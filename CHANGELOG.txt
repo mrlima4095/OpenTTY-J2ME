@@ -1,0 +1,26 @@
+OpenTTY Java Edition 1.0
+Copyright (C) 2024 - Mr. Lima
+
+[ New Features ]
+
+All was added here..  lol
+It's first release
+
+[ Commands ]
+
+- call <number> - Make a call
+- clear - Clear console 
+- date - Show date and time
+- echo <text> - Send a text for console
+- exit - Close MIDlet
+- execute <command> - Run special commands
+- help - Show avaliable commands
+- hostname - Show hostname
+- locale - Show device language
+- open <url> - Open url's
+- sh - Restart OpenTTY 
+- uname - Show device information
+- version - Show OpenTTY version
+
+
+
