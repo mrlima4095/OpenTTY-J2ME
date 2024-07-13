@@ -10,7 +10,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Command helpCommand;
     private Command executeCommand;
     private Command openCommand;
-    private Command exitCommand;
     private Command titleCommand;
     private Command clearCommand;
     private Command loginCommand;
@@ -34,18 +33,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
             enterCommand = new Command("Send", Command.OK, 1);
             helpCommand = new Command("Help", Command.SCREEN, 2);
             openCommand = new Command("Open", Command.SCREEN, 3);
-            exitCommand = new Command("Exit", Command.SCREEN, 4);
-            clearCommand = new Command("Clear", Command.SCREEN, 5);
-            loginCommand = new Command("Login", Command.SCREEN, 6);
-            titleCommand = new Command("Title", Command.SCREEN, 7);
-            executeCommand = new Command("Execute", Command.SCREEN, 8);
+            clearCommand = new Command("Clear", Command.SCREEN, 4);
+            loginCommand = new Command("Login", Command.SCREEN, 5);
+            executeCommand = new Command("Execute", Command.SCREEN, 6);
             
             form.append(output);
             form.append(commandInput);
             form.addCommand(enterCommand); form.addCommand(helpCommand);
-            form.addCommand(openCommand); form.addCommand(exitCommand);
-            form.addCommand(clearCommand); form.addCommand(loginCommand); 
-            form.addCommand(titleCommand); form.addCommand(executeCommand);
+            form.addCommand(openCommand); form.addCommand(clearCommand); 
+            form.addCommand(loginCommand); form.addCommand(executeCommand);
             form.setCommandListener(this);
             
             display.setCurrent(form);
@@ -62,10 +58,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         else if (c == clearCommand) { output.setText(""); }
         else if (c == helpCommand) { processCommand("help"); } 
-        else if (c == exitCommand) { notifyDestroyed(); }
         else if (c == executeCommand) { commandInput.setString("execute"); }
         else if (c == loginCommand) { commandInput.setString(commandInput.getString() + "login"); }
-        else if (c == titleCommand) { commandInput.setString(commandInput.getString() + "title"); }
         else if (c == openCommand) { commandInput.setString(commandInput.getString() + "open"); }
     }
     
@@ -91,7 +85,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("locale")) { echoCommand(System.getProperty("microedition.locale")); }
         else if (mainCommand.equals("hostname")) { echoCommand(System.getProperty("microedition.hostname")); } 
         else if (mainCommand.equals("logout")) { if (username.equals("")) { echoCommand("logout: not logged"); } else { username = ""; }  } 
-        else if (mainCommand.equals("title")) { if (argument.equals("") ) { form.setTitle("OpenTTY" + version); } else {form.setTitle(argument); } }
+        else if (mainCommand.equals("title")) { if (argument.equals("") ) { form.setTitle("OpenTTY " + version); } else { form.setTitle(argument); } }
         else if (mainCommand.equals("sh")) { form.setTitle("OpenTTY " + version); output.setText("Welcome to OpenTTY " + version + "\nCopyright (C) 2024 - Mr. Lima\n"); }
         else if (mainCommand.equals("whoami")) { if (username.equals("")) { echoCommand("whoami: not logged"); } else { echoCommand(username + "@" + System.getProperty("microedition.hostname")); } } 
         else if (mainCommand.equals("help")) { echoCommand("[call *number] [clear]\n[echo <text>] [exit]\n[execute (command)]\n[false] [hostname]\n[help] [login <user>]\n[logout] [open <url>]\n[true] [title <text>]\n[uname -a] [version]"); }
