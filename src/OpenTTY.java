@@ -7,6 +7,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private TextField commandInput;
     private StringItem output;
     private Command enterCommand;
+    private Command helpCommand;
+    private Command executeCommand;
+    private Command openCommand;
+    private Command exitCommand;
+    private Command titleCommand;
+    private Command clearCommand;
+    private Command loginCommand;
     private String username;
     private String version;
     private boolean app;
@@ -25,26 +32,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
             output = new StringItem("", "Welcome to OpenTTY " + version + "\nCopyright (C) 2024 - Mr. Lima\n");
             
             enterCommand = new Command("Send", Command.OK, 1);
+            helpCommand = new Command("Help", Command.SCREEN, 2);
+            openCommand = new Command("Open", Command.SCREEN, 3);
+            exitCommand = new Command("Exit", Command.SCREEN, 4);
+            clearCommand = new Command("Clear", Command.SCREEN, 5);
+            loginCommand = new Command("Login", Command.SCREEN, 6);
+            titleCommand = new Command("Title", Command.SCREEN, 7);
+            executeCommand = new Command("Execute", Command.SCREEN, 8);
             
             form.append(output);
             form.append(commandInput);
-            form.addCommand(enterCommand);
+            form.addCommand(enterCommand); form.addCommand(helpCommand);
+            form.addCommand(openCommand); form.addCommand(exitCommand);
+            form.addCommand(clearCommand); form.addCommand(loginCommand); 
+            form.addCommand(titleCommand); form.addCommand(executeCommand);
             form.setCommandListener(this);
             
             display.setCurrent(form);
             
-        }    
+        } 
+        
     }
 
     public void pauseApp() { app = true; }
     public void destroyApp(boolean unconditional) { }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == enterCommand) {
-            String command = commandInput.getString();
-            processCommand(command);
-            commandInput.setString("");
-        }
+        if (c == enterCommand) { processCommand(commandInput.getString()); commandInput.setString(""); }
+        
+        else if (c == clearCommand) { output.setText(""); }
+        else if (c == helpCommand) { processCommand("help"); } 
+        else if (c == exitCommand) { notifyDestroyed(); }
+        else if (c == executeCommand) { commandInput.setString("execute"); }
+        else if (c == loginCommand) { commandInput.setString(commandInput.getString() + "login"); }
+        else if (c == titleCommand) { commandInput.setString(commandInput.getString() + "title"); }
+        else if (c == openCommand) { commandInput.setString(commandInput.getString() + "open"); }
     }
     
     // OpenTTY Command Processor
@@ -63,16 +85,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { openCommand(argument); }
         else if (mainCommand.equals("uname")) { unameCommand(argument); }
         else if (mainCommand.equals("execute")) { processCommand(argument); }
+        else if (mainCommand.equals("true") || mainCommand.equals("false")) { }
         else if (mainCommand.equals("version")) { echoCommand("OpenTTY " + version); }
         else if (mainCommand.equals("clear") || mainCommand.equals("cls")) { output.setText(""); } 
         else if (mainCommand.equals("locale")) { echoCommand(System.getProperty("microedition.locale")); }
         else if (mainCommand.equals("hostname")) { echoCommand(System.getProperty("microedition.hostname")); } 
-        else if (mainCommand.equals("logout")) { if (username.equals("")) { echoCommand("logout: you aren't logged"); } else { username = ""; }  } 
+        else if (mainCommand.equals("logout")) { if (username.equals("")) { echoCommand("logout: not logged"); } else { username = ""; }  } 
         else if (mainCommand.equals("title")) { if (argument.equals("") ) { form.setTitle("OpenTTY" + version); } else {form.setTitle(argument); } }
         else if (mainCommand.equals("sh")) { form.setTitle("OpenTTY " + version); output.setText("Welcome to OpenTTY " + version + "\nCopyright (C) 2024 - Mr. Lima\n"); }
-        else if (mainCommand.equals("whoami")) { if (username.equals("")) { echoCommand("whoami: you aren't logged"); } else { echoCommand(username + "@" + System.getProperty("microedition.hostname")); } } 
-        else if (mainCommand.equals("help")) { echoCommand("[call] [clear] [date]\n[echo] [uname] [exit]\n[title] [version] [!]\n[execute]  [hostname]"); }
-        else { output.setText(output.getText() + "\n" + mainCommand + ": unknown command"); }
+        else if (mainCommand.equals("whoami")) { if (username.equals("")) { echoCommand("whoami: not logged"); } else { echoCommand(username + "@" + System.getProperty("microedition.hostname")); } } 
+        else if (mainCommand.equals("help")) { echoCommand("[call *number] [clear]\n[echo <text>] [exit]\n[execute (command)]\n[false] [hostname]\n[help] [login <user>]\n[logout] [open <url>]\n[true] [title <text>]\n[uname -a] [version]"); }
+        else { echoCommand(mainCommand + ": unknown command"); }
         
     }
     
@@ -97,6 +120,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void unameCommand(String options) { output.setText(output.getText() + "\n" + System.getProperty("microedition.platform") + " " + System.getProperty("microedition.configuration") + " " + System.getProperty("microedition.profiles")); }
     private void callCommand(String number) { if (number == null || number.length() == 0) { echoCommand("Usage: call <phone>"); return; } try { platformRequest("tel:" + number); } catch (Exception e) { } }
     private void openCommand(String url) { if (url == null || url.length() == 0) { echoCommand("Usage: open <url>"); return; } try { platformRequest(url); } catch (Exception e) { echoCommand("open: " + url + ": not found"); } }
-    private void login(String user) { if (user == null || user.length() == 0) { echoCommand("Usage: login <username>"); } else { if (username.equals("")) { username = user; } else { echoCommand("login: you are alredy login"); } } }
+    private void login(String user) { if (user == null || user.length() == 0) { echoCommand("Usage: login <user>"); } else { if (username.equals("")) { username = user; } else { echoCommand("login: already logged"); } } }
     
 }
