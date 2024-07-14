@@ -10,7 +10,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Command helpCommand;
     private Command executeCommand;
     private Command openCommand;
-    private Command titleCommand;
     private Command clearCommand;
     private Command loginCommand;
     private String username;
@@ -39,9 +38,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             form.append(output);
             form.append(commandInput);
-            form.addCommand(enterCommand); form.addCommand(helpCommand);
-            form.addCommand(openCommand); form.addCommand(clearCommand); 
-            form.addCommand(loginCommand); form.addCommand(executeCommand);
+            form.addCommand(enterCommand); form.addCommand(helpCommand); form.addCommand(openCommand); 
+            form.addCommand(clearCommand); form.addCommand(loginCommand); form.addCommand(executeCommand);
             form.setCommandListener(this);
             
             display.setCurrent(form);
@@ -58,9 +56,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         else if (c == clearCommand) { output.setText(""); }
         else if (c == helpCommand) { processCommand("help"); } 
-        else if (c == executeCommand) { commandInput.setString("execute"); }
-        else if (c == loginCommand) { commandInput.setString(commandInput.getString() + "login"); }
-        else if (c == openCommand) { commandInput.setString(commandInput.getString() + "open"); }
+        else if (c == executeCommand) { commandInput.setString("execute "); }
+        else if (c == loginCommand) { commandInput.setString(commandInput.getString() + "login "); }
+        else if (c == openCommand) { commandInput.setString(commandInput.getString() + "open "); }
     }
     
     // OpenTTY Command Processor
@@ -72,9 +70,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (mainCommand.equals("")) { } 
         else if (mainCommand.equals("!")) { echoCommand("OpenTTY Java Edition"); }
         else if (mainCommand.equals("date")) { dateCommand(); } 
+        else if (mainCommand.equals("lock")) { lockCommand(); }
         else if (mainCommand.equals("login")) { login(argument); }
         else if (mainCommand.equals("exit")) { notifyDestroyed(); } 
-        else if (mainCommand.equals("call")) { callCommand(argument); } 
+        else if (mainCommand.equals("call")) { callCommand(argument); }
         else if (mainCommand.equals("echo")) { echoCommand(argument); }
         else if (mainCommand.equals("open")) { openCommand(argument); }
         else if (mainCommand.equals("uname")) { unameCommand(argument); }
@@ -103,17 +102,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); }
     }
     
-    private void dateCommand() {
-        java.util.Date date = new java.util.Date();
-        String dateString = date.toString();
-        
-        output.setText(output.getText() + "\n" + dateString);
-    }
-    
+    private void dateCommand() { echoCommand(new java.util.Date().toString()); }
     private void echoCommand(String message) { output.setText(output.getText() + "\n" + message); }
     private void unameCommand(String options) { output.setText(output.getText() + "\n" + System.getProperty("microedition.platform") + " " + System.getProperty("microedition.configuration") + " " + System.getProperty("microedition.profiles")); }
     private void callCommand(String number) { if (number == null || number.length() == 0) { echoCommand("Usage: call <phone>"); return; } try { platformRequest("tel:" + number); } catch (Exception e) { } }
     private void openCommand(String url) { if (url == null || url.length() == 0) { echoCommand("Usage: open <url>"); return; } try { platformRequest(url); } catch (Exception e) { echoCommand("open: " + url + ": not found"); } }
     private void login(String user) { if (user == null || user.length() == 0) { echoCommand("Usage: login <user>"); } else { if (username.equals("")) { username = user; } else { echoCommand("login: already logged"); } } }
+    private void lockCommand() { if (username == null || username.length() == 0) { echoCommand("lock: not logged"); } else { while (true) { if (commandInput.getString().equals(username)) { break; } } } }
     
 }
