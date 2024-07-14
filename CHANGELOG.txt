@@ -1,26 +1,29 @@
-OpenTTY Java Edition 1.0
+OpenTTY Java Edition 1.1
 Copyright (C) 2024 - Mr. Lima
+
+OpenTTY - Security Update
 
 [ New Features ]
 
-All was added here..  lol
-It's first release
+- Login system
+- Lock system
+- Logic conditions (true, false)
+- Commands Menu - Instant run (help, clear)
+- Commands Menu - Pre-code (open, login, execute)
 
 [ Commands ]
 
-- call <number> - Make a call
-- clear - Clear console 
-- date - Show date and time
-- echo <text> - Send a text for console
-- exit - Close MIDlet
-- execute <command> - Run special commands
-- help - Show avaliable commands
-- hostname - Show hostname
-- locale - Show device language
-- open <url> - Open url's
-- sh - Restart OpenTTY 
-- uname - Show device information
-- version - Show OpenTTY version
+- login <username> - Auth user
+- logout - End user session
+- whoami - Show username
+- lock - block OpenTTY
 
+[ ATTENTION ]
 
+When you use command 'lock' 
+OpenTTY doesnt send any message
+And all functions stop to work.
 
+To unlock only type your username
+in textbox, is not required press
+button send. 
