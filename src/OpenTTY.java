@@ -1,5 +1,7 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
+import javax.microedition.io.*;
+import java.io.*;
 
 public class OpenTTY extends MIDlet implements CommandListener {
     private Display display;
@@ -20,7 +22,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         if (!app == true) {
             // OpenTTY Settings
-            version = "1.1";
+            version = "1.2";
             username = "";
         
             display = Display.getDisplay(this);
@@ -67,12 +69,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command).toLowerCase();
         String argument = getArgument(command);
         
-        if (mainCommand.equals("")) { } 
+        if (mainCommand.equals("")) { }
         else if (mainCommand.equals("!")) { echoCommand("OpenTTY Java Edition"); }
         else if (mainCommand.equals("date")) { dateCommand(); } 
         else if (mainCommand.equals("lock")) { lockCommand(); }
         else if (mainCommand.equals("login")) { login(argument); }
-        else if (mainCommand.equals("exit")) { notifyDestroyed(); } 
+        else if (mainCommand.equals("exit")) { notifyDestroyed(); }
+        else if (mainCommand.equals("ping")) { pingCommand(argument); }
+        else if (mainCommand.equals("curl")) { curlCommand(argument); } 
         else if (mainCommand.equals("call")) { callCommand(argument); }
         else if (mainCommand.equals("echo")) { echoCommand(argument); }
         else if (mainCommand.equals("open")) { openCommand(argument); }
@@ -80,6 +84,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("execute")) { processCommand(argument); }
         else if (mainCommand.equals("true") || mainCommand.equals("false")) { }
         else if (mainCommand.equals("version")) { echoCommand("OpenTTY " + version); }
+        else if (mainCommand.equals("ipconfig")) { curlCommand("http://checkip.amazonaws.com"); }
         else if (mainCommand.equals("clear") || mainCommand.equals("cls")) { output.setText(""); } 
         else if (mainCommand.equals("locale")) { echoCommand(System.getProperty("microedition.locale")); }
         else if (mainCommand.equals("hostname")) { echoCommand(System.getProperty("microedition.hostname")); } 
@@ -92,15 +97,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
     }
     
-    private String getCommand(String input) {
-        int spaceIndex = input.indexOf(' ');
-        if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); }
-    }
-    
-    private String getArgument(String input) {
-        int spaceIndex = input.indexOf(' ');
-        if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); }
-    }
+    private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
+    private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     
     private void dateCommand() { echoCommand(new java.util.Date().toString()); }
     private void echoCommand(String message) { output.setText(output.getText() + "\n" + message); }
@@ -109,5 +107,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void openCommand(String url) { if (url == null || url.length() == 0) { echoCommand("Usage: open <url>"); return; } try { platformRequest(url); } catch (Exception e) { echoCommand("open: " + url + ": not found"); } }
     private void login(String user) { if (user == null || user.length() == 0) { echoCommand("Usage: login <user>"); } else { if (username.equals("")) { username = user; } else { echoCommand("login: already logged"); } } }
     private void lockCommand() { if (username == null || username.length() == 0) { echoCommand("lock: not logged"); } else { while (true) { if (commandInput.getString().equals(username)) { break; } } } }
+    
+    // Network API Service
+    private void curlCommand(String url) {
+        if (url == null || url.length() == 0) { echoCommand("Usage: curl <url>"); return; }
+        if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
+        final String finalUrl = url;  
+        new Thread(new Runnable() { public void run() { try { HttpConnection conn = (HttpConnection) Connector.open(finalUrl); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); 
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } String response = new String(baos.toByteArray()); echoCommand(response);
+            is.close(); conn.close(); } catch (Exception e) { echoCommand("curl: " + e.getMessage()); } } }).start();
+    } 
+    
+    private void pingCommand(String url) {
+        if (url == null || url.length() == 0) { echoCommand("Usage: ping <url>"); return; }
+        if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
+        final String finalUrl = url; 
+        new Thread(new Runnable() { public void run() { long startTime = System.currentTimeMillis();
+            try { HttpConnection conn = (HttpConnection) Connector.open(finalUrl); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); int responseCode = conn.getResponseCode();
+                long endTime = System.currentTimeMillis(); if (responseCode == HttpConnection.HTTP_OK) { echoCommand("Ping to " + finalUrl + " successful, time=" + (endTime - startTime) + "ms"); } 
+                else { echoCommand("Ping to " + finalUrl + " failed, HTTP response code: " + responseCode); } is.close(); conn.close();
+            } catch (IOException e) { echoCommand("Ping to " + finalUrl + " failed: " + e.getMessage()); } } }).start();
+    }
     
 }
