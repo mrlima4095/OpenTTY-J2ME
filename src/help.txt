@@ -1,0 +1,26 @@
+OpenTTY 1.2 - Utility Update
+Copyright (C) 2024 - Mr. Lima
+
+
+[ Commands ]
+
+alias ** - create aliases
+aliases - show current aliases
+call <number> - make a call
+curl <url> - make a HTTP request
+clear - clear console
+exit - close OpenTTY
+echo <text> - show text
+execute <command> - run as owner
+false - return false
+help - show this help message
+ipconfig - show global ip 
+login <user> - auth into user
+logout - end user session
+lock - block console
+open <link> - start a midlet/url
+ping <url> - get ping with a server
+title <text> - set console title
+uname - show system info
+uname - delete aliases
+version - show OpenTTY version
