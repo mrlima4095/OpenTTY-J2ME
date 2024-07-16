@@ -1,4 +1,4 @@
-OpenTTY 1.2 - Utility Update
+OpenTTY 1.3 - Utility Update
 Copyright (C) 2024 - Mr. Lima
 
 
@@ -12,6 +12,7 @@ exit - close OpenTTY
 echo <text> - show text
 execute <command> - run as 
 false - return false
+htop - show memory info
 help - show this help message
 ipconfig - show global ip 
 login <user> - auth into user
