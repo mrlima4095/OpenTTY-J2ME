@@ -8,7 +8,7 @@ import java.io.*;
 public class OpenTTY extends MIDlet implements CommandListener {
     private boolean app;
     private String username = "";
-    private String version = "1.2";
+    private String version = "1.3";
     private Hashtable aliases = new Hashtable();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + version);
@@ -58,6 +58,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("!")) { echoCommand("OpenTTY Java Edition"); }
         else if (mainCommand.equals("date")) { dateCommand(); } 
         else if (mainCommand.equals("lock")) { lockCommand(); }
+        else if (mainCommand.equals("htop")) { htopCommand(); }
         else if (mainCommand.equals("login")) { login(argument); }
         else if (mainCommand.equals("exit")) { notifyDestroyed(); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); }
@@ -98,6 +99,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void openCommand(String url) { if (url == null || url.length() == 0) { echoCommand("Usage: open <url>"); return; } try { platformRequest(url); } catch (Exception e) { echoCommand("open: " + url + ": not found"); } }
     private void login(String user) { if (user == null || user.length() == 0) { echoCommand("Usage: login <user>"); } else { if (username.equals("")) { username = user; } else { echoCommand("login: already logged"); } } }
     private void lockCommand() { if (username == null || username.length() == 0) { echoCommand("lock: not logged"); } else { while (true) { if (commandInput.getString().equals(username)) { break; } } } }
+    private void htopCommand() { Runtime runtime = Runtime.getRuntime(); echoCommand("Memory Status:\n\nUsed Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB"); echoCommand("Free Memory: " + runtime.freeMemory() / 1024 + " KB"); echoCommand("Total Memory: " + runtime.totalMemory() / 1024 + " KB"); }
     
     // Network API Service
     private void curlCommand(final String url) {
