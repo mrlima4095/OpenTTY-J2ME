@@ -1,29 +1,27 @@
-OpenTTY Java Edition 1.1
+OpenTTY Java Edition 1.2
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - Security Update
+OpenTTY - Utility Update
 
-[ New Features ]
+[ UPDATES ]
 
-- Login system
-- Lock system
-- Logic conditions (true, false)
-- Commands Menu - Instant run (help, clear)
-- Commands Menu - Pre-code (open, login, execute)
+- New tools added
+- Added network api
+- Added alias system
+- Added OpenTTY icon
 
 [ Commands ]
 
-- login <username> - Auth user
-- logout - End user session
-- whoami - Show username
-- lock - block OpenTTY
+- curl <url> - make a HTTP GET request
+- ping <url> - get HTTP connect ping
+- ipconfig - get global ip of machine
+- alias <name> <command> - create an alias
+- unalias <name> - delete aliases
 
-[ ATTENTION ]
+[ Warnings ] 
 
-When you use command 'lock' 
-OpenTTY doesnt send any message
-And all functions stop to work.
-
-To unlock only type your username
-in textbox, is not required press
-button send. 
+- Detected bugs: When you use curl in old
+  phones you can get a error message like
+  "Alert(2,40)" it means that the html is 
+  so large to load.   I test and it works 
+  normally in J2ME emulators.
