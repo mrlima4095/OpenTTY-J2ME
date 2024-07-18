@@ -62,6 +62,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         if (mainCommand.equals("")) { }
         else if (mainCommand.equals("!")) { echoCommand("OpenTTY Java Edition"); }
+        else if (mainCommand.equals("nano")) { nano(); }
         else if (mainCommand.equals("netstat")) { netstat(); }
         else if (mainCommand.equals("date")) { dateCommand(); } 
         else if (mainCommand.equals("lock")) { lockCommand(); }
@@ -75,7 +76,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { openCommand(argument); }
         else if (mainCommand.equals("uname")) { unameCommand(argument); }
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
-        else if (mainCommand.equals("nano")) { loadNanoContent(); nano(); }
         else if (mainCommand.equals("hostname")) { echoCommand(hostname); } 
         else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
         else if (mainCommand.equals("execute")) { processCommand(argument); }
@@ -109,10 +109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void lockCommand() { if (username == null || username.length() == 0) { echoCommand("lock: not logged"); } else { while (true) { if (commandInput.getString().equals(username)) { break; } } } }
     private void htopCommand() { Runtime runtime = Runtime.getRuntime(); echoCommand("Memory Status:\n\nUsed Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB"); echoCommand("Free Memory: " + runtime.freeMemory() / 1024 + " KB"); echoCommand("Total Memory: " + runtime.totalMemory() / 1024 + " KB"); }
     
-    // Nano MIDlet
-    private void nano() { final TextBox editor = new TextBox("Nano", nanoContent, 2048, TextField.ANY); final Command back = new Command("Back", Command.OK, 1); final Command clear = new Command("Clear", Command.SCREEN, 2); editor.addCommand(back); editor.addCommand(clear); editor.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { nanoContent = editor.getString(); saveNanoContent(nanoContent); display.setCurrent(form); } else if (c == clear) { editor.setString(""); } } }); display.setCurrent(editor); }
-    private void saveNanoContent(String content) { try { RecordStore nanoStore = RecordStore.openRecordStore("NanoRMS", true); byte[] data = content.getBytes(); if (nanoStore.getNumRecords() > 0) { nanoStore.setRecord(1, data, 0, data.length); } else { nanoStore.addRecord(data, 0, data.length); } nanoStore.closeRecordStore(); } catch (RecordStoreException e) { } }
-    private void loadNanoContent() { try { RecordStore nanoStore = RecordStore.openRecordStore("NanoRMS", true); if (nanoStore.getNumRecords() > 0) { byte[] data = nanoStore.getRecord(1); nanoContent = new String(data); } else { nanoContent = "Welcome to nano"; } nanoStore.closeRecordStore(); } catch (RecordStoreException e) { nanoContent = "Welcome to nano"; } }
+    private void nano() { final TextBox editor = new TextBox("Nano", nanoContent, 2048, TextField.ANY); final Command back = new Command("Back", Command.OK, 1); final Command clear = new Command("Clear", Command.SCREEN, 2); editor.addCommand(back); editor.addCommand(clear); editor.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { nanoContent = editor.getString(); display.setCurrent(form); } else if (c == clear) { editor.setString(""); } } }); display.setCurrent(editor); }
     
     // Login API Service
     private void login(String user) { if (user == null || user.length() == 0) { echoCommand("Usage: login <user>"); } else { if (username.equals("")) { username = user; saveUsername(user); } else { echoCommand("login: already logged"); } } }
@@ -124,6 +121,5 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void netstat() { new Thread(new Runnable() { public void run() { try { HttpConnection conn = (HttpConnection) Connector.open("http://www.google.com"); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); conn.getResponseCode(); echoCommand("Available"); conn.close(); } catch (IOException e) { echoCommand("Unavailable"); } } }).start(); }
     private void curlCommand(final String url) { if (url == null || url.length() == 0) { echoCommand("Usage: curl <url>"); return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } new Thread(new Runnable() { public void run() { try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } String response = new String(baos.toByteArray()); echoCommand(response); is.close(); conn.close(); } catch (Exception e) { echoCommand("curl: " + e.getMessage()); } } }).start(); }
     private void pingCommand(final String url) { if (url == null || url.length() == 0) { echoCommand("Usage: ping <url>"); return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } new Thread(new Runnable() { public void run() { long startTime = System.currentTimeMillis(); try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); int responseCode = conn.getResponseCode(); long endTime = System.currentTimeMillis(); echoCommand("Ping to " + url + " successful, time=" + (endTime - startTime) + "ms"); is.close(); conn.close(); } catch (IOException e) { echoCommand("Ping to " + url + " failed: " + e.getMessage()); } } }).start(); }
-    
     
 }
