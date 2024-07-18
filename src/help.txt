@@ -11,13 +11,16 @@ clear - clear console
 exit - close OpenTTY
 echo <text> - show text
 execute <command> - run as 
+htop - show memory usage
 false - return false
-htop - show memory info
+htop - show memory usage
 help - show this help message
 ipconfig - show global ip 
 login <user> - auth into user
 logout - end user session
 lock - block console
+nano - Nano text editor
+netstat - verify network status
 open <link> - start a midlet/url
 ping <url> - get ping with a server
 title <text> - set console title
