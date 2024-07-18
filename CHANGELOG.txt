@@ -1,27 +1,15 @@
-OpenTTY Java Edition 1.2
+OpenTTY Java Edition 1.3
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - Utility Update
-
-[ UPDATES ]
-
-- New tools added
-- Added network api
-- Added alias system
-- Added OpenTTY icon
+OpenTTY - Utility Update - Part II
 
 [ Commands ]
 
-- curl <url> - make a HTTP GET request
-- ping <url> - get HTTP connect ping
-- ipconfig - get global ip of machine
-- alias <name> <command> - create an alias
-- unalias <name> - delete aliases
+- htop - show memory usage
+- netstat - verify network
+- nano - temporary notepad
 
-[ Warnings ] 
+[ Updates ]
 
-- Detected bugs: When you use curl in old
-  phones you can get a error message like
-  "Alert(2,40)" it means that the html is 
-  so large to load.   I test and it works 
-  normally in J2ME emulators.
+- Now you credentials be safe 
+  across OpenTTY sessions.
