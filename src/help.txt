@@ -27,3 +27,4 @@ title <text> - set console title
 uname - show system info
 unalias <alias> - delete aliases
 version - show OpenTTY version
+wget <url> - save website html
