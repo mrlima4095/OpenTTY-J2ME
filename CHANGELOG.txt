@@ -3,13 +3,24 @@ Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - Utility Update - Part II
 
+
 [ Commands ]
 
 - htop - show memory usage
 - netstat - verify network
 - nano - temporary notepad
+- wget <url> - save website html
+- tty - show console path
 
 [ Updates ]
 
 - Now you credentials be safe 
   across OpenTTY sessions.
+
+- New IDE/Text editor Nano added
+  use wget to download html and 
+  run it with OpenTTY Nano.
+
+- Added simple HTML Viewer to run
+  pages writed in Nano.
+
