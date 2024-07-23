@@ -1,0 +1,6 @@
+/
+| scripts /
+| | debug.sh
+| icon.png
+| help.txt
+| resources.txt
