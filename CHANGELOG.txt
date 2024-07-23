@@ -1,26 +1,12 @@
-OpenTTY Java Edition 1.3
+OpenTTY Java Edition 1.4
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - Utility Update - Part II
-
-
-[ Commands ]
-
-- htop - show memory usage
-- netstat - verify network
-- nano - temporary notepad
-- wget <url> - save website html
-- tty - show console path
+OpenTTY - Performance Update
 
 [ Updates ]
 
-- Now you credentials be safe 
-  across OpenTTY sessions.
-
-- New IDE/Text editor Nano added
-  use wget to download html and 
-  run it with OpenTTY Nano.
-
-- Added simple HTML Viewer to run
-  pages writed in Nano.
-
+- Added Error and Alert window
+- Added support for shell script
+- Removed login button
+- Removed logout system
+- Disabled command logout
