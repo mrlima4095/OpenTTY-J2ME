@@ -1,30 +1,24 @@
-OpenTTY 1.3 - Utility Update
+OpenTTY 1.5 - X.Org Update
 Copyright (C) 2024 - Mr. Lima
 
 
 [ Commands ]
 
-alias ** - create aliases
-call <number> - make a call
-curl <url> - make a HTTP request
-clear - clear console
-exit - close OpenTTY
-echo <text> - show text
-execute <command> - run as 
-htop - show memory usage
-false - return false
-htop - show memory usage
-help - show this help message
-ipconfig - show global ip 
-login <user> - auth into user
-logout - end user session
-lock - block console
-nano - Nano text editor
-netstat - verify network status
-open <link> - start a midlet/url
-ping <url> - get ping with a server
-title <text> - set console title
-uname - show system info
-unalias <alias> - delete aliases
-version - show OpenTTY version
-wget <url> - save website html
+alias; call; curl; cat; clear; date;
+exit; echo; execute; false; help;
+hostname; ipconfig; login; lock;
+netstat; open; ping; title; true;
+unalias; uname; version; wget;
+
+
+[ About ]
+
+OpenTTY is a Terminal Emulator
+for J2ME supported Phones. If
+you found any issue report at
+github page
+
+[ Web Project ]
+
+https://github.com/mrlima4095/
+OpenTTY-J2ME
