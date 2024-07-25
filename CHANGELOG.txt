@@ -1,12 +1,13 @@
-OpenTTY Java Edition 1.4
+OpenTTY Java Edition 1.5
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - Performance Update
+OpenTTY - Xorg Update
+
+[ Commands ]
+
+- debug - Debug Tool for OpenTTY
+- xorg - X.Org Server Manager
 
 [ Updates ]
 
-- Added Error and Alert window
-- Added support for shell script
-- Removed login button
-- Removed logout system
-- Disabled command logout
+- Updated Xorg server
