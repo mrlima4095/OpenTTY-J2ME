@@ -6,8 +6,6 @@ development notes at project [wiki](https://github.com/mrlima4095/OpenTTY-J2ME/w
 
 # In development 
 
-- JSON Reader
-- Command History
 - Metasploit for J2ME
 - X.Org window creator
 - Auto Updater
