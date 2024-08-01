@@ -1,13 +1,11 @@
-OpenTTY Java Edition 1.5
+OpenTTY Java Edition 1.6
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - Xorg Update
+OpenTTY - FS Update
 
 [ Commands ]
 
-- debug - Debug Tool for OpenTTY
-- xorg - X.Org Server Manager
 
 [ Updates ]
 
-- Updated Xorg server
+
