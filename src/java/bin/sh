@@ -1,0 +1,18 @@
+[ Config ]
+
+app=sh
+version=$VERSION
+
+tty=/java/bin/java
+title=OpenTTY $VERSION
+motd=Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr Lima
+execute=OpenTTY.processCommand
+
+
+# Permissions
+
+root=true
+read=true
+socket=auto
+stream=true
+logout=null
