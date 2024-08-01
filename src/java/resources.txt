@@ -1,6 +1,8 @@
 /
+| java /
+| | bin /
+| | | icon.png
+| | help.txt 
+| | resources.txt
 | scripts /
 | | debug.sh
-| icon.png
-| help.txt
-| resources.txt
