@@ -5,7 +5,28 @@ OpenTTY - FS Update
 
 [ Commands ]
 
+- json - properties to json
+- cd <dir> - walk in classpath
+- history - see commands history
 
 [ Updates ]
+
+- Classpath navigation system
+- New assets organization
+- Changed resources extructure
+- Command History
+- Envirroment variables
+- JSON Parser
+
+
+[ Envirroment Keys ]
+
+$PATH - actual path
+$PATCH - release name
+$USERNAME - username
+$VERSION - OpenTTY Version
+$TYPE - actual Platform
+$CONFIG - Show J2ME Config
+$PROFILE - Show profile
 
 
