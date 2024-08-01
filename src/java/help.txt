@@ -1,22 +1,14 @@
-OpenTTY 1.5 - X.Org Update
+OpenTTY $VERSION - $PATCH
 Copyright (C) 2024 - Mr. Lima
 
 
 [ Commands ]
 
-alias; call; curl; cat; clear; date;
-exit; echo; execute; false; help;
+alias; cd; call; curl; cat; clear; 
+date; exit; echo; execute; false; 
 hostname; ipconfig; login; lock;
 netstat; open; ping; title; true;
 unalias; uname; version; wget;
-
-
-[ About ]
-
-OpenTTY is a Terminal Emulator
-for J2ME supported Phones. If
-you found any issue report at
-github page
 
 [ Web Project ]
 
