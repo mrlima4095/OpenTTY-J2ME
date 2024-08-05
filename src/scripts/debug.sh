@@ -1,13 +1,13 @@
-#!/java/bin/sh 
+#!/java/bin/sh
 
 echo OpenTTY Debug
 echo -------------------
 echo
 
-date 
-locale
+date
 hostname
 whoami
-warn Running OpenTTY debug tools
+uname
+echo PATH=$PATH
 
 echo -------------------
