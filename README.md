@@ -8,6 +8,11 @@ development notes at project [wiki](https://github.com/mrlima4095/OpenTTY-J2ME/w
 
 - Metasploit for J2ME
 - X.Org window creator
+- Image Loader
 - Auto Updater
 - Package manager
+- RMS register
+- In-app documentation
+- Translation API
+- Shell script full support
 
