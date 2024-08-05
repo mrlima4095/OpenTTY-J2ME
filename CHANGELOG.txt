@@ -1,32 +1,16 @@
-OpenTTY Java Edition 1.6
+OpenTTY Java Edition 1.6.2
 Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - FS Update
 
-[ Commands ]
-
-- json - properties to json
-- cd <dir> - walk in classpath
-- history - see commands history
 
 [ Updates ]
 
-- Classpath navigation system
-- New assets organization
-- Changed resources extructure
-- Command History
-- Envirroment variables
-- JSON Parser
-
-
-[ Envirroment Keys ]
-
-$PATH - actual path
-$PATCH - release name
-$USERNAME - username
-$VERSION - OpenTTY Version
-$TYPE - actual Platform
-$CONFIG - Show J2ME Config
-$PROFILE - Show profile
-
+- Using new RMS System to save username
+- Added argument input screen at login
+- Added button Cancel at input screen
+- Login when you are already logged 
+- Run call RMS registers
+- New envirroment key `LOCALE`
+- Bug fix: Now aliases support arguments
 
