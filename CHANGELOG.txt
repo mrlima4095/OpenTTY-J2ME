@@ -1,16 +1,24 @@
-OpenTTY Java Edition 1.6.2
+OpenTTY Java Edition 1.8
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - FS Update
+OpenTTY - Netman Update
+
+[ Commands ]
+
+- nc <ip:port> - netcat for J2ME
+- export <key> - create a empty envirroment key
 
 
 [ Updates ]
 
-- Using new RMS System to save username
-- Added argument input screen at login
-- Added button Cancel at input screen
-- Login when you are already logged 
-- Run call RMS registers
-- New envirroment key `LOCALE`
-- Bug fix: Now aliases support arguments
+- New comparator "not" added into `if` operator
+-
+
+
+[ Packages ]
+
+- OpenTTY.jar - Default release 
+- OpenTTY-scripts.jar - Package with example scripts
+- OpenTTY-
+
 

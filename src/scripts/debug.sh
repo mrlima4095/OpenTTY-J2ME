@@ -4,6 +4,8 @@ echo OpenTTY Debug
 echo -------------------
 echo
 
+tty
+ttysize
 date
 hostname
 whoami

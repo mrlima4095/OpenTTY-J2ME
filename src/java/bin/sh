@@ -3,7 +3,7 @@
 app=sh
 version=$VERSION
 
-tty=/java/bin/java
+tty=/java/optty1
 title=OpenTTY $VERSION
 motd=Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr Lima
 execute=OpenTTY.processCommand
