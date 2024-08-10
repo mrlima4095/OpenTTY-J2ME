@@ -200,31 +200,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
             remote.setCommandListener(new CommandListener() { 
                 public void commandAction(Command c, Displayable d) {
                     if (c == sendCommand) { 
-                        final String data = inputField.getString(); inputField.setString("");
-                        new Thread(new Runnable() { public void run() { 
-                                try { 
+                        final String data = inputField.getString(); 
+                        inputField.setString("");
+                        try { 
                                     outputStream.write(data.getBytes()); outputStream.flush(); 
                                     byte[] buffer = new byte[1024]; int length = inputStream.read(buffer); if (length != -1) { String response = new String(buffer, 0, length); console.setText(console.getText() + "\n" + response); } 
                                             
-                                } catch (IOException e) { processCommand("warn "  + e.getMessage()); } } }).start(); 
+                                } catch (IOException e) { processCommand("warn "  + e.getMessage()); } 
                             
 
                     } else if (c == backCommand) { display.setCurrent(form); } else if (c == clearCommand) { console.setText(""); } } }); display.setCurrent(remote); } catch (IOException e) { processCommand("warn " + e.getMessage()); } }
     private void portScanner(final String host) {
         if (host == null || host.length() == 0) { echoCommand("Usage: prscan <ip>"); return; }
-        for (int port = 1; port <= 4096; port++) {
-            final int cport = port;
-            new Thread(new Runnable() { public void run() { 
+        new Thread(new Runnable() { public void run() { 
+            for (int port = 1; port <= 9999; port++) {
+            
                 try {
-                    SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + cport);
-                    echoCommand("Port " + cport + " is open");
+                    SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port);
+                    echoCommand(host + ": port " + port + " is open");
                 } catch (IOException e) { } 
                 
-            } }).start();
+            } } }).start();
             
         }
         
-    } 
+    
 
 
     

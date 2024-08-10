@@ -5,6 +5,7 @@ OpenTTY - Netman Update
 
 [ Commands ]
 
+- prscan <host> - port scanner
 - nc <ip:port> - netcat for J2ME
 - export <key> - create a empty envirroment key
 
