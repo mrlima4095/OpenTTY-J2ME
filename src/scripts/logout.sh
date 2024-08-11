@@ -6,3 +6,5 @@ install backup
 rnano 
 install OpenRMS
 load backup
+
+exit
