@@ -15,7 +15,16 @@ OpenTTY - Netman Update
 - New comparator "not" added into `if` operator
 -
 
+[ Envirroment keys ]
+
+- $PORT - Server port that will br listen by server
+- $RESPONSE - Server response that will be send after a request
+
+
+
 [ Notes ]
+
+
 
 
 [ Packages ]
