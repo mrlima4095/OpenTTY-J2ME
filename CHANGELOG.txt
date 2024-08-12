@@ -8,7 +8,7 @@ OpenTTY - Netman Update
 - prscan <host> - port scanner
 - nc <ip:port> - netcat for J2ME
 - export <key> - create a empty envirroment key
-
+- server - start a simple tcp server
 
 [ Updates ]
 
@@ -27,7 +27,8 @@ OpenTTY - Netman Update
 
 
 
-[ Packages ]
+[ MIDlets at Full Package ]
 
-- OpenTTY.jar - Default release 
+- OpenTTY 1.8
+-  
 
