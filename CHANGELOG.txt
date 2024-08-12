@@ -20,6 +20,10 @@ OpenTTY - Netman Update
 - $PORT - Server port that will br listen by server
 - $RESPONSE - Server response that will be send after a request
 
+[ Support Scripts ] 
+
+- assets/python/download.py - get and save response of OpenTTY Server into a file
+- assets/
 
 
 [ Notes ]
