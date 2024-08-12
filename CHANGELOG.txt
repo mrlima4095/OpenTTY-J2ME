@@ -15,11 +15,10 @@ OpenTTY - Netman Update
 - New comparator "not" added into `if` operator
 -
 
+[ Notes ]
+
 
 [ Packages ]
 
 - OpenTTY.jar - Default release 
-- OpenTTY-scripts.jar - Package with example scripts
-- OpenTTY-
-
 
