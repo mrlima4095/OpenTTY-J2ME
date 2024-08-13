@@ -23,11 +23,12 @@ OpenTTY - Netman Update
 [ Support Scripts ] 
 
 - assets/python/download.py - get and save response of OpenTTY Server into a file
-- assets/
+- assets/python/portscanner.py - port scanner base system 
 
 
 [ Notes ]
 
+- To set server response nanoContent, to save it into a file in another device use command `set $RESPONSE nano`
 
 
 
