@@ -1917,7 +1917,6 @@ class NotStaticError(Exception): # OpenTTY Internal Exception (NotStaticError - 
 
 
 if __name__ == "__main__":
-	with OpenTTY() as app:
-
-		try: app.shell(' '.join(sys.argv[1:]).replace("--admin", "").replace("-b", ""), makepipe=True, root=False) if not "--admin" in sys.argv else app.runas(' '.join(sys.argv[1:]).replace("--admin", "").replace("-b", ""), makepipe=True)
-		except IndexError: app.help()
+	with OpenTTY() as app: app.connect()
+		#try: app.shell(' '.join(sys.argv[1:]).replace("--admin", "").replace("-b", ""), makepipe=True, root=False) if not "--admin" in sys.argv else app.runas(' '.join(sys.argv[1:]).replace("--admin", "").replace("-b", ""), makepipe=True)
+		#except IndexError: app.help()

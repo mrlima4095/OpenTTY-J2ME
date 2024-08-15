@@ -9,11 +9,15 @@ OpenTTY - Netman Update
 - nc <ip:port> - netcat for J2ME
 - export <key> - create a empty envirroment key
 - server - start a simple tcp server
+- pjnc - parse nanoContent to JSON 
+
 
 [ Updates ]
 
 - New comparator "not" added into `if` operator
--
+- HTML Viewer title now get attribute from <title> tag
+- Now spaces dont be added into commands history
+ 
 
 [ Envirroment keys ]
 
@@ -24,11 +28,12 @@ OpenTTY - Netman Update
 
 - assets/python/download.py - get and save response of OpenTTY Server into a file
 - assets/python/portscanner.py - port scanner base system 
-
+- assets/python/localhost.py - start a HTTP localhost server
+- assets/python/remote.py - remote telnet server to opentty
 
 [ Notes ]
 
-- To set server response nanoContent, to save it into a file in another device use command `set $RESPONSE nano`
+- To set server response nanoContent, to save it into a file in another device use command `set RESPONSE nano`
 
 
 
