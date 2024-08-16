@@ -1,6 +1,11 @@
-# Usage: python portscanner.py
-#
-# Verify opened ports in a host
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#    
+#    python portscanner.py 
+#    
+#  Copyright (C) 2023 "Mr. Lima"
+#  
+
 
 
 import socket

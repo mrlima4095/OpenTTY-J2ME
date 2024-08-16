@@ -1,6 +1,11 @@
-# Usage: python localhost.py
-#
-# Start a localhost server
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#    
+#    python localhost.py 
+#    
+#  Copyright (C) 2023 "Mr. Lima"
+#  
+
 
 import socketserver
 import http.server

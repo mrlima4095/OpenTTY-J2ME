@@ -1,8 +1,10 @@
-# Usage: python download.py
-#
-# Dont forget to start server at OpenTTY J2ME
-# and setup ip configuration below to save nanoContent
-# into your device
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#    
+#    python download.py 
+#    
+#  Copyright (C) 2023 "Mr. Lima"
+#  
 
 import os
 import socket
