@@ -11,18 +11,19 @@ OpenTTY - Netman Update
 - server - start a simple tcp server
 - pjnc - parse nanoContent to JSON 
 
-
 [ Updates ]
 
 - New comparator "not" added into `if` operator
 - HTML Viewer title now get attribute from <title> tag
 - Now spaces dont be added into commands history
- 
+- Call, Open and other API commands using Advanced input 
+- Advanced input dont return error when user leave the field blank 
 
 [ Envirroment keys ]
 
 - $PORT - Server port that will br listen by server
 - $RESPONSE - Server response that will be send after a request
+- $OUTPUT - Save last text that go to console
 
 [ Support Scripts ] 
 
@@ -40,5 +41,6 @@ OpenTTY - Netman Update
 [ MIDlets at Full Package ]
 
 - OpenTTY 1.8
--  
+- Firefox J2ME
+- 
 
