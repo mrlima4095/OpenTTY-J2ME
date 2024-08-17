@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #    
-#  Copyright (C) 2023 "Mr. Lima"
+#  Copyright (C) 2024 "Mr. Lima"
 #  
 #  Permission is hereby granted, free of charge, to any person obtaining a copy
 #  of this software and associated documentation files (the "Software"), to deal

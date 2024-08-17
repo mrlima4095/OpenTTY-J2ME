@@ -1,7 +1,10 @@
 OpenTTY Java Edition 1.8
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - Netman Update
+OpenTTY - Netman Update 
+
+LTS Edition
+End of support scheduled for January 2025
 
 [ Commands ]
 
@@ -11,10 +14,12 @@ OpenTTY - Netman Update
 - server - start a simple tcp server
 - pjnc - parse nanoContent to JSON 
 - basename - get last filenames
+- silvio - an article in memory of Silvio Santos
 
 [ Updates ]
 
-- New comparator "not" added into `if` operator
+- New comparator "not" added into `if` operator to null values
+- New comparator "is" added into `if` operator to foundnot null values
 - HTML Viewer title now get attribute from <title> tag
 - Now spaces dont be added into commands history
 - Call, Open and other API commands using Advanced input 
@@ -43,12 +48,7 @@ implemented directly on J2ME 'cause it is a restrict envirroment
 [ Notes ]
 
 - To set server response nanoContent, to save it into a file in another device use command `set RESPONSE nano`
-
-
-
-[ MIDlets at Full Package ]
-
-- OpenTTY 1.8
-- 
-- 
+- If nano doesnt open, try use rnano to clean content, if you load a bytecode or a too large file it wont open
+- Port scanner may had your performance damaged by running device, it doest use an external API, used a internal method to run port dump
+- You can see Silvio Santos article in portuguese if your locale is setted to 'pt-BR' 
 

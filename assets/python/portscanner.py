@@ -3,7 +3,7 @@
 #    
 #    python portscanner.py 
 #    
-#  Copyright (C) 2023 "Mr. Lima"
+#  Copyright (C) 2024 "Mr. Lima"
 #  
 
 

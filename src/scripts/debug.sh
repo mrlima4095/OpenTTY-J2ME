@@ -1,4 +1,10 @@
 #!/java/bin/sh
+# -*- coding: utf-8 -*-
+#    
+#    . /scripts/debug.sh 
+#    
+#  Copyright (C) 2024 "Mr. Lima"
+#  
 
 echo OpenTTY Debug
 echo -------------------

@@ -14,6 +14,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String xversion = "0.4";
     private String tty = "/java/optty1";
     private String hostname = "localhost";
+    private String last = loadRMS("last", 1);
     private Hashtable paths = new Hashtable();
     private Hashtable aliases = new Hashtable();
     private Vector commandHistory = new Vector();
@@ -50,10 +51,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
     public void pauseApp() { app = true; }
-    public void destroyApp(boolean unconditional) { writeRMS("nano", nanoContent); }
+    public void destroyApp(boolean unconditional) { writeRMS("nano", nanoContent); writeRMS("last", last); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == enterCommand) { String command = commandInput.getString(); if (!command.trim().equals("")) { commandHistory.addElement(commandInput.getString()); } processCommand(command); commandInput.setLabel(username + " " + path + " $"); commandInput.setString(""); }
+        if (c == enterCommand) { String command = commandInput.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command); } commandInput.setString(""); last = command; processCommand(command); commandInput.setLabel(username + " " + path + " $"); }
         
         else if (c == clearCommand) { output.setText(""); }
         else if (c == helpCommand) { processCommand("help"); } 
@@ -108,7 +109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); } 
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("echo")) { echoCommand(argument); }
-        else if (mainCommand.equals("exit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
+        else if (mainCommand.equals("exit")) { destroyApp(); notifyDestroyed(); }
         else if (mainCommand.equals("export")) { if (argument.equals("")) { echoCommand("Usage: export <name>"); } else { attributes.put(argument, ""); } }
         else if (mainCommand.equals("execute")) { processCommand(argument); }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
@@ -137,9 +138,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); }
         else if (mainCommand.equals("xorg")) { if (argument.length() == 0 || argument.equals("help")) { viewer("OpenTTY X.Org", "OpenTTY X.Org - X Server " + xversion + "\nRelease Date: 2024-07-25\nX Protocol Version 1, Revision 3\nBuild OS: " + System.getProperty("microedition.platform")); } else if (argument.equals("stop")) { form = new Form(""); } } 
             
-        else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS"));  }
+        else if (mainCommand.equals("!!")) { commandInput.setString(last); }
+        else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS\nThis release in memory of Silvio Santos"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
         
+        if (mainCommand.equals("silvio")) { if (env("$LOCALE").equals("pt-BR")) { viewer("Silvio Santos", read("/java/silvio-pt.txt")); } else { viewer("Silvio Santos", read("/java/silvio-en.txt")); } }
+
         else { echoCommand(mainCommand + ": unknown command"); }
         
     }
@@ -188,7 +192,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }    
     
     private void changeDisk(String way) { if (way == null || way.length() == 0) { echoCommand("Usage: cd <dir>"); return; } String[] availablePaths = (String[]) paths.get(path); if (availablePaths != null) { boolean pathFound = false; for (int i = 0; i < availablePaths.length; i++) { if (availablePaths[i].equals(way)) { pathFound = true; break; } } if (pathFound) { if (way.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { path = path.equals("/") ? "/" + way : path + "/" + way; } } else { if (way.equals("/") || way.equals(".") || way.equals("..")) { path = "/"; return; } echoCommand("cd: " + way + ": not found"); } } else { echoCommand("cd: " + way + ": not found"); } }
-    private void ifCommand(String argument) { int firstSpaceIndex = argument.indexOf(' '); int secondSpaceIndex = argument.indexOf(' ', firstSpaceIndex + 1); if (firstSpaceIndex == -1) { echoCommand("Usage: if <x> <y> [command] "); return; } if (secondSpaceIndex == -1) { processCommand("warn java.io.IOException: missing operators"); return; } String value1 = argument.substring(0, firstSpaceIndex).trim(); String value2 = argument.substring(firstSpaceIndex + 1, secondSpaceIndex).trim(); String command = argument.substring(secondSpaceIndex + 1).trim(); if (value1.equals(value2)) { processCommand(command); } if (value1.equals("not") && value2.equals("")) { processCommand(command); } }
+    private void ifCommand(String argument) { int firstSpaceIndex = argument.indexOf(' '); int secondSpaceIndex = argument.indexOf(' ', firstSpaceIndex + 1); if (firstSpaceIndex == -1) { echoCommand("Usage: if <x> <y> [command] "); return; } if (secondSpaceIndex == -1) { processCommand("warn java.io.IOException: missing operators"); return; } String value1 = argument.substring(0, firstSpaceIndex).trim(); String value2 = argument.substring(firstSpaceIndex + 1, secondSpaceIndex).trim(); String command = argument.substring(secondSpaceIndex + 1).trim(); if (value1.equals(value2)) { processCommand(command); } if (value1.equals("not") && value2.equals("")) { processCommand(command); } if (value1.equals("is") && !value2.equals("") ) { processCommand(command); } }
     private void writeRMS(String recordStoreName, String data) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
     private void install(String filename) { if (filename == null || filename.length() == 0) { final Form screen = new Form(form.getTitle()); final TextField name = new TextField("Filename", "", 16, TextField.ANY);  final Command save = new Command("Save", Command.OK, 1); final Command back = new Command("Cancel", Command.SCREEN, 2); screen.append(name); screen.addCommand(save); screen.addCommand(back); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == save) { if (name.getString().trim().equals("")) { } else { writeRMS(name.getString().trim(), nanoContent); display.setCurrent(form); } } } } ); display.setCurrent(screen); } else { writeRMS(filename, nanoContent); } }
     private void loadCommand(String filename) { if (filename == null || filename.length() == 0) { final Form screen = new Form(form.getTitle()); final TextField name = new TextField("Filename", "", 16, TextField.ANY); final Command save = new Command("Load", Command.OK, 1); final Command back = new Command("Cancel", Command.SCREEN, 2); screen.append(name); screen.addCommand(save); screen.addCommand(back); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == save) { if (name.getString().trim().equals("")) { } else { nanoContent = loadRMS(name.getString().trim(), 1); display.setCurrent(form); } } } } ); display.setCurrent(screen); } else { nanoContent = loadRMS(filename, 1); } }
