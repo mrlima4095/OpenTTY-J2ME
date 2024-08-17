@@ -10,6 +10,7 @@ OpenTTY - Netman Update
 - export <key> - create a empty envirroment key
 - server - start a simple tcp server
 - pjnc - parse nanoContent to JSON 
+- basename - get last filenames
 
 [ Updates ]
 
@@ -18,6 +19,7 @@ OpenTTY - Netman Update
 - Now spaces dont be added into commands history
 - Call, Open and other API commands using Advanced input 
 - Advanced input dont return error when user leave the field blank 
+- Deafult hostname for uncompatible devices now is localhost
 - Permissions managment automatic verifier
 - Logout is enabled again
 
@@ -28,6 +30,10 @@ OpenTTY - Netman Update
 - $OUTPUT - Save last text that go to console
 
 [ Support Scripts ] 
+
+The support scripts are tools to you run in 
+another device, it is utilies that add things that cant be
+implemented directly on J2ME 'cause it is a restrict envirroment
 
 - assets/python/download.py - get and save response of OpenTTY Server into a file
 - assets/python/portscanner.py - port scanner base system 

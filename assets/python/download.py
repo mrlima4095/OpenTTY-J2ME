@@ -7,24 +7,34 @@
 #  
 
 import os
+import sys
 import socket
 
-server_ip = "192.168.1.28"
-port = 4095
-
-# Name of file that response will be save
-filename = "file.txt"
-
-# Packet that will be send
-message = "com.assets.python.download"
-
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((server_ip, port))
-
-s.sendall(message.encode('utf-8'))
-
-with open(filename, 'wt+') as file:
-    file.write(s.recv(4096).decode('utf-8'))
+def download():
+    try:
+        server_ip = sys.argv[1]
+        port = sys.argv[2]
+    except IndexError:
+        print("python download.py <ip> <port> [filename]")
+        
+        return
+        
+    try: filename = sys.argv[3]
+    except IndexError: filename = "file.txt"
+      
+    try: message = sys.argv[4]
+    except IndexError: message = "com.assets.download"
+      
     
-s.close()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((server_ip, port))
+    
+    s.sendall(message.encode('utf-8'))
+    
+    with open(filename, 'wt+') as file:
+        file.write(s.recv(4096).decode('utf-8'))
+        
+    s.close()
+      
+      
+download()      
