@@ -4,15 +4,4 @@ app=sh
 version=$VERSION
 
 tty=/java/optty1
-title=OpenTTY $VERSION
-motd=Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr Lima
 execute=OpenTTY.processCommand
-
-
-# Permissions
-
-root=true
-read=true
-socket=auto
-stream=true
-logout=null
