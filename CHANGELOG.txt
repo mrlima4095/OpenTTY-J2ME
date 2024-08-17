@@ -8,6 +8,7 @@ End of support scheduled for January 2025
 
 [ Commands ]
 
+- !! - run last command again
 - prscan <host> - port scanner
 - nc <ip:port> - netcat for J2ME
 - export <key> - create a empty envirroment key
@@ -19,7 +20,7 @@ End of support scheduled for January 2025
 [ Updates ]
 
 - New comparator "not" added into `if` operator to null values
-- New comparator "is" added into `if` operator to foundnot null values
+- New comparator "is" added into `if` operator to found not null values
 - HTML Viewer title now get attribute from <title> tag
 - Now spaces dont be added into commands history
 - Call, Open and other API commands using Advanced input 
@@ -52,3 +53,5 @@ implemented directly on J2ME 'cause it is a restrict envirroment
 - Port scanner may had your performance damaged by running device, it doest use an external API, used a internal method to run port dump
 - You can see Silvio Santos article in portuguese if your locale is setted to 'pt-BR' 
 
+Soon will be added at release page Extra packages with other builds
+of this release, return to see if have anything new.

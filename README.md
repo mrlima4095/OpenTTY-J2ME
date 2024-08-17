@@ -6,7 +6,6 @@ development notes at project [wiki](https://github.com/mrlima4095/OpenTTY-J2ME/w
 
 # In development 
 
-- Metasploit for J2ME
 - X.Org window creator
 - Image Loader
 - Auto Updater
@@ -14,4 +13,3 @@ development notes at project [wiki](https://github.com/mrlima4095/OpenTTY-J2ME/w
 - In-app documentation
 - Translation API
 - Shell script full support
-
