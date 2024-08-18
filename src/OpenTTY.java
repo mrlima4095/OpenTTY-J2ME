@@ -10,7 +10,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private boolean app;
     private int currentIndex = 0;
     private String path = "/";
-    private String version = "1.8";
+    private String version = "1.8.1";
     private String xversion = "0.4";
     private String tty = "/java/optty1";
     private String hostname = "localhost";
@@ -172,7 +172,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void lockCommand() { if (username == null || username.length() == 0) { echoCommand("lock: not logged"); return; } final Form lock = new Form(form.getTitle() + " - Locked"); final TextField userField = new TextField("Username", "", 256, TextField.ANY); final StringItem text = new StringItem("", "OpenTTY was blocked! Insert your\nusername to return to console."); final Command unlock = new Command("Unlock", Command.OK, 1); lock.append(text); lock.append(userField); lock.addCommand(unlock); lock.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == unlock) { if (userField.getString().equals(username)) { display.setCurrent(form); } else if (!userField.getString().equals("")) { Alert alert = new Alert(form.getTitle(), "Wrong username!", null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, lock); } } } } ); display.setCurrent(lock); }
     private void htopCommand() { Runtime runtime = Runtime.getRuntime(); viewer(form.getTitle(), "Memory Status:\n\nUsed Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\nFree Memory: " + runtime.freeMemory() / 1024 + " KB\nTotal Memory: " + runtime.totalMemory() / 1024 + " KB"); }
     
-    private void showHistory() { final List historyList = new List("OpenTTY History", List.IMPLICIT); final Command back = new Command("Back", Command.BACK, 1); final Command run = new Command("Run", Command.OK, 2); for (int i = 0; i < commandHistory.size(); i++) { historyList.append((String) commandHistory.elementAt(i), null); } historyList.addCommand(back); historyList.addCommand(run); historyList.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == run) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); commandInput.setString(historyList.getString(index)); } } } }); display.setCurrent(historyList); }
+    private void showHistory() { final List historyList = new List("OpenTTY History", List.IMPLICIT); final Command back = new Command("Back", Command.BACK, 1); final Command run = new Command("Run", Command.OK, 2); final Command edit = new Command("Edit", Command.OK, 2); for (int i = 0; i < commandHistory.size(); i++) { historyList.append((String) commandHistory.elementAt(i), null); } historyList.addCommand(back); historyList.addCommand(run); historyList.addCommand(edit); historyList.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } 
+        else if (c == run) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); processCommand(historyList.getString(index)); } } 
+        else if (c == edit) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); commandInput.setString(historyList.getString(index)); } } 
+        
+    } }); display.setCurrent(historyList); }
     
     
     private void nano() { final TextBox editor = new TextBox("Nano", nanoContent, 4096, TextField.ANY); final Command back = new Command("Back", Command.OK, 1); final Command clear = new Command("Clear", Command.SCREEN, 2); final Command run = new Command("View as HTML", Command.SCREEN, 3); editor.addCommand(back); editor.addCommand(clear); editor.addCommand(run); editor.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { nanoContent = editor.getString(); display.setCurrent(form); } else if (c == clear) { editor.setString(""); } else if (c == run) { nanoContent = editor.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }); display.setCurrent(editor); }

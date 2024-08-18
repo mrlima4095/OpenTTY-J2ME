@@ -1,57 +1,10 @@
-OpenTTY Java Edition 1.8
+OpenTTY Java Edition 1.8.1
 Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - Netman Update 
 
-LTS Edition
-End of support scheduled for January 2025
+[ Updates ] 
 
-[ Commands ]
+- Added separeted buttons in history to run and edit
+- 
 
-- !! - run last command again
-- prscan <host> - port scanner
-- nc <ip:port> - netcat for J2ME
-- export <key> - create a empty envirroment key
-- server - start a simple tcp server
-- pjnc - parse nanoContent to JSON 
-- basename - get last filenames
-- silvio - an article in memory of Silvio Santos
-
-[ Updates ]
-
-- New comparator "not" added into `if` operator to null values
-- New comparator "is" added into `if` operator to found not null values
-- HTML Viewer title now get attribute from <title> tag
-- Now spaces dont be added into commands history
-- Call, Open and other API commands using Advanced input 
-- Advanced input dont return error when user leave the field blank 
-- Deafult hostname for uncompatible devices now is localhost
-- Permissions managment automatic verifier
-- Logout is enabled again
-
-[ Envirroment keys ]
-
-- $PORT - Server port that will br listen by server
-- $RESPONSE - Server response that will be send after a request
-- $OUTPUT - Save last text that go to console
-
-[ Support Scripts ] 
-
-The support scripts are tools to you run in 
-another device, it is utilies that add things that cant be
-implemented directly on J2ME 'cause it is a restrict envirroment
-
-- assets/python/download.py - get and save response of OpenTTY Server into a file
-- assets/python/portscanner.py - port scanner base system 
-- assets/python/localhost.py - start a HTTP localhost server
-- assets/python/remote.py - remote shell to opentty
-
-[ Notes ]
-
-- To set server response nanoContent, to save it into a file in another device use command `set RESPONSE nano`
-- If nano doesnt open, try use rnano to clean content, if you load a bytecode or a too large file it wont open
-- Port scanner may had your performance damaged by running device, it doest use an external API, used a internal method to run port dump
-- You can see Silvio Santos article in portuguese if your locale is setted to 'pt-BR' 
-
-Soon will be added at release page Extra packages with other builds
-of this release, return to see if have anything new.
