@@ -3,5 +3,5 @@
 app=sh
 version=$VERSION
 
-tty=/java/optty1
+tty=$TTY
 execute=OpenTTY.processCommand

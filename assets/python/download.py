@@ -27,7 +27,7 @@ def download():
       
     
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((server_ip, port))
+    s.connect((server_ip, int(port)))
     
     s.sendall(message.encode('utf-8'))
     

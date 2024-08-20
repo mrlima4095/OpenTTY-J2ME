@@ -11,9 +11,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int currentIndex = 0;
     private String path = "/";
     private String version = "1.8.1";
-    private String xversion = "0.4";
-    private String tty = "/java/optty1";
-    private String hostname = "localhost";
     private Hashtable paths = new Hashtable();
     private Hashtable aliases = new Hashtable();
     private Vector commandHistory = new Vector();
@@ -34,9 +31,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (!app == true) {
             mount(); commandInput.setLabel(username + " " + path + " $"); 
             
-            attributes.put("PATCH", "Netman Update"); attributes.put("VERSION", version); attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); 
-            attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("XVERSION", xversion); attributes.put("RELEASE", "stable"); attributes.put("l", "\n"); attributes.put("LOCALE", System.getProperty("microedition.locale")); attributes.put("PORT", "4095"); 
-            attributes.put("RESPONSE", "com.opentty.server"); attributes.put("OUTPUT", "");
+            attributes.put("PATCH", "Netman Update"); attributes.put("VERSION", version); attributes.put("RELEASE", "mod"); attributes.put("XVERSION", "0.4");
+            attributes.put("TTY", "/java/optty1"); attributes.put("HOSTNAME", "localhost"); attributes.put("PORT", "4095"); attributes.put("RESPONSE", "com.opentty.server");
+            attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
+            attributes.put("OUTPUT", ""); attributes.put("l", "\n"); 
             
             form.append(output);
             form.append(commandInput);
@@ -112,7 +110,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("export")) { if (argument.equals("")) { echoCommand("Usage: export <name>"); } else { attributes.put(argument, ""); } }
         else if (mainCommand.equals("execute")) { processCommand(argument); }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
-        else if (mainCommand.equals("hostname")) { echoCommand(hostname); } 
+        else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); } 
         else if (mainCommand.equals("htop")) { htopCommand(); }
         else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
         else if (mainCommand.equals("history")) { showHistory(); }
@@ -124,18 +122,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { openCommand(argument); }
         else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
         else if (mainCommand.equals("set")) { setCommand(argument); }
-        else if (mainCommand.equals("sh")) { form.setTitle("OpenTTY " + version); output.setText("Welcome to OpenTTY " + version + "\nCopyright (C) 2024 - Mr. Lima\n"); path = "/"; }
+        else if (mainCommand.equals("sh")) { form.setTitle(env("OpenTTY $VERSION")); output.setText(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr. Lima\n")); path = "/"; }
         else if (mainCommand.equals("true") || mainCommand.equals("false")) { }
-        else if (mainCommand.equals("tty")) { echoCommand(tty); }
+        else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
         else if (mainCommand.equals("ttysize")) { echoCommand(output.getText().length() + " KB"); }
-        else if (mainCommand.equals("title")) { if (argument.equals("") ) { form.setTitle("OpenTTY " + version); } else { form.setTitle(argument); } }
+        else if (mainCommand.equals("title")) { if (argument.equals("") ) { form.setTitle(env("OpenTTY $VERSION")); } else { form.setTitle(argument); } }
         else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
         else if (mainCommand.equals("uname")) { echoCommand(env("$TYPE $CONFIG $PROFILE")); }
         else if (mainCommand.equals("unset")) { unsetCommand(argument); }
         else if (mainCommand.equals("version")) { echoCommand("OpenTTY " + version); }
         else if (mainCommand.equals("whoami")) { if (username.equals("")) { echoCommand("whoami: not logged"); } else { echoCommand(username); } } 
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); }
-        else if (mainCommand.equals("xorg")) { if (argument.length() == 0 || argument.equals("help")) { viewer("OpenTTY X.Org", "OpenTTY X.Org - X Server " + xversion + "\nRelease Date: 2024-07-25\nX Protocol Version 1, Revision 3\nBuild OS: " + System.getProperty("microedition.platform")); } else if (argument.equals("stop")) { form = new Form(""); } } 
+        else if (mainCommand.equals("xorg")) { if (argument.length() == 0 || argument.equals("help")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-07-25\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } else if (argument.equals("stop")) { form = new Form(""); } } 
             
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS\nIn memory of Silvio Santos"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
@@ -172,11 +170,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void lockCommand() { if (username == null || username.length() == 0) { echoCommand("lock: not logged"); return; } final Form lock = new Form(form.getTitle() + " - Locked"); final TextField userField = new TextField("Username", "", 256, TextField.ANY); final StringItem text = new StringItem("", "OpenTTY was blocked! Insert your\nusername to return to console."); final Command unlock = new Command("Unlock", Command.OK, 1); lock.append(text); lock.append(userField); lock.addCommand(unlock); lock.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == unlock) { if (userField.getString().equals(username)) { display.setCurrent(form); } else if (!userField.getString().equals("")) { Alert alert = new Alert(form.getTitle(), "Wrong username!", null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, lock); } } } } ); display.setCurrent(lock); }
     private void htopCommand() { Runtime runtime = Runtime.getRuntime(); viewer(form.getTitle(), "Memory Status:\n\nUsed Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\nFree Memory: " + runtime.freeMemory() / 1024 + " KB\nTotal Memory: " + runtime.totalMemory() / 1024 + " KB"); }
     
-    private void showHistory() { final List historyList = new List("OpenTTY History", List.IMPLICIT); final Command back = new Command("Back", Command.BACK, 1); final Command run = new Command("Run", Command.OK, 2); final Command edit = new Command("Edit", Command.OK, 2); for (int i = 0; i < commandHistory.size(); i++) { historyList.append((String) commandHistory.elementAt(i), null); } historyList.addCommand(back); historyList.addCommand(run); historyList.addCommand(edit); historyList.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } 
-        else if (c == run) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); processCommand(historyList.getString(index)); } } 
-        else if (c == edit) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); commandInput.setString(historyList.getString(index)); } } 
-        
-    } }); display.setCurrent(historyList); }
+    private void showHistory() { final List historyList = new List("OpenTTY History", List.IMPLICIT); final Command back = new Command("Back", Command.BACK, 1); final Command run = new Command("Run", Command.OK, 2); final Command edit = new Command("Edit", Command.OK, 2); for (int i = 0; i < commandHistory.size(); i++) { historyList.append((String) commandHistory.elementAt(i), null); } historyList.addCommand(back); historyList.addCommand(run); historyList.addCommand(edit); historyList.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == run) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); processCommand(historyList.getString(index)); } } else if (c == edit) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); commandInput.setString(historyList.getString(index)); } } } }); display.setCurrent(historyList); }
     
     
     private void nano() { final TextBox editor = new TextBox("Nano", nanoContent, 4096, TextField.ANY); final Command back = new Command("Back", Command.OK, 1); final Command clear = new Command("Clear", Command.SCREEN, 2); final Command run = new Command("View as HTML", Command.SCREEN, 3); editor.addCommand(back); editor.addCommand(clear); editor.addCommand(run); editor.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { nanoContent = editor.getString(); display.setCurrent(form); } else if (c == clear) { editor.setString(""); } else if (c == run) { nanoContent = editor.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }); display.setCurrent(editor); }

@@ -6,5 +6,7 @@ OpenTTY - Netman Update
 [ Updates ] 
 
 - Added separeted buttons in history to run and edit
-- 
+- Added new example scripts into scripts folder 
+- TTY setting charged to an envirroment key
+- Hostname setting charged to an envirroment key
 
