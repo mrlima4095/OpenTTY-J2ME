@@ -9,4 +9,8 @@ OpenTTY - Netman Update
 - Added new example scripts into scripts folder 
 - TTY setting charged to an envirroment key
 - Hostname setting charged to an envirroment key
+- Unknown command message charged to "not found"
+- X.Org now says if a tool isnt avaliable
+- If you arent logged and use command logout, it closes MIDlet
+- JSON Converter now parsing with organized indentation
 
