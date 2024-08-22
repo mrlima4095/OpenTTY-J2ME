@@ -13,4 +13,5 @@ OpenTTY - Netman Update
 - X.Org now says if a tool isnt avaliable
 - If you arent logged and use command logout, it closes MIDlet
 - JSON Converter now parsing with organized indentation
+- Fixed a bug in runScript that split $l line breaks
 
