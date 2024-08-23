@@ -14,4 +14,3 @@ OpenTTY - Netman Update
 - If you arent logged and use command logout, it closes MIDlet
 - JSON Converter now parsing with organized indentation
 - Fixed a bug in runScript that split $l line breaks
-
