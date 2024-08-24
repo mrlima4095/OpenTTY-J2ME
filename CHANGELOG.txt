@@ -1,16 +1,11 @@
-OpenTTY Java Edition 1.8.1
+OpenTTY Java Edition 1.8.2
 Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - Netman Update 
 
 [ Updates ] 
 
-- Added separeted buttons in history to run and edit
-- Added new example scripts into scripts folder 
-- TTY setting charged to an envirroment key
-- Hostname setting charged to an envirroment key
-- Unknown command message charged to "not found"
-- X.Org now says if a tool isnt avaliable
-- If you arent logged and use command logout, it closes MIDlet
-- JSON Converter now parsing with organized indentation
-- Fixed a bug in runScript that split $l line breaks
+- Netcat now use trim in processed responsed
+- Netcat sending request with a \n in end-of-file
+
+
