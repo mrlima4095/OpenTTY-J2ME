@@ -39,7 +39,7 @@ def start_server():
                             print("[-] Client disconnected")
                             break
 
-                        print(f"[+] Running command: {command}")
+                        print(f"[+] Running command: {command.strip()}")
                       
                         result = execute_command(command)
                         client_socket.sendall(result.strip().encode('utf-8'))
@@ -47,6 +47,8 @@ def start_server():
                     except Exception as e:
                         print(f"[-] Error: {e}")
                         break
-
+                        
+        server_socket.close()
+                        
 if __name__ == '__main__':
     start_server()
