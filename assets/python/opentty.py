@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #    
-#    python opentty.py 
+#    python opentty.py  
 #    
 #  Copyright (C) 2024 "Mr. Lima"
 #  
