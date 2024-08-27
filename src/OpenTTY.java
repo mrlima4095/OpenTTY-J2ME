@@ -98,8 +98,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("html")) { viewer(extractTitle(nanoContent), html2text(nanoContent)); }
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { echoCommand("Usage: cat <file>"); } else { if (argument.startsWith("/")) { echoCommand(read(argument)); } else { echoCommand(read(path + "/" + argument)); } } }
         else if (mainCommand.equals("get")) { if (argument.equals("")) { echoCommand("Usage: get <file>"); } else { if (argument.startsWith("/")) { nanoContent = read(argument); } else { nanoContent = read(path + "/" + argument); } } }
-        else if (mainCommand.equals("mount")) { mount("/java/bin/fstab"); }
-        
+        else if (mainCommand.equals("mount")) { if (argument.equals("")) { echoCommand("Usage: mount <drive>"); } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano") { mount(loadRMS(argument, 1)); } else { mount(loadRMS(argument, 1)); } } }
+        else if (mainCommand.equals("unmount")) { paths = new Hashtable(); }
         
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
@@ -158,7 +158,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String basename(String path) { if (path == null || path.length() == 0) { return ""; } if (path.endsWith("/")) { path = path.substring(0, path.length() - 1); } int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == -1) { return path; } return path.substring(lastSlashIndex + 1); }
     
     private String[] splitLines(String content) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == '\n') { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
-    private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = splitLines(text); for (int i = 0; i < lines.length; i++) { String line = lines[i]; int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } return properties; }
+    private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = splitLines(text); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
     
     private void aliasCommand(String argument) { int spaceIndex = argument.indexOf(' '); if (spaceIndex == -1) { echoCommand("Usage: alias <name> <command>"); return; } String aliasName = argument.substring(0, spaceIndex).trim(); String aliasCommand = argument.substring(spaceIndex + 1).trim(); aliases.put(aliasName, aliasCommand); }
     private void unaliasCommand(String aliasName) { if (aliasName == null || aliasName.length() == 0) { echoCommand("Usage: unalias <alias>"); return; } if (aliases.containsKey(aliasName)) { aliases.remove(aliasName); } else { echoCommand("unalias: " + aliasName + ": not found"); } }
@@ -181,75 +181,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void runScript(String script) { String[] commands = splitLines(script); for (int i = 0; i < commands.length; i++) { String cmd = env(commands[i].trim()); if (!cmd.startsWith("#")) { processCommand(cmd); } } }
     
     
-private void mount(String script) {
-    String[] lines = splitLines(script);
-    for (int i = 0; i < lines.length; i++) {
-        String line = "";
-        if (lines[i] != null) { line = lines[i].trim(); } // Remove espaços em branco extras
-        
-        if (line.startsWith("#")) { }
-        else if (line.length() != 0) { // Verifica se a string não está vazia
-            // Verifica se o diretório começa com "/"
-            if (line.startsWith("/")) {
-                String fullPath = "";
-                int start = 0;
-    
-                // Divisão manual usando '/' como delimitador
-                for (int j = 1; j < line.length(); j++) {
-                    if (line.charAt(j) == '/') {
-                        // Adiciona o diretório ao fullPath
-                        String dir = line.substring(start + 1, j);
-                        fullPath += "/" + dir;
-    
-                        // Adiciona o diretório ao paths se ainda não existir
-                        addDirectory(fullPath);
-                        start = j;
-                    }
-                }
-    
-                // Adiciona o último diretório no caminho
-                String dir = line.substring(start + 1);
-                fullPath += "/" + dir;
-                addDirectory(fullPath);
-            } 
-        }
-    }
-
-
-}
-
-private void addDirectory(String fullPath) {
-    // Adiciona o diretório ao paths se ainda não existir
-    if (!paths.containsKey(fullPath)) {
-        paths.put(fullPath, new String[] { ".." });
-
-        // Atualiza o diretório pai
-        String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
-        if (parentPath.length() == 0) {
-            parentPath = "/";
-        }
-
-        String[] parentContents = (String[]) paths.get(parentPath);
-        Vector updatedContents = new Vector();
-
-        if (parentContents != null) {
-            // Adiciona todos os subdiretórios existentes ao diretório pai
-            for (int k = 0; k < parentContents.length; k++) {
-                updatedContents.addElement(parentContents[k]);
-            }
-        }
-
-        // Adiciona o novo subdiretório ao diretório pai
-        updatedContents.addElement(fullPath.substring(fullPath.lastIndexOf('/') + 1));
-
-        // Converte de volta para array
-        String[] newContents = new String[updatedContents.size()];
-        updatedContents.copyInto(newContents);
-
-        // Atualiza a lista de subdiretórios do diretório pai no paths
-        paths.put(parentPath, newContents);
-    }
-}
+    private void mount(String script) { String[] lines = splitLines(script); for (int i = 0; i < lines.length; i++) { String line = ""; if (lines[i] != null) { line = lines[i].trim(); } if (line.startsWith("#")) { } else if (line.length() != 0 { if (line.startsWith("/")) { String fullPath = ""; int start = 0; for (int j = 1; j < line.length(); j++) { if (line.charAt(j) == '/') { String dir = line.substring(start + 1, j); fullPath += "/" + dir; addDirectory(fullPath); start = j; } } String dir = line.substring(start + 1); fullPath += "/" + dir; addDirectory(fullPath); } } } }
+    private void addDirectory(String fullPath) { if (!paths.containsKey(fullPath)) { paths.put(fullPath, new String[] { ".." }); String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/')); if (parentPath.length() == 0) { parentPath = "/"; } String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } updatedContents.addElement(fullPath.substring(fullPath.lastIndexOf('/') + 1)); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } }
  
     private void changeDisk(String way) { if (way == null || way.length() == 0) { echoCommand("Usage: cd <dir>"); return; } String[] availablePaths = (String[]) paths.get(path); if (availablePaths != null) { boolean pathFound = false; for (int i = 0; i < availablePaths.length; i++) { if (availablePaths[i].equals(way)) { pathFound = true; break; } } if (pathFound) { if (way.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { path = path.equals("/") ? "/" + way : path + "/" + way; } } else { if (way.equals("/") || way.equals(".") || way.equals("..")) { path = "/"; return; } echoCommand("cd: " + way + ": not found"); } } else { echoCommand("cd: " + way + ": not found"); } }
     private void ifCommand(String argument) { int firstSpaceIndex = argument.indexOf(' '); int secondSpaceIndex = argument.indexOf(' ', firstSpaceIndex + 1); if (firstSpaceIndex == -1) { echoCommand("Usage: if <x> <y> [command] "); return; } if (secondSpaceIndex == -1) { processCommand("warn java.io.IOException: missing operators"); return; } String value1 = argument.substring(0, firstSpaceIndex).trim(); String value2 = argument.substring(firstSpaceIndex + 1, secondSpaceIndex).trim(); String command = argument.substring(secondSpaceIndex + 1).trim(); if (value1.equals(value2)) { processCommand(command); } if (value1.equals("not") && value2.equals("")) { processCommand(command); } if (value1.equals("is") && !value2.equals("") ) { processCommand(command); } }
