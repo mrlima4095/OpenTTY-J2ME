@@ -1,0 +1,10 @@
+# OpenTTY Filesystem CONFIG
+# Classpath Virtual Disk mount
+#
+# fstab: 1.8.x 
+
+/
+/java
+/java/bin
+/java/sounds
+/scripts

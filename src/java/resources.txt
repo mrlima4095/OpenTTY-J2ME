@@ -2,6 +2,7 @@
 | java /
 | | bin /
 | | | icon.png
+| | | fstab
 | | | java
 | | | sh
 | | help.txt 

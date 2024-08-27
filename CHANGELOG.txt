@@ -5,22 +5,16 @@ OpenTTY - Netman Update
 
 [ Command ]
 
-- mount - remake classpath extructure file tree
-- mkdir <folder> - create virtual directories
-- rmdir <folder> - remove virtual directories
+- mount <drive> - remake classpath extructure file tree
 
 [ Updates ] 
 
 - Netcat now use trim in processed responsed
 - Netcat sending request with a \n in end-of-file
 - Netcat save console content into 'console' file
-
+- OpenTTY FileSystem mount using a fstab config file
 
 [ Notes ] 
 
 - To recover the last remote connection console content
   usage command `load console`
-- When you use rmdir it doesnt work really, but serves to
-  become OpenTTY usage more imersive and compatible with 
-  shell scripts. After you delete a important folder, usage
-  command `mount` to remake the origin file extructure.
