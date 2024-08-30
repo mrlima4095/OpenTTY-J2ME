@@ -7,8 +7,13 @@ OpenTTY - Netman Update
 
 - env - list envirronment keys
 - dir - show directories at current path
+- rm <filename> - delete files 
 
 [ Updates ] 
 
 - execute run many commands in once prompt, you can sepair commands with ';'
+- you can open direct RMS Files saveds with `nano <filename>`
 
+[ Notes ]
+
+- you can see RMS existing files with command `dir f`
