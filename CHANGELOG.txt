@@ -1,30 +1,14 @@
-OpenTTY Java Edition 1.8.2
+OpenTTY Java Edition 1.8.3
 Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - Netman Update 
 
 [ Command ]
 
-- mount <drive> - make a filesystem
-- unmount - unmount all file systems
+- env - list envirronment keys
+- dir - show directories at current path
 
 [ Updates ] 
 
-- Netcat now use trim in processed responsed
-- Netcat sending request with a \n in end-of-file
-- Netcat save console content into 'console' file
-- OpenTTY FileSystem mount using a fstab config file
-- Parse JSON dont consider keys with `#` comment key
+- execute run many commands in once prompt, you can sepair commands with ';'
 
-[ Notes ] 
-
-- To recover the last remote connection console content
-  usage command `load console`
-- You can mount other virtual disks using command `mount`
-  and inputing the config file (See /java/bin/fstab) for
-  a simple example. It can be loaded by a file if you insert
-  full path like "/java/example/drive" or "drive-specification"
-  without / to load it from a RMS Register made by user. If you
-  write it now and the config is in Nano Editor usage `mount nano`
-  
-  
