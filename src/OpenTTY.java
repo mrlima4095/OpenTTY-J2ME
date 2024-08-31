@@ -24,6 +24,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Command nanoCommand = new Command("Nano", Command.SCREEN, 3);
     private Command clearCommand = new Command("Clear", Command.SCREEN, 4);
     private Command historyCommand = new Command("History", Command.SCREEN, 5);
+    private Command executeCommand = new Command("Execute", Command.SCREEN, 6);
     private TextField commandInput = new TextField("Command", "", 256, TextField.ANY);
     private StringItem output = new StringItem("", "Welcome to OpenTTY " + version + "\nCopyright (C) 2024 - Mr. Lima\n");
     
@@ -51,17 +52,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == enterCommand) { 
-            String command = commandInput.getString().trim();
-            if (!command.equals("")) { commandHistory.addElement(command.trim()); } 
-            commandInput.setString(""); processCommand(command); commandInput.setLabel(username + " " + path + " $"); 
-            } 
+        if (c == enterCommand) { String command = commandInput.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command.trim()); } commandInput.setString(""); processCommand(command); commandInput.setLabel(username + " " + path + " $"); } 
             
-        
+        else if (c == executeCommand) { commandInput.setString("execute"); }
         else if (c == clearCommand) { output.setText(""); }
         else if (c == helpCommand) { processCommand("help"); } 
         else if (c == historyCommand) { showHistory(); }
-        else if (c == nanoCommand) { nano(); }
+        else if (c == nanoCommand) { nano(""); }
         
     }
     
@@ -105,11 +102,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("get")) { if (argument.equals("")) { echoCommand("Usage: get <file>"); } else { if (argument.startsWith("/")) { nanoContent = read(argument); } else { nanoContent = read(path + "/" + argument); } } }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { echoCommand("Usage: mount <drive>"); } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano")) { mount(nanoContent); } else { mount(loadRMS(argument, 1)); } } }
         else if (mainCommand.equals("unmount")) { paths = new Hashtable(); }
-        else if (mainCommand.equals("dir")) { 
-            if (argument.equals("f")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { 
-                            if (!recordStores[i].trim().equals("OpenRMS") || !recordStores[i].trim().equals("nano") || !recordStores[i].trim().equals("initd")) { 
-                                echoCommand(recordStores[i]); } } } } catch (RecordStoreException e) { } } 
-            else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } if (files.length == 1) { echoCommand("folder empty"); } } } }
+        else if (mainCommand.equals("dir")) { if (argument.equals("f")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { echoCommand(recordStores[i]); } } } catch (RecordStoreException e) { } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } if (files.length == 1) { echoCommand("folder empty"); } } } }
         else if (mainCommand.equals("rm")) { deleteFile(argument); }
         
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
@@ -119,6 +112,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); } 
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("env")) { Enumeration keys = attributes.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) attributes.get(key); if (!key.equals("OUTPUT") || value.equals("")) { echoCommand(key + "=" + value.trim()); } } }
+        else if (mainCommand.equals("exec")) { form.addCommand(executeCommand); }
         else if (mainCommand.equals("echo")) { echoCommand(argument); }
         else if (mainCommand.equals("exit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
         else if (mainCommand.equals("export")) { if (argument.equals("")) { echoCommand("Usage: export <name>"); } else { attributes.put(argument, ""); } }
@@ -187,7 +181,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void showHistory() { final List historyList = new List("OpenTTY History", List.IMPLICIT); final Command back = new Command("Back", Command.BACK, 1); final Command run = new Command("Run", Command.OK, 2); final Command edit = new Command("Edit", Command.OK, 2); for (int i = 0; i < commandHistory.size(); i++) { historyList.append((String) commandHistory.elementAt(i), null); } historyList.addCommand(back); historyList.addCommand(run); historyList.addCommand(edit); historyList.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == run) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); processCommand(historyList.getString(index)); } } else if (c == edit) { int index = historyList.getSelectedIndex(); if (index >= 0) { display.setCurrent(form); commandInput.setString(historyList.getString(index)); } } } }); display.setCurrent(historyList); }
     
     
-    private void nano(String file) { if (file == null || file.length() == 0) { file = nanoContent } else { loadRMS(file, 1); } final TextBox editor = new TextBox("Nano", file, 4096, TextField.ANY); final Command back = new Command("Back", Command.OK, 1); final Command clear = new Command("Clear", Command.SCREEN, 2); final Command run = new Command("View as HTML", Command.SCREEN, 3); editor.addCommand(back); editor.addCommand(clear); editor.addCommand(run); editor.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { nanoContent = editor.getString(); display.setCurrent(form); } else if (c == clear) { editor.setString(""); } else if (c == run) { nanoContent = editor.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }); display.setCurrent(editor); }
+    private void nano(String file) { if (file == null || file.length() == 0) { file = nanoContent; } else { file = loadRMS(file, 1); } final TextBox editor = new TextBox("Nano", file, 4096, TextField.ANY); final Command back = new Command("Back", Command.OK, 1); final Command clear = new Command("Clear", Command.SCREEN, 2); final Command run = new Command("View as HTML", Command.SCREEN, 3); editor.addCommand(back); editor.addCommand(clear); editor.addCommand(run); editor.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { nanoContent = editor.getString(); display.setCurrent(form); } else if (c == clear) { editor.setString(""); } else if (c == run) { nanoContent = editor.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }); display.setCurrent(editor); }
     private void viewer(String title, String text) { Form viewer = new Form(env(title)); StringItem contentItem = new StringItem(null, env(text)); final Command back = new Command("Back", Command.OK, 1); viewer.addCommand(back); viewer.append(contentItem); viewer.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } } }); display.setCurrent(viewer); }
     
     private void runScript(String script) { String[] commands = split(script, '\n'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
