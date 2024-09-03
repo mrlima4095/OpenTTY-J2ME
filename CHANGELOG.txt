@@ -1,19 +1,19 @@
-OpenTTY Java Edition 1.8.3
+OpenTTY Java Edition 1.8.4
 Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - Netman Update 
 
-[ Command ]
+[ Commands ]
 
-- env - list envirronment keys
-- dir - show directories at current path
-- rm <filename> - delete files 
+- touch <filename> - create new file
 
 [ Updates ] 
 
-- execute run many commands in once prompt, you can sepair commands with ';'
-- you can open direct RMS Files saveds with `nano <filename>`
+- New envirronment key `TITLE` with current title
+- New script that saves OpenTTY Console content and reload at next start
+- Login at OpenTTY first start
+- Logout quit from OpenTTY 
 
 [ Notes ]
 
-- you can see RMS existing files with command `dir f`
+
