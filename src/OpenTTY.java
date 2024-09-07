@@ -31,7 +31,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (!app == true) {
             mount(read("/java/bin/fstab")); commandInput.setLabel(username + " " + path + " $"); 
             
-            attributes.put("PATCH", "Netman Update"); attributes.put("VERSION", version); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.4");
+            attributes.put("PATCH", "OpenTTY Revolution"); attributes.put("VERSION", version); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.4");
             attributes.put("TTY", "/java/optty1"); attributes.put("HOSTNAME", "localhost"); attributes.put("PORT", "4095"); attributes.put("RESPONSE", "com.opentty.server");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             attributes.put("OUTPUT", "");  
@@ -144,11 +144,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("xorg")) { if (argument.length() == 0 || argument.equals("help")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-07-25\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } else if (argument.equals("stop")) { form = new Form(""); display.setCurrent(form); } else { echoCommand("xorg: " + argument + ": not found"); } } 
         
            
-        else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS\nIn memory of Silvio Santos"));  }
+        else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
         
-        else if (mainCommand.equals("silvio")) { if (env("$LOCALE").equals("pt-BR")) { viewer("Silvio Santos", read("/java/silvio-pt.txt")); } else { viewer("Silvio Santos", read("/java/silvio-en.txt")); } }
-
         else { echoCommand(mainCommand + ": not found"); }
         
     }
@@ -158,19 +156,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String extractTitle(String htmlContent) { int titleStart = htmlContent.indexOf("<title>"); int titleEnd = htmlContent.indexOf("</title>"); if (titleStart != -1 && titleEnd != -1 && titleEnd > titleStart) { return htmlContent.substring(titleStart + 7, titleEnd).trim(); } return "HTML Viewer"; }
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false; boolean inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inTitle) { text.append(c); } } return text.toString().trim(); }
     private String parseJson(String text) { Hashtable properties = parseProperties(text); Enumeration keys = properties.keys(); StringBuffer jsonBuffer = new StringBuffer(); jsonBuffer.append("{"); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) properties.get(key); jsonBuffer.append("\n  \"").append(key).append("\": "); jsonBuffer.append("\"").append(value).append("\""); if (keys.hasMoreElements()) { jsonBuffer.append(","); } } jsonBuffer.append("\n}"); return jsonBuffer.toString(); }
-    private String jsonToString(String json) {
-    // Remove as chaves
-    String result = replace(json, "{", "");
-    result = replace(result, "}", "");
-
-    // Substitui aspas e vírgulas
-    result = replace(result, "\"", "");  // Remove todas as aspas
-    result = replace(result, ",", ""); 
-    // Substitui dois pontos ":"
-    result = replace(result, ":", ": "); // Adiciona espaço após os dois pontos
-    
-    return result;
-}private String loadRMS(String recordStoreName, int recordId) { RecordStore recordStore = null; String result = ""; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); if (recordStore.getNumRecords() >= recordId) { byte[] data = recordStore.getRecord(recordId); if (data != null) { result = new String(data); } } } catch (RecordStoreException e) { result = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return result; }
+    private String loadRMS(String recordStoreName, int recordId) { RecordStore recordStore = null; String result = ""; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); if (recordStore.getNumRecords() >= recordId) { byte[] data = recordStore.getRecord(recordId); if (data != null) { result = new String(data); } } } catch (RecordStoreException e) { result = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return result; }
     private String read(String filename) { try { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } catch (IOException e) { return e.getMessage(); } }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$l", "\n"); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); for (Enumeration e = attributes.keys(); e.hasMoreElements();) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } return text; }

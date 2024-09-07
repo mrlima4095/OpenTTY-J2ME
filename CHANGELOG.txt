@@ -1,19 +1,13 @@
-OpenTTY Java Edition 1.8.4
+OpenTTY Java Edition 1.9
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - Netman Update 
+OpenTTY - OpenTTY Revolution
 
 [ Commands ]
 
-- touch <filename> - create new file
 
 [ Updates ] 
 
-- New envirronment key `TITLE` with current title
-- New script that saves OpenTTY Console content and reload at next start
-- Login at OpenTTY first start
-- Logout quit from OpenTTY 
-- Netstat true and false responses
 
 [ Notes ]
 
