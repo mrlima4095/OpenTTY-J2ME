@@ -13,6 +13,7 @@ OpenTTY - Netman Update
 - New script that saves OpenTTY Console content and reload at next start
 - Login at OpenTTY first start
 - Logout quit from OpenTTY 
+- Netstat true and false responses
 
 [ Notes ]
 
