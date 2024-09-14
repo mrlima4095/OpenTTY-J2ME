@@ -1,14 +1,24 @@
 OpenTTY Java Edition 1.9
 Copyright (C) 2024 - Mr. Lima
 
-OpenTTY - OpenTTY Revolution
+[ _Commands_ ]
 
-[ Commands ]
+- `su` - charge your user to root
+- `sudo <command>` - run as superuser
+- `import <lib>` - import a lib 
+- `about` - show info about a lib
 
+[ _Updates_ ] 
 
-[ Updates ] 
+- Username 'root' blocked to login
+- touch without filename clear nanoContent
+- button Exit in lock screen
+- Command **cd** now can jump into folders
+- added new resource folder '/java/lib'
+- alias and set now need = to split key from value
+- New if method added
 
+[ _Notes_ ]
 
-[ Notes ]
-
+- in futher updates command `rnano` will be replaced officialy by touch to clear nanoContent
 

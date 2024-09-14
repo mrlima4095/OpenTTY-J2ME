@@ -17,8 +17,7 @@ hostname
 whoami
 uname
 echo PATH=$PATH
-if $PATH / echo you are in root directory
-if not $USERNAME echo you are not logged
+if ($PATH /) echo you are in root directory
 !
 tty
 ttysize

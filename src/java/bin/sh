@@ -2,6 +2,9 @@
 
 app=sh
 version=$VERSION
+description=OpenTTY Command Processor
+
+config=execute sh
 
 tty=$TTY
 execute=OpenTTY.processCommand

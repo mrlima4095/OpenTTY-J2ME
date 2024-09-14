@@ -3,5 +3,5 @@
 app=java
 version=1.2
 
-config=$CONFIG
-profile=$PROFILE
+jme_config=$CONFIG
+jme_profile=$PROFILE
