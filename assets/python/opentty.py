@@ -17,7 +17,7 @@ class OpenTTY:
     def __init__(self):
         self.aliases = {"true": "", "false": "", "cls": "clear"}
         self.attributes = {
-            "VERSION": "1.8.2", "PACTH": "Netman Update", "RELEASE": "mod", "XVERSION": "0.4",
+            "VERSION": "1.9", "PACTH": "Netman Update", "RELEASE": "mod", "XVERSION": "0.4",
             "TTY": "/java/optty1", "HOSTNAME": "localhost", "PORT": "4095", "RESPONSE": "com.opentty.server",
             "TYPE": "linux", "CONFIG": "CLDC-1.0", "PROFILE": "MIDP-2.1", "LOCALE": "en-US", 
             "OUTPUT": "", "l": "\n"

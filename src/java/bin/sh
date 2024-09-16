@@ -1,10 +1,7 @@
 [ Config ]
 
-app=sh
+name=sh
 version=$VERSION
-description=OpenTTY Command Processor
+description=OpenTTY Shell MIDlet
 
-config=execute sh
-
-tty=$TTY
-execute=OpenTTY.processCommand
+config=execute title; cd /; clear; echo Welcome to OpenTTY $VERSION; echo Copyright (C) 2024 - Mr. Lima; echo;

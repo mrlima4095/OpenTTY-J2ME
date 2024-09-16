@@ -1,0 +1,11 @@
+[ QuestExample ]
+
+name=QuestLib
+version=1.0
+description=Debug LIB to Quest System
+
+command=qldebug=quest quest-lib
+
+quest=TextBox
+quest-cmd=echo $Quest
+quest-key=Quest

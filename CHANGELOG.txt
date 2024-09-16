@@ -7,15 +7,21 @@ Copyright (C) 2024 - Mr. Lima
 - `sudo <command>` - run as superuser
 - `import <lib>` - import a lib 
 - `about` - show info about a lib
+- `log <option>` - log system
+- `x11 <service>` - X.Org Server CLI
 
 [ _Updates_ ] 
 
 - Username 'root' blocked to login
 - touch without filename clear nanoContent
 - button Exit in lock screen
+- fixed jump-line after a cleared console
 - Command **cd** now can jump into folders
 - added new resource folder '/java/lib'
 - alias and set now need = to split key from value
+- Log API added to trace lib states
+- Command `xorg` removed
+- X.Org updated to 0.5
 - New if method added
 
 [ _Notes_ ]
