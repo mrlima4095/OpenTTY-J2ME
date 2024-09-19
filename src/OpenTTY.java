@@ -210,7 +210,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (parts[1].equals("startswith")) { if (parts[0].startsWith(parts[2])) { processCommand(command); } }
             else if (parts[1].equals("endswith")) { if (parts[0].endsWith(parts[2])) { processCommand(command); } }
             else if (parts[1].equals("!=")) { if (!parts[0].equals(parts[2])) { processCommand(command); } }
-            else if (parts[1].equals("==")) { if (!parts[0].equals(parts[2])) { processCommand(command); } }
+            else if (parts[1].equals("==")) { if (parts[0].equals(parts[2])) { processCommand(command); } }
             
         }
         else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } 
@@ -271,7 +271,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("mod")) { final String mod = (String) lib.get("mod"); new Thread(new Runnable() { public void run() { while (true) { if (commandInput.getString().equals("break")) { break; } processCommand(mod); } } }).start(); }
         
         if (lib.containsKey("files")) { 
+                String[] files = split((String) lib.get("files"), ',');
+                for (int i = 0; i < files.length; i++) {
+                    if (lib.containsKey(files[i])) {
+                        writeRMS(files[i], env((String) lib.get(files[i])));
+                    }
+                }
             }
+        
     }
     private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2024 - Mr. Lima")); return; } if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); } Hashtable lib = parseProperties(script); if (lib.containsKey("name")) { echoCommand((String) lib.get("name") + " " + (String) lib.get("version")); } if (lib.containsKey("description")) { echoCommand((String) lib.get("description")); } }
     private void quest(String script) { if (script == null || script.length() == 0) { return; } if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); } final Hashtable lib = parseProperties(script); if (lib.containsKey("quest") && lib.containsKey("quest-cmd") && lib.containsKey("quest-key")) { final Form screen = new Form(form.getTitle()); final TextField name = new TextField(env((String) lib.get("quest")), "", 256, TextField.ANY); final Command save = new Command("Send", Command.OK, 1); final Command back = new Command("Cancel", Command.SCREEN, 2); screen.append(name); screen.addCommand(save); screen.addCommand(back); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == save) { if (name.getString().trim().equals("")) { } else { processCommand("set " + env((String) lib.get("quest-key")) + "=" + env(name.getString().trim())); display.setCurrent(form); processCommand(env((String) lib.get("quest-cmd"))); } } } } ); display.setCurrent(screen); } else { if (lib.containsKey("name")) { MIDletLogs("add error quest crashed while init, malformed settings"); } else { MIDletLogs("add warn the content may not be a lib, failed to start quest"); } } }
