@@ -8,6 +8,7 @@ Copyright (C) 2024 - Mr. Lima
 - `import <lib>` - import a lib 
 - `about` - show info about a lib
 - `log <option>` - log system
+- `logcat` - show logs in console
 - `x11 <service>` - X.Org Server CLI
 
 [ _Updates_ ] 
@@ -18,6 +19,7 @@ Copyright (C) 2024 - Mr. Lima
 - fixed jump-line after a cleared console
 - Command **cd** now can jump into folders
 - added new resource folder '/java/lib'
+- new if operators `startswith` and `endswith`
 - alias and set now need = to split key from value
 - Log API added to trace lib states
 - Command `xorg` removed

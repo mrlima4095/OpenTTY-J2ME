@@ -10,6 +10,8 @@ echo OpenTTY Debug
 echo -------------------
 echo
 
+log add debug executed debug script
+
 basename /java/bin/basename
 locale
 date
