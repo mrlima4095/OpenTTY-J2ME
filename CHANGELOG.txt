@@ -18,13 +18,19 @@ Copyright (C) 2024 - Mr. Lima
 - button Exit in lock screen
 - fixed jump-line after a cleared console
 - Command **cd** now can jump into folders
-- added new resource folder '/java/lib'
+- added new resource folder _/java/lib_
 - new if operators `startswith` and `endswith`
 - alias and set now need = to split key from value
 - Log API added to trace lib states
+- command `dir f` now open a explorer
 - Command `xorg` removed
 - X.Org updated to 0.5
 - New if method added
+
+[ _Envirroment Keys_ ]
+
+- **$PROMPT**: String at stdin
+- **$TITLE**: Current Terminal Title
 
 [ _Notes_ ]
 
