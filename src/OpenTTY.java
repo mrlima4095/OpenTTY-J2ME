@@ -226,12 +226,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     final Command backCommand = new Command("Back", Command.OK, 1);
                     final Command userCommand = new Command(env((String) lib.get("screen.button")), Command.SCREEN, 2);
                     
-                    if (lib.containsKey("screen.content")) { content.setText(env((String) lib.get("screen.content"))); }
-                    else { content.setText(""); }
-                    
                     screen.append(content);
                     screen.addCommand(backCommand); screen.addCommand(userCommand); 
                     screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == backCommand) { display.setCurrent(form); if (lib.containsKey("screen.back")) { processCommand(env((String) lib.get("screen.back"))); } } else if (c == userCommand) { display.setCurrent(form); if (lib.containsKey("screen.button.cmd")) { processCommand(env((String) lib.get("screen.button.cmd"))); } else { MIDletLogs("add warn an error was ocurred, screen.button command not found"); } } } });
+                    if (lib.containsKey("screen.content")) { content.setText(env((String) lib.get("screen.content"))); }
+                    else { content.setText(""); }
+                    
                     display.setCurrent(screen);
                 } else { MIDletLogs("add error screen crashed while init, malformed settings"); }
             }

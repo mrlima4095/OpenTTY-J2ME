@@ -11,15 +11,14 @@ name=JBuntu
 version=1.0
 description=Desktop for OpenTTY J2ME
 
-config=execute set JVERSION=1.0; set DISPLAY=true; title JBuntu $JVERSION; clear;
-mod=if ($DISPLAY == true) if ($PROMPT != xterm) buff xterm;
+config=execute set JVERSION=1.0; title JBuntu $JVERSION; clear;
 command=xterm
 
-xterm=execute x11 make jbuntu; set DISPLAY=true; false
+xterm=execute x11 make jbuntu; 
 
 
-screen.title=JBuntu $JVERSION
-screen.back=set DISPLAY=false
+screen.title=JBuntu $JVERSION 
+screen.back=exit
 screen.button=Menu
 screen.button.cmd=x11 list jbuntu
 
@@ -30,5 +29,5 @@ list.content=About,Nano,Explorer,Terminal
 About=execute clear; buff xterm; about jbuntu;
 Nano=execute clear; buff xterm; nano;
 Explorer=execute clear; buff xterm; dir f;
-Terminal=execute set DISPLAY=false; sh;
+Terminal=execute buff; sh;
 
