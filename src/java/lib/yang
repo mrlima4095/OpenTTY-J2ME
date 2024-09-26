@@ -1,0 +1,23 @@
+[ Config ]
+
+name=PackJ
+version=1.0
+description=OpenTTY Package Manager
+
+config=execute if ($YANG != true) about /java/lib/yang; set YANG=true; 
+command=yang,setrepo
+
+yang=execute x11 list /java/lib/yang;
+setrepo=execute x11 quest /java/lib/yang;
+
+quest.title=PackJ Settings
+quest.label=Server IP
+quest.key=REPO
+quest.cmd=execute set REPO;
+
+[ Index ]
+
+list.title=Repository
+list.content=JBuntu
+
+JBuntu=execute buff wget $REPO/jbuntu;

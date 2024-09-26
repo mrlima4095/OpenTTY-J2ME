@@ -1,0 +1,27 @@
+[ Config ]
+
+name=NetKit 
+version=1.0
+description=Network Center
+
+command=nk
+
+nk=execute x11 list /java/lib/netkit;
+
+[ DISPLAY ]
+
+quest.title=$TITLE
+quest.label=IP Adress
+quest.cmd=execute $TOOL $INPUT; unset TOOL; unset INPUT;
+quest.key=INPUT
+
+list.title=NetKit Tools
+list.content=Remote,IPConfig,Port Scanner,Ping Test,Server
+
+Remote=execute set TOOL=nc; x11 quest /java/lib/netkit;
+Netstat=execute netstat;
+IPConfig=execute fw ip;
+Port Scanner=execute set TOOL=prscan; x11 quest /java/lib/netkit;
+Ping Test=execute set TOOL=ping; x11 quest /java/lib/netkit;
+Server=execute server;
+

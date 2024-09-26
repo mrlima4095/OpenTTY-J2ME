@@ -1,6 +1,6 @@
 [ Config ]
 
-name=java
+name=Java
 version=1.2
 
 jme_config=$CONFIG

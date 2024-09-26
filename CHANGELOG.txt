@@ -3,13 +3,15 @@ Copyright (C) 2024 - Mr. Lima
 
 [ _Commands_ ]
 
-- `su` - charge your user to root
-- `sudo <command>` - run as superuser
-- `import <lib>` - import a lib 
-- `about` - show info about a lib
-- `log <option>` - log system
-- `logcat` - show logs in console
-- `x11 <service>` - X.Org Server CLI
+- `su`: charge your user to root
+- `sudo <command>`: run as superuser
+- `import <lib>`: import a lib 
+- `about`: show info about a lib
+- `log <option>`: log system
+- `logcat`: show logs in console
+- `x11 <service>`: X.Org Server CLI
+- `buff <text>`: Set **stdin** content
+- `time`: show current time
 
 [ _Updates_ ] 
 
@@ -31,6 +33,13 @@ Copyright (C) 2024 - Mr. Lima
 
 - **$PROMPT**: String at stdin
 - **$TITLE**: Current Terminal Title
+- 
+[ _Libs & Modules_ ]
+
+The Lib files can be found at **/java/lib** folder and it contains the example Modules added by default in OpenTTY Package
+
+- `/java/lib/yang`: Package Manager (Beta)
+- `/java/lib/netkit`: Basic Network Tools UI
 
 [ _Notes_ ]
 
