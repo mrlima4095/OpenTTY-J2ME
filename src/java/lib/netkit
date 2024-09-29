@@ -19,7 +19,6 @@ list.title=NetKit Tools
 list.content=Remote,IPConfig,Port Scanner,Ping Test,Server
 
 Remote=execute set TOOL=nc; x11 quest /java/lib/netkit;
-Netstat=execute netstat;
 IPConfig=execute fw ip;
 Port Scanner=execute set TOOL=prscan; x11 quest /java/lib/netkit;
 Ping Test=execute set TOOL=ping; x11 quest /java/lib/netkit;

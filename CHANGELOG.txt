@@ -3,8 +3,6 @@ Copyright (C) 2024 - Mr. Lima
 
 [ _Commands_ ]
 
-- `su`: charge your user to root
-- `sudo <command>`: run as superuser
 - `import <lib>`: import a lib 
 - `about`: show info about a lib
 - `log <option>`: log system
@@ -15,7 +13,6 @@ Copyright (C) 2024 - Mr. Lima
 
 [ _Updates_ ] 
 
-- Username 'root' blocked to login
 - touch without filename clear nanoContent
 - button Exit in lock screen
 - fixed jump-line after a cleared console
@@ -40,8 +37,10 @@ The Lib files can be found at **/java/lib** folder and it contains the example M
 
 - `/java/lib/yang`: Package Manager (Beta)
 - `/java/lib/netkit`: Basic Network Tools UI
+- `/java/lib/settings`: Basic Settings Menu
 
 [ _Notes_ ]
 
 - in futher updates command `rnano` will be replaced officialy by touch to clear nanoContent
+- if you use look in **Admin mode** it will continue unlocking with default username 
 

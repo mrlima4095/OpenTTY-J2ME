@@ -8,6 +8,7 @@
 | | lib/ 
 | | | yang
 | | | netkit
+| | | settings
 | | help.txt 
 | | resources.txt
 | scripts /
