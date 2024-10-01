@@ -17,7 +17,7 @@ quest.cmd=execute set REPO;
 [ Index ]
 
 list.title=Repository
-list.content=JBuntu,JAuth2
+list.content=JBuntu
 
-JBuntu=execute buff wget $REPO/jbuntu;
+JBuntu=execute set QUERY=nano; buff query $REPO get lib/jbuntu;
 

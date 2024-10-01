@@ -9,11 +9,13 @@ Copyright (C) 2024 - Mr. Lima
 - `logcat`: show logs in console
 - `x11 <service>`: X.Org Server CLI
 - `buff <text>`: Set **stdin** content
+- `query <adress> <data>`: send data to host and save response
 - `time`: show current time
 
 [ _Updates_ ] 
 
 - touch without filename clear nanoContent
+- missing argument messages remade
 - button Exit in lock screen
 - fixed jump-line after a cleared console
 - Command **cd** now can jump into folders
@@ -30,7 +32,8 @@ Copyright (C) 2024 - Mr. Lima
 
 - **$PROMPT**: String at stdin
 - **$TITLE**: Current Terminal Title
-- 
+- **$QUERY**: What will be made with Query retrived data _nano_, _show_ or **filename**
+
 [ _Libs & Modules_ ]
 
 The Lib files can be found at **/java/lib** folder and it contains the example Modules added by default in OpenTTY Package
@@ -42,5 +45,3 @@ The Lib files can be found at **/java/lib** folder and it contains the example M
 [ _Notes_ ]
 
 - in futher updates command `rnano` will be replaced officialy by touch to clear nanoContent
-- if you use look in **Admin mode** it will continue unlocking with default username 
-

@@ -6,11 +6,11 @@
 #  Copyright (C) 2024 "Mr. Lima"
 #  
 
-echo OpenTTY Debug
+echo OpenTTY Debug 
 echo -------------------
 echo
 
-log add debug executed debug script
+log add debug Executed debug script 
 
 basename /java/bin/basename
 locale
