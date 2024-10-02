@@ -11,6 +11,7 @@ Copyright (C) 2024 - Mr. Lima
 - `buff <text>`: Set **stdin** content
 - `query <adress> <data>`: send data to host and save response
 - `time`: show current time
+- `ip`: show global ip adress
 
 [ _Updates_ ] 
 
@@ -25,6 +26,8 @@ Copyright (C) 2024 - Mr. Lima
 - Log API added to trace lib states
 - command `dir f` now open a explorer
 - Command `xorg` removed
+- Command `ipconfig` removed
+- Command `ifconfig` now show local IP Adress
 - X.Org updated to 0.5
 - New if method added
 

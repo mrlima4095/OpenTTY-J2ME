@@ -75,16 +75,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         // Network Utilities
         else if (mainCommand.equals("netstat")) { netstat(); }
+        else if (mainCommand.equals("ip")) { fwCommand("ip"); }
         else if (mainCommand.equals("nc")) { connect(argument); }
         else if (mainCommand.equals("query")) { query(argument); }
         else if (mainCommand.equals("fw")) { fwCommand(argument); }
-        else if (mainCommand.equals("ipconfig")) { fwCommand("ip"); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); }
         else if (mainCommand.equals("curl")) { curlCommand(argument); } 
         else if (mainCommand.equals("wget")) { wgetCommand(argument); } 
-        else if (mainCommand.equals("ifconfig")) { ifconfig(argument); }
         else if (mainCommand.equals("prscan")) { portScanner(argument); }
         else if (mainCommand.equals("server")) { runServer(env("$PORT")); }
+        else if (mainCommand.equals("ifconfig")) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://8.8.8.8:53"); echoCommand(socketConnection.getLocalAddress()); socketConnection.close(); } catch (IOException e) { } }
         
         // File Utilities
         else if (mainCommand.equals("nano")) { nano(argument); }
@@ -270,7 +270,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Network API Service
     private void netstat() { new Thread(new Runnable() { public void run() { try { HttpConnection conn = (HttpConnection) Connector.open("http://ipinfo.io/ip"); conn.setRequestMethod(HttpConnection.GET); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); echoCommand("true"); conn.close(); } catch (Exception e) { echoCommand("false"); } } }).start(); }
     private void fwCommand(final String ip) { final String url = "http://ipinfo.io/" + (ip == null || ip.length() == 0 ? "json" : ip); new Thread(new Runnable() { public void run() { try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } String response = new String(baos.toByteArray()); echoCommand(response); is.close(); conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } }).start(); }
-    private void ifconfig(final String method) { final String url = "http://ifconfig.me/" + ((method == null || method.length() == 0) ? "ua" : method); new Thread(new Runnable() { public void run() { try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } String response = new String(baos.toByteArray()); echoCommand(response); is.close(); conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } }).start(); }
     private void curlCommand(final String url) { if (url == null || url.length() == 0) { echoCommand("curl: missing [url]"); return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } new Thread(new Runnable() { public void run() { try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } echoCommand(new String(baos.toByteArray())); is.close(); conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } }).start(); }
     private void wgetCommand(final String url) { if (url == null || url.length() == 0) { echoCommand("wget: missing [url]"); return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } new Thread(new Runnable() { public void run() { try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } nanoContent = new String(baos.toByteArray()); echoCommand("wget: html saved to nano"); is.close(); conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } }).start(); }
     private void pingCommand(final String url) { if (url == null || url.length() == 0) { echoCommand("ping: missing [url]"); return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } new Thread(new Runnable() { public void run() { long startTime = System.currentTimeMillis(); try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); int responseCode = conn.getResponseCode(); long endTime = System.currentTimeMillis(); echoCommand("Ping to " + url + " successful, time=" + (endTime - startTime) + "ms"); is.close(); conn.close(); } catch (IOException e) { echoCommand("Ping to " + url + " failed: " + e.getMessage()); } } }).start(); }
