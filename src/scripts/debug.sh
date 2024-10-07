@@ -6,11 +6,11 @@
 #  Copyright (C) 2024 "Mr. Lima"
 #  
 
-echo OpenTTY Debug 
-echo -------------------
+echo OpenTTY Debug Script
+echo -------------------------
 echo
 
-log add debug Executed debug script 
+log add debug Debug script had been executed 
 
 basename /java/bin/basename
 locale
@@ -24,4 +24,4 @@ if ($PATH /) echo you are in root directory
 tty
 ttysize
 
-echo -------------------
+echo -------------------------

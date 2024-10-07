@@ -48,3 +48,11 @@ The Lib files can be found at **/java/lib** folder and it contains the example M
 [ _Notes_ ]
 
 - in futher updates command `rnano` will be replaced officialy by touch to clear nanoContent
+- the **yang** package repository isn't complete, I will update it later with new libraries
+
+
+For use **Yang (PackJ)** you will need to host your own _OpenTTY API Server_ you can download the server files
+below, or see the [Oficial Github Repository](https://github.com/mrlima4095/OpenTTY-Repo) if it is important to you.
+
+Note that the _OpenTTY Server_ requires **Python 3.8** or later installed to run. 
+Read more at the resource README.md
