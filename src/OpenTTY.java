@@ -160,7 +160,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 echoCommand("hash: missing [file]");
             }
             else {
-                if (argument.startsWith("/")) { echoCommand(read(argument).hashCode()); } else if (argument.startsWith("rms://")) { echoCommand(loadRMS(replace(argument, "rms://", "")).hashCode()) } else { echoCommand(read(path + "/" + argument)); }
+                if (argument.startsWith("/")) { 
+                    echoCommand(read(argument).hashCode()); 
+                } 
+                else if (argument.startsWith("rms://")) { 
+                    echoCommand(loadRMS(replace(argument, "rms://", "")).hashCode());
+                } 
+                else { 
+                    echoCommand(read(path + "/" + argument)); 
+                }
             }
 
         }
