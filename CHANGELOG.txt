@@ -12,6 +12,7 @@ Copyright (C) 2024 - Mr. Lima
 - `query <adress> <data>`: send data to host and save response
 - `time`: show current time
 - `ip`: show global ip adress
+- `hash <file>`: get a hash of a resource or RMS file
 
 [ _Updates_ ] 
 

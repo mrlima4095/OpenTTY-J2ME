@@ -154,12 +154,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("x11")) { xserver(argument); }
         
         else if (mainCommand.equals("import")) { importScript(argument); }
+
+        else if (mainCommand.equals("hash")) {
+            if (argument.equals("")) {
+                echoCommand("hash: missing [file]");
+            }
+            else {
+                if (argument.startsWith("/")) { echoCommand(read(argument).hashCode()); } else if (argument.startsWith("rms://")) { echoCommand(loadRMS(replace(argument, "rms://", "")).hashCode()) } else { echoCommand(read(path + "/" + argument)); }
+            }
+
+        }
            
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
         
         else { echoCommand(mainCommand + ": not found"); }
-        
+
     }
     
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }

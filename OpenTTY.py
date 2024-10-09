@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import Menu, filedialog
 import subprocess
+import socket
 import sys
 
 class OpenTTY:
@@ -83,6 +84,7 @@ class OpenTTY:
                 with open(file_path, 'rt') as file: self.clear_output(), self.print(file.read())
             except Exception as e: self.print(e)
 
+   
 
 if __name__ == "__main__":
     # Cria a janela principal
