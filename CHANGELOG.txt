@@ -11,24 +11,30 @@ Copyright (C) 2024 - Mr. Lima
 - `buff <text>`: Set **stdin** content
 - `query <adress> <data>`: send data to host and save response
 - `time`: show current time
-- `ip`: show global ip adress
 - `hash <file>`: get a hash of a resource or RMS file
 
 [ _Updates_ ] 
 
-- touch without filename clear nanoContent
-- missing argument messages remade
-- button Exit in lock screen
-- fixed jump-line after a cleared console
+- Touch without filename clear nanoContent
+- Install, Open and Call quest screen removed
+- Viewers and Minimal screens now use the global command listener
+- Netcat added button _Save_ to save the console into a RMS File
+- The _Save_ netcat button now using a new format **Remote-[IP Adress]**
+- Missing argument messages remade
+- Button Exit in lock screen
+- Fixed jump-line after a cleared console
 - Command **cd** now can jump into folders
-- added new resource folder _/java/lib_
-- new if operators `startswith` and `endswith`
-- alias and set now need = to split key from value
+- Added new resource folder _/java/lib_
+- New if operators `startswith` and `endswith`
+- Alias and set now need = to split key from value
 - Log API added to trace lib states
-- command `dir f` now open a explorer
+- Commands `cat` and `get` now can be used to integer with RMS files
+- Command `dir f` now open a explorer
 - Command `xorg` removed
+- Command `load` removed
 - Command `ipconfig` removed
 - Command `ifconfig` now show local IP Adress
+- Default port charged to **31522**
 - X.Org updated to 0.5
 - New if method added
 
