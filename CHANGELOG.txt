@@ -18,8 +18,7 @@ Copyright (C) 2024 - Mr. Lima
 - Touch without filename clear nanoContent
 - Install, Open and Call quest screen removed
 - Viewers and Minimal screens now use the global command listener
-- Netcat added button _Save_ to save the console into a RMS File
-- The _Save_ netcat button now using a new format **Remote-[IP Adress]**
+- When you back from netcat now save content in file **Remote-[IP Adress]**
 - Missing argument messages remade
 - Button Exit in lock screen
 - Fixed jump-line after a cleared console

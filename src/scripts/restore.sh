@@ -9,6 +9,6 @@
 #  content and load it when you start
 #  MIDlet. Note: exit with command 'quit'
 
-execute install nano; touch; add install nano; add load last-session; add rraw; add load nano; add . /scripts/restore.sh; install initd; load nano;
+execute install nano; touch; add install nano; add get last-session; add rraw; add get nano; add . /scripts/restore.sh; install initd; get nano;
 
-alias exit=execute install nano; getty; install last-session; load nano; quit; 
+alias exit=execute install nano; getty; install last-session; get nano; quit; 
