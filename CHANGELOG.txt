@@ -35,7 +35,7 @@ Copyright (C) 2024 - Mr. Lima
 - Command `ifconfig` now show local IP Adress
 - Default port charged to **31522**
 - X.Org updated to 0.5
-- New if method added
+- New if method addeds
 
 [ _Envirroment Keys_ ]
 
