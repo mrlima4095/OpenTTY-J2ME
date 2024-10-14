@@ -17,7 +17,7 @@ quest.cmd=execute set REPO;
 [ Index ]
 
 list.title=Repository
-list.content=JBuntu,Updater,SmartME
+list.content=JBuntu,Updater
 
 JBuntu=execute set QUERY=jbuntu; query $REPO get lib/jbuntu; set QUERY=nano;
 Updater=execute set QUERY=sync; query $REPO get lib/sync; set QUERY=nano;
