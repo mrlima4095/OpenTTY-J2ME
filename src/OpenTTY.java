@@ -115,10 +115,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 int totalSize = 0;
                 for (int i = 0; i < totalRecordStores; i++) {
-                    RecordStore rs = recordStores[i];
-                    int size = rs.getSize();
+                    String rs = recordStores[i];
+                    int size = rs.length();
                     totalSize += size;
-                    echoCommand("RMS: " + rs.getName() + " | Size: " + size + " B\n");
+                    echoCommand("RMS: " + rs + " | Size: " + size + " B\n");
                 }
 
                 echoCommand("Storage Usage: " + totalSize / 1024 + " KB");
