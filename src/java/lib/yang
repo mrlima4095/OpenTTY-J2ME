@@ -17,10 +17,9 @@ quest.cmd=execute set REPO;
 [ Index ]
 
 list.title=Repository
-list.content=JBuntu,JBenchmark,Armitage,Updater,Forge,
+list.content=JBuntu,JBenchmark,Updater,Forge
 
 JBuntu=execute set OLD_QUERY=$QUERY; set QUERY=jbuntu; query $REPO get lib/jbuntu; set QUERY=OLD_QUERY; unset OLD_QUERY;
 JBenchmark=execute set OLD_QUERY=$QUERY; set QUERY=jbenchmark; query $REPO get lib/jbenchmark; set QUERY=OLD_QUERY; unset OLD_QUERY;
-Armitage=execute set OLD_QUERY=$QUERY; set QUERY=armitage; query $REPO get lib/armitage; set QUERY=OLD_QUERY; unset OLD_QUERY;
 Updater=execute set OLD_QUERY=$QUERY; set QUERY=sync; query $REPO get lib/sync; set QUERY=OLD_QUERY; unset OLD_QUERY;
 Forge=execute set OLD_QUERY=$QUERY; set QUERY=forge; query $REPO get lib/forge; set QUERY=OLD_QUERY; unset OLD_QUERY;
