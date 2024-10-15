@@ -109,7 +109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { explorer(); } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }
         else if (mainCommand.equals("df")) { 
             try {
-                RecordStore[] recordStores = RecordStore.listRecordStores();
+                String[] recordStores = RecordStore.listRecordStores();
                 int totalRecordStores = (recordStores != null) ? recordStores.length : 0;
                 echoCommand("Total RMS Files: " + totalRecordStores + "\n");
 
@@ -118,20 +118,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     RecordStore rs = recordStores[i];
                     int size = rs.getSize();
                     totalSize += size;
-                    echoCommand("RMS: " + rs.getName() + " | Size: " + size + " bytes\n");
+                    echoCommand("RMS: " + rs.getName() + " | Size: " + size + " B\n");
                 }
 
-                echoCommand("Storage Usage: " + totalSize + " bytes\n");
-                echoCommand("Available Space: " + (RecordStore.MAX_RECORD_SIZE * RecordStore.MAX_RECORDS) + " bytes\n");
+                echoCommand("Storage Usage: " + totalSize / 1024 + " KB");
             } catch (RecordStoreException e) { }
         }
-        else if (mainCommand.equals("du")) {
-            try {
-                RecordStore[] recordStores = RecordStore.listRecordStores();
-                echoCommand("Storage " + (recordStores != null) ? recordStores.length : 0 + "/" + RecordStore.MAX_RECORDS); 
-            } catch (RecordStoreException e) { }
-        }
-
+        
 
         // General 
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
@@ -238,7 +231,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command).toLowerCase();
         String argument = getArgument(command);
         
-        if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-10-02\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } 
+        if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-10-15\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } 
         else if (mainCommand.equals("reset")) { form = new Form(""); display.setCurrent(form); }
         else if (mainCommand.equals("title")) { form.setTitle(argument); }
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
