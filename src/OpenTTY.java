@@ -107,23 +107,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ph2s")) { StringBuffer script = new StringBuffer(); for (int i = 0; i < commandHistory.size() - 1; i++) { script.append(commandHistory.elementAt(i)); if (i < commandHistory.size() - 1) { script.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano")) { mount(nanoContent); } else { mount(loadRMS(argument, 1)); } } }
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { explorer(); } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }
-        else if (mainCommand.equals("df")) { 
-            try {
-                String[] recordStores = RecordStore.listRecordStores();
-                int totalRecordStores = (recordStores != null) ? recordStores.length : 0;
-                echoCommand("Total RMS Files: " + totalRecordStores + "\n");
-
-                int totalSize = 0;
-                for (int i = 0; i < totalRecordStores; i++) {
-                    String rs = recordStores[i];
-                    int size = rs.length();
-                    totalSize += size;
-                    echoCommand("RMS: " + rs + " | Size: " + size + " B\n");
+        else if (mainCommand.equals("du")) {
+            if (argument.equals("")) { } else {
+                if (argument.startsWith("/")) {
+                    echoCommand(basename(argument) + " (Size: " + read(argument).length() + " B)");
+                } else { 
+                    echoCommand(argument + " (Size: " + loadRMS(argument, 1).length() + " B)");
                 }
-
-                echoCommand("Storage Usage: " + totalSize / 1024 + " KB");
-            } catch (RecordStoreException e) { }
+            }
         }
+        else if (mainCommand.equals("grep")) {
+            if (argument.equals("") || split(argument, ' ').length < 2) { } 
+            else {
+                String[] args = split(argument, ' ');
+                if (args[0].startsWith("/")) { String file = read(args[0]); } 
+                else if (args[0].equals("nano")) { String file = nanoContent; } 
+                else { String file = loadRMS(args[0], 1); } 
+                echoCommand(file.indexOf(args[1]) != -1 ? "true" : "false");
+                  
+            }
+        }
+        
+
         
 
         // General 
@@ -141,6 +146,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("export")) { if (argument.equals("")) { processCommand("env"); } else { attributes.put(argument, ""); } }
         else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
+        else if (mainCommand.equals("gc")) { Runtime.getRuntime().gc(); }
         else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); } 
         else if (mainCommand.equals("htop")) { htopCommand(); }
         else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
