@@ -5,8 +5,14 @@ OpenTTY - Netman Update
 
 [ Commands ]
 
-- `import <lib>`: import a
+- `import <lib>`: import a lib 
+- `about`: show info about a lib
 
 [ Updates ] 
 
 - Added 1.9 Lib API features
+- Command `ifconfig` now show local IP Adress
+- New envirronment key `PROMPT` with stdin content
+- Added new resource folder _/java/lib_
+
+
