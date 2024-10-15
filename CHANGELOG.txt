@@ -5,14 +5,8 @@ OpenTTY - Netman Update
 
 [ Commands ]
 
-- ifconfig - info about network drive
-- touch <filename> - create new file
+- `import <lib>`: import a
 
 [ Updates ] 
 
-- New envirronment key `TITLE` with current title
-- New script that saves OpenTTY Console content and reload at next start
-- Login at OpenTTY first start
-- Logout quit from OpenTTY 
-- Netstat true and false returns
-
+- Added 1.9 Lib API features
