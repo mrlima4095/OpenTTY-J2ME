@@ -1,0 +1,21 @@
+[ Config ]
+
+name=Settings
+version=1.0
+description=Config. Menu
+
+command=cfg,cfg.info
+
+cfg=execute x11 list /java/lib/settings;
+cfg.info=execute about /java/lib/settings;
+
+[ DISPLAY ]
+
+list.title=Settings
+list.content=Locale,Hostname,Query Storage,Server Port,Repo Adress
+
+Locale=execute buff set LOCALE;
+Hostname=execute buff set HOSTNAME;
+Query Storage=execute buff set QUERY;
+Server Port=execute buff set PORT;
+Repo Adress=execute buff set REPO;
