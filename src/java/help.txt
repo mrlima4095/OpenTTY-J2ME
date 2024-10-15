@@ -6,7 +6,7 @@ Copyright (C) 2024 - Mr. Lima
 
 alias; cd; call; curl; cat; clear; 
 date; exit; echo; execute; false; 
-hostname; ipconfig; login; lock;
+hostname; ipconfig; lock; logout;
 netstat; open; ping; title; true;
 unalias; uname; version; wget;
 

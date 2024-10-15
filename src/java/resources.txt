@@ -5,6 +5,9 @@
 | | | fstab
 | | | java
 | | | sh
+| | lib/ 
+| | | netkit
+| | | settings
 | | help.txt 
 | | resources.txt
 | scripts /

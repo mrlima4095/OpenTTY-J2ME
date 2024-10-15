@@ -1,7 +1,7 @@
 [ Config ]
 
-app=java
+name=Java
 version=1.2
 
-config=$CONFIG
-profile=$PROFILE
+jvm_config=$CONFIG
+jvm_profile=$PROFILE

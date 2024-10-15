@@ -1,7 +1,7 @@
 [ Config ]
 
-app=sh
+name=Shell
 version=$VERSION
+description=OpenTTY MIDlet
 
-tty=$TTY
-execute=OpenTTY.processCommand
+config=execute title; cd; buff; clear; echo Welcome to OpenTTY $VERSION; echo Copyright (C) 2024 - Mr. Lima; echo; forget;

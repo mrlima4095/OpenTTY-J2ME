@@ -9,8 +9,9 @@ import java.io.*;
 public class OpenTTY extends MIDlet implements CommandListener {
     private boolean app;
     private int currentIndex = 0;
+    private String logs = "";
     private String path = "/";
-    private String version = "1.8.4";
+    private String version = "1.8.5";
     private Hashtable paths = new Hashtable();
     private Hashtable aliases = new Hashtable();
     private Vector commandHistory = new Vector();
@@ -31,7 +32,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (!app == true) {
             mount(read("/java/bin/fstab")); commandInput.setLabel(username + " " + path + " $"); 
             
-            attributes.put("PATCH", "Netman Update"); attributes.put("VERSION", version); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.4");
+            attributes.put("PATCH", "Netman Update"); attributes.put("VERSION", version); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.5");
             attributes.put("TTY", "/java/optty1"); attributes.put("HOSTNAME", "localhost"); attributes.put("PORT", "4095"); attributes.put("RESPONSE", "com.opentty.server");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             attributes.put("OUTPUT", "");  
@@ -108,6 +109,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
+        else if (mainCommand.equals("buff")) { stdin.setString(argument); }
+        else if (mainCommand.equals("break")) { app = false; }
         else if (mainCommand.equals("call")) { callCommand(argument); }
         else if (mainCommand.equals("clear") || mainCommand.equals("cls")) { output.setText(""); } 
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); } 
@@ -123,6 +126,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
         else if (mainCommand.equals("history")) { showHistory(); }
         else if (mainCommand.equals("if")) { ifCommand(argument); }
+        else if (mainCommand.equals("log")) { MIDletLogs(argument); }
+        else if (mainCommand.equals("logcat")) { echoCommand(logs); }
         else if (mainCommand.equals("logout")) { username = ""; writeRMS("OpenRMS", ""); processCommand("exit"); }
         else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
         else if (mainCommand.equals("lock")) { lockCommand(); }
@@ -142,7 +147,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("whoami")) { if (username.equals("")) { echoCommand("whoami: not logged"); } else { echoCommand(username); } } 
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); }
         else if (mainCommand.equals("xorg")) { if (argument.length() == 0 || argument.equals("help")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-07-25\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } else if (argument.equals("stop")) { form = new Form(""); display.setCurrent(form); } else { echoCommand("xorg: " + argument + ": not found"); } } 
-        
+        else if (mainCommand.equals("x11")) { xserver(argument); }
+
+
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { importScript(argument); }
            
@@ -200,6 +207,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void install(String filename) { if (filename == null || filename.length() == 0) { final Form screen = new Form(form.getTitle()); final TextField name = new TextField("Filename", "", 16, TextField.ANY);  final Command save = new Command("Save", Command.OK, 1); final Command back = new Command("Cancel", Command.SCREEN, 2); screen.append(name); screen.addCommand(save); screen.addCommand(back); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == save) { if (name.getString().trim().equals("")) { } else { writeRMS(name.getString().trim(), nanoContent); display.setCurrent(form); } } } } ); display.setCurrent(screen); } else { writeRMS(filename, nanoContent); } }
     private void loadCommand(String filename) { if (filename == null || filename.length() == 0) { final Form screen = new Form(form.getTitle()); final TextField name = new TextField("Filename", "", 16, TextField.ANY); final Command save = new Command("Load", Command.OK, 1); final Command back = new Command("Cancel", Command.SCREEN, 2); screen.append(name); screen.addCommand(save); screen.addCommand(back); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == save) { if (name.getString().trim().equals("")) { } else { nanoContent = loadRMS(name.getString().trim(), 1); display.setCurrent(form); } } } } ); display.setCurrent(screen); } else { nanoContent = loadRMS(filename, 1); } }
     
+    // X Server 0.5 - Project Fork
+    private void xserver(String command) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command).toLowerCase();
+        String argument = getArgument(command);
+        
+        if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-10-16\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } 
+        else if (mainCommand.equals("reset")) { form = new Form(""); display.setCurrent(form); }
+        else if (mainCommand.equals("title")) { form.setTitle(argument); }
+        else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
+        else if (mainCommand.equals("make")) { if (argument.equals("")) { echoCommand("x11: make: missing file"); } else { final Hashtable lib; if (argument.startsWith("/")) { lib = parseProperties(read(argument)); } else if (argument.equals("nano")) { lib = parseProperties(nanoContent); } else { lib = parseProperties(loadRMS(argument, 1)); } if (lib.containsKey("screen.title") && lib.containsKey("screen.button")) { final Form screen = new Form(env((String) lib.get("screen.title"))); final StringItem content = new StringItem("", "Screen Content"); final Command backCommand = new Command("Back", Command.OK, 1); final Command userCommand = new Command(env((String) lib.get("screen.button")), Command.SCREEN, 2); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == backCommand) { display.setCurrent(form); if (lib.containsKey("screen.back")) { processCommand(env((String) lib.get("screen.back"))); } } else if (c == userCommand) { display.setCurrent(form); if (lib.containsKey("screen.button.cmd")) { processCommand(env((String) lib.get("screen.button.cmd"))); } else { MIDletLogs("add warn an error was ocurred, screen.button command not found"); } } } }); content.setText(lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : ""); display.setCurrent(screen); } else { MIDletLogs("add error screen crashed while init, malformed settings"); } } }
+        else if (mainCommand.equals("list")) { if (argument.equals("")) { echoCommand("x11: list: missing file"); } else { final Hashtable lib; if (argument.startsWith("/")) { lib = parseProperties(read(argument)); } else if (argument.equals("nano")) { lib = parseProperties(nanoContent); } else { lib = parseProperties(loadRMS(argument, 1)); } if (lib.containsKey("list.title") && lib.containsKey("list.content")) { final List screen = new List(env((String) lib.get("list.title")), List.IMPLICIT); final Command back = new Command("Back", Command.OK, 1); final Command run = new Command("Select", Command.SCREEN, 2); String[] content = split(env((String) lib.get("list.content")), ','); for (int i = 0; i < content.length; i++) { screen.append(content[i], null); } screen.addCommand(back); screen.addCommand(run); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { display.setCurrent(form); } else if (c == run) { int index = screen.getSelectedIndex(); if (index >= 0) { if (lib.containsKey(screen.getString(index))) { display.setCurrent(form); processCommand((String) lib.get(screen.getString(index))); } else { MIDletLogs("add warn an error ocurred, " + screen.getString(index) + " item not found"); } } } } }); display.setCurrent(screen); } else { MIDletLogs("add error list crashed while init, malformed settings"); } } }
+        else if (mainCommand.equals("quest")) { if (argument.equals("")) { echoCommand("x11: quest: missing file"); } else { final Hashtable lib; if (argument.startsWith("/")) { lib = parseProperties(read(argument)); } else if (argument.equals("nano")) { lib = parseProperties(nanoContent); } else { lib = parseProperties(loadRMS(argument, 1)); } if (lib.containsKey("quest.title") && lib.containsKey("quest.label") && lib.containsKey("quest.cmd") && lib.containsKey("quest.key")) { final Form screen = new Form(env((String) lib.get("quest.title"))); final TextField name = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY); final Command save = new Command("Send", Command.OK, 1); final Command back = new Command("Cancel", Command.SCREEN, 2); screen.append(name); screen.addCommand(save); screen.addCommand(back); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { app = false; display.setCurrent(form); app = true; } else if (c == save) { if (name.getString().trim().equals("")) { } else { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(name.getString().trim())); display.setCurrent(form); processCommand(env((String) lib.get("quest.cmd"))); } } } } ); display.setCurrent(screen); } else { MIDletLogs("add error quest crashed while init, malformed settings"); } } }
+        
+        else { echoCommand("x11: " + mainCommand + ": not found"); }
+    }
+    private void MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { if (argument.equals("")) { return; } else if (getCommand(argument).toLowerCase().equals("info")) { if (!getArgument(command).equals("")) { logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("warn")) { if (!getArgument(command).equals("")) { logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("debug")) { if (!getArgument(command).equals("")) { logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("error")) { if (!getArgument(command).equals("")) { logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": level not found"); } } else { echoCommand("log: " + mainCommand + ": not found"); } }
+
+
     // Lib API Service
     private void importScript(String script) {
         if (script == null || script.length() == 0) { return; } if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); }

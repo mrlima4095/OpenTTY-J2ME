@@ -7,12 +7,15 @@ OpenTTY - Netman Update
 
 - `import <lib>`: import a lib 
 - `about`: show info about a lib
+- `break`: stop mods backgrounded running
+- `buff <text>`: set stdin content
+- `log`: basic log system
 
 [ Updates ] 
 
 - Added 1.9 Lib API features
-- Command `ifconfig` now show local IP Adress
 - New envirronment key `PROMPT` with stdin content
+- X Server updated to 0.5
 - Added new resource folder _/java/lib_
 
 
