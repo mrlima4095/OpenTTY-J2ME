@@ -1,9 +1,9 @@
-OpenTTY Java Edition 1.8.4
+OpenTTY Java Edition 1.8.5
 Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - Netman Update 
 
-[ Commands ]
+[ _Commands_ ]
 
 - `import <lib>`: import a lib 
 - `about`: show info about a lib
@@ -11,7 +11,7 @@ OpenTTY - Netman Update
 - `buff <text>`: set stdin content
 - `log`: basic log system
 
-[ Updates ] 
+[ _Updates_ ] 
 
 - Added 1.9 Lib API features
 - New envirronment key `PROMPT` with stdin content
