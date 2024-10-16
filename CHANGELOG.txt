@@ -14,8 +14,8 @@ Copyright (C) 2024 - Mr. Lima
 - `ph2s`: parse command history to a script file
 - `hash <file>`: get a hash of a resource or RMS file
 - `du <file>`: show file size in bytes
-- `grep <file> <pattern>`: find pattern in file
-- `find <file> <key>`: get a key from a conf file
+- `grep <pattern> <file>`: find pattern in file
+- `find <key> <file>`: get a key from a conf file
 - `gc`: clean memory (Garbage Collector)
 
 
