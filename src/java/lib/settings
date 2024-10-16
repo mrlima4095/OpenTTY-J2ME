@@ -18,4 +18,4 @@ Locale=execute buff set LOCALE=;
 Hostname=execute buff set HOSTNAME=;
 Query Storage=execute buff set QUERY=;
 Server Port=execute buff set PORT=;
-Repo Adress=execute buff set REPO=;
+Repo Adress=execute x11 quest /java/lib/yang;

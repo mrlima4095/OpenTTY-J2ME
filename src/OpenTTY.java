@@ -112,9 +112,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("") || split(argument, ' ').length < 2) { } 
             else {
                 String[] args = split(argument, ' ');
-                if (args[0].startsWith("/")) { String file = read(args[0]); } 
-                else if (args[0].equals("nano")) { String file = nanoContent; } 
-                else { String file = loadRMS(args[0], 1); } 
+                if (args[0].startsWith("/")) { String file = read(args[0]); } else if (args[0].equals("nano")) { String file = nanoContent; } else { String file = loadRMS(args[0], 1); } 
                 echoCommand(file.indexOf(args[1]) != -1 ? "true" : "false");
                   
             }
@@ -123,9 +121,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("") || split(argument, ' ').length < 2) { } else {
                 String[] args = split(argument, ' ');
                 
-                if (args[0].startsWith("/")) { String script = read(args[0]); } else if (args[0].equals("nano")) { String script = nanoContent; } else { String script = loadRMS(args[0], 1); }
+                if (args[0].startsWith("/")) { String file = read(args[0]); } else if (args[0].equals("nano")) { String file = nanoContent; } else { String file = loadRMS(args[0], 1); }
 
-                String value = (String) parseProperties(script).get(args[1]);
+                String value = (String) parseProperties(file).get(args[1]);
                 echoCommand(value != null ? value : "null");
                 }
         }
