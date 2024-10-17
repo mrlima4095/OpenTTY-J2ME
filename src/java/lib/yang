@@ -1,7 +1,7 @@
 [ Config ]
 
 name=PackJ
-version=1.0
+version=1.1
 description=OpenTTY Package Manager
 
 command=yang,setrepo
@@ -17,10 +17,11 @@ quest.key=REPO
 [ Index ]
 
 list.title=Repository
-list.content=Forge,Updater,JBuntu,PackJ (Update)
+list.content=Armitage,Forge,JBuntu,PackJ (Update),Updater
 
-Forge=execute set OLD_QUERY=$QUERY; set QUERY=forge; query $REPO get lib/forge; set QUERY=OLD_QUERY; unset OLD_QUERY;
-Updater=execute set OLD_QUERY=$QUERY; set QUERY=sync; query $REPO get lib/sync; set QUERY=OLD_QUERY; unset OLD_QUERY;
-JBuntu=execute set OLD_QUERY=$QUERY; set QUERY=jbuntu; query $REPO get lib/jbuntu; set QUERY=OLD_QUERY; unset OLD_QUERY;
-PackJ (Update)=execute set OLD_QUERY=$QUERY; set QUERY=yang; query $REPO get lib/yang; set QUERY=OLD_QUERY; unset OLD_QUERY
+Armitage=execute set OLD_QUERY=$QUERY; set QUERY=armitage; query $REPO get lib/armitage; set QUERY=$OLD_QUERY; unset OLD_QUERY;
+Forge=execute set OLD_QUERY=$QUERY; set QUERY=forge; query $REPO get lib/forge; set QUERY=$OLD_QUERY; unset OLD_QUERY;
+JBuntu=execute set OLD_QUERY=$QUERY; set QUERY=jbuntu; query $REPO get lib/jbuntu; set QUERY=$OLD_QUERY; unset OLD_QUERY;
+Proxy=execute set OLD_QUERY=$QUERY; set QUERY=proxy; query $REPO get lib/proxy; set QUERY=$OLD_QUERY; unset OLD_QUERY;
+Updater=execute set OLD_QUERY=$QUERY; set QUERY=sync; query $REPO get lib/sync; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 

@@ -1,71 +1,10 @@
-OpenTTY Java Edition 1.9
+OpenTTY Java Edition 1.9.1
 Copyright (C) 2024 - Mr. Lima
-
-[ _Commands_ ]
-
-- `import <lib>`: import a lib 
-- `about`: show info about a lib
-- `log <option>`: log system
-- `logcat`: show logs in console
-- `x11 <service>`: X.Org Server CLI
-- `buff <text>`: Set **stdin** content
-- `query <adress> <data>`: send data to host and save response
-- `time`: show current time
-- `ph2s`: parse command history to a script file
-- `hash <file>`: get a hash of a resource or RMS file
-- `du <file>`: show file size in bytes
-- `grep <pattern> <file>`: find pattern in file
-- `find <key> <file>`: get a key from a conf file
-- `gc`: clean memory (Garbage Collector)
-
 
 [ _Updates_ ] 
 
-- Touch without filename clear nanoContent
-- Install, Open and Call quest screen removed
-- Viewers and Minimal screens now use the global command listener
-- Some missing operand verbose removed
-- Missing argument messages remade
-- Button Exit in lock screen
-- Fixed jump-line after a cleared console
-- Command **cd** now can jump into folders
-- Added new resource folder _/java/lib_
-- New if operators `startswith` and `endswith`
-- Alias and set now need = to split key from value
-- Log API added to trace lib states
-- Commands `cat` and `get` now can be used to integer with RMS files
-- Command `ttysize` fixed a bug that show TTY lenght in **KB** not in **B** (bytes)
-- Command `dir f` now open a explorer
-- Command `xorg` removed
-- Command `load` removed
-- Command `ipconfig` removed
-- Command `ifconfig` now show local IP Adress
-- Default port charged to **31522**
-- X.Org updated to 0.5
-- New if method addeds
+- PackJ Package Manager 1.1 
+- Network tools now running in main Thread
+- X Server **List API** added the attribute `list.back`
+- Fixed a bug in PackJ QUEST Setting charging
 
-[ _Envirroment Keys_ ]
-
-- **$PROMPT**: String at stdin
-- **$TITLE**: Current Terminal Title
-- **$QUERY**: What will be made with Query retrived data _nano_, _show_ or **filename**
-
-[ _Libs & Modules_ ]
-
-The Lib files can be found at **/java/lib** folder and it contains the example Modules added by default in OpenTTY Package
-
-- `/java/lib/yang`: Package Manager (Beta)
-- `/java/lib/netkit`: Basic Network Tools UI
-- `/java/lib/settings`: Basic Settings Menu
-
-[ _Notes_ ]
-
-- in futher updates command `rnano` will be replaced officialy by touch to clear nanoContent
-- the **yang** package repository isn't complete, I will update it later with new libraries
-
-
-For use **Yang (PackJ)** you will need to host your own _OpenTTY API Server_ you can download the server files
-below, or see the [Oficial Github Repository](https://github.com/mrlima4095/OpenTTY-Repo) if it is important to you.
-
-Note that the _OpenTTY Server_ requires **Python 3.8** or later installed to run. 
-Read more at the resource README.md
