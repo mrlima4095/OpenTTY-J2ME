@@ -8,4 +8,8 @@ Copyright (C) 2024 - Mr. Lima
 - X Server **List API** added attribute `list.back`
 - X Server **Screen API** added attribute `screen.back.label` 
 - Fixed a bug in PackJ QUEST Setting charging
-- Added new package **Armitage**
+- Added new packages **Armitage** and **JBenchmark**
+
+[ _Notes_ ]
+
+- If you want run a Network Tool in background or any command try add prefix `bg` after the command
