@@ -30,7 +30,6 @@ OpenTTY is a terminal emulator for mobile phones that support J2ME (Java 2 Micro
 
 ### Basic Commands
 
-- `ls`: Lists files in the current directory.
 - `cd [directory]`: Changes the current directory.
 - `exit`: Exits the terminal.
 - `echo [text]`: Displays a line of text or variables.
