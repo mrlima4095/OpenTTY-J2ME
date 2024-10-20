@@ -5,50 +5,21 @@ Copyright (C) 2024 - Mr. Lima
 [ Commands Overview ]
 
 Network Utilities:
-  netstat   - Show network status
-  nc        - Connect (e.g., nc [host] [port])
-  query     - Query network resources
-  fw        - Request IP Info
-  ping      - Ping a network host
-  curl      - Get data from a server
-  wget      - Save pages from the web
-  prscan    - Port scanner
-  server    - Run a simple server
-  genip     - Generate a random IP address
-  ifconfig  - Show local IP adress
-
+  netstat, nc, query, fw, ping
+  curl, wget, prscan, server
+  genip, ifconfig
+  
 File Utilities:
-  nano      - Text editor
-  pwd       - Show current directory
-  rm        - Remove a file
-  install   - Save files 
-  ls        - List resources
-  cat       - Show file content
-  cp        - Copy files
-  du        - Show file sizes
-  mount     - Mount a drive script
-  unmount   - Unmount file-system
-  find      - Get patterns in files
-  grep      - Search for patterns in files
-  touch     - Create or modify files
+  nano, html, pwd, rm, install
+  ls, cat, cp, du, mount, find
+  unmount, find, grep, touch
 
 General Utilities:
-  alias     - Create a command alias
-  clear     - Clear console screen
-  date      - Show the current date and time
-  echo      - Show a text in console
-  execute   - Execute multiple commands
-  exit      - Exit from OpenTTY
-  hostname  - Show Hostname
-  version   - Show OpenTTY version
-  uname     - Show System information
-  lock      - Lock OpenTTY console
-  logout    - Logout from the session
-  whoami    - Show the current user
-  history   - Show command history
+  alias, clear, date, execute
+  echo, exit, hostname, version
+  uname, lock, logout, whoami
 
 
-[ More Info ]
+[ Web Project ]
 
-Visit the OpenTTY project page:
 https://github.com/mrlima4095/OpenTTY-J2ME
