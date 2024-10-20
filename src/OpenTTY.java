@@ -77,12 +77,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Network Utilities
         else if (mainCommand.equals("nc")) { connect(argument); }
         else if (mainCommand.equals("query")) { query(argument); }
-        else if (mainCommand.equals("fw")) { fwCommand(argument); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); } 
         else if (mainCommand.equals("prscan")) { portScanner(argument); }
-        else if (mainCommand.equals("server")) { runServer(env("$PORT")); }
-        else if (mainCommand.equals("curl")) { echo(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); } 
+        else if (mainCommand.equals("server")) { runServer(env("$PORT")); } 
+        else if (mainCommand.equals("fw")) { echo(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
         else if (mainCommand.equals("genip")) { echoCommand(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256)); }
+        else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand((request(argument.startsWith("http://") && argument.startsWith("https://") ? argument : "http://" + argument)); } }
         else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument.startsWith("http://") && argument.startsWith("https://") ? argument : "http://" + argument); } }
         else if (mainCommand.equals("netstat")) { try { HttpConnection conn = (HttpConnection) Connector.open("http://ipinfo.io/ip"); conn.setRequestMethod(HttpConnection.GET); if (conn.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } conn.close(); } catch (Exception e) { echoCommand("false"); } }
         else if (mainCommand.equals("ifconfig")) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://8.8.8.8:53"); echoCommand(socketConnection.getLocalAddress()); socketConnection.close(); } catch (IOException e) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://1.1.1.1:53"); echoCommand(socketConnection.getLocalAddress()); socketConnection.close(); } catch (IOException e) { echoCommand("null"); } } }
