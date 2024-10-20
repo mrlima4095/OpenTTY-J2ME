@@ -6,9 +6,13 @@ Copyright (C) 2024 - Mr. Lima
 - PackJ Package Manager 1.1 
 - Network tools now running in main Thread
 - X Server **List API** added attribute `list.back`
+- X Server **List API** added attribute `quest.back`
 - X Server **Screen API** added attribute `screen.back.label` 
 - Fixed a bug in PackJ QUEST Setting charging
 - Added new packages **Armitage** and **JBenchmark**
+- Explorer new buttons **Run Script** and **Import**
+- JSON Parser now recognize not conf format for conversion
+- Improved _help_ message
 
 [ _Notes_ ]
 
