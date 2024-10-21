@@ -1,6 +1,7 @@
 [ Config ]
 
 name=NetKit 
+name=NetKit
 version=1.0
 description=Network Center
 
@@ -16,11 +17,11 @@ quest.cmd=execute $TOOL $INPUT; unset TOOL; unset INPUT;
 quest.key=INPUT
 
 list.title=NetKit Tools
-list.content=Remote,IPConfig,Port Scanner,Ping Test,Server
+list.content=Remote,IP Adress,Port Scanner,Ping Test,Run Server
 
 Remote=execute set TOOL=nc; x11 quest /java/lib/netkit;
-IPConfig=execute fw ip;
+IP Adress=execute fw ip;
 Port Scanner=execute set TOOL=prscan; x11 quest /java/lib/netkit;
 Ping Test=execute set TOOL=ping; x11 quest /java/lib/netkit;
-Server=execute server;
+Run Server=execute server;
 

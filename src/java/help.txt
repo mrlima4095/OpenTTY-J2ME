@@ -6,7 +6,7 @@ Copyright (C) 2024 - Mr. Lima
 
 Network Utilities:
   netstat, nc, query, fw, ping, curl
-  wget, prscan, server, genip, ifconfig
+  wget, prscan, server, ifconfig
   
 File Utilities:
   nano, html, json, dir, pwd, rm, cat
@@ -15,8 +15,8 @@ File Utilities:
 
 General Utilities:
   alias, about, clear, date, echo, exit
-  execute, env, hostname, version, lock
-  logout, whoami, uname, tty, version
+  execute, env, hostname, version
+  logout, whoami, uname, tty
 
 
 [ Web Project ]
