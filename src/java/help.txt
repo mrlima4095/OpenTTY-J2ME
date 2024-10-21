@@ -5,19 +5,18 @@ Copyright (C) 2024 - Mr. Lima
 [ Commands Overview ]
 
 Network Utilities:
-  netstat, nc, query, fw, ping
-  curl, wget, prscan, server
-  genip, ifconfig
+  netstat, nc, query, fw, ping, curl
+  wget, prscan, server, genip, ifconfig
   
 File Utilities:
-  nano, html, pwd, rm, install
-  ls, cat, cp, du, mount, find
-  unmount, find, grep, touch
+  nano, html, json, dir, pwd, rm, cat
+  ls, install, cp, du, mount, unmount
+  find, grep, touch, hash
 
 General Utilities:
-  alias, clear, date, execute
-  echo, exit, hostname, version
-  uname, lock, logout, whoami
+  alias, about, clear, date, echo, exit
+  execute, env, hostname, version, lock
+  logout, whoami, uname, tty, version
 
 
 [ Web Project ]

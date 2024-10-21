@@ -12,7 +12,6 @@ Copyright (C) 2024 - Mr. Lima
 - Added new packages **Armitage** and **JBenchmark**
 - Explorer new buttons **Run Script** and **Import**
 - JSON Parser now recognize not conf format for conversion
-- Quest Screens now with reversed button
 - Improved _help_ message
 
 [ _Notes_ ]
