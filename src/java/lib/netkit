@@ -1,6 +1,5 @@
 [ Config ]
 
-name=NetKit 
 name=NetKit
 version=1.0
 description=Network Center

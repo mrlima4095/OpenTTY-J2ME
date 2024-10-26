@@ -80,10 +80,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ping")) { pingCommand(argument); } 
         else if (mainCommand.equals("prscan")) { portScanner(argument); }
         else if (mainCommand.equals("server")) { runServer(env("$PORT")); }
+        else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand(request(argument)); } }
+        else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument); } }
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
         else if (mainCommand.equals("genip")) { echoCommand(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256)); }
-        else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand(request(argument.startsWith("http://") && argument.startsWith("https://") ? argument : "http://" + argument)); } }
-        else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument.startsWith("http://") && argument.startsWith("https://") ? argument : "http://" + argument); } }
         else if (mainCommand.equals("netstat")) { try { HttpConnection conn = (HttpConnection) Connector.open("http://ipinfo.io/ip"); conn.setRequestMethod(HttpConnection.GET); if (conn.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } conn.close(); } catch (Exception e) { echoCommand("false"); } }
         else if (mainCommand.equals("ifconfig")) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://8.8.8.8:53"); echoCommand(socketConnection.getLocalAddress()); socketConnection.close(); } catch (IOException e) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://1.1.1.1:53"); echoCommand(socketConnection.getLocalAddress()); socketConnection.close(); } catch (IOException e) { echoCommand("null"); } } }
         
@@ -152,6 +152,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("time")) { echoCommand(split(new java.util.Date().toString(), ' ')[3]); }
         else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
+        else if (mainCommand.equals("trim")) { console.setText(console.getText().trim()); }
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
         else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
         else if (mainCommand.equals("uname")) { echoCommand(env("$TYPE $CONFIG $PROFILE")); }
@@ -165,6 +166,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { importScript(argument); }
 
+        else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
+        else if (mainCommand.equals("lima")) { warnCommand("Congratulations!", "October 28th - Mr Lima Birthday!") }
+        //else if (mainCommand.equals("")) {  }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
@@ -234,7 +238,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else { echoCommand("x11: " + mainCommand + ": not found"); }
     }
     private void MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { if (argument.equals("")) { return; } else if (getCommand(argument).toLowerCase().equals("info")) { if (!getArgument(command).equals("")) { logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("warn")) { if (!getArgument(command).equals("")) { logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("debug")) { if (!getArgument(command).equals("")) { logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("error")) { if (!getArgument(command).equals("")) { logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": level not found"); } } else { echoCommand("log: " + mainCommand + ": not found"); } }
-
     
     // Lib API Service
     private void importScript(String script) {

@@ -17,12 +17,13 @@ quest.key=REPO
 [ Index ]
 
 list.title=Repository
-list.content=Armitage,Forge,JBuntu,JBenchmark,PackJ (Update),Updater
+list.content=Armitage,Forge,JBuntu,JBenchmark,SmartME SDK,PackJ (Update),Updater
 
 Armitage=execute set OLD_QUERY=$QUERY; set QUERY=armitage; query $REPO get lib/armitage; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 Forge=execute set OLD_QUERY=$QUERY; set QUERY=forge; query $REPO get lib/forge; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 JBuntu=execute set OLD_QUERY=$QUERY; set QUERY=jbuntu; query $REPO get lib/jbuntu; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 JBenchmark=execute set OLD_QUERY=$QUERY; set QUERY=debuggers; query $REPO get lib/debuggers; set QUERY=$OLD_QUERY; unset OLD_QUERY;
+SmartME SDK=execute set OLD_QUERY=$QUERY; set QUERY=sdkme; query $REPO get lib/smartme; set QUERY=forge; query $REPO get lib/forge; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 PackJ (Update)=execute set OLD_QUERY=$QUERY; set QUERY=yang; query $REPO get lib/yang; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 Updater=execute set OLD_QUERY=$QUERY; set QUERY=sync; query $REPO get lib/sync; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 
