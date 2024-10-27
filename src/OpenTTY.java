@@ -305,7 +305,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         protected void keyPressed(int keyCode) {
-            display.setCurrent(form)
+            display.setCurrent(form);
         }
     }
 }
