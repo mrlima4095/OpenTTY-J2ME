@@ -262,14 +262,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("command")) { String[] command = split((String) lib.get("command"), ','); for (int i = 0; i < command.length; i++) { if (lib.containsKey(command[i])) { aliases.put(command[i], env((String) lib.get(command[i]))); } else { MIDletLogs("add error failed to create command '" + command[i] + "' content not found"); } } }
         if (lib.containsKey("file")) { String[] file = split((String) lib.get("file"), ','); for (int i = 0; i < file.length; i++) { if (lib.containsKey(file[i])) { writeRMS(file[i], env((String) lib.get(file[i]))); } else { MIDletLogs("add error failed to create file '" + file[i] + "' content not found"); } } }
         
+        if (lib.containsKey("shell.name") && lib.containsKey("shell.args")) { build(lib); }
+
     }
     private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2024 - Mr. Lima")); return; } if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); } Hashtable lib = parseProperties(script); if (lib.containsKey("name")) { echoCommand((String) lib.get("name") + " " + (String) lib.get("version")); } if (lib.containsKey("description")) { echoCommand((String) lib.get("description")); } }
     private void build(Hashtable lib) {
         String name = null;
         String[] args = null;
 
-        if (lib.containsKey("shell.name")) { name = (String) lib.get("shell.name"); }
-        if (lib.containsKey("shell.args")) { args = split((String) lib.get("shell.args"), ' '); }
+        name = (String) lib.get("shell.name");
+        args = split((String) lib.get("shell.args"), ' ');
 
         if (name != null && args != null) {
             Hashtable shellTable = new Hashtable();
