@@ -152,7 +152,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("time")) { echoCommand(split(new java.util.Date().toString(), ' ')[3]); }
         else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
-        else if (mainCommand.equals("trim")) { console.setText(console.getText().trim()); }
+        else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
         else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
         else if (mainCommand.equals("uname")) { echoCommand(env("$TYPE $CONFIG $PROFILE")); }
@@ -167,7 +167,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
-        else if (mainCommand.equals("lima")) { warnCommand("Congratulations!", "October 28th - Mr Lima Birthday!") }
+        else if (mainCommand.equals("lima")) { warnCommand("Congratulations!", "October 28th - Mr Lima Birthday!"); }
         //else if (mainCommand.equals("")) {  }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
