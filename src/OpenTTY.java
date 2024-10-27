@@ -267,11 +267,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2024 - Mr. Lima")); return; } if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); } Hashtable lib = parseProperties(script); if (lib.containsKey("name")) { echoCommand((String) lib.get("name") + " " + (String) lib.get("version")); } if (lib.containsKey("description")) { echoCommand((String) lib.get("description")); } }
     private void build(Hashtable lib) {
-        String name = null;
-        String[] args = null;
-
-        name = (String) lib.get("shell.name");
-        args = split((String) lib.get("shell.args"), ' ');
+        String name = (String) lib.get("shell.name");
+        String[] args = split((String) lib.get("shell.args"), ',');
 
         if (name != null && args != null) {
             Hashtable shellTable = new Hashtable();
