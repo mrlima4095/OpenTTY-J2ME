@@ -267,7 +267,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             // Lista os diretórios raiz
-            private void listRoots() {
+            public void listRoots() {
                 files.deleteAll();
                 try {
                     Enumeration roots = FileSystemRegistry.listRoots();
