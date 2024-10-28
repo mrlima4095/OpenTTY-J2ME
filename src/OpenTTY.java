@@ -124,6 +124,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
         else if (mainCommand.equals("break")) { app = false; }
         else if (mainCommand.equals("call")) { callCommand(argument); }
+        else if (mainCommand.equals("class")) { echoCommand(getClass().getName()); }
         else if (mainCommand.equals("clear") || mainCommand.equals("cls")) { stdout.setText(""); } 
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); } 
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
@@ -239,7 +240,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Image image; 
             if (argument.equals("")) { }
             if (argument.startsWith("/")) { image = Image.createImage(argument); } 
-            else if (argument.equals("nano")) { image = nanoContent; } 
+            else if (argument.equals("nano")) { image = Image.createImage(nanoContent); } 
             else { try { image = Image.createImage(RecordStore.openRecordStore(argument, false).getRecord(1)); } catch (Exception e) { } }
 
             display.setCurrent(new Canvas() { protected void paint(Graphics g) { g.setColor(255, 255, 255); g.fillRect(0, 0, getWidth(), getHeight()); if (image != null) { int x = (getWidth() - image.getWidth()) / 2; int y = (getHeight() - image.getHeight()) / 2; g.drawImage(image, x, y, Graphics.TOP | Graphics.LEFT); } } protected void keyPressed(int keyCode) { display.setCurrent(form); } }); 
