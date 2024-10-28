@@ -295,3 +295,121 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void portScanner(final String host) { if (host == null || host.length() == 0) { return; } final List ports = new List(host + " Ports", List.IMPLICIT); ports.addCommand(new Command("Connect", Command.OK, 1)); ports.addCommand(new Command("Back", Command.BACK, 2)); ports.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.OK) { connect(host + ":" + ports.getString(ports.getSelectedIndex())); } else if (c.getCommandType() == Command.BACK) { display.setCurrent(form); } } }); display.setCurrent(ports); new Thread(new Runnable() { public void run() { for (int port = 1; port <= 65535; port++) { try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); ports.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } } }).start(); }
     
 }
+
+
+public class FileExplorer extends List implements CommandListener {
+    private String currentPath = "file:///";
+    private Display display;
+    private Command openCommand;
+    private Command backCommand;
+    private Command exitCommand;
+    private Command viewCommand;
+
+    public FileExplorer(Display display) {
+        super("File Explorer", List.IMPLICIT);
+        this.display = display;
+
+        openCommand = new Command("Open", Command.OK, 1);
+        backCommand = new Command("Back", Command.BACK, 1);
+        exitCommand = new Command("Exit", Command.EXIT, 1);
+        viewCommand = new Command("View", Command.ITEM, 1);
+
+        addCommand(openCommand);
+        addCommand(backCommand);
+        addCommand(exitCommand);
+        addCommand(viewCommand);
+        setCommandListener(this);
+
+        listFiles(currentPath);
+    }
+
+    private void listFiles(String path) {
+        deleteAll();
+        try {
+            if (path.equals("file:///")) {
+                Enumeration roots = FileSystemRegistry.listRoots();
+                while (roots.hasMoreElements()) {
+                    append((String) roots.nextElement(), null);
+                }
+            } else {
+                FileConnection dir = (FileConnection) Connector.open(path, Connector.READ);
+                Enumeration files = dir.list();
+
+                Vector dirs = new Vector();
+                Vector filesOnly = new Vector();
+
+                while (files.hasMoreElements()) {
+                    String fileName = (String) files.nextElement();
+                    if (fileName.endsWith("/")) {
+                        dirs.addElement(fileName);
+                    } else {
+                        filesOnly.addElement(fileName);
+                    }
+                }
+
+                while (!dirs.isEmpty()) {
+                    append(getFirstString(dirs), null);
+                }
+                while (!filesOnly.isEmpty()) {
+                    append(getFirstString(filesOnly), null);
+                }
+
+                dir.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String getFirstString(Vector v) {
+        String result = null;
+        for (int i = 0; i < v.size(); i++) {
+            String cur = (String) v.elementAt(i);
+            if (result == null || cur.compareTo(cur) < 0) {
+                result = cur;
+            }
+        }
+        v.removeElement(result);
+        return result;
+    }
+
+    public void commandAction(Command c, Displayable d) {
+        if (c == openCommand) {
+            String selected = getString(getSelectedIndex());
+            String newPath = currentPath + selected;
+            if (selected.endsWith("/")) {
+                currentPath = newPath;
+                listFiles(newPath);
+            } else {
+                showFileDetails(newPath);
+            }
+        } else if (c == backCommand) {
+            if (!currentPath.equals("file:///")) {
+                int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2);
+                if (lastSlash != -1) {
+                    currentPath = currentPath.substring(0, lastSlash + 1);
+                    listFiles(currentPath);
+                }
+            }
+        } else if (c == viewCommand) {
+            showFileDetails(currentPath + getString(getSelectedIndex()));
+        } else if (c == exitCommand) {
+            display.setCurrent(form);
+        }
+    }
+
+    private void showFileDetails(String filePath) {
+        try {
+            FileConnection fileConn = (FileConnection) Connector.open(filePath, Connector.READ);
+            String details = "Name: " + fileConn.getName() + "\n" +
+                             "Size: " + fileConn.fileSize() + " bytes\n" +
+                             "Path: " + fileConn.getURL();
+            Alert alert = new Alert("File Details", details, null, AlertType.INFO);
+            alert.setTimeout(Alert.FOREVER);
+            display.setCurrent(alert);
+            fileConn.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
