@@ -384,7 +384,7 @@ public class FileExplorer implements CommandListener {
             if (selectedIndex >= 0) {
                 String selected = files.getString(selectedIndex);
                 String newPath = currentPath + selected;
-                if (selected.endsWith("/")) {  // Se é um diretório
+                if (selected.endsWith("/")) {  
                     currentPath = newPath;
                     listFiles(newPath);
                 } else {  // Se é um arquivo
@@ -423,7 +423,7 @@ public class FileExplorer implements CommandListener {
             
         }
     }
-    private void getfile(String filePath) {
+    private String getfile(String filePath) {
         try {
             FileConnection fileConn = (FileConnection) Connector.open(filePath, Connector.READ);
             InputStream is = fileConn.openInputStream();
