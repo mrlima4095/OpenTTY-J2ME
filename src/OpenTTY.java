@@ -328,7 +328,6 @@ public class FileExplorer {
     }
 
     private void listFiles(String path) {
-        deleteAll();
         try {
             if (path.equals("file:///")) {
                 Enumeration roots = FileSystemRegistry.listRoots();
