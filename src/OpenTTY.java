@@ -33,7 +33,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (!app == true) {
             mount(read("/java/bin/fstab")); stdin.setLabel(username + " " + path + " $"); app = true;
             
-            attributes.put("PATCH", "The Revolution"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "mod"); attributes.put("XVERSION", "0.5");
+            attributes.put("PATCH", "Special"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.5");
             attributes.put("TTY", "/java/optty1"); attributes.put("HOSTNAME", "localhost"); attributes.put("PORT", "31522"); attributes.put("RESPONSE", "com.opentty.server"); attributes.put("QUERY", "nano");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             attributes.put("OUTPUT", "");  
@@ -105,6 +105,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : loadRMS(argument, 1))); }
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument + "\n" : nanoContent + "\n" + argument; }
         else if (mainCommand.equals("touch") || mainCommand.equals("rnano")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
+        else if (mainCommand.equals("fdisk")) { Enumeration roots = FileSystemRegistry.listRoots();
+            while (roots.hasMoreElements()) {
+                echoCommand((String) roots.nextElement());
+            } }
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand(read(argument)); } else { echoCommand(loadRMS(argument, 1)); } } }
         else if (mainCommand.equals("get")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { nanoContent = read(argument); } else { nanoContent = loadRMS(argument, 1); } } }
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), loadRMS(getCommand(argument), 1)); } }

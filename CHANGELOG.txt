@@ -1,22 +1,10 @@
-OpenTTY Java Edition 1.9.1
+OpenTTY Java Edition 1.10
 Copyright (C) 2024 - Mr. Lima
+
+[ _Commands_ ]
 
 [ _Updates_ ] 
 
-- PackJ Package Manager 1.1 
-- Network tools now running in main Thread
-- X Server **List API** added attribute `list.back`
-- X Server **List API** added attribute `quest.back`
-- X Server **Screen API** added attribute `screen.back.label` 
-- X Server **Canvas API** upadted to load images
-- Fixed a bug in PackJ QUEST Setting charging
-- Added new packages **Armitage** and **JBenchmark**
-- Explorer new buttons **Run Script** and **Import**
-- Beta API for Advanced command creation
-- JSON Parser now recognize not conf format for conversion
-- Lock screen dont warn more about wrong username
-- Improved _help_ message
-
 [ _Notes_ ]
 
-- If you want run a Network Tool in background or any command try add prefix `bg` after the command
+
