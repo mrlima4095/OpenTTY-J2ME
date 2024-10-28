@@ -173,7 +173,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
-        else if (mainCommand.equals("lima")) { warnCommand("Congratulations!", "October 28th - Mr Lima Birthday!"); }
+        else if (mainCommand.equals("dsf")) { externalAPI(); }
         //else if (mainCommand.equals("")) {  }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
@@ -230,11 +230,83 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void externalAPI() {
         final List files = new List(form.getTitle(), List.IMPLICIT);
         final Command open = new Command("Open", Command.OK, 2);
+        final Command back = new Command("Back", Command.BACK, 1);
+        
+        files.addCommand(back);
+        files.addCommand(open);
+        files.setCommandListener(new CommandListener() {
+            private String currentPath = ""; // Caminho atual
 
-        files.addCommand(new Command("Back", Command.BACK, 1)); files.addCommand(open); 
-        files.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.BACK) { display.setCurrent(form); } else if (c == open) { display.setCurrent(form); importScript(files.getString(files.getSelectedIndex())); } } } } }); 
+            public void commandAction(Command c, Displayable d) {
+                if (c == back) {
+                    // Voltar para o diretório anterior ou listar os roots
+                    if (currentPath.equals("")) {
+                        listRoots();
+                    } else {
+                        // Navega para o diretório anterior
+                        int lastSlashIndex = currentPath.lastIndexOf('/', currentPath.length() - 2);
+                        String parentPath = lastSlashIndex > 0 ? currentPath.substring(0, lastSlashIndex + 1) : "";
+                        listDirectory(parentPath);
+                    }
+                } else if (c == open) {
+                    int index = files.getSelectedIndex();
+                    if (index >= 0) {
+                        String selected = files.getString(index);
+                        String newPath = currentPath + selected;
 
+                        if (selected.endsWith("/")) {
+                            // Navega para o diretório
+                            listDirectory(newPath);
+                        } else {
+                            // Abre o arquivo selecionado
+                            display.setCurrent(form);
+                            importScript(newPath); // Abre o arquivo usando `importScript`
+                        }
+                    }
+                }
+            }
+
+            // Lista os diretórios raiz
+            private void listRoots() {
+                files.deleteAll();
+                try {
+                    Enumeration roots = FileSystemRegistry.listRoots();
+                    while (roots.hasMoreElements()) {
+                        String root = (String) roots.nextElement();
+                        files.append(root, null);
+                    }
+                    currentPath = ""; // Limpa o caminho atual
+                    display.setCurrent(files);
+                } catch (Exception e) {
+                    
+                }
+            }
+
+            // Lista os arquivos e diretórios em um caminho específico
+            private void listDirectory(String path) {
+                files.deleteAll();
+                try {
+                    FileConnection dir = (FileConnection) Connector.open("file:///" + path);
+                    Enumeration fileEnum = dir.list();
+                    while (fileEnum.hasMoreElements()) {
+                        String fileName = (String) fileEnum.nextElement();
+                        files.append(fileName, null);
+                    }
+                    currentPath = path; // Atualiza o caminho atual
+                    dir.close();
+                    display.setCurrent(files);
+                } catch (IOException e) {
+                    
+                }
+            }
+
+            
+        });
+
+        // Começa listando os roots
+        listRoots();
     }
+
 
     // MIDlet Services Command Processor 
     private void xserver(String command) {
