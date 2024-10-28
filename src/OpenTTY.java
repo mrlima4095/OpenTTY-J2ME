@@ -328,11 +328,12 @@ public class FileExplorer {
     }
 
     private void listFiles(String path) {
+        files.deleteAll();
         try {
             if (path.equals("file:///")) {
                 Enumeration roots = FileSystemRegistry.listRoots();
                 while (roots.hasMoreElements()) {
-                    append((String) roots.nextElement(), null);
+                    files.append((String) roots.nextElement(), null);
                 }
             } else {
                 FileConnection dir = (FileConnection) Connector.open(path, Connector.READ);
@@ -351,10 +352,10 @@ public class FileExplorer {
                 }
 
                 while (!dirs.isEmpty()) {
-                    append(getFirstString(dirs), null);
+                    files.append(getFirstString(dirs), null);
                 }
                 while (!filesOnly.isEmpty()) {
-                    append(getFirstString(filesOnly), null);
+                    files.append(getFirstString(filesOnly), null);
                 }
 
                 dir.close();
