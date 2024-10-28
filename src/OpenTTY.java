@@ -232,7 +232,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command open = new Command("Open", Command.OK, 2);
         private Command back = new Command("Back", Command.BACK, 1);
         
-        private void externalAPI() {
+        public void externalAPI() {
         files.addCommand(back);
         files.addCommand(open);
         files.setCommandListener(new CommandListener() {
@@ -261,7 +261,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } }); display.setCurrent(files); listRoots();
 
         // Lista os diretórios raiz
-        public void listRoots() {
+        private void listRoots() {
             files.deleteAll();
             try {
                 Enumeration roots = FileSystemRegistry.listRoots();
