@@ -227,7 +227,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void install(String filename) { if (filename == null || filename.length() == 0) { return; } writeRMS(filename, nanoContent); }
     private void explorer() { final List files = new List(form.getTitle(), List.IMPLICIT); final Command open = new Command("Open", Command.OK, 2); final Command delete = new Command("Delete", Command.OK, 3); final Command run = new Command("Run Script", Command.OK, 4); final Command importfile = new Command("Import File", Command.OK, 5); try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { files.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } files.addCommand(new Command("Back", Command.BACK, 1)); files.addCommand(open); files.addCommand(delete); files.addCommand(run); files.addCommand(importfile); files.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.BACK) { display.setCurrent(form); } else if (c == delete) { deleteFile(files.getString(files.getSelectedIndex())); explorer(); } else if (c == open) { nano(files.getString(files.getSelectedIndex())); } else if (c == run) { display.setCurrent(form); runScript(files.getString(files.getSelectedIndex())); } else if (c == importfile) { display.setCurrent(form); importScript(files.getString(files.getSelectedIndex())); } } }); display.setCurrent(files); }
     
-    private void externalAPI() {
+    private class externalAPI() {
         final List files = new List(form.getTitle(), List.IMPLICIT);
         final Command open = new Command("Open", Command.OK, 2);
         final Command back = new Command("Back", Command.BACK, 1);
@@ -253,57 +253,46 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (index >= 0) {
                         String selected = files.getString(index);
                         String newPath = currentPath + selected;
-
-                        if (selected.endsWith("/")) {
-                            // Navega para o diretório
-                            listDirectory(newPath);
-                        } else {
-                            // Abre o arquivo selecionado
-                            display.setCurrent(form);
-                            importScript(newPath); // Abre o arquivo usando `importScript`
+                        listDirectory(newPath);
+                        
                         }
                     }
+                } });
+
+        // Lista os diretórios raiz
+        public void listRoots() {
+            files.deleteAll();
+            try {
+                Enumeration roots = FileSystemRegistry.listRoots();
+                while (roots.hasMoreElements()) {
+                    String root = (String) roots.nextElement();
+                    files.append(root, null);
                 }
+                currentPath = ""; // Limpa o caminho atual
+                display.setCurrent(files);
+            } catch (Exception e) {
+                
             }
+        }
 
-            // Lista os diretórios raiz
-            public void listRoots() {
-                files.deleteAll();
-                try {
-                    Enumeration roots = FileSystemRegistry.listRoots();
-                    while (roots.hasMoreElements()) {
-                        String root = (String) roots.nextElement();
-                        files.append(root, null);
-                    }
-                    currentPath = ""; // Limpa o caminho atual
-                    display.setCurrent(files);
-                } catch (Exception e) {
-                    
+        // Lista os arquivos e diretórios em um caminho específico
+        private void listDirectory(String path) {
+            files.deleteAll();
+            try {
+                FileConnection dir = (FileConnection) Connector.open("file:///" + path);
+                Enumeration fileEnum = dir.list();
+                while (fileEnum.hasMoreElements()) {
+                    String fileName = (String) fileEnum.nextElement();
+                    files.append(fileName, null);
                 }
+                currentPath = path; // Atualiza o caminho atual
+                dir.close();
+                display.setCurrent(files);
+            } catch (IOException e) {
+                
             }
+        }
 
-            // Lista os arquivos e diretórios em um caminho específico
-            private void listDirectory(String path) {
-                files.deleteAll();
-                try {
-                    FileConnection dir = (FileConnection) Connector.open("file:///" + path);
-                    Enumeration fileEnum = dir.list();
-                    while (fileEnum.hasMoreElements()) {
-                        String fileName = (String) fileEnum.nextElement();
-                        files.append(fileName, null);
-                    }
-                    currentPath = path; // Atualiza o caminho atual
-                    dir.close();
-                    display.setCurrent(files);
-                } catch (IOException e) {
-                    
-                }
-            }
-
-            
-        });
-
-        // Começa listando os roots
         listRoots();
     }
 
