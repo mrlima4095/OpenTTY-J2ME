@@ -173,7 +173,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
-        else if (mainCommand.equals("")) { display.setCurrent(new FileExplorer(display)); }
+        else if (mainCommand.equals("")) { new FileExplorer(display, form); }
         //else if (mainCommand.equals("")) {  }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
@@ -298,29 +298,32 @@ public class OpenTTY extends MIDlet implements CommandListener {
 }
 
 
-public class FileExplorer extends List implements CommandListener {
+public class FileExplorer {
     private String currentPath = "file:///";
     private Display display;
+    private List files
     private Command openCommand;
     private Command backCommand;
     private Command exitCommand;
     private Command viewCommand;
 
-    public FileExplorer(Display display) {
-        super("File Explorer", List.IMPLICIT);
+    public FileExplorer(Display display, Form form) {
+        files = new List("File Explorer", List.IMPLICIT);
         this.display = display;
+        this.form = form;
 
         openCommand = new Command("Open", Command.OK, 1);
         backCommand = new Command("Back", Command.BACK, 1);
         exitCommand = new Command("Exit", Command.EXIT, 1);
         viewCommand = new Command("View", Command.ITEM, 1);
 
-        addCommand(openCommand);
-        addCommand(backCommand);
-        addCommand(exitCommand);
-        addCommand(viewCommand);
-        setCommandListener(this);
+        files.addCommand(openCommand);
+        files.addCommand(backCommand);
+        files.addCommand(exitCommand);
+        files.addCommand(viewCommand);
+        files.setCommandListener(this);
 
+        display.setCurrent(files);
         listFiles(currentPath);
     }
 
@@ -358,7 +361,7 @@ public class FileExplorer extends List implements CommandListener {
                 dir.close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            
         }
     }
 
@@ -410,7 +413,7 @@ public class FileExplorer extends List implements CommandListener {
             display.setCurrent(alert);
             fileConn.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            
         }
     }
 }
