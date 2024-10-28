@@ -297,21 +297,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
 }
 
-
-public class FileExplorer {
+public class FileExplorer implements CommandListener {
     private String currentPath = "file:///";
     private Display display;
     private List files;
+    private Form form;
     private Command openCommand;
     private Command backCommand;
     private Command exitCommand;
     private Command viewCommand;
 
     public FileExplorer(Display display, Form form) {
-        files = new List("File Explorer", List.IMPLICIT);
         this.display = display;
         this.form = form;
 
+        files = new List("File Explorer", List.IMPLICIT);
+        
         openCommand = new Command("Open", Command.OK, 1);
         backCommand = new Command("Back", Command.BACK, 1);
         exitCommand = new Command("Exit", Command.EXIT, 1);
@@ -337,13 +338,13 @@ public class FileExplorer {
                 }
             } else {
                 FileConnection dir = (FileConnection) Connector.open(path, Connector.READ);
-                Enumeration files = dir.list();
+                Enumeration fileList = dir.list();
 
                 Vector dirs = new Vector();
                 Vector filesOnly = new Vector();
 
-                while (files.hasMoreElements()) {
-                    String fileName = (String) files.nextElement();
+                while (fileList.hasMoreElements()) {
+                    String fileName = (String) fileList.nextElement();
                     if (fileName.endsWith("/")) {
                         dirs.addElement(fileName);
                     } else {
@@ -379,13 +380,16 @@ public class FileExplorer {
 
     public void commandAction(Command c, Displayable d) {
         if (c == openCommand) {
-            String selected = getString(getSelectedIndex());
-            String newPath = currentPath + selected;
-            if (selected.endsWith("/")) {
-                currentPath = newPath;
-                listFiles(newPath);
-            } else {
-                showFileDetails(newPath);
+            int selectedIndex = files.getSelectedIndex();
+            if (selectedIndex >= 0) {
+                String selected = files.getString(selectedIndex);
+                String newPath = currentPath + selected;
+                if (selected.endsWith("/")) {  // Se é um diretório
+                    currentPath = newPath;
+                    listFiles(newPath);
+                } else {  // Se é um arquivo
+                    writeRMS(selected, getfile(newPath));
+                }
             }
         } else if (c == backCommand) {
             if (!currentPath.equals("file:///")) {
@@ -396,9 +400,12 @@ public class FileExplorer {
                 }
             }
         } else if (c == viewCommand) {
-            showFileDetails(currentPath + getString(getSelectedIndex()));
+            int selectedIndex = files.getSelectedIndex();
+            if (selectedIndex >= 0) {
+                showFileDetails(currentPath + files.getString(selectedIndex));
+            }
         } else if (c == exitCommand) {
-            display.setCurrent(form);
+            display.setCurrent(form); // Retorna para a tela anterior
         }
     }
 
@@ -416,4 +423,25 @@ public class FileExplorer {
             
         }
     }
+    private void getfile(String filePath) {
+        try {
+            FileConnection fileConn = (FileConnection) Connector.open(filePath, Connector.READ);
+            InputStream is = fileConn.openInputStream();
+            
+            // Leitura do conteúdo do arquivo
+            StringBuffer content = new StringBuffer();
+            int ch;
+            while ((ch = is.read()) != -1) {
+                content.append((char) ch);
+            }
+            is.close();
+            fileConn.close();
+            
+            return content.toString();
+        } catch (IOException e) {
+            return "";
+        }
+    }
+    private void writeRMS(String recordStoreName, String data) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
+    
 }
