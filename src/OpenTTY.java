@@ -301,7 +301,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 public class FileExplorer {
     private String currentPath = "file:///";
     private Display display;
-    private List files
+    private List files;
     private Command openCommand;
     private Command backCommand;
     private Command exitCommand;
