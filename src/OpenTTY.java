@@ -233,32 +233,32 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command back = new Command("Back", Command.BACK, 1);
         
         public void externalAPI() {
-        files.addCommand(back);
-        files.addCommand(open);
-        files.setCommandListener(new CommandListener() {
-            private String currentPath = ""; // Caminho atual
+            files.addCommand(back);
+            files.addCommand(open);
+            files.setCommandListener(new CommandListener() {
+                private String currentPath = ""; // Caminho atual
 
-            public void commandAction(Command c, Displayable d) {
-                if (c == back) {
-                    // Voltar para o diretório anterior ou listar os roots
-                    if (currentPath.equals("")) {
-                        listRoots();
-                    } else {
-                        // Navega para o diretório anterior
-                        int lastSlashIndex = currentPath.lastIndexOf('/', currentPath.length() - 2);
-                        String parentPath = lastSlashIndex > 0 ? currentPath.substring(0, lastSlashIndex + 1) : "";
-                        listDirectory(parentPath);
-                    }
-                } else if (c == open) {
-                    int index = files.getSelectedIndex();
-                    if (index >= 0) {
-                        String selected = files.getString(index);
-                        String newPath = currentPath + selected;
-                        listDirectory(newPath);
-                        
+                public void commandAction(Command c, Displayable d) {
+                    if (c == back) {
+                        // Voltar para o diretório anterior ou listar os roots
+                        if (currentPath.equals("")) {
+                            listRoots();
+                        } else {
+                            // Navega para o diretório anterior
+                            int lastSlashIndex = currentPath.lastIndexOf('/', currentPath.length() - 2);
+                            String parentPath = lastSlashIndex > 0 ? currentPath.substring(0, lastSlashIndex + 1) : "";
+                            listDirectory(parentPath);
                         }
-                    }
-                } }); display.setCurrent(files); listRoots();
+                    } else if (c == open) {
+                        int index = files.getSelectedIndex();
+                        if (index >= 0) {
+                            String selected = files.getString(index);
+                            String newPath = currentPath + selected;
+                            listDirectory(newPath);
+                            
+                            }
+                        }
+                    } }); display.setCurrent(files); listRoots(); }
 
         // Lista os diretórios raiz
         private void listRoots() {
@@ -295,7 +295,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         
-    } }
+    }
 
 
     // MIDlet Services Command Processor 
