@@ -297,9 +297,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
 }
 
 public class FileExplorer implements CommandListener {
-    private String currentPath = "file:///"; private Display display; private Form form;
+    private String currentPath = "file:///"; private Display display; private Form form; private List files;
 
-    public FileExplorer(Display display, Form form) { this.display = display; this.form = form; List files = new List(form.getTitle(), List.IMPLICIT); files.addCommand(new Command("Open", Command.OK, 1)); files.addCommand(new Command("Back", Command.BACK, 1)); files.setCommandListener(this); display.setCurrent(files); listFiles(currentPath); }
+    public FileExplorer(Display display, Form form) { 
+        this.display = display; 
+        this.form = form; 
+
+        List files = new List(form.getTitle(), List.IMPLICIT); 
+        files.addCommand(new Command("Open", Command.OK, 1)); files.addCommand(new Command("Back", Command.BACK, 1)); 
+        files.setCommandListener(this); display.setCurrent(files); listFiles(currentPath); 
+    }
 
     private void listFiles(String path) {
         files.deleteAll();
@@ -335,7 +342,7 @@ public class FileExplorer implements CommandListener {
                 dir.close();
             }
         } catch (IOException e) {
-            Alert alert = new Alert("", e.getMessage(), null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, form);
+            Alert alert = new Alert(null, e.getMessage(), null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, form);
         }
     }
 
@@ -352,7 +359,8 @@ public class FileExplorer implements CommandListener {
     }
 
     public void commandAction(Command c, Displayable d) {
-        if (c.getCommandType() == Command.OK) { int selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, getfile(newPath)); Alert alert = new Alert("", "File '" + selected + "' sucessfuly saved!", null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, files); } } 
+        if (c.getCommandType() == Command.OK) { i
+        nt selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, getfile(newPath)); Alert alert = new Alert(null, "File '" + selected + "' sucessfuly saved!", null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, files); } } 
         } else if (c.getCommandType() == Command.BACK) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { display.setCurrent(form); } } 
     }
     private String getfile(String filePath) {
