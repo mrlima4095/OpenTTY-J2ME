@@ -359,8 +359,8 @@ public class FileExplorer implements CommandListener {
     }
 
     public void commandAction(Command c, Displayable d) {
-        if (c.getCommandType() == Command.OK) { i
-        nt selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, getfile(newPath)); Alert alert = new Alert(null, "File '" + selected + "' sucessfuly saved!", null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, files); } } 
+        if (c.getCommandType() == Command.OK) { 
+        int selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, getfile(newPath)); Alert alert = new Alert(null, "File '" + selected + "' sucessfuly saved!", null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, files); } } 
         } else if (c.getCommandType() == Command.BACK) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { display.setCurrent(form); } } 
     }
     private String getfile(String filePath) {
