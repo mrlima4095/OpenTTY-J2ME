@@ -351,7 +351,7 @@ public class FileExplorer implements CommandListener {
                 dir.close();
             }
         } catch (IOException e) {
-            Alert alert = new Alert(null, e.getMessage(), null, alertType);
+            Alert alert = new Alert(null, e.getMessage(), null, AlertType.ERROR);
             alert.setTimeout(Alert.FOREVER);
             display.setCurrent(alert, form);
         }
