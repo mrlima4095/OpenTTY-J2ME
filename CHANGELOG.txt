@@ -3,8 +3,13 @@ Copyright (C) 2024 - Mr. Lima
 
 [ _Commands_ ]
 
+- `fdisk`: show system roots (file systems)
+
 [ _Updates_ ] 
 
-[ _Notes_ ]
+- File Explorer - Run `dir s` to open. It can be used to save files from System to OpenTTY 
+- Fixed a bug in _OpenTTY.explorer_ in **Run Script** button
+- Added in _PackJ_ repository more packages **X.Org 0.4**, **AutoPrompt**
 
+[ _Notes_ ]
 

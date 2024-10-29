@@ -224,7 +224,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void writeRMS(String recordStoreName, String data) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
     private void deleteFile(String filename) { if (filename == null || filename.length() == 0) { return; } try { RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } }
     private void install(String filename) { if (filename == null || filename.length() == 0) { return; } writeRMS(filename, nanoContent); }
-    private void explorer() { final List files = new List(form.getTitle(), List.IMPLICIT); final Command open = new Command("Open", Command.OK, 2); final Command delete = new Command("Delete", Command.OK, 3); final Command run = new Command("Run Script", Command.OK, 4); final Command importfile = new Command("Import File", Command.OK, 5); try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { files.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } files.addCommand(new Command("Back", Command.BACK, 1)); files.addCommand(open); files.addCommand(delete); files.addCommand(run); files.addCommand(importfile); files.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.BACK) { display.setCurrent(form); } else if (c == delete) { deleteFile(files.getString(files.getSelectedIndex())); explorer(); } else if (c == open) { nano(files.getString(files.getSelectedIndex())); } else if (c == run) { display.setCurrent(form); runScript(files.getString(files.getSelectedIndex())); } else if (c == importfile) { display.setCurrent(form); importScript(files.getString(files.getSelectedIndex())); } } }); display.setCurrent(files); }
+    private void explorer() { final List files = new List(form.getTitle(), List.IMPLICIT); final Command open = new Command("Open", Command.OK, 2); final Command delete = new Command("Delete", Command.OK, 3); final Command run = new Command("Run Script", Command.OK, 4); final Command importfile = new Command("Import File", Command.OK, 5); try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { files.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } files.addCommand(new Command("Back", Command.BACK, 1)); files.addCommand(open); files.addCommand(delete); files.addCommand(run); files.addCommand(importfile); files.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.BACK) { display.setCurrent(form); } else if (c == delete) { deleteFile(files.getString(files.getSelectedIndex())); explorer(); } else if (c == open) { processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == run) { display.setCurrent(form); runScript(files.getString(files.getSelectedIndex())); } else if (c == importfile) { display.setCurrent(form); importScript(files.getString(files.getSelectedIndex())); } } }); display.setCurrent(files); }
     
 
     // MIDlet Services Command Processor 
@@ -264,24 +264,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     }
     private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2024 - Mr. Lima")); return; } if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); } Hashtable lib = parseProperties(script); if (lib.containsKey("name")) { echoCommand((String) lib.get("name") + " " + (String) lib.get("version")); } if (lib.containsKey("description")) { echoCommand((String) lib.get("description")); } }
-    private void build(Hashtable lib) {
-        String name = (String) lib.get("shell.name");
-        String[] args = split((String) lib.get("shell.args"), ',');
-
-        if (name != null && args != null) {
-            Hashtable shellTable = new Hashtable();
-
-            for (int i = 0; i < args.length; i++) {
-                String argName = args[i].trim();
-                
-                String argValue = (String) lib.get(argName);
-
-                shellTable.put(argName, (argValue != null) ? argValue : "");
-            }
-
-            shell.put(name, shellTable);
-        } 
-    }
+    private void build(Hashtable lib) { String name = (String) lib.get("shell.name"); String[] args = split((String) lib.get("shell.args"), ','); Hashtable shellTable = new Hashtable(); for (int i = 0; i < args.length; i++) { String argName = args[i].trim(); String argValue = (String) lib.get(argName); shellTable.put(argName, (argValue != null) ? argValue : ""); } shell.put(name, shellTable); }
 
 
     // Login API Service
@@ -297,37 +280,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
 }
 
 public class FileExplorer implements CommandListener {
-    private String currentPath = "file:///";
-    private Display display;
-    private List files;
-    private Form form;
-    private Command openCommand, backCommand;
+    private String currentPath = "file:///"; private Display display; private List files; private Form form; private Command openCommand, backCommand;
 
     public FileExplorer(Display display, Form form) {
-        this.display = display;
-        this.form = form;
+        this.display = display; this.form = form; 
         files = new List(form.getTitle(), List.IMPLICIT);
 
-        openCommand = new Command("Open", Command.OK, 1);
-        backCommand = new Command("Back", Command.BACK, 1);
+        openCommand = new Command("Open", Command.OK, 1); backCommand = new Command("Back", Command.BACK, 1);
 
-        files.addCommand(openCommand);
-        files.addCommand(backCommand);
-        files.setCommandListener(this);
+        files.addCommand(openCommand); files.addCommand(backCommand); files.setCommandListener(this);
 
-        display.setCurrent(files);
-        listFiles(currentPath);
+        display.setCurrent(files); listFiles(currentPath);
     }
 
     private void listFiles(String path) {
         files.deleteAll();
         try {
-            if (path.equals("file:///")) {
-                Enumeration roots = FileSystemRegistry.listRoots();
-                while (roots.hasMoreElements()) {
-                    files.append((String) roots.nextElement(), null);
-                }
-            } else {
+            if (path.equals("file:///")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { files.append((String) roots.nextElement(), null); } } 
+            else { 
                 FileConnection dir = (FileConnection) Connector.open(path, Connector.READ);
                 Enumeration fileList = dir.list();
 
@@ -336,39 +306,17 @@ public class FileExplorer implements CommandListener {
 
                 while (fileList.hasMoreElements()) {
                     String fileName = (String) fileList.nextElement();
-                    if (fileName.endsWith("/")) {
-                        dirs.addElement(fileName);
-                    } else {
-                        filesOnly.addElement(fileName);
-                    }
+                    if (fileName.endsWith("/")) { dirs.addElement(fileName); } else { filesOnly.addElement(fileName); }
                 }
 
-                while (!dirs.isEmpty()) {
-                    files.append(getFirstString(dirs), null);
-                }
-                while (!filesOnly.isEmpty()) {
-                    files.append(getFirstString(filesOnly), null);
-                }
+                while (!dirs.isEmpty()) { files.append(getFirstString(dirs), null); }
+                while (!filesOnly.isEmpty()) { files.append(getFirstString(filesOnly), null); }
                 dir.close();
             }
-        } catch (IOException e) {
-            Alert alert = new Alert(null, e.getMessage(), null, AlertType.ERROR);
-            alert.setTimeout(Alert.FOREVER);
-            display.setCurrent(alert, form);
-        }
+        } catch (IOException e) { }
     }
 
-    private static String getFirstString(Vector v) {
-        String result = null;
-        for (int i = 0; i < v.size(); i++) {
-            String cur = (String) v.elementAt(i);
-            if (result == null || cur.compareTo(cur) < 0) {
-                result = cur;
-            }
-        }
-        v.removeElement(result);
-        return result;
-    }
+    private static String getFirstString(Vector v) { String result; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(cur) < 0) { result = cur; } } v.removeElement(result); return result; }
 
     public void commandAction(Command c, Displayable d) {
         if (c == openCommand) {
@@ -376,45 +324,18 @@ public class FileExplorer implements CommandListener {
             if (selectedIndex >= 0) {
                 String selected = files.getString(selectedIndex);
                 String newPath = currentPath + selected;
-                if (selected.endsWith("/")) {  
-                    currentPath = newPath;
-                    listFiles(newPath);
+                if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath);
                 } else {
-                    writeRMS(selected, getFileContent(newPath));
+                    writeRMS(selected, read(newPath));
                     Alert alert = new Alert(null, "File '" + selected + "' successfully saved!", null, AlertType.INFO);
                     alert.setTimeout(Alert.FOREVER);
                     display.setCurrent(alert);
                 }
             }
-        } else if (c == backCommand) {
-            if (!currentPath.equals("file:///")) {
-                int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2);
-                if (lastSlash != -1) {
-                    currentPath = currentPath.substring(0, lastSlash + 1);
-                    listFiles(currentPath);
-                }
-            } else { display.setCurrent(form); }
-        } 
+        } else if (c == backCommand) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { display.setCurrent(form); } } 
     }
 
-    private String getFileContent(String filePath) {
-        try {
-            FileConnection fileConn = (FileConnection) Connector.open(filePath, Connector.READ);
-            InputStream is = fileConn.openInputStream();
-
-            StringBuffer content = new StringBuffer();
-            int ch;
-            while ((ch = is.read()) != -1) {
-                content.append((char) ch);
-            }
-            is.close();
-            fileConn.close();
-
-            return content.toString();
-        } catch (IOException e) {
-            return "";
-        }
-    }
+    private String read(String file) { try { FileConnection fileConn = (FileConnection) Connector.open(file, Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return content.toString(); } catch (IOException e) { return ""; } }
 
     private void writeRMS(String recordStoreName, String data) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
 
