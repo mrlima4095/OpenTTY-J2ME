@@ -300,6 +300,7 @@ public class FileExplorer implements CommandListener {
     private String currentPath = "file:///";
     private Display display;
     private List files;
+    private Form form;
     private Command openCommand, backCommand;
 
     public FileExplorer(Display display, Form form) {
