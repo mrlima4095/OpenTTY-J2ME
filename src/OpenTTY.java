@@ -304,7 +304,7 @@ public class FileExplorer implements CommandListener {
 
     public FileExplorer(Display display, Form form) {
         this.display = display;
-        this.form = form
+        this.form = form;
         files = new List(form.getTitle(), List.IMPLICIT);
 
         openCommand = new Command("Open", Command.OK, 1);
