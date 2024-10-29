@@ -412,7 +412,6 @@ public class FileExplorer implements CommandListener {
 
             return content.toString();
         } catch (IOException e) {
-            showAlert("Error", e.getMessage(), AlertType.ERROR);
             return "";
         }
     }
