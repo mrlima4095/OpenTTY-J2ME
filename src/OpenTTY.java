@@ -297,15 +297,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
 }
 
 public class FileExplorer implements CommandListener {
-    private String currentPath = "file:///"; private Display display; private Form form; private List files;
+    private String currentPath = "file:///";
+    private Display display;
+    private List files;
+    private Command openCommand, backCommand;
 
-    public FileExplorer(Display display, Form form) { 
-        this.display = display; 
-        this.form = form; 
+    public FileExplorer(Display display, Form form) {
+        this.display = display;
+        this.form = form
+        files = new List(form.getTitle(), List.IMPLICIT);
 
-        List files = new List(form.getTitle(), List.IMPLICIT); 
-        files.addCommand(new Command("Open", Command.OK, 1)); files.addCommand(new Command("Back", Command.BACK, 1)); 
-        files.setCommandListener(this); display.setCurrent(files); listFiles(currentPath); 
+        openCommand = new Command("Open", Command.OK, 1);
+        backCommand = new Command("Back", Command.BACK, 1);
+
+        files.addCommand(openCommand);
+        files.addCommand(backCommand);
+        files.setCommandListener(this);
+
+        display.setCurrent(files);
+        listFiles(currentPath);
     }
 
     private void listFiles(String path) {
@@ -338,11 +348,12 @@ public class FileExplorer implements CommandListener {
                 while (!filesOnly.isEmpty()) {
                     files.append(getFirstString(filesOnly), null);
                 }
-
                 dir.close();
             }
         } catch (IOException e) {
-            Alert alert = new Alert(null, e.getMessage(), null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, form);
+            Alert alert = new Alert(null, e.getMessage(), null, alertType);
+            alert.setTimeout(Alert.FOREVER);
+            display.setCurrent(alert, form);
         }
     }
 
@@ -359,15 +370,37 @@ public class FileExplorer implements CommandListener {
     }
 
     public void commandAction(Command c, Displayable d) {
-        if (c.getCommandType() == Command.OK) { 
-        int selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, getfile(newPath)); Alert alert = new Alert(null, "File '" + selected + "' sucessfuly saved!", null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert, files); } } 
-        } else if (c.getCommandType() == Command.BACK) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { display.setCurrent(form); } } 
+        if (c == openCommand) {
+            int selectedIndex = files.getSelectedIndex();
+            if (selectedIndex >= 0) {
+                String selected = files.getString(selectedIndex);
+                String newPath = currentPath + selected;
+                if (selected.endsWith("/")) {  
+                    currentPath = newPath;
+                    listFiles(newPath);
+                } else {
+                    writeRMS(selected, getFileContent(newPath));
+                    Alert alert = new Alert(null, "File '" + selected + "' successfully saved!", null, AlertType.INFO);
+                    alert.setTimeout(Alert.FOREVER);
+                    display.setCurrent(alert);
+                }
+            }
+        } else if (c == backCommand) {
+            if (!currentPath.equals("file:///")) {
+                int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2);
+                if (lastSlash != -1) {
+                    currentPath = currentPath.substring(0, lastSlash + 1);
+                    listFiles(currentPath);
+                }
+            } else { display.setCurrent(form); }
+        } 
     }
-    private String getfile(String filePath) {
+
+    private String getFileContent(String filePath) {
         try {
             FileConnection fileConn = (FileConnection) Connector.open(filePath, Connector.READ);
             InputStream is = fileConn.openInputStream();
-            
+
             StringBuffer content = new StringBuffer();
             int ch;
             while ((ch = is.read()) != -1) {
@@ -375,12 +408,14 @@ public class FileExplorer implements CommandListener {
             }
             is.close();
             fileConn.close();
-            
+
             return content.toString();
         } catch (IOException e) {
+            showAlert("Error", e.getMessage(), AlertType.ERROR);
             return "";
         }
     }
+
     private void writeRMS(String recordStoreName, String data) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
-    
+
 }
