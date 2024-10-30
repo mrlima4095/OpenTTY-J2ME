@@ -224,7 +224,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void writeRMS(String recordStoreName, String data) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
     private void deleteFile(String filename) { if (filename == null || filename.length() == 0) { return; } try { RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } }
     private void install(String filename) { if (filename == null || filename.length() == 0) { return; } writeRMS(filename, nanoContent); }
-    private void explorer() { final List files = new List(form.getTitle(), List.IMPLICIT); final Command open = new Command("Open", Command.OK, 2); final Command delete = new Command("Delete", Command.OK, 3); final Command run = new Command("Run Script", Command.OK, 4); final Command importfile = new Command("Import File", Command.OK, 5); try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { files.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } files.addCommand(new Command("Back", Command.BACK, 1)); files.addCommand(open); files.addCommand(delete); files.addCommand(run); files.addCommand(importfile); files.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.BACK) { display.setCurrent(form); } else if (c == delete) { deleteFile(files.getString(files.getSelectedIndex())); explorer(); } else if (c == open) { processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == run) { display.setCurrent(form); runScript(files.getString(files.getSelectedIndex())); } else if (c == importfile) { display.setCurrent(form); importScript(files.getString(files.getSelectedIndex())); } } }); display.setCurrent(files); }
+    private void explorer() { final List files = new List(form.getTitle(), List.IMPLICIT); final Command open = new Command("Open", Command.OK, 2); final Command delete = new Command("Delete", Command.OK, 3); final Command run = new Command("Run Script", Command.OK, 4); final Command importfile = new Command("Import File", Command.OK, 5); try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { files.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } files.addCommand(new Command("Back", Command.BACK, 1)); files.addCommand(open); files.addCommand(delete); files.addCommand(run); files.addCommand(importfile); 
+    files.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.BACK) { display.setCurrent(form); } else if (c == delete) { deleteFile(files.getString(files.getSelectedIndex())); explorer(); } else if (c == open) { nano(files.getString(files.getSelectedIndex())); } else if (c == run) { display.setCurrent(form); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importfile) { display.setCurrent(form); importScript(files.getString(files.getSelectedIndex())); } } }); display.setCurrent(files); }
     
 
     // MIDlet Services Command Processor 
@@ -325,11 +326,9 @@ public class FileExplorer implements CommandListener {
                 String selected = files.getString(selectedIndex);
                 String newPath = currentPath + selected;
                 if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath);
-                } else {
-                    writeRMS(selected, read(newPath));
-                    Alert alert = new Alert(null, "File '" + selected + "' successfully saved!", null, AlertType.INFO);
-                    alert.setTimeout(Alert.FOREVER);
-                    display.setCurrent(alert);
+                } else { 
+                    writeRMS(selected, read(newPath)); Alert alert = new Alert(null, "File '" + selected + "' successfully saved!", null, AlertType.INFO);
+                    alert.setTimeout(Alert.FOREVER); display.setCurrent(alert);
                 }
             }
         } else if (c == backCommand) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { display.setCurrent(form); } } 
