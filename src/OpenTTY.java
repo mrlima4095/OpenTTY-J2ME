@@ -173,7 +173,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
-        else if (mainCommand.equals("prg")) { PushManager(command); }
+        else if (mainCommand.equals("rg")) { try {
+            long currentTime = System.currentTimeMillis();
+            long alarmTime = currentTime + 5000; // 5 segundos em milissegundos
+            PushRegistry.registerAlarm(getClass().getName(), alarmTime);
+        } catch (Exception e) {
+            System.out.println("Erro ao registrar alarme: " + e.getMessage());
+        } }
         //else if (mainCommand.equals("")) {  }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
@@ -246,46 +252,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else { echoCommand("x11: " + mainCommand + ": not found"); }
     }
     private void MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { if (argument.equals("")) { return; } else if (getCommand(argument).toLowerCase().equals("info")) { if (!getArgument(command).equals("")) { logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("warn")) { if (!getArgument(command).equals("")) { logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("debug")) { if (!getArgument(command).equals("")) { logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("error")) { if (!getArgument(command).equals("")) { logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": level not found"); } } else { echoCommand("log: " + mainCommand + ": not found"); } }
-    private void PushManager(String command) {
-        command = env(command.trim());
-        String mainCommand = getCommand(command).toLowerCase();
-        String argument = getArgument(command);
-
-        if (argument.equals("")) { }
-        else if (argument.equals("init")) {
-            try {
-                PushRegistry.registerConnection("socket://:10455", this.getClass().getName(), "*");
-
-                
-                
-                new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            ServerSocketConnection serverConn = (ServerSocketConnection) Connector.open("socket://:10455");
-                            
-                            SocketConnection clientConn = (SocketConnection) serverConn.acceptAndOpen();
-                            InputStream is = clientConn.openInputStream();
-
-                            int data;
-                            while ((data = is.read()) != -1) {
-                                System.out.print((char) data);  // Exibe os dados recebidos
-                            }
-                            is.close();
-                            clientConn.close();
-                        } catch (IOException e) {
-                            echoCommand(e.getMessage());
-                        }
-                    }
-
-                }).start();
-
-            } catch (Exception e) {
-                
-            }
-
-        }
-
-    }
 
     // Lib API Service
     private void importScript(String script) {
