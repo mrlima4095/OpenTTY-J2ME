@@ -316,7 +316,7 @@ public class FileExplorer implements CommandListener {
         } catch (IOException e) { }
     }
 
-    private static String getFirstString(Vector v) { String result; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(cur) < 0) { result = cur; } } v.removeElement(result); return result; }
+    private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(cur) < 0) { result = cur; } } v.removeElement(result); return result; }
 
     public void commandAction(Command c, Displayable d) {
         if (c == openCommand) {
