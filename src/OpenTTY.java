@@ -173,7 +173,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("prg")) { PushManager(command); }
         //else if (mainCommand.equals("")) {  }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
@@ -246,7 +246,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else { echoCommand("x11: " + mainCommand + ": not found"); }
     }
     private void MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { if (argument.equals("")) { return; } else if (getCommand(argument).toLowerCase().equals("info")) { if (!getArgument(command).equals("")) { logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("warn")) { if (!getArgument(command).equals("")) { logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("debug")) { if (!getArgument(command).equals("")) { logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("error")) { if (!getArgument(command).equals("")) { logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": level not found"); } } else { echoCommand("log: " + mainCommand + ": not found"); } }
-    private void PushRegistry(String command) {
+    private void PushManager(String command) {
         command = env(command.trim());
         String mainCommand = getCommand(command).toLowerCase();
         String argument = getArgument(command);
