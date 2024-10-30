@@ -4,12 +4,15 @@ Copyright (C) 2024 - Mr. Lima
 [ _Commands_ ]
 
 - `fdisk`: show system roots (file systems)
+- `reset`: restart MIDlet
 
 [ _Updates_ ] 
 
 - File Explorer - Run `dir s` to open. It can be used to save files from System to OpenTTY 
 - Fixed a bug in _OpenTTY.explorer_ in **Run Script** button
-- Added in _PackJ_ repository more packages **X.Org 0.4**, **AutoPrompt**
+- Added in _PackJ_ repository more packages **X.Org 0.4** and **JAuth2**
+
 
 [ _Notes_ ]
 
+- About command `reset`, it will work if device dont support PushRegistry. Use it to restart the MIDlet. OpenTTYY will close and five seconds before will return

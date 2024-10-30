@@ -150,6 +150,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { openCommand(argument); }
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : getAppProperty(argument)); }
         else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
+        else if (mainCommand.equals("reset")) { try { long alarmTime = System.currentTimeMillis(); + 5000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); processCommand("exit"); } catch (Exception e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("seed")) { echoCommand("" +  random.nextInt(999) + ""); }
         else if (mainCommand.equals("set")) { setCommand(argument); }
         else if (mainCommand.equals("stty")) { display.setCurrent(form); }
@@ -173,15 +174,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
-        else if (mainCommand.equals("rg")) { try {
-            long currentTime = System.currentTimeMillis();
-            long alarmTime = currentTime + 5000; // 5 segundos em milissegundos
-            PushRegistry.registerAlarm(getClass().getName(), alarmTime);
-        } catch (Exception e) {
-            System.out.println("Erro ao registrar alarme: " + e.getMessage());
-        } }
         //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("bti")) {
+            try {
+                // Obtém o dispositivo Bluetooth local
+                LocalDevice localDevice = LocalDevice.getLocalDevice();
 
+                // Obtém o endereço Bluetooth e o nome amigável
+                String bluetoothAddress = localDevice.getBluetoothAddress();
+                String friendlyName = localDevice.getFriendlyName();
+
+                // Exibe as informações do dispositivo no console
+                System.out.println("Endereço Bluetooth: " + bluetoothAddress);
+                System.out.println("Nome do Dispositivo: " + friendlyName);
+
+            } catch (BluetoothStateException e) {
+                echoCommand(e.getMessage());
+            }
+        }
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
         
