@@ -256,7 +256,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try {
                 PushRegistry.registerConnection("socket://:10455", this.getClass().getName(), "*");
 
-                serverConn = (ServerSocketConnection) Connector.open("socket://:10455");
+                ServerSocketConnection serverConn = (ServerSocketConnection) Connector.open("socket://:10455");
                 
             } catch (Exception e) {
                 
