@@ -150,7 +150,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { openCommand(argument); }
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : getAppProperty(argument)); }
         else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
-        else if (mainCommand.equals("reset")) { try { long alarmTime = System.currentTimeMillis(); + 5000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); processCommand("exit"); } catch (Exception e) { echoCommand(e.getMessage()); } }
+        else if (mainCommand.equals("reset")) { try { long alarmTime = System.currentTimeMillis() + 5000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); processCommand("exit"); } catch (Exception e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("seed")) { echoCommand("" +  random.nextInt(999) + ""); }
         else if (mainCommand.equals("set")) { setCommand(argument); }
         else if (mainCommand.equals("stty")) { display.setCurrent(form); }
