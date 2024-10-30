@@ -2,8 +2,8 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
 import javax.microedition.rms.*;
+import javax.microedition.pki.*;
 import javax.microedition.io.*;
-import javax.bluetooth.*;
 import java.util.*;
 import java.io.*;
 
@@ -175,24 +175,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
-        //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("bti")) {
-            try {
-                // Obtém o dispositivo Bluetooth local
-                LocalDevice localDevice = LocalDevice.getLocalDevice();
-
-                // Obtém o endereço Bluetooth e o nome amigável
-                String bluetoothAddress = localDevice.getBluetoothAddress();
-                String friendlyName = localDevice.getFriendlyName();
-
-                // Exibe as informações do dispositivo no console
-                System.out.println("Endereço Bluetooth: " + bluetoothAddress);
-                System.out.println("Nome do Dispositivo: " + friendlyName);
-
-            } catch (BluetoothStateException e) {
-                echoCommand(e.getMessage());
-            }
+        else if (mainCommand.equals("cert")) {  try {
+        Certificate[] certs = PKI.getCertificates();
+        for (int i = 0; i < certs.length; i++) {
+            // Exibir informações do certificado
+            System.out.println("Certificado " + (i + 1) + ":");
+            System.out.println("Issuer: " + certs[i].getIssuer());
+            System.out.println("Subject: " + certs[i].getSubject());
+            System.out.println("Serial Number: " + certs[i].getSerialNumber());
+            // Você pode adicionar mais detalhes conforme necessário
         }
+    } catch (Exception e) {
+        System.out.println("Erro ao listar certificados: " + e.getMessage());
+    } }
+        //else if (mainCommand.equals("")) {  }
+        
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
         
