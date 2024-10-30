@@ -3,6 +3,7 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
+import javax.bluetooth.*;
 import java.util.*;
 import java.io.*;
 
