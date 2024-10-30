@@ -175,19 +175,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { openCommand(getAppProperty("MIDlet-Info-URL")); }
-        else if (mainCommand.equals("cert")) {  try {
-        Certificate[] certs = PKI.getCertificates();
-        for (int i = 0; i < certs.length; i++) {
-            // Exibir informações do certificado
-            System.out.println("Certificado " + (i + 1) + ":");
-            System.out.println("Issuer: " + certs[i].getIssuer());
-            System.out.println("Subject: " + certs[i].getSubject());
-            System.out.println("Serial Number: " + certs[i].getSerialNumber());
-            // Você pode adicionar mais detalhes conforme necessário
-        }
-    } catch (Exception e) {
-        System.out.println("Erro ao listar certificados: " + e.getMessage());
-    } }
         //else if (mainCommand.equals("")) {  }
         
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
