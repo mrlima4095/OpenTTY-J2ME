@@ -258,6 +258,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 ServerSocketConnection serverConn = (ServerSocketConnection) Connector.open("socket://:10455");
                 
+                new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            // Espera por conexões de clientes
+                            SocketConnection clientConn = (SocketConnection) serverConn.acceptAndOpen();
+                            InputStream is = clientConn.openInputStream();
+
+                            int data;
+                            while ((data = is.read()) != -1) {
+                                System.out.print((char) data);  // Exibe os dados recebidos
+                            }
+                            is.close();
+                            clientConn.close();
+                        } catch (IOException e) {
+                            echoCommand(e.getMessage());
+                        }
+                    }
+
+                }).start();
+
             } catch (Exception e) {
                 
             }
