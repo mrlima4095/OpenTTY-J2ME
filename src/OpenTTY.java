@@ -2,7 +2,6 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
 import javax.microedition.rms.*;
-import javax.microedition.pki.*;
 import javax.microedition.io.*;
 import java.util.*;
 import java.io.*;
