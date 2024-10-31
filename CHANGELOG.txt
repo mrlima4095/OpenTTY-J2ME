@@ -11,6 +11,7 @@ Copyright (C) 2024 - Mr. Lima
 - File Explorer - Run `dir s` to open. It can be used to save files from System to OpenTTY 
 - Fixed a bug in _OpenTTY.explorer_ in **Run Script** button
 - Added in _PackJ_ repository more packages **X.Org 0.4** and **JAuth2**
+- **JBuntu** updated to 1.1 
 
 
 [ _Notes_ ]
