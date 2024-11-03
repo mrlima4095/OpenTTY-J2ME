@@ -327,7 +327,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         }
 
-        private void GoVerify() {
+        private boolean GoVerify() {
             HttpConnection conn = null;
             InputStream is = null;
             try {
