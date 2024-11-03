@@ -348,9 +348,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             StringBuffer sb = new StringBuffer();
             
             for (int i = 0; i < pages.size(); i++) {
-                sb.append(list.getString(i));
+                sb.append(pages.getString(i));
                 
-                if (i < list.size() - 1) {
+                if (i < pages.size() - 1) {
                     sb.append("\n");
                 }
             }
