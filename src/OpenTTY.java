@@ -305,7 +305,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             pages.addCommand(openCommand); 
             pages.addCommand(saveCommand); 
             pages.addCommand(backCommand);
-            pages.setCommandListener(this);
+            pages.setCommandListener(new CommandListener() {
+                public void commandAction(Command c, Displayable d) {
+                    if (c == openCommand) {
+                        processCommand("wget " + url + pages.getString(pages.getSelectedIndex()));
+                    } else if (c == saveCommand) {
+                        nanoContent = GoSave(pages);
+                    } else if (c == backCommand) {
+                        processCommand("xterm");
+                    }
+                }
+
+            });
 
             new Thread(new Runnable() {
                 public void run() {
@@ -351,16 +362,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return sb.toString();
         }
 
-
-        public void commandAction(Command c, Displayable d) {
-            if (c == openCommand) {
-                processCommand("wget " + url + pages.getString(pages.getSelectedIndex()));
-            } else if (c == saveCommand) {
-                nanoContent = GoSave(pages);
-            } else if (c == backCommand) {
-                processCommand("xterm");
-            }
-        }
 
     }
 
