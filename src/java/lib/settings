@@ -13,8 +13,9 @@ cfg.info=execute about /java/lib/settings;
 
 quest.title=Settings
 quest.label=$VALUE
+quest.back=execute x11 list /java/lib/settings; unset VALUE; unset CFG;
 quest.cmd=execute set $VALUE=$CFG; unset VALUE; unset CFG;
-quest.key=$CFG
+quest.key=CFG
 
 list.title=Settings
 list.content=Locale,Hostname,Query Storage,Server Port,Repo Adress
