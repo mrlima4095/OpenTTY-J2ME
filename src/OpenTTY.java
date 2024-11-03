@@ -288,46 +288,45 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List pages;
         private Command openCommand, saveCommand, backCommand;
 
-        public J2Buster(String argument) {
-            if (argument == null || argument.length() == 0) { return; }
+        public J2Buster(String url, Display display) {
+            if (url == null || url.length() == 0) { return; }
 
-            this.url = argument;
+            List pages = new List("J2Buster (" + url + ")", List.IMPLICIT);
+            String[] wordlist = split(loadRMS("j2buster"), '\n');
 
-            pages = new List("J2Buster (" + url + ")", List.IMPLICIT);
+            if (wordlist == null || wordlist.length == 0) { 
+                wordlist = split(read("/java/etc/j2buster"), '\n'); 
+            }
 
-            this.wordlist = split(loadRMS("j2buster"), '\n');
-            if (wordlist == null || wordlist.length == 0) { this.wordlist = split(read("/java/etc/j2buster"), '\n'); }
+            Command openCommand = new Command("Get Request", Command.OK, 1);
+            Command saveCommand = new Command("Save Result", Command.OK, 1);
+            Command backCommand = new Command("Back", Command.BACK, 1);
+
+            pages.addCommand(openCommand); 
+            pages.addCommand(saveCommand); 
+            pages.addCommand(backCommand);
+            pages.setCommandListener(this);
 
             new Thread(new Runnable() {
                 public void run() {
                     for (int i = 0; i < wordlist.length; i++) {
-                        if (!url.startsWith("#")) {
-                            this.fullUrl = url + "/" + wordlist[i];
-                            try {
-                                if (GoVerify(fullUrl)) {
-                                    pages.append("/" + wordlist[i], null);
-                                } 
-                            } catch (IOException e) {
-                                Alert alert = new Alert(null, e.getMessage(), null, AlertType.ERROR); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert);
+                        String fullUrl = url + "/" + wordlist[i];
+                        try {
+                            if (GoVerify(fullUrl)) {
+                                pages.append("/" + wordlist[i], null);
                             }
+                        } catch (IOException e) {
+                            Alert alert = new Alert(null, e.getMessage(), null, AlertType.ERROR); 
+                            alert.setTimeout(Alert.FOREVER); 
+                            display.setCurrent(alert);
                         }
-                        
                     }
+                    display.setCurrent(pages);
                 }
             }).start();
-
-            openCommand = new Command("Get Request", Command.OK, 1);
-            saveCommand = new Command("Save Result", Command.OK, 1);
-            backCommand = new Command("Back", Command.BACK, 1);
-
-            pages.addCommand(openCommand); pages.addCommand(saveCommand); pages.addCommand(backCommand);
-            pages.setCommandListener(this);
-
-            display.setCurrent(pages);
-
         }
 
-        private boolean GoVerify() {
+        private boolean GoVerify(String fullUrl) throws IOException {
             HttpConnection conn = null;
             InputStream is = null;
             try {
@@ -335,36 +334,49 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 conn.setRequestMethod(HttpConnection.GET);
                 int responseCode = conn.getResponseCode();
                 return (responseCode == HttpConnection.HTTP_OK);
-            } catch (IOException e) {
-                return false;
             } finally {
                 if (is != null) { is.close(); }
                 if (conn != null) { conn.close(); }
             }
-
         }
 
-        private String GoSave() {
+        private String GoSave(List pages) {
             StringBuffer sb = new StringBuffer();
-            
             for (int i = 0; i < pages.size(); i++) {
                 sb.append(pages.getString(i));
-                
                 if (i < pages.size() - 1) {
                     sb.append("\n");
                 }
             }
-            
             return sb.toString();
         }
 
-        public void commandAction(Command c, Displayable d) {
-            if (c == openCommand) { processCommand("wget " + url + pages.getString(pages.getSelectedIndex())); }
-            else if (c == saveCommand) { nanoContent = GoSave(); }
-            else if (c == backCommand) { processCommand("xterm"); }
+        private String[] split(String str, char delimiter) {
+            // Implementação de divisão de string para J2ME
         }
 
+        private String loadRMS(String recordName) {
+            // Carrega a wordlist do RMS, se necessário.
+        }
 
+        private String read(String path) {
+            // Leitura de arquivo da wordlist no sistema de arquivos
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            List pages = (List) d;
+            if (c.getLabel().equals("Get Request")) {
+                processCommand("wget " + url + pages.getString(pages.getSelectedIndex()));
+            } else if (c.getLabel().equals("Save Result")) {
+                nanoContent = GoSave(pages);
+            } else if (c.getLabel().equals("Back")) {
+                processCommand("xterm");
+            }
+        }
+
+        private void processCommand(String command) {
+            // Lógica de execução de comandos.
+        }
     }
 
 }
