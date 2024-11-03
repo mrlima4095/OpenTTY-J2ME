@@ -324,9 +324,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             display.setCurrent(alert);
                         }
                     }
-                    display.setCurrent(pages);
-                }
+                    }
             }).start();
+            display.setCurrent(pages);
+
         }
 
         private boolean GoVerify(String fullUrl) throws IOException {
