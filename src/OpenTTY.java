@@ -288,7 +288,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List pages;
         private Command openCommand, saveCommand, backCommand;
 
-        public J2Buster(String url, Display display) {
+        public J2Buster(String url) {
             if (url == null || url.length() == 0) { return; }
 
             List pages = new List("J2Buster (" + url + ")", List.IMPLICIT);
@@ -351,17 +351,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return sb.toString();
         }
 
-        private String[] split(String str, char delimiter) {
-            // Implementação de divisão de string para J2ME
-        }
-
-        private String loadRMS(String recordName) {
-            // Carrega a wordlist do RMS, se necessário.
-        }
-
-        private String read(String path) {
-            // Leitura de arquivo da wordlist no sistema de arquivos
-        }
 
         public void commandAction(Command c, Displayable d) {
             List pages = (List) d;
@@ -374,9 +363,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        private void processCommand(String command) {
-            // Lógica de execução de comandos.
-        }
     }
 
 }
