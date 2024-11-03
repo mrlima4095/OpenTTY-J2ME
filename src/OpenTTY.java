@@ -288,10 +288,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List pages;
         private Command openCommand, saveCommand, backCommand;
 
-        public J2Buster(String url) {
-            if (url == null || url.length() == 0) { return; }
+        public J2Buster(String argument) {
+            if (argument == null || argument.length() == 0) { return; }
 
-            this.url = url;
+            this.url = argument;
 
             pages = new List("J2Buster (" + url + ")", List.IMPLICIT);
 
@@ -359,7 +359,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void commandAction(Command c, Displayable d) {
-            if (c == openCommand) { processCommand("wget " + (String) url + pages.getString(pages.getSelectedIndex())); }
+            if (c == openCommand) { processCommand("wget " + url + pages.getString(pages.getSelectedIndex())); }
             else if (c == saveCommand) { nanoContent = GoSave(); }
             else if (c == backCommand) { processCommand("xterm"); }
         }
