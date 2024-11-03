@@ -354,11 +354,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void commandAction(Command c, Displayable d) {
             List pages = (List) d;
-            if (c.getLabel().equals("Get Request")) {
-                processCommand("wget " + url + pages.getString(pages.getSelectedIndex()));
-            } else if (c.getLabel().equals("Save Result")) {
+            if (c == openCommand) {
+                processCommand("wget " + this.url + pages.getString(pages.getSelectedIndex()));
+            } else if (c == saveCommand) {
                 nanoContent = GoSave(pages);
-            } else if (c.getLabel().equals("Back")) {
+            } else if (c == backCommand) {
                 processCommand("xterm");
             }
         }
