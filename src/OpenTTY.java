@@ -288,8 +288,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List pages;
         private Command openCommand, saveCommand, backCommand;
 
-        public J2Buster(url) {
-            if (url == null || url.length() == 0) { return; }
+        public J2Buster(String args) {
+            if (args == null || args.length() == 0) { return; }
+
+            this.url = args;
 
             List pages = new List("J2Buster (" + url + ")", List.IMPLICIT);
             String[] wordlist = split(loadRMS("j2buster", 1), '\n');
