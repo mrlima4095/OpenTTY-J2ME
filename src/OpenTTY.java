@@ -294,7 +294,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             this.url = url;
 
             List pages = new List("J2Buster (" + url + ")", List.IMPLICIT);
-            String[] wordlist = split(loadRMS("j2buster"), '\n');
+            String[] wordlist = split(loadRMS("j2buster", 1), '\n');
 
             if (wordlist == null || wordlist.length == 0) { 
                 wordlist = split(read("/java/etc/j2buster"), '\n'); 
