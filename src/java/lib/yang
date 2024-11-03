@@ -9,6 +9,8 @@ command=yang,setrepo
 yang=execute x11 list /java/lib/yang;
 setrepo=execute x11 quest /java/lib/yang;
 
+[ DISPLAY ]
+
 quest.title=PackJ Settings
 quest.label=Server IP
 quest.cmd=execute set REPO;
@@ -22,10 +24,8 @@ list.content=Armitage,Forge,JAuth2,JBuntu,JBenchmark,SmartME SDK,PackJ (Update),
 Armitage=execute set OLD_QUERY=$QUERY; set QUERY=armitage; query $REPO get lib/armitage; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 Forge=execute set OLD_QUERY=$QUERY; set QUERY=forge; query $REPO get lib/forge; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 JAuth2=execute set OLD_QUERY=$QUERY; set QUERY=jauth2; query $REPO get lib/jauth2; set QUERY=$OLD_QUERY; unset OLD_QUERY;
-JBuntu=execute set OLD_QUERY=$QUERY; set QUERY=jbuntu; query $REPO get lib/jbuntu; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 JBenchmark=execute set OLD_QUERY=$QUERY; set QUERY=debuggers; query $REPO get lib/debuggers; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 SmartME SDK=execute set OLD_QUERY=$QUERY; set QUERY=sdkme; query $REPO get lib/smartme; set QUERY=forge; query $REPO get lib/forge; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 PackJ (Update)=execute set OLD_QUERY=$QUERY; set QUERY=yang; query $REPO get lib/yang; set QUERY=$OLD_QUERY; unset OLD_QUERY;
-X Server 0.4=execute set OLD_QUERY=$QUERY; set QUERY=xorg; query $REPO get lib/xorg-client; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 Updater=execute set OLD_QUERY=$QUERY; set QUERY=sync; query $REPO get lib/sync; set QUERY=$OLD_QUERY; unset OLD_QUERY;
 

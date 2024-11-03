@@ -22,5 +22,5 @@ Remote=execute set TOOL=nc; x11 quest /java/lib/netkit;
 IP Adress=execute fw ip;
 Port Scanner=execute set TOOL=prscan; x11 quest /java/lib/netkit;
 Ping Test=execute set TOOL=ping; x11 quest /java/lib/netkit;
-Run Server=execute server;
+Run Server=execute server; 
 
