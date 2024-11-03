@@ -284,6 +284,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void portScanner(final String host) { if (host == null || host.length() == 0) { return; } final List ports = new List(host + " Ports", List.IMPLICIT); ports.addCommand(new Command("Connect", Command.OK, 1)); ports.addCommand(new Command("Back", Command.BACK, 2)); ports.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.OK) { connect(host + ":" + ports.getString(ports.getSelectedIndex())); } else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); } } }); display.setCurrent(ports); new Thread(new Runnable() { public void run() { for (int port = 1; port <= 65535; port++) { try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); ports.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } } }).start(); }
 
     public class J2Buster implements CommandListener {
+        private String fullUrl, wordlist
         private List pages;
         private Command openCommand, saveCommand, backCommand;
 
@@ -294,14 +295,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             pages = new List("J2Buster (" + url + ")", List.IMPLICIT);
 
-            String this.wordlist = split(loadRMS("j2buster"), '\n');
+            this.wordlist = split(loadRMS("j2buster"), '\n');
             if (wordlist == null || wordlist.length == 0) { this.wordlist = split(read("/java/etc/j2buster"), '\n'); }
 
             new Thread(new Runnable() {
                 public void run() {
                     for (int i = 0; i < wordlist.length; i++) {
                         if (!url.startsWith("#")) {
-                            String this.fullUrl = url + "/" + wordlist[i];
+                            this.fullUrl = url + "/" + wordlist[i];
                             try {
                                 if (GoVerify(fullUrl)) {
                                     pages.append("/" + wordlist[i], null);
