@@ -283,12 +283,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void query(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { echoCommand("query: missing [host]"); return; } if (argument.equals("")) { echoCommand("query: missing [data]"); return; } try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + mainCommand); OutputStream outputStream = socket.openOutputStream(); outputStream.write((argument + "\n").getBytes()); outputStream.flush(); InputStream inputStream = socket.openInputStream(); byte[] buffer = new byte[2048]; int length = inputStream.read(buffer); if (length != -1) { String data = new String(buffer, 0, length); if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(data); MIDletLogs("add warn Query storage setting not found"); } else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(data); } else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = data; echoCommand("query: data retrived"); } else { writeRMS(env("$QUERY"), data); } } } catch (IOException e) { echoCommand(e.getMessage()); } }
     private void portScanner(final String host) { if (host == null || host.length() == 0) { return; } final List ports = new List(host + " Ports", List.IMPLICIT); ports.addCommand(new Command("Connect", Command.OK, 1)); ports.addCommand(new Command("Back", Command.BACK, 2)); ports.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.OK) { connect(host + ":" + ports.getString(ports.getSelectedIndex())); } else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); } } }); display.setCurrent(ports); new Thread(new Runnable() { public void run() { for (int port = 1; port <= 65535; port++) { try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); ports.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } } }).start(); }
 
-    public class J2Buster {
+    public class J2Buster implements CommandListener {
         private String fullUrl, wordlist, url;
         private List pages;
         private Command openCommand, saveCommand, backCommand;
 
-        public J2Buster(String url) {
+        public J2Buster(url) {
             if (url == null || url.length() == 0) { return; }
 
             List pages = new List("J2Buster (" + url + ")", List.IMPLICIT);
@@ -298,25 +298,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 wordlist = split(read("/java/etc/j2buster"), '\n'); 
             }
 
-            Command openCommand = new Command("Get Request", Command.OK, 1);
-            Command saveCommand = new Command("Save Result", Command.OK, 1);
-            Command backCommand = new Command("Back", Command.BACK, 1);
+            openCommand = new Command("Get Request", Command.OK, 1);
+            saveCommand = new Command("Save Result", Command.OK, 1);
+            backCommand = new Command("Back", Command.BACK, 1);
 
             pages.addCommand(openCommand); 
             pages.addCommand(saveCommand); 
             pages.addCommand(backCommand);
-            pages.setCommandListener(new CommandListener() {
-                public void commandAction(Command c, Displayable d) {
-                    if (c == openCommand) {
-                        processCommand("wget " + url + pages.getString(pages.getSelectedIndex()));
-                    } else if (c == saveCommand) {
-                        nanoContent = GoSave(pages);
-                    } else if (c == backCommand) {
-                        processCommand("xterm");
-                    }
-                }
-
-            });
+            pages.setCommandListener(this);
 
             new Thread(new Runnable() {
                 public void run() {
@@ -362,6 +351,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return sb.toString();
         }
 
+
+        public void commandAction(Command c, Displayable d) {
+            if (c == openCommand) {
+                processCommand("wget " + url + pages.getString(pages.getSelectedIndex()));
+            } else if (c == saveCommand) {
+                nanoContent = GoSave(pages);
+            } else if (c == backCommand) {
+                processCommand("xterm");
+            }
+        }
 
     }
 
