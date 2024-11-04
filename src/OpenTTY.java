@@ -318,10 +318,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 InputStream is = clientSocket.openInputStream();
                 OutputStream os = clientSocket.openOutputStream();
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-                String requestLine = reader.readLine();
-                
-
                 // Cria uma resposta simples em HTML
                 String response = "HTTP/1.1 200 OK\r\n" +
                                   "Content-Type: text/html\r\n" +
