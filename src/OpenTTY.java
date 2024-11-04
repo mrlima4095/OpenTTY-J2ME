@@ -81,10 +81,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Network Utilities
         else if (mainCommand.equals("nc")) { connect(argument); }
         else if (mainCommand.equals("query")) { query(argument); }
-        else if (mainCommand.equals("http.server")) { HTTPServer(); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); } 
         else if (mainCommand.equals("prscan")) { portScanner(argument); }
-        else if (mainCommand.equals("server")) { runServer(env("$PORT")); }
+        else if (mainCommand.equals("server")) { if (argument.equals("http")) { HTTPServer(); } else { runServer(env("$PORT")); } }
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
         else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand(request(argument)); } }
         else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument); } }
@@ -290,29 +289,51 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void run() {
             ServerSocketConnection serverSocket = null;
             try {
-                serverSocket = (ServerSocketConnection) Connector.open("socket://:8081"); echoCommand("[+] http.server started");
+                serverSocket = (ServerSocketConnection) Connector.open("socket://:8081"); echoCommand("[+] listening at port 8081"); MIDletLogs("add info Server listening at port 8081");
 
-                while (true) { SocketConnection clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); processRequest(clientSocket); }
+                while (true) { SocketConnection clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); processRequest(clientSocket); serverSocket.close(); serverSocket = (ServerSocketConnection) Connector.open("socket://:8081"); }
             } catch (IOException e) { MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); } finally { try { if (serverSocket != null) serverSocket.close(); } catch (IOException e) { } }
         }
 
         private void processRequest(SocketConnection clientSocket) {
+            String file = "/"; 
             try {
                 InputStream is = clientSocket.openInputStream();
                 OutputStream os = clientSocket.openOutputStream();
 
+                StringBuffer requestLine = new StringBuffer();
+                int ch;
+                while ((ch = is.read()) != -1) {
+                    if (ch == '\n') break;  
+                    if (ch != '\r') requestLine.append((char) ch);
+                }
+
+                String request = requestLine.toString();
+                if (request.startsWith("GET")) {
+                    int start = request.indexOf(" ") + 1;
+                    int end = request.indexOf(" ", start);
+                    file = request.substring(start, end);  
+                }
+
+                String header, response;
                 String content = loadRMS("index.html", 1);
-                if (content == null || content.length() == 0) { content = nanoContent; }
+                if (!file.equals("/")) { content = loadRMS(file, 1); }
+                if (content == null || content.length() == 0) { content = nanoContent; header = content == null || content.length() == 0 ? "HTTP/1.1 404 Not Found\r\n" : "HTTP/1.1 200 OK\r\n" }
+                if (content == null || content.length() == 0) { content = read("/java/etc/not-found.html"); }
 
                 
-                String response = "HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "Connection: close\r\n\r\n" + nanoContent;
 
-                os.write(response.getBytes()); os.flush();
+                String response = header + "Content-Type: text/html\r\n" + "Connection: close\r\n\r\n" + content;
+
+                os.write(response.getBytes());
+                os.flush();
 
                 os.close();
                 is.close();
                 clientSocket.close(); 
-            } catch (IOException e) { MIDletLogs("add error Server [HTTPServer.processRequest] bad '" + e.getMessage() + "'"); }
+            } catch (IOException e) { 
+                MIDletLogs("add error Server [HTTPServer.processRequest] bad '" + e.getMessage() + "'"); 
+            }
         }
 
     }).start(); }

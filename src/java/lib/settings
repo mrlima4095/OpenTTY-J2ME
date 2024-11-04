@@ -24,4 +24,4 @@ Locale=execute set VALUE=LOCALE; x11 quest /java/lib/settings;
 Hostname=execute set VALUE=HOSTNAME; x11 quest /java/lib/settings;
 Query Storage=execute set VALUE=QUERY; x11 quest /java/lib/settings;
 Server Port=execute set VALUE=PORT; x11 quest /java/lib/settings;
-Repo Adress=execute x11 quest /java/lib/yang;
+Repo Adress=execute set VALUE=REPO; x11 quest /java/lib/settings;
