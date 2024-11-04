@@ -8,7 +8,6 @@
 | | | fstab
 | | | gobuster
 | | | initd.sh
-| | | 404.html
 | | lib / 
 | | | yang
 | | | netkit
