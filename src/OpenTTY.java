@@ -83,10 +83,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("query")) { query(argument); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); } 
         else if (mainCommand.equals("prscan")) { portScanner(argument); }
-        else if (mainCommand.equals("server")) { if (argument.equals("http")) { HTTPServer(); } else { runServer(env("$PORT")); } }
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
         else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand(request(argument)); } }
         else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument); } }
+        else if (mainCommand.equals("server")) { if (argument.equals("http")) { HTTPServer(); } else { runServer(env("$PORT")); } }
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
         else if (mainCommand.equals("genip")) { echoCommand(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256)); }
         else if (mainCommand.equals("netstat")) { try { HttpConnection conn = (HttpConnection) Connector.open("http://ipinfo.io/ip"); conn.setRequestMethod(HttpConnection.GET); if (conn.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } conn.close(); } catch (Exception e) { echoCommand("false"); } }
