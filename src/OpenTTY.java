@@ -318,8 +318,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 InputStream is = clientSocket.openInputStream();
                 OutputStream os = clientSocket.openOutputStream();
 
-                // Cria uma resposta simples em HTML
-                String response = "HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "Connection: close\r\n\r\n" + loadRMS("index.html").equals("") ? nanoContent : loadRMS("index.html");
+                String content = loadRMS("index.html");
+                if (content == null || content.length() == 0) { content = nanoContent; }
+
+                
+                String response = "HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "Connection: close\r\n\r\n" + nanoContent;
 
                 os.write(response.getBytes()); os.flush();
 
