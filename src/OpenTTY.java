@@ -323,7 +323,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 
 
-                String response = header + "Content-Type: text/html\r\n" + "Connection: close\r\n\r\n" + content;
+                response = header + "Content-Type: text/html\r\n" + "Connection: close\r\n\r\n" + content;
 
                 os.write(response.getBytes());
                 os.flush();
