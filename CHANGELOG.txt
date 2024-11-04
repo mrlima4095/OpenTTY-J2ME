@@ -18,9 +18,12 @@ Copyright (C) 2024 - Mr. Lima
 - Package **JBuntu** temporaly removed from repository list
 - **Settings** updated to 1.1 
 - **PackJ** updated to 1.2
+- **PackJ** _Repo Adress_ command `setrepo` now use quest from **Settings API**
+- Now asset file `/java/etc/initd.sh` will be run first
 
 
 [ _Notes_ ]
 
 - About command `reset`, it will work if device dont support PushRegistry. Use it to restart the MIDlet. OpenTTYY will close and five seconds before will return
 - Now default return command is `xterm`, every times that a back button is ran it will be called. Use aliases to replace it
+- The `/java/etc/initd.sh` asset run first then user `initd` at RMS file

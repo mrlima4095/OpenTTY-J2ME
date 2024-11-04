@@ -1,16 +1,17 @@
 /
 | java /
-| | bin /
-| | | icon.png
-| | | fstab
-| | | java
+| | bin / 
 | | | sh
-| | lib/ 
-| | | yang
-| | | netkit
-| | | settings
-| | help.txt 
-| | resources.txt
-| scripts /
-| | debug.sh
-| | restore.sh
+| | | java
+| | | icon.png
+| | etc / 
+| | | fstab
+| | | gobuster
+| | | initd.sh
+| 
+|
+|
+|
+|
+|
+|

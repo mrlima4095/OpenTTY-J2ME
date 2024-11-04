@@ -7,14 +7,7 @@ description=OpenTTY Package Manager
 command=yang,setrepo
 
 yang=execute x11 list /java/lib/yang;
-setrepo=execute x11 quest /java/lib/yang;
-
-[ DISPLAY ]
-
-quest.title=PackJ Settings
-quest.label=Server IP
-quest.cmd=execute set REPO;
-quest.key=REPO
+setrepo=execute set CFG=REPO; x11 quest /java/lib/settings;
 
 [ Index ]
 

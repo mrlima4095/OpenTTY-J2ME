@@ -12,7 +12,7 @@ cfg.info=execute about /java/lib/settings;
 [ DISPLAY ]
 
 quest.title=Settings
-quest.label=$VALUE
+quest.label=Set value for '$VALUE'
 quest.back=execute x11 list /java/lib/settings; unset VALUE; unset CFG;
 quest.cmd=execute set $VALUE=$CFG; unset VALUE; unset CFG;
 quest.key=CFG
