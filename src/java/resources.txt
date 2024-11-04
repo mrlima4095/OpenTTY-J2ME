@@ -8,10 +8,12 @@
 | | | fstab
 | | | gobuster
 | | | initd.sh
-| 
-|
-|
-|
-|
-|
-|
+| | lib / 
+| | | yang
+| | | netkit
+| | | settings
+| | help.txt
+| | resources.txt
+| scripts / 
+| | debug.sh
+| | restore.sh
