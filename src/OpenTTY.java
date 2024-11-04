@@ -318,8 +318,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String header, response;
                 String content = loadRMS("index.html", 1);
                 if (!file.equals("/")) { content = loadRMS(file, 1); }
-                if (content == null || content.length() == 0) { content = nanoContent; header = content == null || content.length() == 0 ? "HTTP/1.1 404 Not Found\r\n" : "HTTP/1.1 200 OK\r\n" }
-                if (content == null || content.length() == 0) { content = read("/java/etc/not-found.html"); }
+                if (content == null || content.length() == 0) { content = nanoContent; header = content == null || content.length() == 0 ? "HTTP/1.1 404 Not Found\r\n" : "HTTP/1.1 200 OK\r\n"; }
+                if (content == null || content.length() == 0) { content = read("/java/etc/404.html"); }
 
                 
 
