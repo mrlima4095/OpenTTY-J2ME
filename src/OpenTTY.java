@@ -322,7 +322,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String response = "HTTP/1.1 200 OK\r\n" +
                                   "Content-Type: text/html\r\n" +
                                   "Connection: close\r\n\r\n" +
-                                  loadRMS("index.html") ? loadRMS("index.html") : nanoContent;
+                                  loadRMS("index.html").equals("") ? nanoContent : loadRMS("index.html");
 
                 os.write(response.getBytes()); os.flush();
 
