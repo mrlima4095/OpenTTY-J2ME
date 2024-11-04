@@ -307,7 +307,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void run() {
             ServerSocketConnection serverSocket = null;
             try {
-                serverSocket = (ServerSocketConnection) Connector.open("socket://:80"); echoCommand("[+] http.server started")
+                serverSocket = (ServerSocketConnection) Connector.open("socket://:80"); echoCommand("[+] http.server started");
 
                 while (true) { SocketConnection clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); processRequest(clientSocket); }
             } catch (IOException e) { MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); } finally { try { if (serverSocket != null) serverSocket.close(); } catch (IOException e) { } }
