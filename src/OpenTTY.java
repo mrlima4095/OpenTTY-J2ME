@@ -318,7 +318,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 InputStream is = clientSocket.openInputStream();
                 OutputStream os = clientSocket.openOutputStream();
 
-                String content = loadRMS("index.html");
+                String content = loadRMS("index.html", 1);
                 if (content == null || content.length() == 0) { content = nanoContent; }
 
                 
