@@ -81,11 +81,13 @@ db
 json
 xml
 index
+index.php
 login.php
 admin.php
 config.php
 install.php
 setup.php
+server
 release
 proxy
 post
