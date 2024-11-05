@@ -4,6 +4,7 @@ Copyright (C) 2024 - Mr. Lima
 [ _Commands_ ]
 
 - `gobuster <url>`: GoBuster for J2ME
+- `gaddr <domain>`: resolve DNS and get IP Adress of domain
 - `command <command>`: run a native command without consider aliases and shells
 - `fdisk`: show system roots (file systems)
 - `reset`: restart MIDlet
