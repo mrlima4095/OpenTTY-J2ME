@@ -291,7 +291,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
 
     public class GetAdress {
-        public void GetAdress(String args) {
+        public GetAdress(String args) {
             String result = performNSLookup(args);
             echoCommand(result); 
         }
