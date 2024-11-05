@@ -291,10 +291,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
 
     public class GetAdress {
-        private String domain, result;
         public void GetAdress(String args) {
-            this.domain = args; // Define o domínio para consulta
-            this.result = performNSLookup(domain);
+            String result = performNSLookup(args);
             echoCommand(result); 
         }
 
