@@ -86,6 +86,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("prscan")) { portScanner(argument); }
         else if (mainCommand.equals("server")) { runServer(env("$PORT"));  }
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
+        else if (mainCommand.equals("gaddr")) { new GetAdress(argument); }
         else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand(request(argument)); } }
         else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument); } }
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
@@ -125,7 +126,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
         else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }).start(); }
-        else if (mainCommand.equals("builtin")) { processCommand(argument, false); }
+        else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { processCommand(argument, false); }
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
         else if (mainCommand.equals("break")) { app = false; }
         else if (mainCommand.equals("cal")) { calendar(); }
@@ -287,7 +288,67 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
 
     public class GoBuster implements CommandListener { private String fullUrl, url; private String[] wordlist; private List pages; private Command openCommand, saveCommand, backCommand; public GoBuster(String args) { if (args == null || args.length() == 0) { return; } this.url = args; pages = new List("GoBuster (" + url + ")", List.IMPLICIT); wordlist = split(loadRMS("gobuster", 1), '\n'); if (wordlist == null || wordlist.length == 0) { wordlist = split(read("/java/etc/gobuster"), '\n'); } openCommand = new Command("Get Request", Command.OK, 1); saveCommand = new Command("Save Result", Command.OK, 1); backCommand = new Command("Back", Command.BACK, 1); pages.addCommand(openCommand); pages.addCommand(saveCommand); pages.addCommand(backCommand); pages.setCommandListener(this); new Thread(new Runnable() { public void run() { for (int i = 0; i < wordlist.length; i++) { if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; try { if (GoVerify(fullUrl)) { pages.append("/" + wordlist[i], null); } } catch (IOException e) {  } } } } }).start(); display.setCurrent(pages); } private boolean GoVerify(String fullUrl) throws IOException { HttpConnection conn = null; InputStream is = null; try { conn = (HttpConnection) Connector.open(fullUrl); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); return (responseCode == HttpConnection.HTTP_OK); } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } } private String GoSave(List pages) { StringBuffer sb = new StringBuffer(); for (int i = 0; i < pages.size(); i++) { sb.append(pages.getString(i)); if (i < pages.size() - 1) { sb.append("\n"); } } return replace(sb.toString(), "/", ""); } public void commandAction(Command c, Displayable d) { if (c == openCommand) { processCommand("bg execute wget " + url + pages.getString(pages.getSelectedIndex()) + "; nano;"); } else if (c == saveCommand && pages.size() != 0) { nanoContent = GoSave(pages); nano(""); } else if (c == backCommand) { processCommand("xterm"); } } }
-        
+    
+
+    public class GetAdress {
+        private String domain, result;
+        public void GetAdress(String args) {
+            this.domain = args; // Define o domínio para consulta
+            this.result = performNSLookup(domain);
+            echoCommand(result); 
+        }
+
+        private String performNSLookup(String domain) {
+            try {
+                DatagramConnection conn = (DatagramConnection) Connector.open("datagram://1.1.1.1:53"); 
+                byte[] query = createDNSQuery(domain);
+                Datagram request = conn.newDatagram(query, query.length);
+                conn.send(request);
+
+                Datagram response = conn.newDatagram(512);
+                conn.receive(response);
+
+                conn.close();
+                return parseDNSResponse(response.getData()); // Extrai e retorna o IP
+            } catch (IOException e) {
+                return e.getMessage();
+            }
+        }
+
+        private byte[] createDNSQuery(String domain) throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            out.write(0x12); out.write(0x34); // ID
+            out.write(0x01); out.write(0x00); // Flags
+            out.write(0x00); out.write(0x01); // Pergunta
+            out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00);
+
+            for (String part : domain.split("\\.")) {
+                out.write(part.length());
+                out.write(part.getBytes());
+            }
+            out.write(0x00); // Terminador de nome
+            out.write(0x00); out.write(0x01); // Tipo A
+            out.write(0x00); out.write(0x01); // Classe IN
+            return out.toByteArray();
+        }
+
+        private String parseDNSResponse(byte[] response) {
+            int start = 12 + response[12] + 5;
+            StringBuilder ip = new StringBuilder();
+            
+            if (response[start + 2] == 0x00 && response[start + 3] == 0x01) {
+                for (int i = start + 12; i < start + 16; i++) {
+                    ip.append(response[i] & 0xFF);
+                    if (i < start + 15) ip.append(".");
+                }
+            } else {
+                ip.append("no results founds");
+            }
+            return ip.toString();
+        }
+    }
+
+
 
 }
 
