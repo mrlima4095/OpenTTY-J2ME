@@ -322,9 +322,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             out.write(0x00); out.write(0x01); // Pergunta
             out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00);
 
-            for (String part : domain.split("\\.")) {
-                out.write(part.length());
-                out.write(part.getBytes());
+            // Usando for tradicional para iterar sobre as partes do domínio
+            String[] parts = domain.split("\\.");
+            for (int i = 0; i < parts.length; i++) {
+                out.write(parts[i].length());
+                out.write(parts[i].getBytes());
             }
             out.write(0x00); // Terminador de nome
             out.write(0x00); out.write(0x01); // Tipo A
