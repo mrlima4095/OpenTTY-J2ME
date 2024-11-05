@@ -67,13 +67,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     
     // OpenTTY Command Processor
-    private void processCommand(String command) {
+    private void processCommand(String command) { processCommand(command, true); }
+    private void processCommand(String command, boolean ignore) {
         command = command.startsWith("execute") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command).toLowerCase();
         String argument = getArgument(command);
         
-        if (shell.containsKey(mainCommand)) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand)); } } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); } return; }
-        if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand) + " " + argument); return; }
+        if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand)); } } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); } return; }
+        if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument); return; }
         
 
         if (mainCommand.equals("")) { }
@@ -124,6 +125,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
         else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }).start(); }
+        else if (mainCommand.equals("builtin")) { processCommand(argument, false); }
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
         else if (mainCommand.equals("break")) { app = false; }
         else if (mainCommand.equals("cal")) { calendar(); }
