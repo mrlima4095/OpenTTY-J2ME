@@ -334,7 +334,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private String parseDNSResponse(byte[] response) {
             int start = 12 + response[12] + 5;
-            StringBuilder ip = new StringBuilder();
+            StringBuffer ip = new StringBuffer();
             
             if (response[start + 2] == 0x00 && response[start + 3] == 0x01) {
                 for (int i = start + 12; i < start + 16; i++) {
