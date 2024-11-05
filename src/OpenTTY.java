@@ -321,7 +321,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00);
 
             // Usando for tradicional para iterar sobre as partes do domínio
-            String[] parts = domain.split("\\.");
+            String[] parts = split(domain, '.');
             for (int i = 0; i < parts.length; i++) {
                 out.write(parts[i].length());
                 out.write(parts[i].getBytes());
