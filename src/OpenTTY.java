@@ -289,100 +289,75 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public class GoBuster implements CommandListener { private String fullUrl, url; private String[] wordlist; private List pages; private Command openCommand, saveCommand, backCommand; public GoBuster(String args) { if (args == null || args.length() == 0) { return; } this.url = args; pages = new List("GoBuster (" + url + ")", List.IMPLICIT); wordlist = split(loadRMS("gobuster", 1), '\n'); if (wordlist == null || wordlist.length == 0) { wordlist = split(read("/java/etc/gobuster"), '\n'); } openCommand = new Command("Get Request", Command.OK, 1); saveCommand = new Command("Save Result", Command.OK, 1); backCommand = new Command("Back", Command.BACK, 1); pages.addCommand(openCommand); pages.addCommand(saveCommand); pages.addCommand(backCommand); pages.setCommandListener(this); new Thread(new Runnable() { public void run() { for (int i = 0; i < wordlist.length; i++) { if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; try { if (GoVerify(fullUrl)) { pages.append("/" + wordlist[i], null); } } catch (IOException e) {  } } } } }).start(); display.setCurrent(pages); } private boolean GoVerify(String fullUrl) throws IOException { HttpConnection conn = null; InputStream is = null; try { conn = (HttpConnection) Connector.open(fullUrl); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); return (responseCode == HttpConnection.HTTP_OK); } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } } private String GoSave(List pages) { StringBuffer sb = new StringBuffer(); for (int i = 0; i < pages.size(); i++) { sb.append(pages.getString(i)); if (i < pages.size() - 1) { sb.append("\n"); } } return replace(sb.toString(), "/", ""); } public void commandAction(Command c, Displayable d) { if (c == openCommand) { processCommand("bg execute wget " + url + pages.getString(pages.getSelectedIndex()) + "; nano;"); } else if (c == saveCommand && pages.size() != 0) { nanoContent = GoSave(pages); nano(""); } else if (c == backCommand) { processCommand("xterm"); } } }
     
-
-    import javax.microedition.io.*;
-import java.io.*;
-import java.util.Vector;
-
-public class GetAddress {
-    public GetAddress(String args) {
-        String result = performNSLookup(args);
-        echoCommand(result);
-    }
-
-    private String performNSLookup(String domain) {
-        try {
-            DatagramConnection conn = (DatagramConnection) Connector.open("datagram://1.1.1.1:53");
-            byte[] query = createDNSQuery(domain);
-            Datagram request = conn.newDatagram(query, query.length);
-            conn.send(request);
-
-            Datagram response = conn.newDatagram(512);
-            conn.receive(response);
-
-            conn.close();
-            return parseDNSResponse(response.getData());
-        } catch (IOException e) {
-            return e.getMessage();
-        }
-    }
-
-    private byte[] createDNSQuery(String domain) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        out.write(0x12); out.write(0x34); // ID
-        out.write(0x01); out.write(0x00); // Flags
-        out.write(0x00); out.write(0x01); // Pergunta
-        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00);
-
-        String[] parts = split(domain, '.');
-        for (int i = 0; i < parts.length; i++) {
-            out.write(parts[i].length());
-            out.write(parts[i].getBytes());
-        }
-        out.write(0x00); // Terminador de nome
-        out.write(0x00); out.write(0x01); // Tipo A
-        out.write(0x00); out.write(0x01); // Classe IN
-        return out.toByteArray();
-    }
-
-    private String parseDNSResponse(byte[] response) {
-        // Verificação básica no cabeçalho para checar se o DNS respondeu corretamente
-        if ((response[3] & 0x0F) != 0) { // Se o código de resposta não for 0, houve erro
-            return "DNS response error";
+    public class GetAddress {
+        public GetAddress(String args) {
+            String result = performNSLookup(args);
+            echoCommand(result);
         }
 
-        // Calcula o offset do IP (ajustado)
-        int answerOffset = 12; // Início das respostas
-        while (response[answerOffset] != 0) { // Pula o nome
-            answerOffset++;
-        }
-        answerOffset += 5; // Ignora o terminador e o tipo/classe da resposta
+        private String performNSLookup(String domain) {
+            try {
+                DatagramConnection conn = (DatagramConnection) Connector.open("datagram://1.1.1.1:53");
+                byte[] query = createDNSQuery(domain);
+                Datagram request = conn.newDatagram(query, query.length);
+                conn.send(request);
 
-        // Checa se é uma resposta do tipo 'A' (IPv4)
-        if (response[answerOffset + 2] == 0x00 && response[answerOffset + 3] == 0x01) {
-            // Extrai o endereço IP
-            StringBuffer ip = new StringBuffer();
-            for (int i = answerOffset + 12; i < answerOffset + 16; i++) {
-                ip.append(response[i] & 0xFF);
-                if (i < answerOffset + 15) ip.append(".");
-            }
-            return ip.toString();
-        } else {
-            return "no results found";
-        }
-    }
+                Datagram response = conn.newDatagram(512);
+                conn.receive(response);
 
-    private void echoCommand(String message) {
-        System.out.println(message);
-    }
-
-    private String[] split(String content, char div) {
-        Vector lines = new Vector();
-        int start = 0;
-        for (int i = 0; i < content.length(); i++) {
-            if (content.charAt(i) == div) {
-                lines.addElement(content.substring(start, i));
-                start = i + 1;
+                conn.close();
+                return parseDNSResponse(response.getData());
+            } catch (IOException e) {
+                return e.getMessage();
             }
         }
-        if (start < content.length()) {
-            lines.addElement(content.substring(start));
+
+        private byte[] createDNSQuery(String domain) throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            out.write(0x12); out.write(0x34); // ID
+            out.write(0x01); out.write(0x00); // Flags
+            out.write(0x00); out.write(0x01); // Pergunta
+            out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00);
+
+            String[] parts = split(domain, '.');
+            for (int i = 0; i < parts.length; i++) {
+                out.write(parts[i].length());
+                out.write(parts[i].getBytes());
+            }
+            out.write(0x00); // Terminador de nome
+            out.write(0x00); out.write(0x01); // Tipo A
+            out.write(0x00); out.write(0x01); // Classe IN
+            return out.toByteArray();
         }
-        String[] result = new String[lines.size()];
-        lines.copyInto(result);
-        return result;
+
+        private String parseDNSResponse(byte[] response) {
+            // Verificação básica no cabeçalho para checar se o DNS respondeu corretamente
+            if ((response[3] & 0x0F) != 0) { // Se o código de resposta não for 0, houve erro
+                return "DNS response error";
+            }
+
+            // Calcula o offset do IP (ajustado)
+            int answerOffset = 12; // Início das respostas
+            while (response[answerOffset] != 0) { // Pula o nome
+                answerOffset++;
+            }
+            answerOffset += 5; // Ignora o terminador e o tipo/classe da resposta
+
+            // Checa se é uma resposta do tipo 'A' (IPv4)
+            if (response[answerOffset + 2] == 0x00 && response[answerOffset + 3] == 0x01) {
+                // Extrai o endereço IP
+                StringBuffer ip = new StringBuffer();
+                for (int i = answerOffset + 12; i < answerOffset + 16; i++) {
+                    ip.append(response[i] & 0xFF);
+                    if (i < answerOffset + 15) ip.append(".");
+                }
+                return ip.toString();
+            } else {
+                return "no results found";
+            }
+        }
+
     }
-}
 
 
 
