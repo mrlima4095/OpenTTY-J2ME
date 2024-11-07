@@ -293,7 +293,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private InputStream inputStream = null;
         private OutputStream outputStream = null;
 
-        private String host
+        private String host;
 
         private Form remote = new Form(form.getTitle());
         private TextField inputField = new TextField("Remote (" + split(host, ':')[0] + ")", "", 256, TextField.ANY);
