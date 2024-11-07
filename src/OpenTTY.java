@@ -95,7 +95,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("netstat")) { try { HttpConnection conn = (HttpConnection) Connector.open("http://ipinfo.io/ip"); conn.setRequestMethod(HttpConnection.GET); if (conn.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } conn.close(); } catch (Exception e) { echoCommand("false"); } }
         else if (mainCommand.equals("ifconfig")) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://1.1.1.1:53"); echoCommand(socketConnection.getLocalAddress()); socketConnection.close(); } catch (IOException e) { echoCommand("null"); } }
         else if (mainCommand.equals("pprt")) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://1.1.1.1:53"); echoCommand(Integer.toString(socketConnection.getLocalPort())); socketConnection.close(); } catch (IOException e) { echoCommand("null"); } }
-        else if (mainCommand.equals("rp")) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://1.1.1.1:53"); echoCommand(socketConnection.getRemoteAddress()); socketConnection.close(); } catch (IOException e) { echoCommand("null"); } }
         
         // File Utilities
         else if (mainCommand.equals("nano")) { nano(argument); }
