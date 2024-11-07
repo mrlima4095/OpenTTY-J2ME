@@ -293,6 +293,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private InputStream inputStream = null;
         private OutputStream outputStream = null;
 
+        private String host
+
         private Form remote = new Form(form.getTitle());
         private TextField inputField = new TextField("Remote (" + split(host, ':')[0] + ")", "", 256, TextField.ANY);
         private Command sendCommand = new Command("Send", Command.OK, 1);
@@ -300,12 +302,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command clearCommand = new Command("Clear", Command.SCREEN, 3);
         private StringItem console = new StringItem("", "");
 
-        public RemoteConnection(String host) {
-            if (host == null || host.length() == 0) { return; }
+        public RemoteConnection(String args) {
+            if (args == null || args.length() == 0) { return; }
 
             remote.append(console); remote.append(inputField);
             remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(sendCommand);
-            remote.setCommandListener(this);
+            remote.setCommandListener(this); host = args;
 
             try {
                 socket = (SocketConnection) Connector.open("socket://" + host);
