@@ -313,7 +313,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 inputStream = socket.openInputStream();
                 outputStream = socket.openOutputStream();
             } 
-            catch (IOException e) { echoCommand(e.getMessage()); }
+            catch (IOException e) { echoCommand(e.getMessage()); return; }
             finally { display.setCurrent(remote); }
             
         }
@@ -321,12 +321,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == sendCommand) {
                 sendData(inputField.getString());
                 inputField.setString("");
-            } else if (c == backCommand) {
-                writeRMS("remote", console.getText());
-                processCommand("xterm");
-            } else if (c == clearCommand) {
-                console.setText("");
-            }
+            } else if (c == backCommand) { writeRMS("remote", console.getText()); processCommand("xterm");
+            } else if (c == clearCommand) { console.setText(""); }
         }
         private void sendData(String data) {
             try {
@@ -341,14 +337,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             if (length != -1) {
                                 echoCommand(new String(buffer, 0, length), console);
                             }
-                        } catch (IOException e) {
-                            echoCommand("[ERROR] " + new java.util.Date().toString() + " " + e.getMessage(), console);
-                        }
+                        } catch (IOException e) { processCommand("warn " + e.getMessage()); }
                     } 
                 }).start();
-            } catch (IOException e) {
-                processCommand("warn " + e.getMessage());
-            }
+            } catch (IOException e) { processCommand("warn " + e.getMessage()); }
         }
     }
 
