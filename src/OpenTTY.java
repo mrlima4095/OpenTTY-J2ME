@@ -318,7 +318,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         public void commandAction(Command c, Displayable d) {
             if (c == sendCommand) {
-                sendData(inputField.getString()};
+                sendData(inputField.getString());
                 inputField.setString("");
             } else if (c == backCommand) {
                 writeRMS("Remote-" + host, console.getText());
