@@ -293,7 +293,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             final Form remote = new Form(form.getTitle());
             final TextField inputField = new TextField("Remote (" + split(host, ':')[0] + ")", "", 256, TextField.ANY);
             final Command sendCommand = new Command("Send", Command.OK, 1);
-            final Command Command = new Command("Send", Command.SCREEN, 1);
+            final Command infoCommand = new Command("", Command.SCREEN, 1);
             final Command backCommand = new Command("Back", Command.SCREEN, 2);
             final Command clearCommand = new Command("Clear", Command.SCREEN, 3);
             final StringItem console = new StringItem("", "");
