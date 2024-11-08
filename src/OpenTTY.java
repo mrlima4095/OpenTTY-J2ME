@@ -321,8 +321,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         public void commandAction(Command c, Displayable d) {
             if (c == sendCommand) { String command = inputField.getString().trim(); inputField.setString(""); send(command); } 
-            else if (c == backCommand) { writeRMS("Remote-" + split(args, ':')[0], console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); }
-            else if (c == infoCommand) { warnCommand("Informations",  "Host: " +  split(args, ':')[0] + "\nPort: " +  split(args, ':')[1] + "\n\nLocal Port: " + Integer.toString(socket.getLocalPort())); }
+            else if (c == backCommand) { writeRMS("Remote-" + split(host, ':')[0], console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); }
+            else if (c == infoCommand) { warnCommand("Informations",  "Host: " +  split(host, ':')[0] + "\nPort: " +  split(host, ':')[1] + "\n\nLocal Port: " + Integer.toString(socket.getLocalPort())); }
 
         }
         private void send(String data) {
