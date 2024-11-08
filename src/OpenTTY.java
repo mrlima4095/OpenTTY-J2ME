@@ -296,6 +296,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command sendCommand = new Command("Send", Command.OK, 1);
         private Command backCommand = new Command("Back", Command.SCREEN, 2);
         private Command clearCommand = new Command("Clear", Command.SCREEN, 3);
+        private Command infoCommand = new Command("Show info", Command.SCREEN, 4);
         private StringItem console = new StringItem("", "");
 
         public RemoteConnection(String args) {
@@ -303,7 +304,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             inputField.setLabel("Remote (" + split(args, ':')[0] + ")");
             remote.append(console); remote.append(inputField);
-            remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(sendCommand);
+            remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(infoCommand); remote.addCommand(sendCommand);
             remote.setCommandListener(this);
 
             try {
@@ -317,12 +318,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
         }
         public void commandAction(Command c, Displayable d) {
-            if (c == sendCommand) {
-                String command = inputField.getString().trim(); 
-                inputField.setString("");
-                send(command);
-            } else if (c == backCommand) { writeRMS("remote", console.getText()); processCommand("xterm");
-            } else if (c == clearCommand) { console.setText(""); }
+            if (c == sendCommand) { String command = inputField.getString().trim(); inputField.setString(""); send(command); } 
+            else if (c == backCommand) { writeRMS("Remote-" + split(args, ':')[0], console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); }
+            else if (c == infoCommand) { warnCommand("Informations",  "Host: " +  split(args, ':')[0] + "\nPort: " +  split(args, ':')[1] + "\n\nLocal Port: " + Integer.toString(socket.getLocalPort())); }
+
         }
         private void send(String data) {
             try {
@@ -342,6 +341,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }).start();
             } catch (IOException e) { processCommand("warn " + e.getMessage()); }
         }
+        
+
     }
 
     public class GetAddress { public GetAddress(String args) { if (args.equals("")) { processCommand("ifconfig"); } else { String result = performNSLookup(args); echoCommand(result); } } private String performNSLookup(String domain) { try { DatagramConnection conn = (DatagramConnection) Connector.open("datagram://1.1.1.1:53"); byte[] query = createDNSQuery(domain); Datagram request = conn.newDatagram(query, query.length); conn.send(request); Datagram response = conn.newDatagram(512); conn.receive(response); conn.close(); return parseDNSResponse(response.getData()); } catch (IOException e) { return e.getMessage(); } } private byte[] createDNSQuery(String domain) throws IOException { ByteArrayOutputStream out = new ByteArrayOutputStream(); out.write(0x12); out.write(0x34); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); String[] parts = split(domain, '.'); for (int i = 0; i < parts.length; i++) { out.write(parts[i].length()); out.write(parts[i].getBytes()); } out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x01); return out.toByteArray(); } private String parseDNSResponse(byte[] response) { if ((response[3] & 0x0F) != 0) { return "DNS response error"; } int answerOffset = 12; while (response[answerOffset] != 0) { answerOffset++; } answerOffset += 5; if (response[answerOffset + 2] == 0x00 && response[answerOffset + 3] == 0x01) { StringBuffer ip = new StringBuffer(); for (int i = answerOffset + 12; i < answerOffset + 16; i++) { ip.append(response[i] & 0xFF); if (i < answerOffset + 15) ip.append("."); } return ip.toString(); } else { return "not found"; } } }
