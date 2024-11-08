@@ -14,9 +14,6 @@ Copyright (C) 2024 - Mr. Lima
 
 - New package in classpath `/java/etc`
 - Fstab file moved to `/java/etc/fstab`
-- Improved netcat remote connection method
-- On end connection netcat dont quit automatic 
-- Netcat content file now is `remote`. The name `console` isnt used anymore
 - File Explorer - Run `dir s` to open. It can be used to save files from System to OpenTTY 
 - Fixed a bug in _OpenTTY.explorer_ in **Run Script** button
 - Added in _PackJ_ repository more packages **X.Org 0.4** and **JAuth2**
@@ -25,6 +22,9 @@ Copyright (C) 2024 - Mr. Lima
 - **PackJ** updated to 1.2
 - **PackJ** _Repo Adress_ command `setrepo` now use quest from **Settings API**
 - Now asset file `/java/etc/initd.sh` will be run first
+- Improved Netcat
+- Netcat back file save name charged to `remote`
+- `OpenTTY.connect(String ip)` moved to class `OpenTTY$RemoteConnection` 
 
 
 [ _Notes_ ]
