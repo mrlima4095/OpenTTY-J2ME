@@ -209,7 +209,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void setCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { /* Exportation File */ } return; } String key = argument.substring(0, equalsIndex).trim(); String value = argument.substring(equalsIndex + 1).trim(); attributes.put(key, value); }
     private void unsetCommand(String key) { if (key == null || key.length() == 0) { return; } if (attributes.containsKey(key)) { attributes.remove(key); } }
     
-    private void echoCommand(String message) { echoCommand(message, stdout); }
+    private void echoCommand(String message) { echoCommand(message, stdout); attributes.put("OUTPUT", message); }
     private void echoCommand(String message, StringItem console) { console.setText(console.getText().equals("") ? message.trim() : console.getText() + "\n" + message.trim()); }
     private void callCommand(String number) { if (number == null || number.length() == 0) { } try { platformRequest("tel:" + number); } catch (Exception e) { } }
     private void openCommand(String url) { if (url == null || url.length() == 0) { } try { platformRequest(url); } catch (Exception e) { echoCommand("open: " + url + ": not found"); } }
@@ -289,7 +289,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
 
     public class RemoteConnection implements CommandListener{
-        private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream;
+        private SocketConnection socket; private InputStream input7
 
         private Form remote = new Form(form.getTitle());
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY);
@@ -324,7 +324,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else if (c == backCommand) { writeRMS("remote", console.getText()); processCommand("xterm");
             } else if (c == clearCommand) { console.setText(""); }
         }
-        private void sendData(String data) {
+        private void send(String data) {
             try {
                 outputStream.write((data + "\n").getBytes());
                 outputStream.flush();
