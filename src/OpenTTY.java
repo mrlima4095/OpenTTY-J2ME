@@ -320,7 +320,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == sendCommand) {
                 String command = inputField.getString().trim(); 
                 inputField.setString("");
-                (command);
+                send(command);
             } else if (c == backCommand) { writeRMS("remote", console.getText()); processCommand("xterm");
             } else if (c == clearCommand) { console.setText(""); }
         }
