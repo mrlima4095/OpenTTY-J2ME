@@ -291,14 +291,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class RemoteConnection implements CommandListener{
         private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream;
 
-        private String host;
 
         private Form remote = new Form(form.getTitle());
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY);
         private Command sendCommand = new Command("Send", Command.OK, 1);
         private Command backCommand = new Command("Back", Command.SCREEN, 2);
         private Command clearCommand = new Command("Clear", Command.SCREEN, 3);
-        private Command infoCommand = new Command("Show info", Command.SCREEN, 4);
         private StringItem console = new StringItem("", "");
 
         public RemoteConnection(String args) {
@@ -306,7 +304,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             inputField.setLabel("Remote (" + split(args, ':')[0] + ")");
             remote.append(console); remote.append(inputField);
-            remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(infoCommand); remote.addCommand(sendCommand);
+            remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(sendCommand);
             remote.setCommandListener(this);
 
             try {
@@ -321,9 +319,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         public void commandAction(Command c, Displayable d) {
             if (c == sendCommand) { String command = inputField.getString().trim(); inputField.setString(""); send(command); } 
-            else if (c == backCommand) { writeRMS("Remote-" + split(host, ':')[0], console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); }
-            else if (c == infoCommand) { try { warnCommand("Informations",  "Host: " +  split(host, ':')[0] + "\nPort: " +  split(host, ':')[1] + "\n\nLocal Port: " + Integer.toString(socket.getLocalPort())); } catch (IOException e) { } }
-
+            else if (c == backCommand) { writeRMS("remote", console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); }
+            
         }
         private void send(String data) {
             try {
