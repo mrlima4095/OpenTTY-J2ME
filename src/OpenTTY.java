@@ -326,22 +326,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == infoCommand) { try { warnCommand("Informations",  "Host: " +  split(host, ':')[0] + "\nPort: " +  split(host, ':')[1] + "\n\nLocal Port: " + Integer.toString(socket.getLocalPort())); } catch (IOException e) { } }
 
         }
-        private void send(String data) {
-            try {
-                outputStream.write((data + "\n").getBytes());
-                outputStream.flush();
-
-                new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            byte[] buffer = new byte[1024];
-                            int length = inputStream.read(buffer);
-                            if (length != -1) { echoCommand(new String(buffer, 0, length), console); }
-                        } catch (IOException e) { processCommand("warn " + e.getMessage()); }
-                    } 
-                }).start();
-            } catch (IOException e) { processCommand("warn " + e.getMessage()); }
-        }
+        private void send(String data) { try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); new Thread(new Runnable() { public void run() { try { byte[] buffer = new byte[1024]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (IOException e) { processCommand("warn " + e.getMessage()); } } }).start(); } catch (IOException e) { processCommand("warn " + e.getMessage()); } }
         
 
     }
