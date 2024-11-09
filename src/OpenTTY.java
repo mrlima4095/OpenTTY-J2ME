@@ -295,7 +295,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         try {
             int port = 80;  // Usaremos a porta 80, que geralmente está aberta em servidores web
 
-            DatagramConnection connection = (DatagramConnection) Connector.open("datagram://" + destination + ":" + port);
+            DatagramConnection connection = (DatagramConnection) Connector.open("udp://" + destination + ":" + port);
             //connection.setTimeout(1000); // 1 segundo de timeout para cada pacote
 
             for (int ttl = 1; ttl <= 30; ttl++) {
