@@ -1,6 +1,7 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
+import javax.wireless.messaging.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
 import java.util.*;
@@ -34,7 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (!app == true) {
             mount(read("/java/etc/fstab")); stdin.setLabel(username + " " + path + " $"); app = true;
             
-            attributes.put("PATCH", " Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.5");
+            attributes.put("PATCH", "Misc Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.5");
             attributes.put("TTY", "/java/optty1"); attributes.put("HOSTNAME", "localhost"); attributes.put("PORT", "31522"); attributes.put("RESPONSE", "/java/etc/index.html"); attributes.put("QUERY", "nano");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             attributes.put("OUTPUT", "");  
@@ -82,12 +83,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Network Utilities
         else if (mainCommand.equals("query")) { query(argument); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); } 
+        else if (mainCommand.equals("sms")) { sendSMS(argument); }
         else if (mainCommand.equals("prscan")) { portScanner(argument); }
         else if (mainCommand.equals("gaddr")) { new GetAddress(argument); }
         else if (mainCommand.equals("server")) { runServer(env("$PORT"));  }
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
         else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
-        else if (mainCommand.equals("traceroute")) { runTraceroute(argument); }
         else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand(request(argument)); } }
         else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument); } }
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
@@ -288,54 +289,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void query(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { echoCommand("query: missing [host]"); return; } if (argument.equals("")) { echoCommand("query: missing [data]"); return; } try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + mainCommand); OutputStream outputStream = socket.openOutputStream(); outputStream.write((argument + "\n").getBytes()); outputStream.flush(); InputStream inputStream = socket.openInputStream(); byte[] buffer = new byte[2048]; int length = inputStream.read(buffer); if (length != -1) { String data = new String(buffer, 0, length); if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(data); MIDletLogs("add warn Query storage setting not found"); } else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(data); } else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = data; echoCommand("query: data retrived"); } else { writeRMS(env("$QUERY"), data); } } } catch (IOException e) { echoCommand(e.getMessage()); } }
     private void portScanner(final String host) { if (host == null || host.length() == 0) { return; } final List ports = new List(host + " Ports", List.IMPLICIT); ports.addCommand(new Command("Connect", Command.OK, 1)); ports.addCommand(new Command("Back", Command.BACK, 2)); ports.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.OK) { new RemoteConnection(host + ":" + ports.getString(ports.getSelectedIndex())); } else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); } } }); display.setCurrent(ports); new Thread(new Runnable() { public void run() { for (int port = 1; port <= 65535; port++) { try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); ports.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } } }).start(); }
 
+    private void sendSMS(String argument) {
+        int firstSpace = argument.indexOf(' ');
+        
+        if (firstSpace == -1) { return; }
 
-    private void runTraceroute(String destination) {
-        if (destination == null || destination.length() == 0) { return; }
+        String number = argument.substring(0, firstSpace);
+        String message = argument.substring(firstSpace + 1);
 
         try {
-            int port = 80;  // Usaremos a porta 80, que geralmente está aberta em servidores web
+            MessageConnection conn = (MessageConnection) Connector.open("sms://" + number);
 
-            DatagramConnection connection = (DatagramConnection) Connector.open("udp://" + destination + ":" + port);
-            //connection.setTimeout(1000); // 1 segundo de timeout para cada pacote
+            TextMessage textMessage = (TextMessage) conn.newMessage(MessageConnection.TEXT_MESSAGE);
+            textMessage.setPayloadText(message);
 
-            for (int ttl = 1; ttl <= 30; ttl++) {
-                // Tentando simular o aumento do TTL, já que não temos suporte a ICMP
-                String message = "Traceroute packet (TTL " + ttl + ")";
-                byte[] buffer = message.getBytes();
+            conn.send(textMessage);
 
-                // Criação do pacote com a mensagem para enviar
-                Datagram packet = connection.newDatagram(buffer, buffer.length);
-
-                // Envia o pacote para o servidor de destino
-                connection.send(packet);
-
-                long startTime = System.currentTimeMillis();
-                try {
-                    // Recebe a resposta do pacote enviado
-                    connection.receive(packet);
-                    long roundTripTime = System.currentTimeMillis() - startTime;
-
-                    String response = "Hop " + ttl + ": " + packet.getAddress() + " RTT: " + roundTripTime + " ms";
-                    echoCommand(response);
-
-                    
-                } catch (IOException e) {
-                    String response = "Hop " + ttl + ": Timeout";
-                    echoCommand(response);
-                }
-
-                // Se o pacote for enviado para o destino correto (supondo que estamos usando uma rede real)
-                if (packet.getAddress().equals(destination)) {
-                    echoCommand("Traceroute concluído");
-                    break;  // Reached destination
-                }
-            }
-
-            connection.close();
+            textBox.setString("message sent");
+            conn.close();
         } catch (Exception e) {
             echoCommand(e.getMessage());
         }
     }
+
 
     public class RemoteConnection implements CommandListener{
         private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream;
@@ -383,7 +359,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public class GetAddress { public GetAddress(String args) { if (args.equals("")) { processCommand("ifconfig"); } else { String result = performNSLookup(args); echoCommand(result); } } private String performNSLookup(String domain) { try { DatagramConnection conn = (DatagramConnection) Connector.open("datagram://1.1.1.1:53"); byte[] query = createDNSQuery(domain); Datagram request = conn.newDatagram(query, query.length); conn.send(request); Datagram response = conn.newDatagram(512); conn.receive(response); conn.close(); return parseDNSResponse(response.getData()); } catch (IOException e) { return e.getMessage(); } } private byte[] createDNSQuery(String domain) throws IOException { ByteArrayOutputStream out = new ByteArrayOutputStream(); out.write(0x12); out.write(0x34); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); String[] parts = split(domain, '.'); for (int i = 0; i < parts.length; i++) { out.write(parts[i].length()); out.write(parts[i].getBytes()); } out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x01); return out.toByteArray(); } private String parseDNSResponse(byte[] response) { if ((response[3] & 0x0F) != 0) { return "DNS response error"; } int answerOffset = 12; while (response[answerOffset] != 0) { answerOffset++; } answerOffset += 5; if (response[answerOffset + 2] == 0x00 && response[answerOffset + 3] == 0x01) { StringBuffer ip = new StringBuffer(); for (int i = answerOffset + 12; i < answerOffset + 16; i++) { ip.append(response[i] & 0xFF); if (i < answerOffset + 15) ip.append("."); } return ip.toString(); } else { return "not found"; } } }
     public class GoBuster implements CommandListener { private String fullUrl, url; private String[] wordlist; private List pages; private Command openCommand, saveCommand, backCommand; public GoBuster(String args) { if (args == null || args.length() == 0) { return; } this.url = args; pages = new List("GoBuster (" + url + ")", List.IMPLICIT); wordlist = split(loadRMS("gobuster", 1), '\n'); if (wordlist == null || wordlist.length == 0) { wordlist = split(read("/java/etc/gobuster"), '\n'); } openCommand = new Command("Get Request", Command.OK, 1); saveCommand = new Command("Save Result", Command.OK, 1); backCommand = new Command("Back", Command.BACK, 1); pages.addCommand(openCommand); pages.addCommand(saveCommand); pages.addCommand(backCommand); pages.setCommandListener(this); new Thread(new Runnable() { public void run() { for (int i = 0; i < wordlist.length; i++) { if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; try { if (GoVerify(fullUrl)) { pages.append("/" + wordlist[i], null); } } catch (IOException e) {  } } } } }).start(); display.setCurrent(pages); } private boolean GoVerify(String fullUrl) throws IOException { HttpConnection conn = null; InputStream is = null; try { conn = (HttpConnection) Connector.open(fullUrl); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); return (responseCode == HttpConnection.HTTP_OK); } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } } private String GoSave(List pages) { StringBuffer sb = new StringBuffer(); for (int i = 0; i < pages.size(); i++) { sb.append(pages.getString(i)); if (i < pages.size() - 1) { sb.append("\n"); } } return replace(sb.toString(), "/", ""); } public void commandAction(Command c, Displayable d) { if (c == openCommand) { processCommand("bg execute wget " + url + pages.getString(pages.getSelectedIndex()) + "; nano;"); } else if (c == saveCommand && pages.size() != 0) { nanoContent = GoSave(pages); nano(""); } else if (c == backCommand) { processCommand("xterm"); } } }
-
 
 }
 
