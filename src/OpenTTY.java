@@ -304,7 +304,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public RemoteConnection(String args) {
             if (args == null || args.length() == 0) { return; }
 
-            if (args.indexOf("-d") != -1) { UDPConnection(replace(args, "-p", "")); return; }
+            if (args.indexOf("-d") != -1) { new UDPConnection(replace(args, "-p", "")); return; }
 
             inputField.setLabel("Remote (" + split(args, ':')[0] + ")");
             remote.append(console); remote.append(inputField);
