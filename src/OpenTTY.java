@@ -1,7 +1,6 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
-import javax.wireless.messaging.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
 import java.util.*;
@@ -205,7 +204,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
-    
+    private Hashtable parseFrom(String script) { if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); } return parseProperties(script); }
+
     private void aliasCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else { Enumeration keys = aliases.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); echoCommand("alias " + key + "='" + value.trim() + "'"); } } return; } String aliasName = argument.substring(0, equalsIndex).trim(); String aliasCommand = argument.substring(equalsIndex + 1).trim(); aliases.put(aliasName, aliasCommand); }
     private void unaliasCommand(String aliasName) { if (aliasName == null || aliasName.length() == 0) { echoCommand("unalias: missing [alias]"); return; } if (aliases.containsKey(aliasName)) { aliases.remove(aliasName); } else { echoCommand("unalias: " + aliasName + ": not found"); } }
     private void setCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { /* Exportation File */ } return; } String key = argument.substring(0, equalsIndex).trim(); String value = argument.substring(equalsIndex + 1).trim(); attributes.put(key, value); }
@@ -251,17 +251,119 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
         else if (mainCommand.equals("canvas")) { display.setCurrent(new Canvas() { protected void paint(Graphics g) { g.setColor(255, 255, 255); g.fillRect(0, 0, getWidth(), getHeight()); } protected void keyPressed(int keyCode) { processCommand("xterm"); } }); }
-        else if (mainCommand.equals("make")) { if (argument.equals("")) { echoCommand("x11: make: missing file"); } else { final Hashtable lib; if (argument.startsWith("/")) { lib = parseProperties(read(argument)); } else if (argument.equals("nano")) { lib = parseProperties(nanoContent); } else { lib = parseProperties(loadRMS(argument, 1)); } if (lib.containsKey("screen.title") && lib.containsKey("screen.button")) { final Form screen = new Form(env((String) lib.get("screen.title"))); final StringItem content = new StringItem("", lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : ""); final Command backCommand = new Command(lib.containsKey("screen.back.label") ? (String) lib.get("screen.back.label") : "Back", Command.OK, 1); final Command userCommand = new Command(env((String) lib.get("screen.button")), Command.SCREEN, 2); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); if (lib.containsKey("screen.back")) { processCommand(env((String) lib.get("screen.back"))); } } else if (c == userCommand) { processCommand("xterm"); if (lib.containsKey("screen.button.cmd")) { processCommand(env((String) lib.get("screen.button.cmd"))); } else { MIDletLogs("add warn an error was ocurred, screen.button command not found"); } } } }); display.setCurrent(screen); } else { MIDletLogs("add error screen crashed while init, malformed settings"); } } }
-        else if (mainCommand.equals("list")) { if (argument.equals("")) { echoCommand("x11: list: missing file"); } else { final Hashtable lib; if (argument.startsWith("/")) { lib = parseProperties(read(argument)); } else if (argument.equals("nano")) { lib = parseProperties(nanoContent); } else { lib = parseProperties(loadRMS(argument, 1)); } if (lib.containsKey("list.title") && lib.containsKey("list.content")) { final List screen = new List(env((String) lib.get("list.title")), List.IMPLICIT); final Command back = new Command("Back", Command.OK, 1); final Command run = new Command("Select", Command.SCREEN, 2); String[] content = split(env((String) lib.get("list.content")), ','); for (int i = 0; i < content.length; i++) { screen.append(content[i], null); } screen.addCommand(back); screen.addCommand(run); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { processCommand("xterm"); if (lib.containsKey("list.back")) { processCommand(env((String) lib.get("list.back"))); } } else if (c == run) { int index = screen.getSelectedIndex(); if (index >= 0) { if (lib.containsKey(screen.getString(index))) { processCommand("xterm"); processCommand((String) lib.get(screen.getString(index))); } else { MIDletLogs("add warn an error ocurred, " + screen.getString(index) + " item not found"); } } } } }); display.setCurrent(screen); } else { MIDletLogs("add error list crashed while init, malformed settings"); } } }
-        else if (mainCommand.equals("quest")) { if (argument.equals("")) { echoCommand("x11: quest: missing file"); } else { final Hashtable lib; if (argument.startsWith("/")) { lib = parseProperties(read(argument)); } else if (argument.equals("nano")) { lib = parseProperties(nanoContent); } else { lib = parseProperties(loadRMS(argument, 1)); } if (lib.containsKey("quest.title") && lib.containsKey("quest.label") && lib.containsKey("quest.cmd") && lib.containsKey("quest.key")) { final Form screen = new Form(env((String) lib.get("quest.title"))); final TextField name = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY); final Command save = new Command("Send", Command.OK, 1); final Command back = new Command("Cancel", Command.SCREEN, 2); screen.append(name); screen.addCommand(save); screen.addCommand(back); screen.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c == back) { processCommand("xterm"); if (lib.containsKey("quest.back")) { processCommand(env((String) lib.get("quest.back"))); } } else if (c == save) { if (name.getString().trim().equals("")) { } else { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(name.getString().trim())); processCommand("xterm"); processCommand(env((String) lib.get("quest.cmd"))); } } } } ); display.setCurrent(screen); } else { MIDletLogs("add error quest crashed while init, malformed settings"); } } }
-        
+        else if (mainCommand.equals("make")) {
+            if (argument.equals("")) { echoCommand("x11: make: missing file"); } 
+            else {
+                final Hashtable lib = parseFrom(argument);
+                if (lib.containsKey("screen.title") && lib.containsKey("screen.button")) {
+                    final Form screen = new Form(env((String) lib.get("screen.title")));
+                    final StringItem content = new StringItem("", lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : "");
+                    final Command backCommand = new Command(lib.containsKey("screen.back.label") ? (String) lib.get("screen.back.label") : "Back", Command.OK, 1);
+                    final Command userCommand = new Command(env((String) lib.get("screen.button")), Command.SCREEN, 2);
+
+                    screen.append(content);
+                    screen.addCommand(backCommand);
+                    screen.addCommand(userCommand);
+                    screen.setCommandListener(new CommandListener() {
+                        public void commandAction(Command c, Displayable d) {
+                            if (c == backCommand) {
+                                processCommand("xterm");
+                                processCommand(lib.containsKey("screen.back") ? env((String) lib.get("screen.back")) : "true");
+                            } else if (c == userCommand) {
+                                processCommand("xterm");
+                                if (lib.containsKey("screen.button.cmd")) { 
+                                    processCommand(env((String) lib.get("screen.button.cmd")));
+                                } else {
+                                    MIDletLogs("add warn An error ocurred, 'screen.button.cmd' not found");
+                                }
+                            }
+                        }
+                    });
+                    display.setCurrent(screen);
+                } else { MIDletLogs("add error Screen crashed while init, malformed settings"); }
+            }
+        }
+        else if (mainCommand.equals("list")) {
+            if (argument.equals("")) { echoCommand("x11: list: missing file"); } 
+            else {
+                final Hashtable lib = parseFrom(argument);
+                if (lib.containsKey("list.title") && lib.containsKey("list.content")) {
+                    final List screen = new List(env((String) lib.get("list.title")), List.IMPLICIT);
+                    final Command back = new Command(lib.containsKey("list.back.label") ? (String) lib.get("list.back.label") : "Back", Command.OK, 1);
+                    final Command run = new Command(lib.containsKey("list.button") ? (String) lib.get("list.button") : "Select", Command.SCREEN, 2);
+                    String[] content = split(env((String) lib.get("list.content")), ',');
+
+                    for (int i = 0; i < content.length; i++) {
+                        screen.append(content[i], null);
+                    }
+
+                    screen.addCommand(back);
+                    screen.addCommand(run);
+                    screen.setCommandListener(new CommandListener() {
+                        public void commandAction(Command c, Displayable d) {
+                            if (c == back) {
+                                processCommand("xterm");
+                                processCommand(lib.containsKey("list.back") ? env((String) lib.get("list.back")) : "true");
+                            } else if (c == run) {
+                                int index = screen.getSelectedIndex();
+                                if (index >= 0) {
+                                    if (lib.containsKey(screen.getString(index))) {
+                                        processCommand("xterm");
+                                        processCommand((String) lib.get(screen.getString(index)));
+                                    } else {
+                                        MIDletLogs("add warn An error ocurred, '" + screen.getString(index) + "' not found");
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    display.setCurrent(screen);
+                } else {
+                    MIDletLogs("add error List crashed while init, malformed settings");
+                }
+            }
+        }
+        else if (mainCommand.equals("quest")) {
+            if (argument.equals("")) { echoCommand("x11: quest: missing file"); } 
+            else {
+                final Hashtable lib = parseFrom(argument);
+                if (lib.containsKey("quest.title") && lib.containsKey("quest.label") && lib.containsKey("quest.cmd") && lib.containsKey("quest.key")) {
+                    final Form screen = new Form(env((String) lib.get("quest.title")));
+                    final TextField name = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY);
+                    final Command save = new Command("Send", Command.OK, 1);
+                    final Command back = new Command("Cancel", Command.SCREEN, 2);
+
+                    screen.append(name);
+                    screen.addCommand(save);
+                    screen.addCommand(back);
+                    screen.setCommandListener(new CommandListener() {
+                        public void commandAction(Command c, Displayable d) {
+                            if (c == back) {
+                                processCommand("xterm");
+                                processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true");
+                            } else if (c == save) {
+                                if (!name.getString().trim().equals("")) {
+                                    processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(name.getString().trim()));
+                                    processCommand("xterm");
+                                    processCommand(env((String) lib.get("quest.cmd")));
+                                }
+                            }
+                        }
+                    });
+                    display.setCurrent(screen);
+                } else {
+                    MIDletLogs("add error Quest crashed while init, malformed settings");
+                }
+            }
+        }
+
         else { echoCommand("x11: " + mainCommand + ": not found"); }
     }
     private void MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { if (argument.equals("")) { return; } else if (getCommand(argument).toLowerCase().equals("info")) { if (!getArgument(command).equals("")) { logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("warn")) { if (!getArgument(command).equals("")) { logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("debug")) { if (!getArgument(command).equals("")) { logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("error")) { if (!getArgument(command).equals("")) { logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": level not found"); } } else { echoCommand("log: " + mainCommand + ": not found"); } }
 
     // Lib API Service
     private void importScript(String script) {
-        if (script == null || script.length() == 0) { return; } if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); }
+        if (script == null || script.length() == 0) { return; } 
         
         Hashtable lib = parseProperties(script);
         
@@ -276,7 +378,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("shell.name") && lib.containsKey("shell.args")) { build(lib); }
 
     }
-    private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2024 - Mr. Lima")); return; } if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); } Hashtable lib = parseProperties(script); if (lib.containsKey("name")) { echoCommand((String) lib.get("name") + " " + (String) lib.get("version")); } if (lib.containsKey("description")) { echoCommand((String) lib.get("description")); } }
+    private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2024 - Mr. Lima")); return; } ilib = parseFrom(script); if (lib.containsKey("name")) { echoCommand((String) lib.get("name") + " " + (String) lib.get("version")); } if (lib.containsKey("description")) { echoCommand((String) lib.get("description")); } }
     private void build(Hashtable lib) { String name = (String) lib.get("shell.name"); String[] args = split((String) lib.get("shell.args"), ','); Hashtable shellTable = new Hashtable(); for (int i = 0; i < args.length; i++) { String argName = args[i].trim(); String argValue = (String) lib.get(argName); shellTable.put(argName, (argValue != null) ? argValue : ""); } shell.put(name, shellTable); }
 
 
@@ -289,31 +391,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void query(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { echoCommand("query: missing [host]"); return; } if (argument.equals("")) { echoCommand("query: missing [data]"); return; } try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + mainCommand); OutputStream outputStream = socket.openOutputStream(); outputStream.write((argument + "\n").getBytes()); outputStream.flush(); InputStream inputStream = socket.openInputStream(); byte[] buffer = new byte[2048]; int length = inputStream.read(buffer); if (length != -1) { String data = new String(buffer, 0, length); if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(data); MIDletLogs("add warn Query storage setting not found"); } else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(data); } else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = data; echoCommand("query: data retrived"); } else { writeRMS(env("$QUERY"), data); } } } catch (IOException e) { echoCommand(e.getMessage()); } }
     private void portScanner(final String host) { if (host == null || host.length() == 0) { return; } final List ports = new List(host + " Ports", List.IMPLICIT); ports.addCommand(new Command("Connect", Command.OK, 1)); ports.addCommand(new Command("Back", Command.BACK, 2)); ports.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.OK) { new RemoteConnection(host + ":" + ports.getString(ports.getSelectedIndex())); } else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); } } }); display.setCurrent(ports); new Thread(new Runnable() { public void run() { for (int port = 1; port <= 65535; port++) { try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); ports.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } } }).start(); }
 
-    private void sendSMS(String argument) {
-        int firstSpace = argument.indexOf(' ');
-        
-        if (firstSpace == -1) { return; }
 
-        String number = argument.substring(0, firstSpace);
-        String message = argument.substring(firstSpace + 1);
-
-        try {
-            MessageConnection conn = (MessageConnection) Connector.open("sms://" + number);
-
-            TextMessage textMessage = (TextMessage) conn.newMessage(MessageConnection.TEXT_MESSAGE);
-            textMessage.setPayloadText(message);
-
-            conn.send(textMessage);
-
-            echoCommand("message sent");
-            conn.close();
-        } catch (Exception e) {
-            echoCommand(e.getMessage());
-        }
-    }
-
-
-    public class RemoteConnection implements CommandListener{
+    public class RemoteConnection implements CommandListener {
         private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream;
 
         private String host;
@@ -335,11 +414,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(infoCommand); remote.addCommand(sendCommand);
             remote.setCommandListener(this);
 
-            try {
-                socket = (SocketConnection) Connector.open("socket://" + args);
-                inputStream = socket.openInputStream();
-                outputStream = socket.openOutputStream();
-            } 
+            try { socket = (SocketConnection) Connector.open("socket://" + args); inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); } 
             catch (IOException e) { echoCommand(e.getMessage()); return; }
             
             display.setCurrent(remote);
@@ -353,7 +428,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         private void send(String data) { try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); new Thread(new Runnable() { public void run() { try { byte[] buffer = new byte[1024]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (IOException e) { processCommand("warn " + e.getMessage()); } } }).start(); } catch (IOException e) { processCommand("warn " + e.getMessage()); } }
         
-
     }
 
 
