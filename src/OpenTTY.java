@@ -364,7 +364,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void importScript(String script) {
         if (script == null || script.length() == 0) { return; } 
         
-        Hashtable lib = parseProperties(script);
+        Hashtable lib = parseFrom(script);
         
         if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { importScript(include[i]); } }
         
