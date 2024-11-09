@@ -305,7 +305,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             conn.send(textMessage);
 
-            textBox.setString("message sent");
+            echoCommand("message sent");
             conn.close();
         } catch (Exception e) {
             echoCommand(e.getMessage());
