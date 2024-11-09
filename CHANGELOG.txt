@@ -25,6 +25,8 @@ Copyright (C) 2024 - Mr. Lima
 - Improved Netcat
 - Netcat back file save name charged to `remote`
 - `OpenTTY.connect(String ip)` moved to class `OpenTTY$RemoteConnection` 
+- Server response now can be asset files, RMS files and nanoContent
+- Default content of `$RESPONSE` charged to `/java/etc/index.html`
 
 
 [ _Notes_ ]
