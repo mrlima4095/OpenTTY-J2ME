@@ -302,9 +302,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private StringItem console = new StringItem("", "");
 
         public RemoteConnection(String args) {
-            if (args == null || args.length() == 0) { return; }
+            if (args == null || args.length() == 0) { return; } host = args;
 
-            if (args.indexOf("-d") != -1) { new UDPConnection(replace(args, "-p", "")); return; }
 
             inputField.setLabel("Remote (" + split(args, ':')[0] + ")");
             remote.append(console); remote.append(inputField);
@@ -345,89 +344,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         
 
-    }
-
-    public class UDPConnection implements CommandListener {
-        private DatagramConnection datagramConnection;
-        private String host;
-        private int port;
-        private Form remote = new Form(form.getTitle());
-        private TextField inputField = new TextField("Command", "", 256, TextField.ANY);
-        private Command sendCommand = new Command("Send", Command.OK, 1);
-        private Command backCommand = new Command("Back", Command.SCREEN, 2);
-        private Command clearCommand = new Command("Clear", Command.SCREEN, 3);
-        private Command infoCommand = new Command("Show info", Command.SCREEN, 4);
-        private StringItem console = new StringItem("", "");
-
-        public UDPConnection(String args) {
-            if (args == null || args.length() == 0) {
-                return;
-            }
-
-            this.host = split(args, ':')[0];
-            this.port = Integer.parseInt(split(args, ':')[1]);
-            inputField.setLabel("Remote (" + host + ")");
-            remote.append(console);
-            remote.append(inputField);
-            remote.addCommand(backCommand);
-            remote.addCommand(clearCommand);
-            remote.addCommand(infoCommand);
-            remote.addCommand(sendCommand);
-            remote.setCommandListener(this);
-
-            try {
-                // Abre a conexão de datagram
-                datagramConnection = (DatagramConnection) Connector.open("datagram://" + host + ":" + port);
-            } catch (IOException e) {
-                echoCommand(e.getMessage());
-                return;
-            }
-
-            display.setCurrent(remote);
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (c == sendCommand) {
-                String command = inputField.getString().trim();
-                inputField.setString("");
-                send(command);
-            } else if (c == backCommand) {
-                writeRMS("remote-udp", console.getText());
-                processCommand("xterm");
-            } else if (c == clearCommand) {
-                console.setText("");
-            } else if (c == infoCommand) {
-                warnCommand("Informations", "Host: " + host + "\nPort: " + port);
-            }
-        }
-
-        private void send(String data) {
-            try {
-                byte[] message = data.getBytes();
-                Datagram datagram = datagramConnection.newDatagram(message, message.length, "datagram://" + host + ":" + port);
-                datagramConnection.send(datagram);
-
-                // Recebe uma resposta
-                new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            byte[] buffer = new byte[1024];
-                            Datagram responseDatagram = datagramConnection.newDatagram(buffer, buffer.length);
-                            datagramConnection.receive(responseDatagram);
-
-                            String response = new String(responseDatagram.getData(), 0, responseDatagram.getLength());
-                            echoCommand(response, console);
-                        } catch (IOException e) {
-                            processCommand("warn " + e.getMessage());
-                        }
-                    }
-                }).start();
-            } catch (IOException e) {
-                processCommand("warn " + e.getMessage());
-            }
-        }
-
-        
     }
 
 
