@@ -318,12 +318,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String response = "Hop " + ttl + ": " + packet.getAddress() + " RTT: " + roundTripTime + " ms";
                     echoCommand(response);
 
-                    // Atualiza a interface ou log de saída
-                    textBox.append(response + "\n");
+                    
                 } catch (IOException e) {
                     String response = "Hop " + ttl + ": Timeout";
                     echoCommand(response);
-                    textBox.append(response + "\n");
                 }
 
                 // Se o pacote for enviado para o destino correto (supondo que estamos usando uma rede real)
