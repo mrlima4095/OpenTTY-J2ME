@@ -414,7 +414,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             datagramConnection.receive(responseDatagram);
 
                             String response = new String(responseDatagram.getData(), 0, responseDatagram.getLength());
-                            echoCommand(response);
+                            echoCommand(response, console);
                         } catch (IOException e) {
                             processCommand("warn " + e.getMessage());
                         }
