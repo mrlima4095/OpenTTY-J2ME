@@ -119,7 +119,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else { if (argument.startsWith("/")) { if (paths.containsKey(argument)) { path = argument; } else { echoCommand("cd: " + basename(argument) + ": not found"); } } else if (argument.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { processCommand(path.equals("/") ? "cd " + "/" + argument : "cd " + path + "/" + argument); } } }
         else if (mainCommand.equals("find")) {if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } String value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
         else if (mainCommand.equals("grep")) {if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } echoCommand(file.indexOf(args[0]) != -1 ? "true" : "false"); } }
-        else if (mainCommand.equals("dir")) { if (argument.equals("f")) { explorer(); } else if (argument.equals("s")) { new FileExplorer(display, form); } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }
+        else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(display, form); } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano")) { mount(nanoContent); } else { mount(loadRMS(argument, 1)); } } }
 
 
@@ -288,45 +288,89 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
 
     public class History implements CommandListener { private List historyList; private Command backCommand; private Command runCommand; private Command editCommand; public History() { historyList = new List(form.getTitle(), List.IMPLICIT); for (int i = 0; i < commandHistory.size(); i++) { historyList.append((String) commandHistory.elementAt(i), null); } backCommand = new Command("Back", Command.BACK, 1); runCommand = new Command("Run", Command.OK, 2); editCommand = new Command("Edit", Command.OK, 2); historyList.addCommand(backCommand); historyList.addCommand(runCommand); historyList.addCommand(editCommand); historyList.setCommandListener(this); display.setCurrent(historyList); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == runCommand) { int index = historyList.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(historyList.getString(index)); } } else if (c == editCommand) { int index = historyList.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(historyList.getString(index)); } } } }
-    
+
+    public class Explorer implements CommandListener {
+
+        private List files = new List(form.getTitle(), List.IMPLICIT);
+        private Command backCommand = new Command("Back", Command.BACK, 1)
+        private Command openCommand = new Command("Open", Command.SCREEN, 2);
+        private Command deleteCommand = new Command("Delete", Command.SCREEN, 3);
+        private Command runCommand = new Command("Run Script", Command.SCREEN, 4);
+        private Command importCommand = new Command("Import File", Command.SCREEN, 5);
+
+        public Explorer() {
+            
+            try {
+                String[] recordStores = RecordStore.listRecordStores();
+                if (recordStores != null) {
+                    for (int i = 0; i < recordStores.length; i++) {
+                        files.append((String) recordStores[i], null);
+                    }
+                }
+            } catch (RecordStoreException e) {
+                
+            }
+
+            files.addCommand(backCommand);
+            files.addCommand(openCommand);
+            files.addCommand(deleteCommand);
+            files.addCommand(runCommand);
+            files.addCommand(importCommand);
+            files.setCommandListener(this);
+
+            form.setCurrent(files);
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            if (c.getCommandType() == Command.BACK) {
+                processCommand("xterm");
+            } else if (c == delete) {
+                deleteFile(files.getString(files.getSelectedIndex()));
+                explorer();
+            } else if (c == open) {
+                nano(files.getString(files.getSelectedIndex()));
+            } else if (c == run) {
+                processCommand("xterm");
+                processCommand("run " + files.getString(files.getSelectedIndex()));
+            } else if (c == importfile) {
+                processCommand("xterm");
+                importScript(files.getString(files.getSelectedIndex()));
+            }
+        }
+    }
 
     public class NanoEditor implements CommandListener {
 
-        private TextBox editor;
-        private String nanoContent;
-        private Command backCommand;
-        private Command clearCommand;
-        private Command runCommand;
+        private TextBox editor = new TextBox("Nano Editor", "", 4096, TextField.ANY);
+        private Command backCommand = new Command("Back", Command.BACK, 1);
+        private Command clearCommand = new Command("Clear", Command.SCREEN, 2);
+        private Command runCommand = new Command("Run Script", Command.SCREEN, 3);
+        private Command importCommand = new Command("Import File", Command.SCREEN, 4);
+        private Command viewCommand = new Command("View as HTML", Command.SCREEN, 5);
 
         public NanoEditor(String args) {
-            String content = (args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1);
-            nanoContent = content;
+            editor.setString((args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1));
 
-            // Inicializa o editor
-            editor = new TextBox("Nano", content, 4096, TextField.ANY);
-
-            // Comandos
-            backCommand = new Command("Back", Command.BACK, 1);
-            clearCommand = new Command("Clear", Command.SCREEN, 2);
-            runCommand = new Command("View as HTML", Command.SCREEN, 3);
-
-            // Adiciona os comandos ao editor
             editor.addCommand(backCommand);
             editor.addCommand(clearCommand);
             editor.addCommand(runCommand);
+            editor.addCommand(importCommand);
+            editor.addCommand(viewCommand);
 
-            // Define o CommandListener e exibe o editor
             editor.setCommandListener(this);
             display.setCurrent(editor);
         }
 
         public void commandAction(Command c, Displayable d) {
             if (c == backCommand) {
-                nanoContent = editor.getString();
-                processCommand("xterm");
+                nanoContent = editor.getString(); processCommand("xterm");
             } else if (c == clearCommand) {
                 editor.setString("");
             } else if (c == runCommand) {
+                nanoContent = editor.getString(); processCommand("execute xterm; run;");
+            } else if (c == importCommand) {
+                nanoContent = editor.getString(); processCommand("execute xterm; import nano;"); 
+            } else if (c == viewCommand) {
                 nanoContent = editor.getString();
                 viewer(extractTitle(nanoContent), html2text(nanoContent));
             }
