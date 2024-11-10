@@ -98,7 +98,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // File Utilities
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("rm")) { deleteFile(argument); }
-        else if (mainCommand.equals("install")) { install(argument); }
         else if (mainCommand.equals("raw")) { echoCommand(nanoContent); }
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
         else if (mainCommand.equals("unmount")) { paths = new Hashtable(); }
@@ -107,6 +106,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
         else if (mainCommand.equals("ls")) { viewer("Resources", read("/java/resources.txt")); }
         else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
+        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(filename, nanoContent); } }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : loadRMS(argument, 1))); }
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument + "\n" : nanoContent + "\n" + argument; }
         else if (mainCommand.equals("touch") || mainCommand.equals("rnano")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
@@ -227,9 +227,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); String command = argument.substring(lastParenthesis + 1).trim(); String[] parts = split(expression, ' '); if (parts.length == 3) { if (parts[1].equals("startswith")) { if (parts[0].startsWith(parts[2])) { processCommand(command); } } else if (parts[1].equals("endswith")) { if (parts[0].endsWith(parts[2])) { processCommand(command); } } else if (parts[1].equals("!=")) { if (!parts[0].equals(parts[2])) { processCommand(command); } } else if (parts[1].equals("==")) { if (parts[0].equals(parts[2])) { processCommand(command); } } } else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } else if (parts.length == 1) { if (!parts[0].equals("")) { processCommand(command); } } }
     private void writeRMS(String recordStoreName, String data) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
     private void deleteFile(String filename) { if (filename == null || filename.length() == 0) { return; } try { RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } }
-    private void install(String filename) { if (filename == null || filename.length() == 0) { return; } writeRMS(filename, nanoContent); }
-    private void explorer() { final List files = new List(form.getTitle(), List.IMPLICIT); final Command open = new Command("Open", Command.OK, 2); final Command delete = new Command("Delete", Command.OK, 3); final Command run = new Command("Run Script", Command.OK, 4); final Command importfile = new Command("Import File", Command.OK, 5); try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { files.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } files.addCommand(new Command("Back", Command.BACK, 1)); files.addCommand(open); files.addCommand(delete); files.addCommand(run); files.addCommand(importfile); files.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.BACK) { processCommand("xterm"); } else if (c == delete) { deleteFile(files.getString(files.getSelectedIndex())); explorer(); } else if (c == open) { nano(files.getString(files.getSelectedIndex())); } else if (c == run) { processCommand("xterm"); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importfile) { processCommand("xterm"); importScript(files.getString(files.getSelectedIndex())); } } }); display.setCurrent(files); }
-
+    
     private void calendar() { final Form cal = new Form(form.getTitle()); cal.append(new DateField(null , DateField.DATE)); cal.addCommand(new Command("Back", Command.BACK, 1)); cal.setCommandListener(this); display.setCurrent(cal); }
 
 
