@@ -156,7 +156,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { openCommand(argument); }
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : getAppProperty(argument)); }
         else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
-        else if (mainCommand.equals("reset")) { try { long alarmTime = System.currentTimeMillis() + argument.length() == 0 ? 5000 : Integer.parseInt(argument) * 1000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); processCommand("exit"); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
+        else if (mainCommand.equals("reset")) { try { long alarmTime = System.currentTimeMillis() + 5000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); processCommand("exit"); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (IOException e) { echoCommand(e.getMessage()); } } }
         else if (mainCommand.equals("seed")) { echoCommand("" +  random.nextInt(999) + ""); }
         else if (mainCommand.equals("set")) { setCommand(argument); }
@@ -265,7 +265,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         Hashtable lib = parseFrom(script);
         
-        if (lib.containsKey("api.version")) { if ((String) lib.get("api.version") != env("$VERSION")) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
+        if (lib.containsKey("api.version")) { if ((String) lib.get("api.version").trim() != env("$VERSION")) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
 
         if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { importScript(include[i]); } }
         
