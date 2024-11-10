@@ -318,7 +318,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             files.addCommand(importCommand);
             files.setCommandListener(this);
 
-            form.setCurrent(files);
+            display.setCurrent(files);
         }
 
         public void commandAction(Command c, Displayable d) {
