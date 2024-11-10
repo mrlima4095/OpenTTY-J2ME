@@ -360,7 +360,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else {
                     userField.setString("");
                 } 
-            } else if (exitCommand) {
+            } else if (c == exitCommand) {
                 processCommand("exit");
             }
         }
