@@ -349,7 +349,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             lock.addCommand(exitCommand);
             lock.setCommandListener(this);
 
-
             display.setCurrent(lock);
         }
 
