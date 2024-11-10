@@ -335,15 +335,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public class Login implements CommandListener {
 
-        private Form login;
-        private TextField userField;
+        private Form login = new Form("Login");;
+        private TextField userField = new TextField("Username", "", 256, TextField.ANY);
         private Command loginCommand = new Command("Login", Command.OK, 1);
         private Command exitCommand = new Command("Exit", Command.SCREEN, 2);
-        private String username;
 
-        public LoginScreen() {
-            login = new Form("Login");
-            userField = new TextField("Username", "", 256, TextField.ANY);
+        public Login() {
+            
             
             login.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr. Lima\n\nCreate an user to access OpenTTY!"));
             login.append(userField);
