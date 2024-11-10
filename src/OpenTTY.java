@@ -45,7 +45,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             form.addCommand(historyCommand);
             form.setCommandListener(this);
             
-            if (username.equals("")) { login(); }
+            if (username.equals("")) { new Login(); }
             else { display.setCurrent(form); runScript(read("/java/etc/initd.sh")); runScript(loadRMS("initd", 1)); }
         }    
     }
@@ -272,9 +272,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void build(Hashtable lib) { String name = (String) lib.get("shell.name"); String[] args = split((String) lib.get("shell.args"), ','); Hashtable shellTable = new Hashtable(); for (int i = 0; i < args.length; i++) { String argName = args[i].trim(); String argValue = (String) lib.get(argName); shellTable.put(argName, (argValue != null) ? argValue : ""); } shell.put(name, shellTable); }
 
 
-    // Login API Service
-    private void login() { final Form login = new Form("Login"); final TextField userField = new TextField("Username", "", 256, TextField.ANY); login.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr. Lima\n\nCreate an user to acess OpenTTY!")); login.append(userField); login.addCommand(new Command("Login", Command.OK, 1)); login.addCommand(new Command("Exit", Command.SCREEN, 2)); login.setCommandListener(new CommandListener() { public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.OK) { username = userField.getString(); if (!username.equals("")) { writeRMS("OpenRMS", username); processCommand("xterm"); } } else if (c.getCommandType() == Command.SCREEN) { notifyDestroyed(); } } }); display.setCurrent(login); } 
-    
     // Network API Service
     private void pingCommand(String url) { if (url == null || url.length() == 0) { return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } long startTime = System.currentTimeMillis(); try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); long endTime = System.currentTimeMillis(); echoCommand("Ping to " + url + " successful, time=" + (endTime - startTime) + "ms"); conn.close(); } catch (IOException e) { echoCommand("Ping to " + url + " failed: " + e.getMessage()); } }
     private void runServer(final String port) { if (port == null || port.length() == 0 || port.equals("$PORT")) { processCommand("set PORT=31522"); runServer("31522"); return; } new Thread(new Runnable() { public void run() { ServerSocketConnection serverSocket = null; try { serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); while (true) { SocketConnection clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); InputStream is = clientSocket.openInputStream(); OutputStream os = clientSocket.openOutputStream(); echoCommand("[+] " + clientSocket.getAddress() + " connected"); byte[] buffer = new byte[256]; int bytesRead = is.read(buffer); String clientData = new String(buffer, 0, bytesRead); echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim())); String response = env("$RESPONSE"); if (response.startsWith("/")) { os.write(read(response).getBytes()); } else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } else { os.write(loadRMS(response, 1).getBytes()); } } } catch (IOException e) { echoCommand("[-] " + e.getMessage()); MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); serverSocket.close(); } } }).start(); }
@@ -336,6 +333,42 @@ public class OpenTTY extends MIDlet implements CommandListener {
             memoryStatus.setText("Memory Status:\n\nUsed Memory: " + usedMemory + " KB\nFree Memory: " + freeMemory + " KB\nTotal Memory: " + totalMemory + " KB");
         }
     }
+    public class Login implements CommandListener {
+
+        private Form login;
+        private TextField userField;
+        private Command loginCommand = new Command("Login", Command.OK, 1);
+        private Command exitCommand = new Command("Exit", Command.SCREEN, 2);
+        private String username;
+
+        public LoginScreen() {
+            login = new Form("Login");
+            userField = new TextField("Username", "", 256, TextField.ANY);
+            
+            login.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr. Lima\n\nCreate an user to access OpenTTY!"));
+            login.append(userField);
+            
+            login.addCommand(loginCommand);
+            login.addCommand(exitCommand);
+            
+            login.setCommandListener(this);
+
+            display.setCurrent(login);
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            if (c == loginCommand) {
+                username = userField.getString();
+                if (!username.equals("")) {
+                    writeRMS("OpenRMS", username);
+                    display.setCurrent(form); 
+                }
+            } else if (c == exitCommand) {
+                notifyDestroyed();
+            }
+        }
+    }
+
     public class LockScreen implements CommandListener {
 
         private Form lock = new Form(form.getTitle() + " - Locked");
