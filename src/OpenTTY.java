@@ -369,12 +369,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try {
                 socket = (SocketConnection) Connector.open("socket://" + args);
                 inputStream = socket.openInputStream();
-                outputStream = socket.openOutputStream(); new Thread(this).start();
+                outputStream = socket.openOutputStream(); 
             } catch (IOException e) {
                 echoCommand(e.getMessage());
                 return;
             }
 
+            new Thread(this).start();
             display.setCurrent(remote);
         }
 
