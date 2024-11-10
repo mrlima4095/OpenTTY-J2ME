@@ -286,7 +286,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Form htop = new Form(form.getTitle());
         private Command backCommand = new Command("Back", Command.BACK, 1);
         private Command refreshCommand = new Command("Refresh", Command.SCREEN, 2);
-        private Command garbageCommand = new Command("Clear Memory", Command.SCREEN, 3);
         private StringItem memoryStatus = new StringItem("", "");
         private boolean thr_status = true;
 
@@ -294,7 +293,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             htop.append(memoryStatus);
             htop.addCommand(backCommand);
             htop.addCommand(refreshCommand);
-            htop.addCommand(garbageCommand);
             htop.setCommandListener(this);
             MemoryStatus();
             display.setCurrent(htop);
@@ -304,10 +302,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == backCommand) {
                 thr_status = false; processCommand("xterm");
             } else if (c == refreshCommand) {
-                MemoryStatus();
-            } else if (c == garbageCommand) {
-                Runtime.getRuntime().gc();
-            }
+                Runtime.getRuntime().gc(); MemoryStatus();
+            } 
         }
 
         private void MemoryStatus() {
@@ -326,53 +322,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class LockScreen implements CommandListener { private Form lock = new Form(form.getTitle() + " - Locked"); private TextField userField = new TextField("Username", "", 256, TextField.ANY); private Command unlockCommand = new Command("Unlock", Command.OK, 1); private Command exitCommand = new Command("Exit", Command.SCREEN, 2); public LockScreen() { lock.append(userField); lock.addCommand(unlockCommand); lock.addCommand(exitCommand); lock.setCommandListener(this); display.setCurrent(lock); } public void commandAction(Command c, Displayable d) { if (c == unlockCommand) { if (userField.getString().equals(username)) { processCommand("xterm"); } else { userField.setString(""); } } else if (c == exitCommand) { processCommand("exit"); } } }
 
     public class GetAddress { public GetAddress(String args) { if (args.equals("")) { processCommand("ifconfig"); } else { String result = performNSLookup(args); echoCommand(result); } } private String performNSLookup(String domain) { try { DatagramConnection conn = (DatagramConnection) Connector.open("datagram://1.1.1.1:53"); byte[] query = createDNSQuery(domain); Datagram request = conn.newDatagram(query, query.length); conn.send(request); Datagram response = conn.newDatagram(512); conn.receive(response); conn.close(); return parseDNSResponse(response.getData()); } catch (IOException e) { return e.getMessage(); } } private byte[] createDNSQuery(String domain) throws IOException { ByteArrayOutputStream out = new ByteArrayOutputStream(); out.write(0x12); out.write(0x34); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); String[] parts = split(domain, '.'); for (int i = 0; i < parts.length; i++) { out.write(parts[i].length()); out.write(parts[i].getBytes()); } out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x01); return out.toByteArray(); } private String parseDNSResponse(byte[] response) { if ((response[3] & 0x0F) != 0) { return "DNS response error"; } int answerOffset = 12; while (response[answerOffset] != 0) { answerOffset++; } answerOffset += 5; if (response[answerOffset + 2] == 0x00 && response[answerOffset + 3] == 0x01) { StringBuffer ip = new StringBuffer(); for (int i = answerOffset + 12; i < answerOffset + 16; i++) { ip.append(response[i] & 0xFF); if (i < answerOffset + 15) ip.append("."); } return ip.toString(); } else { return "not found"; } } }
-    public class Server implements Runnable {
-        private String port;
-        public Server(String args) {
-            if (args == null || args.length() == 0 || args.equals("$PORT")) {
-                processCommand("set PORT=31522");
-                new Server("31522");
-                return;
-            }
-            port = args;
-            new Thread(this).start();
-        }
-
-        public void run() {
-            
-            ServerSocketConnection serverSocket = null;
-            try {
-                serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
-                echoCommand("[+] listening at port " + port);
-                MIDletLogs("add info Server listening at port " + port);
-                while (true) {
-                    SocketConnection clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
-                    InputStream is = clientSocket.openInputStream();
-                    OutputStream os = clientSocket.openOutputStream();
-                    echoCommand("[+] " + clientSocket.getAddress() + " connected");
-                    byte[] buffer = new byte[256];
-                    int bytesRead = is.read(buffer);
-                    String clientData = new String(buffer, 0, bytesRead);
-                    echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim()));
-                    String response = env("$RESPONSE");
-                    if (response.startsWith("/")) {
-                        os.write(read(response).getBytes());
-                    } else if (response.equals("nano")) {
-                        os.write(nanoContent.getBytes());
-                    } else {
-                        os.write(loadRMS(response, 1).getBytes());
-                    }
-                }
-            } catch (IOException e) {
-                echoCommand("[-] " + e.getMessage());
-                MIDletLogs("add error Server crashed '" + e.getMessage() + "'");
-                try {
-                    serverSocket.close();
-                } catch (IOException e) { }
-            }
-                
-        }
-    }
+    public class Server implements Runnable { private String port; public Server(String args) { if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522"); new Server("31522"); return; } port = args; new Thread(this).start(); } public void run() { ServerSocketConnection serverSocket = null; try { serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); while (true) { SocketConnection clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); InputStream is = clientSocket.openInputStream(); OutputStream os = clientSocket.openOutputStream(); echoCommand("[+] " + clientSocket.getAddress() + " connected"); byte[] buffer = new byte[256]; int bytesRead = is.read(buffer); String clientData = new String(buffer, 0, bytesRead); echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim())); String response = env("$RESPONSE"); if (response.startsWith("/")) { os.write(read(response).getBytes()); } else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } else { os.write(loadRMS(response, 1).getBytes()); } } } catch (IOException e) { echoCommand("[-] " + e.getMessage()); MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); try { serverSocket.close(); } catch (IOException e1) { } } } }
 
     public class RemoteConnection implements CommandListener, Runnable { private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream; private String host; private Form remote = new Form(form.getTitle()); private TextField inputField = new TextField("Command", "", 256, TextField.ANY); private Command sendCommand = new Command("Send", Command.OK, 1); private Command backCommand = new Command("Back", Command.SCREEN, 2); private Command clearCommand = new Command("Clear", Command.SCREEN, 3); private Command infoCommand = new Command("Show info", Command.SCREEN, 4); private StringItem console = new StringItem("", ""); public RemoteConnection(String args) { if (args == null || args.length() == 0) { return; } host = args; inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); remote.append(console); remote.append(inputField); remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(infoCommand); remote.addCommand(sendCommand); remote.setCommandListener(this); try { socket = (SocketConnection) Connector.open("socket://" + args); inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); } catch (IOException e) { echoCommand(e.getMessage()); return; } new Thread(this).start(); display.setCurrent(remote); } public void commandAction(Command c, Displayable d) { if (c == sendCommand) { String data = inputField.getString().trim(); inputField.setString(""); try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } catch (IOException e) { processCommand("warn " + e.getMessage()); } } else if (c == backCommand) { writeRMS("remote", console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); } else if (c == infoCommand) { try { warnCommand("Informations", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Port: " + Integer.toString(socket.getLocalPort())); } catch (IOException e) { } } } public void run() { while (true) { try { byte[] buffer = new byte[4096]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (IOException e) { processCommand("warn " + e.getMessage()); break; } } } }
     public class GoBuster implements CommandListener, Runnable { private String fullUrl; private String url; private String[] wordlist; private List pages; private Command openCommand = new Command("Get Request", Command.OK, 1); private Command saveCommand = new Command("Save Result", Command.OK, 1); private Command backCommand = new Command("Back", Command.BACK, 1); public GoBuster(String args) { if (args == null || args.length() == 0) { return; } url = args; pages = new List("GoBuster (" + url + ")", List.IMPLICIT); wordlist = split(loadRMS("gobuster", 1), '\n'); if (wordlist == null || wordlist.length == 0) { wordlist = split(read("/java/etc/gobuster"), '\n'); } pages.addCommand(openCommand); pages.addCommand(saveCommand); pages.addCommand(backCommand); pages.setCommandListener(this); new Thread(this).start(); display.setCurrent(pages); } private boolean GoVerify(String fullUrl) throws IOException { HttpConnection conn = null; InputStream is = null; try { conn = (HttpConnection) Connector.open(fullUrl); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); return (responseCode == HttpConnection.HTTP_OK); } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } } private String GoSave(List pages) { StringBuffer sb = new StringBuffer(); for (int i = 0; i < pages.size(); i++) { sb.append(pages.getString(i)); if (i < pages.size() - 1) { sb.append("\n"); } } return replace(sb.toString(), "/", ""); } public void commandAction(Command c, Displayable d) { if (c == openCommand) { processCommand("bg execute wget " + url + pages.getString(pages.getSelectedIndex()) + "; nano;"); } else if (c == saveCommand && pages.size() != 0) { nanoContent = GoSave(pages); new NanoEditor(""); } else if (c == backCommand) { processCommand("xterm"); } } public void run() { for (int i = 0; i < wordlist.length; i++) { if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; try { if (GoVerify(fullUrl)) { pages.append("/" + wordlist[i], null); } } catch (IOException e) { } } } } }
