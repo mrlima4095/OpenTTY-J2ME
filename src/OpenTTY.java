@@ -299,7 +299,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private StringItem memoryStatus = new StringItem("", "");
         private boolean thr_status = true;
 
-        public HtopViewer() {
+        public HTopViewer() {
             htop.append(memoryStatus);
             htop.addCommand(backCommand);
             htop.addCommand(refreshCommand);
