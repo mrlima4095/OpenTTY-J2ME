@@ -322,17 +322,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void commandAction(Command c, Displayable d) {
-            if (c.getCommandType() == Command.BACK) {
+            if (c == backCommand) {
                 processCommand("xterm");
-            } else if (c == delete) {
+            } else if (c == deleteCommand) {
                 deleteFile(files.getString(files.getSelectedIndex()));
                 explorer();
-            } else if (c == open) {
-                nano(files.getString(files.getSelectedIndex()));
-            } else if (c == run) {
+            } else if (c == openCommand) {
+                new NanoEditor(files.getString(files.getSelectedIndex()));
+            } else if (c == runCommand) {
                 processCommand("xterm");
                 processCommand("run " + files.getString(files.getSelectedIndex()));
-            } else if (c == importfile) {
+            } else if (c == importCommand) {
                 processCommand("xterm");
                 importScript(files.getString(files.getSelectedIndex()));
             }
