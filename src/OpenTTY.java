@@ -106,7 +106,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
         else if (mainCommand.equals("ls")) { viewer("Resources", read("/java/resources.txt")); }
         else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
-        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(filename, nanoContent); } }
+        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : loadRMS(argument, 1))); }
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument + "\n" : nanoContent + "\n" + argument; }
         else if (mainCommand.equals("touch") || mainCommand.equals("rnano")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
