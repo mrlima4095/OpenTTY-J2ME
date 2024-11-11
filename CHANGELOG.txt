@@ -28,9 +28,11 @@ Copyright (C) 2024 - Mr. Lima
 - Netcat back file save name charged to `remote`
 - `OpenTTY.connect(String ip)` moved to class `OpenTTY$RemoteConnection` 
 - Netcat buffer size was increased to `4096`
+- Query buffer size was increased to `4096`
 - Server response now can be asset files, RMS files and nanoContent
 - Default content of `$RESPONSE` charged to `/java/etc/index.html`
 - X Server **List API** has new attributes `list.back.label` and `list.button`
+- Added new Package **PasteBin** 1.0 client for PasteBin
 
 
 [ _Notes_ ]

@@ -9,17 +9,25 @@ command=yang,setrepo
 yang=execute x11 list /java/lib/yang;
 setrepo=execute set VALUE=REPO; export RETURN; x11 quest /java/lib/settings;
 
+shell.name=yang
+shell.args=install
+
+install=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; tick Installing...; query $REPO get lib/$RES_FILE; tick; set QUERY=$OLD_QUERY; unset OLD_QUERY; unset RESOURCE; unset RES_FILE;
+
 [ Index ]
 
 list.title=Repository
-list.content=Armitage,Forge,JAuth2,JBenchmark,SmartME SDK,PackJ (Update),X Server 0.4,Updater
+list.content=Armitage,PasteBin,Forge,JAuth2,JBenchmark,SmartME SDK,PackJ (Update),X Server 0.4,Updater
+list.button=Install
 
-Armitage=execute set OLD_QUERY=$QUERY; set QUERY=armitage; query $REPO get lib/armitage; set QUERY=$OLD_QUERY; unset OLD_QUERY;
-Forge=execute set OLD_QUERY=$QUERY; set QUERY=forge; query $REPO get lib/forge; set QUERY=$OLD_QUERY; unset OLD_QUERY;
-JAuth2=execute set OLD_QUERY=$QUERY; set QUERY=jauth2; query $REPO get lib/jauth2; set QUERY=$OLD_QUERY; unset OLD_QUERY;
-JBenchmark=execute set OLD_QUERY=$QUERY; set QUERY=debuggers; query $REPO get lib/debuggers; set QUERY=$OLD_QUERY; unset OLD_QUERY;
-SmartME SDK=execute set OLD_QUERY=$QUERY; set QUERY=sdkme; query $REPO get lib/smartme; set QUERY=forge; query $REPO get lib/forge; set QUERY=$OLD_QUERY; unset OLD_QUERY;
-PackJ (Update)=execute set OLD_QUERY=$QUERY; set QUERY=yang; query $REPO get lib/yang; set QUERY=$OLD_QUERY; unset OLD_QUERY;
-Updater=execute set OLD_QUERY=$QUERY; set QUERY=sync; query $REPO get lib/sync; set QUERY=$OLD_QUERY; unset OLD_QUERY;
+Armitage=execute set RESOURCE=armitage; yang install;
+PasteBin=execute set RESOURCE=pastebin; yang install; 
+Forge=execute set RESOURCE=forge; yang install;
+JAuth2=execute set RESOURCE=jauth2; yang install;
+JBenchmark=execute set RESOURCE=debuggers; yang install;
+SmartME SDK=execute set RESOURCE=sdkme; yang install; execute set RESOURCE=forge; yang install;
+PackJ (Update)=execute set RESOURCE=yang; yang install;
+X Server 0.4=execute set RESOURCE=xorg-client; yang install;
+Updater=execute set RESOURCE=sync; yang install;
 
 
