@@ -181,6 +181,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
 
         else if (mainCommand.equals("github")) { processCommand("open " + getAppProperty("MIDlet-Info-URL")); }
+        else if (mainCommand.equals("proxy")) { if (argument.equals("")) { return; } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
+        else if (mainCommand.equals("tick")) { ticker(argument); } }
         //else if (mainCommand.equals("")) {  }
         
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
@@ -215,6 +217,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void echoCommand(String message, StringItem console) { console.setText(console.getText().equals("") ? message.trim() : console.getText() + "\n" + message.trim()); }
     private void warnCommand(String title, String message) { if (message == null || message.length() == 0) { return; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); }
     
+    private void ticker(String text) { Displayable current = display.getCurrent(); if (text == null || text.length() == 0) { current.setTicker(null); } else { current.setTicker(new Ticker(argument)); }
     private void viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); display.setCurrent(viewer); }
     
     private void runScript(String script) { String[] commands = split(script, '\n'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
@@ -237,6 +240,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-10-16\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } 
         else if (mainCommand.equals("reset")) { form = new Form(""); display.setCurrent(form); }
+        else if (mainCommand.equals("tick")) { ticker(argument); } }
         else if (mainCommand.equals("title")) { form.setTitle(argument); }
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
@@ -280,42 +284,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class Explorer implements CommandListener { private List files = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1); private Command openCommand = new Command("Open", Command.SCREEN, 2); private Command deleteCommand = new Command("Delete", Command.SCREEN, 3); private Command runCommand = new Command("Run Script", Command.SCREEN, 4); private Command importCommand = new Command("Import File", Command.SCREEN, 5); public Explorer() { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { files.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } files.addCommand(backCommand); files.addCommand(openCommand); files.addCommand(deleteCommand); files.addCommand(runCommand); files.addCommand(importCommand); files.setCommandListener(this); display.setCurrent(files); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == deleteCommand) { deleteFile(files.getString(files.getSelectedIndex())); new Explorer(); } else if (c == openCommand) { new NanoEditor(files.getString(files.getSelectedIndex())); } else if (c == runCommand) { processCommand("xterm"); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importCommand) { processCommand("xterm"); importScript(files.getString(files.getSelectedIndex())); } } }
     public class NanoEditor implements CommandListener { private TextBox editor = new TextBox("Nano", "", 4096, TextField.ANY); private Command backCommand = new Command("Back", Command.BACK, 1); private Command clearCommand = new Command("Clear", Command.SCREEN, 2); private Command viewCommand = new Command("View as HTML", Command.SCREEN, 3); public NanoEditor(String args) { editor.setString((args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1)); editor.addCommand(backCommand); editor.addCommand(clearCommand); editor.addCommand(viewCommand); editor.setCommandListener(this); display.setCurrent(editor); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { nanoContent = editor.getString(); processCommand("xterm"); } else if (c == clearCommand) { editor.setString(""); } else if (c == viewCommand) { nanoContent = editor.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
 
-    public class HTopViewer implements CommandListener {
-
-
-        private Form htop = new Form(form.getTitle());
-        private Command backCommand = new Command("Back", Command.BACK, 1);
-        private Command refreshCommand = new Command("Refresh", Command.SCREEN, 2);
-        private StringItem memoryStatus = new StringItem("", "");
-        private boolean thr_status = true;
-
-        public HTopViewer() {
-            htop.append(memoryStatus);
-            htop.addCommand(backCommand);
-            htop.addCommand(refreshCommand);
-            htop.setCommandListener(this);
-            MemoryStatus();
-            display.setCurrent(htop);
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (c == backCommand) {
-                thr_status = false; processCommand("xterm");
-            } else if (c == refreshCommand) {
-                Runtime.getRuntime().gc(); MemoryStatus();
-            } 
-        }
-
-        private void MemoryStatus() {
-            Runtime runtime = Runtime.getRuntime();
-            long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024;
-            long freeMemory = runtime.freeMemory() / 1024;
-            long totalMemory = runtime.totalMemory() / 1024;
-            
-            
-            memoryStatus.setText("Memory Status:\n\nUsed Memory: " + usedMemory + " KB\nFree Memory: " + freeMemory + " KB\nTotal Memory: " + totalMemory + " KB");
-        }
-    }
+    public class HTopViewer implements CommandListener { private Form htop = new Form(form.getTitle()); private Command backCommand = new Command("Back", Command.BACK, 1); private Command refreshCommand = new Command("Refresh", Command.SCREEN, 2); private StringItem memoryStatus = new StringItem("", ""); private boolean thr_status = true; public HTopViewer() { htop.append(memoryStatus); htop.addCommand(backCommand); htop.addCommand(refreshCommand); htop.setCommandListener(this); MemoryStatus(); display.setCurrent(htop); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { thr_status = false; processCommand("xterm"); } else if (c == refreshCommand) { Runtime.getRuntime().gc(); MemoryStatus(); } } private void MemoryStatus() { Runtime runtime = Runtime.getRuntime(); long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024; long freeMemory = runtime.freeMemory() / 1024; long totalMemory = runtime.totalMemory() / 1024; memoryStatus.setText("Memory Status:\n\nUsed Memory: " + usedMemory + " KB\nFree Memory: " + freeMemory + " KB\nTotal Memory: " + totalMemory + " KB"); } }
 
 
     public class Login implements CommandListener { private Form login = new Form("Login"); private TextField userField = new TextField("Username", "", 256, TextField.ANY); private Command loginCommand = new Command("Login", Command.OK, 1); private Command exitCommand = new Command("Exit", Command.SCREEN, 2); public Login() { login.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr. Lima\n\nCreate an user to access OpenTTY!")); login.append(userField); login.addCommand(loginCommand); login.addCommand(exitCommand); login.setCommandListener(this); display.setCurrent(login); } public void commandAction(Command c, Displayable d) { if (c == loginCommand) { username = userField.getString(); if (!username.equals("")) { writeRMS("OpenRMS", username); display.setCurrent(form); } } else if (c == exitCommand) { notifyDestroyed(); } } }
