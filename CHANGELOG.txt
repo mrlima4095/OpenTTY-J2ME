@@ -10,7 +10,6 @@ Copyright (C) 2024 - Mr. Lima
 - `reset`: restart MIDlet
 - `xterm`: return to console screen
 - `tick`: set top label of current screen (status)
-- `bind`: host server to execute a command remotely
 
 [ _Updates_ ] 
 
