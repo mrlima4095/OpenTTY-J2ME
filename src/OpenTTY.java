@@ -182,7 +182,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("github")) { processCommand("open " + getAppProperty("MIDlet-Info-URL")); }
         else if (mainCommand.equals("proxy")) { if (argument.equals("")) { return; } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
-        else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { ticker(argument); } }
+        else if (mainCommand.equals("tick")) { if (argument.equals("label''''''''''")) { echoCommand(display.getCurrent().getTicker().getString()); } else { ticker(argument); } }
         //else if (mainCommand.equals("")) {  }
         
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
