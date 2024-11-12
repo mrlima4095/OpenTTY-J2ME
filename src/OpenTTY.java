@@ -86,7 +86,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
         else if (mainCommand.equals("server")) { new Server(env("$PORT")); }
         else if (mainCommand.equals("prscan")) { new PortScanner(argument); }
-        else if (mainCommand.equals("bind")) { BindConnection(env("$PORT")) }
+        else if (mainCommand.equals("bind")) { BindConnection(env("$PORT")); }
         else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
         else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand(request(argument)); } }
         else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument); } }
