@@ -117,8 +117,43 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand(basename(argument) + " (Size: " + read(argument).length() + " B)"); } else if (argument.equals("nano")) { echoCommand(argument + " (Size: " + nanoContent.length() + " B)"); } else { echoCommand(argument + " (Size: " + loadRMS(argument, 1).length() + " B)"); } } }
         else if (mainCommand.equals("ph2s")) { StringBuffer script = new StringBuffer(); for (int i = 0; i < commandHistory.size() - 1; i++) { script.append(commandHistory.elementAt(i)); if (i < commandHistory.size() - 1) { script.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } }
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else { if (argument.startsWith("/")) { if (paths.containsKey(argument)) { path = argument; } else { echoCommand("cd: " + basename(argument) + ": not found"); } } else if (argument.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { processCommand(path.equals("/") ? "cd " + "/" + argument : "cd " + path + "/" + argument); } } }
-        else if (mainCommand.equals("dd")) { if (argument == null || argument.length() == 0) { } else { String[] args = split(argument, ' '); try  { FileConnection fileConn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); OutputStream os = fileConn.exists() ? fileConn.openOutputStream() : (fileConn.create() ? fileConn.openOutputStream() : null); String content = args[1]; os.write(content.startsWith("/") ? read(content).getBytes() : (content.equals("nano") ? nanoContent.getBytes() : loadRMS(content, 1).getBytes())); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
-        else if (mainCommand.equals("find")) {if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } String value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
+        else if (mainCommand.equals("dd")) { 
+    if (argument == null || argument.length() == 0) {
+        // Nenhum argumento fornecido
+    } else { 
+        String[] args = split(argument, ' ');
+
+        try { 
+            FileConnection fileConn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE);
+
+            OutputStream os;
+            if (fileConn.exists()) {
+                os = fileConn.openOutputStream();
+            } else {
+                fileConn.create();
+                os = fileConn.openOutputStream();
+                
+            }
+
+            if (os != null) {
+                String content = args[1];
+
+                if (content.startsWith("/")) {
+                    os.write(read(content).getBytes());
+                } else if (content.equals("nano")) {
+                    os.write(nanoContent.getBytes());
+                } else {
+                    os.write(loadRMS(content, 1).getBytes());
+                }
+
+                os.flush();
+                echoCommand("operation finish");
+            }
+        } catch (IOException e) { 
+            echoCommand(e.getMessage());
+        } 
+    } 
+}else if (mainCommand.equals("find")) {if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } String value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
         else if (mainCommand.equals("grep")) {if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } echoCommand(file.indexOf(args[0]) != -1 ? "true" : "false"); } }
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(display, form); } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano")) { mount(nanoContent); } else { mount(loadRMS(argument, 1)); } } }
