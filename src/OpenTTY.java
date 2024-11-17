@@ -234,7 +234,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             "microedition.platform"
         };
 
-        String result = "Unknown";
+        String result = "unknown";
         for (int i = 0; i < keys.length; i++) {
             String value = System.getProperty(keys[i]);
             if (value != null) {
@@ -260,7 +260,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String argument = getArgument(command);
         
         if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-10-16\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } 
-        else if (mainCommand.equals("reset")) { form = new Form(""); display.setCurrent(form); }
+        else if (mainCommand.equals("reset")) { form = new Form(""); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); form.setCommandListener(this); display.setCurrent(form); }
+        else if (mainCommand.equals("command")) { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); }
+        else if (mainCommand.equals("stop")) { form = new Form(""); display.setCurrent(form); }
         else if (mainCommand.equals("tick")) { ticker(argument); }
         else if (mainCommand.equals("title")) { form.setTitle(argument); }
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
