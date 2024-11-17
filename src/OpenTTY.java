@@ -124,6 +124,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano")) { mount(nanoContent); } else { mount(loadRMS(argument, 1)); } } }
         
         // General 
+        else if (mainCommand.equals("arch")) { arch(); }
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
         else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }).start(); }
@@ -222,6 +223,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     private void runScript(String script) { String[] commands = split(script, '\n'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
     
+
+    private void arch() {
+        String[] keys = {
+            "com.nokia.s40.cpu", 
+            "com.sonyericsson.hardware", 
+            "com.samsung.hardware.cpu", 
+            "mot.cpu", 
+            "com.lge.hardware", 
+            "microedition.platform"
+        };
+
+        String result = "Unknown";
+        for (int i = 0; i < keys.length; i++) {
+            String value = System.getProperty(keys[i]);
+            if (value != null) {
+                result = value;
+                break; 
+            }
+        } echoCommand(result);
+    }
 
     private void mount(String script) { String[] lines = split(script, '\n'); for (int i = 0; i < lines.length; i++) { String line = ""; if (lines[i] != null) { line = lines[i].trim(); } if (line.startsWith("#")) { } else if (line.length() != 0) { if (line.startsWith("/")) { String fullPath = ""; int start = 0; for (int j = 1; j < line.length(); j++) { if (line.charAt(j) == '/') { String dir = line.substring(start + 1, j); fullPath += "/" + dir; addDirectory(fullPath); start = j; } } String dir = line.substring(start + 1); fullPath += "/" + dir; addDirectory(fullPath); } } } }
     private void addDirectory(String fullPath) { if (!paths.containsKey(fullPath)) { paths.put(fullPath, new String[] { ".." }); String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/')); if (parentPath.length() == 0) { parentPath = "/"; } String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } updatedContents.addElement(fullPath.substring(fullPath.lastIndexOf('/') + 1)); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } }
