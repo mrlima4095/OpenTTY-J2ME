@@ -188,68 +188,40 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
             
-       else if (mainCommand.equals("canvas")) {
-    display.setCurrent(new Canvas() {
-        protected void paint(Graphics g) {
-            // Desenhando a moldura da janela com borda preta
-            int windowWidth = getWidth() - 10;
-            int windowHeight = getHeight() - 10;
-            
-            // Borda preta da janela
-            g.setColor(0, 0, 0); // Cor da borda (preto)
-            g.fillRect(5, 5, windowWidth, windowHeight); // Desenha a borda da janela
+        else if (mainCommand.equals("mouse")) { display.setCurrent(new Canvas() {
+            private int cursorX = 10;
+            private int cursorY = 10;
+            private final int cursorSize = 5;
 
-            // Cabeçalho da janela (barra de título)
-            g.setColor(50, 50, 50); // Cor da barra de título (cinza escuro)
-            g.fillRect(5, 5, windowWidth, 20); // Barra de título
+            // Método para pintar o Canvas
+            protected void paint(Graphics g) {
+                // Limpa a tela
+                g.setColor(255, 255, 255);
+                g.fillRect(0, 0, getWidth(), getHeight());
 
-            // Título da janela (centralizado)
-            g.setColor(255, 255, 255); // Cor do título (branco)
-            g.drawString("Minha Janela", windowWidth / 2 - 40, 15); // Desenha o título
-
-            // Botões (Fechar, Minimizar, Restaurar)
-            int buttonSize = 10;
-            g.setColor(255, 0, 0); // Cor do botão Fechar (vermelho)
-            g.fillRect(windowWidth - 30, 10, buttonSize, buttonSize); // Botão Fechar
-            
-            g.setColor(255, 255, 0); // Cor do botão Minimizar (amarelo)
-            g.fillRect(windowWidth - 50, 10, buttonSize, buttonSize); // Botão Minimizar
-            
-            g.setColor(0, 255, 0); // Cor do botão Restaurar (verde)
-            g.fillRect(windowWidth - 70, 10, buttonSize, buttonSize); // Botão Restaurar
-
-            // Corpo da janela - área para o conteúdo
-            g.setColor(255, 255, 255); // Cor de fundo do conteúdo (branco)
-            g.fillRect(5, 25, windowWidth, windowHeight - 30); // Corpo da janela
-
-            // Conteúdo da janela - texto
-            g.setColor(0, 0, 0); // Cor do texto (preto)
-            g.drawString("Bem-vindo à minha janela!", 20, 40); // Exibe o texto dentro da janela
-            g.drawString("Este é um exemplo de janela", 20, 55);
-            g.drawString("com borda preta e texto dentro.", 20, 70);
-        }
-
-        protected void keyPressed(int keyCode) {
-            // Lógica de interação com os botões
-            int x = getWidth() - 30;
-            int y = 10;
-            int buttonSize = 10;
-            
-            if (keyCode == Canvas.KEY_NUM1) {
-                // Simulando o botão Fechar
-                processCommand("Fechar");
-            } else if (keyCode == Canvas.KEY_NUM2) {
-                // Simulando o botão Minimizar
-                processCommand("Minimizar");
-            } else if (keyCode == Canvas.KEY_NUM3) {
-                // Simulando o botão Restaurar
-                processCommand("Restaurar");
+                // Desenha o cursor (simulado como um quadrado)
+                g.setColor(0, 0, 255);  // Cor do cursor (azul)
+                g.fillRect(cursorX, cursorY, cursorSize, cursorSize);
             }
-        }
-    });
-}
 
+            // Método que captura as teclas pressionadas
+            protected void keyPressed(int keyCode) {
+                int gameAction = getGameAction(keyCode);
 
+                // Movimentação do cursor utilizando as teclas direcionais
+                if (gameAction == LEFT) {
+                    cursorX = Math.max(0, cursorX - 5);
+                } else if (gameAction == RIGHT) {
+                    cursorX = Math.min(getWidth() - cursorSize, cursorX + 5);
+                } else if (gameAction == UP) {
+                    cursorY = Math.max(0, cursorY - 5);
+                } else if (gameAction == DOWN) {
+                    cursorY = Math.min(getHeight() - cursorSize, cursorY + 5);
+                }
+
+                repaint();  // Redesenha o Canvas para mostrar o cursor na nova posição
+            }
+        }); }
 
         else { echoCommand(mainCommand + ": not found"); }
 
