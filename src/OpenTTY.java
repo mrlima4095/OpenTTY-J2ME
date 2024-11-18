@@ -199,7 +199,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 protected void keyPressed(int keyCode) {
                     processCommand("xterm");
                 }
-            });
+            }); }
 
         else { echoCommand(mainCommand + ": not found"); }
 
