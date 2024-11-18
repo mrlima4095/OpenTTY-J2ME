@@ -249,9 +249,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 final Hashtable lib = parseFrom(argument);
 
                 if (lib.containsKey("item.label") && lib.containsKey("item.cmd")) {
-                    final String label = (String) lib.get("item.label")
-                    final Command run = new Command(label, Command.ITEM, 1);
-                    s = new StringItem(null, label, StringItem.BUTTON);
+                    final Command run = new Command((String) lib.get("item.label"), Command.ITEM, 1);
+                    final StringItem s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON);
                     s.setFont(Font.getDefaultFont());
                     s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE);
                     s.addCommand(run);
