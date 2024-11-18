@@ -248,9 +248,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { echoCommand("x11: item: missing file"); } else {
                 final Hashtable lib = parseFrom(argument);
 
-                if (lib.containsKey("screen.title") && lib.containsKey("screen.button")) {
-                    final Command run = new Command((String) lib.get("item.label"), Command.ITEM, 1);
-                    s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON);
+                if (lib.containsKey("item.label") && lib.containsKey("item.cmd")) {
+                    final String label = (String) lib.get("item.label")
+                    final Command run = new Command(label, Command.ITEM, 1);
+                    s = new StringItem(null, label, StringItem.BUTTON);
                     s.setFont(Font.getDefaultFont());
                     s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE);
                     s.addCommand(run);
@@ -266,7 +267,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     });
     
                     form.append(s); 
-                }
+                } else { MIDletLogs("add error Malformed ITEM, missing params"); }
             }
         }
         else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
