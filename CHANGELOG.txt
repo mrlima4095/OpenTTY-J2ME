@@ -4,4 +4,4 @@ Copyright (C) 2024 - Mr. Lima
 [ _Updates_ ] 
 
 - New attributes in **Module API** - `api.version` and `api.error` to verify **API** Compatibility
-
+- OpenTTY Running **X Server** `0.5.1`
