@@ -247,15 +247,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("item")) {
             if (argument.equals("")) { echoCommand("x11: item: missing file"); } else if (argument.equals("clear")) { 
                 for (int i = form.size() - 1; i >= 3; i--) {
-                    form.delete(i);
+                    form.remove(i);
                 }
             } else {
                 final Hashtable lib = parseFrom(argument);
 
-                final String[] item = split((String) lib.get("item"), ','); for (int i = 0; i < item.length; i++) {
-                if (lib.containsKey(item[i] + ".label") && lib.containsKey(item[i] + ".cmd")) {
-                    final Command run = new Command((String) lib.get(item[i] + ".label"), Command.ITEM, 1);
-                    final StringItem s = new StringItem(null, (String) lib.get(item[i] + ".label"), StringItem.BUTTON);
+                
+                if (lib.containsKey("item.label") && lib.containsKey("item.cmd")) {
+                    final Command run = new Command((String) lib.get("item.label"), Command.ITEM, 1);
+                    final StringItem s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON);
                     s.setFont(Font.getDefaultFont());
                     s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE);
                     s.addCommand(run);
@@ -265,13 +265,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         public void commandAction(Command c, Item item) {
                             if (c == run) {
                                 processCommand("xterm");
-                                processCommand((String) lib.get(item[i] + ".cmd"));
+                                processCommand((String) lib.get("item.cmd"));
                             }
                         }
                     });
     
                     form.append(s); 
-                } else { MIDletLogs("add error Malformed ITEM, missing params for '" + item[i] + "'"); } }
+                } else { MIDletLogs("add error Malformed ITEM, missing params"); }
             }
         }
         else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
