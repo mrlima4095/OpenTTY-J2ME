@@ -3,7 +3,15 @@
 #    
 #    . /java/etc/initd.sh 
 #    
-#  The content of this file will be run
-#  every OpenTTY starts
-# 
+#  
 
+x11 init
+mount /java/etc/fstab
+
+set TTY=/java/optty1
+
+set HOSTNAME=localhost
+set RESPONSE=/java/etc/index.html
+
+set PORT=31522
+set QUERY=nano
