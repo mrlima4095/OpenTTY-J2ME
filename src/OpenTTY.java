@@ -184,6 +184,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("proxy")) { if (argument.equals("")) { return; } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { ticker(argument); } }
         //else if (mainCommand.equals("")) {  }
+
+        else if (mainCommand.equals("rv")) { form.deleteAll(); form.append(stdin); form.append(stdout); }
         
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
@@ -246,7 +248,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
         else if (mainCommand.equals("item")) {
             if (argument.equals("")) { echoCommand("x11: item: missing file"); } else if (argument.equals("clear")) { 
-                form.deleteAll();
+                form.deleteAll(); form.append(stdout); form.append(stdin);
             } else {
                 final Hashtable lib = parseFrom(argument);
 
