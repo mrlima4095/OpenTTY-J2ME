@@ -246,9 +246,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
         else if (mainCommand.equals("item")) {
             if (argument.equals("")) { echoCommand("x11: item: missing file"); } else if (argument.equals("clear")) { 
-                for (int i = form.size() - 1; i >= 3; i--) {
-                    form.remove(i);
-                }
+                form.deleteAll();
             } else {
                 final Hashtable lib = parseFrom(argument);
 
