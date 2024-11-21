@@ -3,7 +3,6 @@
 #    
 #    . /java/etc/initd.sh 
 #    
-#  
 
 x11 init
 mount /java/etc/fstab
