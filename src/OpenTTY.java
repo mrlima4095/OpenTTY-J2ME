@@ -180,7 +180,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("@EXEC")) { commandAction(enterCommand, display.getCurrent()); }
+        else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
@@ -236,7 +236,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-10-16\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } 
         else if (mainCommand.equals("title")) { form.setTitle(argument); }
-        else if (mainCommand.equals("term")) { display.setCurrent(form); }
+        else if (mainCommand.equals("term")) { display.setCurrent(form); } 
+        else if (mainCommand.equals("null")) { display.setCurrent(null); }
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
         else if (mainCommand.equals("stop")) { form.deleteAll(); xserver("cmd hide"); form.removeCommand(enterCommand); form.setTitle(""); }
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
