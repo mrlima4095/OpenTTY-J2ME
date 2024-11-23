@@ -1,7 +1,15 @@
 OpenTTY Java Edition 1.11
 Copyright (C) 2024 - Mr. Lima
 
+[ _Commands_ ]
+
+- `exec <commands>`: run many commands in once time
+
 [ _Updates_ ] 
 
 - New attributes in **Module API** - `api.version` and `api.error` to verify **API** Compatibility
 - OpenTTY Running **X Server** `0.5.1`
+
+[ _Notes_ ]
+
+- The `exec` command separator is char **&**, use it in situations like `execute if (expr) exec <cmd1> & <cmd2>; [out comparation]; true`
