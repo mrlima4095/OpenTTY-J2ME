@@ -25,7 +25,7 @@ PasteBin=execute set RESOURCE=pastebin; yang install;
 Forge=execute set RESOURCE=forge; yang install;
 JAuth2=execute set RESOURCE=jauth2; yang install;
 JBenchmark=execute set RESOURCE=debuggers; yang install;
-J2ME Loader=execute set RESOURCE=modme; yang install;
+J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
 SmartME SDK=execute set RESOURCE=sdkme; yang install; execute set RESOURCE=forge; yang install;]
 PackJ (Update)=execute set RESOURCE=yang; yang install;
 X Server 0.4=execute set RESOURCE=xorg-client; yang install;
