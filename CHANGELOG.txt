@@ -17,4 +17,4 @@ Copyright (C) 2024 - Mr. Lima
 [ _Notes_ ]
 
 - The `exec` command separator is char **&**, use it in situations like `execute if (expr) exec <cmd1> & <cmd2>; [out comparation]; true `
-- **String Editor** `sed` has operators `-r` to **replace**, `-d` to **delete**, `-a` to **add new lines** and `-l` to **show the line content**
+
