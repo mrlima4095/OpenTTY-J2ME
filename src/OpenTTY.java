@@ -219,7 +219,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     private void runScript(String script) { String[] commands = split(script, '\n'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
     
-    private void StringEditor(String command) {nano
+    private void StringEditor(String command) {
         command = env(command.trim());
         String mainCommand = getCommand(command).toLowerCase();
         String argument = getArgument(command);
