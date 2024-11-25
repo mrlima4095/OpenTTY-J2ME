@@ -18,7 +18,7 @@ update=execute set RESOURCE=yang; yang install; import yang;
 [ Index ]
 
 list.title=Repository
-list.content=Armitage,PasteBin,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ViaVersion,Updater
+list.content=Armitage,PasteBin,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ImmersiveShell,ViaVersion,Updater
 list.button=Install
 
 Armitage=execute set RESOURCE=armitage; yang install;
@@ -32,6 +32,7 @@ J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
 SmartME SDK=execute set RESOURCE=sdkme; yang install; set RESOURCE=forge; yang install;
 PackJ (Update)=execute set RESOURCE=yang; yang install;
 X Server 0.4=execute set RESOURCE=xorg-client; yang install;
+ImmersiveShell=execute set RESOURCE=sh2me; yang install;
 ViaVersion=execute set RESOURCE=viaversion; yang install;
 Updater=execute set RESOURCE=sync; yang install;
 
