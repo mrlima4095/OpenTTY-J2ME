@@ -1,0 +1,32 @@
+[ Config ]
+
+name=JBenchmark
+version=1.0
+description=Debuggers 
+
+config=execute if ($VERSION == 1.9) echo This API requires OpenTTY 1.9.1 or newer;
+command=dumpsys
+
+dumpsys=execute log add info JBenchmark: Thread.run(OpenTTY.runScript) - Running 'dumpsys' script; echo [ JBenchmark ]; echo; echo ----------> Network Manager; netstat; dumpsys netman; echo; echo ----------> X Server; dumpsys x11; echo =======================\nEND-OF-DUMP;
+
+shell.name=dumpsys
+shell.args=netman,x11
+
+netman=execute if ($OUTPUT == true) echo -> Network detected!; ifconfig; curl ifconfig.me/ua; fw; 
+x11=execute x11 version; set OLD_TITLE=$TITLE; x11 title; x11 title JBenchmark; title $OLD_TITLE; unset OLD_TITLE; x11 make debuggers; stty; echo [X Server] Element 'debuggers.screen' tested; x11 list debuggers; stty; echo [X Server] Element 'debuggers.list' tested; 
+
+
+
+
+
+[ DISPLAY ]
+
+screen.title=JBenchmark (Debug screen)
+screen.content=JBenchmark 1.0\n\nThis screen is for X Server debug
+screen.button=Button
+screen.button.cmd=execute x11 list debuggers;
+
+list.title=JBenchmark (Debug list)
+list.content=,,,,,,,,,,,
+list.back=execute x11 make debuggers;
+
