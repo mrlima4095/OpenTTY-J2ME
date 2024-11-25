@@ -18,7 +18,7 @@ update=execute set RESOURCE=yang; yang install; import yang;
 [ Index ]
 
 list.title=Repository
-list.content=Armitage,PasteBin,FilesME,Forge,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ViaVersion,Updater
+list.content=Armitage,PasteBin,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ViaVersion,Updater
 list.button=Install
 
 Armitage=execute set RESOURCE=armitage; yang install;
