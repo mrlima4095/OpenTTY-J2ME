@@ -20,6 +20,8 @@ Copyright (C) 2024 - Mr. Lima
 - **Forge** updated to 1.2
 - **Forge** bug fix in `New Project` and improved it with new attributes
 - **OpenTTY Repository** moved to main GitHub Repository
+- **FileExplorer()** class moved to inside **OpenTTY$FileExplorer**
+- Device Explorer now back running command `xterm`
 
 [ _Notes_ ]
 
