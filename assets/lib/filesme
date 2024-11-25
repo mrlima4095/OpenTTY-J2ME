@@ -1,0 +1,21 @@
+[ Config ]
+
+name=FilesME
+version=1.0
+description=Assets & Files 
+
+command=dir,ls,assets
+
+ls=execute builtin dir f; true 
+dir=execute builtin dir s; true
+assets=execute builtin ls; true
+
+shell.name=dir
+shell.args=local,assets,files,sys
+
+local=execute builtin dir 
+assets=execute builtin ls
+files=execute builtin dir f; true
+sys=execute builtin dir s; true
+
+
