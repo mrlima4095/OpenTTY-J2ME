@@ -1,0 +1,25 @@
+[ Config ]
+
+name=PasteBin
+version=1.0
+description=Paste Client 
+
+config=echo [PasteBin] To setup your API Key use 'pastebin api'
+command=pastebin
+
+pastebin=execute x11 quest pastebin;
+
+shell.name=pastebin
+shell.args=api,create
+
+api=execute set VALUE=PASTEBIN_API; export RETURN; x11 quest /java/lib/settings; 
+create=execute tick Creating Paste...; set OLD_QUERY=$QUERY; set QUERY=show; query $REPO post https://pastebin.com/api/api_post.php api_dev_key=$PASTEBIN_API&api_option=paste&api_paste_code=$CONTENT; set OLD_TITLE=$TITLE; title Paste URL; tick; warn $OUTPUT; title $OLD_TITLE; set QUERY=$OLD_QUERY; unset OLD_TITLE; unset OLD_QUERY;
+
+
+[ DISPLAY ]
+
+quest.title=PasteBin
+quest.label=Paste Content
+quest.key=CONTENT
+quest.cmd=execute pastebin create; unset CONTENT;
+
