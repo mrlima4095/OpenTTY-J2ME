@@ -17,7 +17,7 @@ xterm=execute x11 make jbuntu;
 shell.name=jbuntu
 shell.args=cfg,about,version,update
 
-cfg=execute install nano; touch; add list.title=Control Panel; add list.content=Update JBuntu,About JBuntu; add list.back=execute x11 list jbuntu; add list.button=Open; add Update JBuntu=jbuntu update; add About JBuntu=jbuntu about; x11 list nano; get nano;
+cfg=execute install nano; touch; add list.title=Control Panel; add list.content=Update JBuntu,About JBuntu; add list.back=execute x11 list jbuntu; add list.button=Open; add Update JBuntu=jbuntu update; add About JBuntu=exec x11 list jbuntu & jbuntu about; x11 list nano; get nano;
 about=execute set OLD_TITLE=$TITLE; title JBuntu $JVERSION; warn JBuntu $JVERSION\nDesktop for OpenTTY; title $OLD_TITLE; unset OLD_TITLE;
 version=execute echo JBuntu $JVERSION;
 update=execute set RESOURCE=jbuntu; yang install;
@@ -36,12 +36,6 @@ screen.back=execute exit;
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
 
-quest.title=Run
-quest.label=$USERNAME $PATH (JBuntu) $
-quest.key=CMD
-quest.cmd=$CMD
-quest.back=execute x11 list jbuntu;
-
 list.title=JBuntu Apps
 list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Control Panel,Security Options
 list.back=execute x11 make jbuntu;
@@ -53,4 +47,4 @@ Network Tools=execute nk;
 OpenTTY Store=execute yang;
 Terminal=execute unalias xterm; x11 stop; x11 term; x11 init; x11 cmd hide; x11 item jbuntu;
 Control Panel=execute jbuntu cfg;
-Security Options=execute install nano; touch; add list.title=JBuntu $JVERSION; add list.content=Quit JBuntu,Logout,Exit MIDlet; add list.back=x11 list jbuntu; add list.button=Open; add Logout=lock; add Exit MIDlet=exit; x11 list nano; get nano;
+Security Options=execute install nano; touch; add list.title=JBuntu $JVERSION; add list.content=Logout,Exit MIDlet; add list.back=x11 list jbuntu; add list.button=Open; add Logout=lock; add Exit MIDlet=exit; x11 list nano; get nano;
