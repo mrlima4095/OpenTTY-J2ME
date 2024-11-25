@@ -69,6 +69,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (mainCommand.equals("")) { }
         
         // Network Utilities
+        else if (mainCommand.equals("post")) { post(argument); }
         else if (mainCommand.equals("query")) { query(argument); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); }
         else if (mainCommand.equals("gaddr")) { new GetAddress(argument); }
@@ -199,6 +200,40 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); for (Enumeration e = attributes.keys(); e.hasMoreElements();) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } return text; }
     private String basename(String path) { if (path == null || path.length() == 0) { return ""; } if (path.endsWith("/")) { path = path.substring(0, path.length() - 1); } int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == -1) { return path; } return path.substring(lastSlashIndex + 1); }
     private String request(String url) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return e.getMessage(); } }
+    private String post(String args) {
+    if (args == null || args.length() == 0) {
+        return "";
+    }
+    String url = getCommand(args), data = getArgument(args);
+
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "http://" + url;
+    }
+    try {
+        HttpConnection conn = (HttpConnection) Connector.open(url);
+        conn.setRequestMethod(HttpConnection.POST); 
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded"); 
+
+        if (postData != null && postData.length() > 0) {
+            OutputStream os = conn.openOutputStream();
+            os.write(postData.getBytes("UTF-8")); 
+            os.flush();
+            os.close();
+        }
+
+        InputStream is = conn.openInputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int ch;
+        while ((ch = is.read()) != -1) {
+            baos.write(ch);
+        }
+        is.close();
+        conn.close();
+
+        return new String(baos.toByteArray(), "UTF-8");
+    } catch (IOException e) { return e.getMessage(); }
+}
+
 
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
