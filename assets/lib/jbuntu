@@ -1,0 +1,45 @@
+[ Config ]
+
+name=JBuntu
+version=1.1
+description=Desktop for OpenTTY 
+
+api.version=1.11
+api.error=execute log add error JBuntu requires OpenTTY 1.11; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.11; title $OLD_TITLE; unset OLD_TITLE;
+
+include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
+
+config=execute set JVERSION=1.1; title JBuntu $JVERSION; log add info Running JBuntu $JVERSION; clear; logcat; x11 stop; x11 init; x11 cmd hide; 
+command=xterm
+
+xterm=execute x11 make jbuntu;
+
+shell.name=
+shell.args=
+
+[ COMMAND ]
+
+item.label=JBuntu
+item.cmd=execute alias xterm=execute x11 make jbuntu; xterm;
+
+[ DISPLAY ]
+
+screen.title=JBuntu $JVERSION
+screen.content=
+screen.back.label=Exit
+screen.back=execute exit;
+screen.button=Apps
+screen.button.cmd=execute x11 list jbuntu;
+
+list.title=JBuntu Apps
+list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Settings,About JBuntu
+list.back=execute x11 make nano;
+list.button=Open
+
+Text Editor=execute nano;
+File Explorer=execute builtin dir f;
+Network Tools=execute nk;
+OpenTTY Store=execute yang;
+Terminal=execute unalias xterm; x11 stop; x11 term; x11 init; x11 item jbuntu;
+Settings=execute cfg;
+About JBuntu=execute set OLD_TITLE=$TITLE; title JBuntu $JVERSION; warn JBuntu $JVERSION\nDesktop for OpenTTY; title $OLD_TITLE; unset OLD_TITLE;
