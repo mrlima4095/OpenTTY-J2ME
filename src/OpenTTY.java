@@ -214,9 +214,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         conn.setRequestMethod(HttpConnection.POST); 
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded"); 
 
-        if (postData != null && postData.length() > 0) {
+        if (data != null && data.length() > 0) {
             OutputStream os = conn.openOutputStream();
-            os.write(postData.getBytes("UTF-8")); 
+            os.write(data.getBytes("UTF-8")); 
             os.flush();
             os.close();
         }
