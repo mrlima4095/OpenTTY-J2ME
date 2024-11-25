@@ -12,7 +12,14 @@ Copyright (C) 2024 - Mr. Lima
 - HTML Viewer now ignore **css** and **javascript** params
 - Nano new buttons **Run Script** and **Import File**
 - OpenTTY Running **X Server** `0.5.1`
-- New packages addded - **J2ME Loader** and **ViaVersion**
+- New packages addded - **J2ME Loader**, **FilesME** and **ViaVersion**
+- **JBuntu** added again to **PackJ Repository** list
+- **NetKit** `IP Adress` option now show local IP Adress
+- **PackJ** `yang` has new subcommand `update` to auto-update
+- **PackJ** updated to 1.3
+- **Forge** updated to 1.2
+- **Forge** bug fix in `New Project` and improved it with new attributes
+- **OpenTTY Repository** moved to main GitHub Repository
 
 [ _Notes_ ]
 
