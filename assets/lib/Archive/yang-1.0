@@ -1,0 +1,26 @@
+[ Config ]
+
+name=PackJ
+version=1.0
+description=OpenTTY Package Manager
+
+command=yang,setrepo
+
+yang=execute x11 list /java/lib/yang;
+setrepo=execute x11 quest /java/lib/yang;
+
+quest.title=PackJ Settings
+quest.label=Server IP
+quest.cmd=execute set REPO;
+quest.key=REPO
+
+[ Index ]
+
+list.title=Repository
+list.content=Forge,Updater,JBuntu,PackJ (Update)
+
+Forge=execute set OLD_QUERY=$QUERY; set QUERY=forge; query $REPO get lib/forge; set QUERY=OLD_QUERY; unset OLD_QUERY;
+Updater=execute set OLD_QUERY=$QUERY; set QUERY=sync; query $REPO get lib/sync; set QUERY=OLD_QUERY; unset OLD_QUERY;
+JBuntu=execute set OLD_QUERY=$QUERY; set QUERY=jbuntu; query $REPO get lib/jbuntu; set QUERY=OLD_QUERY; unset OLD_QUERY;
+PackJ (Update)=execute set OLD_QUERY=$QUERY; set QUERY=yang; query $REPO get lib/yang; set QUERY=OLD_QUERY; unset OLD_QUERY
+

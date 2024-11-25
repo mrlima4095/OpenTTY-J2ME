@@ -1,0 +1,23 @@
+[ Config ]
+
+name=Forge
+version=1.1
+description=Mod Editor
+
+config=execute set FORGE_VERSION=1.1; 
+command=forge
+
+forge=execute x11 make forge; 
+
+[ DISPLAY ]
+
+screen.title=Forge $FORGE_VERSION
+screen.button=Tools
+screen.button.cmd=execute x11 list forge;
+
+list.title=Forge Tools
+list.content=New Project,Open Project
+list.back=execute x11 make forge;
+
+New Project=execute touch; add [ Config ]\n\nname=Untitled\nversion=1.0\ndescription=My Project\n\ninclude=\n\nconfig=\ncommand=;
+Open Project=execute set OLD_TITLE=$TITLE; title Open Project; dir f; title $OLD_TITLE; unset OLD_TITLE;
