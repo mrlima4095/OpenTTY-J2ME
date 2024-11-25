@@ -178,7 +178,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("@reload")) { processCommand("bg execute tick Restarting X...; x11 stop; sleep 2; x11 init; tick;") }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
@@ -224,15 +224,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command).toLowerCase();
         String argument = getArgument(command);
 
-        if (mainCommand.equals("-r")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], split(argument, ' ')[1]); }
-        else if (mainCommand.equals("-a")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; }
+
+        if (mainCommand.equals("-2u")) { nanoContent = nanoContent.toUpperCase(); }
+        else if (mainCommand.equals("-2l")) { nanoContent = nanoContent.toLowerCase(); }
         else if (mainCommand.equals("-d")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], ""); }
+        else if (mainCommand.equals("-a")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; }
+        else if (mainCommand.equals("-r")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], split(argument, ' ')[1]); }
         else if (mainCommand.equals("-l")) { int i = 0; try { i = Integer.parseInt(argument); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return; } echoCommand(split(nanoContent, '\n')[i]); }
         else if (mainCommand.equals("-s")) { int i = 0; try { i = Integer.parseInt(getCommand(argument)); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return; } Vector lines = new Vector(); String div = getArgument(argument); int start = 0, index; while ((index = nanoContent.indexOf(div, start)) != -1) { lines.addElement(nanoContent.substring(start, index)); start = index + div.length(); } if (start < nanoContent.length()) { lines.addElement(nanoContent.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); if (i >= 0 && i < result.length) { echoCommand(result[i]); } else { echoCommand("null"); } }
         else if (mainCommand.equals("-p")) { String[] contentLines = split(nanoContent, '\n'); StringBuffer updatedContent = new StringBuffer(); for (int i = 0; i < contentLines.length; i++) { updatedContent.append(argument).append(contentLines[i]).append("\n"); } nanoContent = updatedContent.toString().trim(); }
         else if (mainCommand.equals("-v")) { String[] lines = split(nanoContent, '\n'); StringBuffer reversed = new StringBuffer(); for (int i = lines.length - 1; i >= 0; i--) { reversed.append(lines[i]).append("\n"); } nanoContent = reversed.toString().trim(); }
-        else if (mainCommand.equals("-2u")) { nanoContent = nanoContent.toUpperCase(); }
-        else if (mainCommand.equals("-2l")) { nanoContent = nanoContent.toLowerCase(); }
+        
 
     }
 
@@ -256,8 +258,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("term")) { display.setCurrent(form); } 
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
         else if (mainCommand.equals("stop")) { form.deleteAll(); xserver("cmd hide"); form.removeCommand(enterCommand); form.setTitle(""); }
-        else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); if (argument.equals("")) { current.setTicker(null); } else { current.setTicker(new Ticker(argument)); } }
+        else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
         else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
         else if (mainCommand.equals("canvas")) { display.setCurrent(new Canvas() { private int cursorX = 10, cursorY = 10, cursorSize = 5; protected void paint(Graphics g) { g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); g.setColor(255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } else { processCommand("xterm"); } repaint(); } }); }
         else if (mainCommand.equals("item")) { if (argument.equals("")) { echoCommand("x11: item: missing file"); } else if (argument.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); } else { final Hashtable lib = parseFrom(argument); if (lib.containsKey("item.label") && lib.containsKey("item.cmd")) { final Command run = new Command((String) lib.get("item.label"), Command.ITEM, 1); final StringItem s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(new ItemCommandListener() { public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }); form.append(s); } else { MIDletLogs("add error Malformed ITEM, missing params"); } } }

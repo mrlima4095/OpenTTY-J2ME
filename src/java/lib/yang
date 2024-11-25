@@ -17,11 +17,12 @@ install=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; tick Installing...; q
 [ Index ]
 
 list.title=Repository
-list.content=Armitage,PasteBin,Forge,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ViaVersion,Updater
+list.content=Armitage,PasteBin,FilesME,Forge,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ViaVersion,Updater
 list.button=Install
 
 Armitage=execute set RESOURCE=armitage; yang install;
 PasteBin=execute set RESOURCE=pastebin; yang install; 
+FilesME=execute set RESOURCE=filesme; yang install;
 Forge=execute set RESOURCE=forge; yang install;
 JAuth2=execute set RESOURCE=jauth2; yang install;
 JBenchmark=execute set RESOURCE=debuggers; yang install;
