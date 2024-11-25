@@ -37,7 +37,7 @@ screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
 
 list.title=JBuntu Apps
-list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Settings,About JBuntu
+list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Settings,About JBuntu,Security Options
 list.back=execute x11 make nano;
 list.button=Open
 
