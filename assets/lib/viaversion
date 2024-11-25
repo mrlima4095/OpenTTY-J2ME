@@ -1,0 +1,28 @@
+[ Config ]
+
+name=ViaVersion
+version=1.0
+description=Charges OpenTTY API
+
+config=
+command=axrz
+
+axrz=execute axrz list;
+
+shell.name=axrz
+shell.args=list, run
+
+list=execute x11 list viaversion;
+run=execute set VERSION=$REQUEST; sh;
+
+
+[ DISPLAY ]
+
+list.title=Select API
+list.content=1.8.5,1.9,1.9.1,1.10,1.11 
+
+1.8.5=execute set REQUEST=1.8.5; set PATCH=Netman Update; axrz run;
+1.9=execute set REQUEST=1.9; set PATCH=OpenTTY Revolution; axrz run;
+1.9.1=execute set REQUEST=1.9.1; set PATCH=The Revolution; axrz run;
+1.10=execute set REQUEST=1.10; set PATCH=Misc Update; axrz run;
+1.11=execute set REQUEST=1.11; set PATCH=API Update; axrz run;
