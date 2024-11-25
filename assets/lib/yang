@@ -6,7 +6,7 @@ description=OpenTTY Package Manager
 
 command=yang,setrepo
 
-yang=execute x11 list /java/lib/yang;
+yang=execute x11 list yang;
 setrepo=execute set VALUE=REPO; export RETURN; x11 quest /java/lib/settings;
 
 shell.name=yang
