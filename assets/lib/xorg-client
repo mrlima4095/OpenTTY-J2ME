@@ -1,0 +1,17 @@
+[ Config ]
+
+name=X.Org
+version=0.4
+decription=Interface Manager
+
+config=execute set XVERSION=0.4;
+command=xorg
+
+xorg=x11
+
+
+shell.name=xorg
+shell.args=stop,help
+
+stop=execute x11 reset;
+help=execute x11;
