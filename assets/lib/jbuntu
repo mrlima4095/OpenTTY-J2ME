@@ -44,7 +44,7 @@ quest.back=execute x11 list jbuntu;
 
 list.title=JBuntu Apps
 list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Control Panel,Security Options
-list.back=execute x11 make nano;
+list.back=execute x11 make jbuntu;
 list.button=Open
 
 Text Editor=execute nano;
