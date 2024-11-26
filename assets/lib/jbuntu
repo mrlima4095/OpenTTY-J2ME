@@ -9,7 +9,7 @@ api.error=execute log add error JBuntu requires OpenTTY 1.11; set OLD_TITLE=$TIT
 
 include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 
-config=execute set JVERSION=1.1; export CONTENT; hash jbuntu-config; if ($OUTPUT != 0) exec set CONTENT=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
+config=execute set JVERSION=1.1; export CONTENT; hash jbuntu-config; if ($OUTPUT != 0) set CONTENT=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
 command=xterm,jbuntu
 
 xterm=execute x11 make jbuntu;
@@ -30,10 +30,10 @@ screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
 
 quest.title=JBuntu $JVERSION
-quest.label=Content of 
-quest.key=CMD
-quest.cmd=$CMD
-quest.back=x11 list jbuntu
+quest.label=Notes
+quest.key=CONTENT
+quest.cmd=execute install nano; touch; add $CONTENT; install jbuntu-config; get nano;
+quest.back=x11 make jbuntu;
 
 list.title=JBuntu Apps
 list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal
