@@ -36,7 +36,7 @@ quest.cmd=execute install nano; touch; add $CONTENT; install jbuntu-config; get 
 quest.back=x11 make jbuntu
 
 list.title=JBuntu Apps
-list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal
+list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Monitor
 list.back=execute x11 make jbuntu;
 list.button=Open
 
