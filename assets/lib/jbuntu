@@ -9,42 +9,41 @@ api.error=execute log add error JBuntu requires OpenTTY 1.11; set OLD_TITLE=$TIT
 
 include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 
-config=execute set JVERSION=1.1; title JBuntu $JVERSION; log add info Running JBuntu $JVERSION; clear; logcat; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; 
-command=xterm
+config=execute set JVERSION=1.1; export CONTENT; hash jbuntu-config; if ($OUTPUT != 0) exec set CONTENT=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
+command=xterm,jbuntu
 
 xterm=execute x11 make jbuntu;
-
-shell.name=jbuntu
-shell.args=cfg,about,version,update
-
-cfg=execute install nano; touch; add list.title=Control Panel; add list.content=Update JBuntu,About JBuntu; add list.back=execute x11 list jbuntu; add list.button=Open; add Update JBuntu=exec set RESOURCE=jbuntu & yang install; add About JBuntu=exec x11 list jbuntu & jbuntu about; x11 list nano; get nano;
-about=execute set OLD_TITLE=$TITLE; title JBuntu $JVERSION; warn JBuntu $JVERSION\nDesktop for OpenTTY; title $OLD_TITLE; unset OLD_TITLE;
-version=execute echo JBuntu $JVERSION;
-update=execute set RESOURCE=jbuntu; yang install;
+jbuntu=execute alias xterm=execute x11 make jbuntu; xterm;
 
 [ COMMAND ]
 
 item.label=JBuntu
-item.cmd=execute alias xterm=execute x11 make jbuntu; xterm;
+item.cmd=execute jbuntu;
 
 [ DISPLAY ]
 
 screen.title=JBuntu $JVERSION
-screen.content=
-screen.back.label=Exit
-screen.back=execute exit;
+screen.content=$CONTENT
+screen.back.label=Menu
+screen.back=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Logout,Exit; add list.back=x11 make jbuntu; add list.button=Open; add View Logs=execute log view; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
 
+quest.title=JBuntu $JVERSION
+quest.label=Content of 
+quest.key=CMD
+quest.cmd=$CMD
+quest.back=x11 list jbuntu
+
 list.title=JBuntu Apps
-list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Control Panel,Security Options
+list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal
 list.back=execute x11 make jbuntu;
 list.button=Open
 
 Text Editor=execute nano;
-File Explorer=execute install nano; touch; add list.title=File Explorer; add list.content=My Files,Device Files,OpenTTY Assets; add list.back=x11 list jbuntu; add list.button=Open; add My Files=builtin dir f; add Device Files=builtin dir s; add OpenTTY Assets=builtin ls; x11 list nano; get nano;
+File Explorer=execute install nano; touch; add list.title=File Explorer; add list.content=My Files,Device Files,Resources; add list.back=x11 list jbuntu; add list.button=Open; add My Files=builtin dir f; add Device Files=builtin dir s; add Resources=builtin ls; x11 list nano; get nano; 
 Network Tools=execute nk;
 OpenTTY Store=execute yang;
-Terminal=execute unalias xterm; x11 stop; x11 term; x11 init; x11 cmd hide; x11 item jbuntu;
-Control Panel=execute jbuntu cfg;
-Security Options=execute install nano; touch; add list.title=JBuntu $JVERSION; add list.content=Logout,Exit MIDlet; add list.back=x11 list jbuntu; add list.button=Open; add Logout=lock; add Exit MIDlet=exit; x11 list nano; get nano;
+Terminal=execute x11 stop; x11 init; x11 item jbuntu; unalias xterm; x11 term;
+Monitor=execute htop;
+
