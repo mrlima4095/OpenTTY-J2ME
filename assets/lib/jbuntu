@@ -17,7 +17,7 @@ xterm=execute x11 make jbuntu;
 shell.name=jbuntu
 shell.args=cfg,about,version,update
 
-cfg=execute install nano; touch; add list.title=Control Panel; add list.content=Update JBuntu,About JBuntu; add list.back=execute x11 list jbuntu; add list.button=Open; add Update JBuntu=exec RESOURCE=jbuntu & yang install; add About JBuntu=exec x11 list jbuntu & jbuntu about; x11 list nano; get nano;
+cfg=execute install nano; touch; add list.title=Control Panel; add list.content=Update JBuntu,About JBuntu; add list.back=execute x11 list jbuntu; add list.button=Open; add Update JBuntu=exec set RESOURCE=jbuntu & yang install; add About JBuntu=exec x11 list jbuntu & jbuntu about; x11 list nano; get nano;
 about=execute set OLD_TITLE=$TITLE; title JBuntu $JVERSION; warn JBuntu $JVERSION\nDesktop for OpenTTY; title $OLD_TITLE; unset OLD_TITLE;
 version=execute echo JBuntu $JVERSION;
 update=execute set RESOURCE=jbuntu; yang install;
