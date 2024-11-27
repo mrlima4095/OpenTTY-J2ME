@@ -6,7 +6,13 @@ OpenTTY - Netman Update
 [ _Commands_ ]
 
 - `exec <commands>`: run many commands in once time
-- `gc`: Garbage Collector
+- `ph2s`: parse command history to a script file
+- `hash <file>`: get a hash of a resource or RMS file
+- `du <file>`: show file size in bytes
+- `grep <pattern> <file>`: find pattern in file
+- `find <key> <file>`: get a key from a conf file
+- `gc`: clean memory (Garbage Collector)
+
 
 [ _Updates_ ] 
 

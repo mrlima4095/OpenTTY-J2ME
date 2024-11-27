@@ -5,8 +5,8 @@ Copyright (C) 2024 - Mr. Lima
 [ Commands Overview ]
 
 Network Utilities:
-  netstat, nc, query, fw, ping, curl
-  wget, prscan, server, ifconfig
+  netstat, nc, server, fw, ping, curl
+  wget, prscan, fconfig
   
 File Utilities:
   nano, html, json, dir, pwd, rm, cat
