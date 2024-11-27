@@ -19,7 +19,7 @@ query=execute x11 quest yang;
 [ DISPLAY ]
 
 quest.title=PackJ Query
-quest.label=Package (filename)
+quest.label=Package
 quest.key=RESOURCE
 quest.cmd=execute yang install;
 
