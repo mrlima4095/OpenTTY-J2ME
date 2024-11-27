@@ -88,7 +88,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ifconfig")) { ifconfig(argument); }
         
         // File Utilities
-        else if (mainCommand.equals("nano")) { nano(argument); }.
+        else if (mainCommand.equals("nano")) { nano(argument); }
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("rnano")) { nanoContent = ""; }
         else if (mainCommand.equals("cd")) { changeDisk(argument); }
