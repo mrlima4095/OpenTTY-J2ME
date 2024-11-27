@@ -13,7 +13,6 @@ OpenTTY - Netman Update
 - `find <key> <file>`: get a key from a conf file
 - `gc`: clean memory (Garbage Collector)
 
-
 [ _Updates_ ] 
 
 - Removed script `restore.sh`
@@ -23,8 +22,8 @@ OpenTTY - Netman Update
 - New attributes in **Module API** - `api.version` and `api.error` to verify **API** Compatibility
 - HTML Viewer now ignore **css** and **javascript** params
 
-
 [ _Notes_ ]
 
 - During **deploy** an error was found - If you try downgrade OpenTTY from a newer version, it'll crash.
   Possible solutions is remove user file **initd** if it contais commands like `if`, `set` and `alias` that have new engines in newer versions
+
