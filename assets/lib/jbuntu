@@ -32,7 +32,7 @@ screen.button.cmd=execute x11 list jbuntu;
 quest.title=JBuntu $JVERSION
 quest.label=Notes
 quest.key=CONTENT
-quest.cmd=execute install nano; touch; add $CONTENT; install jbuntu-config; get nano;
+quest.cmd=execute install nano; touch; add $JBUNTU_NOTES; install jbuntu-config; get nano;
 quest.back=x11 make jbuntu
 
 list.title=JBuntu Apps
