@@ -5,8 +5,14 @@ OpenTTY - Netman Update
 
 [ _Commands_ ]
 
+- `exec <commands>`: run many commands in once time
+- `gc`: Garbage Collector
+
 [ _Updates_ ] 
 
 - Removed script `restore.sh`
 - OpenTTY Running **X Server** `0.5.1`
 - **NetKit** and **Settings** updated to 1.1
+- New attributes in **Module API** - `api.version` and `api.error` to verify **API** Compatibility
+- HTML Viewer now ignore **css** and **javascript** params
+- 
