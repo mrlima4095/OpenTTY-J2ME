@@ -13,6 +13,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String path = "/";
     private String version = "1.8.6";
     private Hashtable paths = new Hashtable();
+    private Hashtable shell = new Hashtable();
     private Hashtable aliases = new Hashtable();
     private Vector commandHistory = new Vector();
     private Hashtable attributes = new Hashtable();
