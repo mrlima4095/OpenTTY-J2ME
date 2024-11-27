@@ -118,7 +118,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("rm")) { deleteFile(argument); }
-        else if (mainCommand.equals("sed")) { StringEditor(argument); }
         else if (mainCommand.equals("raw")) { echoCommand(nanoContent); }
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
         else if (mainCommand.equals("unmount")) { paths = new Hashtable(); }
