@@ -1,0 +1,45 @@
+[ Config ]
+
+name=JBuntu
+version=1.1
+description=Desktop for OpenTTY 
+
+include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
+
+config=execute set JVERSION=1.1; cat jbuntu-config; set JBUNTU_NOTES=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item /java/lib/jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
+command=xterm,jbuntu
+
+xterm=execute x11 make /java/lib/jbuntu;
+jbuntu=execute alias xterm=execute x11 make /java/lib/jbuntu; xterm;
+
+[ COMMAND ]
+
+item.label=JBuntu
+item.cmd=execute jbuntu;
+
+[ DISPLAY ]
+
+screen.title=JBuntu $JVERSION
+screen.content=$JBUNTU_NOTES
+screen.back.label=Menu
+screen.back=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Logout,Exit; add list.back=x11 make /java/lib/jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest /java/lib/jbuntu; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
+screen.button=Apps
+screen.button.cmd=execute x11 list /java/lib/jbuntu;
+
+quest.title=JBuntu $JVERSION
+quest.label=Notes
+quest.key=CONTENT
+quest.cmd=execute install nano; touch; add $JBUNTU_NOTES; install jbuntu-config; get nano;
+quest.back=x11 make /java/lib/jbuntu
+
+list.title=JBuntu Apps
+list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Monitor
+list.back=execute x11 make /java/lib/jbuntu;
+list.button=Open
+
+Text Editor=execute nano;
+File Explorer=execute install nano; touch; add list.title=File Explorer; add list.content=My Files,Device Files,Resources; add list.back=x11 list /java/lib/jbuntu; add list.button=Open; add My Files=builtin dir f; add Device Files=builtin dir s; add Resources=builtin ls; x11 list nano; get nano; 
+Network Tools=execute nk;
+OpenTTY Store=execute yang;
+Terminal=execute x11 stop; x11 init; x11 item /java/lib/jbuntu; unalias xterm; x11 term;
+Monitor=execute htop;
