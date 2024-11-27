@@ -12,4 +12,3 @@
 | | resources.txt
 | scripts /
 | | debug.sh
-| | restore.sh
