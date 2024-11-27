@@ -1,21 +1,12 @@
-OpenTTY Java Edition 1.8.5
+OpenTTY Java Edition 1.8.6
 Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - Netman Update 
 
 [ _Commands_ ]
 
-- `import <lib>`: import a lib 
-- `about`: show info about a lib
-- `break`: stop mods backgrounded running
-- `buff <text>`: set stdin content
-- `log`: basic log system
-
 [ _Updates_ ] 
 
-- Added 1.9 Lib API features
-- New envirronment key `PROMPT` with stdin content
-- X Server updated to 0.5
-- Added new resource folder _/java/lib_
-
-
+- Removed script `restore.sh`
+- OpenTTY Running **X Server** `0.5.1`
+- **NetKit** and **Settings** updated to 1.1
