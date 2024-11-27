@@ -28,7 +28,7 @@ screen.button.cmd=execute x11 list /java/lib/jbuntu;
 
 quest.title=JBuntu $JVERSION
 quest.label=Notes
-quest.key=CONTENT
+quest.key=JBUNTU_NOTES
 quest.cmd=execute install nano; touch; add $JBUNTU_NOTES; install jbuntu-config; get nano;
 quest.back=x11 make /java/lib/jbuntu
 
