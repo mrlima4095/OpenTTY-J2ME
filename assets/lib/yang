@@ -26,11 +26,12 @@ quest.cmd=execute yang install;
 [ Index ]
 
 list.title=Repository
-list.content=Armitage,PasteBin,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ImmersiveShell,ViaVersion,Updater
+list.content=Armitage,PasteBin,DeviceFS,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ImmersiveShell,ViaVersion,Updater
 list.button=Install
 
 Armitage=execute set RESOURCE=armitage; yang install;
 PasteBin=execute set RESOURCE=pastebin; yang install; 
+DeviceFS=execute set RESOURCE=fsdevice; yang install;
 FilesME=execute set RESOURCE=filesme; yang install;
 Forge=execute set RESOURCE=forge; yang install;
 JBuntu=execute set RESOURCE=jbuntu; yang install;
