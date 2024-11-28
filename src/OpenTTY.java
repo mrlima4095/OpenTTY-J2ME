@@ -176,8 +176,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); processCommand("execute break; x11 stop; x11 init; run initd; sh;"); app = true; }
+        else if (mainCommand.equals("@login")) { if (argument.equals("")) { new Login(); } else { username = argument; } }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
