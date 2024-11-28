@@ -44,6 +44,6 @@ Text Editor=execute nano;
 File Explorer=execute install nano; touch; add list.title=File Explorer; add list.content=My Files,Device Files,Resources; add list.back=x11 list jbuntu; add list.button=Open; add My Files=builtin dir f; add Device Files=builtin dir s; add Resources=builtin ls; x11 list nano; get nano; 
 Network Tools=execute nk;
 OpenTTY Store=execute yang;
-Terminal=execute x11 stop; x11 init; x11 item jbuntu; unalias xterm; x11 term;
+Terminal=execute x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; unalias xterm; x11 term;
 Monitor=execute htop;
 
