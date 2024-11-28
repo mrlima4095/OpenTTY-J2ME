@@ -16,4 +16,4 @@ set PORT=31522
 set QUERY=nano
 
 import jbuntu
-bg execute sleep 1; x11 make /java/lib/jbuntu
+bg execute true; sleep 1; x11 make /java/lib/jbuntu
