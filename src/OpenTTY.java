@@ -179,10 +179,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute break; x11 stop; x11 init; run initd; sh;"); app = true; }
-        else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
-        else if (mainCommand.startsWith("@")) { TextBox function = new TextBox(mainCommand,  , 256, TextField.ANY); }
+        else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
+        else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute break; x11 stop; x11 init; run initd; sh;"); app = true; }
+        else if (mainCommand.startsWith("@")) { TextBox function = new TextBox(mainCommand, (String) aliases.get(replace(mainCommand, "@", "")), 256, TextField.ANY); function.addCommand(new Command("Back", Command.BACK, 1)); function.setCommandListener(this); display.setCurrent(function); }
 
         
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
