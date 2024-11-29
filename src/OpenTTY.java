@@ -255,7 +255,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command).toLowerCase();
         String argument = getArgument(command);
         
-        if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-11-22\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } 
+        if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2024-11-30\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); } 
         else if (mainCommand.equals("title")) { form.setTitle(argument); }
         else if (mainCommand.equals("term")) { display.setCurrent(form); } 
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
