@@ -12,16 +12,16 @@ pingw=execute install nano; getty; ping $INPUT; set OLD_TITLE=$TITLE; title Ping
 [ DISPLAY ]
 
 quest.title=$TITLE
-quest.label=IP Adress
+quest.label=$LABEL
 quest.cmd=execute $TOOL $INPUT; unset TOOL; unset INPUT;
 quest.key=INPUT
 
 list.title=NetKit Tools
 list.content=Remote,IP Adress,Port Scanner,Ping Test,Run Server
 
-Remote=execute set TOOL=nc; x11 quest /java/lib/netkit;
-IP Adress=execute ifconfig;
-Port Scanner=execute set TOOL=prscan; x11 quest /java/lib/netkit;
+Remote=execute set TOOL=nc; set LABEL=IP Adress; x11 quest /java/lib/netkit;
+IP Adress=execute x11 list /java/lib/netkit; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
+Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress x11 quest /java/lib/netkit;
 Ping Test=execute set TOOL=pingw; x11 quest /java/lib/netkit;
 Run Server=execute server; 
 
