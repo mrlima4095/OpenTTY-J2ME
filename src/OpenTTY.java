@@ -35,7 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             
             if (username.equals("")) { new Login(); }
-            else { display.setCurrent(form); runScript(loadRMS("initd", 1)); }
+            else { runScript(loadRMS("initd", 1)); }
         }    
     }
 
