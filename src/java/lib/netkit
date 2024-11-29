@@ -4,9 +4,10 @@ name=NetKit
 version=1.1
 description=Network Center
 
-command=nk
+command=nk,pingw
 
 nk=execute x11 list /java/lib/netkit;
+pingw=execute install nano; getty; ping $INPUT; set OLD_TITLE=$TITLE; title Ping; warn $OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true 
 
 [ DISPLAY ]
 
@@ -21,6 +22,6 @@ list.content=Remote,IP Adress,Port Scanner,Ping Test,Run Server
 Remote=execute set TOOL=nc; x11 quest /java/lib/netkit;
 IP Adress=execute ifconfig;
 Port Scanner=execute set TOOL=prscan; x11 quest /java/lib/netkit;
-Ping Test=execute set TOOL=ping; x11 quest /java/lib/netkit;
+Ping Test=execute set TOOL=pingw; x11 quest /java/lib/netkit;
 Run Server=execute server; 
 
