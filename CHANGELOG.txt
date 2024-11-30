@@ -7,6 +7,7 @@ Copyright (C) 2024 - Mr. Lima
 - `sed <operation>`: make text manipulation in nano content
 - `ps`: show current process running 
 - `kill <pid>`: kill a process
+- `trace <process>`: check a process is running and get process pids
 
 [ _Updates_ ] 
 
