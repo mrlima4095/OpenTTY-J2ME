@@ -17,6 +17,7 @@ Copyright (C) 2024 - Mr. Lima
 - HTML Viewer now ignore **css** and **javascript** params
 - Nano new buttons **Run Script** and **Import File**
 - OpenTTY Running **X Server** `0.5.1`
+- Fixed a bug in **Server** in some devices that it crash after response a connection
 - New packages addded - **J2ME Loader**, **FilesME**, **DeviceFS**, **ImmersiveShell** and **ViaVersion**
 - **JBuntu** added again to **PackJ Repository** list
 - **NetKit** `IP Adress` option now show local IP Adress
@@ -32,4 +33,3 @@ Copyright (C) 2024 - Mr. Lima
 [ _Notes_ ]
 
 - The `exec` command separator is char **&**, use it in situations like `execute if (expr) exec <cmd1> & <cmd2>; [out comparation]; true `
-
