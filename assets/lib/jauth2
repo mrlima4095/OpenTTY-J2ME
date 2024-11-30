@@ -14,7 +14,7 @@ su=execute
 
 
 shell.name=sudo
-shell.args=yang,setrepo,cfg, rot
+shell.args=yang,setrepo,cfg, su
 
 yang=execute x11 list /java/lib/yang;
 setrepo=execute x11 quest x11 quest /java/lib/yang;
