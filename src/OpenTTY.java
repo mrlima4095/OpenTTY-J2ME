@@ -250,9 +250,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     private void calendar() { final Form cal = new Form(form.getTitle()); cal.append(new DateField(null , DateField.DATE)); cal.addCommand(new Command("Back", Command.BACK, 1)); cal.setCommandListener(this); display.setCurrent(cal); }
 
-    
-    private void stop(String app) { if (app.startsWith("bg")) { app = getCommand(getArgument(app)); } trace.remove(app); }
-    private void start(String app) { if (app.startsWith("bg")) { app = getCommand(getArgument(app)); } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); }
+
+    private void stop(String app) { if (app.startsWith("bg")) { app = getCommand(getArgument(app)); } else if (app.startsWith("execute") || app.startsWith("exec")) { app = getCommand(app); }trace.remove(app); }
+    private void start(String app) { if (app.startsWith("bg")) { app = getCommand(getArgument(app)); } else if (app.startsWith("execute") || app.startsWith("exec")) { app = getCommand(app); } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); }
     private void kill(String pid) {  if (pid == null || pid.length() == 0) { return; } Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); if (pid.equals(trace.get(key))) { trace.remove(key); echoCommand("Process with PID " + pid + " terminated"); if ("sh".equals(key)) { processCommand("exit"); } return; } } echoCommand("PID '" + pid + "' not found"); }
 
 
