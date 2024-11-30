@@ -180,7 +180,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
-        else if (mainCommand.equals("@pause")) { wait(); }
+        else if (mainCommand.equals("@pause")) { try { wait(); } catch (InterruptedException e) { } }
         else if (mainCommand.equals("@resume")) { notify(); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute break; x11 stop; x11 init; x11 term; run initd; sh;"); app = true; }
