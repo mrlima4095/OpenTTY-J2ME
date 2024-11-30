@@ -278,17 +278,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
 
-    private void list() {
-        echoCommand("PID\tPROCESS");
-        Enumeration keys = trace.keys();
-        while (keys.hasMoreElements()) {
-            String key = (String) keys.nextElement();
-            String pid = (String) trace.get(key);
-            echoCommand(pid + "\t" + key);
-        }
-    }
-
-
 
 
     // MIDlet Services Command Processor 
