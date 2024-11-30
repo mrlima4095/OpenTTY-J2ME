@@ -44,7 +44,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == enterCommand) { String command = stdin.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command.trim()); start(command); } stdin.setString(""); processCommand(command); trace.remove(getCommand(command)); stdin.setLabel(username + " " + path + " $"); } 
+        if (c == enterCommand) { String command = stdin.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command.trim()); start(command); } stdin.setString(""); processCommand(command); stop(command); stdin.setLabel(username + " " + path + " $"); } 
             
         else if (c == clearCommand) { stdout.setText(""); }
         else if (c == helpCommand) { processCommand("help"); }
@@ -140,7 +140,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand("" + read(argument).hashCode()); } else if (argument.equals("nano")) { echoCommand("" + nanoContent.hashCode()); } else { echoCommand("" + loadRMS(argument, 1).hashCode()); } } }
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("if")) { ifCommand(argument); }
-        else if (mainCommand.equals("kill") || mainCommand.equals("stop")) { stop(argument); }
+        else if (mainCommand.equals("kill") || mainCommand.equals("stop")) { kill(argument); }
         else if (mainCommand.equals("log")) { MIDletLogs(argument); }
         else if (mainCommand.equals("logcat")) { echoCommand(logs); }
         else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
@@ -254,9 +254,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void start(String app) {
         if (app.startsWith("bg")) { app = getCommand(getArgument(app)); }
 
-        trace.put(app, String.valueOf(random.nextInt(9999)));
+        trace.put(app, String.valueOf(1000 + random.nextInt(9000)));
     }
-    private void stop(String pid) {
+    private void stop(String app) {
+        if (app.startsWith("bg")) { app = getCommand(getArgument(app)); }
+
+        trace.remove(app);
+    }
+    private void kill(String pid) {
         if (pid == null || pid.length() == 0) {
             return;
         }
@@ -274,8 +279,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return;
             }
         }
-        echoCommand("PID " + pid + " not found.");
+        echoCommand("PID '" + pid + "' not found.");
     }
+
 
 
     // MIDlet Services Command Processor 
