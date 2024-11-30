@@ -161,6 +161,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
+        else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); } }
         else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
         else if (mainCommand.equals("uname")) { echoCommand(env("$TYPE $CONFIG $PROFILE")); }
         else if (mainCommand.equals("unset")) { unsetCommand(argument); }
@@ -254,8 +255,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void stop(String app) { if (app.startsWith("bg")) { app = getCommand(getArgument(app)); } else if (app.startsWith("execute") || app.startsWith("exec")) { app = getCommand(app); }trace.remove(app); }
     private void start(String app) { if (app.startsWith("bg")) { app = getCommand(getArgument(app)); } else if (app.startsWith("execute") || app.startsWith("exec")) { app = getCommand(app); } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); }
     private void kill(String pid) {  if (pid == null || pid.length() == 0) { return; } Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); if (pid.equals(trace.get(key))) { trace.remove(key); echoCommand("Process with PID " + pid + " terminated"); if ("sh".equals(key)) { processCommand("exit"); } return; } } echoCommand("PID '" + pid + "' not found"); }
-
-
 
     // MIDlet Services Command Processor 
     private void xserver(String command) {
