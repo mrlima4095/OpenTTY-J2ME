@@ -339,17 +339,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void run() {
             ServerSocketConnection serverSocket = null;
-            SocketConnection clientSocket = null;
-            InputStream is = null;
-            OutputStream os = null;
-
-
+            
             try {
                 serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
                 echoCommand("[+] listening at port " + port);
                 MIDletLogs("add info Server listening at port " + port);
 
                 while (true) {
+                    SocketConnection clientSocket = null;
+                    InputStream is = null;
+                    OutputStream os = null;
+
                     try {
                         clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
                         is = clientSocket.openInputStream();
@@ -373,15 +373,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         os.flush();
                     } catch (IOException e) {
-                        echoCommand("[-] Error handling client: " + e.getMessage());
-                        MIDletLogs("add error Error handling client '" + e.getMessage() + "'");
+                        warnCommand("Server", e.getMessage());
                     } finally {
                         try {
                             if (is != null) is.close();
                             if (os != null) os.close();
                             if (clientSocket != null) clientSocket.close();
                         } catch (IOException e) {
-                            echoCommand("[-] Failed to close resources: " + e.getMessage());
+                            
                         }
                     }
                 }
@@ -394,7 +393,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         serverSocket.close();
                     }
                 } catch (IOException e1) {
-                    echoCommand("[-] Failed to close server socket: " + e1.getMessage());
+                    
                 }
             }
         }
