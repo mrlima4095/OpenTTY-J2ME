@@ -5,6 +5,8 @@ Copyright (C) 2024 - Mr. Lima
 
 - `exec <commands>`: run many commands in once time
 - `sed <operation>`: make text manipulation in nano content
+- `ps`: show current process running 
+- `kill <pid>`: kill a process
 
 [ _Updates_ ] 
 
