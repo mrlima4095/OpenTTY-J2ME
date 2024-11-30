@@ -289,6 +289,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("api.version")) { if (!((String) lib.get("api.version")).equals(env("$VERSION"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
 
         if (lib.containsKey("process.name")) { start((String) lib.get("process.name")); }
+        if (lib.containsKey("process.owner")) { String owner = (String) lib.get("process.owner") if (owner.equals("root")) {  } else if (owner.equals(username)) {  } else {  } }
         if (lib.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) lib.get("process.port") + " " + (String) lib.get("process.host"))); }
 
         if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { importScript(include[i]); } }
