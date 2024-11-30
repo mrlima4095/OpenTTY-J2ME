@@ -17,3 +17,5 @@ mount /java/etc/fstab
 
 x11 init
 x11 term
+
+start sh
