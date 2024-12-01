@@ -8,6 +8,7 @@ Copyright (C) 2024 - Mr. Lima
 - `ps`: show current process running 
 - `kill <pid>`: kill a process
 - `trace <process>`: check a process is running and get process pids
+- `bind`: start a shell server to execute command from other device
 
 [ _Updates_ ] 
 
