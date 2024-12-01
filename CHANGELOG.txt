@@ -9,6 +9,7 @@ Copyright (C) 2024 - Mr. Lima
 - `kill <pid>`: kill a process
 - `trace <process>`: check a process is running and get process pids
 - `bind`: start a shell server to execute command from other device
+- `case [METHOD] (expr) <command>` use predefined **METHOD**s _(Advanced IF)_
 
 [ _Updates_ ] 
 
