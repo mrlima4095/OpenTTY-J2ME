@@ -18,6 +18,7 @@ Copyright (C) 2024 - Mr. Lima
 - Nano new buttons **Run Script** and **Import File**
 - OpenTTY Running **X Server** `0.5.1`
 - Fixed a bug in **Server** in some devices that it crash after response a connection
+- **Server** buffer size increased to _4096_ bytes
 - New packages addded - **J2ME Loader**, **FilesME**, **DeviceFS**, **ImmersiveShell** and **ViaVersion**
 - **JBuntu** added again to **PackJ Repository** list
 - **NetKit** `IP Adress` option now show local IP Adress
