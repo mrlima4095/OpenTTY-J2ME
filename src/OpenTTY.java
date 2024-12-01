@@ -250,7 +250,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (method.equals("trace")) { if (trace.containsKey(expression)) { processCommand(command); } }
 
         else if (method.equals("!file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { return; } } } processCommand(command); } 
-        else if (method.equals("!root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { return } } processCommand(command); }
+        else if (method.equals("!root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { return; } } processCommand(command); }
         else if (method.equals("!trace")) { if (trace.containsKey(expression)) { } else { processCommand(command); } }
 
     }
