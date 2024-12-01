@@ -245,12 +245,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim();
         String command = argument.substring(lastParenthesis + 1).trim();
 
-        if (method.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { processCommand(command); } } } } 
-        else if (method.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { processCommand(command); } } }
+        if (method.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].toLowerCase().equals(expression)) { processCommand(command); } } } } 
+        else if (method.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).toLowerCase().equals(expression)) { processCommand(command); } } }
         else if (method.equals("trace")) { if (trace.containsKey(expression)) { processCommand(command); } }
 
-        else if (method.equals("!file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { return; } } } processCommand(command); } 
-        else if (method.equals("!root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { return; } } processCommand(command); }
+        else if (method.equals("!file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].toLowerCase().equals(expression)) { return; } } } processCommand(command); } 
+        else if (method.equals("!root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).toLowerCase().equals(expression)) { return; } } processCommand(command); }
         else if (method.equals("!trace")) { if (trace.containsKey(expression)) { } else { processCommand(command); } }
 
     }
@@ -310,8 +310,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("api.version")) { if (!((String) lib.get("api.version")).equals(env("$VERSION"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
 
         if (lib.containsKey("process.name")) { start((String) lib.get("process.name")); }
-        if (lib.containsKey("process.type")) { String type = (String) lib.get("process.type"); }
-        if (lib.containsKey("process.owner")) { String owner = (String) lib.get("process.owner"); }
+        if (lib.containsKey("process.type")) { String type = (String) lib.get("process.type"); if (type.equals("server")) { } else if (type.equals("bind")) { new Bind(env((String) lib.get("process.port"))); } else { MIDletLogs("add warn " + type.toUpperCase() + " is a invalid value for 'process.type'"); } }
         if (lib.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) lib.get("process.port") + " " + (String) lib.get("process.host"))); }
 
         if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { importScript(include[i]); } }
