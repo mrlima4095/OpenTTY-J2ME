@@ -7,6 +7,8 @@ description=Desktop for OpenTTY
 api.version=1.11
 api.error=execute log add error JBuntu requires OpenTTY 1.11; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.11; title $OLD_TITLE; unset OLD_TITLE;
 
+process.name=jbuntu
+
 include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 
 config=execute set JVERSION=1.1; cat jbuntu-config; set JBUNTU_NOTES=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
