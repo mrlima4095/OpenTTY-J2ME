@@ -8,10 +8,7 @@ import java.io.*;
 
 
 public class OpenTTY extends MIDlet implements CommandListener {
-    private boolean app;
     private int currentIndex = 0;
-    private String logs = "";
-    private String path = "/";
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable paths = new Hashtable(), shell = new Hashtable(),
@@ -20,6 +17,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Vector commandHistory = new Vector();
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
+    private String logs = "", path = "/", 
+                   build = "2024-1.11-01x10";
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -29,11 +28,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
 
     public void startApp() {
-        if (!app == true) {
+        if (trace.containsKey("sh")) {
             attributes.put("PATCH", "API Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.5.1");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             
-            runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $"); app = true;
+            runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $"); 
             
             
             if (username.equals("")) { new Login(); }
@@ -41,7 +40,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }    
     }
 
-    public void pauseApp() { app = true; }
+    public void pauseApp() { }
     public void destroyApp(boolean unconditional) { writeRMS("nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
@@ -122,7 +121,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }).start(); }
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { processCommand(argument, false); }
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
-        else if (mainCommand.equals("break")) { app = false; }
+        else if (mainCommand.equals("build")) { echoCommand(build); }
         else if (mainCommand.equals("case")) { caseCommand(argument); }
         else if (mainCommand.equals("cal")) { final Form cal = new Form(form.getTitle()); cal.append(new DateField(null , DateField.DATE)); cal.addCommand(new Command("Back", Command.BACK, 1)); cal.setCommandListener(this); display.setCurrent(cal); }
         else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
@@ -185,10 +184,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
-        else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute break; x11 stop; x11 init; x11 term; run initd; sh;"); app = true; }
+        else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
         else if (mainCommand.startsWith("@")) {  }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
@@ -318,7 +316,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { importScript(include[i]); } }
         
         if (lib.containsKey("config")) { processCommand((String) lib.get("config")); }
-        if (lib.containsKey("mod")) { final String mod = (String) lib.get("mod"); new Thread(new Runnable() { public void run() { while (app) { processCommand(mod); } app = true; } }).start(); }
+        if (lib.containsKey("mod") && lib.containsKey("process.name")) { final String mod = (String) lib.get("mod"); new Thread(new Runnable() { public void run() { while (trace.containsKey((String) lib.get("process.name"))) { processCommand(mod); } } }).start(); }
         
         if (lib.containsKey("command")) { String[] command = split((String) lib.get("command"), ','); for (int i = 0; i < command.length; i++) { if (lib.containsKey(command[i])) { aliases.put(command[i], env((String) lib.get(command[i]))); } else { MIDletLogs("add error Failed to create command '" + command[i] + "' content not found"); } } }
         if (lib.containsKey("file")) { String[] file = split((String) lib.get("file"), ','); for (int i = 0; i < file.length; i++) { if (lib.containsKey(file[i])) { writeRMS(file[i], env((String) lib.get(file[i]))); } else { MIDletLogs("add error Failed to create file '" + file[i] + "' content not found"); } } }
