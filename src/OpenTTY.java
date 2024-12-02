@@ -8,7 +8,7 @@ import java.io.*;
 
 
 public class OpenTTY extends MIDlet implements CommandListener {
-    private int currentIndex = 0;
+    //private int currentIndex = 0;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable paths = new Hashtable(), shell = new Hashtable(),
