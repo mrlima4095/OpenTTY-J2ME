@@ -32,6 +32,14 @@ class OpenTTYClient:
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=self.close_connection)
         self.menubar.add_cascade(label="File", menu=self.file_menu)
+
+        self.commands_menu = tk.Menu(self.menubar, tearoff=0, bg="#424242", fg="#FFFFFF")
+        self.commands_menu.add_command(label="Process", command=lambda: self.send_predefined_command("ps"))
+        self.commands_menu.add_command(label="View Files", command=lambda: self.send_predefined_command("dir v"))
+        self.commands_menu.add_command(label="Run Debug Script", command=lambda: self.send_predefined_command("debug"))
+        self.commands_menu.add_command(label="Import (default)", command=lambda: self.send_predefined_command("execute import /java/lib/yang; import /java/lib/netkit; import /java/lib/settings;"))
+        self.menubar.add_cascade(label="Commands", menu=self.commands_menu)
+
         self.master.config(menu=self.menubar)
 
         # Main frame
@@ -86,6 +94,15 @@ class OpenTTYClient:
             except Exception as e:
                 self.show_message(f"[-] {str(e)}")
                 self.close_connection()
+
+    def send_predefined_command(self, command):
+        if self.connected:
+            try:
+                self.socket.sendall((command + "\n").encode())
+            except Exception as e:
+                self.show_message(f"[-] {str(e)}")
+                self.close_connection()
+
 
     def receive_messages(self):
         try:
