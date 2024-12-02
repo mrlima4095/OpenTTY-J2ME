@@ -28,7 +28,6 @@ class OpenTTYClient:
         # Menubar
         self.menubar = tk.Menu(self.master, bg="#2E2E2E", fg="#FFFFFF", tearoff=0)
         self.file_menu = tk.Menu(self.menubar, tearoff=0, bg="#424242", fg="#FFFFFF")
-        self.file_menu.add_command(label="Run Script", command=self.run_script)
         self.file_menu.add_command(label="Clear Output", command=self.clear_output) 
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=self.close_connection)
@@ -104,18 +103,6 @@ class OpenTTYClient:
         self.output_text.configure(state=tk.NORMAL)
         self.output_text.delete("1.0", tk.END)
         self.output_text.configure(state=tk.DISABLED)
-
-    def run_script(self):
-        try:
-            script_path = filedialog.askopenfilename(filetypes=[("Shell Script", "*.sh"), ("All files", "*.*")])
-            if script_path:
-                with open(script_path, "r") as script_file:
-                    lines = script_file.read().split('\n')
-
-                    for line in lines:
-                        self.socket.sendall((line + "\n").encode())
-        except Exception as e:
-            messagebox.showerror("OpenTTY", e)
 
     def show_message(self, message):
         self.output_text.configure(state=tk.NORMAL)
