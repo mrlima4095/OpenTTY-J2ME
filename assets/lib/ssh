@@ -1,0 +1,30 @@
+[ Config ]
+
+name=OpenSSH
+version=1.0
+description=Secure-Shell for J2ME
+
+api.version=1.11
+api.error=execute log add error OpenSSH requires API from OpenTTY 1.11 or newer
+
+process.name=openssh
+process.type=bind
+process.port=22
+
+mod=case !trace (openssh) execute ssh stop; break
+
+command=ssh
+
+ssh=execute x11 quest ssh;
+
+shell.name=ssh
+shell.args=init,stop
+
+init=execute import ssh;
+stop=execute trace pid bind; kill $OUTPUT; 
+
+
+quest.title=OpenSSH
+quest.label=IP Adress
+quest.cmd=execute nc $ADDR:22; unset ADDR;
+quest.key=ADDR
