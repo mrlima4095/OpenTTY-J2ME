@@ -79,11 +79,11 @@ class OpenTTYClient:
         message = self.input_text.get()
         if message.strip() and self.connected:
             try:
-                if message.split()[0] == "/exit": self.master.destroy()
+                if message.split()[0] == "/exit": self.master.destroy(),
                 elif message.split()[0] == "/clear": self.clear_output()
-                else:
-                    self.socket.sendall((message + "\n").encode())
-                    self.input_text.delete(0, tk.END)
+                else: self.socket.sendall((message + "\n").encode())
+                
+                self.input_text.delete(0, tk.END)
             except Exception as e:
                 self.show_message(f"[-] {str(e)}")
                 self.close_connection()
