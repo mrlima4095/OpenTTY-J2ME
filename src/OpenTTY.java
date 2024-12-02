@@ -8,17 +8,16 @@ import java.io.*;
 
 
 public class OpenTTY extends MIDlet implements CommandListener {
-    //private int currentIndex = 0;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable paths = new Hashtable(), shell = new Hashtable(),
                       aliases = new Hashtable(), attributes = new Hashtable(),
                       trace = new Hashtable();
-    private Vector commandHistory = new Vector();
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2024-1.11-01x10";
+                   build = "2024-1.11-01x11";
+    private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -305,7 +304,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void importScript(String script) {
         if (script == null || script.length() == 0) { return; } 
         
-        final Hashtable lib = parseFrom(script);
+        Hashtable lib = parseFrom(script);
         
         if (lib.containsKey("api.version")) { if (!((String) lib.get("api.version")).equals(env("$VERSION"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
 
@@ -316,7 +315,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { importScript(include[i]); } }
         
         if (lib.containsKey("config")) { processCommand((String) lib.get("config")); }
-        if (lib.containsKey("mod") && lib.containsKey("process.name")) { final String mod = (String) lib.get("mod"); new Thread(new Runnable() { public void run() { while (trace.containsKey((String) lib.get("process.name"))) { processCommand(mod); } } }).start(); }
+        if (lib.containsKey("mod") && lib.containsKey("process.name")) { final String name = (String) lib.get("process.name"); final String mod = (String) lib.get("mod"); new Thread(new Runnable() { public void run() { while (trace.containsKey(name) { processCommand(mod); } } }).start(); }
         
         if (lib.containsKey("command")) { String[] command = split((String) lib.get("command"), ','); for (int i = 0; i < command.length; i++) { if (lib.containsKey(command[i])) { aliases.put(command[i], env((String) lib.get(command[i]))); } else { MIDletLogs("add error Failed to create command '" + command[i] + "' content not found"); } } }
         if (lib.containsKey("file")) { String[] file = split((String) lib.get("file"), ','); for (int i = 0; i < file.length; i++) { if (lib.containsKey(file[i])) { writeRMS(file[i], env((String) lib.get(file[i]))); } else { MIDletLogs("add error Failed to create file '" + file[i] + "' content not found"); } } }
