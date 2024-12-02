@@ -31,6 +31,7 @@ Copyright (C) 2024 - Mr. Lima
 - **OpenTTY Repository** moved to main GitHub Repository
 - **FileExplorer()** class moved to inside **OpenTTY$FileExplorer**
 - Device Explorer now back running command `xterm`
+- Removed `app` variable and now Threads are controll by PID
 - Removed script `restore.sh`
 
 [ _Notes_ ]
