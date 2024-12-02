@@ -305,7 +305,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void importScript(String script) {
         if (script == null || script.length() == 0) { return; } 
         
-        Hashtable lib = parseFrom(script);
+        final Hashtable lib = parseFrom(script);
         
         if (lib.containsKey("api.version")) { if (!((String) lib.get("api.version")).equals(env("$VERSION"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
 
