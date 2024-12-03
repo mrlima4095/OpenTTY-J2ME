@@ -16,6 +16,7 @@ Copyright (C) 2024 - Mr. Lima
 - New attributes in **Module API** - `api.version` and `api.error` to verify **API** Compatibility
 - New attributes in **Module API** - `process.name` to start a virtual process to _Package_ 
 - New attributes in **Module API** - `process.host` and `process.port` to start hosts 
+- `mod` now requires a `process.name` to handle it in process list
 - HTML Viewer now ignore **css** and **javascript** params
 - Nano new buttons **Run Script** and **Import File**
 - OpenTTY Running **X Server** `0.5.1`
