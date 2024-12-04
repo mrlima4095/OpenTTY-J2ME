@@ -16,7 +16,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2024-1.11-01x11";
+                   build = "2024-1.11-01x12";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -183,6 +183,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("@class")) { echoCommand(getClass().getName()); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
@@ -247,7 +250,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (method.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { processCommand(command); } } } } 
         else if (method.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { processCommand(command); } } }
         else if (method.equals("trace")) { if (trace.containsKey(expression)) { processCommand(command); } }
-
+        
         else if (method.equals("!file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { return; } } } processCommand(command); } 
         else if (method.equals("!root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { return; } } processCommand(command); }
         else if (method.equals("!trace")) { if (trace.containsKey(expression)) { } else { processCommand(command); } }
