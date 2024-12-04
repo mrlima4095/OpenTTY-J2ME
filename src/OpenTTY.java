@@ -362,7 +362,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class ScreenList implements CommandListener {
         private Hashtable lib;
         private List screen; 
-        private StringItem content;
         private Command backCommand, userCommand;
 
         public ScreenList(String args) {
@@ -382,8 +381,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             for (int i = 0; i < content.length; i++) {
                 screen.append(content[i], null);
             }
-            
-            screen.append(content);
+            =
             screen.addCommand(backCommand);
             screen.addCommand(userCommand);
 
