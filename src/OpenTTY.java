@@ -378,6 +378,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             backCommand = new Command(lib.containsKey("list.back.label") ? (String) lib.get("list.back.label") : "Back", Command.OK, 1);
             userCommand = new Command(lib.containsKey("list.button") ? (String) lib.get("list.button") : "Select", Command.SCREEN, 2);
 
+            String[] content = split(env((String) lib.get("list.content")), ',');
+            for (int i = 0; i < content.length; i++) {
+                screen.append(content[i], null);
+            }
             
             screen.append(content);
             screen.addCommand(backCommand);
@@ -385,13 +389,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             screen.setCommandListener(this);
             
-            String[] content = split(env((String) lib.get("list.content")), ',');
-            for (int i = 0; i < content.length; i++) {
-                screen.append(content[i], null);
-            }
-            
             display.setCurrent(screen);
-
+            
         }
         public void commandAction(Command c, Displayable d) {
             if (c == backCommand) {
