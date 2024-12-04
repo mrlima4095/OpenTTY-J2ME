@@ -381,7 +381,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             for (int i = 0; i < content.length; i++) {
                 screen.append(content[i], null);
             }
-            =
+            
             screen.addCommand(backCommand);
             screen.addCommand(userCommand);
 
