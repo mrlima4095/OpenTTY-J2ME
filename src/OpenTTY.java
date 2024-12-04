@@ -361,7 +361,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     } 
     public class ScreenList implements CommandListener {
         private Hashtable lib;
-        private Form screen; 
+        private List screen; 
         private StringItem content;
         private Command backCommand, userCommand;
 
