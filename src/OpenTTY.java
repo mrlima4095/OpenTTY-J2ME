@@ -278,9 +278,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
         else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
         else if (mainCommand.equals("canvas")) { display.setCurrent(new Canvas() { private int cursorX = 10, cursorY = 10, cursorSize = 5; protected void paint(Graphics g) { g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); g.setColor(255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } else { processCommand("xterm"); } repaint(); } }); }
-        else if (mainCommand.equals("item")) { new ItemLoader(argument); }
+        
         else if (mainCommand.equals("make")) { new Screen(argument); } 
-        else if (mainCommand.equals("list")) { new ScreenList(argument); } 
+        else if (mainCommand.equals("list")) { new ScreenList(argument); }
+        else if (mainCommand.equals("item")) { new ItemLoader(argument); } 
         else if (mainCommand.equals("quest")) { new ScreenQuest(argument); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); }
@@ -409,7 +410,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class ScreenQuest implements CommandListener {
         private Hashtable lib;
         private Form screen; 
-        private TextField content
+        private TextField content;
         private Command backCommand, userCommand;
 
         public ScreenQuest(String args) {
