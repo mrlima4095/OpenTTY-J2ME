@@ -364,7 +364,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int contentWidth = g.getFont().stringWidth(content);
             int contentHeight = g.getFont().getHeight();
 
-            g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2);
+            // Centralizar o texto com o alinhamento TOP e HCENTER
+            g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.HCENTER);
         }
 
         // Desenhar o cursor
