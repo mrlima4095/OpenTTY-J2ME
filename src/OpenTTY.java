@@ -326,68 +326,73 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseFrom(args); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
 
-    public class MyCanvas extends Canvas implements CommandListener {
-        private Hashtable lib;
-        private Command backCommand, userCommand;
-        private int cursorX = 10, cursorY = 10;
-        private final int cursorSize = 5;
+   public class MyCanvas extends Canvas implements CommandListener {
+    private Hashtable lib;
+    private Command backCommand, userCommand;
+    private int cursorX = 10, cursorY = 10;
+    private final int cursorSize = 5;
 
+    public MyCanvas(String args) {
+        if (args == null || args.length() == 0) { return; } 
 
-        public MyCanvas(String args) {
-            if (args == null || args.length() == 0) { return; } 
+        lib = parseFrom(args); 
 
-            lib = parseFrom(args); 
+        backCommand = new Command(lib.containsKey("canvas.back.label") ? (String) lib.get("canvas.back.label") : "Back", Command.EXIT, 1);
+        userCommand = new Command(lib.containsKey("canvas.button") ? (String) lib.get("canvas.button") : "Menu", Command.OK, 2);
 
-            backCommand = new Command(lib.containsKey("canvas.back.label") ? (String) lib.get("canvas.back.label") : "Back", Command.EXIT, 1);
-            userCommand = new Command(lib.containsKey("canvas.button") ? (String) lib.get("canvas.button") : "Menu", Command.OK, 2);
+        addCommand(backCommand);
+        if (lib.containsKey("canvas.button")) { addCommand(userCommand); }
 
-            addCommand(backCommand);
-            if (lib.containsKey("canvas.button")) { addCommand(userCommand); }
-
-            setCommandListener(this);
-        }
-
-        protected void paint(Graphics g) {
-            g.setColor(0, 0, 0);
-            g.fillRect(0, 0, getWidth(), getHeight());
-
-            if (lib.containsKey("canvas.title")) { 
-                g.setColor(50, 50, 50);
-                g.fillRect(0, 0, getWidth(), 30); 
-
-                g.setColor(255, 255, 255); 
-                g.drawString((String) lib.get("canvas.title"), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER);
-                
-                g.setColor(50, 50, 50);  
-                g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);  
-                g.drawRect(1, 1, getWidth() - 3, getHeight() - 32); 
-            }
-
-            g.setColor(255, 255, 255);
-            g.fillRect(cursorX, cursorY, cursorSize, cursorSize);
-        }
-
-        protected void keyPressed(int keyCode) {
-            int gameAction = getGameAction(keyCode);
-
-            if (gameAction == LEFT) {
-                cursorX = Math.max(0, cursorX - 5);
-            } else if (gameAction == RIGHT) {
-                cursorX = Math.min(getWidth() - cursorSize, cursorX + 5);
-            } else if (gameAction == UP) {
-                cursorY = Math.max(0, cursorY - 5);
-            } else if (gameAction == DOWN) {
-                cursorY = Math.min(getHeight() - cursorSize, cursorY + 5);
-            }
-
-            repaint();
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } 
-            else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); }
-        }
+        setCommandListener(this);
     }
+
+    protected void paint(Graphics g) {
+        g.setColor(0, 0, 0);
+        g.fillRect(0, 0, getWidth(), getHeight());
+
+        if (lib.containsKey("canvas.title")) { 
+            g.setColor(50, 50, 50);
+            g.fillRect(0, 0, getWidth(), 30); 
+
+            g.setColor(255, 255, 255); 
+            g.drawString((String) lib.get("canvas.title"), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER);
+        }
+
+        if (lib.containsKey("canvas.content")) {
+            g.setColor(255, 255, 255);
+            String content = (String) lib.get("canvas.content");
+            int contentWidth = g.getFont().stringWidth(content);
+            int contentHeight = g.getFont().getHeight();
+
+            g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2);
+        }
+
+        // Desenhar o cursor
+        g.setColor(255, 255, 255);
+        g.fillRect(cursorX, cursorY, cursorSize, cursorSize);
+    }
+
+    protected void keyPressed(int keyCode) {
+        int gameAction = getGameAction(keyCode);
+
+        if (gameAction == LEFT) {
+            cursorX = Math.max(0, cursorX - 5);
+        } else if (gameAction == RIGHT) {
+            cursorX = Math.min(getWidth() - cursorSize, cursorX + 5);
+        } else if (gameAction == UP) {
+            cursorY = Math.max(0, cursorY - 5);
+        } else if (gameAction == DOWN) {
+            cursorY = Math.min(getHeight() - cursorSize, cursorY + 5);
+        }
+
+        repaint();
+    }
+
+    public void commandAction(Command c, Displayable d) {
+        if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } 
+        else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); }
+    }
+}
 
 
 
