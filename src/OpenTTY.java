@@ -437,8 +437,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 processCommand("xterm");
                 processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true");
             } else if (c == userCommand) {
-                if (!name.getString().trim().equals("")) {
-                    processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(name.getString().trim()));
+                if (!content.getString().trim().equals("")) {
+                    processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(content.getString().trim()));
                     processCommand("xterm");
                     processCommand(env((String) lib.get("quest.cmd")));
                 }
