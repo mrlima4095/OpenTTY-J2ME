@@ -356,6 +356,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             g.setColor(255, 255, 255); 
             g.drawString((String) lib.get("canvas.title"), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER);
+            
+            g.setColor(50, 50, 50);  
+            g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
         }
 
         if (lib.containsKey("canvas.content")) {
@@ -364,7 +367,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int contentWidth = g.getFont().stringWidth(content);
             int contentHeight = g.getFont().getHeight();
 
-            // Centralizar o texto com o alinhamento TOP e HCENTER
             g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.HCENTER);
         }
 
