@@ -184,9 +184,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
+        else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument)); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
         else if (mainCommand.startsWith("@")) {  }
 
@@ -325,6 +325,40 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class ScreenQuest implements CommandListener { private Hashtable lib; private Form screen; private TextField content; private Command backCommand, userCommand; public ScreenQuest(String args) { if (args == null || args.length() == 0) return; lib = parseFrom(args); if (!lib.containsKey("quest.title") || !lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } screen = new Form(env((String) lib.get("quest.title"))); content = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY); backCommand = new Command("Cancel", Command.SCREEN, 2); userCommand = new Command("Send", Command.OK, 1); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true"); } else if (c == userCommand) { if (!content.getString().trim().equals("")) { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(content.getString().trim())); processCommand("xterm"); processCommand(env((String) lib.get("quest.cmd"))); } } } }
 
     public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) return; else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseFrom(args); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
+
+    public class  extends Canvas {
+        private int cursorX = 10;
+        private int cursorY = 10;
+        private final int cursorSize = 5;
+
+        protected void paint(Graphics g) {
+            g.setColor(0, 0, 0);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
+            g.setColor(255, 255, 255);
+            g.fillRect(cursorX, cursorY, cursorSize, cursorSize);
+        }
+
+        protected void keyPressed(int keyCode) {
+            int gameAction = getGameAction(keyCode);
+
+            if (gameAction == LEFT) {
+                cursorX = Math.max(0, cursorX - 5);
+            } else if (gameAction == RIGHT) {
+                cursorX = Math.min(getWidth() - cursorSize, cursorX + 5);
+            } else if (gameAction == UP) {
+                cursorY = Math.max(0, cursorY - 5);
+            } else if (gameAction == DOWN) {
+                cursorY = Math.min(getHeight() - cursorSize, cursorY + 5);
+            } else {
+                processCommand("xterm");
+            }
+
+            repaint();
+        }
+
+    }
+
 
 
     public class Explorer implements CommandListener { private List files = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), openCommand = new Command("Open", Command.SCREEN, 2), deleteCommand = new Command("Delete", Command.SCREEN, 3), runCommand = new Command("Run Script", Command.SCREEN, 4), importCommand = new Command("Import File", Command.SCREEN, 5); public Explorer() { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { files.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } files.addCommand(backCommand); files.addCommand(openCommand); files.addCommand(deleteCommand); files.addCommand(runCommand); files.addCommand(importCommand); files.setCommandListener(this); display.setCurrent(files); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == deleteCommand) { deleteFile(files.getString(files.getSelectedIndex())); new Explorer(); } else if (c == openCommand) { new NanoEditor(files.getString(files.getSelectedIndex())); } else if (c == runCommand) { processCommand("xterm"); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importCommand) { processCommand("xterm"); importScript(files.getString(files.getSelectedIndex())); } } }
