@@ -17,6 +17,11 @@ command=xterm,jbuntu
 xterm=execute x11 make jbuntu;
 jbuntu=execute alias xterm=execute x11 make jbuntu; xterm;
 
+shell.name=jbuntu
+shell.args=menu
+
+menu=install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Logout,Exit; add list.back=x11 make jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
+
 [ COMMAND ]
 
 item.label=JBuntu
@@ -27,9 +32,16 @@ item.cmd=execute jbuntu;
 screen.title=JBuntu $JVERSION
 screen.content=$JBUNTU_NOTES
 screen.back.label=Menu
-screen.back=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Logout,Exit; add list.back=x11 make jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
+screen.back=execute jbuntu menu; 
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
+
+canvas.title=JBuntu $JVERSION
+canvas.content=$JBUNTU_NOTES
+canvas.back.label=Menu
+canvas.back=execute jbuntu menu;
+canvas.button=Apps
+canvas.button.cmd=execute x11 list jbuntu;
 
 quest.title=JBuntu $JVERSION
 quest.label=Notes
