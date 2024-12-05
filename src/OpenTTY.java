@@ -396,8 +396,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         protected void pointerPressed(int x, int y) {
             if (lib.containsKey("canvas.content")) {
                 String content = (String) lib.get("canvas.content");
-                int contentWidth = getFont().stringWidth(content);
-                int contentHeight = getFont().getHeight();
+                int contentWidth = getGraphics().getFont().stringWidth(content);
+                int contentHeight = getGraphics().getFont().getHeight();
 
                 int textX = (getWidth() - contentWidth) / 2;
                 int textY = (getHeight() - contentHeight) / 2;
