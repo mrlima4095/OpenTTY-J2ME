@@ -418,7 +418,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int textX = (getWidth() - contentWidth) / 2;
                     int textY = (getHeight() - contentHeight) / 2;
 
-                    if (x >= textX && x <= textX + contentWidth && y >= textY && y <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); }
+                    if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); }
                 }
             }
 
