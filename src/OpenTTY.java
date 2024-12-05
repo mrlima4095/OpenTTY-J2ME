@@ -277,7 +277,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); if (argument.equals("")) { current.setTicker(null); } else { current.setTicker(new Ticker(argument)); } }
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
         else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
-        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "default" : argument)); }
+        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument)); }
         
         else if (mainCommand.equals("make")) { new Screen(argument); } 
         else if (mainCommand.equals("list")) { new ScreenList(argument); }
@@ -334,8 +334,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private final int cursorSize = 5;
 
         public MyCanvas(String args) {
-            if (args == null || args.length() == 0) { return; } 
-
             lib = parseFrom(args); 
 
             backCommand = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.EXIT, 1);
@@ -373,29 +371,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             if (lib.containsKey("canvas.content")) {
-                if (lib.containsKey("canvas.content.type") && ((String) lib.get("canvas.content.type")).equals("image")) {
-                    try {
-                        Image img = null;
+                g.setColor(255, 255, 255);
+                String content = env((String) lib.get("canvas.content"));
+                int contentWidth = g.getFont().stringWidth(content);
+                int contentHeight = g.getFont().getHeight();
 
-                        if (((String) lib.get("canvas.content")).startsWith("/")) { Image img = Image.createImage(env((String) lib.get("canvas.content"))); }
-                        else if (((String) lib.get("canvas.content")).equals("nano")) { Image img = Image.createImage(nanoContent.getBytes(), 0, nanoContent.getBytes().length); } 
-                        else { Image img = Image.createImage(loadRMS(env((String) lib.get("canvas.content")), 1).getBytes(), 0, loadRMS(env((String) lib.get("canvas.content")), 1).getBytes().length); }
-
-                        int imgX = (getWidth() - img.getWidth()) / 2;
-                        int imgY = (getHeight() - img.getHeight()) / 2;
-                        g.drawImage(img, imgX, imgY, Graphics.TOP | Graphics.LEFT);
-                    } catch (IOException e) {
-                        MIDletLogs("add warn Bad ITEM 'image', cant be loaded into Graphics");
-                    }
-                }
-                else {
-                    g.setColor(255, 255, 255);
-                    String content = env((String) lib.get("canvas.content"));
-                    int contentWidth = g.getFont().stringWidth(content);
-                    int contentHeight = g.getFont().getHeight();
-
-                    g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
-                }
+                g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
             }
 
             g.setColor(255, 255, 255);
