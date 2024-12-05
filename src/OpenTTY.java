@@ -365,7 +365,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 g.fillRect(0, 0, getWidth(), 30); 
 
                 g.setColor(255, 255, 255); 
-                g.drawString((String) lib.get("canvas.title"), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER);
+                g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER);
                 
                 g.setColor(50, 50, 50);  
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
@@ -374,7 +374,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (lib.containsKey("canvas.content")) {
                 g.setColor(255, 255, 255);
-                String content = (String) lib.get("canvas.content");
+                String content = env((String) lib.get("canvas.content"));
                 int contentWidth = g.getFont().stringWidth(content);
                 int contentHeight = g.getFont().getHeight();
 
@@ -392,23 +392,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } 
             else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } 
             else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); }
+            else if (gameAction == FIRE) {
+                if (lib.containsKey("canvas.content")) {
+                    String content = env((String) lib.get("canvas.content"));
+                    int contentWidth = screen.getFont().stringWidth(content);
+                    int contentHeight = screen.getFont().getHeight();
+
+                    int textX = (getWidth() - contentWidth) / 2;
+                    int textY = (getHeight() - contentHeight) / 2;
+
+                    if (x >= textX && x <= textX + contentWidth && y >= textY && y <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); }
+                }
+            }
 
             repaint();
         }
 
-        protected void pointerPressed(int x, int y) {
-            if (lib.containsKey("canvas.content")) {
-                String content = (String) lib.get("canvas.content");
-                int contentWidth = screen.getFont().stringWidth(content);
-                int contentHeight = screen.getFont().getHeight();
-
-                int textX = (getWidth() - contentWidth) / 2;
-                int textY = (getHeight() - contentHeight) / 2;
-
-                if (x >= textX && x <= textX + contentWidth && y >= textY && y <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); }
-            }
-        }
-
+        protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); }
+        
         public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } }
     }
 
