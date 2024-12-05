@@ -327,11 +327,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseFrom(args); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
 
     public class MyCanvas extends Canvas implements CommandListener {
-        private Hashtable lib;
-        private Graphics screen;
-        private Command backCommand, userCommand;
-        private int cursorX = 10, cursorY = 10;
-        private final int cursorSize = 5;
+        private Hashtable lib; private Graphics screen; private Command backCommand, userCommand; private int cursorX = 10, cursorY = 10; private final int cursorSize = 5;
 
         public MyCanvas(String args) {
             lib = parseFrom(args); 
@@ -367,7 +363,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 g.setColor(50, 50, 50);  
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
-                g.drawRect(1, 1, getWidth() - 3, getHeight() - 32); 
+                g.drawRect(1, 1, getWidth() - 3, getHeight() - 33); 
             }
 
             if (lib.containsKey("canvas.content")) {
