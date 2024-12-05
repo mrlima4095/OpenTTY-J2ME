@@ -363,7 +363,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 g.setColor(50, 50, 50);  
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
-                g.drawRect(1, 1, getWidth() - 3, getHeight() - 33); 
+                g.drawRect(1, 1, getWidth() - 3, getHeight() - 65); 
             }
 
             if (lib.containsKey("canvas.content")) {
