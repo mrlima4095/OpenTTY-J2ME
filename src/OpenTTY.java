@@ -183,7 +183,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("font")) { stdout.setFont(Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_MEDIUM)); }
+        else if (mainCommand.equals("font")) { stdout.setFont(Font.getFont(split(argument, ' ')[0].equals("sys") ? Font.FACE_SYSTEM : split(argument, ' ')[0].equals("mono") ? Font.FACE_MONOSPACE : Font.FACE_PROPORTIONAL,  
+            split(argument, ' ')[1].equals("plain") ? Font.STYLE_PLAIN : split(argument, ' ')[1].equals("bold") ? Font.STYLE_BOLD : split(argument, ' ')[1].equals("italic") ? Font.STYLE_ITALIC : Font.STYLE_UNDERLINED, 
+            split(argument, ' ')[1].equals("small") ? Font.SIZE_SMALL : split(argument, ' ')[1].equals("medium") ? Font.SIZE_MEDIUM : Font.SIZE_LARGE)); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
