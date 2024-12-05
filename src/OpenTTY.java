@@ -373,12 +373,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             if (lib.containsKey("canvas.content")) {
-                g.setColor(255, 255, 255);
-                String content = env((String) lib.get("canvas.content"));
-                int contentWidth = g.getFont().stringWidth(content);
-                int contentHeight = g.getFont().getHeight();
+                if (lib.containsKey("canvas.content.type") && ((String) lib.get("canvas.content.type")).equals("image")) {
+                    try {
+                        if (((String) lib.get("canvas.content")).startsWith("/")) { Image img = Image.createImage(env((String) lib.get("canvas.content"))); }
+                        else if (((String) lib.get("canvas.content")).equals("nano")) {
+                            Image img = Image.createImage(nanoContent.getBytes(), 0, nanoContent.getBytes().length);
+                        } else {
+                            Image img = Image.createImage(loadRMS(env((String) lib.get("canvas.content"))).getBytes(), 0, loadRMS(env((String) lib.get("canvas.content"))).getBytes().length);
+                        }
 
-                g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                        int imgX = (getWidth() - img.getWidth()) / 2;
+                        int imgY = (getHeight() - img.getHeight()) / 2;
+                        g.drawImage(img, imgX, imgY, Graphics.TOP | Graphics.LEFT);
+                    } catch (IOException e) {
+                        MIDletLogs("add warn Bad ITEM 'image', cant be loaded into Graphics");
+                    }
+                }
+                else {
+                    g.setColor(255, 255, 255);
+                    String content = env((String) lib.get("canvas.content"));
+                    int contentWidth = g.getFont().stringWidth(content);
+                    int contentHeight = g.getFont().getHeight();
+
+                    g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                }
             }
 
             g.setColor(255, 255, 255);
