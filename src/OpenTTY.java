@@ -328,6 +328,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public class MyCanvas extends Canvas implements CommandListener {
         private Hashtable lib;
+        private Graphics screen;
         private Command backCommand, userCommand;
         private int cursorX = 10, cursorY = 10;
         private final int cursorSize = 5;
@@ -354,6 +355,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         protected void paint(Graphics g) {
+            if (screen == null) screen = g;
+
             g.setColor(0, 0, 0);
             g.fillRect(0, 0, getWidth(), getHeight());
 
@@ -396,8 +399,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         protected void pointerPressed(int x, int y) {
             if (lib.containsKey("canvas.content")) {
                 String content = (String) lib.get("canvas.content");
-                int contentWidth = getGraphics().getFont().stringWidth(content);
-                int contentHeight = getGraphics().getFont().getHeight();
+                int contentWidth = screen.getFont().stringWidth(content);
+                int contentHeight = screen.getFont().getHeight();
 
                 int textX = (getWidth() - contentWidth) / 2;
                 int textY = (getHeight() - contentHeight) / 2;
