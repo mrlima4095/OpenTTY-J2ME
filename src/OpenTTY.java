@@ -354,26 +354,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             g.setColor(0, 0, 0);
             g.fillRect(0, 0, getWidth(), getHeight());
 
-            if (lib.containsKey("canvas.title")) { 
-                g.setColor(50, 50, 50);
-                g.fillRect(0, 0, getWidth(), 30); 
-
-                g.setColor(255, 255, 255); 
-                g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER);
-                
-                g.setColor(50, 50, 50);  
-                g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
-                g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); 
-            }
-
-            if (lib.containsKey("canvas.content")) {
-                g.setColor(255, 255, 255);
-                String content = env((String) lib.get("canvas.content"));
-                int contentWidth = g.getFont().stringWidth(content);
-                int contentHeight = g.getFont().getHeight();
-
-                g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
-            }
+            if (lib.containsKey("canvas.title")) { g.setColor(50, 50, 50); g.fillRect(0, 0, getWidth(), 30); g.setColor(255, 255, 255); g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER); g.setColor(50, 50, 50); g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); }
+            if (lib.containsKey("canvas.content")) { g.setColor(255, 255, 255); String content = env((String) lib.get("canvas.content")); int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight(); g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); }
 
             g.setColor(255, 255, 255);
             g.fillRect(cursorX, cursorY, cursorSize, cursorSize);
@@ -386,18 +368,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } 
             else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } 
             else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); }
-            else if (gameAction == FIRE) {
-                if (lib.containsKey("canvas.content")) {
-                    String content = env((String) lib.get("canvas.content"));
-                    int contentWidth = screen.getFont().stringWidth(content);
-                    int contentHeight = screen.getFont().getHeight();
-
-                    int textX = (getWidth() - contentWidth) / 2;
-                    int textY = (getHeight() - contentHeight) / 2;
-
-                    if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); }
-                }
-            }
+            else if (gameAction == FIRE) { if (lib.containsKey("canvas.content")) { String content = env((String) lib.get("canvas.content")); int contentWidth = screen.getFont().stringWidth(content); int contentHeight = screen.getFont().getHeight(); int textX = (getWidth() - contentWidth) / 2; int textY = (getHeight() - contentHeight) / 2; if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); } } }
 
             repaint();
         }
