@@ -375,7 +375,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (lib.containsKey("canvas.content")) {
                 if (lib.containsKey("canvas.content.type") && ((String) lib.get("canvas.content.type")).equals("image")) {
                     try {
-                        Image img;
+                        Image img = null;
 
                         if (((String) lib.get("canvas.content")).startsWith("/")) { Image img = Image.createImage(env((String) lib.get("canvas.content"))); }
                         else if (((String) lib.get("canvas.content")).equals("nano")) { Image img = Image.createImage(nanoContent.getBytes(), 0, nanoContent.getBytes().length); } 
