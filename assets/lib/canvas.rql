@@ -1,0 +1,6 @@
+canvas.title=$TITLE
+canvas.content=(C) 2024 - Mr. Lima
+canvas.conent.link=execute about;
+canvas.button=Settings
+canvas.button.cmd=execute import /java/lib/settings; cfg;
+canvas.background=255,0,0
