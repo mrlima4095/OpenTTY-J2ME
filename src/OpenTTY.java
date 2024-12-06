@@ -147,7 +147,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
         else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
         else if (mainCommand.equals("lock")) { new LockScreen(); }
-        else if (mainCommand.equals("mpr")) { Registry(argument); }
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
         else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
@@ -288,19 +287,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else { echoCommand("x11: " + mainCommand + ": not found"); }
     }
     private void MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { if (argument.equals("")) { return; } else if (getCommand(argument).toLowerCase().equals("info")) { if (!getArgument(command).equals("")) { logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("warn")) { if (!getArgument(command).equals("")) { logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("debug")) { if (!getArgument(command).equals("")) { logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("error")) { if (!getArgument(command).equals("")) { logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": level not found"); } } else { echoCommand("log: " + mainCommand + ": not found"); } }
-    private void Registry(String command) {
-        command = env(command.trim());
-        String mainCommand = getCommand(command).toLowerCase();
-        String argument = getArgument(command);
-        
-        if (mainCommand.equals("")) { }
-        else if (mainCommand.equals("rem")) { if (argument.equals("")) { } else { try { PushRegistry.unregisterConnection(argument); } catch (IOException e) { echoCommand(e.getMessage()); } } }
-        else if (mainCommand.equals("all") || mainCommand.equals("list")) { String[] conn = PushRegistry.listConnections(false); for (int i = 0; i < conn.length - 1; i++) { echoCommand(conn[i]); } }
-        else if (mainCommand.equals("add")) { if (argument.equals("")) { } else { try { PushRegistry.registerConnection(argument, getClass().getName(), "*"); } catch (ClassNotFoundException e) { } catch (IOException e) { echoCommand(e.getMessage()); } } }
-        else { echoCommand("mpr: " + mainCommand + ": not found"); }
-
-    }
-
+    
     // Lib API Service
     private void importScript(String script) {
         if (script == null || script.length() == 0) { return; } 
