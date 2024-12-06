@@ -8,6 +8,7 @@ api.version=1.11
 api.error=execute log add error JBuntu requires OpenTTY 1.11; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.11; title $OLD_TITLE; unset OLD_TITLE;
 
 process.name=jbuntu
+mod=execute case !trace (jbuntu) exec log add info JBuntu was stopped & @reload; 
 
 include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 
@@ -38,6 +39,7 @@ screen.button.cmd=execute x11 list jbuntu;
 
 canvas.title=JBuntu $JVERSION
 canvas.content=$JBUNTU_NOTES
+canvas.content.link=execute x11 quest jbuntu;
 canvas.back.label=Menu
 canvas.back=execute jbuntu menu;
 canvas.button=Apps
