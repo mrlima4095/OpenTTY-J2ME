@@ -296,7 +296,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (mainCommand.equals("")) { }
         else if (mainCommand.equals("rem")) { if (argument.equals("")) { } else { try { PushRegistry.unregisterConnection(argument); } catch (IOException e) { echoCommand(e.getMessage()); } } }
         else if (mainCommand.equals("all") || mainCommand.equals("list")) { String[] conn = PushRegistry.listConnections(false); for (int i = 0; i < conn.length - 1; i++) { echoCommand(conn[i]); } }
-        else if (mainCommand.equals("add")) { if (argument.equals("")) { } else { try { PushRegistry.registerConnection(argument, getClass().getName(), "*"); } catch (ClassNotFoundException) { } catch (IOException e) { echoCommand(e.getMessage()); } } }
+        else if (mainCommand.equals("add")) { if (argument.equals("")) { } else { try { PushRegistry.registerConnection(argument, getClass().getName(), "*"); } catch (ClassNotFoundException e) { } catch (IOException e) { echoCommand(e.getMessage()); } } }
         else { echoCommand("mpr: " + mainCommand + ": not found"); }
 
     }
