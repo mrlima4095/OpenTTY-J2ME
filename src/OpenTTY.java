@@ -43,7 +43,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == enterCommand) { String command = stdin.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command.trim()); start(command); } stdin.setString(""); processCommand(command); stop(command); stdin.setLabel(username + " " + path + " $"); } 
+        if (c == enterCommand) { String command = stdin.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
             
         else if (c == clearCommand) { stdout.setText(""); }
         else if (c == helpCommand) { processCommand("help"); }
