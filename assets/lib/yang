@@ -40,6 +40,7 @@ JBenchmark=execute set RESOURCE=debuggers; yang install;
 J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
 SmartME SDK=execute set RESOURCE=sdkme; yang install; set RESOURCE=forge; yang install;
 PackJ (Update)=execute set RESOURCE=yang; yang install;
+PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install;
 X Server 0.4=execute set RESOURCE=xorg-client; yang install;
 ImmersiveShell=execute set RESOURCE=sh2me; yang install;
 ViaVersion=execute set RESOURCE=viaversion; yang install;
