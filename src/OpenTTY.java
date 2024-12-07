@@ -266,7 +266,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     // Trace API 
     private void start(String app) { if (app == null || app.length() == 0) { return; } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); }
-    private void stop(String app) { if (app == null || app.length() == 0) { return; } if (trace.containsKey(app)) { trace.remove(app); } else { echoCommand("stop: " + app + ": not found"); } }
+    private void stop(String app) { if (app == null || app.length() == 0) { return; } trace.remove(app); } 
     private void kill(String pid) { if (pid == null || pid.length() == 0) { return; } Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); if (pid.equals(trace.get(key))) { trace.remove(key); echoCommand("Process with PID " + pid + " terminated"); if ("sh".equals(key)) { processCommand("exit"); } return; } } echoCommand("PID '" + pid + "' not found"); }
 
     // MIDlet Services Command Processor 
