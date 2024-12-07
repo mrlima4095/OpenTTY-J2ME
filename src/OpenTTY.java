@@ -16,7 +16,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2024-1.11-01x14";
+                   build = "2024-1.11-01x15";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -141,7 +141,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand("" + read(argument).hashCode()); } else if (argument.equals("nano")) { echoCommand("" + nanoContent.hashCode()); } else { echoCommand("" + loadRMS(argument, 1).hashCode()); } } }
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("if")) { ifCommand(argument); }
-        else if (mainCommand.equals("kill") || mainCommand.equals("stop")) { kill(argument); }
+        else if (mainCommand.equals("kill")) { kill(argument); }
         else if (mainCommand.equals("log")) { MIDletLogs(argument); }
         else if (mainCommand.equals("logcat")) { echoCommand(logs); }
         else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
@@ -154,7 +154,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (NumberFormatException e) { echoCommand(e.getMessage()); } } }
         else if (mainCommand.equals("seed")) { try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("set")) { setCommand(argument); }
-        else if (mainCommand.equals("start")) { if (argument.equals("")) { } else { start(argument); } }
+        else if (mainCommand.equals("start")) { start(argument); }
+        else if (mainCommand.equals("stop")) { stop(argument); }
         else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh"); }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("time")) { echoCommand(split(new java.util.Date().toString(), ' ')[3]); }
@@ -184,11 +185,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
-        else if (mainCommand.startsWith("@")) {  }
+        else if (mainCommand.startsWith("@")) { }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
@@ -259,8 +261,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void StringEditor(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("-2u")) { nanoContent = nanoContent.toUpperCase(); } else if (mainCommand.equals("-2l")) { nanoContent = nanoContent.toLowerCase(); } else if (mainCommand.equals("-d")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], ""); } else if (mainCommand.equals("-a")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } else if (mainCommand.equals("-r")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], split(argument, ' ')[1]); } else if (mainCommand.equals("-l")) { int i = 0; try { i = Integer.parseInt(argument); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return; } echoCommand(split(nanoContent, '\n')[i]); } else if (mainCommand.equals("-s")) { int i = 0; try { i = Integer.parseInt(getCommand(argument)); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return; } Vector lines = new Vector(); String div = getArgument(argument); int start = 0, index; while ((index = nanoContent.indexOf(div, start)) != -1) { lines.addElement(nanoContent.substring(start, index)); start = index + div.length(); } if (start < nanoContent.length()) { lines.addElement(nanoContent.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); if (i >= 0 && i < result.length) { echoCommand(result[i]); } else { echoCommand("null"); } } else if (mainCommand.equals("-p")) { String[] contentLines = split(nanoContent, '\n'); StringBuffer updatedContent = new StringBuffer(); for (int i = 0; i < contentLines.length; i++) { updatedContent.append(argument).append(contentLines[i]).append("\n"); } nanoContent = updatedContent.toString().trim(); } else if (mainCommand.equals("-v")) { String[] lines = split(nanoContent, '\n'); StringBuffer reversed = new StringBuffer(); for (int i = lines.length - 1; i >= 0; i--) { reversed.append(lines[i]).append("\n"); } nanoContent = reversed.toString().trim(); } }
 
     // Trace API 
-    private void stop(String app) { if (app.startsWith("bg")) { app = getCommand(getArgument(app)); } else if (app.startsWith("execute") || app.startsWith("exec")) { app = getCommand(app); } trace.remove(app); }
-    private void start(String app) { if (app.startsWith("bg")) { app = getCommand(getArgument(app)); } else if (app.startsWith("execute") || app.startsWith("exec")) { app = getCommand(app); } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); }
+    private void start(String app) { if (app == null || app.length() == 0) { return; } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); }
+    private void stop(String app) { if (app == null || app.length() == 0) { return; } if (lib.containsKey(app)) { trace.remove(app); } else { echoCommand("stop: " + app + ": not found"); } }
     private void kill(String pid) { if (pid == null || pid.length() == 0) { return; } Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); if (pid.equals(trace.get(key))) { trace.remove(key); echoCommand("Process with PID " + pid + " terminated"); if ("sh".equals(key)) { processCommand("exit"); } return; } } echoCommand("PID '" + pid + "' not found"); }
 
     // MIDlet Services Command Processor 
@@ -297,7 +299,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("api.version")) { if (!((String) lib.get("api.version")).equals(env("$VERSION"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
 
         if (lib.containsKey("process.name")) { start((String) lib.get("process.name")); }
-        if (lib.containsKey("process.type")) { String type = (String) lib.get("process.type"); if (type.equals("server")) { } else if (type.equals("bind")) { new Bind(env((String) lib.get("process.port"))); } else { MIDletLogs("add warn " + type.toUpperCase() + " is a invalid value for 'process.type'"); } }
+        if (lib.containsKey("process.type")) { String type = (String) lib.get("process.type"); if (type.equals("server")) { } else if (type.equals("bind")) { new Bind(env((String) lib.get("process.port"))); } else { MIDletLogs("add warn '" + type.toUpperCase() + "' is a invalid value for 'process.type'"); } }
         if (lib.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) lib.get("process.port") + " " + (String) lib.get("process.host"))); }
 
         if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { importScript(include[i]); } }
