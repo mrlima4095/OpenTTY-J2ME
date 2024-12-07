@@ -32,6 +32,7 @@ Copyright (C) 2024 - Mr. Lima
 - **Forge** bug fix in `New Project` and improved it with new attributes
 - **OpenTTY Repository** moved to main GitHub Repository
 - **FileExplorer()** class moved to inside **OpenTTY$FileExplorer**
+- Blank aliases now isn't listed in _Alias List_
 - Device Explorer now back running command `xterm`
 - Command **PKG** if query starts with `/[propierty]` it get a System.property
 - Removed `app` variable and now Threads are controll by PID
