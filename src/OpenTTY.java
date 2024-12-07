@@ -399,11 +399,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         processCommand(command); 
                         String afterCommand = stdout != null ? stdout.getText() : ""; 
 
-                        String output = "\n"; 
-                        if (afterCommand.length() >= beforeCommand.length()) { 
-                            output = afterCommand.substring(beforeCommand.length()).trim() + "\n"; 
-                        }
-
+                        String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n"; 
+                        
                         os.write(output.getBytes()); 
                         os.flush(); 
                     }
@@ -411,12 +408,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                 } finally { 
                     echoCommand("[-] " + clientSocket.getAddress() + " disconnected"); 
-                    try { 
-                        if (is != null) is.close(); 
-                        if (os != null) os.close();  
-                    } catch (IOException e) { 
-                        
-                    } 
+                    
                 } 
             }
             
