@@ -1,4 +1,4 @@
-User-Agent=OpenTTY ($TYPE)
+User-Agent=Mozilla/5.0 (OpenTTY $VERSION)
 Content-Type: application/json
 Accept-Encoding=gzip, deflate, br
 Accept-Language=en-US,en;q=0.9
