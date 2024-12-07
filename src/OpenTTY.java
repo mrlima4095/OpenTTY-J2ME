@@ -355,82 +355,80 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public class GetAddress { public GetAddress(String args) { if (args.equals("")) { processCommand("ifconfig"); } else { String result = performNSLookup(args); echoCommand(result); } } private String performNSLookup(String domain) { try { DatagramConnection conn = (DatagramConnection) Connector.open("datagram://1.1.1.1:53"); byte[] query = createDNSQuery(domain); Datagram request = conn.newDatagram(query, query.length); conn.send(request); Datagram response = conn.newDatagram(512); conn.receive(response); conn.close(); return parseDNSResponse(response.getData()); } catch (IOException e) { return e.getMessage(); } } private byte[] createDNSQuery(String domain) throws IOException { ByteArrayOutputStream out = new ByteArrayOutputStream(); out.write(0x12); out.write(0x34); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); String[] parts = split(domain, '.'); for (int i = 0; i < parts.length; i++) { out.write(parts[i].length()); out.write(parts[i].getBytes()); } out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x01); return out.toByteArray(); } private String parseDNSResponse(byte[] response) { if ((response[3] & 0x0F) != 0) { return "DNS response error"; } int answerOffset = 12; while (response[answerOffset] != 0) { answerOffset++; } answerOffset += 5; if (response[answerOffset + 2] == 0x00 && response[answerOffset + 3] == 0x01) { StringBuffer ip = new StringBuffer(); for (int i = answerOffset + 12; i < answerOffset + 16; i++) { ip.append(response[i] & 0xFF); if (i < answerOffset + 15) ip.append("."); } return ip.toString(); } else { return "not found"; } } }
     public class Bind implements Runnable { 
-    private String port;
+        private String port;
 
-    public Bind(String args) { 
-        if (args == null || args.length() == 0 || args.equals("$PORT")) { 
-            processCommand("set PORT=31522"); 
-            new Bind("31522"); 
-            return; 
+        public Bind(String args) { 
+            if (args == null || args.length() == 0 || args.equals("$PORT")) { 
+                processCommand("set PORT=31522"); 
+                new Bind("31522"); 
+                return; 
+            }
+            port = getCommand(args); 
+            new Thread(this).start(); 
         }
-        port = getCommand(args); 
-        new Thread(this).start(); 
-    }
 
-    public void run() { 
-        ServerSocketConnection serverSocket = null; 
-        try { 
-            serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); 
-            echoCommand("[+] listening at port " + port); 
-            MIDletLogs("add info Server listening at port " + port); 
-            start("bind");
+        public void run() { 
+            ServerSocketConnection serverSocket = null; 
+            try { 
+                serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); 
+                echoCommand("[+] listening at port " + port); 
+                MIDletLogs("add info Server listening at port " + port); 
+                start("bind");
 
-            while (trace.containsKey("bind")) { 
-                SocketConnection clientSocket = null; 
-                InputStream is = null; 
-                OutputStream os = null; 
+                while (trace.containsKey("bind")) { 
+                    SocketConnection clientSocket = null; 
+                    InputStream is = null; 
+                    OutputStream os = null; 
 
+                    try { 
+                        clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); 
+                        echoCommand("[+] " + clientSocket.getAddress() + " connected"); 
+
+                        is = clientSocket.openInputStream(); 
+                        os = clientSocket.openOutputStream(); 
+
+                        while (trace.containsKey("bind")) { 
+                            byte[] buffer = new byte[4096]; 
+                            int bytesRead = is.read(buffer); 
+
+                            if (bytesRead == -1) break; 
+                            
+                            String command = new String(buffer, 0, bytesRead).trim(); 
+                            echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(command)); 
+
+                            String beforeCommand = stdout != null ? stdout.getText() : ""; 
+                            processCommand(command); 
+                            String afterCommand = stdout != null ? stdout.getText() : ""; 
+
+                            String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n"; 
+                            
+                            os.write(output.getBytes()); 
+                            os.flush(); 
+                        }
+                    } catch (IOException e) { 
+                        echoCommand("[-] " + e.getMessage());
+                    } finally { 
+                        echoCommand("[-] " + clientSocket.getAddress() + " disconnected"); 
+                        
+                    } 
+                }
+                
+                echoCommand("[-] Server stopped"); 
+                MIDletLogs("add info Server was stopped"); 
+
+            } catch (IOException e) { 
+                echoCommand("[-] " + e.getMessage()); 
+                MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); 
+            } finally { 
                 try { 
-                    clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); 
-                    echoCommand("[+] " + clientSocket.getAddress() + " connected"); 
-
-                    is = clientSocket.openInputStream(); 
-                    os = clientSocket.openOutputStream(); 
-
-                    while (trace.containsKey("bind")) { 
-                        byte[] buffer = new byte[4096]; 
-                        int bytesRead = is.read(buffer); 
-
-                        if (bytesRead == -1) break; 
-                        
-                        String command = new String(buffer, 0, bytesRead).trim(); 
-                        echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(command)); 
-
-                        String beforeCommand = stdout != null ? stdout.getText() : ""; 
-                        processCommand(command); 
-                        String afterCommand = stdout != null ? stdout.getText() : ""; 
-
-                        String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n"; 
-                        
-                        os.write(output.getBytes()); 
-                        os.flush(); 
-                    }
-                    is.close();
-                    os.close();
+                    if (serverSocket != null) serverSocket.close(); 
                 } catch (IOException e) { 
-                    echoCommand("[-] " + e.getMessage());
-                } finally { 
-                    echoCommand("[-] " + clientSocket.getAddress() + " disconnected"); 
                     
                 } 
-            }
-            
-            echoCommand("[-] Server stopped"); 
-            MIDletLogs("add info Server was stopped"); 
-
-        } catch (IOException e) { 
-            echoCommand("[-] " + e.getMessage()); 
-            MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); 
-        } finally { 
-            try { 
-                if (serverSocket != null) serverSocket.close(); 
-            } catch (IOException e) { 
-                
             } 
         } 
-    } 
-}
-public class Server implements Runnable { private String port, response; public Server(String args) { if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522"); new Server("31522"); return; } port = getCommand(args); response = getArgument(args); new Thread(this).start(); } public void run() { ServerSocketConnection serverSocket = null; try { serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); start("server"); while (trace.containsKey("server")) { SocketConnection clientSocket = null; InputStream is = null; OutputStream os = null; try { clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); is = clientSocket.openInputStream(); os = clientSocket.openOutputStream(); echoCommand("[+] " + clientSocket.getAddress() + " connected"); byte[] buffer = new byte[4096]; int bytesRead = is.read(buffer); String clientData = new String(buffer, 0, bytesRead); echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim())); if (response.startsWith("/")) { os.write(read(response).getBytes()); } else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } else { os.write(loadRMS(response, 1).getBytes()); } os.flush(); } catch (IOException e) { } finally { try { if (is != null) is.close(); if (os != null) os.close(); if (clientSocket != null) clientSocket.close(); } catch (IOException e) { } } } echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); } catch (IOException e) { echoCommand("[-] " + e.getMessage()); MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); try { if (serverSocket != null) { serverSocket.close(); } } catch (IOException e1) { } } } }
+    }
+    public class Server implements Runnable { private String port, response; public Server(String args) { if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522"); new Server("31522"); return; } port = getCommand(args); response = getArgument(args); new Thread(this).start(); } public void run() { ServerSocketConnection serverSocket = null; try { serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); start("server"); while (trace.containsKey("server")) { SocketConnection clientSocket = null; InputStream is = null; OutputStream os = null; try { clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); is = clientSocket.openInputStream(); os = clientSocket.openOutputStream(); echoCommand("[+] " + clientSocket.getAddress() + " connected"); byte[] buffer = new byte[4096]; int bytesRead = is.read(buffer); String clientData = new String(buffer, 0, bytesRead); echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim())); if (response.startsWith("/")) { os.write(read(response).getBytes()); } else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } else { os.write(loadRMS(response, 1).getBytes()); } os.flush(); } catch (IOException e) { } finally { try { if (is != null) is.close(); if (os != null) os.close(); if (clientSocket != null) clientSocket.close(); } catch (IOException e) { } } } echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); } catch (IOException e) { echoCommand("[-] " + e.getMessage()); MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); try { if (serverSocket != null) { serverSocket.close(); } } catch (IOException e1) { } } } }
 
     public class RemoteConnection implements CommandListener, Runnable { 
         private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream; private String host; private Form remote = new Form(form.getTitle()); private TextField inputField = new TextField("Command", "", 256, TextField.ANY); private Command sendCommand = new Command("Send", Command.OK, 1), backCommand = new Command("Back", Command.SCREEN, 2), clearCommand = new Command("Clear", Command.SCREEN, 3), infoCommand = new Command("Show info", Command.SCREEN, 4); private StringItem console = new StringItem("", ""); 
