@@ -5,33 +5,40 @@ version=1.2
 description=Debuggers 
 
 api.version=1.11
-api.error=execute echo [JBenchmark] This version requires OpenTTY 1.11
+api.error=execute echo [JBenchmark] This version requires OpenTTY 1.11;
 
 command=dumpsys
 
-dumpsys=execute log add info JBenchmark: Thread.run(OpenTTY.runScript) - Running 'dumpsys' script; tick [JBenchmark] Running 'dumpsys'; echo [ JBenchmark ]; echo; echo ----------> Network Manager; netstat; dumpsys netman; echo; echo ----------> X Server; dumpsys x11; tick; echo =======================\nEND-OF-DUMP;
+dumpsys=execute dumpsys run; true 
+
 
 shell.name=dumpsys
-shell.args=netman,x11
+shell.args=run,sys,net
 
-netman=execute if ($OUTPUT == true) echo -> Network detected!; ifconfig; curl ifconfig.me/ua; fw; 
-x11=execute x11 version; set OLD_TITLE=$TITLE; x11 title; x11 title JBenchmark; title $OLD_TITLE; unset OLD_TITLE; x11 make debuggers; xterm; echo [X Server] Element 'debuggers.screen' tested; x11 list debuggers; xterm; echo [X Server] Element 'debuggers.list' tested; 
+sys=execute pkg /microedition.configuration; add MicroEdition Config: $OUTPUT; pkg /microedition.profiles; add MicroEdition Profiles: $OUTPUT; pkg /microedition.platform; add MicroEdition Platform: $OUTPUT; pkg /microedition.encoding; add MicroEdition Encoding: $OUTPUT; add;
+net=execute netstat; if ($OUTPUT == true) exec ifconfig & add IP Adress: $OUTPUT & fw ip & add Global Addr: $OUTPUT; if ($OUTPUT == false) add Not Connected with Internet; add; 
 
+
+run=execute start dumpsys; tick Debugging...; install nano; getty; install stdout-content-backup; clear; touch; add JBenchmark Result; add; dumpsys sys; # dumpsys net; clear; raw; set LOGS=$OUTPUT; tick; x11 make debuggers; get stdout-content-backup; rm stdout-content-backup; rraw; get nano; stop dumpsys;
 
 
 [ DISPLAY ]
 
-screen.title=JBenchmark (Debug screen)
-screen.content=JBenchmark 1.1\n\nThis screen is for X Server debug
-screen.button=Button
+screen.title=JBenchmark
+screen.content=$LOGS
+screen.back=execute unset LOGS;
+screen.button=Menu
 screen.button.cmd=execute x11 list debuggers;
 
-list.title=JBenchmark (Debug list)
-list.content=item1,item2,item3,item4,item5
+quest.title=JBenchmark
+quest.label=Save Logs (filename)
+quest.key=FILENAME
+quest.cmd=execute x11 list debuggers; install nano; touch; add $LOGS; install $FILENAME; get nano; unset FILENAME;
+quest.back=execute x11 list debuggers;
+
+list.title=JBenchmark
+list.content=Save Logs,Run Again
 list.back=execute x11 make debuggers;
 
-item1=execute echo [JBenchmark] -> 'list.item1' selected;
-item2=execute echo [JBenchmark] -> 'list.item2' selected;
-item3=execute echo [JBenchmark] -> 'list.item3' selected;
-item4=execute echo [JBenchmark] -> 'list.item4' selected;
-item5=execute echo [JBenchmark] -> 'list.item5' selected;
+Save Logs=execute x11 quest debuggers;
+Run Again=execute dumpsys;
