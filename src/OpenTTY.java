@@ -405,8 +405,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         os.write(output.getBytes()); 
                         os.flush(); 
                     }
-                    is.close()
-                    os.close()
+                    is.close();
+                    os.close();
                 } catch (IOException e) { 
                     echoCommand("[-] " + e.getMessage())
                 } finally { 
