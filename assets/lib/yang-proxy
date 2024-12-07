@@ -1,0 +1,49 @@
+[ Config ]
+
+name=PackJ
+version=1.3
+description=OpenTTY Package Manager
+
+command=yang,setrepo
+
+yang=execute x11 list yang-proxy;
+setrepo=execute set VALUE=REPO; export RETURN; x11 quest /java/lib/settings;
+
+shell.name=yang
+shell.args=install,update,query
+
+install=execute install nano; tick Installing...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/$RESOURCE; install $RESOURCE; get nano;
+update=execute set RESOURCE=yang; yang install; import yang;
+query=execute x11 quest yang-proxy;
+
+[ DISPLAY ]
+
+quest.title=PackJ Query
+quest.label=Package
+quest.key=RESOURCE
+quest.cmd=execute yang install;
+
+[ Index ]
+
+list.title=Repository
+list.content=Armitage,PasteBin,DeviceFS,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),X Server 0.4,ImmersiveShell,ViaVersion,Updater
+list.button=Install
+
+Armitage=execute set RESOURCE=armitage; yang install;
+PasteBin=execute set RESOURCE=pastebin; yang install; 
+DeviceFS=execute set RESOURCE=fsdevice; yang install;
+FilesME=execute set RESOURCE=filesme; yang install;
+Forge=execute set RESOURCE=forge; yang install;
+JBuntu=execute set RESOURCE=jbuntu; yang install;
+JAuth2=execute set RESOURCE=jauth2; yang install;
+JBenchmark=execute set RESOURCE=debuggers; yang install;
+J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
+SmartME SDK=execute set RESOURCE=sdkme; yang install; set RESOURCE=forge; yang install;
+PackJ (Update)=execute set RESOURCE=yang; yang install;
+PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install;
+X Server 0.4=execute set RESOURCE=xorg-client; yang install;
+ImmersiveShell=execute set RESOURCE=sh2me; yang install;
+ViaVersion=execute set RESOURCE=viaversion; yang install;
+Updater=execute set RESOURCE=sync; yang install;
+
+
