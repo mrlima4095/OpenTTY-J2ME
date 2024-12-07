@@ -408,7 +408,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     is.close();
                     os.close();
                 } catch (IOException e) { 
-                    echoCommand("[-] " + e.getMessage())
+                    echoCommand("[-] " + e.getMessage());
                 } finally { 
                     echoCommand("[-] " + clientSocket.getAddress() + " disconnected"); 
                     
