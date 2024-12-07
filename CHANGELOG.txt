@@ -24,6 +24,7 @@ Copyright (C) 2024 - Mr. Lima
 - Fixed a bug in **Server** in some devices that it crash after response a connection
 - **Server** buffer size increased to _4096_ bytes
 - New packages addded - **J2ME Loader**, **FilesME**, **DeviceFS**, **ImmersiveShell** and **ViaVersion**
+- New _dist_ of **PackJ** with HTTPS Proxy to direct connect without `OpenTTY Server`
 - **JBuntu** added again to **PackJ Repository** list
 - **NetKit** `IP Adress` option now show local IP Adress
 - **PackJ** `yang` has new subcommand `update` to auto-update
