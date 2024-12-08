@@ -7,20 +7,18 @@ description=Debuggers
 api.version=1.11
 api.error=execute echo [JBenchmark] This version requires OpenTTY 1.11;
 
-command=dumpsys
+config=execute set JDB_VERSION=1.2;
+command=jdb,dumpsys
 
-dumpsys=execute dumpsys run; true 
+jdb=execute jdb version; 
+dumpsys=execute jdb run; true 
 
+shell.name=jdb
+shell.args=start,run,version
 
-shell.name=dumpsys
-shell.args=run,sys,net
-
-sys=execute pkg /microedition.configuration; add MicroEdition Config: $OUTPUT; pkg /microedition.profiles; add MicroEdition Profiles: $OUTPUT; pkg /microedition.platform; add MicroEdition Platform: $OUTPUT; pkg /microedition.encoding; add MicroEdition Encoding: $OUTPUT; add;
-net=execute netstat; if ($OUTPUT == true) exec ifconfig & add IP Adress: $OUTPUT & fw ip & add Global Addr: $OUTPUT; if ($OUTPUT == false) add Not Connected with Internet; add; 
-
-
-run=execute start dumpsys; tick Debugging...; install nano; getty; install stdout-content-backup; clear; touch; add JBenchmark Result; add; dumpsys sys; # dumpsys net; clear; raw; set LOGS=$OUTPUT; tick; x11 make debuggers; get stdout-content-backup; rm stdout-content-backup; rraw; get nano; stop dumpsys;
-
+start=execute install nano; touch; add process.type=bind; add process.port=; add process.db=jdb; import nano; get nano; 
+run=execute start dumpsys; tick Debugging...; install nano; getty; install stdout-content-backup; clear; touch; add JBenchmark $JDB_VERSION; add; exec add MicroEdition Config: $CONFIG & add MicroEdition Profiles: $PROFILE & add MicroEdition Platform: $TYPE & pkg /microedition.encoding & add MicroEdition Encoding: $OUTPUT & add; clear; raw; set LOGS=$OUTPUT; tick; x11 make debuggers; get stdout-content-backup; rm stdout-content-backup; rraw; get nano; stop dumpsys;
+version=execute echo JBenchmark $JDB_VERSION;
 
 [ DISPLAY ]
 
