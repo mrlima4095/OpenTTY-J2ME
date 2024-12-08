@@ -16,7 +16,7 @@ dumpsys=execute jdb run; true
 shell.name=jdb
 shell.args=start,run,version
 
-start=execute install nano; touch; add process.type=bind; add process.port=; add process.db=jdb; import nano; get nano; 
+start=execute install nano; touch; add process.type=bind; add process.port=31337; add process.db=jdb; import nano; get nano; 
 run=execute start dumpsys; tick Debugging...; install nano; getty; install stdout-content-backup; clear; touch; add JBenchmark $JDB_VERSION; add; exec add MicroEdition Config: $CONFIG & add MicroEdition Profiles: $PROFILE & add MicroEdition Platform: $TYPE & pkg /microedition.encoding & add MicroEdition Encoding: $OUTPUT & add; clear; raw; set LOGS=$OUTPUT; tick; x11 make debuggers; get stdout-content-backup; rm stdout-content-backup; rraw; get nano; stop dumpsys;
 version=execute echo JBenchmark $JDB_VERSION;
 
