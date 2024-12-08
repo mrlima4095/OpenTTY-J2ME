@@ -6,6 +6,7 @@
 | | | icon.png
 | | etc / 
 | | | fstab
+| | | headers
 | | | gobuster
 | | | initd.sh
 | | | index.html
