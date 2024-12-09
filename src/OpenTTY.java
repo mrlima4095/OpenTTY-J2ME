@@ -167,6 +167,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
         else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); } }
+        else if (mainCommand.equals("tasks")) { List todo = new List(form.getTitle(), List.IMPLICIT); todo.addCommand(new Command("Back", Command.BACK, 1)); todo.setCommandListener(this); try { PIM pim = PIM.getInstance(); ToDoList toDoList = (ToDoList) pim.openPIMList(PIM.TODO_LIST, PIM.READ_ONLY); Enumeration tasks = toDoList.items(); while (tasks.hasMoreElements()) { ToDo task = (ToDo) tasks.nextElement(); String title = task.countValues(ToDo.SUMMARY) > 0 ? task.getString(ToDo.SUMMARY, 0) : "Untitled Task"; String dueDate = task.countValues(ToDo.DUE) > 0 ? new java.util.Date(task.getDate(ToDo.DUE, 0)).toString() : "No Due Date"; todo.append(title + " - " + dueDate, null); } toDoList.close(); } catch (Exception e) { echoCommand(e.getMessage()); } display.setCurrent(todo); }
         else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer(); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); } }
         else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
         else if (mainCommand.equals("uname")) { echoCommand(env("$TYPE $CONFIG $PROFILE")); }
@@ -185,7 +186,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("proxy")) { if (argument.equals("")) { return; } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
-        //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
@@ -353,67 +353,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class HTopViewer implements CommandListener { private Form htop = new Form(form.getTitle()); private Command backCommand = new Command("Back", Command.BACK, 1), refreshCommand = new Command("Refresh", Command.SCREEN, 2); private StringItem memoryStatus = new StringItem("", ""); private boolean thr_status = true; public HTopViewer() { htop.append(memoryStatus); htop.addCommand(backCommand); htop.addCommand(refreshCommand); htop.setCommandListener(this); MemoryStatus(); display.setCurrent(htop); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { thr_status = false; processCommand("xterm"); } else if (c == refreshCommand) { Runtime.getRuntime().gc(); MemoryStatus(); } } private void MemoryStatus() { long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024; long freeMemory = runtime.freeMemory() / 1024; long totalMemory = runtime.totalMemory() / 1024; memoryStatus.setText("Memory Status:\n\nUsed Memory: " + usedMemory + " KB\nFree Memory: " + freeMemory + " KB\nTotal Memory: " + totalMemory + " KB"); } }
     public class History implements CommandListener { private List historyList = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), runCommand = new Command("Run", Command.OK, 2), editCommand = new Command("Edit", Command.OK, 2); public History() { for (int i = 0; i < commandHistory.size(); i++) { historyList.append((String) commandHistory.elementAt(i), null); } historyList.addCommand(backCommand); historyList.addCommand(runCommand); historyList.addCommand(editCommand); historyList.setCommandListener(this); display.setCurrent(historyList); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == runCommand) { int index = historyList.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(historyList.getString(index)); } } else if (c == editCommand) { int index = historyList.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(historyList.getString(index)); } } } }
 
-    public class Contacts implements CommandListener {
-        private List agenda = new List(form.getTitle(), List.IMPLICIT); 
-        private Command backCommand = new Command("Back", Command.BACK, 1), callCommand = new Command("Call", Command.SCREEN, 2), sendCommand = new Command("Send SMS", Command.SCREEN, 3);
+    public class Contacts implements CommandListener { private List agenda = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), callCommand = new Command("Call", Command.SCREEN, 2), sendCommand = new Command("Send SMS", Command.SCREEN, 3); public Contacts() { agenda.addCommand(backCommand); agenda.addCommand(callCommand); agenda.addCommand(sendCommand); agenda.setCommandListener(this); try { PIM pim = PIM.getInstance(); ContactList cl = (ContactList) pim.openPIMList(PIM.CONTACT_LIST, PIM.READ_ONLY); Enumeration contacts = cl.items(); while (contacts.hasMoreElements()) { Contact contact = (Contact) contacts.nextElement(); String name = contact.countValues(Contact.FORMATTED_NAME) > 0 ? contact.getString(Contact.FORMATTED_NAME, 0) : "Unknown"; String number = contact.countValues(Contact.TEL) > 0 ? contact.getString(Contact.TEL, 0) : "No Number"; agenda.append(name + " - " + number, null); } cl.close(); } catch (Exception e) { echoCommand(e.getMessage()); return; } display.setCurrent(agenda); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == callCommand || c == smsCommand) { int index = agenda.getSelectedIndex(); if (index != -1) { String selected = agenda.getString(index); selectedNumber = selected.substring(selected.lastIndexOf(" - ") + 3); if (c == callCommand) { try { platformRequest("tel:" + selectedNumber); } catch (Exception e) { processCommand("builtin warn " + e.getMessage()); } } else if (c == smsCommand) { try { platformRequest("sms:" + selectedNumber); } catch (Exception e) { processCommand("builtin warn " + e.getMessage()); } } } } } }
 
-        public Contacts() {
-
-            agenda.addCommand(backCommand);
-            agenda.addCommand(callCommand);
-            agenda.addCommand(sendCommand);
-            agenda.setCommandListener(this);
-
-            try {
-                PIM pim = PIM.getInstance();
-                ContactList cl = (ContactList) pim.openPIMList(PIM.CONTACT_LIST, PIM.READ_ONLY);
-
-                Enumeration contacts = cl.items();
-                while (contacts.hasMoreElements()) {
-                    Contact contact = (Contact) contacts.nextElement();
-                    String name = contact.countValues(Contact.FORMATTED_NAME) > 0
-                            ? contact.getString(Contact.FORMATTED_NAME, 0)
-                            : "Unknown";
-                    String number = contact.countValues(Contact.TEL) > 0
-                            ? contact.getString(Contact.TEL, 0)
-                            : "No Number";
-
-                    agenda.append(name + " - " + number, null);
-                }
-                cl.close();
-            } catch (Exception e) {
-                echoCommand(e.getMessage()); return;
-            }
-
-            display.setCurrent(agenda);
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (c == backCommand) {
-                processCommand("xterm");
-            } else if (c == callCommand || c == smsCommand) {
-                int index = agenda.getSelectedIndex();
-                if (index != -1) {
-                    String selected = agenda.getString(index);
-                    selectedNumber = selected.substring(selected.lastIndexOf(" - ") + 3);
-
-                    if (c == callCommand) {
-                        try {
-                            platformRequest("tel:" + selectedNumber);
-                        } catch (Exception e) {
-                            processCommand("builtin warn " + e.getMessage());
-                        }
-                    } else if (c == smsCommand) {
-                        try {
-                            platformRequest("sms:" + selectedNumber);
-                        } catch (Exception e) {
-                            processCommand("builtin warn " + e.getMessage());
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     public class Login implements CommandListener { private Form login = new Form("Login"); private TextField userField = new TextField("Username", "", 256, TextField.ANY); private Command loginCommand = new Command("Login", Command.OK, 1), exitCommand = new Command("Exit", Command.SCREEN, 2); public Login() { login.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2024 - Mr. Lima\n\nCreate an user to access OpenTTY!")); login.append(userField); login.addCommand(loginCommand); login.addCommand(exitCommand); login.setCommandListener(this); display.setCurrent(login); } public void commandAction(Command c, Displayable d) { if (c == loginCommand) { username = userField.getString(); if (!username.equals("")) { writeRMS("OpenRMS", username); display.setCurrent(form); } } else if (c == exitCommand) { processCommand("exit"); } } }
     public class LockScreen implements CommandListener { private Form lock = new Form(form.getTitle() + " - Locked"); private TextField userField = new TextField("Username", "", 256, TextField.ANY); private Command unlockCommand = new Command("Unlock", Command.OK, 1), exitCommand = new Command("Exit", Command.SCREEN, 2); public LockScreen() { lock.append(userField); lock.addCommand(unlockCommand); lock.addCommand(exitCommand); lock.setCommandListener(this); display.setCurrent(lock); } public void commandAction(Command c, Displayable d) { if (c == unlockCommand) { if (userField.getString().equals(username)) { processCommand("xterm"); } else { userField.setString(""); } } else if (c == exitCommand) { processCommand("exit"); } } }
