@@ -415,16 +415,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 while (tasks.hasMoreElements()) {
                     ToDo task = (ToDo) tasks.nextElement();
                     String title = task.countValues(ToDo.SUMMARY) > 0 ? task.getString(ToDo.SUMMARY, 0) : "Untitled Task";
-                    String dueDate = task.countValues(ToDo.DUE) > 0 ? new java.util.Date(task.getDate(ToDo.DUE, 0)).toString() : "No Due Date";
+
+                    String dueDate = "No Due Date";
+                    if (task.countValues(ToDo.DUE) > 0) {
+                        long dueTime = task.getDate(ToDo.DUE, 0);
+                        Calendar cal = Calendar.getInstance().setTime(new java.util.Date(dueTime));
+                        dueDate = cal.get(Calendar.DAY_OF_MONTH) + "/" + cal.get(Calendar.MONTH) + 1 + "/" + cal.get(Calendar.YEAR);
+                    } 
+
                     String completed = task.countValues(ToDo.COMPLETED) > 0 && task.getBoolean(ToDo.COMPLETED, 0) ? " (Completed)" : "";
 
-                    //office.append(title + " - " + dueDate + completed, null);
-                    office.append(title + completed, null);
+                    office.append(title + " - " + dueDate + completed, null);
                 }
             } catch (PIMException e) {
                 processCommand("builtin warn " + e.getMessage());
             }
         }
+
 
         private void NewTask() {
             try {
