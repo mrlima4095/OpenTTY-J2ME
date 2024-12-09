@@ -419,9 +419,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String dueDate = "No Due Date";
                     if (task.countValues(ToDo.DUE) > 0) {
                         long dueTime = task.getDate(ToDo.DUE, 0);
-                        Calendar cal = Calendar.getInstance().setTime(new java.util.Date(dueTime));
-                        dueDate = cal.get(Calendar.DAY_OF_MONTH) + "/" + cal.get(Calendar.MONTH) + 1 + "/" + cal.get(Calendar.YEAR);
-                    } 
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(new java.util.Date(dueTime));
+                        dueDate = cal.get(Calendar.DAY_OF_MONTH) + "/" + (cal.get(Calendar.MONTH) + 1) + "/" + cal.get(Calendar.YEAR);
+                    }
 
                     String completed = task.countValues(ToDo.COMPLETED) > 0 && task.getBoolean(ToDo.COMPLETED, 0) ? " (Completed)" : "";
 
