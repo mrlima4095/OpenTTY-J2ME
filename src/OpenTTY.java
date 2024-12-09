@@ -444,7 +444,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 processCommand("builtin warn " + e.getMessage());
             }
             taskName.setString("");
-            dueDate.setDate(System.currentTimeMillis());
+            dueDate.setDate(java.util.Date());
             GetTasks();
             display.setCurrent(office);
         }
