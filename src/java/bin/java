@@ -3,5 +3,5 @@
 name=Java
 version=1.2
 
-jvm_config=$CONFIG
-jvm_profile=$PROFILE
+me_config=$CONFIG
+me_profile=$PROFILE
