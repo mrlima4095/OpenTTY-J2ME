@@ -1,7 +1,6 @@
 OpenTTY Java Edition 1.11
 Copyright (C) 2024 - Mr. Lima
 
-
 [ _Commands_ ]
 
 - `exec <commands>`: run many commands in once time
