@@ -22,6 +22,7 @@ list.title=Select API
 list.content=1.8.5,1.9,1.9.1,1.10,1.11 
 
 1.8.5=execute set REQUEST=1.8.5; set PATCH=Netman Update; axrz run;
+1.8.6=execute set REQUEST=1.8.6; set PATCH=Netman Update; axrz run;
 1.9=execute set REQUEST=1.9; set PATCH=OpenTTY Revolution; axrz run;
 1.9.1=execute set REQUEST=1.9.1; set PATCH=The Revolution; axrz run;
 1.10=execute set REQUEST=1.10; set PATCH=Misc Update; axrz run;
