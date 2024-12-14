@@ -11,6 +11,7 @@ Copyright (C) 2024 - Mr. Lima
 - `bind`: start a shell server to execute command from other device
 - `case [METHOD] (expr) <command>`: use predefined **METHOD**s _(Advanced IF)_
 - `http <url>`: make a HTTP request in **url** with _HEADERS_ in editor 
+- `bruteforce`: run commands in loop. Stop killing process **bruteforce** 
 
 [ _Updates_ ] 
 
