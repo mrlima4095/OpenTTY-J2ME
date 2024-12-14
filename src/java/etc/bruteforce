@@ -3,15 +3,6 @@
 name=Bruteforce
 version=1.0
 
-api.version=
-api.error=
-
-process.name=
-process.type=
-process.port=
-process.host=
-process.db=
-
 [ DISPLAY ]
 
 quest.title=Bruteforce
@@ -21,9 +12,8 @@ quest.cmd=execute bruteforce -c $CMD; unset CMD;
 quest.back=execute x11 list /java/etc/bruteforce;
 
 list.title=BruteForce
-list.content=Run Command,
-list.back.label=
-list.back=
-list.button=
+list.content=Run Command
+list.button=Open
 
-Run Command=execute x11 quest /java/etc/bruteforce
+Run Command=execute x11 quest /java/etc/bruteforce;
+Run Command-INFO=Execute commands in loop
