@@ -10,7 +10,6 @@
 | | | gobuster
 | | | initd.sh
 | | | index.html
-| | | bruteforce
 | | lib / 
 | | | yang
 | | | netkit
