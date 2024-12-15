@@ -16,7 +16,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2024-1.11-01x17";
+                   build = "2024-1.11-01x18";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -180,7 +180,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { importScript(argument); }
 
-        else if (mainCommand.equals("prg")) { PushManager(argument); }
         else if (mainCommand.equals("github")) { processCommand("open " + getAppProperty("MIDlet-Info-URL")); }
         else if (mainCommand.equals("proxy")) { if (argument.equals("")) { return; } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
@@ -295,55 +294,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private void MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { if (argument.equals("")) { return; } else if (getCommand(argument).toLowerCase().equals("info")) { if (!getArgument(command).equals("")) { logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("warn")) { if (!getArgument(command).equals("")) { logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("debug")) { if (!getArgument(command).equals("")) { logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("error")) { if (!getArgument(command).equals("")) { logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": level not found"); } } else { echoCommand("log: " + mainCommand + ": not found"); } }
 
-    private void PushManager(String command) {
-        command = command.trim();
-        String mainCommand = getCommand(command).toLowerCase();
-        String argument = getArgument(command);
-        
-        if (mainCommand.equals("")) { } 
-        else if (mainCommand.equals("add")) {
-            if (argument.equals("")) { } 
-            else {
-                try {
-                    String[] parts = split(argument, ' ');
-                    if (parts.length < 2) {
-                        echoCommand("<MIDlet-Class> <Connection-URL>");
-                        return;
-                    }
-                    String midletClass = parts[0];
-                    String connectionURL = parts[1];
-                    PushRegistry.registerConnection(connectionURL, midletClass, "*");
-                    echoCommand("PushRegistry: Added '" + connectionURL + "' for " + midletClass);
-                } catch (ClassNotFoundException e) { echoCommand(e.getMessage()); } catch (IOException e) { echoCommand(e.getMessage()); }
-            }
-        } 
-        else if (mainCommand.equals("rem")) {
-            if (argument.equals("")) {
-                
-            } else {
-                try {
-                    PushRegistry.unregisterConnection(argument);
-                    echoCommand("PushRegistry: Removed " + argument);
-                } catch (IOException e) {
-                    echoCommand(e.getMessage());
-                }
-            }
-        } 
-        else if (mainCommand.equals("list")) {
-            String[] connections = PushRegistry.listConnections(false);
-            if (connections != null && connections.length > 0) {
-                for (int i = 0; i < connections.length; i++) {
-                    echoCommand("" + connections[i]);
-                }
-            } else {
-                echoCommand("PushRegistry: No connections registered.");
-            }
-        } 
-        else {
-            echoCommand("prg: " + mainCommand + ": not found");
-        }
-    }
-
+    
     // Lib API Service
     private void importScript(String script) {
         if (script == null || script.length() == 0) { return; } 
