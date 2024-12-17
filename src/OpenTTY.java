@@ -168,8 +168,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("github")) { processCommand("open " + getAppProperty("MIDlet-Info-URL")); }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
         
-        else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); processCommand("execute break; x11 stop; x11 init; run initd; sh;"); app = true; }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
+        else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
+        else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
+        else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); processCommand("execute break; x11 stop; x11 init; run initd; sh;"); app = true; }
                 
         else if (mainCommand.equals("!")) { echoCommand(env("1.8.x/$RELEASE LTS\nIn memory of Silvio Santos"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
