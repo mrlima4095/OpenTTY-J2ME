@@ -1,29 +1,15 @@
-OpenTTY Java Edition 1.8.6
+OpenTTY Java Edition 1.8.7
 Copyright (C) 2024 - Mr. Lima
 
 OpenTTY - Netman Update 
 
 [ _Commands_ ]
 
-- `exec <commands>`: run many commands in once time
-- `ph2s`: parse command history to a script file
-- `hash <file>`: get a hash of a resource or RMS file
-- `du <file>`: show file size in bytes
-- `grep <pattern> <file>`: find pattern in file
-- `find <key> <file>`: get a key from a conf file
-- `gc`: clean memory (Garbage Collector)
+
 
 [ _Updates_ ] 
 
-- Removed script `restore.sh`
-- OpenTTY Running **X Server** `0.5.1`
-- **NetKit** and **Settings** updated to 1.1
-- Improved **HELP** message (From OpenTTY 1.9.1)
-- New attributes in **Module API** - `api.version` and `api.error` to verify **API** Compatibility
-- HTML Viewer now ignore **css** and **javascript** params
 
 [ _Notes_ ]
 
-- During **deploy** an error was found - If you try downgrade OpenTTY from a newer version, it'll crash.
-  Possible solutions is remove user file **initd** if it contais commands like `if`, `set` and `alias` that have new engines in newer versions
 
