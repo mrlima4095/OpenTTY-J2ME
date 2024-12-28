@@ -16,7 +16,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2024-1.11-01x19";
+                   build = "2024-1.11-01x20";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -28,7 +28,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public void startApp() {
         if (!trace.containsKey("sh")) {
-            attributes.put("PATCH", "API Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.5.1");
+            attributes.put("PATCH", "Year Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.5.1");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $"); 
@@ -184,7 +184,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("proxy")) { if (argument.equals("")) { return; } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("mail")) { echoCommand(request("nnp.nnchan.ru/hproxy.php?raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }

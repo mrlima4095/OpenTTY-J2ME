@@ -1,47 +1,14 @@
-OpenTTY Java Edition 1.11
+OpenTTY Java Edition 2025
 Copyright (C) 2024 - Mr. Lima
 
 [ _Commands_ ]
 
-- `exec <commands>`: run many commands in once time
-- `sed <operation>`: make text manipulation in nano content
-- `ps`: show current process running 
-- `kill <pid>`: kill a process
-- `trace <process>`: check a process is running and get process pids
-- `bind`: start a shell server to execute command from other device
-- `case [METHOD] (expr) <command>`: use predefined **METHOD**s _(Advanced IF)_
-- `http <url>`: make a HTTP request in **url** with _HEADERS_ in editor 
-- `bruteforce`: run commands in loop. Stop killing process **bruteforce** 
+- `mail`: read notes from OpenTTY developer
 
 [ _Updates_ ] 
 
-- New attributes in **Module API** - `api.version` and `api.error` to verify **API** Compatibility
-- New attributes in **Module API** - `process.name` to start a virtual process to _Package_ 
-- New attributes in **Module API** - `process.host` and `process.port` to start hosts 
-- `mod` now requires a `process.name` to handle it in process list
-- HTML Viewer now ignore **css** and **javascript** params
-- Nano new buttons **Run Script** and **Import File**
-- OpenTTY Running **X Server** `0.5.1`
-- New **X Server** API - **Canvas** (Attributes in `/assets/template.conf`)
-- `dir` listings of _RMS Files_ **f** and **v** hiding files that starts with prefix _._ 
-- Fixed a bug in **Server** in some devices that it crash after response a connection
-- **Server** buffer size increased to _4096_ bytes
-- New packages addded - **J2ME Loader**, **FilesME**, **DeviceFS**, **ImmersiveShell** and **ViaVersion**
-- New _dist_ of **PackJ** with HTTPS Proxy to direct connect without `OpenTTY Server`
-- **JBuntu** added again to **PackJ Repository** list
-- **NetKit** `IP Adress` option now show local IP Adress
-- **PackJ** `yang` has new subcommand `update` to auto-update
-- **PackJ** updated to 1.3
-- **Forge** updated to 1.2
-- **Forge** bug fix in `New Project` and improved it with new attributes
-- **OpenTTY Repository** moved to main GitHub Repository
-- **FileExplorer()** class moved to inside **OpenTTY$FileExplorer**
-- Blank aliases now isn't listed in _Alias List_
-- Device Explorer now back running command `xterm`
-- Command **PKG** if query starts with `/[propierty]` it get a System.property
-- Removed `app` variable and now Threads are controll by PID
-- Removed script `restore.sh`
+
 
 [ _Notes_ ]
 
-- The `exec` command separator is char **&**, use it in situations like `execute if (expr) exec <cmd1> & <cmd2>; [out comparation]; true `
+- This release is a **Modification** of `OpenTTY 1.11` but isn't **1.11.1**, I'll release it when I have time.
