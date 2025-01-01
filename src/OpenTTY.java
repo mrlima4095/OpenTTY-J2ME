@@ -16,12 +16,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2024-1.11-01x20";
+                   build = "2025-1.11-01x21";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
-    private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2024 - Mr. Lima\n");
+    private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
     private Command enterCommand = new Command("Send", Command.OK, 1), helpCommand = new Command("Help", Command.SCREEN, 2), nanoCommand = new Command("Nano", Command.SCREEN, 3), 
                     clearCommand = new Command("Clear", Command.SCREEN, 4), historyCommand = new Command("History", Command.SCREEN, 5);
     
@@ -47,7 +47,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
         else if (c == clearCommand) { stdout.setText(""); }
         else if (c == helpCommand) { processCommand("help"); }
-        else if (c == nanoCommand) { new NanoEditor(""); } 
+        else if (c == nanoCommand) { new NanoEditor(""); }
         else if (c == historyCommand) { new History(); }
         
         else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); }

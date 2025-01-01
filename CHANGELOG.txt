@@ -5,10 +5,6 @@ Copyright (C) 2024 - Mr. Lima
 
 - `mail`: read notes from OpenTTY developer
 
-[ _Updates_ ] 
-
-
-
 [ _Notes_ ]
 
 - This release is a **Modification** of `OpenTTY 1.11` but isn't **1.11.1**, I'll release it when I have time.
