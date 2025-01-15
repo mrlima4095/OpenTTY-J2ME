@@ -1,10 +1,10 @@
-OpenTTY Java Edition 2025
+OpenTTY Java Edition 1.11.1
 Copyright (C) 2024 - Mr. Lima
 
 [ _Commands_ ]
 
 - `mail`: read notes from OpenTTY developer
 
-[ _Notes_ ]
+[ _Updates_ ]
 
-- This release is a **Modification** of `OpenTTY 1.11` but isn't **1.11.1**, I'll release it when I have time.
+- Messages updated to '**2025**'
