@@ -1,10 +1,10 @@
 OpenTTY Java Edition 1.11.1
-Copyright (C) 2024 - Mr. Lima
+Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- `mail`: read notes from OpenTTY developer
+
 
 [ _Updates_ ]
 
-- Messages updated to '**2025**'
+- **X Server** updated to _0.6_
