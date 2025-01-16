@@ -14,10 +14,12 @@ su=execute
 
 
 shell.name=sudo
-shell.args=yang,setrepo,cfg, su
+shell.args=yang,setrepo,cfg,su,exit,logout
 
 yang=execute x11 list /java/lib/yang;
 setrepo=execute x11 quest x11 quest /java/lib/yang;
 cfg=execute x11 list /java/lib/settings;
 su=execute @login root; 
 
+exit=execute if ($USERNAME == root) @login; if ($USERNAME != root) builtin exit;
+logout=execute if ($USERNAME == root) @login; if ($USERNAME != root) builtin logout;
