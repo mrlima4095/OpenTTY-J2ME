@@ -1,4 +1,4 @@
-OpenTTY Java Edition 1.11.1
+OpenTTY Java Edition 1.12
 Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
@@ -8,3 +8,4 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - **X Server** updated to _0.6_
+- **JBuntu** updated to _1.2_
