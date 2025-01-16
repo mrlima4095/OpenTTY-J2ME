@@ -4,8 +4,8 @@ name=JBuntu
 version=1.2
 description=Desktop for OpenTTY 
 
-api.version=1.11.1
-api.error=execute log add error JBuntu requires OpenTTY 1.11.1; warn JBuntu requires OpenTTY 1.11; x11 title JBuntu;
+api.version=1.12
+api.error=execute log add error JBuntu requires OpenTTY 1.12; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.12; title $OLD_TITLE; unset OLD_TITLE;
 
 process.name=jbuntu
 mod=execute case !trace (jbuntu) exec log add info JBuntu was stopped & @reload; 
@@ -16,13 +16,13 @@ config=execute set JVERSION=1.1; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; ca
 command=xterm,jbuntu
 
 xterm=execute x11 $JNOME_DISPLAY jbuntu;
-jbuntu=execute alias xterm=execute x11 make jbuntu; xterm;
+jbuntu=execute alias xterm=execute x11 $JNOME_DISPLAY jbuntu; xterm;
 
 shell.name=jbuntu
 shell.args=menu,jnome
 
-menu=install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Desktop Settings,Logout,Exit; add list.back=x11 make jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
-jnome=install nano; touch; add list.title=Desktop Type; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add list.button=Select; add Legacy=exec install nano & touch & add make & install .jbuntu-config & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-config & get nano; x11 list nano; get nano; 
+menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Desktop Settings,Logout,Exit; add list.back=x11 make jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
+jnome=execute install nano; touch; add list.title=Desktop Type; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add list.button=Select; add Legacy=exec install nano & touch & add make & install .jbuntu-config & jbuntu & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-config & jbuntu & get nano; x11 list nano; get nano; 
 
 [ COMMAND ]
 
@@ -64,3 +64,5 @@ OpenTTY Store=execute yang;
 Terminal=execute x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; unalias xterm; x11 term;
 Monitor=execute htop;
 
+
+# End of Code
