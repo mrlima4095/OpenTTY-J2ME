@@ -615,27 +615,39 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (lib.containsKey("canvas.logo")) {
                     try {
-                        Image logo = Image.createImage(env((String) lib.get("canvas.logo")));
-                        int logoWidth = logo.getWidth();
-                        int logoHeight = logo.getHeight();
-                        
-                        // Garantir que o logo caiba na barra de título
-                        int maxLogoHeight = 30; // Altura máxima da barra de título
-                        if (logoHeight > maxLogoHeight) {
-                            // Redimensionar proporcionalmente
-                            double scale = (double) maxLogoHeight / logoHeight;
-                            logoWidth = (int) (logoWidth * scale);
-                            logoHeight = maxLogoHeight;
-                            // Substituir por uma versão redimensionada se necessário
-                            logo = Image.createImage(logo, 0, 0, logoWidth, logoHeight, 0);
-                        }
+                        // Carregar a imagem original
+                        Image originalLogo = Image.createImage(env((String) lib.get("canvas.logo")));
+                        int originalWidth = originalLogo.getWidth();
+                        int originalHeight = originalLogo.getHeight();
 
-                        g.drawImage(logo, 5, (30 - logoHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                        // Definir os limites máximos para o logo
+                        int maxLogoWidth = 30;  // Largura máxima (barra de título)
+                        int maxLogoHeight = 30; // Altura máxima (barra de título)
+
+                        // Calcular a escala para redimensionamento proporcional
+                        double scale = Math.min((double) maxLogoWidth / originalWidth, (double) maxLogoHeight / originalHeight);
+
+                        // Verificar se o redimensionamento é necessário
+                        if (scale < 1.0) {
+                            int resizedWidth = (int) (originalWidth * scale);
+                            int resizedHeight = (int) (originalHeight * scale);
+
+                            // Redimensionar a imagem
+                            Image resizedLogo = Image.createImage(resizedWidth, resizedHeight);
+                            Graphics logoGraphics = resizedLogo.getGraphics();
+                            logoGraphics.drawImage(originalLogo, 0, 0, resizedWidth, resizedHeight, 0);
+
+                            // Desenhar o logo na barra de título
+                            g.drawImage(resizedLogo, 5, (maxLogoHeight - resizedHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                        } else {
+                            // Desenhar o logo sem redimensionar (já está dentro dos limites)
+                            g.drawImage(originalLogo, 5, (maxLogoHeight - originalHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                        }
                     } catch (IOException e) {
-                        processCommand("xterm");
-                        processCommand("execute log add error Malformed Logo Image," + e.getMessage());
+                        processCommand("execute log add error Malformed Logo Image: " + e.getMessage());
                     }
                 }
+
 
             } 
             
@@ -644,7 +656,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 if ("image".equals(contentType)) {
                    try { g.drawImage(Image.createImage(env((String) lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER); }
-                   catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image," + e.getMessage()); }
+                   catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); }
                 }
 
                 else {
