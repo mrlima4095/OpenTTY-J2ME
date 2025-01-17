@@ -612,55 +612,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
                 g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); 
 
-                if (lib.containsKey("canvas.logo")) {
-                    try {
-                        // Carregar a imagem original
-                        Image originalLogo = Image.createImage(env((String) lib.get("canvas.logo")));
-                        int originalWidth = originalLogo.getWidth();
-                        int originalHeight = originalLogo.getHeight();
-
-                        // Definir os limites máximos para o logo
-                        int maxLogoWidth = 30;  // Largura máxima (barra de título)
-                        int maxLogoHeight = 30; // Altura máxima (barra de título)
-
-                        // Calcular a escala para redimensionamento proporcional
-                        double scale = Math.min((double) maxLogoWidth / originalWidth, (double) maxLogoHeight / originalHeight);
-                        int resizedWidth = (int) (originalWidth * scale);
-                        int resizedHeight = (int) (originalHeight * scale);
-
-                        // Criar uma nova imagem redimensionada
-                        Image resizedLogo = Image.createImage(resizedWidth, resizedHeight);
-                        Graphics resizedGraphics = resizedLogo.getGraphics();
-
-                        // Desenhar a imagem original redimensionada na nova imagem
-                        for (int y = 0; y < resizedHeight; y++) {
-                            for (int x = 0; x < resizedWidth; x++) {
-                                // Calcular as coordenadas na imagem original
-                                int srcX = (x * originalWidth) / resizedWidth;
-                                int srcY = (y * originalHeight) / resizedHeight;
-
-                                // Obter a cor do pixel original
-                                int pixelColor = originalLogo.getGraphics().getColor();
-                                originalLogo.getGraphics().translate(-srcX, -srcY);
-
-                                // Definir a cor e desenhar o pixel redimensionado
-                                resizedGraphics.setColor(pixelColor);
-                                resizedGraphics.fillRect(x, y, 1, 1);
-                            }
-                        }
-
-                        // Desenhar o logo redimensionado na barra de título
-                        g.drawImage(resizedLogo, 5, (maxLogoHeight - resizedHeight) / 2, Graphics.TOP | Graphics.LEFT);
-
-                    } catch (IOException e) {
-                        processCommand("execute log add error Malformed Image, " + e.getMessage());
-                    }
-                }
-
-
                 
-
-
             } 
             
             if (lib.containsKey("canvas.content")) {
