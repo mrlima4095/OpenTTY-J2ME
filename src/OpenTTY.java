@@ -613,13 +613,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); 
             } 
             
-            if (lib.containsKey("canvas.content")) { 
+            /*if (lib.containsKey("canvas.content")) { 
                 g.setColor(255, 255, 255); 
                 String content = env((String) lib.get("canvas.content")); 
                 int contentWidth = g.getFont().stringWidth(content); 
                 int contentHeight = g.getFont().getHeight(); 
                 g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); 
-            } 
+            }*/ 
             if (lib.containsKey("canvas.content")) {
                 String contentType = env((String) lib.get("canvas.content.type"));
                 
@@ -646,6 +646,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if ("image".equals(contentType)) {
                     g.drawImage(Image.createImage(env(lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER);
                 }
+            
+            }
             
             g.setColor(255, 255, 255); 
             g.fillRect(cursorX, cursorY, cursorSize, cursorSize); 
