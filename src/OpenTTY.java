@@ -8,6 +8,7 @@ import java.io.*;
 
 
 public class OpenTTY extends MIDlet implements CommandListener {
+    private int cursorX = 10, cursorY = 10; 
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable paths = new Hashtable(), shell = new Hashtable(),
@@ -24,7 +25,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
     private Command enterCommand = new Command("Send", Command.OK, 1), helpCommand = new Command("Help", Command.SCREEN, 2), nanoCommand = new Command("Nano", Command.SCREEN, 3), 
                     clearCommand = new Command("Clear", Command.SCREEN, 4), historyCommand = new Command("History", Command.SCREEN, 5);
-    
 
     public void startApp() {
         if (!trace.containsKey("sh")) {
@@ -336,7 +336,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Hashtable lib; 
         private Graphics screen; 
         private Command backCommand, userCommand; 
-        private int cursorX = 10, cursorY = 10; 
         private final int cursorSize = 5;
 
         public MyCanvas(String args) { 
