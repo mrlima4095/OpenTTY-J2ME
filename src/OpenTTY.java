@@ -615,7 +615,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (lib.containsKey("canvas.logo")) {
                     try {
-                        // Carregar a imagem original
                         Image originalLogo = Image.createImage(env((String) lib.get("canvas.logo")));
                         int originalWidth = originalLogo.getWidth();
                         int originalHeight = originalLogo.getHeight();
@@ -636,8 +635,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             Image resizedLogo = Image.createImage(resizedWidth, resizedHeight);
                             Graphics logoGraphics = resizedLogo.getGraphics();
 
-                            // Desenhar a imagem original na nova imagem redimensionada com ancoragem
-                            logoGraphics.drawImage(originalLogo, 0, 0, Graphics.TOP | Graphics.LEFT);
+                            // Preencher o gráfico com a imagem original redimensionada
+                            logoGraphics.drawImage(originalLogo, 0, 0, originalWidth, originalHeight, 0, 0, resizedWidth, resizedHeight);
 
                             // Desenhar o logo na barra de título
                             g.drawImage(resizedLogo, 5, (maxLogoHeight - resizedHeight) / 2, Graphics.TOP | Graphics.LEFT);
@@ -646,7 +645,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             g.drawImage(originalLogo, 5, (maxLogoHeight - originalHeight) / 2, Graphics.TOP | Graphics.LEFT);
                         }
                     } catch (IOException e) {
-                        processCommand("execute log add error Malformed Logo Image: " + e.getMessage());
+                        processCommand("execute log add error Malformed Image, " + e.getMessage());
                     }
                 }
 
@@ -655,7 +654,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             
             if (lib.containsKey("canvas.content")) {
-                String contentType = lib.containsKey("canvas.content") ? env((String) lib.get("canvas.content.type")) : "default";
+                String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default";
                 
                 if ("image".equals(contentType)) {
                    try { g.drawImage(Image.createImage(env((String) lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER); }
