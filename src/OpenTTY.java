@@ -712,7 +712,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         protected void pointerPressed(int x, int y) { 
             cursorX = x; 
             cursorY = y; 
-            keyPressed(-5); 
+            repaint(); 
         }
         
         public void commandAction(Command c, Displayable d) { 
