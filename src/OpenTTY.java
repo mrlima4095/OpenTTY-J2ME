@@ -632,21 +632,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             int resizedWidth = (int) (originalWidth * scale);
                             int resizedHeight = (int) (originalHeight * scale);
 
-                            // Redimensionar a imagem
+                            // Criar uma nova imagem redimensionada
                             Image resizedLogo = Image.createImage(resizedWidth, resizedHeight);
                             Graphics logoGraphics = resizedLogo.getGraphics();
-                            logoGraphics.drawImage(originalLogo, 0, 0, resizedWidth, resizedHeight, 0);
+
+                            // Desenhar a imagem original na nova imagem redimensionada com ancoragem
+                            logoGraphics.drawImage(originalLogo, 0, 0, Graphics.TOP | Graphics.LEFT);
 
                             // Desenhar o logo na barra de título
                             g.drawImage(resizedLogo, 5, (maxLogoHeight - resizedHeight) / 2, Graphics.TOP | Graphics.LEFT);
                         } else {
-                            // Desenhar o logo sem redimensionar (já está dentro dos limites)
+                            // Desenhar o logo diretamente (já está dentro dos limites)
                             g.drawImage(originalLogo, 5, (maxLogoHeight - originalHeight) / 2, Graphics.TOP | Graphics.LEFT);
                         }
                     } catch (IOException e) {
                         processCommand("execute log add error Malformed Logo Image: " + e.getMessage());
                     }
                 }
+
 
 
             } 
