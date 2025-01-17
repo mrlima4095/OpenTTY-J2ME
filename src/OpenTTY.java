@@ -613,29 +613,55 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); 
             } 
             
-            /*if (lib.containsKey("canvas.content")) { 
-                g.setColor(255, 255, 255); 
-                String content = env((String) lib.get("canvas.content")); 
-                int contentWidth = g.getFont().stringWidth(content); 
-                int contentHeight = g.getFont().getHeight(); 
-                g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); 
-            }*/ 
+            if (lib.containsKey("canvas.logo")) {
+                try {
+                    Image logo = Image.createImage(env((String) lib.get("canvas.logo")));
+                    int logoWidth = logo.getWidth();
+                    int logoHeight = logo.getHeight();
+
+                    int maxWidth = getWidth() - 20; // 10 pixels padding on each side
+
+                    int maxHeight = 30; // Limit height to 30 pixels
+
+                    if (logoWidth > maxWidth || logoHeight > maxHeight) {
+                        double scale = Math.min((double) maxWidth / logoWidth, (double) maxHeight / logoHeight);
+
+                        logoWidth = (int) (logoWidth * scale);
+                        logoHeight = (int) (logoHeight * scale);
+
+                        logo = Image.createImage(logo, 0, 0, logo.getWidth(), logo.getHeight(), Sprite.TRANS_NONE);
+                        logo = Image.createImage(logo, 0, 0, logoWidth, logoHeight, Sprite.TRANS_NONE);
+
+                    }
+
+                    g.drawImage(logo, 10, 10, Graphics.TOP | Graphics.LEFT);
+
+                } catch (IOException e) {
+                    processCommand("xterm"); processCommand("execute log add error Malformed Image," + e.getMessage());
+                }
+
+            }
+
             if (lib.containsKey("canvas.content")) {
                 String contentType = env((String) lib.get("canvas.content.type"));
                 
-                if ("text".equals(contentType) || contentType == null) {
+                if ("image".equals(contentType)) {
+                   try { g.drawImage(Image.createImage(env((String) lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER); }
+                   catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image," + e.getMessage()); }
+                }
+
+                else {
                     g.setColor(255, 255, 255);
                     String content = env((String) lib.get("canvas.content"));
                     
+                    g.setFont(Font.getDefaultFont());
+
                     if (lib.containsKey("canvas.content.style")) {
                         String style = env((String) lib.get("canvas.content.style"));
-                        if ("bold".equals(style)) {
-                            g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM));
-                        } else if ("italic".equals(style)) {
-                            g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM));
-                        } else {
-                            g.setFont(Font.getDefaultFont());
-                        }
+                        if ("bold".equals(style)) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM)); } 
+                        else if ("italic".equals(style)) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM)); } 
+                        else if ("small".equals(style)) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL)); }
+                        else if ("large".equals(style)) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE)); }
                     }
                     
                     int contentWidth = g.getFont().stringWidth(content);
@@ -643,10 +669,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
                 }
 
-                else if ("image".equals(contentType)) {
-                   try { g.drawImage(Image.createImage(env((String) lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER); }
-                   catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Canvas Crashed, Malformed Image file provided"); }
-                }
             
             }
 
@@ -666,7 +688,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String content = env((String) lib.get("canvas.content")); 
                     int contentWidth = screen.getFont().stringWidth(content); 
                     int contentHeight = screen.getFont().getHeight(); 
-                    int textX = ( getWidth() - contentWidth) / 2; 
+                    int textX = (getWidth() - contentWidth) / 2; 
                     int textY = (getHeight() - contentHeight) / 2; 
                     if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); }
                 } 
