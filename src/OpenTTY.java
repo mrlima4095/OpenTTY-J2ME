@@ -620,6 +620,32 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int contentHeight = g.getFont().getHeight(); 
                 g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); 
             } 
+            if (lib.containsKey("canvas.content")) {
+                String contentType = env((String) lib.get("canvas.content.type"));
+                
+                if ("text".equals(contentType) || contentType == null) {
+                    g.setColor(255, 255, 255);
+                    String content = env((String) lib.get("canvas.content"));
+                    
+                    if (lib.containsKey("canvas.content.style")) {
+                        String style = env((String) lib.get("canvas.content.style"));
+                        if ("bold".equals(style)) {
+                            g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM));
+                        } else if ("italic".equals(style)) {
+                            g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM));
+                        } else {
+                            g.setFont(Font.getDefaultFont());
+                        }
+                    }
+                    
+                    int contentWidth = g.getFont().stringWidth(content);
+                    int contentHeight = g.getFont().getHeight();
+                    g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                }
+
+                else if ("image".equals(contentType)) {
+                    g.drawImage(Image.createImage(env(lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER);
+                }
             
             g.setColor(255, 255, 255); 
             g.fillRect(cursorX, cursorY, cursorSize, cursorSize); 
