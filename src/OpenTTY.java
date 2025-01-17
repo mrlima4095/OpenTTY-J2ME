@@ -611,37 +611,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 g.setColor(50, 50, 50); 
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
                 g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); 
+
+
+                if (lib.containsKey("canvas.logo")) {
+                    try {
+                        Image logo = Image.createImage(env((String) lib.get("canvas.logo")));
+                        int logoWidth = logo.getWidth();
+                        int logoHeight = logo.getHeight();
+
+                        if (logoHeight > 30) {
+                            float scaleFactor = 30.0f / logoHeight;
+                            logoWidth = (int) (logoWidth * scaleFactor);
+                            logoHeight = 30;
+                        }
+
+                        g.drawImage(logo, 5, 15 - (logoHeight / 2), Graphics.TOP | Graphics.LEFT);
+                    } catch (IOException e) {
+                        processCommand("xterm"); 
+                        processCommand("execute log add error Malformed Image," + e.getMessage());
+                    }
+                }
             } 
             
-            if (lib.containsKey("canvas.logo")) {
-                try {
-                    Image logo = Image.createImage(env((String) lib.get("canvas.logo")));
-                    int logoWidth = logo.getWidth();
-                    int logoHeight = logo.getHeight();
-
-                    int maxWidth = getWidth() - 20; // 10 pixels padding on each side
-
-                    int maxHeight = 30; // Limit height to 30 pixels
-
-                    if (logoWidth > maxWidth || logoHeight > maxHeight) {
-                        double scale = Math.min((double) maxWidth / logoWidth, (double) maxHeight / logoHeight);
-
-                        logoWidth = (int) (logoWidth * scale);
-                        logoHeight = (int) (logoHeight * scale);
-
-                        logo = Image.createImage(logo, 0, 0, logo.getWidth(), logo.getHeight(), Sprite.TRANS_NONE);
-                        logo = Image.createImage(logo, 0, 0, logoWidth, logoHeight, Sprite.TRANS_NONE);
-
-                    }
-
-                    g.drawImage(logo, 10, 10, Graphics.TOP | Graphics.LEFT);
-
-                } catch (IOException e) {
-                    processCommand("xterm"); processCommand("execute log add error Malformed Image," + e.getMessage());
-                }
-
-            }
-
             if (lib.containsKey("canvas.content")) {
                 String contentType = env((String) lib.get("canvas.content.type"));
                 
