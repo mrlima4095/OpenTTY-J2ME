@@ -576,7 +576,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); 
                     cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); 
                 } catch (NumberFormatException e) { 
-                    MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); 
+                    MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10;
                 } 
             }
 
@@ -597,7 +597,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])
                     ); 
                 } catch (NumberFormatException e) { 
-                    MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); 
+                    MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); 
                 } 
             }
             
@@ -628,14 +628,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         protected void keyPressed(int keyCode) { 
             int gameAction = getGameAction(keyCode); 
             
-            if (gameAction == LEFT) 
-                cursorX = Math.max(0, cursorX - 5); 
-            else if (gameAction == RIGHT) 
-                cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); 
-            else if (gameAction == UP) 
-                cursorY = Math.max(0, cursorY - 5); 
-            else if (gameAction == DOWN) 
-                cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); 
+            if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); }
+            else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); }
+            else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); }
+            else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); }
             else if (gameAction == FIRE) {
                 if (lib.containsKey("canvas.content")) { 
                     String content = env((String) lib.get("canvas.content")); 
@@ -643,11 +639,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int contentHeight = screen.getFont().getHeight(); 
                     int textX = ( getWidth() - contentWidth) / 2; 
                     int textY = (getHeight() - contentHeight) / 2; 
-                    if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) 
-                        processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); 
+                    if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); }
                 } 
-                repaint(); 
             } 
+
+            repaint(); 
         }
 
         protected void pointerPressed(int x, int y) { 
