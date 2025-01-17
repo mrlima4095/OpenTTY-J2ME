@@ -10,3 +10,12 @@ Copyright (C) 2025 - Mr. Lima
 - **X Server** updated to _0.6_
 - **JBuntu** updated to _1.2_
 - **Canvas** mouse position is saved
+- **Screen** default user button text now is _Menu_
+- **Screen** attribute _screen.button_ isnt required anymore
+- Buttons now get placeholders from env keys in all screens
+- **List** content bug fix that placeholders are recognized from list and the picker not
+- 
+- 
+- 
+- 
+-  
