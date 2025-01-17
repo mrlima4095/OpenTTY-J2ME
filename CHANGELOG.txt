@@ -9,3 +9,4 @@ Copyright (C) 2025 - Mr. Lima
 
 - **X Server** updated to _0.6_
 - **JBuntu** updated to _1.2_
+- **Canvas** mouse position is saved
