@@ -644,11 +644,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 else if ("image".equals(contentType)) {
-                    g.drawImage(Image.createImage(env(lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER);
+                    g.drawImage(Image.createImage(env((String) lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER);
                 }
             
             }
-            
+
             g.setColor(255, 255, 255); 
             g.fillRect(cursorX, cursorY, cursorSize, cursorSize); 
         }
