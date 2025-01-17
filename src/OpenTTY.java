@@ -612,9 +612,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
                 g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); 
 
-
                 if (lib.containsKey("canvas.logo")) {
                     try {
+                        // Carregar a imagem original
                         Image originalLogo = Image.createImage(env((String) lib.get("canvas.logo")));
                         int originalWidth = originalLogo.getWidth();
                         int originalHeight = originalLogo.getHeight();
@@ -625,30 +625,37 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         // Calcular a escala para redimensionamento proporcional
                         double scale = Math.min((double) maxLogoWidth / originalWidth, (double) maxLogoHeight / originalHeight);
+                        int resizedWidth = (int) (originalWidth * scale);
+                        int resizedHeight = (int) (originalHeight * scale);
 
-                        // Verificar se o redimensionamento é necessário
-                        if (scale < 1.0) {
-                            int resizedWidth = (int) (originalWidth * scale);
-                            int resizedHeight = (int) (originalHeight * scale);
+                        // Criar uma nova imagem redimensionada
+                        Image resizedLogo = Image.createImage(resizedWidth, resizedHeight);
+                        Graphics resizedGraphics = resizedLogo.getGraphics();
 
-                            // Criar uma nova imagem redimensionada
-                            Image resizedLogo = Image.createImage(resizedWidth, resizedHeight);
-                            Graphics logoGraphics = resizedLogo.getGraphics();
+                        // Redimensionar manualmente (desenhando pixel por pixel)
+                        for (int y = 0; y < resizedHeight; y++) {
+                            for (int x = 0; x < resizedWidth; x++) {
+                                // Calcular as coordenadas da imagem original
+                                int srcX = (x * originalWidth) / resizedWidth;
+                                int srcY = (y * originalHeight) / resizedHeight;
 
-                            // Preencher o gráfico com a imagem original redimensionada
-                            logoGraphics.drawImage(originalLogo, 0, 0, originalWidth, originalHeight, 0, 0, resizedWidth, resizedHeight);
+                                // Obter a cor do pixel original
+                                int pixelColor = originalLogo.getRGB()[srcY * originalWidth + srcX];
 
-                            // Desenhar o logo na barra de título
-                            g.drawImage(resizedLogo, 5, (maxLogoHeight - resizedHeight) / 2, Graphics.TOP | Graphics.LEFT);
-                        } else {
-                            // Desenhar o logo diretamente (já está dentro dos limites)
-                            g.drawImage(originalLogo, 5, (maxLogoHeight - originalHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                                // Desenhar o pixel na imagem redimensionada
+                                resizedGraphics.setColor(pixelColor);
+                                resizedGraphics.fillRect(x, y, 1, 1);
+                            }
                         }
+
+                        // Desenhar o logo na barra de título
+                        g.drawImage(resizedLogo, 5, (maxLogoHeight - resizedHeight) / 2, Graphics.TOP | Graphics.LEFT);
                     } catch (IOException e) {
-                        processCommand("execute log add error Malformed Image, " + e.getMessage());
+                        processCommand("execute log add error Malformed Logo Image: " + e.getMessage());
                     }
                 }
 
+                
 
 
             } 
@@ -657,8 +664,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default";
                 
                 if ("image".equals(contentType)) {
-                   try { g.drawImage(Image.createImage(env((String) lib.get("canvas.content"))), getWidth() / 2, getHeight() / 2, Graphics.TOP | Graphics.HCENTER); }
-                   catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); }
+                   try {
+                        Image contentImage = Image.createImage(env((String) lib.get("canvas.content")));
+
+                        g.drawImage(contentImage, (getWidth() - contentImage.getWidth()) / 2, (getHeight() - contentImage.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
+                    } catch (IOException e) {
+                        processCommand("xterm");
+                        processCommand("execute log add error Malformed Image, " + e.getMessage());
+                    }
+
                 }
 
                 else {
