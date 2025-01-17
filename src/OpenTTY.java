@@ -632,28 +632,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         Image resizedLogo = Image.createImage(resizedWidth, resizedHeight);
                         Graphics resizedGraphics = resizedLogo.getGraphics();
 
-                        // Redimensionar manualmente (desenhando pixel por pixel)
+                        // Desenhar a imagem original redimensionada na nova imagem
                         for (int y = 0; y < resizedHeight; y++) {
                             for (int x = 0; x < resizedWidth; x++) {
-                                // Calcular as coordenadas da imagem original
+                                // Calcular as coordenadas na imagem original
                                 int srcX = (x * originalWidth) / resizedWidth;
                                 int srcY = (y * originalHeight) / resizedHeight;
 
                                 // Obter a cor do pixel original
-                                int pixelColor = originalLogo.getRGB()[srcY * originalWidth + srcX];
+                                int pixelColor = originalLogo.getGraphics().getColor();
+                                originalLogo.getGraphics().translate(-srcX, -srcY);
 
-                                // Desenhar o pixel na imagem redimensionada
+                                // Definir a cor e desenhar o pixel redimensionado
                                 resizedGraphics.setColor(pixelColor);
                                 resizedGraphics.fillRect(x, y, 1, 1);
                             }
                         }
 
-                        // Desenhar o logo na barra de título
+                        // Desenhar o logo redimensionado na barra de título
                         g.drawImage(resizedLogo, 5, (maxLogoHeight - resizedHeight) / 2, Graphics.TOP | Graphics.LEFT);
+
                     } catch (IOException e) {
-                        processCommand("execute log add error Malformed Logo Image: " + e.getMessage());
+                        processCommand("execute log add error Malformed Image, " + e.getMessage());
                     }
                 }
+
 
                 
 
