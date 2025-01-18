@@ -17,7 +17,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.12-01x24";
+                   build = "2025-1.12-01x25";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -508,7 +508,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 else if (contentType.equals("shape")) {
-                    String[] shapes = env((String) lib.get("canvas.content")).split(";");
+                    String[] shapes = split(env((String) lib.get("canvas.content")), ';');
 
                     for (int i = 0; i < shapes.length; i++) {
                         String[] parts = split(shapes[i], ',');
