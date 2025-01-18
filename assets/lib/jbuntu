@@ -12,7 +12,7 @@ mod=execute case !trace (jbuntu) exec log add info JBuntu was stopped & @reload;
 
 include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 
-config=execute set JVERSION=1.2; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-config; if (not $OUTPUT) exec set OUTPUT=canvas; set JNOME_DISPLAY=$OUTPUT set JNOME_DISPLAY=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
+config=execute set JVERSION=1.2; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-config; if (not $OUTPUT) exec set OUTPUT=canvas; set JNOME_DISPLAY=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
 command=xterm,jbuntu
 
 xterm=execute x11 $JNOME_DISPLAY jbuntu;
