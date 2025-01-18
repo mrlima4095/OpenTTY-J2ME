@@ -537,7 +537,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             g.setColor(0, 0, 255); // Cor padrão
                             g.drawRect(x, y, width, height);
                         } 
-                        else if (type.equals("polygon") && parts.length >= 5 && parts.length % 2 == 1) {
+                        /*else if (type.equals("polygon") && parts.length >= 5 && parts.length % 2 == 1) {
                             int[] xPoints = new int[(parts.length - 1) / 2];
                             int[] yPoints = new int[(parts.length - 1) / 2];
                             for (int j = 1; j < parts.length; j += 2) {
@@ -546,7 +546,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             }
                             g.setColor(255, 255, 0); // Cor padrão
                             g.drawPolygon(xPoints, yPoints, xPoints.length);
-                        } 
+                        } */
                         else {
                             processCommand("execute log add error Invalid shape type or parameters: " + type);
                         }
