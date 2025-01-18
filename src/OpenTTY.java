@@ -353,6 +353,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     content = new StringItem("", env((String) lib.get("screen.content")));
                 } else if (contentType.equals("image")) {
                     try {
+                        echoCommand("HERE DEU");
                         ImageItem content = new ImageItem("", Image.createImage(env((String) lib.get("screen.content"))), ImageItem.LAYOUT_CENTER, "Malformed Image");
                     } catch (IOException e) {
                         MIDletLogs("add error Malformed Image, " + e.getMessage());
