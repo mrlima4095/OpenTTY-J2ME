@@ -12,7 +12,7 @@ mod=execute case !trace (jbuntu) exec log add info JBuntu was stopped & @reload;
 
 include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 
-config=execute set JVERSION=1.1; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-config; if (not $OUTPUT) exec set OUTPUT=canvas; set JNOME_DISPLAY=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
+config=execute set JVERSION=1.2; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-config; if (not $OUTPUT) exec set OUTPUT=canvas; set JNOME_DISPLAY=$OUTPUT set JNOME_DISPLAY=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
 command=xterm,jbuntu
 
 xterm=execute x11 $JNOME_DISPLAY jbuntu;
@@ -21,8 +21,8 @@ jbuntu=execute alias xterm=execute x11 $JNOME_DISPLAY jbuntu; xterm;
 shell.name=jbuntu
 shell.args=menu,jnome
 
-menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Desktop Settings,Logout,Exit; add list.back=x11 make jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
-jnome=execute install nano; touch; add list.title=Desktop Type; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add list.button=Select; add Legacy=exec install nano & touch & add make & install .jbuntu-config & jbuntu & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-config & jbuntu & get nano; x11 list nano; get nano; 
+menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Desktop Settings,Logout,Exit; add list.back=x11 $JNOME_DISPLAY jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
+jnome=execute install nano; touch; add list.title=Desktop Settings; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add list.button=Select; add Legacy=exec install nano & touch & add make & install .jbuntu-config & set JNOME_DISPLAY=make & jbuntu & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-config & set JNOME_DISPLAY=canvas & jbuntu & get nano; x11 list nano; get nano; 
 
 [ COMMAND ]
 
@@ -50,7 +50,7 @@ quest.title=JBuntu $JVERSION
 quest.label=Notes
 quest.key=JBUNTU_NOTES
 quest.cmd=execute install nano; touch; add $JBUNTU_NOTES; install .jbuntu-notes; get nano;
-quest.back=x11 make jbuntu
+quest.back=x11 $JNOME_DISPLAY jbuntu
 
 list.title=JBuntu Apps
 list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Monitor
