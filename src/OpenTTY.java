@@ -345,26 +345,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             
             screen = new Form(env((String) lib.get("screen.title")));
-
-            if (lib.containsKey("screen.content")) {
-                String contentType = lib.containsKey("screen.content.type") ? env((String) lib.get("screen.content.type")) : "default";
-
-                if (contentType.equals("text") || contentType.equals("default")) {
-                    content = new StringItem("", env((String) lib.get("screen.content")));
-                } else if (contentType.equals("image")) {
-                    try {
-                        ImageItem content = new ImageItem("", Image.createImage(env((String) lib.get("screen.content"))), ImageItem.LAYOUT_CENTER, "Malformed Image");
-                    } catch (Throwable e) {
-                        MIDletLogs("add error Malformed Image, " + e.getMessage());
-                        return;
-                    }   
-                } else {
-                    MIDletLogs("add error Screen crashed while init, unknown content type");
-                    return;
-                }
-
-            } 
-            
+            content = new StringItem("", lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : "");
             
             backCommand = new Command(lib.containsKey("screen.back.label") ? env((String) lib.get("screen.back.label")) : "Back", Command.OK, 1);
             userCommand = new Command(lib.containsKey("screen.button") ? env((String) lib.get("screen.button")) : "Menu", Command.SCREEN, 2);
