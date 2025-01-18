@@ -431,48 +431,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
             addCommand(backCommand); 
             
             if (lib.containsKey("canvas.button")) { addCommand(userCommand); } 
-            if (lib.containsKey("canvas.mouse")) {
-                try { 
-                    cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); 
-                    cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); 
-                } catch (NumberFormatException e) { 
-                    MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10;
-                } 
-            }
+            if (lib.containsKey("canvas.mouse")) { try { cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } }
 
             setCommandListener(this); 
         }
 
         protected void paint(Graphics g) { 
-            if (screen == null) 
-                screen = g; 
+            if (screen == null) { screen = g; }
             
             g.setColor(0, 0, 0); 
             
             if (lib.containsKey("canvas.background")) {
-                try { 
-                    g.setColor(
-                        Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]), 
-                        Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]), 
-                        Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])
-                    ); 
-                } catch (NumberFormatException e) { 
-                    MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); 
-                } 
+                String backgroundType = lib.containsKey("canvas.background.type") ? env((String) lib.get("canvas.background.type")) : "default";
+                    
+                if (backgroundType.equals("color") || backgroundType.equals("default")) { try { g.setColor(Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); } } 
+                else if (contentType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.background"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } }
+                
             }
             
-            g.fillRect(0, 0, getWidth(), getHeight()); 
+            //g.fillRect(0, 0, getWidth(), getHeight()); 
             
-            if (lib.containsKey("canvas.title")) { 
-                g.setColor(50, 50, 50); 
-                g.fillRect(0, 0, getWidth(), 30); 
-                g.setColor(255, 255, 255); 
-                g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER); 
-                g.setColor(50, 50, 50); 
-                g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
-                g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); 
-
-            } 
+            if (lib.containsKey("canvas.title")) { g.setColor(50, 50, 50); g.fillRect(0, 0, getWidth(), 30);  g.setColor(255, 255, 255); g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER); g.setColor(50, 50, 50);  g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); } 
             
             if (lib.containsKey("canvas.content")) {
                 String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default";
@@ -483,78 +462,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                     g.setFont(Font.getDefaultFont());
 
-                    if (lib.containsKey("canvas.content.style")) {
-                        String style = env((String) lib.get("canvas.content.style"));
-                        if ("bold".equals(style)) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM)); } 
-                        else if ("italic".equals(style)) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM)); } 
-                        else if ("small".equals(style)) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL)); }
-                        else if ("large".equals(style)) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE)); }
-                    }
+                    if (lib.containsKey("canvas.content.style")) { String style = env((String) lib.get("canvas.content.style")); if (style.equals("bold")) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM)); } else if (style.equals("italic")) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM)); } else if (style.equals("small")) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL)); } else if (style.equals("large")) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE)); } }
                     
-                    int contentWidth = g.getFont().stringWidth(content);
-                    int contentHeight = g.getFont().getHeight();
+                    int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight();
                     g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
                 }
 
-                else if (contentType.equals("image")) {
-                   try {
-                        Image content = Image.createImage(env((String) lib.get("canvas.content")));
-                        g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
-                    } catch (IOException e) {
-                        processCommand("xterm");
-                        processCommand("execute log add error Malformed Image, " + e.getMessage());
-                    }
-
-                }
+                else if (contentType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.content"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } }
 
                 else if (contentType.equals("shape")) {
                     String[] shapes = split(env((String) lib.get("canvas.content")), ';');
 
                     for (int i = 0; i < shapes.length; i++) {
                         String[] parts = split(shapes[i], ',');
-                        String type = parts[0].toLowerCase(); // Tipo da forma
+                        String type = parts[0].toLowerCase(); 
 
-                        if (type.equals("line") && parts.length == 5) {
-                            int x1 = Integer.parseInt(parts[1]);
-                            int y1 = Integer.parseInt(parts[2]);
-                            int x2 = Integer.parseInt(parts[3]);
-                            int y2 = Integer.parseInt(parts[4]);
-                            g.setColor(255, 255, 255); // Cor padrão
-                            g.drawLine(x1, y1, x2, y2);
-                        } 
-                        else if (type.equals("circle") && parts.length == 4) {
-                            int centerX = Integer.parseInt(parts[1]);
-                            int centerY = Integer.parseInt(parts[2]);
-                            int radius = Integer.parseInt(parts[3]);
-                            g.setColor(0, 255, 0); // Cor padrão
-                            g.drawArc(centerX - radius, centerY - radius, radius * 2, radius * 2, 0, 360);
-                        } 
-                        else if (type.equals("rect") && parts.length == 5) {
-                            int x = Integer.parseInt(parts[1]);
-                            int y = Integer.parseInt(parts[2]);
-                            int width = Integer.parseInt(parts[3]);
-                            int height = Integer.parseInt(parts[4]);
-                            g.setColor(0, 0, 255); // Cor padrão
-                            g.drawRect(x, y, width, height);
-                        } 
-                        /*else if (type.equals("polygon") && parts.length >= 5 && parts.length % 2 == 1) {
-                            int[] xPoints = new int[(parts.length - 1) / 2];
-                            int[] yPoints = new int[(parts.length - 1) / 2];
-                            for (int j = 1; j < parts.length; j += 2) {
-                                xPoints[(j - 1) / 2] = Integer.parseInt(parts[j]);
-                                yPoints[(j - 1) / 2] = Integer.parseInt(parts[j + 1]);
-                            }
-                            g.setColor(255, 255, 0); // Cor padrão
-                            g.drawPolygon(xPoints, yPoints, xPoints.length);
-                        } */
-                        else {
-                            processCommand("execute log add error Invalid shape type or parameters: " + type);
-                        }
+                        if (type.equals("line") && parts.length == 5) { int x1 = Integer.parseInt(parts[1]); int y1 = Integer.parseInt(parts[2]); int x2 = Integer.parseInt(parts[3]); int y2 = Integer.parseInt(parts[4]); g.setColor(255, 255, 255); g.drawLine(x1, y1, x2, y2); } 
+                        else if (type.equals("circle") && parts.length == 4) { int centerX = Integer.parseInt(parts[1]); int centerY = Integer.parseInt(parts[2]); int radius = Integer.parseInt(parts[3]); g.setColor(0, 255, 0);  g.drawArc(centerX - radius, centerY - radius, radius * 2, radius * 2, 0, 360); } 
+                        else if (type.equals("rect") && parts.length == 5) { int x = Integer.parseInt(parts[1]); int y = Integer.parseInt(parts[2]); int width = Integer.parseInt(parts[3]); int height = Integer.parseInt(parts[4]); g.setColor(0, 0, 255); g.drawRect(x, y, width, height); } 
                     }
                 }
 
-
-            
             }
 
             g.setColor(255, 255, 255); 
