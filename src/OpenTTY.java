@@ -391,9 +391,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command backCommand, userCommand;
 
         public ScreenList(String args) {
-            if (args == null || args.length() == 0) {
-                return;
-            }
+            if (args == null || args.length() == 0) { return; }
             lib = parseFrom(args);
             
             if (!lib.containsKey("list.title") && !lib.containsKey("list.content")) {
@@ -403,25 +401,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             screen = new List(env((String) lib.get("list.title")), List.IMPLICIT);
             
-            backCommand = new Command(
-                lib.containsKey("list.back.label") ? 
-                env((String) lib.get("list.back.label")) : "Back", 
-                Command.OK, 
-                1
-            );
-            
-            userCommand = new Command(
-                lib.containsKey("list.button") ? 
-                env((String) lib.get("list.button")) : "Select", 
-                Command.SCREEN, 
-                2
-            );
+            backCommand = new Command(lib.containsKey("list.back.label") ? env((String) lib.get("list.back.label")) : "Back", Command.OK, 1);
+            userCommand = new Command(lib.containsKey("list.button") ? env((String) lib.get("list.button")) : "Select", Command.SCREEN, 2);
             
             String[] content = split(env((String) lib.get("list.content")), ',');
             
-            for (int i = 0; i < content.length; i++) {
-                screen.append(content[i], null);
-            }
+            for (int i = 0; i < content.length; i++) { screen.append(content[i], null); }
             
             screen.addCommand(backCommand);
             screen.addCommand(userCommand);
@@ -432,17 +417,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) {
             if (c == backCommand) {
                 processCommand("xterm");
-                processCommand(lib.containsKey("list.back") ? 
-                    env((String) lib.get("list.back")) : "true"
-                );
+                processCommand(lib.containsKey("list.back") ? env((String) lib.get("list.back")) : "true");
             } else if (c == userCommand) {
                 int index = screen.getSelectedIndex();
                 if (index >= 0) {
                     processCommand("xterm");
-                    processCommand(lib.containsKey(screen.getString(index)) ? 
-                        env((String) lib.get(screen.getString(index))) : 
-                        "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found"
-                    );
+                    processCommand(lib.containsKey(screen.getString(index)) ? env((String) lib.get(screen.getString(index))) : "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found");
                 }
             }
         }
@@ -499,45 +479,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
 
-    public class ItemLoader implements ItemCommandListener {
-        private Hashtable lib;
-        private Command run;
-        private StringItem s;
-
-        public ItemLoader(String args) {
-            if (args == null || args.length() == 0) {
-                return;
-            } else if (args.equals("clear")) {
-                form.deleteAll();
-                form.append(stdout);
-                form.append(stdin);
-                return;
-            }
-            
-            lib = parseFrom(args);
-            
-            if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) {
-                MIDletLogs("add error Malformed ITEM, missing params");
-                return;
-            }
-            
-            run = new Command((String) lib.get("item.label"), Command.ITEM, 1);
-            s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON);
-            s.setFont(Font.getDefaultFont());
-            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE);
-            s.addCommand(run);
-            s.setDefaultCommand(run);
-            s.setItemCommandListener(this);
-            form.append(s);
-        }
-
-        public void commandAction(Command c, Item item) {
-            if (c == run) {
-                processCommand("xterm");
-                processCommand((String) lib.get("item.cmd"));
-            }
-        }
-    }
+    public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseFrom(args); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
 
     public class MyCanvas extends Canvas implements CommandListener {
         private Hashtable lib; 
