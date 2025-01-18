@@ -283,7 +283,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
         else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
-        
+        else if (mainCommand.equals("font")) {
+            if (argument.equals("")) { }
+            else {
+                Item item = display.getCurrentItem();
+
+                if (argument.equals("default")) { item.setFont(Font.getDefaultFont()); }
+                else if (argument.equals("bold")) { item.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM)); }
+                else if (argument.equals("italic")) { item.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM)); }
+                else if (argument.equals("small")) { item.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL)); }
+                else if (argument.equals("large")) { item.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE)); }
+                else if (argument.equals("monospace")) { item.setFont(Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, Font.SIZE_MEDIUM)); }
+
+            }
+        }
+
         else if (mainCommand.equals("make")) { new Screen(argument); } 
         else if (mainCommand.equals("list")) { new ScreenList(argument); }
         else if (mainCommand.equals("item")) { new ItemLoader(argument); } 
