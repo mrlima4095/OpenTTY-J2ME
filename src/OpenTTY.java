@@ -344,24 +344,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             
             screen = new Form(env((String) lib.get("screen.title")));
-            content = new StringItem("", 
-                lib.containsKey("screen.content") ? 
-                env((String) lib.get("screen.content")) : ""
-            );
+
+            if (lib.containsKey("screen.content")) {
+                String contentType = lib.containsKey("screen.content.type") ? env((String) lib.get("screen.content.type")) : "default";
+
+                if (contentType.equals("text") || contentType.equals("default")) {
+                    content = new StringItem("", env((String) lib.get("screen.content")));
+                } else if (contentType.equals("image")) {
+                    try {
+                        ImageItem content = new ImageItem("", Image.createImage(env((String) lib.get("canvas.content"))), ImageItem.LAYOUT_CENTER, "Build failed");
+                    } catch (IOException e) {
+                        MIDletLogs("add error Malformed Image, " + e.getMessage());
+                        return;
+                    }   
+                } else {
+                    MIDletLogs("add error Screen crashed while init, unknown content type");
+                    return;
+                }
+
+            } 
             
-            backCommand = new Command(
-                lib.containsKey("screen.back.label") ? 
-                env((String) lib.get("screen.back.label")) : "Back", 
-                Command.OK, 
-                1
-            );
             
-            userCommand = new Command(
-                lib.containsKey("screen.button") ? 
-                env((String) lib.get("screen.button")) : "Menu", 
-                Command.SCREEN, 
-                2
-            );
+            backCommand = new Command(lib.containsKey("screen.back.label") ? env((String) lib.get("screen.back.label")) : "Back", Command.OK, 1);
+            userCommand = new Command(lib.containsKey("screen.button") ? env((String) lib.get("screen.button")) : "Menu", Command.SCREEN, 2);
             
             screen.append(content);
             screen.addCommand(backCommand);
@@ -373,15 +378,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) {
             if (c == backCommand) {
                 processCommand("xterm");
-                processCommand(lib.containsKey("screen.back") ? 
-                    env((String) lib.get("screen.back")) : "true"
-                );
+                processCommand(lib.containsKey("screen.back") ? (String) lib.get("screen.back") : "true");
             } else if (c == userCommand) {
                 processCommand("xterm");
-                processCommand(lib.containsKey("screen.button.cmd") ? 
-                    (String) lib.get("screen.button.cmd") : 
-                    "log add warn An error occurred, 'screen.button.cmd' not found"
-                );
+                processCommand(lib.containsKey("screen.button.cmd") ? (String) lib.get("screen.button.cmd") : "log add warn An error occurred, 'screen.button.cmd' not found");
             }
         }
     }
@@ -422,14 +422,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int index = screen.getSelectedIndex();
                 if (index >= 0) {
                     processCommand("xterm");
-                    processCommand(lib.containsKey(screen.getString(index)) ? env((String) lib.get(screen.getString(index))) : "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found");
+                    processCommand(lib.containsKey(screen.getString(index)) ? (String) lib.get(env(screen.getString(index))) : "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found");
                 }
             }
         }
     }
-    public class ScreenQuest implements CommandListener { private Hashtable lib; private Form screen; private TextField content; private Command backCommand, userCommand; public ScreenQuest(String args) { if (args == null || args.length() == 0) { return; } lib = parseFrom(args); if (!lib.containsKey("quest.title") || !lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } screen = new Form(env((String) lib.get("quest.title"))); content = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY); backCommand = new Command("Cancel", Command.SCREEN, 2); userCommand = new Command("Send", Command.OK, 1); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) {if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true"); } else if (c == userCommand) { if (!content.getString().trim().equals("")) { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(content.getString().trim())); processCommand("xterm"); processCommand(env((String) lib.get("quest.cmd"))); } } } }
+    public class ScreenQuest implements CommandListener { private Hashtable lib; private Form screen; private TextField content; private Command backCommand, userCommand; public ScreenQuest(String args) { if (args == null || args.length() == 0) { return; } lib = parseFrom(args); if (!lib.containsKey("quest.title") || !lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } screen = new Form(env((String) lib.get("quest.title"))); content = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY); backCommand = new Command("Cancel", Command.SCREEN, 2); userCommand = new Command("Send", Command.OK, 1); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) {if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true"); } else if (c == userCommand) { if (!content.getString().trim().equals("")) { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(content.getString().trim())); processCommand("xterm"); processCommand((String) lib.get("quest.cmd")); } } } }
 
-    public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseFrom(args); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, (String) lib.get("item.label"), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
+    public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseFrom(args); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, env((String) lib.get("item.label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
 
     public class MyCanvas extends Canvas implements CommandListener {
         private Hashtable lib; 
@@ -490,24 +490,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); 
                 g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); 
 
-                
             } 
             
             if (lib.containsKey("canvas.content")) {
                 String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default";
                 
-                if ("image".equals(contentType)) {
-                   try {
-                        Image content = Image.createImage(env((String) lib.get("canvas.content")));
-                        g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
-                    } catch (IOException e) {
-                        processCommand("xterm");
-                        processCommand("execute log add error Malformed Image, " + e.getMessage());
-                    }
-
-                }
-
-                else {
+                if (contentType.equals("text") || contentType.equals("default")) {
                     g.setColor(255, 255, 255);
                     String content = env((String) lib.get("canvas.content"));
                     
@@ -524,6 +512,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int contentWidth = g.getFont().stringWidth(content);
                     int contentHeight = g.getFont().getHeight();
                     g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                }
+
+
+                else if (contentType.equals("image")) {
+                   try {
+                        Image content = Image.createImage(env((String) lib.get("canvas.content")));
+                        g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
+                    } catch (IOException e) {
+                        processCommand("xterm");
+                        processCommand("execute log add error Malformed Image, " + e.getMessage());
+                    }
+
                 }
 
             
