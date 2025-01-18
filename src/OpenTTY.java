@@ -511,7 +511,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String[] shapes = env((String) lib.get("canvas.content")).split(";");
 
                     for (int i = 0; i < shapes.length; i++) {
-                        String[] parts = shapes[i].split(",");
+                        String[] parts = split(shapes[i], ',');
                         String type = parts[0].toLowerCase(); // Tipo da forma
 
                         if (type.equals("line") && parts.length == 5) {
