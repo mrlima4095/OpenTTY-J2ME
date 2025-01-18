@@ -13,9 +13,10 @@ Copyright (C) 2025 - Mr. Lima
 - **Screen** default user button text now is _Menu_
 - **Screen** attribute _screen.button_ isnt required anymore
 - Buttons now get placeholders from env keys in all screens
+- Placehoders from commands now use the `OpenTTY.processCommand` recursive recognizer
 - **List** content bug fix that placeholders are recognized from list and the picker not
 - **Canvas** invalid background color detected turn color to black (default)
 - **Canvas** invalid mouse position detected send cursor to 10, 10 (default)
-- 
-- 
+- **Screen** new attribute _screen.content.type_
+- **Screen** image support added
 -  
