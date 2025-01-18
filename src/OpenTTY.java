@@ -496,7 +496,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
                 }
 
-
                 else if (contentType.equals("image")) {
                    try {
                         Image content = Image.createImage(env((String) lib.get("canvas.content")));
@@ -507,6 +506,53 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
 
                 }
+
+                else if (contentType.equals("shape")) {
+                    String[] shapes = env((String) lib.get("canvas.content")).split(";");
+
+                    for (int i = 0; i < shapes.length; i++) {
+                        String[] parts = shapes[i].split(",");
+                        String type = parts[0].toLowerCase(); // Tipo da forma
+
+                        if (type.equals("line") && parts.length == 5) {
+                            int x1 = Integer.parseInt(parts[1]);
+                            int y1 = Integer.parseInt(parts[2]);
+                            int x2 = Integer.parseInt(parts[3]);
+                            int y2 = Integer.parseInt(parts[4]);
+                            g.setColor(255, 255, 255); // Cor padrão
+                            g.drawLine(x1, y1, x2, y2);
+                        } 
+                        else if (type.equals("circle") && parts.length == 4) {
+                            int centerX = Integer.parseInt(parts[1]);
+                            int centerY = Integer.parseInt(parts[2]);
+                            int radius = Integer.parseInt(parts[3]);
+                            g.setColor(0, 255, 0); // Cor padrão
+                            g.drawArc(centerX - radius, centerY - radius, radius * 2, radius * 2, 0, 360);
+                        } 
+                        else if (type.equals("rect") && parts.length == 5) {
+                            int x = Integer.parseInt(parts[1]);
+                            int y = Integer.parseInt(parts[2]);
+                            int width = Integer.parseInt(parts[3]);
+                            int height = Integer.parseInt(parts[4]);
+                            g.setColor(0, 0, 255); // Cor padrão
+                            g.drawRect(x, y, width, height);
+                        } 
+                        else if (type.equals("polygon") && parts.length >= 5 && parts.length % 2 == 1) {
+                            int[] xPoints = new int[(parts.length - 1) / 2];
+                            int[] yPoints = new int[(parts.length - 1) / 2];
+                            for (int j = 1; j < parts.length; j += 2) {
+                                xPoints[(j - 1) / 2] = Integer.parseInt(parts[j]);
+                                yPoints[(j - 1) / 2] = Integer.parseInt(parts[j + 1]);
+                            }
+                            g.setColor(255, 255, 0); // Cor padrão
+                            g.drawPolygon(xPoints, yPoints, xPoints.length);
+                        } 
+                        else {
+                            processCommand("execute log add error Invalid shape type or parameters: " + type);
+                        }
+                    }
+                }
+
 
             
             }
