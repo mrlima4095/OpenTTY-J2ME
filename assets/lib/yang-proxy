@@ -13,7 +13,7 @@ shell.name=yang
 shell.args=install,update,query
 
 install=execute install nano; tick Installing...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/$RESOURCE; install $RESOURCE; get nano;
-update=execute set RESOURCE=yang; yang install; import yang;
+update=execute set RESOURCE=yang-proxy; yang install; import yang-proxy;
 query=execute x11 quest yang-proxy;
 
 [ DISPLAY ]
