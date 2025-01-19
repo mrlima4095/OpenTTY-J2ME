@@ -466,8 +466,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
                 }
 
-                else if (contentType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.content"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } }
-
                 else if (contentType.equals("shape")) {
                     String[] shapes = split(env((String) lib.get("canvas.content")), ';');
 
