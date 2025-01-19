@@ -445,7 +445,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String backgroundType = lib.containsKey("canvas.background.type") ? env((String) lib.get("canvas.background.type")) : "default";
                     
                 if (backgroundType.equals("color") || backgroundType.equals("default")) { try { g.setColor(Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); } } 
-                else if (contentType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.background"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } }
+                else if (backgroundType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.background"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } }
                 
             }
             
