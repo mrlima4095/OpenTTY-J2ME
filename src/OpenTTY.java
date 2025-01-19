@@ -476,7 +476,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (type.equals("line") && parts.length == 5) { int x1 = Integer.parseInt(parts[1]); int y1 = Integer.parseInt(parts[2]); int x2 = Integer.parseInt(parts[3]); int y2 = Integer.parseInt(parts[4]); g.setColor(0, 0, 255); g.drawLine(x1, y1, x2, y2); } 
                         else if (type.equals("circle") && parts.length == 4) { int centerX = Integer.parseInt(parts[1]); int centerY = Integer.parseInt(parts[2]); int radius = Integer.parseInt(parts[3]); g.setColor(0, 0, 255);  g.drawArc(centerX - radius, centerY - radius, radius * 2, radius * 2, 0, 360); } 
                         else if (type.equals("rect") && parts.length == 5) { int x = Integer.parseInt(parts[1]); int y = Integer.parseInt(parts[2]); int width = Integer.parseInt(parts[3]); int height = Integer.parseInt(parts[4]); g.setColor(0, 0, 255); g.drawRect(x, y, width, height); } 
-                        else if (type.equals("cuboid") && parts.length == 6) {
+                        else if (type.equals("cline") && parts.length == 6) {
                             int x1 = Integer.parseInt(parts[1]);
                             int y1 = Integer.parseInt(parts[2]);
                             int x2 = Integer.parseInt(parts[3]);
