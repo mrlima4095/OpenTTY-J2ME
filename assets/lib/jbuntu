@@ -46,8 +46,6 @@ canvas.button=Apps
 canvas.button.cmd=execute x11 list jbuntu;
 canvas.back.label=Menu
 canvas.back=execute jbuntu menu;
-#canvas.background=/jbuntu.jpg
-#canvas.background.type=image
 
 quest.title=JBuntu $JVERSION
 quest.label=Notes
