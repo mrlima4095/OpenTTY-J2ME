@@ -4,6 +4,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `report`: Send a mail to me to report bugs
+- `for key (file) [command]`: Run commands with a pre-list
 
 [ _Updates_ ]
 
