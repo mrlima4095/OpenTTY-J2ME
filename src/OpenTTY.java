@@ -185,7 +185,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
         else if (mainCommand.equals("mail")) { echoCommand(request("raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com?subject=Report%20OpenTTY%20bug&body=Version%3A%20%24VERSION%0AWrite%20about%20the%20bug:%3A%0A%0A"); }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
