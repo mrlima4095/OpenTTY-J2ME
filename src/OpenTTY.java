@@ -373,18 +373,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     public class ScreenList implements CommandListener {
-        private Hashtable lib;
-        private List screen;
-        private Command backCommand, userCommand;
+        private Hashtable lib; private List screen; private Command backCommand, userCommand;
 
         public ScreenList(String args) {
             if (args == null || args.length() == 0) { return; }
             lib = parseFrom(args);
             
-            if (!lib.containsKey("list.title") && !lib.containsKey("list.content")) {
-                MIDletLogs("add error List crashed while init, malformed settings");
-                return;
-            }
+            if (!lib.containsKey("list.title") && !lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; }
             
             screen = new List(env((String) lib.get("list.title")), List.IMPLICIT);
             
@@ -401,18 +396,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             display.setCurrent(screen);
         }
 
-        public void commandAction(Command c, Displayable d) {
-            if (c == backCommand) {
-                processCommand("xterm");
-                processCommand(lib.containsKey("list.back") ? env((String) lib.get("list.back")) : "true");
-            } else if (c == userCommand) {
-                int index = screen.getSelectedIndex();
-                if (index >= 0) {
-                    processCommand("xterm");
-                    processCommand(lib.containsKey(screen.getString(index)) ? (String) lib.get(env(screen.getString(index))) : "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found");
-                }
-            }
-        }
+        public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("list.back") ? env((String) lib.get("list.back")) : "true"); } else if (c == userCommand) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(lib.containsKey(screen.getString(index)) ? (String) lib.get(env(screen.getString(index))) : "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found"); } } }
     }
     public class ScreenQuest implements CommandListener { private Hashtable lib; private Form screen; private TextField content; private Command backCommand, userCommand; public ScreenQuest(String args) { if (args == null || args.length() == 0) { return; } lib = parseFrom(args); if (!lib.containsKey("quest.title") || !lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } screen = new Form(env((String) lib.get("quest.title"))); content = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY); backCommand = new Command("Cancel", Command.SCREEN, 2); userCommand = new Command("Send", Command.OK, 1); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) {if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true"); } else if (c == userCommand) { if (!content.getString().trim().equals("")) { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(content.getString().trim())); processCommand("xterm"); processCommand((String) lib.get("quest.cmd")); } } } }
 
@@ -512,21 +496,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             repaint(); 
         }
 
-        protected void pointerPressed(int x, int y) { 
-            cursorX = x; 
-            cursorY = y; 
-            repaint(); 
-        }
+        protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); }
         
-        public void commandAction(Command c, Displayable d) { 
-            if (c == backCommand) { 
-                processCommand("xterm"); 
-                processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); 
-            } else if (c == userCommand) { 
-                processCommand("xterm"); 
-                processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); 
-            } 
-        }
+        public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } }
     }
 
 
