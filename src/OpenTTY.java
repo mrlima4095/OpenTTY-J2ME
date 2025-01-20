@@ -188,9 +188,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
+        else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
         else if (mainCommand.startsWith("@")) { processCommand("builtin warn Function '" + replace(mainCommand.toUpperCase(), "@", "") + "' not found"); }
@@ -476,17 +476,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (type.equals("line") && parts.length == 5) { int x1 = Integer.parseInt(parts[1]); int y1 = Integer.parseInt(parts[2]); int x2 = Integer.parseInt(parts[3]); int y2 = Integer.parseInt(parts[4]); g.setColor(0, 0, 255); g.drawLine(x1, y1, x2, y2); } 
                         else if (type.equals("circle") && parts.length == 4) { int centerX = Integer.parseInt(parts[1]); int centerY = Integer.parseInt(parts[2]); int radius = Integer.parseInt(parts[3]); g.setColor(0, 0, 255);  g.drawArc(centerX - radius, centerY - radius, radius * 2, radius * 2, 0, 360); } 
                         else if (type.equals("rect") && parts.length == 5) { int x = Integer.parseInt(parts[1]); int y = Integer.parseInt(parts[2]); int width = Integer.parseInt(parts[3]); int height = Integer.parseInt(parts[4]); g.setColor(0, 0, 255); g.drawRect(x, y, width, height); } 
-                        else if (type.equals("cline") && parts.length == 6) {
-                            int x1 = Integer.parseInt(parts[1]);
-                            int y1 = Integer.parseInt(parts[2]);
-                            int x2 = Integer.parseInt(parts[3]);
-                            int y2 = Integer.parseInt(parts[4]);
-                            int cuboid = Integer.parseInt(parts[5]);
-                            g.setColor(0, 0, 255); 
-                            for (int i = 0; i < cuboid; i++) {
-                                g.drawLine(x1, y1 + i, x2, y2 + i);
-                            }
-                        }
+                        
 
                     }
                 }
