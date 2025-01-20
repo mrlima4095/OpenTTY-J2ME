@@ -285,10 +285,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (file.equals("nano")) { file = nanoContent; } 
         else { file = loadRMS(file, 1); } 
 
-        String[] file = split(file, '\n');
+        String[] lines = split(file, '\n');
 
-        for (int i = 0; i < file.length; i++) {
-            processCommand("set " + key + "=" + file[i]);
+        for (int i = 0; i < lines.length; i++) {
+            processCommand("set " + key + "=" + lines[i]);
             processCommand(command);
         }      
 
