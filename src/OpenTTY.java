@@ -336,9 +336,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command backCommand, userCommand;
 
         public Screen(String args) {
-            if (args == null || args.length() == 0) { 
-                return; 
-            }
+            if (args == null || args.length() == 0) { return; }
             lib = parseFrom(args);
             
             if (!lib.containsKey("screen.title")) {
@@ -422,9 +420,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private final int cursorSize = 5;
 
         public MyCanvas(String args) { 
-            if (args == null || args.length() == 0) { 
-                return; 
-            }
+            if (args == null || args.length() == 0) { return; }
             lib = parseFrom(args); 
 
             backCommand = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.OK, 1); 
