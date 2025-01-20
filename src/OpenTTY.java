@@ -279,7 +279,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String command = argument.substring(lastParenthesis + 1).trim(); 
 
         if (key.startsWith("(")) { return; }
-        if (key.startsWith("#")) { key = replace(key, "#", ""); }
+        if (key.startsWith("$")) { key = replace(key, "$", ""); }
 
         if (file.startsWith("/")) { file = read(file); } 
         else if (file.equals("nano")) { file = nanoContent; } 
@@ -287,10 +287,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         String[] lines = split(file, '\n');
 
-        for (int i = 0; i < lines.length; i++) {
-            processCommand("set " + key + "=" + lines[i]);
-            processCommand(command);
-        }      
+        for (int i = 0; i < lines.length; i++) { if (lines[i] != null || lines[i].length() == 0) { processCommand("set " + key + "=" + lines[i]); processCommand(command); processCommand("unset " + key); } }
 
     }
     private void StringEditor(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("-2u")) { nanoContent = nanoContent.toUpperCase(); } else if (mainCommand.equals("-2l")) { nanoContent = nanoContent.toLowerCase(); } else if (mainCommand.equals("-d")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], ""); } else if (mainCommand.equals("-a")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } else if (mainCommand.equals("-r")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], split(argument, ' ')[1]); } else if (mainCommand.equals("-l")) { int i = 0; try { i = Integer.parseInt(argument); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return; } echoCommand(split(nanoContent, '\n')[i]); } else if (mainCommand.equals("-s")) { int i = 0; try { i = Integer.parseInt(getCommand(argument)); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return; } Vector lines = new Vector(); String div = getArgument(argument); int start = 0, index; while ((index = nanoContent.indexOf(div, start)) != -1) { lines.addElement(nanoContent.substring(start, index)); start = index + div.length(); } if (start < nanoContent.length()) { lines.addElement(nanoContent.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); if (i >= 0 && i < result.length) { echoCommand(result[i]); } else { echoCommand("null"); } } else if (mainCommand.equals("-p")) { String[] contentLines = split(nanoContent, '\n'); StringBuffer updatedContent = new StringBuffer(); for (int i = 0; i < contentLines.length; i++) { updatedContent.append(argument).append(contentLines[i]).append("\n"); } nanoContent = updatedContent.toString().trim(); } else if (mainCommand.equals("-v")) { String[] lines = split(nanoContent, '\n'); StringBuffer reversed = new StringBuffer(); for (int i = lines.length - 1; i >= 0; i--) { reversed.append(lines[i]).append("\n"); } nanoContent = reversed.toString().trim(); } }
@@ -509,16 +506,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); }
             else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); }
             else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); }
-            else if (gameAction == FIRE) {
-                if (lib.containsKey("canvas.content")) { 
-                    String content = env((String) lib.get("canvas.content")); 
-                    int contentWidth = screen.getFont().stringWidth(content); 
-                    int contentHeight = screen.getFont().getHeight(); 
-                    int textX = (getWidth() - contentWidth) / 2; 
-                    int textY = (getHeight() - contentHeight) / 2; 
-                    if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); }
-                } 
-            } 
+            else if (gameAction == FIRE) { if (lib.containsKey("canvas.content")) { String content = env((String) lib.get("canvas.content")); int contentWidth = screen.getFont().stringWidth(content); int contentHeight = screen.getFont().getHeight(); int textX = (getWidth() - contentWidth) / 2; int textY = (getHeight() - contentHeight) / 2; if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); } } } 
 
             repaint(); 
         }
