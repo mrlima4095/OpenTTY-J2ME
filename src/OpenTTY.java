@@ -136,6 +136,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
         else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
+        else if (mainCommand.equals("for")) { forCommand(argument); }
         else if (mainCommand.equals("gc")) { Runtime.getRuntime().gc(); }
         else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); } 
         else if (mainCommand.equals("htop")) { new HTopViewer(); }
@@ -186,7 +187,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
         else if (mainCommand.equals("mail")) { echoCommand(request("raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); }        
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
-        //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
