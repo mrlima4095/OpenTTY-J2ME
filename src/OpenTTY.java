@@ -184,8 +184,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("proxy")) { if (argument.equals("")) { return; } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
-        else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com?subject=Report%20OpenTTY%20bug&body=Version%3A%20%24VERSION%0AWrite%20about%20the%20bug:%3A%0A%0A"); }
-        else if (mainCommand.equals("mail")) { echoCommand(request("raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); }        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("mail")) { echoCommand(request("raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); }        
+        else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
+        //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
@@ -220,6 +221,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
     private Hashtable parseFrom(String script) { if (script.startsWith("/")) { script = read(script); } else if (script.equals("nano")) { script = nanoContent; } else { script = loadRMS(script, 1); } return parseProperties(script); }
+
+    private Font newFont(String style) { if (style == null || style.length() == 0 || style.equals("default")) { return Font.getDefaultFont(); } else if (style.equals("bold")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM); } else if (style.equals("italic")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM); } else if (style.equals("ul")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_UNDERLINED, Font.SIZE_MEDIUM); } else if (style.equals("small")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL); } else if (style.equals("large")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE); } else { return newFont("default"); } }
 
     // Registry API (aliases & env keys)
     private void aliasCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else { Enumeration keys = aliases.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); if (!key.equals("xterm") && !value.equals("")) { echoCommand("alias " + key + "='" + value.trim() + "'"); } } } return; } String aliasName = argument.substring(0, equalsIndex).trim(); String aliasCommand = argument.substring(equalsIndex + 1).trim(); aliases.put(aliasName, aliasCommand); }
@@ -284,7 +287,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); if (argument.equals("")) { current.setTicker(null); } else { current.setTicker(new Ticker(argument)); } }
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
         else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
-        else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default"); } else { if (argument.equals("default")) { stdout.setFont(Font.getDefaultFont()); } else if (argument.equals("bold")) { stdout.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM)); } else if (argument.equals("italic")) { stdout.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM)); } else if (argument.equals("small")) { stdout.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL)); } else if (argument.equals("large")) { stdout.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE)); }  } }
+        else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default"); } else { stdout.setFont(newFont(argument)); } } 
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
 
         else if (mainCommand.equals("make")) { new Screen(argument); } 
@@ -343,6 +346,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 MIDletLogs("add error Screen crashed while init, malformed settings");
                 return;
             }
+
+            if (lib.containsKey("screen.content.style")) { content.setFont(newFont((String) lib.get("screen.content.style"))); }
             
             screen = new Form(env((String) lib.get("screen.title")));
             content = new StringItem("", lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : "");
@@ -452,14 +457,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (lib.containsKey("canvas.content")) {
                 String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default";
                 
+                g.setFont(Font.getDefaultFont());
+                if (lib.containsKey("canvas.content.style")) { g.setFont(newFont((String) lib.get("canvas.content.style"))); }
+
                 if (contentType.equals("text") || contentType.equals("default")) {
                     g.setColor(255, 255, 255);
                     String content = env((String) lib.get("canvas.content"));
-                    
-                    g.setFont(Font.getDefaultFont());
-
-                    if (lib.containsKey("canvas.content.style")) { String style = env((String) lib.get("canvas.content.style")); if (style.equals("bold")) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM)); } else if (style.equals("italic")) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM)); } else if (style.equals("small")) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL)); } else if (style.equals("large")) { g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE)); } }
-                    
+                                        
                     int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight();
                     g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
                 }
@@ -471,13 +475,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String[] parts = split(shapes[i], ',');
                         String type = parts[0].toLowerCase(); 
 
-                        if (type.equals("line") && parts.length == 5) { int x1 = Integer.parseInt(parts[1]); int y1 = Integer.parseInt(parts[2]); int x2 = Integer.parseInt(parts[3]); int y2 = Integer.parseInt(parts[4]); g.setColor(0, 0, 255); g.drawLine(x1, y1, x2, y2); } 
-                        else if (type.equals("circle") && parts.length == 4) { int centerX = Integer.parseInt(parts[1]); int centerY = Integer.parseInt(parts[2]); int radius = Integer.parseInt(parts[3]); g.setColor(0, 0, 255);  g.drawArc(centerX - radius, centerY - radius, radius * 2, radius * 2, 0, 360); } 
-                        else if (type.equals("rect") && parts.length == 5) { int x = Integer.parseInt(parts[1]); int y = Integer.parseInt(parts[2]); int width = Integer.parseInt(parts[3]); int height = Integer.parseInt(parts[4]); g.setColor(0, 0, 255); g.drawRect(x, y, width, height); } 
-                        
-
+                        if (type.equals("line") && parts.length == 5) { g.setColor(255, 255, 255); g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } 
+                        else if (type.equals("circle") && parts.length == 4) { g.setColor(0, 255, 0); int radius = Integer.parseInt(parts[3]); g.drawArc(Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360); } 
+                        else if (type.equals("rect") && parts.length == 5) { g.setColor(0, 0, 255); g.drawRect(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } 
+                        else if (type.equals("text") && parts.length == 4) { g.setColor(255, 255, 255); g.drawString(parts[3], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Graphics.TOP | Graphics.LEFT); }
+                    
                     }
                 }
+
 
             }
 
