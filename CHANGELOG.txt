@@ -1,21 +1,10 @@
-OpenTTY Java Edition 1.12
+OpenTTY Java Edition 1.12.1
 Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- `report`: Send a mail to me to report bugs
-- `for key (file) [command]`: Run commands with a pre-list
+- 
 
 [ _Updates_ ]
 
-- **X Server** updated to _0.6_
-- **JBuntu** updated to _1.2_
-- **Canvas** mouse position is saved
-- **Screen** default user button text now is _Menu_
-- **Screen** attribute _screen.button_ isnt required anymore
-- Buttons now get placeholders from env keys in all screens
-- Placehoders from commands now use the `OpenTTY.processCommand` recursive recognizer
-- **List** content bug fix that placeholders are recognized from list and the picker not
-- **Canvas** invalid background color detected turn color to black (default)
-- **Canvas** invalid mouse position detected send cursor to 10, 10 (default)
-- **Canvas** mew attribute _canvas.background.type_ to load background as Image if you want to put other things in content
+- 
