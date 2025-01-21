@@ -190,7 +190,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("bt")) { new Bluetooh(argument); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -209,20 +209,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     private String extractTitle(String htmlContent) { int titleStart = htmlContent.indexOf("<title>"); int titleEnd = htmlContent.indexOf("</title>"); if (titleStart != -1 && titleEnd != -1 && titleEnd > titleStart) { return htmlContent.substring(titleStart + 7, titleEnd).trim(); } return "HTML Viewer"; }
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
-    private String text2note(String content) {
-        if (content == null || content.length() == 0) {
-            return "BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:\nEND:VNOTE";
-        }
-
-        content = replace(content, "\n", "=0A");
-        
-        StringBuilder vnote = new StringBuilder();
-        vnote.append("BEGIN:VNOTE\n");
-        vnote.append("VERSION:1.1\n");
-        vnote.append("BODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:" + content);
-        vnote.append("\nEND:VNOTE");
-        return vnote.toString();
-    }
+    private String text2note(String content) { if (content == null || content.length() == 0) { return "BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:\nEND:VNOTE"; }
+content = replace(content, "\n", "=0A"); StringBuilder vnote = new StringBuilder(); vnote.append("BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:" + content + "\nEND:VNOTE"); return vnote.toString(); }
     private String parseJson(String text) { Hashtable properties = parseProperties(text); if (properties.isEmpty()) { return "{}"; } Enumeration keys = properties.keys(); StringBuffer jsonBuffer = new StringBuffer(); jsonBuffer.append("{"); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) properties.get(key); jsonBuffer.append("\n  \"").append(key).append("\": "); jsonBuffer.append("\"").append(value).append("\""); if (keys.hasMoreElements()) { jsonBuffer.append(","); } } jsonBuffer.append("\n}"); return jsonBuffer.toString(); }
     private String loadRMS(String recordStoreName, int recordId) { RecordStore recordStore = null; String result = ""; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); if (recordStore.getNumRecords() >= recordId) { byte[] data = recordStore.getRecord(recordId); if (data != null) { result = new String(data); } } } catch (RecordStoreException e) { result = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return result; }
     private String read(String filename) { try { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } catch (IOException e) { return e.getMessage(); } }
@@ -507,6 +495,50 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } }
     }
+
+    public class Bluetooh {
+        private LocalDevice localDevice = LocalDevice.getLocalDevice();
+        private DiscoveryAgent discoveryAgent = localDevice.getDiscoveryAgent();
+
+        public Bluetooh(String args) {
+            command = env(command.trim());
+            String mainCommand = getCommand(command).toLowerCase();
+            String argument = getArgument(command);
+
+            if (mainCommand.equals("")) { }
+            else if (mainCommand.equals("scan")) { scan(); }
+            else if (mainCommand.equals("connect")) { if (argument.equals("")) {  } else {  } }
+            else if (mainCommand.equals("disconnect")) {  }
+            else if (mainCommand.equals("status")) {  }
+            else if (mainCommand.equals("send")) { if (argument.equals("")) { } else {  } }
+            
+            else { echoCommand("bt: " + mainCommand + ": not found"); }
+        }
+
+        private void scan() {
+            try {
+                discoveryAgent.startInquiry(DiscoveryAgent.GIAC, new DiscoveryListener() {
+                    public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
+                        try {
+                            String deviceName = btDevice.getFriendlyName(true);
+                            echoCommand(deviceName + ": " + btDevice.getBluetoothAddress());
+                        } catch (Exception e) {
+                            echoCommand(e.getMessage());
+                        }
+                    }
+
+                    public void inquiryCompleted(int discType) {
+                        echoCommand("scan complete");
+                    }
+
+                    public void serviceSearchCompleted(int transID, int respCode) { }
+                    public void servicesDiscovered(int transID, ServiceRecord[] servRecord) { }
+                });
+            } catch (Exception e) {
+                echoCommand(e.getMessage());
+            }
+        }
+    
 
 
     public class Explorer implements CommandListener { private List files = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), openCommand = new Command("Open", Command.SCREEN, 2), deleteCommand = new Command("Delete", Command.SCREEN, 3), runCommand = new Command("Run Script", Command.SCREEN, 4), importCommand = new Command("Import File", Command.SCREEN, 5); public Explorer() { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { files.append((String) recordStores[i], null); } } } } catch (RecordStoreException e) { } files.addCommand(backCommand); files.addCommand(openCommand); files.addCommand(deleteCommand); files.addCommand(runCommand); files.addCommand(importCommand); files.setCommandListener(this); display.setCurrent(files); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == deleteCommand) { deleteFile(files.getString(files.getSelectedIndex())); new Explorer(); } else if (c == openCommand) { new NanoEditor(files.getString(files.getSelectedIndex())); } else if (c == runCommand) { processCommand("xterm"); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importCommand) { processCommand("xterm"); importScript(files.getString(files.getSelectedIndex())); } } }
