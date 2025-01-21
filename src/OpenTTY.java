@@ -194,7 +194,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("bt")) { new Bluetooh(argument); }
+        else if (mainCommand.equals("jsr")) { if (argument.equals("")) { } else {
+            try {
+                Class.forName(argument);
+
+                echoCommand("true");
+            } catch (ClassNotFoundException e) { echoCommand("false"); }
+        } }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -499,7 +505,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } }
     }
 
-    public class Bluetooh  {
+    /* public class Bluetooh  {
         private LocalDevice localDevice;
         private DiscoveryAgent discoveryAgent;
         private StreamConnection connection;
@@ -585,7 +591,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-    }
+    } */
 
     
 
