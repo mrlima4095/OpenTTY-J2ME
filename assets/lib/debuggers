@@ -4,8 +4,8 @@ name=JBenchmark
 version=1.2
 description=Debuggers 
 
-api.version=1.11
-api.error=execute echo [JBenchmark] This version requires OpenTTY 1.11;
+api.version=1.12
+api.error=execute echo [JBenchmark] This version requires OpenTTY 1.12;
 
 config=execute set JDB_VERSION=1.2;
 command=jdb,dumpsys
