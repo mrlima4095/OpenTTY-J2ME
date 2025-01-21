@@ -16,10 +16,8 @@ whois=query whois.iana.org:43
 [ DISPLAY ]
 
 screen.title=Armitage
-screen.content=
 screen.button=Tools
 screen.button.cmd=execute x11 list armitage 
-screen.back=
 
 quest.title=Armitage
 quest.label=$LABEL
