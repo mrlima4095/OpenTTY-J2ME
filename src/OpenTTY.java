@@ -516,8 +516,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private void scan() {
             try {
-                DiscoveryAgent discoveryAgent = localDevice.getDiscoveryAgent();
-                discoveryAgent.startInquiry(DiscoveryAgent.GIAC, new DiscoveryListener() {
+                localDevice.getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, new DiscoveryListener() {
                     public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
                         try {
                             String deviceName = btDevice.getFriendlyName(true);
