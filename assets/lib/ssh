@@ -4,9 +4,6 @@ name=OpenSSH
 version=1.0
 description=Secure-Shell for J2ME
 
-api.version=1.11
-api.error=execute log add error OpenSSH requires API from OpenTTY 1.11 or newer
-
 process.name=openssh
 process.type=bind
 process.port=22
