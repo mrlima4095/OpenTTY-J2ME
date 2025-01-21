@@ -7,4 +7,4 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Updates_ ]
 
-- 
+- **ViaVersion** updated to 1.1
