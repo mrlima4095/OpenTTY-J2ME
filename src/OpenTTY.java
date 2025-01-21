@@ -3,6 +3,7 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
+import javax.bluetooh.*;
 import java.util.*;
 import java.io.*;
 
@@ -497,7 +498,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public class Bluetooh {
         private LocalDevice localDevice = LocalDevice.getLocalDevice();
-        private DiscoveryAgent discoveryAgent = localDevice.getDiscoveryAgent();
 
         public Bluetooh(String args) {
             command = env(command.trim());
@@ -516,6 +516,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private void scan() {
             try {
+                DiscoveryAgent discoveryAgent = localDevice.getDiscoveryAgent();
                 discoveryAgent.startInquiry(DiscoveryAgent.GIAC, new DiscoveryListener() {
                     public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
                         try {
