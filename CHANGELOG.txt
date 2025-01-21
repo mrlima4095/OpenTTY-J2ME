@@ -3,7 +3,7 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- 
+- `vnt [file] [out]` parse text to VNOTE format
 
 [ _Updates_ ]
 
