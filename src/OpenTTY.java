@@ -29,7 +29,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public void startApp() {
         if (!trace.containsKey("sh")) {
-            attributes.put("PATCH", "UI Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6");
+            attributes.put("PATCH", "UI Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.6");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $"); 
@@ -191,7 +191,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("bt")) { new Bluetooh(argument); }
+        //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -495,51 +498,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } }
     }
-
-    /* public class Bluetooh {
-        private LocalDevice localDevice = LocalDevice.getLocalDevice();
-
-        public Bluetooh(String args) {
-            command = env(command.trim());
-            String mainCommand = getCommand(command).toLowerCase();
-            String argument = getArgument(command);
-
-            if (mainCommand.equals("")) { }
-            else if (mainCommand.equals("scan")) { scan(); }
-            else if (mainCommand.equals("connect")) { if (argument.equals("")) {  } else {  } }
-            else if (mainCommand.equals("disconnect")) {  }
-            else if (mainCommand.equals("status")) {  }
-            else if (mainCommand.equals("send")) { if (argument.equals("")) { } else {  } }
-            
-            else { echoCommand("bt: " + mainCommand + ": not found"); }
-        }
-
-        private void scan() {
-            try {
-                localDevice.getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, new DiscoveryListener() {
-                    public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-                        try {
-                            String deviceName = btDevice.getFriendlyName(true);
-                            echoCommand(deviceName + ": " + btDevice.getBluetoothAddress());
-                        } catch (Exception e) {
-                            echoCommand(e.getMessage());
-                        }
-                    }
-
-                    public void inquiryCompleted(int discType) {
-                        echoCommand("scan complete");
-                    }
-
-                    public void serviceSearchCompleted(int transID, int respCode) { }
-                    public void servicesDiscovered(int transID, ServiceRecord[] servRecord) { }
-                });
-            } catch (Exception e) {
-                echoCommand(e.getMessage());
-            }
-        }
-    
-    } */
-
 
     public class Explorer implements CommandListener { private List files = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), openCommand = new Command("Open", Command.SCREEN, 2), deleteCommand = new Command("Delete", Command.SCREEN, 3), runCommand = new Command("Run Script", Command.SCREEN, 4), importCommand = new Command("Import File", Command.SCREEN, 5); public Explorer() { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { files.append((String) recordStores[i], null); } } } } catch (RecordStoreException e) { } files.addCommand(backCommand); files.addCommand(openCommand); files.addCommand(deleteCommand); files.addCommand(runCommand); files.addCommand(importCommand); files.setCommandListener(this); display.setCurrent(files); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == deleteCommand) { deleteFile(files.getString(files.getSelectedIndex())); new Explorer(); } else if (c == openCommand) { new NanoEditor(files.getString(files.getSelectedIndex())); } else if (c == runCommand) { processCommand("xterm"); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importCommand) { processCommand("xterm"); importScript(files.getString(files.getSelectedIndex())); } } }
     public class FileExplorer implements CommandListener { private String currentPath = "file:///"; private List files = new List(form.getTitle(), List.IMPLICIT); private Command openCommand = new Command("Open", Command.OK, 1), backCommand = new Command("Back", Command.BACK, 1); public FileExplorer() { files.addCommand(openCommand); files.addCommand(backCommand); files.setCommandListener(this); display.setCurrent(files); listFiles(currentPath); } private void listFiles(String path) { files.deleteAll(); try { if (path.equals("file:///")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { files.append((String) roots.nextElement(), null); } } else { FileConnection dir = (FileConnection) Connector.open(path, Connector.READ); Enumeration fileList = dir.list(); Vector dirs = new Vector(); Vector filesOnly = new Vector(); while (fileList.hasMoreElements()) { String fileName = (String) fileList.nextElement(); if (fileName.endsWith("/")) { dirs.addElement(fileName); } else { filesOnly.addElement(fileName); } } while (!dirs.isEmpty()) { files.append(getFirstString(dirs), null); } while (!filesOnly.isEmpty()) { files.append(getFirstString(filesOnly), null); } dir.close(); } } catch (IOException e) { } } public void commandAction(Command c, Displayable d) { if (c == openCommand) { int selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, read(newPath)); warnCommand(null, "File '" + selected + "' successfully saved!"); } } } else if (c == backCommand) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { processCommand("xterm"); } } } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(cur) < 0) { result = cur; } } v.removeElement(result); return result; } private String read(String file) { try { FileConnection fileConn = (FileConnection) Connector.open(file, Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return content.toString(); } catch (IOException e) { return ""; } } }
