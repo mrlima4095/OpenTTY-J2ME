@@ -1,25 +1,25 @@
 [ Config ]
 
 name=JAuth2
-version=1.0
+version=1.1
 description=Advanced Perms
 
 include=forge
 
 config=execute if ($USERNAME == root) echo [JAuth2] Username may not be String 'root';
-command=sudo,su
+command=sudo,su,exit,logout
 
 sudo=execute
 su=execute 
 
+exit=execute if ($USERNAME == root) @login; if ($USERNAME != root) builtin exit;
+logout=execute if ($USERNAME == root) @login; if ($USERNAME != root) builtin logout;
 
 shell.name=sudo
-shell.args=yang,setrepo,cfg,su,exit,logout
+shell.args=yang,setrepo,cfg,su
 
 yang=execute x11 list /java/lib/yang;
 setrepo=execute x11 quest x11 quest /java/lib/yang;
 cfg=execute x11 list /java/lib/settings;
 su=execute @login root; 
 
-exit=execute if ($USERNAME == root) @login; if ($USERNAME != root) builtin exit;
-logout=execute if ($USERNAME == root) @login; if ($USERNAME != root) builtin logout;
