@@ -558,7 +558,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { }
                         else {
-                            object(parts[1].substring(firstParenthesis + 1, lastParenthesis).trim());
+                            objects.get(objectName)(parts[1].substring(firstParenthesis + 1, lastParenthesis).trim());
                         }
                     } else { throw new IOException("Invalid syntax"); }
                 } catch (Exception e) {
