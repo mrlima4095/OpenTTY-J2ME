@@ -548,7 +548,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         objectNames.addElement(objectName);
                         objects.addElement(instance);
-                        classes.addElem ent(clazz);
+                        classes.addElement(clazz);
 
                         if (verbose == true) { echoCommand("Object '" + objectName + "' of class '" + className + "' created"); }
                     } else if (line.indexOf('.') != -1) {
