@@ -508,23 +508,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String mainCommand = getCommand(command).toLowerCase();
             String argument = getArgument(command);
             
-            if (mainCommand.equals("")) { xserver("make /java/bin/java"); }
-            else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
-            else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); }
-            else if (mainCommand.equals("--verbose")) { verbose = true; Java(argument); }
+            if (mainCommand.equals("")) { xserver("make /java/bin/java"); return; }
+            if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } return; } 
+            if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); return; }
+            if (mainCommand.equals("--verbose")) { verbose = true; mainCommand = argument; }
+            
 
-            else {
-                if (mainCommand.startsWith("/")) { code = read(mainCommand); }
-                else if (mainCommand.equals("nano")) { code = nanoContent; }
-                else { code = loadRMS(mainCommand, 1); }
+            if (mainCommand.startsWith("/")) { code = read(mainCommand); }
+            else if (mainCommand.equals("nano")) { code = nanoContent; }
+            else { code = loadRMS(mainCommand, 1); }
 
-                if (code == null || code.length() == 0) {
-                    echoCommand("java: " + mainCommand + ": blank class"); return;
-                }
-
-                build();
-
+            if (code == null || code.length() == 0) {
+                echoCommand("java: " + mainCommand + ": blank class"); return;
             }
+
+            build();
+
+            
         }
 
         private void build() {
