@@ -5,6 +5,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - `vnt [file] [out]`: parse text to VNOTE format
 - `java`: java virtual machine (beta)
+- `todo`: personal task manager
 
 [ _Updates_ ]
 
