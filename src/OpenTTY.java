@@ -501,6 +501,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Java ME Embbed Version
     public class Java {
         private String code;
+        private boolean verbose = false;
 
         public Java(String command) {
             command = env(command.trim());
@@ -510,7 +511,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (mainCommand.equals("")) { xserver("make /java/bin/java"); }
             else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
             else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); }
-            else if (mainCommand.equals("")) { }
+            else if (mainCommand.equals("--verbose")) { verbose = true; Java(argument); }
 
             else {
                 if (mainCommand.startsWith("/")) { code = read(mainCommand); }
@@ -538,7 +539,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     if (line.indexOf('=') != -1) {
-                        // Criando objeto (exemplo: obj=java.lang.String)
                         String[] parts = split(line, '=');
                         String objectName = parts[0].trim();
                         String className = parts[1].trim();
@@ -548,11 +548,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         objectNames.addElement(objectName);
                         objects.addElement(instance);
-                        classes.addElement(clazz);
+                        classes.addElem ent(clazz);
 
-                        echoCommand("Object '" + objectName + "' of class '" + className + "' created");
+                        if (verbose == true) { echoCommand("Object '" + objectName + "' of class '" + className + "' created"); }
                     } else if (line.indexOf('.') != -1) {
-                        // Simular chamada de método (exemplo: obj.method())
                         String[] parts = split(line, '.');
                         String objectName = parts[0].trim();
                         String methodName = replace(parts[1], "()", "").trim();
@@ -560,17 +559,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         int index = objectNames.indexOf(objectName);
                         if (index == -1) {
                             echoCommand("java: object '" + objectName + "' not found");
-                            continue;
+                            return;
                         }
 
                         Class clazz = (Class) classes.elementAt(index);
-                        echoCommand("Simulated call to method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'");
+                        if (verbose == true) { echoCommand("Run method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'"); }
                     } else {
-                        echoCommand("java: invalid syntax: " + line);
+                        echoCommand("java: invalid syntax: " + line); return;
                     }
                 } catch (Exception e) {
-                    echoCommand("java: error processing line '" + line + "': " + e.getMessage());
-                }
+                    echoCommand(e.getClass().getSimpleName() + ": '" + line + "'");
+                } 
             }
         }
 
