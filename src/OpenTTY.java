@@ -192,7 +192,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("todo")) { new MyTaskManager(); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -558,6 +558,46 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public class Explorer implements CommandListener { private List files = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), openCommand = new Command("Open", Command.SCREEN, 2), deleteCommand = new Command("Delete", Command.SCREEN, 3), runCommand = new Command("Run Script", Command.SCREEN, 4), importCommand = new Command("Import File", Command.SCREEN, 5); public Explorer() { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { files.append((String) recordStores[i], null); } } } } catch (RecordStoreException e) { } files.addCommand(backCommand); files.addCommand(openCommand); files.addCommand(deleteCommand); files.addCommand(runCommand); files.addCommand(importCommand); files.setCommandListener(this); display.setCurrent(files); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == deleteCommand) { deleteFile(files.getString(files.getSelectedIndex())); new Explorer(); } else if (c == openCommand) { new NanoEditor(files.getString(files.getSelectedIndex())); } else if (c == runCommand) { processCommand("xterm"); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importCommand) { processCommand("xterm"); importScript(files.getString(files.getSelectedIndex())); } } }
     public class FileExplorer implements CommandListener { private String currentPath = "file:///"; private List files = new List(form.getTitle(), List.IMPLICIT); private Command openCommand = new Command("Open", Command.OK, 1), backCommand = new Command("Back", Command.BACK, 1); public FileExplorer() { files.addCommand(openCommand); files.addCommand(backCommand); files.setCommandListener(this); display.setCurrent(files); listFiles(currentPath); } private void listFiles(String path) { files.deleteAll(); try { if (path.equals("file:///")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { files.append((String) roots.nextElement(), null); } } else { FileConnection dir = (FileConnection) Connector.open(path, Connector.READ); Enumeration fileList = dir.list(); Vector dirs = new Vector(); Vector filesOnly = new Vector(); while (fileList.hasMoreElements()) { String fileName = (String) fileList.nextElement(); if (fileName.endsWith("/")) { dirs.addElement(fileName); } else { filesOnly.addElement(fileName); } } while (!dirs.isEmpty()) { files.append(getFirstString(dirs), null); } while (!filesOnly.isEmpty()) { files.append(getFirstString(filesOnly), null); } dir.close(); } } catch (IOException e) { } } public void commandAction(Command c, Displayable d) { if (c == openCommand) { int selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, read(newPath)); warnCommand(null, "File '" + selected + "' successfully saved!"); } } } else if (c == backCommand) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { processCommand("xterm"); } } } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(cur) < 0) { result = cur; } } v.removeElement(result); return result; } private String read(String file) { try { FileConnection fileConn = (FileConnection) Connector.open(file, Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return content.toString(); } catch (IOException e) { return ""; } } }
+    public class MyTaskManager implements CommandListener {
+        private List tasks = new List(form.getTitle(), List.IMPLICIT);
+        private TextBox taskname = new TextBox("Create Task", "", 256, TextField.ANY);
+        private Command backCommand = new Command("Back", Command.BACK, 1), saveCommand = new Command("Save", Command.OK, 1), 
+        newCommand = new Command("New Task", Command.SCREEN, 2),
+        clearCommand = new Command("Delete all", Command.SCREEN, 3),
+        deleteCommand = new Command("Delete", Command.SCREEN, 4);
+
+        public MyTaskManager() {
+            tasks.addCommand(backCommand); tasks.addCommand(newCommand);
+            tasks.addCommand(deleteCommand); taskname.addCommand(saveCommand);
+
+            tasks.setCommandListener(this);
+            taskname.setCommandListener(this);
+
+            readTasks();
+
+            display.setCurrent(tasks);
+        }
+        public void commandAction(Command c, Displayable d) {
+            if (display.getCurrent() == tasks) {
+                if (c == backCommand) { processCommand("xterm"); }
+                else if (c == newCommand) { display.setCurrent(taskname); }
+                else if (c == clearCommand) { writeRMS(".tasks", ""); readTasks(); }
+                else if (c == deleteCommand) { deleteTask(screen.getString(screen.getSelectedIndex())); }
+            } else if (display.getCurrent() == taskname) {
+                if (c == saveCommand) {
+                    if (taskname.getString().equals("")) { }
+                    else { writeTasks(); readTasks(); display.setCurrent(tasks); }
+                }
+            }
+
+        }
+
+        private void writeTasks() { writeRMS(".tasks", loadRMS(".tasks", 1) + "\n" + taskname.getString()); }
+        private void readTasks() { tasks.deleteAll(); String[] tasklist = split(loadRMS(".tasks", 1), '\n'); for (int i = 0; i < tasklist.length; i++) { if (!tasklist[i].trim().equals("")) { tasks.append(tasklist[i].trim(), null); } } }
+        private void deleteTask(String task) { String[] tasklist = split(loadRMS(".tasks", 1), '\n'); StringBuffer newlist = new StringBuffer(); for (int i = 0; i < tasklist.length; i++) { if (task.equals(tasklist[i])) { } else { newlist.append(tasklist[i] + "\n"); } } writeRMS(".tasks", newlist.toString()); readTasks(); } 
+
+
+    }
     public class NanoEditor implements CommandListener { private TextBox editor = new TextBox("Nano", "", 4096, TextField.ANY); private Command backCommand = new Command("Back", Command.BACK, 1), clearCommand = new Command("Clear", Command.SCREEN, 2), runCommand = new Command("Run Script", Command.SCREEN, 3), importCommand = new Command("Import File", Command.SCREEN, 4), viewCommand = new Command("View as HTML", Command.SCREEN, 5); public NanoEditor(String args) { editor.setString((args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1)); editor.addCommand(backCommand); editor.addCommand(clearCommand); editor.addCommand(runCommand); editor.addCommand(importCommand); editor.addCommand(viewCommand); editor.setCommandListener(this); display.setCurrent(editor); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { nanoContent = editor.getString(); processCommand("xterm"); } else if (c == clearCommand) { editor.setString(""); } else if (c == runCommand) { nanoContent = editor.getString(); processCommand("xterm"); runScript(nanoContent); } else if (c == importCommand) { nanoContent = editor.getString(); processCommand("xterm"); importScript("nano"); } else if (c == viewCommand) { nanoContent = editor.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
 
     public class HTopViewer implements CommandListener { private Form htop = new Form(form.getTitle()); private Command backCommand = new Command("Back", Command.BACK, 1), refreshCommand = new Command("Refresh", Command.SCREEN, 2); private StringItem memoryStatus = new StringItem("", ""); private boolean thr_status = true; public HTopViewer() { htop.append(memoryStatus); htop.addCommand(backCommand); htop.addCommand(refreshCommand); htop.setCommandListener(this); MemoryStatus(); display.setCurrent(htop); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { thr_status = false; processCommand("xterm"); } else if (c == refreshCommand) { Runtime.getRuntime().gc(); MemoryStatus(); } } private void MemoryStatus() { long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024; long freeMemory = runtime.freeMemory() / 1024; long totalMemory = runtime.totalMemory() / 1024; memoryStatus.setText("Memory Status:\n\nUsed Memory: " + usedMemory + " KB\nFree Memory: " + freeMemory + " KB\nTotal Memory: " + totalMemory + " KB"); } }
