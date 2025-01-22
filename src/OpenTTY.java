@@ -524,19 +524,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private void build() {
-            Map<String, Object> objs = new HashMap<>(); // Armazena objetos criados dinamicamente
+            Hashtable objs = new Hashtable(); 
 
-            // Divide o código em linhas usando o método split implementado
             String[] codes = split(code, ';');
 
             for (int i = 0; i < codes.length; i++) {
-                String line = codes[i].trim(); // Remove espaços extras
-                if (line == null || line.isEmpty()) continue;
+                String line = codes[i].trim(); 
+                if (line == null || line.length() == 0) continue;
 
                 try {
-                    // Verifica se há um ponto na linha para determinar o tipo de comando
                     if (line.indexOf('.') != -1) {
-                        // Divide a linha em partes usando o método split implementado
                         String[] parts = split(line, '.');
                         String objectName = parts[0];
                         String rest = parts[1];
@@ -554,7 +551,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             echoCommand("Method '" + methodName + "' executed on '" + objectName + "'");
                         } else {
                             // Criação de objeto
-                            Class<?> clazz = Class.forName(rest);
+                            Class clazz = Class.forName(rest);
                             Object instance = clazz.getDeclaredConstructor().newInstance();
                             objs.put(objectName, instance);
                             echoCommand("Object '" + objectName + "' of type '" + rest + "' created");
@@ -563,10 +560,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         echoCommand("java: invalid statement '" + line + "'");
                     }
                 } catch (Exception e) {
-                    echoCommand(e.getMessage());
+                    echoCommand("Error processing line '" + line + "': " + e.getMessage());
                 }
             }
         }
+
 
     
     
