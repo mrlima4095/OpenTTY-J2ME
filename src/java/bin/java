@@ -2,3 +2,17 @@
 
 name=Java
 version=1.2
+
+[ DISPLAY ]
+
+screen.title=Java ME
+screen.content=Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE
+screen.content.style=bold
+screen.button=Menu
+screen.button.cmd=execute x11 list /java/bin/java
+
+list.title=Java ME
+list.content=
+list.back=
+list.button=
+
