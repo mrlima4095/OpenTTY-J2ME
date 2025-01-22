@@ -3,7 +3,8 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- `vnt [file] [out]` parse text to VNOTE format
+- `vnt [file] [out]`: parse text to VNOTE format
+- `java`: java virtual machine (beta)
 
 [ _Updates_ ]
 
