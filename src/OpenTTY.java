@@ -14,7 +14,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable paths = new Hashtable(), shell = new Hashtable(),
                       aliases = new Hashtable(), attributes = new Hashtable(),
-                      trace = new Hashtable();
+                      trace = new Hashtable(), objects = new Hashtable();
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
@@ -193,7 +193,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("@out")) { System.out.println(argument); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -501,37 +500,34 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Java ME Embbed Version
     public class Java {
         private String code;
-        private boolean verbose = false;
 
         public Java(String command) {
             command = env(command.trim());
             String mainCommand = getCommand(command).toLowerCase();
             String argument = getArgument(command);
             
-            if (mainCommand.equals("")) { xserver("make /java/bin/java"); return; }
-            if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } return; } 
-            if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); return; }
+            if (mainCommand.equals("")) { viewer("Java ME", env("")); }
+            else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
+            else if (mainCommand.equals("--list-attr")) { Enumeration keys = objects.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); echoCommand(key + " (" + value + ")"); } }
+            else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); }
             
+            else {
+                if (mainCommand.startsWith("/")) { code = read(mainCommand); }
+                else if (mainCommand.equals("nano")) { code = nanoContent; }
+                else { code = loadRMS(mainCommand, 1); }
 
-            if (mainCommand.equals("--verbose")) { verbose = true; mainCommand = argument; }
+                if (code == null || code.length() == 0) {
+                    echoCommand("java: " + mainCommand + ": blank class"); return;
+                }
 
+                build();
 
-            if (mainCommand.startsWith("/")) { code = read(mainCommand); }
-            else if (mainCommand.equals("nano")) { code = nanoContent; }
-            else { code = loadRMS(mainCommand, 1); }
-
-            if (code == null || code.length() == 0) {
-                echoCommand("java: " + mainCommand + ": blank class"); return;
-            }
-
-            build();
-
+            }                
             
         }
 
         private void build() {
             String[] lines = split(code, ';');
-            Hashtable objects = new Hashtable();
 
             for (int i = 0; i < lines.length; i++) {
                 String line = lines[i].trim();
@@ -539,7 +535,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     if (line.indexOf('=') != -1) {
-                        // Criando objeto (exemplo: obj=java.lang.String)
                         String[] parts = split(line, '=');
                         String objectName = parts[0].trim();
                         String className = parts[1].trim();
@@ -549,26 +544,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         objects.put(objectName, instance);
                     } else if (line.indexOf('.') != -1) {
-                        // Simular chamada de método (exemplo: obj.method())
                         String[] parts = split(line, '.');
                         String objectName = parts[0].trim();
                         String methodName = replace(parts[1], "()", "").trim();
 
-                        if (!objects.containsKey(objectName)) {
-                            echoCommand("⚠️ Erro: Objeto '" + objectName + "' não encontrado.");
-                            return;
-                        }
+                        if (!objects.containsKey(objectName)) { throw new IllegalAcessException("Object not found"); }
 
                         Object object = objects.get(objectName);
                         Class clazz = object.getClass();
 
                         echoCommand("✔️ Simulada chamada ao método '" + methodName + "' no objeto '" + objectName + "' da classe '" + clazz.getName() + "'.");
-                    } else {
-                        echoCommand("⚠️ Sintaxe inválida: '" + line + "'. Use 'obj=classe' ou 'obj.metodo()'.");
-                        return;
-                    }
+                    } else { throw new IOException("Invalid syntax"); }
                 } catch (Exception e) {
-                    echoCommand("❌ " + e.getClass().getName() + ": Erro ao processar linha '" + line + "'.");
+                    echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")");
                     return;
                 }
             }
