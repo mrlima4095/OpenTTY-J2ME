@@ -555,7 +555,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         // Simular chamada de método (exemplo: obj.method())
                         String[] parts = split(line, '.');
                         String objectName = parts[0].trim();
-                        String methodName = parts[1].replace("()", "").trim();
+                        String methodName = replace(parts[1], "()", "").trim();
 
                         int index = objectNames.indexOf(objectName);
                         if (index == -1) {
