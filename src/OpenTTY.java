@@ -553,13 +553,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         Object object = objects.get(objectName);
                         Class clazz = object.getClass();
 
-                        int firstParenthesis = parts[1].indexOf('(');
-                        int lastParenthesis = parts[1].indexOf(')');
-
-                        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { }
-                        else {
-                            objects.get(objectName)(parts[1].substring(firstParenthesis + 1, lastParenthesis).trim());
-                        }
+                        echoCommand("Invoke method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'.");
+                        
                     } else { throw new IOException("Invalid syntax"); }
                 } catch (Exception e) {
                     echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")");
