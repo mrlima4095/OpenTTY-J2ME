@@ -145,6 +145,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand("" + read(argument).hashCode()); } else if (argument.equals("nano")) { echoCommand("" + nanoContent.hashCode()); } else { echoCommand("" + loadRMS(argument, 1).hashCode()); } } }
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("if")) { ifCommand(argument); }
+        else if (mainCommand.equals("java")) { new Java(argument); }
         else if (mainCommand.equals("kill")) { kill(argument); }
         else if (mainCommand.equals("log")) { MIDletLogs(argument); }
         else if (mainCommand.equals("logcat")) { echoCommand(logs); }
@@ -193,14 +194,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("jsr")) { if (argument.equals("")) { } else {
-            try {
-                Class.forName(argument);
-
-                echoCommand("true");
-            } catch (ClassNotFoundException e) { echoCommand("false"); }
-        } }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -505,7 +498,79 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } }
     }
 
-        
+    // Java ME Embbed Version
+    public class Java {
+        private String code;
+
+        public Java(String command) {
+            command = env(command.trim());
+            String mainCommand = getCommand(command).toLowerCase();
+            String argument = getArgument(command);
+            
+            if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Limited)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
+            else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
+            else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Limited)"); }
+            else if (mainCommand.startsWith("-")) { echoCommand("java: " + replace(mainCommand, "-", "") + ": not found"); }
+
+            else {
+                if (mainCommand.startsWith("/")) { code = read(mainCommand); }
+                else if (mainCommand.equals("nano")) { code = nanoContent; } else { code = loadRMS(mainCommand, 1); }
+
+                if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank source"); }
+                else {
+                    build();
+                }
+            }
+        }
+
+        private void build() {
+            Map<String, Object> objs = new HashMap<>(); // Armazena objetos criados dinamicamente
+
+            // Divide o código em linhas usando o método split implementado
+            String[] codes = split(code, ';');
+
+            for (int i = 0; i < codes.length; i++) {
+                String line = codes[i].trim(); // Remove espaços extras
+                if (line == null || line.isEmpty()) continue;
+
+                try {
+                    // Verifica se há um ponto na linha para determinar o tipo de comando
+                    if (line.indexOf('.') != -1) {
+                        // Divide a linha em partes usando o método split implementado
+                        String[] parts = split(line, '.');
+                        String objectName = parts[0];
+                        String rest = parts[1];
+
+                        if (rest.endsWith("()")) {
+                            String methodName = rest.substring(0, rest.length() - 2); // Remove "()"
+                            Object object = objs.get(objectName);
+                            if (object == null) {
+                                echoCommand("java: object '" + objectName + "' not found");
+                                return;
+                            }
+
+                            // Invoca o método
+                            object.getClass().getMethod(methodName).invoke(object);
+                            echoCommand("Method '" + methodName + "' executed on '" + objectName + "'");
+                        } else {
+                            // Criação de objeto
+                            Class<?> clazz = Class.forName(rest);
+                            Object instance = clazz.getDeclaredConstructor().newInstance();
+                            objs.put(objectName, instance);
+                            echoCommand("Object '" + objectName + "' of type '" + rest + "' created");
+                        }
+                    } else {
+                        echoCommand("java: invalid statement '" + line + "'");
+                    }
+                } catch (Exception e) {
+                    echoCommand(e.getMessage());
+                }
+            }
+        }
+
+    
+    
+    }
 
     public class Explorer implements CommandListener { private List files = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), openCommand = new Command("Open", Command.SCREEN, 2), deleteCommand = new Command("Delete", Command.SCREEN, 3), runCommand = new Command("Run Script", Command.SCREEN, 4), importCommand = new Command("Import File", Command.SCREEN, 5); public Explorer() { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { files.append((String) recordStores[i], null); } } } } catch (RecordStoreException e) { } files.addCommand(backCommand); files.addCommand(openCommand); files.addCommand(deleteCommand); files.addCommand(runCommand); files.addCommand(importCommand); files.setCommandListener(this); display.setCurrent(files); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == deleteCommand) { deleteFile(files.getString(files.getSelectedIndex())); new Explorer(); } else if (c == openCommand) { new NanoEditor(files.getString(files.getSelectedIndex())); } else if (c == runCommand) { processCommand("xterm"); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importCommand) { processCommand("xterm"); importScript(files.getString(files.getSelectedIndex())); } } }
     public class FileExplorer implements CommandListener { private String currentPath = "file:///"; private List files = new List(form.getTitle(), List.IMPLICIT); private Command openCommand = new Command("Open", Command.OK, 1), backCommand = new Command("Back", Command.BACK, 1); public FileExplorer() { files.addCommand(openCommand); files.addCommand(backCommand); files.setCommandListener(this); display.setCurrent(files); listFiles(currentPath); } private void listFiles(String path) { files.deleteAll(); try { if (path.equals("file:///")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { files.append((String) roots.nextElement(), null); } } else { FileConnection dir = (FileConnection) Connector.open(path, Connector.READ); Enumeration fileList = dir.list(); Vector dirs = new Vector(); Vector filesOnly = new Vector(); while (fileList.hasMoreElements()) { String fileName = (String) fileList.nextElement(); if (fileName.endsWith("/")) { dirs.addElement(fileName); } else { filesOnly.addElement(fileName); } } while (!dirs.isEmpty()) { files.append(getFirstString(dirs), null); } while (!filesOnly.isEmpty()) { files.append(getFirstString(filesOnly), null); } dir.close(); } } catch (IOException e) { } } public void commandAction(Command c, Displayable d) { if (c == openCommand) { int selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, read(newPath)); warnCommand(null, "File '" + selected + "' successfully saved!"); } } } else if (c == backCommand) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { processCommand("xterm"); } } } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(cur) < 0) { result = cur; } } v.removeElement(result); return result; } private String read(String file) { try { FileConnection fileConn = (FileConnection) Connector.open(file, Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return content.toString(); } catch (IOException e) { return ""; } } }
