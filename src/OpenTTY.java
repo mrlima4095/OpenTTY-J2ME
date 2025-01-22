@@ -523,44 +523,34 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        private void build() {
-            Hashtable objs = new Hashtable(); 
-
+        public void build() {
+            Hashtable objs = new Hashtable();
             String[] codes = split(code, ';');
 
             for (int i = 0; i < codes.length; i++) {
-                String line = codes[i].trim(); 
-                if (line == null || line.length() == 0) continue;
+                String line = codes[i].trim(); // Remove espaços extras
+                if (line == null || line.length() == 0) continue; // Ignora linhas vazias
 
                 try {
                     if (line.indexOf('.') != -1) {
+                        // Divide a linha em partes: objeto e ação (ex.: obj.classe)
                         String[] parts = split(line, '.');
-                        String objectName = parts[0];
-                        String rest = parts[1];
+                        String objectName = parts[0]; // Nome do objeto
+                        String className = parts[1]; // Nome da classe
 
-                        if (rest.endsWith("()")) {
-                            String methodName = rest.substring(0, rest.length() - 2); // Remove "()"
-                            Object object = objs.get(objectName);
-                            if (object == null) {
-                                echoCommand("java: object '" + objectName + "' not found");
-                                return;
-                            }
-
-                            // Invoca o método
-                            object.getClass()
-                            echoCommand("Method '" + methodName + "' executed on '" + objectName + "'");
+                        // Verifica se a classe existe
+                        if (evaluateClass(className)) {
+                            // Registra o objeto e a classe no mapa
+                            objs.put(objectName, className);
+                            echoCommand("Object '" + objectName + "' of type '" + className + "' registered");
                         } else {
-                            // Criação de objeto
-                            Class clazz = Class.forName(rest);
-                            Object instance = clazz.getDeclaredConstructor().newInstance();
-                            objs.put(objectName, instance);
-                            echoCommand("Object '" + objectName + "' of type '" + rest + "' created");
+                            echoCommand("Class '" + className + "' not found");
                         }
                     } else {
-                        echoCommand("java: invalid statement '" + line + "'");
+                        echoCommand("Invalid statement: '" + line + "'");
                     }
                 } catch (Exception e) {
-                    echoCommand("Error processing line '" + line + "': " + e.getMessage());
+                    echoCommand("Error: " + e.getMessage());
                 }
             }
         }
