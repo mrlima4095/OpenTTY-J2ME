@@ -336,8 +336,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String className = parts[1].trim();
 
                         Class clazz = Class.forName(className);
+                        Object instance = clazz.newInstance();
 
-                        objects.put(objectName, clazz);
+                        objects.put(objectName, instance);
                     } else if (line.indexOf('.') != -1) {
                         String[] parts = split(line, '.');
                         String objectName = parts[0].trim();
