@@ -507,53 +507,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String mainCommand = getCommand(command).toLowerCase();
             String argument = getArgument(command);
             
-            if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Limited)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
+            if (mainCommand.equals("")) { xserver("make /java/bin/java"); }
             else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
-            else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Limited)"); }
-            else if (mainCommand.startsWith("-")) { echoCommand("java: " + replace(mainCommand, "-", "") + ": not found"); }
-
-            else {
-                if (mainCommand.startsWith("/")) { code = read(mainCommand); }
-                else if (mainCommand.equals("nano")) { code = nanoContent; } else { code = loadRMS(mainCommand, 1); }
-
-                if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank source"); }
-                else {
-                    build();
-                }
-            }
+            else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); }
+            else if (mainCommand.equals(""))
         }
-
-        public void build() {
-            Hashtable objs = new Hashtable();
-            String[] codes = split(code, ';');
-
-            for (int i = 0; i < codes.length; i++) {
-                String line = codes[i].trim(); // Remove espaços extras
-                if (line == null || line.length() == 0) continue; // Ignora linhas vazias
-
-                try {
-                    if (line.indexOf('.') != -1) {
-                        // Divide a linha em partes: objeto e ação (ex.: obj.classe)
-                        String[] parts = split(line, '.');
-                        String objectName = parts[0]; // Nome do objeto
-                        String className = parts[1]; // Nome da classe
-
-                        // Verifica se a classe existe
-                        if (evaluateClass(className)) {
-                            // Registra o objeto e a classe no mapa
-                            objs.put(objectName, className);
-                            echoCommand("Object '" + objectName + "' of type '" + className + "' registered");
-                        } else {
-                            echoCommand("Class '" + className + "' not found");
-                        }
-                    } else {
-                        echoCommand("Invalid statement: '" + line + "'");
-                    }
-                } catch (Exception e) {
-                    echoCommand("Error: " + e.getMessage());
-                }
-            }
-        }
+        
 
 
     
