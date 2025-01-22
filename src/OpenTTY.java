@@ -511,11 +511,71 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
             else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); }
             else if (mainCommand.equals(""))
+
+            else {
+                if (mainCommand.startsWith("/")) { code = read(mainCommand); }
+                else if (mainCommand.equals("nano")) { code = nanoContent; }
+                else { code = loadRMS(mainCommand, 1); }
+
+                if (code == null || code.length() == 0) {
+                    echoCommand("java: " + mainCommand + ": blank class"); return;
+                }
+
+                build();
+
+            }
         }
+
+        private void build() {
+            String[] lines = split(code, ';');
+            Vector objectNames = new Vector();
+            Vector objects = new Vector();
+            Vector classes = new Vector();
+
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i].trim();
+                if (line.length() == 0) continue;
+
+                try {
+                    if (line.contains("=")) {
+                        // Criando objeto (exemplo: obj=java.lang.String)
+                        String[] parts = split(line, '=');
+                        String objectName = parts[0].trim();
+                        String className = parts[1].trim();
+
+                        Class clazz = Class.forName(className);
+                        Object instance = clazz.newInstance();
+
+                        objectNames.addElement(objectName);
+                        objects.addElement(instance);
+                        classes.addElement(clazz);
+
+                        echoCommand("Object '" + objectName + "' of class '" + className + "' created");
+                    } else if (line.contains(".")) {
+                        // Simular chamada de método (exemplo: obj.method())
+                        String[] parts = split(line, '.');
+                        String objectName = parts[0].trim();
+                        String methodName = parts[1].replace("()", "").trim();
+
+                        int index = objectNames.indexOf(objectName);
+                        if (index == -1) {
+                            echoCommand("java: object '" + objectName + "' not found");
+                            continue;
+                        }
+
+                        Class clazz = (Class) classes.elementAt(index);
+                        echoCommand("Simulated call to method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'");
+                    } else {
+                        echoCommand("java: invalid syntax: " + line);
+                    }
+                } catch (Exception e) {
+                    echoCommand("java: error processing line '" + line + "': " + e.getMessage());
+                }
+            }
+        }
+
         
 
-
-    
     
     }
 
