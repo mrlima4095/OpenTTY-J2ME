@@ -582,7 +582,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (c == backCommand) { processCommand("xterm"); }
                 else if (c == newCommand) { display.setCurrent(taskname); }
                 else if (c == clearCommand) { writeRMS(".tasks", ""); readTasks(); }
-                else if (c == deleteCommand) { deleteTask(screen.getString(screen.getSelectedIndex())); }
+                else if (c == deleteCommand) { deleteTask(tasks.getString(tasks.getSelectedIndex())); }
             } else if (display.getCurrent() == taskname) {
                 if (c == saveCommand) {
                     if (taskname.getString().equals("")) { }
