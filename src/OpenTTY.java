@@ -145,7 +145,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand("" + read(argument).hashCode()); } else if (argument.equals("nano")) { echoCommand("" + nanoContent.hashCode()); } else { echoCommand("" + loadRMS(argument, 1).hashCode()); } } }
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("if")) { ifCommand(argument); }
-        else if (mainCommand.equals("java")) { new Java(argument); }
+        else if (mainCommand.equals("java")) { java(argument); }
         else if (mainCommand.equals("kill")) { kill(argument); }
         else if (mainCommand.equals("log")) { MIDletLogs(argument); }
         else if (mainCommand.equals("logcat")) { echoCommand(logs); }
@@ -300,6 +300,65 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("quest")) { new ScreenQuest(argument); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); }
+    }
+    private void java(String command) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command).toLowerCase();
+        String argument = getArgument(command);
+        
+        if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
+        else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
+        else if (mainCommand.equals("--list")) { Enumeration keys = objects.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); echoCommand(key + " (" + value.getClass() + ")"); } }
+        else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); } 
+        else if (mainCommand.equals("-cc")) { objects = new Hashtable(); }
+        
+        else {
+            String code;
+
+            if (mainCommand.startsWith("/")) { code = read(mainCommand); }
+            else if (mainCommand.equals("nano")) { code = nanoContent; }
+            else { code = loadRMS(mainCommand, 1); }
+
+            if (code == null || code.length() == 0) {
+                echoCommand("java: " + mainCommand + ": blank class"); return;
+            }
+
+            String[] lines = split(code, ';');
+
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i].trim();
+                if (line.length() == 0) continue;
+
+                try {
+                    if (line.indexOf('=') != -1) {
+                        String[] parts = split(line, '=');
+                        String objectName = parts[0].trim();
+                        String className = parts[1].trim();
+
+                        Class clazz = Class.forName(className);
+                        Object instance = clazz.newInstance();
+
+                        objects.put(objectName, instance);
+                    } else if (line.indexOf('.') != -1) {
+                        String[] parts = split(line, '.');
+                        String objectName = parts[0].trim();
+                        String methodName = replace(parts[1], "()", "").trim();
+
+                        if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); }
+
+                        Object object = objects.get(objectName);
+                        Class clazz = object.getClass();
+
+                        echoCommand("Invoke method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'.");
+                        
+                    } else { throw new IOException("Invalid syntax"); }
+                } catch (Exception e) {
+                    echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")");
+                    return;
+                }
+            }
+
+        }                
     }
     private void MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command).toLowerCase(); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { if (argument.equals("")) { return; } else if (getCommand(argument).toLowerCase().equals("info")) { if (!getArgument(command).equals("")) { logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("warn")) { if (!getArgument(command).equals("")) { logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("debug")) { if (!getArgument(command).equals("")) { logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else if (getCommand(argument).toLowerCase().equals("error")) { if (!getArgument(command).equals("")) { logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; } } else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": level not found"); } } else { echoCommand("log: " + mainCommand + ": not found"); } }
     
@@ -495,74 +554,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } }
     }
 
-    // Java ME Embbed Version
-    public class Java {
-        private String code;
 
-        public Java(String command) {
-            command = env(command.trim());
-            String mainCommand = getCommand(command).toLowerCase();
-            String argument = getArgument(command);
-            
-            if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
-            else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
-            else if (mainCommand.equals("--list")) { Enumeration keys = objects.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); echoCommand(key + " (" + value.getClass() + ")"); } }
-            else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); }
-            else if (mainCommand.equals("-cc")) { objects = new Hashtable(); }
-            
-            else {
-                if (mainCommand.startsWith("/")) { code = read(mainCommand); }
-                else if (mainCommand.equals("nano")) { code = nanoContent; }
-                else { code = loadRMS(mainCommand, 1); }
-
-                if (code == null || code.length() == 0) {
-                    echoCommand("java: " + mainCommand + ": blank class"); return;
-                }
-
-                build();
-
-            }                
-            
-        }
-
-        private void build() {
-            String[] lines = split(code, ';');
-
-            for (int i = 0; i < lines.length; i++) {
-                String line = lines[i].trim();
-                if (line.length() == 0) continue;
-
-                try {
-                    if (line.indexOf('=') != -1) {
-                        String[] parts = split(line, '=');
-                        String objectName = parts[0].trim();
-                        String className = parts[1].trim();
-
-                        Class clazz = Class.forName(className);
-                        Object instance = clazz.newInstance();
-
-                        objects.put(objectName, instance);
-                    } else if (line.indexOf('.') != -1) {
-                        String[] parts = split(line, '.');
-                        String objectName = parts[0].trim();
-                        String methodName = replace(parts[1], "()", "").trim();
-
-                        if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); }
-
-                        Object object = objects.get(objectName);
-                        Class clazz = object.getClass();
-
-                        echoCommand("Invoke method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'.");
-                        
-                    } else { throw new IOException("Invalid syntax"); }
-                } catch (Exception e) {
-                    echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")");
-                    return;
-                }
-            }
-        }
-    
-    }
 
     public class Explorer implements CommandListener { private List files = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), openCommand = new Command("Open", Command.SCREEN, 2), deleteCommand = new Command("Delete", Command.SCREEN, 3), runCommand = new Command("Run Script", Command.SCREEN, 4), importCommand = new Command("Import File", Command.SCREEN, 5); public Explorer() { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { files.append((String) recordStores[i], null); } } } } catch (RecordStoreException e) { } files.addCommand(backCommand); files.addCommand(openCommand); files.addCommand(deleteCommand); files.addCommand(runCommand); files.addCommand(importCommand); files.setCommandListener(this); display.setCurrent(files); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == deleteCommand) { deleteFile(files.getString(files.getSelectedIndex())); new Explorer(); } else if (c == openCommand) { new NanoEditor(files.getString(files.getSelectedIndex())); } else if (c == runCommand) { processCommand("xterm"); processCommand("run " + files.getString(files.getSelectedIndex())); } else if (c == importCommand) { processCommand("xterm"); importScript(files.getString(files.getSelectedIndex())); } } }
     public class FileExplorer implements CommandListener { private String currentPath = "file:///"; private List files = new List(form.getTitle(), List.IMPLICIT); private Command openCommand = new Command("Open", Command.OK, 1), backCommand = new Command("Back", Command.BACK, 1); public FileExplorer() { files.addCommand(openCommand); files.addCommand(backCommand); files.setCommandListener(this); display.setCurrent(files); listFiles(currentPath); } private void listFiles(String path) { files.deleteAll(); try { if (path.equals("file:///")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { files.append((String) roots.nextElement(), null); } } else { FileConnection dir = (FileConnection) Connector.open(path, Connector.READ); Enumeration fileList = dir.list(); Vector dirs = new Vector(); Vector filesOnly = new Vector(); while (fileList.hasMoreElements()) { String fileName = (String) fileList.nextElement(); if (fileName.endsWith("/")) { dirs.addElement(fileName); } else { filesOnly.addElement(fileName); } } while (!dirs.isEmpty()) { files.append(getFirstString(dirs), null); } while (!filesOnly.isEmpty()) { files.append(getFirstString(filesOnly), null); } dir.close(); } } catch (IOException e) { } } public void commandAction(Command c, Displayable d) { if (c == openCommand) { int selectedIndex = files.getSelectedIndex(); if (selectedIndex >= 0) { String selected = files.getString(selectedIndex); String newPath = currentPath + selected; if (selected.endsWith("/")) { currentPath = newPath; listFiles(newPath); } else { writeRMS(selected, read(newPath)); warnCommand(null, "File '" + selected + "' successfully saved!"); } } } else if (c == backCommand) { if (!currentPath.equals("file:///")) { int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2); if (lastSlash != -1) { currentPath = currentPath.substring(0, lastSlash + 1); listFiles(currentPath); } } else { processCommand("xterm"); } } } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(cur) < 0) { result = cur; } } v.removeElement(result); return result; } private String read(String file) { try { FileConnection fileConn = (FileConnection) Connector.open(file, Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return content.toString(); } catch (IOException e) { return ""; } } }
