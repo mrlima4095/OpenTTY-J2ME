@@ -193,6 +193,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("@break")) { throw new InterruptedException(""); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -548,7 +549,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String objectName = parts[0].trim();
                         String methodName = replace(parts[1], "()", "").trim();
 
-                        if (!objects.containsKey(objectName)) { throw new IllegalAcessException("Object not found"); }
+                        if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); }
 
                         Object object = objects.get(objectName);
                         Class clazz = object.getClass();
