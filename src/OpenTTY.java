@@ -547,7 +547,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             }
 
                             // Invoca o método
-                            object.getClass().invoke(object);/*.getMethod(methodName)*/
+                            object.getClass()
                             echoCommand("Method '" + methodName + "' executed on '" + objectName + "'");
                         } else {
                             // Criação de objeto
