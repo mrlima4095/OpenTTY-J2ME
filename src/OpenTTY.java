@@ -308,7 +308,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
         else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
-        else if (mainCommand.equals("--list")) { Enumeration keys = objects.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); echoCommand(key + " (" + value.getClass().getName() + ")"); } }
+        else if (mainCommand.equals("--list")) { Enumeration keys = objects.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); Object value = (Object) objects.get(key); echoCommand(key + " (" + value.getClass().getName() + ")"); } }
         else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); } 
         else if (mainCommand.equals("-cc")) { objects = new Hashtable(); }
         
