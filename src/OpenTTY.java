@@ -537,7 +537,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (line.length() == 0) continue;
 
                 try {
-                    if (line.contains("=")) {
+                    if (line.indexOf('=') != -1) {
                         // Criando objeto (exemplo: obj=java.lang.String)
                         String[] parts = split(line, '=');
                         String objectName = parts[0].trim();
@@ -551,7 +551,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         classes.addElement(clazz);
 
                         echoCommand("Object '" + objectName + "' of class '" + className + "' created");
-                    } else if (line.contains(".")) {
+                    } else if (line.indexOf('.') != -1) {
                         // Simular chamada de método (exemplo: obj.method())
                         String[] parts = split(line, '.');
                         String objectName = parts[0].trim();
@@ -573,6 +573,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
         }
+
 
         
 
