@@ -568,7 +568,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         echoCommand("java: invalid syntax: " + line); return;
                     }
                 } catch (Exception e) {
-                    echoCommand(e.getClass().getSimpleName() + ": '" + line + "'");
+                    echoCommand(e.getClass().getName() + ": '" + line + "'");
                 } 
             }
         }
