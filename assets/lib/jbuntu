@@ -5,7 +5,7 @@ version=1.2
 description=Desktop for OpenTTY
 
 api.version=1.12
-api.error=execute log add JBuntu requires OpenTTY 1.12; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.12; title $OLD_TITLE; unset OLD_TITLE:
+api.error=execute log add error JBuntu requires OpenTTY 1.12; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.12; title $OLD_TITLE; unset OLD_TITLE:
 
 process.name=jbuntu
 
