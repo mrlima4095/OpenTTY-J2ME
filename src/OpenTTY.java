@@ -193,7 +193,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("@out")) { System.out.println(argument); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -511,8 +511,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (mainCommand.equals("")) { xserver("make /java/bin/java"); return; }
             if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } return; } 
             if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); return; }
-            if (mainCommand.equals("--verbose")) { verbose = true; mainCommand = argument; }
             
+
+            if (mainCommand.equals("--verbose")) { verbose = true; mainCommand = argument; }
+
 
             if (mainCommand.startsWith("/")) { code = read(mainCommand); }
             else if (mainCommand.equals("nano")) { code = nanoContent; }
@@ -529,9 +531,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private void build() {
             String[] lines = split(code, ';');
-            Vector objectNames = new Vector();
-            Vector objects = new Vector();
-            Vector classes = new Vector();
+            Hashtable objects = new Hashtable();
 
             for (int i = 0; i < lines.length; i++) {
                 String line = lines[i].trim();
@@ -539,6 +539,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     if (line.indexOf('=') != -1) {
+                        // Criando objeto (exemplo: obj=java.lang.String)
                         String[] parts = split(line, '=');
                         String objectName = parts[0].trim();
                         String className = parts[1].trim();
@@ -546,32 +547,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         Class clazz = Class.forName(className);
                         Object instance = clazz.newInstance();
 
-                        objectNames.addElement(objectName);
-                        objects.addElement(instance);
-                        classes.addElement(clazz);
-
-                        if (verbose == true) { echoCommand("Object '" + objectName + "' of class '" + className + "' created"); }
+                        objects.put(objectName, instance);
                     } else if (line.indexOf('.') != -1) {
+                        // Simular chamada de método (exemplo: obj.method())
                         String[] parts = split(line, '.');
                         String objectName = parts[0].trim();
                         String methodName = replace(parts[1], "()", "").trim();
 
-                        int index = objectNames.indexOf(objectName);
-                        if (index == -1) {
-                            echoCommand("java: object '" + objectName + "' not found");
+                        if (!objects.containsKey(objectName)) {
+                            echoCommand("⚠️ Erro: Objeto '" + objectName + "' não encontrado.");
                             return;
                         }
 
-                        Class clazz = (Class) classes.elementAt(index);
-                        if (verbose == true) { echoCommand("Run method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'"); }
+                        Object object = objects.get(objectName);
+                        Class clazz = object.getClass();
+
+                        echoCommand("✔️ Simulada chamada ao método '" + methodName + "' no objeto '" + objectName + "' da classe '" + clazz.getName() + "'.");
                     } else {
-                        echoCommand("java: invalid syntax: " + line); return;
+                        echoCommand("⚠️ Sintaxe inválida: '" + line + "'. Use 'obj=classe' ou 'obj.metodo()'.");
+                        return;
                     }
                 } catch (Exception e) {
-                    echoCommand(e.getClass().getName() + ": '" + line + "'");
-                } 
+                    echoCommand("❌ " + e.getClass().getName() + ": Erro ao processar linha '" + line + "'.");
+                    return;
+                }
             }
         }
+
 
 
         
