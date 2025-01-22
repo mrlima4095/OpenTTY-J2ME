@@ -336,9 +336,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String className = parts[1].trim();
 
                         Class clazz = Class.forName(className);
-                        Object instance = clazz.newInstance();
 
-                        objects.put(objectName, instance);
+                        objects.put(objectName, clazz);
                     } else if (line.indexOf('.') != -1) {
                         String[] parts = split(line, '.');
                         String objectName = parts[0].trim();
@@ -351,7 +350,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         echoCommand("Invoke method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'.");
                         
-                    } else { throw new IOException("Invalid syntax"); }
+                    } else if (line.startsWith("//")) { } else { throw new IOException("Invalid syntax"); }
                 } catch (Exception e) {
                     echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")");
                     return;
