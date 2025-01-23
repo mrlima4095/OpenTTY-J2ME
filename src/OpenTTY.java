@@ -168,6 +168,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
+        else if (mainCommand.equals("todo")) { if (argument.equals("") || argument.equals("list")) { new MyTaskManager(); } else { writeRMS(".tasks", loadRMS(".tasks", 1) + "\n" + (argument.startsWith("/") ? read(argument) : argument.equals("nano") ? nanoContent : loadRMS(argument, 1))); } }
         else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); } }
         else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer(); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); } }
         else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
@@ -192,7 +193,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("todo")) { new MyTaskManager(); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
@@ -561,7 +561,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class MyTaskManager implements CommandListener {
         private List tasks = new List(form.getTitle(), List.IMPLICIT);
         private TextBox taskname = new TextBox("Create Task", "", 256, TextField.ANY);
-        private Command backCommand = new Command("Back", Command.BACK, 1), saveCommand = new Command("Save", Command.OK, 1), newCommand = new Command("New Task", Command.SCREEN, 2), clearCommand = new Command("Delete all", Command.SCREEN, 3), deleteCommand = new Command("Delete", Command.SCREEN, 4);
+        private Command backCommand = new Command("Back", Command.BACK, 1), saveCommand = new Command("Save", Command.OK, 1), newCommand = new Command("New Task", Command.SCREEN, 2), toggleCommand = new Command("Toggle Status", Command.SCREEN, 3), clearCommand = new Command("Delete all", Command.SCREEN, 4), deleteCommand = new Command("Delete", Command.SCREEN, 5);
 
         public MyTaskManager() {
             tasks.addCommand(backCommand); tasks.addCommand(newCommand);
@@ -580,9 +580,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == newCommand) { display.setCurrent(taskname); }
                 else if (c == clearCommand) { writeRMS(".tasks", ""); readTasks(); }
                 else if (c == deleteCommand) { deleteTask(tasks.getString(tasks.getSelectedIndex())); }
+                else if (c == toggleCommand) { toggleTask(tasks.getSelectedIndex()); }
             } else if (display.getCurrent() == taskname) {
                 if (c == saveCommand) {
-                    if (taskname.getString().equals("")) { }
+                    if (taskname.getString().equals("")) { display.setCurrent(tasks); }
                     else { writeTasks(); readTasks(); display.setCurrent(tasks); }
                 }
             }
@@ -592,9 +593,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void writeTasks() { writeRMS(".tasks", loadRMS(".tasks", 1) + "\n" + taskname.getString()); }
         private void readTasks() { tasks.deleteAll(); String[] tasklist = split(loadRMS(".tasks", 1), '\n'); for (int i = 0; i < tasklist.length; i++) { if (!tasklist[i].trim().equals("")) { tasks.append(tasklist[i].trim(), null); } } }
         private void deleteTask(String task) { String[] tasklist = split(loadRMS(".tasks", 1), '\n'); StringBuffer newlist = new StringBuffer(); for (int i = 0; i < tasklist.length; i++) { if (task.equals(tasklist[i])) { } else { newlist.append(tasklist[i] + "\n"); } } writeRMS(".tasks", newlist.toString()); readTasks(); } 
+        private void toggleTask(int index) { String task = tasks.getString(index); if (task.startsWith("[COMPLETE] ")) { task = task.substring("[COMPLETE] ".length()).trim(); } else { task = "[COMPLETE] " + task; } String[] tasklist = split(loadRMS(".tasks", 1), '\n'); tasklist[index] = task; StringBuffer newlist = new StringBuffer(); for (int i = 0; i < tasklist.length; i++) { newlist.append(tasklist[i] + "\n"); } writeRMS(".tasks", newlist.toString()); readTasks(); }
 
+    } 
 
-    }
     public class NanoEditor implements CommandListener { private TextBox editor = new TextBox("Nano", "", 4096, TextField.ANY); private Command backCommand = new Command("Back", Command.BACK, 1), clearCommand = new Command("Clear", Command.SCREEN, 2), runCommand = new Command("Run Script", Command.SCREEN, 3), importCommand = new Command("Import File", Command.SCREEN, 4), viewCommand = new Command("View as HTML", Command.SCREEN, 5); public NanoEditor(String args) { editor.setString((args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1)); editor.addCommand(backCommand); editor.addCommand(clearCommand); editor.addCommand(runCommand); editor.addCommand(importCommand); editor.addCommand(viewCommand); editor.setCommandListener(this); display.setCurrent(editor); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { nanoContent = editor.getString(); processCommand("xterm"); } else if (c == clearCommand) { editor.setString(""); } else if (c == runCommand) { nanoContent = editor.getString(); processCommand("xterm"); runScript(nanoContent); } else if (c == importCommand) { nanoContent = editor.getString(); processCommand("xterm"); importScript("nano"); } else if (c == viewCommand) { nanoContent = editor.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
 
     public class HTopViewer implements CommandListener { private Form htop = new Form(form.getTitle()); private Command backCommand = new Command("Back", Command.BACK, 1), refreshCommand = new Command("Refresh", Command.SCREEN, 2); private StringItem memoryStatus = new StringItem("", ""); private boolean thr_status = true; public HTopViewer() { htop.append(memoryStatus); htop.addCommand(backCommand); htop.addCommand(refreshCommand); htop.setCommandListener(this); MemoryStatus(); display.setCurrent(htop); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { thr_status = false; processCommand("xterm"); } else if (c == refreshCommand) { Runtime.getRuntime().gc(); MemoryStatus(); } } private void MemoryStatus() { long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024; long freeMemory = runtime.freeMemory() / 1024; long totalMemory = runtime.totalMemory() / 1024; memoryStatus.setText("Memory Status:\n\nUsed Memory: " + usedMemory + " KB\nFree Memory: " + freeMemory + " KB\nTotal Memory: " + totalMemory + " KB"); } }
