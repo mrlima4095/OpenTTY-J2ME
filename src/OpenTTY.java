@@ -579,7 +579,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (display.getCurrent() == tasks) {
                 if (c == backCommand) { processCommand("xterm"); }
                 else if (c == newCommand) { display.setCurrent(taskname); }
-                else if (c == toggleCommand) { toggleTask(tasks.getSelectedIndex()); }
+                else if (c == toggleCommand) { toggleTask(tasks.getString(tasks.getSelectedIndex())); }
                 else if (c == readCommand) { viewmore(tasks.getString(tasks.getSelectedIndex())); }
                 else if (c == clearCommand) { writeRMS(file, ""); readTasks(); }
                 else if (c == deleteCommand) { deleteTask(tasks.getString(tasks.getSelectedIndex())); }
@@ -590,7 +590,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void writeTasks() { writeRMS(file, loadRMS(file, 1) + "\n" + taskname.getString()); }
         private void readTasks() { tasks.deleteAll(); String[] tasklist = split(loadRMS(file, 1), '\n'); for (int i = 0; i < tasklist.length; i++) { if (!tasklist[i].trim().equals("")) { tasks.append(tasklist[i].trim(), null); } } }
         private void deleteTask(String task) { String[] tasklist = split(loadRMS(file, 1), '\n'); StringBuffer newlist = new StringBuffer(); for (int i = 0; i < tasklist.length; i++) { if (task.equals(tasklist[i])) { } else { newlist.append(tasklist[i] + "\n"); } } writeRMS(file, newlist.toString()); readTasks(); } 
-        private void toggleTask(int index) { String task = tasks.getString(index); if (task.startsWith("[COMPLETE] ")) { task = task.substring("[COMPLETE] ".length()).trim(); } else { task = "[COMPLETE] " + task; } String[] tasklist = split(loadRMS(file, 1), '\n'); tasklist[index] = task; StringBuffer newlist = new StringBuffer(); for (int i = 0; i < tasklist.length; i++) { newlist.append(tasklist[i] + "\n"); } writeRMS(file, newlist.toString()); readTasks(); }
+        private void toggleTask(String task) { String[] tasklist = split(loadRMS(file, 1), '\n'); StringBuffer newlist = new StringBuffer(); 
+            for (int i = 0; i < tasklist.length; i++) { 
+                if (tasklist[i].equals(task)) {
+                    if (task.startsWith("[COMPLETE] ")) { newlist.append(task.substring("[COMPLETE] ".length()).trim() + "\n"); } 
+                    else { newlist.append("[COMPLETE] " + task + "\n"); } 
+                }
+
+                newlist.append(tasklist[i] + "\n"); 
+            } 
+            writeRMS(file, newlist.toString()); readTasks(); 
+        }
         private void viewmore(String task) { String status = "Needs action";
             if (task.startsWith("[COMPLETE] ")) { status = "Finished"; }
             warnCommand(form.getTitle(), 
