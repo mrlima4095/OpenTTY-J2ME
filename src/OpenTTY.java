@@ -344,7 +344,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); }
 
-                        for (int j = 1; j < objectName.length; j++) {
+                        for (int j = 1; j < parts.length; j++) {
                             Object object = (Object) objects.get(objectName);
                             Class clazz = object.getClass();
 
