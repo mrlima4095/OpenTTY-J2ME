@@ -564,7 +564,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command backCommand = new Command("Back", Command.BACK, 1), saveCommand = new Command("Save", Command.OK, 1), newCommand = new Command("New Task", Command.SCREEN, 2), toggleCommand = new Command("Toggle Status", Command.SCREEN, 3), clearCommand = new Command("Delete all", Command.SCREEN, 4), deleteCommand = new Command("Delete", Command.SCREEN, 5);
 
         public MyTaskManager() {
-            tasks.addCommand(backCommand); tasks.addCommand(newCommand);
+            tasks.addCommand(backCommand); tasks.addCommand(newCommand); tasks.addCommand(toggleCommand);
             tasks.addCommand(deleteCommand); taskname.addCommand(saveCommand);
 
             tasks.setCommandListener(this);
@@ -581,12 +581,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == clearCommand) { writeRMS(".tasks", ""); readTasks(); }
                 else if (c == deleteCommand) { deleteTask(tasks.getString(tasks.getSelectedIndex())); }
                 else if (c == toggleCommand) { toggleTask(tasks.getSelectedIndex()); }
-            } else if (display.getCurrent() == taskname) {
-                if (c == saveCommand) {
-                    if (taskname.getString().equals("")) { display.setCurrent(tasks); }
-                    else { writeTasks(); readTasks(); display.setCurrent(tasks); }
-                }
-            }
+            } else if (display.getCurrent() == taskname) { if (c == saveCommand) { if (taskname.getString().equals("")) { display.setCurrent(tasks); } else { writeTasks(); readTasks(); display.setCurrent(tasks); } } }
 
         }
 
@@ -596,7 +591,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void toggleTask(int index) { String task = tasks.getString(index); if (task.startsWith("[COMPLETE] ")) { task = task.substring("[COMPLETE] ".length()).trim(); } else { task = "[COMPLETE] " + task; } String[] tasklist = split(loadRMS(".tasks", 1), '\n'); tasklist[index] = task; StringBuffer newlist = new StringBuffer(); for (int i = 0; i < tasklist.length; i++) { newlist.append(tasklist[i] + "\n"); } writeRMS(".tasks", newlist.toString()); readTasks(); }
 
     } 
-
     public class NanoEditor implements CommandListener { private TextBox editor = new TextBox("Nano", "", 4096, TextField.ANY); private Command backCommand = new Command("Back", Command.BACK, 1), clearCommand = new Command("Clear", Command.SCREEN, 2), runCommand = new Command("Run Script", Command.SCREEN, 3), importCommand = new Command("Import File", Command.SCREEN, 4), viewCommand = new Command("View as HTML", Command.SCREEN, 5); public NanoEditor(String args) { editor.setString((args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1)); editor.addCommand(backCommand); editor.addCommand(clearCommand); editor.addCommand(runCommand); editor.addCommand(importCommand); editor.addCommand(viewCommand); editor.setCommandListener(this); display.setCurrent(editor); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { nanoContent = editor.getString(); processCommand("xterm"); } else if (c == clearCommand) { editor.setString(""); } else if (c == runCommand) { nanoContent = editor.getString(); processCommand("xterm"); runScript(nanoContent); } else if (c == importCommand) { nanoContent = editor.getString(); processCommand("xterm"); importScript("nano"); } else if (c == viewCommand) { nanoContent = editor.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
 
     public class HTopViewer implements CommandListener { private Form htop = new Form(form.getTitle()); private Command backCommand = new Command("Back", Command.BACK, 1), refreshCommand = new Command("Refresh", Command.SCREEN, 2); private StringItem memoryStatus = new StringItem("", ""); private boolean thr_status = true; public HTopViewer() { htop.append(memoryStatus); htop.addCommand(backCommand); htop.addCommand(refreshCommand); htop.setCommandListener(this); MemoryStatus(); display.setCurrent(htop); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { thr_status = false; processCommand("xterm"); } else if (c == refreshCommand) { Runtime.getRuntime().gc(); MemoryStatus(); } } private void MemoryStatus() { long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024; long freeMemory = runtime.freeMemory() / 1024; long totalMemory = runtime.totalMemory() / 1024; memoryStatus.setText("Memory Status:\n\nUsed Memory: " + usedMemory + " KB\nFree Memory: " + freeMemory + " KB\nTotal Memory: " + totalMemory + " KB"); } }
