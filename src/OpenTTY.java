@@ -562,7 +562,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List tasks = new List(form.getTitle(), List.IMPLICIT);
         private TextBox taskname = new TextBox("Create Task", "", 256, TextField.ANY);
         private Command backCommand = new Command("Back", Command.BACK, 1), saveCommand = new Command("Save", Command.OK, 1), newCommand = new Command("New Task", Command.SCREEN, 2), readCommand = new Command("View more", Command.SCREEN, 3), toggleCommand = new Command("Toggle Status", Command.SCREEN, 4), clearCommand = new Command("Delete all", Command.SCREEN, 5), deleteCommand = new Command("Delete", Command.SCREEN, 6);
-        private String file = ".tasks-" + username; 
+        private String file = ".tasks"; 
 
         public MyTaskManager() {
             tasks.addCommand(backCommand); tasks.addCommand(newCommand); tasks.addCommand(toggleCommand); tasks.addCommand(readCommand);
