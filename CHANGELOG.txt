@@ -12,7 +12,6 @@ Copyright (C) 2025 - Mr. Lima
 - **ViaVersion** updated to 1.1
 - **Yang** now can use recursive install by nano
 - Garbage Colletor instace charged from `Runtime.getRuntime().gc()` to `System.gc()`
-- Prefix '@' can be used to run remote scripts
 -
 -
 -
