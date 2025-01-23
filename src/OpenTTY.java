@@ -138,7 +138,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
         else if (mainCommand.equals("for")) { forCommand(argument); }
-        else if (mainCommand.equals("gc")) { Runtime.getRuntime().gc(); }
+        else if (mainCommand.equals("gc")) { System.gc(); } //Runtime.getRuntime().gc(); }
         else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); } 
         else if (mainCommand.equals("htop")) { new HTopViewer(); }
         else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
@@ -313,20 +313,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
         else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
         else if (mainCommand.equals("--list")) { Enumeration keys = objects.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); Object value = (Object) objects.get(key); echoCommand(key + " (" + value.getClass().getName() + ")"); } }
-        else if (mainCommand.equals("--inspect")) {  }
+        else if (mainCommand.equals("--inspect")) { if (argument.equals("")) { } else if (objects.containsKey(argument)) { echoCommand(argument + " (" + objects.get(argument).getClass().getName() + ")"); } else { echoCommand("java: " + argument + "not found"); } }
         else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); } 
         else if (mainCommand.equals("-cc")) { objects = new Hashtable(); }
         
         else {
-            String code;
+            String code; if (mainCommand.startsWith("/")) { code = read(mainCommand); } else if (mainCommand.equals("nano")) { code = nanoContent; } else { code = loadRMS(mainCommand, 1); }
 
-            if (mainCommand.startsWith("/")) { code = read(mainCommand); }
-            else if (mainCommand.equals("nano")) { code = nanoContent; }
-            else { code = loadRMS(mainCommand, 1); }
-
-            if (code == null || code.length() == 0) {
-                echoCommand("java: " + mainCommand + ": blank class"); return;
-            }
+            if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return; }
 
             String[] lines = split(code, ';');
 
@@ -347,15 +341,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } else if (line.indexOf('.') != -1) {
                         String[] parts = split(line, '.');
                         String objectName = parts[0].trim();
-                        String methodName = replace(parts[1], "()", "").trim();
 
                         if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); }
 
-                        Object object = (Object) objects.get(objectName);
-                        Class clazz = object.getClass();
+                        for (int j = 1; j < objectName.length; j++) {
+                            Object object = (Object) objects.get(objectName);
+                            Class clazz = object.getClass();
 
-                        echoCommand("Invoke method '" + methodName + "' on object '" + objectName + "' of class '" + clazz.getName() + "'.");
-                        
+                            echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'.");
+                            
+                        }
                     } else if (line.startsWith("//")) { } else { throw new IOException("Invalid syntax"); }
                 } catch (Exception e) {
                     echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")");
