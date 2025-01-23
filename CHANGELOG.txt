@@ -10,3 +10,11 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - **ViaVersion** updated to 1.1
+- **Yang** now can use recursive install by nano
+-
+-
+-
+-
+-
+-
+-
