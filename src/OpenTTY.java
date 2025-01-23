@@ -561,7 +561,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class MyTaskManager implements CommandListener {
         private List tasks = new List(form.getTitle(), List.IMPLICIT);
         private TextBox taskname = new TextBox("Create Task", "", 256, TextField.ANY);
-        private Alert clearConfirm = new Alert(title, "Are you sure?\n\nYou'll delete all of your tasks", null, AlertType.WARNING);
+        private Alert clearConfirm = new Alert(form.getTitle(), "Are you sure?\n\nYou'll delete all of your tasks", null, AlertType.WARNING);
         private Command backCommand = new Command("Back", Command.BACK, 1), saveCommand = new Command("Save", Command.OK, 1), newCommand = new Command("New Task", Command.SCREEN, 2), readCommand = new Command("View more", Command.SCREEN, 3), toggleCommand = new Command("Toggle Status", Command.SCREEN, 4), clearCommand = new Command("Delete all", Command.SCREEN, 5), deleteCommand = new Command("Delete", Command.SCREEN, 6);
         private String file = ".tasks"; 
 
@@ -574,6 +574,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             tasks.setCommandListener(this);
             taskname.setCommandListener(this);
+            clearConfirm.setCommandListener(this);
 
             readTasks();
 
@@ -586,10 +587,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == newCommand) { display.setCurrent(taskname); }
                 else if (c == toggleCommand) { toggleTask(tasks.getString(tasks.getSelectedIndex())); }
                 else if (c == readCommand) { viewmore(tasks.getString(tasks.getSelectedIndex())); }
-                else if (c == clearCommand) { writeRMS(file, ""); readTasks(); }
+                else if (c == clearCommand) { display.setCurrent(clearConfirm); }
                 else if (c == deleteCommand) { deleteTask(tasks.getString(tasks.getSelectedIndex())); }
-            } else if (display.getCurrent() == taskname) { if (c == saveCommand) { if (taskname.getString().equals("")) { display.setCurrent(tasks); } else { writeTasks(); readTasks(); taskname.setString(""); display.setCurrent(tasks); } } }
-
+            } 
+            else if (display.getCurrent() == taskname) { if (c == saveCommand) { if (taskname.getString().equals("")) { display.setCurrent(tasks); } else { writeTasks(); readTasks(); taskname.setString(""); display.setCurrent(tasks); } } }
+            else if (display.getCurrent() == clearConfirm) {
+                if (c.getLabel() == "Yes") { writeRMS(file, ""); readTasks(); display.setCurrent(tasks); }
+                else if (c.getLabel() == "No") { display.setCurrent(tasks); }
+            }
         }
 
         private void writeTasks() { writeRMS(file, loadRMS(file, 1) + "\n" + taskname.getString()); }
