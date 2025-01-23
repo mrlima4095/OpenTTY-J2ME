@@ -580,7 +580,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (c == backCommand) { processCommand("xterm"); }
                 else if (c == newCommand) { display.setCurrent(taskname); }
                 else if (c == toggleCommand) { toggleTask(tasks.getSelectedIndex()); }
-                else if (c == readCommand) { warnCommand(form.getTitle(), env("Task Name: " + replace(tasks.getString(tasks.getSelectedIndex()), "[COMPLETE] ", "") + "\nStatus: " + (tasks.getString(tasks.getSelectedIndex()).startsWith("[COMPLETE] ")) ? "Finished" : "Needs action" + "\n\nUser: " + username)); }
+                else if (c == readCommand) { warnCommand(form.getTitle(), env("Task Name: " + replace(tasks.getString(tasks.getSelectedIndex()), "[COMPLETE] ", "") + "\nStatus: " + tasks.getString(tasks.getSelectedIndex()).startsWith("[COMPLETE] ") ? "Finished" : "Needs action" + "\n\nUser: " + username)); }
                 else if (c == clearCommand) { writeRMS(file, ""); readTasks(); }
                 else if (c == deleteCommand) { deleteTask(tasks.getString(tasks.getSelectedIndex())); }
             } else if (display.getCurrent() == taskname) { if (c == saveCommand) { if (taskname.getString().equals("")) { display.setCurrent(tasks); } else { writeTasks(); readTasks(); taskname.setString(""); display.setCurrent(tasks); } } }
