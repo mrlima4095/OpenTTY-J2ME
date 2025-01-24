@@ -21,5 +21,5 @@ list.content=Forge,Create HTML Page,About SDK
 list.back=
 
 Forge=execute forge; 
-Create HTML Page=execute touch; add HTTP/1.1 200 OK\nContent-Type: text/html\nConnection: close\n\n\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    \n<title>SmartME HTML</title>\n</head>\n<body>\n	Put HTML Content here\n</body>\n</html>; nano;
-About SDK=execute set OLD_TITLE=$TITLE; title About SmartME; warn SmartME $SDK\nOpenTTY Toolkit; title $OLD_TITLE; unset OLD_TITLE;
+New HTML Page=execute touch; add HTTP/1.1 200 OK\nContent-Type: text/html\nConnection: close\n\n\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Page Title</title>\n</head>\n<body>\n    <p>Write here the page content.</p>\n</body>\n</html>; nano
+About SDK=execute sdk; set OLD_TITLE=$TITLE; title About SmartME; warn SmartME $SDK\nOpenTTY Toolkit; title $OLD_TITLE; unset OLD_TITLE;
