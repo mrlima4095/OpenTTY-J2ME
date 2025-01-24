@@ -16,7 +16,7 @@ install=execute install nano; tick Installing...; proxy raw.githubusercontent.co
 update=execute set RESOURCE=yang-proxy; yang install; import yang-proxy;
 query=execute x11 quest yang-proxy;
 
-run=execute for RESOURCE (nano) exec yang install & echo [Yang] installed '$RESOURCE';
+run=for RESOURCE (nano) execute yang install; echo [Yang] installed '$RESOURCE';
 
 [ DISPLAY ]
 
