@@ -10,19 +10,19 @@ command=axrz
 axrz=execute axrz list;
 
 shell.name=axrz
-shell.args=list,run,update
+shell.args=list,run,update,query
 
 list=execute x11 list viaversion;
 run=execute log add debug ViaVersion - Modified from $VERSION to $REQUEST; set VERSION=$REQUEST; unset REQUEST; sh; 
 update=execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/viaversion; install viaversion; import viaversion; tick; 
-
+query=excute x11 quest viaversion
 
 [ DISPLAY ]
 
 quest.title=Select API
 quest.label=Version
 quest.key=REQUEST
-quest.cmd=execute find REQUEST nano; if ($OUTPUT == null) exec echo [ViaVersion] Invalid API '$REQUEST' & @alert; if ($OUTPUT != null) axrz run; 
+quest.cmd=execute find REQUEST viaversion; if ($OUTPUT == null) exec echo [ViaVersion] Invalid API '$REQUEST' & @alert; if ($OUTPUT != null) axrz run; 
 
 
 list.title=Select API
