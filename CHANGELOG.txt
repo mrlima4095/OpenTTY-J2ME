@@ -1,15 +1,13 @@
-OpenTTY Java Edition 1.12.1
+OpenTTY Java Edition 1.12.2
 Copyright (C) 2025 - Mr. Lima
 
-[ _Commands_ ]
-
-- `vnt [file] [out]`: parse text to VNOTE format
-- `java`: java virtual machine (beta)
-- `todo`: personal task manager
 
 [ _Updates_ ]
 
-- **ViaVersion** updated to 1.1
-- **Yang** now can use recursive install by nano
-- Garbage Colletor instace charged from `Runtime.getRuntime().gc()` to `System.gc()`
-- Method '**RELOAD**' now log him executed
+-
+-
+-
+-
+-
+-
+-
