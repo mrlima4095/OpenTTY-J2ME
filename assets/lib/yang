@@ -16,7 +16,7 @@ install=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; tick Installing...; q
 update=execute set RESOURCE=yang; yang install; import yang;
 query=execute x11 quest yang;
 
-run=execute for RESOURCE (nano) exec yang install & echo [Yang] installed '$RESOURCE';
+run=for RESOURCE (nano) execute yang install; echo [Yang] installed '$RESOURCE';
 
 [ DISPLAY ]
 
