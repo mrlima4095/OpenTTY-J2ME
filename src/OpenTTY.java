@@ -11,7 +11,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int currentIndex = 0;
     private String logs = "";
     private String path = "/";
-    private String version = "1.8.6";
+    private String version = "1.8.9";
     private Hashtable paths = new Hashtable();
     private Hashtable shell = new Hashtable();
     private Hashtable aliases = new Hashtable();
@@ -169,7 +169,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
         
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
-        else if (mainCommand.equals("@login")) { if (argument.equals("")) { } else { username = argument; } }
+        else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); processCommand("execute break; x11 stop; x11 init; run initd; sh;"); app = true; }
                 
