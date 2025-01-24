@@ -15,7 +15,7 @@ shell.args=list,run,update,query
 list=execute x11 list viaversion;
 run=execute log add debug ViaVersion - Modified from $VERSION to $REQUEST; set VERSION=$REQUEST; unset REQUEST; sh; 
 update=execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/viaversion; install viaversion; import viaversion; tick; 
-query=excute x11 quest viaversion
+query=excute x11 quest viaversion;
 
 [ DISPLAY ]
 
