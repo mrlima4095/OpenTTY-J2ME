@@ -12,8 +12,8 @@ command=sudo,su,exit,logout
 sudo=execute
 su=execute lock; true 
 
-exit=execute if ($USERNAME == root) @login; if ($USERNAME != root) builtin exit;
-logout=execute if ($USERNAME == root) @login; if ($USERNAME != root) builtin logout;
+exit=execute if ($USERNAME != root) builtin exit; if ($USERNAME == root) @login; 
+logout=execute if ($USERNAME != root) builtin logout; if ($USERNAME == root) @login; 
 
 shell.name=sudo
 shell.args=yang,setrepo,cfg,su
