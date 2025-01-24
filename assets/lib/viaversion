@@ -22,7 +22,7 @@ query=execute x11 quest viaversion;
 quest.title=Select API
 quest.label=Version
 quest.key=REQUEST
-quest.cmd=execute find REQUEST viaversion; if ($OUTPUT == null) exec echo [ViaVersion] Invalid API '$REQUEST' & @alert; if ($OUTPUT != null) axrz run; 
+quest.cmd=execute find $REQUEST viaversion; if ($OUTPUT == null) exec echo [ViaVersion] Invalid API '$REQUEST' & @alert; if ($OUTPUT != null) axrz run; 
 
 
 list.title=Select API
