@@ -89,6 +89,7 @@ class OpenTTYClient:
             try:
                 if message.split()[0] == "/exit": self.master.destroy(),
                 elif message.split()[0] == "/clear": self.clear_output()
+                elif message.split()[0] == "/nano": self.open_nano_editor()
                 else: self.socket.sendall((message + "\n").encode())
                 
                 self.input_text.delete(0, tk.END)
