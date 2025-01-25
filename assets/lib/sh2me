@@ -3,8 +3,8 @@
 name=ImmersiveShell
 version=1.1
 
-api.version=1.12.1
-api.error=execute log add error ImmersiveShell requires OpenTTY 1.12.1;
+api.version=1.12
+api.error=execute log add error ImmersiveShell requires OpenTTY 1.12;
 
 include=forge
  
