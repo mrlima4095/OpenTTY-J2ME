@@ -28,6 +28,7 @@ class OpenTTYClient:
         # Menubar
         self.menubar = tk.Menu(self.master, bg="#2E2E2E", fg="#FFFFFF", tearoff=0)
         self.file_menu = tk.Menu(self.menubar, tearoff=0, bg="#424242", fg="#FFFFFF")
+        self.file_menu.add_command(label="Open nano", command=self.open_nano_editor) 
         self.file_menu.add_command(label="Clear Output", command=self.clear_output) 
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=self.close_connection)
@@ -135,6 +136,40 @@ class OpenTTYClient:
             except:
                 pass
         self.master.destroy()
+
+    def open_nano_editor(self):
+        if not self.connected:
+            messagebox.showwarning("OpenTTY", "Not connected to the server.")
+            return
+
+        try:
+            self.socket.sendall(b"execute raw\n")
+            raw_data = self.socket.recv(4096).decode()
+        except Exception as e:
+            messagebox.showerror("OpenTTY", f"Failed to fetch data: {str(e)}")
+            return
+
+        editor_window = tk.Toplevel(self.master)
+        editor_window.title("Nano Editor")
+        editor_window.configure(bg="#2E2E2E")
+
+        editor_text = tk.Text(editor_window, wrap=tk.WORD, bg="#424242", fg="#FFFFFF")
+        editor_text.insert(tk.END, raw_data)
+        editor_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        def save_and_close():
+            edited_content = editor_text.get("1.0", tk.END).strip()
+            lines = edited_content.split("\n")
+            try:
+                self.socket.sendall(b"execute touch\n")
+                for line in lines:
+                    self.socket.sendall(f"add {line}\n".encode())
+            except Exception as e:
+                messagebox.showerror("OpenTTY", f"Failed to send data: {str(e)}")
+            editor_window.destroy()
+
+        save_button = ttk.Button(editor_window, text="Back", command=save_and_close)
+        save_button.pack(pady=5)
 
 
 if __name__ == "__main__":
