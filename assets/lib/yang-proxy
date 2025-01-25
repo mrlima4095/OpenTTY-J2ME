@@ -31,21 +31,21 @@ list.title=Repository
 list.content=Armitage,PasteBin,DeviceFS,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),PackJ (Proxy),X Server 0.4,ImmersiveShell,ViaVersion,Updater
 list.button=Install
 
-Armitage=execute set RESOURCE=armitage; yang install;
-PasteBin=execute set RESOURCE=pastebin; yang install; 
-DeviceFS=execute set RESOURCE=fsdevice; yang install;
-FilesME=execute set RESOURCE=filesme; yang install;
-Forge=execute set RESOURCE=forge; yang install;
-JBuntu=execute set RESOURCE=jbuntu; yang install;
-JAuth2=execute set RESOURCE=jauth2; yang install;
-JBenchmark=execute set RESOURCE=debuggers; yang install;
-J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
-SmartME SDK=execute set RESOURCE=sdkme; yang install; set RESOURCE=forge; yang install;
-PackJ (Update)=execute set RESOURCE=yang; yang install;
-PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install;
-X Server 0.4=execute set RESOURCE=xorg-client; yang install;
-ImmersiveShell=execute set RESOURCE=sh2me; yang install;
-ViaVersion=execute set RESOURCE=viaversion; yang install;
-Updater=execute set RESOURCE=sync; yang install;
+Armitage=execute set RESOURCE=armitage; yang install; yang;
+PasteBin=execute set RESOURCE=pastebin; yang install; yang;
+DeviceFS=execute set RESOURCE=fsdevice; yang install; yang;
+FilesME=execute set RESOURCE=filesme; yang install; yang;
+Forge=execute set RESOURCE=forge; yang install; yang;
+JBuntu=execute set RESOURCE=jbuntu; yang install; yang;
+JAuth2=execute set RESOURCE=jauth2; yang install; yang;
+JBenchmark=execute set RESOURCE=debuggers; yang install; yang;
+J2ME Loader=execute set RESOURCE=modme; yang install; import modme; yang;
+SmartME SDK=execute set RESOURCE=sdkme; yang install; set RESOURCE=forge; yang install; yang;
+PackJ (Update)=execute set RESOURCE=yang; yang install; yang;
+PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install; yang;
+X Server 0.4=execute set RESOURCE=xorg-client; yang install; yang;
+ImmersiveShell=execute set RESOURCE=sh2me; yang install; yang;
+ViaVersion=execute set RESOURCE=viaversion; yang install; yang;
+Updater=execute set RESOURCE=sync; yang install; yang;
 
 
