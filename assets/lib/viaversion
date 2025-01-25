@@ -37,4 +37,4 @@ list.content=1.8.5,1.8.6,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2
 1.11.1=execute set REQUEST=1.11.1; set PATCH=API Update; axrz run;
 1.12=execute set REQUEST=1.12; set PATCH=UI Update; axrz run;
 1.12.1=execute set REQUEST=1.12.1; set PATCH=UI Update; axrz run;
-1.12.1=execute set REQUEST=1.12.2; set PATCH=UI Update; axrz run;
+1.12.2=execute set REQUEST=1.12.2; set PATCH=UI Update; axrz run;
