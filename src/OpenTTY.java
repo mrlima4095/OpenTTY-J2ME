@@ -138,7 +138,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
         else if (mainCommand.equals("for")) { forCommand(argument); }
-        else if (mainCommand.equals("gc")) { System.gc(); } //Runtime.getRuntime().gc(); }
+        else if (mainCommand.equals("gc")) { System.gc(); } 
         else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); } 
         else if (mainCommand.equals("htop")) { new HTopViewer(); }
         else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
@@ -329,33 +329,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (line.length() == 0) continue;
 
                 try {
-                    if (line.indexOf('=') != -1) {
-                        String[] parts = split(line, '=');
-                        String objectName = parts[0].trim();
-                        String className = parts[1].trim();
-
-                        Class clazz = Class.forName(className);
-                        Object instance = clazz.newInstance();
-
-                        objects.put(objectName, instance);
-                    } else if (line.indexOf('.') != -1) {
-                        String[] parts = split(line, '.');
-                        String objectName = parts[0].trim();
-
-                        if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); }
-
-                        for (int j = 1; j < parts.length; j++) {
-                            Object object = (Object) objects.get(objectName);
-                            Class clazz = object.getClass();
-
-                            echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'.");
-                            
-                        }
-                    } else if (line.startsWith("//")) { } else { throw new IOException("Invalid syntax"); }
-                } catch (Exception e) {
-                    echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")");
-                    return;
-                }
+                    if (line.indexOf('=') != -1) { String[] parts = split(line, '='); String objectName = parts[0].trim(); String className = parts[1].trim(); Class clazz = Class.forName(className); Object instance = clazz.newInstance(); objects.put(objectName, instance); } 
+                    else if (line.indexOf('.') != -1) { String[] parts = split(line, '.'); String objectName = parts[0].trim(); if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } for (int j = 1; j < parts.length; j++) { Object object = (Object) objects.get(objectName); Class clazz = object.getClass(); echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); } } 
+                    else if (line.startsWith("//")) { } else { throw new IOException("Invalid syntax"); }
+                } catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return; }
             }
 
         }                
