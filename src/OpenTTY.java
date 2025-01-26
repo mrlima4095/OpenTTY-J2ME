@@ -386,11 +386,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return;
             }
 
-            if (lib.containsKey("screen.content.style")) { content.setFont(newFont((String) lib.get("screen.content.style"))); }
+            
             
             screen = new Form(env((String) lib.get("screen.title")));
             content = new StringItem("", lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : "");
             
+            if (lib.containsKey("screen.content.style")) { content.setFont(newFont((String) lib.get("screen.content.style"))); }
+
             backCommand = new Command(lib.containsKey("screen.back.label") ? env((String) lib.get("screen.back.label")) : "Back", Command.OK, 1);
             userCommand = new Command(lib.containsKey("screen.button") ? env((String) lib.get("screen.button")) : "Menu", Command.SCREEN, 2);
             
