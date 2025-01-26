@@ -1,37 +1,42 @@
 tick Debugging...
+start deployer
+log add info Running Remote Deployer
+
+echo Testing 'stdout'
+basename /java/bin/java
+
 install nano
 touch
-clear
-start deployer
-echo Starting OpenTTY Deploying\n\n
-
-about /java/bin/sh
-basename /java/lib/yang
-build
-date
-
-dir v
-alias
-env
+add key=value
+json
+pjnc
+get nano
 
 fw
 gaddr
 hostname
+netstat
 genip
 
-debug
+ps
 
-add key=value
-json
-pjnc
+dir v
+hash initd
+du initd
 
-@alert
-@flash
+@alert 10
+@screen 
 
+tty
+ttysize
+
+java --version
+java --list
+
+tick 
 stop deployer
-tick
 
-get nano
+log add info Finished Deploy
+
 clear
-
 gc
