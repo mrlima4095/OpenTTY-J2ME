@@ -7,13 +7,11 @@ description=Advanced Perms
 include=forge
 
 config=execute if ($USERNAME == root) echo [JAuth2] Username may not be String 'root';
-command=sudo,su,exit,logout
+command=sudo,exit,logout
 
 sudo=execute
 su=execute lock; true 
 
-exit=execute if ($USERNAME != root) builtin exit; if ($USERNAME == root) @login; 
-logout=execute if ($USERNAME != root) builtin logout; if ($USERNAME == root) @login; 
 
 shell.name=sudo
 shell.args=yang,setrepo,cfg,su
