@@ -1,7 +1,0 @@
-
-quest.title=J2ME Remote
-quest.label=IP Adress
-quest.key=ADDR
-quest.cmd=execute tick Connecting...; bc nc $ADDR; tick;
-quest.back=exit
-
