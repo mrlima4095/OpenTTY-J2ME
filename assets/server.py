@@ -124,6 +124,7 @@ class Server:
             return f"[-] {e}"
 
     def execute_command(self, command):
+        return "Machine commmands blocked"
         """Execute a shell command safely."""
         try: return subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).decode('utf-8')
         except subprocess.CalledProcessError as e: return e.output.decode('utf-8')
