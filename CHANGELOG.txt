@@ -8,5 +8,5 @@ Copyright (C) 2025 - Mr. Lima
 - API checker use prefix to minimal parsing
 - Added a new app to '**TODO**' in JBuntu 
 - Fixed bug at **Screen** when founded '_canvas.content.style_'
--
+- Fixed bugs at string manipulation of Command '**SED**'
 -
