@@ -139,6 +139,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
         else if (mainCommand.equals("for")) { forCommand(argument); }
         else if (mainCommand.equals("gc")) { System.gc(); } 
+        else if (mainCommand.equals("github")) { processCommand("open " + getAppProperty("MIDlet-Info-URL")); }
         else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); } 
         else if (mainCommand.equals("htop")) { new HTopViewer(); }
         else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
@@ -152,9 +153,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
         else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
         else if (mainCommand.equals("lock")) { new LockScreen(); }
+        else if (mainCommand.equals("mail")) { echoCommand(request("nnp.nnchan.ru/hproxy.php?raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
+        else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }       
+        else if (mainCommand.equals("proxy")) { if (argument.equals("")) { } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
         else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
+        else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         else if (mainCommand.equals("reset")) { try { long alarmTime = System.currentTimeMillis() + 5000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); processCommand("exit"); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (NumberFormatException e) { echoCommand(e.getMessage()); } } }
         else if (mainCommand.equals("seed")) { try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
@@ -163,6 +168,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("stop")) { stop(argument); }
         else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh"); }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
+        else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
         else if (mainCommand.equals("time")) { echoCommand(split(new java.util.Date().toString(), ' ')[3]); }
         else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
@@ -185,12 +191,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { importScript(argument); }
 
-        else if (mainCommand.equals("github")) { processCommand("open " + getAppProperty("MIDlet-Info-URL")); }
-        else if (mainCommand.equals("proxy")) { if (argument.equals("")) { return; } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
-        else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
-        else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
-        else if (mainCommand.equals("mail")) { echoCommand(request("raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); }        
-        else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
@@ -202,7 +202,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); MIDletLogs("add debug API reloaded"); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
-        else if (mainCommand.startsWith("@")) { viewer(form.getTitle(), env("@exec\n@login\n@screen\n@alert\n@reload")); }
+        else if (mainCommand.startsWith("@")) { if (attributes.containsKey(replace(mainCommand, "@", ""))) { echoCommand(env(replace(mainCommand, "@", "$"))); } }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
@@ -435,20 +435,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command backCommand, userCommand; 
         private final int cursorSize = 5;
 
-        public MyCanvas(String args) { 
-            if (args == null || args.length() == 0) { return; }
-            lib = parseFrom(args); 
-
-            backCommand = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.OK, 1); 
-            userCommand = new Command(lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu", Command.SCREEN, 2); 
-
-            addCommand(backCommand); 
-            
-            if (lib.containsKey("canvas.button")) { addCommand(userCommand); } 
-            if (lib.containsKey("canvas.mouse")) { try { cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } }
-
-            setCommandListener(this); 
-        }
+        public MyCanvas(String args) { if (args == null || args.length() == 0) { return; } lib = parseFrom(args); backCommand = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.OK, 1); userCommand = new Command(lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu", Command.SCREEN, 2); addCommand(backCommand); if (lib.containsKey("canvas.button")) { addCommand(userCommand); } if (lib.containsKey("canvas.mouse")) { try { cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } } setCommandListener(this); }
 
         protected void paint(Graphics g) { 
             if (screen == null) { screen = g; }
@@ -471,20 +458,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 g.setFont(Font.getDefaultFont());
                 if (lib.containsKey("canvas.content.style")) { g.setFont(newFont((String) lib.get("canvas.content.style"))); }
 
-                if (contentType.equals("text") || contentType.equals("default")) {
-                    g.setColor(255, 255, 255);
-                    String content = env((String) lib.get("canvas.content"));
-                                        
-                    int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight();
-                    g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
-                }
+                if (contentType.equals("text") || contentType.equals("default")) { g.setColor(255, 255, 255); String content = env((String) lib.get("canvas.content")); int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight(); g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); }
 
-                else if (contentType.equals("shape")) {
-                    String[] shapes = split(env((String) lib.get("canvas.content")), ';');
+                else if (contentType.equals("shape")) { String[] shapes = split(env((String) lib.get("canvas.content")), ';');
 
-                    for (int i = 0; i < shapes.length; i++) {
-                        String[] parts = split(shapes[i], ',');
-                        String type = parts[0].toLowerCase(); 
+                    for (int i = 0; i < shapes.length; i++) { String[] parts = split(shapes[i], ','); String type = parts[0].toLowerCase(); 
 
                         if (type.equals("line") && parts.length == 5) { g.setColor(255, 255, 255); g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } 
                         else if (type.equals("circle") && parts.length == 4) { g.setColor(0, 255, 0); int radius = Integer.parseInt(parts[3]); g.drawArc(Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360); } 
@@ -502,20 +480,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         }
 
-        protected void keyPressed(int keyCode) { 
-            int gameAction = getGameAction(keyCode); 
-            
-            if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); }
-            else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); }
-            else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); }
-            else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); }
-            else if (gameAction == FIRE) { if (lib.containsKey("canvas.content")) { String content = env((String) lib.get("canvas.content")); int contentWidth = screen.getFont().stringWidth(content); int contentHeight = screen.getFont().getHeight(); int textX = (getWidth() - contentWidth) / 2; int textY = (getHeight() - contentHeight) / 2; if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); } } } 
-
-            repaint(); 
-        }
-
+        protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } else if (gameAction == FIRE) { if (lib.containsKey("canvas.content")) { String content = env((String) lib.get("canvas.content")); int contentWidth = screen.getFont().stringWidth(content); int contentHeight = screen.getFont().getHeight(); int textX = (getWidth() - contentWidth) / 2; int textY = (getHeight() - contentHeight) / 2; if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); } } } repaint(); }
         protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); }
-        
         public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } }
     }
 
