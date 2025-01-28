@@ -29,4 +29,4 @@ list.title=Forge Tools
 list.content=New Project
 list.back=execute x11 make forge;
 
-New Project=
+New Project=execute forge gen;
