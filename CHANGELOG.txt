@@ -11,7 +11,7 @@ Copyright (C) 2025 - Mr. Lima
 - `gear`: 
 - `cron`: 
 - `join`: 
-- `chmod`: 
+- `chmod`: 	
 
 [ _Updates_ ]
 
