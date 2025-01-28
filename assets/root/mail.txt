@@ -1,9 +1,11 @@
-Happy 2025 for all users!
+[ OpenTTY Mail ]
 
-I will stop by a time with development of OpenTTY cause it have a lot of features and I dont find any bugs in deploy.
+From: Mr Lima (Lead Developer)
 
-About 1.8 LTS, I will send updates to it in Janery and stop in 1.8.9.
+------------------------------
 
+Hi guys, I wrote this to say that I am looking for help in OpenTTY development and in app documentation. If you are interesting send me a mail (You can do it with command 'report'). 
 
-Thank you guys
-Byee!
+I hope that you like OpenTTY.
+
+jan 27, 2025
