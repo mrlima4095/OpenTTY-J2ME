@@ -29,7 +29,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public void startApp() {
         if (!trace.containsKey("sh")) {
-            attributes.put("PATCH", " Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.6");
+            attributes.put("PATCH", "Media Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.6");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $"); 
@@ -144,6 +144,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("htop")) { new HTopViewer(); }
         else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand("" + read(argument).hashCode()); } else if (argument.equals("nano")) { echoCommand("" + nanoContent.hashCode()); } else { echoCommand("" + loadRMS(argument, 1).hashCode()); } } }
+        else if (mainCommand.equals("hostid")) { String data = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int hash = 7; for (int i = 0; i < data.length(); i++) { hash = hash * 31 + data.charAt(i); } echoCommand(Integer.toHexString(hash).toLowerCase()); }
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("if")) { ifCommand(argument); }
         else if (mainCommand.equals("java")) { java(argument); }
@@ -194,6 +195,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
+        
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
