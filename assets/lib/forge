@@ -26,7 +26,9 @@ screen.button=Tools
 screen.button.cmd=execute x11 list forge;
 
 list.title=Forge Tools
-list.content=New Project
+list.content=New Project,Charge API,Update Forge
 list.back=execute x11 make forge;
 
 New Project=execute forge gen;
+Charge API=execute hash viaversion; if ($OUTPUT == 0) exec x11 list forge & warn You must have ViaVersion installed; if ($OUTPUT != 0) axrz;
+Update Forge=execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/forge; install forge; get nano; import forge; tick; forge; warn Forge was installed the latest version from GitHub;
