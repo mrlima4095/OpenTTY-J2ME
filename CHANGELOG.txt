@@ -1,12 +1,22 @@
-OpenTTY Java Edition 1.12.2
+OpenTTY Java Edition 1.13
 Copyright (C) 2025 - Mr. Lima
 
 
+[ _Commands_ ]
+
+-
+-
+-
+-
+-
+
 [ _Updates_ ]
 
-- **OpenTTY Remote** now support nano
-- API checker use prefix to minimal parsing
-- Added a new app to '**TODO**' in JBuntu 
-- Fixed bug at **Screen** when founded '_canvas.content.style_'
-- Fixed bugs at string manipulation of Command '**SED**'
+-
+-
+-
+-
+-
+-
+-
 -
