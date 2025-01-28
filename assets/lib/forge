@@ -9,6 +9,16 @@ command=forge
 
 forge=execute x11 make forge; 
 
+shell.name=forge
+shell.args=new,gen_web,
+
+new=execute install nano; touch; add list.title=New Project; add list.content=Web Application,OpenTTY Server,Default App,Enhanced App; add list.back=forge; add Web Application=forge gen_web; add OpenTTY Server=forge gen_server; add Default App=forge gen_default; add Enhanced App=forge gen_enhanced;
+
+gen_web=execute touch; add HTTP/1.1 200 OK\nContent-Type: text/html\nConnection: close\n\n\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Page Title</title>\n</head>\n<body>\n    <p>Write here the page content.</p>\n</body>\n</html>; nano
+gen_server=execute touch; add [ Config ]\n\nname=\nversion=\ndescription=\n\nprocess.type=bind\nprocess.port=10455\n\nconfig=\n; nano;
+gen_default=execute touch; add [ Config ]\n\nname=\nversion=\ndescription=\n\ninclude=\n\nconfig=\ncommand=\n\n 
+gen_enhanced= 
+
 [ DISPLAY ]
 
 screen.title=Forge $FORGE_VERSION
@@ -19,5 +29,4 @@ list.title=Forge Tools
 list.content=New Project
 list.back=execute x11 make forge;
 
-New Project=execute touch; add [ Config ]\n\nname=App Name\nversion=1.0\ndescription=My Project\n\ninclude=forge\n\nprocess.name=app\nmod=\n\nconfig=execute true\ncommand=\n; nano; 
-
+New Project=
