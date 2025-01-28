@@ -6,15 +6,12 @@ Copyright (C) 2025 - Mr. Lima
 
 - `hostid`: ID of current machine
 - `clone`: 
-- `uuid`:
 - `heal`: 
 - `stat`: 
 - `gear`: 
 - `cron`: 
 - `join`: 
 - `chmod`: 
-- `playsound`: 
-- `stopsound`: 
 
 [ _Updates_ ]
 
