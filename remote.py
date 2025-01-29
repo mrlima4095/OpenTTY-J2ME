@@ -14,6 +14,7 @@ class RemoteApp:
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect((host, int(port)))
+        self.s.settimeout(2)
 
         self.host = host
 
@@ -21,14 +22,18 @@ class RemoteApp:
         
     def connect(self):
         self.username = self.get("logname").strip()
+        self.path = self.get("pwd").strip()
 
         while True:
             try:
-                command = input(f"\033[32m{self.username}@{self.host}\033[m:\033[m~$ ").strip()
+                command = input(f"{self.username} {self.path} $ ").strip()
                 command = self.get(command).strip()
-
+                
                 if (command != ""): print(command)
             except KeyboardInterrupt:
+                self.path = self.get("pwd").strip()
+                self.username = self.get("logname").strip()
+
                 self.clear()
             except Exception as e:
                 print("\nClosed Connection")
