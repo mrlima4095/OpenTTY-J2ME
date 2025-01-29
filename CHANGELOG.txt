@@ -5,13 +5,14 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `hostid`: ID of current machine
+- `chmod`: 
 - `clone`: 
-- `heal`: 
-- `stat`: 
-- `gear`: 
+- `mmspt`: 
+- `sign`: 
 - `cron`: 
 - `join`: 
-- `chmod`: 	
+- ``: 
+- ``: 
 
 [ _Updates_ ]
 
