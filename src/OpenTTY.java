@@ -281,13 +281,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void chmod(String node) {
         if (node == null || node.length() == 0) { return; }
 
-        int status;
+        int status = 0;
 
         try {
             if (node.equals("http")) { ((HttpConnection) Connector.open("http://ipinfo.io")).close(); status = 1; node = "javax.microedition.io.Connector.http"; } 
             else if (node.equals("socket")) { ((SocketConnection) Connector.open("socket://1.1.1.1:53")).close(); status = 1; node = "javax.microedition.io.Connector.socket"; } 
             else if (node.equals("file")) { FileSystemRegistry.listRoots(); status = 1; node = "javax.microedition.io.Connector.file"; } 
-            
+            else if 
+
             else { echoCommand("chmod: " + node + ": not found"); }
         } 
         catch (SecurityException e) { status = 2; } 
