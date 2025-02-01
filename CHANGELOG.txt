@@ -13,6 +13,7 @@ Copyright (C) 2025 - Mr. Lima
 - `join`: 
 - ``: 
 - ``: 
+- ``: 
 
 [ _Updates_ ]
 
@@ -24,3 +25,11 @@ Copyright (C) 2025 - Mr. Lima
 -
 -
 -
+
+[ _Permissions_ ]
+
+- `http`: 
+- `file`:
+- `socket`:  
+- ``: 
+- ``: 
