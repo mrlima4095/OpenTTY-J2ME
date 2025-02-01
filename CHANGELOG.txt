@@ -5,7 +5,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `hostid`: ID of current machine
-- `chmod`: Runtime Permissions 
+- `chmod`: Runtime Permissions settings
 - `clone`: 
 - `mmspt`: 
 - `sign`: 
