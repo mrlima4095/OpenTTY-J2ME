@@ -284,11 +284,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         int status = 0;
 
         try {
-            if (node.equals("http")) { ((HttpConnection) Connector.open("http://ipinfo.io")).close(); status = 1; node = "javax.microedition.io.Connector.http"; } 
-            else if (node.equals("socket")) { ((SocketConnection) Connector.open("socket://1.1.1.1:53")).close(); status = 1; node = "javax.microedition.io.Connector.socket"; } 
-            else if (node.equals("file")) { FileSystemRegistry.listRoots(); status = 1; node = "javax.microedition.io.Connector.file"; } 
+            if (node.equals("http")) { node = "javax.microedition.io.Connector.http"; ((HttpConnection) Connector.open("http://ipinfo.io")).close(); status = 1; } 
+            else if (node.equals("socket")) { node = "javax.microedition.io.Connector.socket"; ((SocketConnection) Connector.open("socket://1.1.1.1:53")).close(); status = 1; } 
+            else if (node.equals("file")) {  node = "javax.microedition.io.Connector.file"; FileSystemRegistry.listRoots(); status = 1; } 
             
-
             else { echoCommand("chmod: " + node + ": not found"); }
         } 
         catch (SecurityException e) { status = 2; } 
