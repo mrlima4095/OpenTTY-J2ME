@@ -5,11 +5,11 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `hostid`: ID of current machine
-- `chmod`: Runtime Permissions settings
+- `chmod [node]`: Runtime Permissions settings
 - `clone`: 
 - `mmspt`: 
 - `sign`: 
-- `cron`: 
+- `cron [time] (command)`: Wait before execute command
 - ``: 
 - ``: 
 - ``: 
@@ -22,6 +22,10 @@ Copyright (C) 2025 - Mr. Lima
 -
 -
 -
--
--
 
+[ _Permissions_ ]
+
+- `http`: _javax.microedition.io.Connector.http_
+- `file`: _javax.microedition.io.Connector.file_
+- `socket`: _javax.microedition.io.Connector.socket_
+- `prg`: _javax.microedition.io.PushRegistry_
