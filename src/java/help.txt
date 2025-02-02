@@ -23,8 +23,8 @@ General Utilities:
 [ API Info ]
 
 Package Manager: 
-  To acess this, import /java/lib/yang
-  and run Command (yang) to open repo
+  To acess import /java/lib/yang
+  Commands are 'yang' and 'setrepo' 
 
 [ Web Project ]
 
