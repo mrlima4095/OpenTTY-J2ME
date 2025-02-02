@@ -10,15 +10,15 @@ Network Utilities:
   nc, prscan, gobuster
   
 File Utilities:
-  add, nano, html, json, dir, pwd, rm
-  cat, ls, install, cp, du, dd, touch
-  mount, unmount, find, grep, sed
+  nano, html, json, dir, pwd, rm, cat
+  ls, install, cp, du, mount, unmount
+  find, grep, touch, hash, sed
 
 General Utilities:
   alias, about, clear, date, echo, exit
-  execute, exec, env, hostname, version
+  execute, exec, env, hostname
   logout, whoami, start, ps, stop, kill
-  uname, tty, ttysize
+  uname, tty, ttysize, version
 
 [ API Info ]
 
