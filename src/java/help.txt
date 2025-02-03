@@ -22,9 +22,11 @@ General Utilities:
 
 [ API Info ]
 
-Package Manager: 
-  To acess import /java/lib/yang
-  Commands are 'yang' and 'setrepo' 
+Package Manager:
+  local - /java/lib/yang
+
+  To acess it, import lib and
+  run command 'yang'
 
 [ Web Project ]
 
