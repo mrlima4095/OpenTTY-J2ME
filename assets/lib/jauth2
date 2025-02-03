@@ -10,8 +10,6 @@ config=execute if ($USERNAME == root) echo [JAuth2] Username may not be String '
 command=sudo,exit,logout
 
 sudo=execute
-su=execute lock; true 
-
 
 shell.name=sudo
 shell.args=yang,setrepo,cfg,su
