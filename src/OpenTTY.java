@@ -398,22 +398,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         private String file = ".tasks";
         
-        public MyTaskManager() {
-            tasks.addCommand(backCommand);
-            tasks.addCommand(newCommand);
-            tasks.addCommand(toggleCommand);
-            tasks.addCommand(readCommand);
-            tasks.addCommand(clearCommand);
-            tasks.addCommand(deleteCommand);
-            taskname.addCommand(saveCommand);
-            
-            tasks.setCommandListener(this);
-            taskname.setCommandListener(this);
-            clearConfirm.setCommandListener(this);
-            
-            readTasks();
-            display.setCurrent(tasks);
-        }
+        public MyTaskManager() { tasks.addCommand(backCommand); tasks.addCommand(newCommand); tasks.addCommand(toggleCommand); tasks.addCommand(readCommand); tasks.addCommand(clearCommand); tasks.addCommand(deleteCommand); taskname.addCommand(saveCommand); tasks.setCommandListener(this); taskname.setCommandListener(this); readTasks(); display.setCurrent(tasks); }
         
         public void commandAction(Command c, Displayable d) {
             if (display.getCurrent() == tasks) {
