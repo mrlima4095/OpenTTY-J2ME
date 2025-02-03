@@ -1,2 +1,2 @@
 [2025-1.12.1-01x33] Added Command 'CHMOD'
-[2025-1.13-01x34]	Added Command 'CRON' and Permission fix in 'javax.microedition.io.PushRegistry'
+[2025-1.13-01x34]	Added Command 'CRON' | Permission 'javax.microedition.io.PushRegistry' fixed
