@@ -120,7 +120,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("alias")) { aliasCommand(argument); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
         else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { processCommand(argument); } }
-        else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }, "").start(); }
+        else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }, "background").start(); }
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { processCommand(argument, false); }
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
         else if (mainCommand.equals("build")) { echoCommand(build); }
