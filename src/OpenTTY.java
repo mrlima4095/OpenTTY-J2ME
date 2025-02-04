@@ -156,6 +156,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
         else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
         else if (mainCommand.equals("lock")) { new LockScreen(); }
+        else if (mainCommand.equals("mmspt")) { //Thread.currentThread().interrupt(); 
+            Thread t = Thread.currentThread();
+echoCommand("Nome: " + t.getName());
+echoCommand("ID: " + t.getId());
+echoCommand("Estado: " + t.getState());
+echoCommand("Prioridade: " + t.getPriority());
+echoCommand("É Daemon? " + t.isDaemon());
+        }
         else if (mainCommand.equals("mail")) { echoCommand(request("nnp.nnchan.ru/hproxy.php?raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
@@ -196,8 +204,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("clone")) {  }
-        else if (mainCommand.equals("mmspt")) { echoCommand(Thread.currentThread().getName()); }
-        else if (mainCommand.equals("this")) { Thread.currentThread().interrupt(); }
         else if (mainCommand.equals("sign")) {  }
          
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
