@@ -160,7 +160,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Thread t = Thread.currentThread();
 echoCommand("Nome: " + t.getName());
 echoCommand("Prioridade: " + t.getPriority());
-echoCommand("É Daemon? " + t.isDaemon());
         }
         else if (mainCommand.equals("mail")) { echoCommand(request("nnp.nnchan.ru/hproxy.php?raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
