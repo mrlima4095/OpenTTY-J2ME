@@ -159,7 +159,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("mmspt")) { //Thread.currentThread().interrupt(); 
             Thread t = Thread.currentThread();
 echoCommand("Nome: " + t.getName());
-echoCommand("ID: " + t.getId());
 echoCommand("Estado: " + t.getState());
 echoCommand("Prioridade: " + t.getPriority());
 echoCommand("É Daemon? " + t.isDaemon());
