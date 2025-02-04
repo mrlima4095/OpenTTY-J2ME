@@ -8,7 +8,7 @@ Copyright (C) 2025 - Mr. Lima
 - `chmod [node]`: Runtime Permissions settings
 - `clone`: 
 - `mmspt`: 
-- `sign`: 
+- `sign`: Get and set name for current Thread
 - `cron [time] (command)`: Wait before execute command
 - ``: 
 - ``: 
@@ -19,7 +19,7 @@ Copyright (C) 2025 - Mr. Lima
 - New OpenTTY Logo
 - Updated help message
 - Task Manager button `Delete all` replaced by `Clear finished`
-- 
+- Fixed **IllegalAcessException** in Java of MIDlet
 -
 -
 
