@@ -18,8 +18,8 @@ Copyright (C) 2025 - Mr. Lima
 
 - New OpenTTY Logo
 - Updated help message
--
--
+- Task Manager button `Delete all` replaced by `Clear finished`
+- 
 -
 -
 
