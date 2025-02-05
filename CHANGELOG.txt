@@ -1,4 +1,4 @@
-5OpenTTY Java Edition 1.13
+OpenTTY Java Edition 1.13
 Copyright (C) 2025 - Mr. Lima7
 
 
