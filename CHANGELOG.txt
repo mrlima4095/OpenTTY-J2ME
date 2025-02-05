@@ -1,5 +1,5 @@
-OpenTTY Java Edition 1.13
-Copyright (C) 2025 - Mr. Lima
+5OpenTTY Java Edition 1.13
+Copyright (C) 2025 - Mr. Lima7
 
 
 [ _Commands_ ]
@@ -20,7 +20,7 @@ Copyright (C) 2025 - Mr. Lima
 - Updated help message
 - Task Manager button `Delete all` replaced by `Clear finished`
 - Fixed **IllegalAcessException** in Java of MIDlet
--
+- New case method `Thread` to check **Thread** type
 -
 
 [ _Permissions_ ]
