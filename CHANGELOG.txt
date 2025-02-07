@@ -21,7 +21,7 @@ Copyright (C) 2025 - Mr. Lima7
 - Task Manager button `Delete all` replaced by `Clear finished`
 - Fixed **IllegalAcessException** in Java of MIDlet
 - New case method `Thread` to check **Thread** type
--
+- New app **Tab** added in _Repository list_
 
 [ _Permissions_ ]
 
