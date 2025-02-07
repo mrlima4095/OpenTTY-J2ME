@@ -1,0 +1,25 @@
+[ Config ]
+
+name=Tab
+version=1.0
+description=Auto Syntax
+
+api.version=1.13
+api.error=execute echo [Tab] Requires API 1.13; log add error Tab requires OpenTTY 1.13;
+
+process.name=tab
+mod=execute 
+
+include=forge
+
+config=
+command=
+
+shell.name=
+shell.args=
+
+[ COMMAND ]
+
+item.label=
+item.cmd=
+
