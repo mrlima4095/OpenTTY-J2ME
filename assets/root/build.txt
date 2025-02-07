@@ -1,4 +1,5 @@
 [2025-1.12.1-01x33] Added Command 'CHMOD'
 [2025-1.13-01x34]	Added Command 'CRON' | Permission 'javax.microedition.io.PushRegistry' fixed
 [2025-1.13-01x35]	Added Command 'MMSPT' | New function @stop 
-[]
+[2025-1.13-01x36]   
+
