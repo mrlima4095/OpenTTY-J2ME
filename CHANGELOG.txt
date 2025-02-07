@@ -1,5 +1,5 @@
 OpenTTY Java Edition 1.13
-Copyright (C) 2025 - Mr. Lima7
+Copyright (C) 2025 - Mr. Lima
 
 
 [ _Commands_ ]
