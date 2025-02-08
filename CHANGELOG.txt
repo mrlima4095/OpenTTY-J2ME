@@ -29,3 +29,4 @@ Copyright (C) 2025 - Mr. Lima
 - `file`: _javax.microedition.io.Connector.file_
 - `socket`: _javax.microedition.io.Connector.socket_
 - `prg`: _javax.microedition.io.PushRegistry_
+																																																																																															
