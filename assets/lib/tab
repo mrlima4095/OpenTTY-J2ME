@@ -14,7 +14,7 @@ config=execute x11 item tab;
 [ COMMAND ]
 
 item.label=TAB
-item.cmd=if ($PROMPT) execute if ($PROMPT == ex) buff exec; if ($PROMPT == execu) buff execute; if ($PROMPT == execut) buff; if ($PROMPT == x) buff x11; if ($PROMPT == canvas) buff x11 canvas; if ($PROMPT == quest) buff x11 quest; if ($PROMPT == make) buff x11 make; if ($PROMPT == list) buff x11 list;
+item.cmd=if ($PROMPT) execute if ($PROMPT startswith exe) buff execute; 
 
 # if ($PROMPT == )
 # if ($PROMPT == )
