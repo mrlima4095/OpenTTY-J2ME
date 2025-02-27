@@ -14,7 +14,4 @@ config=execute x11 item tab;
 [ COMMAND ]
 
 item.label=TAB
-item.cmd=if ($PROMPT) execute if ($PROMPT startswith exe) buff execute; 
-
-# if ($PROMPT == )
-# if ($PROMPT == )
+item.cmd=if ($PROMPT) execute if ($PROMPT startswith exec) buff execute; if ($PROMPT startswith net) buff netstat; if ($PROMPT startswith ip) buff ifconfig; if ($PROMPT startswith ins) buff install; if ($PROMPT startswith hn) buff hostname; if ($PROMPT startswith hi) buff hostid; if ($PROMPT startswith x) buff x11; if ($PROMPT startswith canvas) buff x11 canvas; if ($PROMPT startswith -class) buff java -class; if ($PROMPT startswith imp) buff import; 
