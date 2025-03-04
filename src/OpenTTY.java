@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.13-01x36";
+                   build = "2025-1.13-01x37";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -194,6 +194,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { importScript(argument); }
 
+        //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("clone")) {  }
         else if (mainCommand.equals("sign")) {  }
