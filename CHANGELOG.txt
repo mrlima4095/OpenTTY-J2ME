@@ -1,27 +1,16 @@
-OpenTTY Java Edition 1.13
+OpenTTY Java Edition 1.14
 Copyright (C) 2025 - Mr. Lima
 
 
 [ _Commands_ ]
 
-- `hostid`: ID of current machine
-- `chmod [node]`: Runtime Permissions settings
-- `mmspt`: Show name/ type for current Thread
-- `cron [time] (command)`: Wait before execute command
+- ``:
+- ``:
+- ``:
+- ``:
 
 [ _Updates_ ]
 
-- New OpenTTY Logo
-- Updated help message
-- Task Manager button `Delete all` replaced by `Clear finished`
-- Fixed **IllegalAcessException** in Java of MIDlet
-- New case method `Thread` to check **Thread** type
-- New app **Tab** added in _Repository list_
-
-[ _Permissions_ ]
-
-- `http`: _javax.microedition.io.Connector.http_
-- `file`: _javax.microedition.io.Connector.file_
-- `socket`: _javax.microedition.io.Connector.socket_
-- `prg`: _javax.microedition.io.PushRegistry_
-																																																																																															
+- ``:
+- ``:
+- ``:
