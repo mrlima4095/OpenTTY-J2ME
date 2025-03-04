@@ -6,13 +6,8 @@ Copyright (C) 2025 - Mr. Lima
 
 - `hostid`: ID of current machine
 - `chmod [node]`: Runtime Permissions settings
-- `clone`: 
 - `mmspt`: Show name/ type for current Thread
-- `sign`: 
 - `cron [time] (command)`: Wait before execute command
-- ``: 
-- ``: 
-- ``: 
 
 [ _Updates_ ]
 
