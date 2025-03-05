@@ -4,8 +4,6 @@ From: Mr Lima (Lead Developer)
 
 ------------------------------
 
-Hi guys, I wrote this to say that I am looking for help in OpenTTY development and in app documentation. If you are interesting send me a mail (You can do it with command 'report'). 
+Another update had been released yesterday. I'm without ideas for new updates
 
-I hope that you like OpenTTY.
-
-jan 27, 2025
+mar 05, 2025
