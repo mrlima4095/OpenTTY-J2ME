@@ -3,3 +3,4 @@
 [2025-1.13-01x35]	Added Command 'MMSPT' | New function @stop 
 [2025-1.13-01x36]   Added package 'TAB'
 [2025-1.13-01x37]	Release 1.13
+[2025-1.13-01x38]	1.14 Suite case | Added package 'Android API'
