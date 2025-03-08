@@ -1,0 +1,29 @@
+[ Config ]
+
+name=Android
+version=1.0
+description=API for Android
+
+api.version=1.14
+api.error=execute log add Android API requires OpenTTY 1.14; echo [ Android ] Required 1.14 OpenTTY API;
+
+process.name=android
+process.type=service
+process.port=10141
+
+include=forge
+
+config=
+command=
+
+shell.name=droid
+shell.args=help
+
+help=open https://github.com/mrlima4095/OpenTTY-J2ME/blob/main/assets/root/android.md
+
+
+[ COMMAND ]
+
+item.label=
+item.cmd=
+
