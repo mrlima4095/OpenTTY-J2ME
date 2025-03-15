@@ -4,8 +4,8 @@ name=Tab
 version=1.0
 description=Auto Syntax
 
-api.version=1.13
-api.error=execute echo [Tab] Requires API 1.13; log add error Tab requires OpenTTY 1.13;
+api.version=1.14
+api.error=execute echo [Tab] Requires API 1.14; log add error Tab requires OpenTTY 1.14;
 
 include=forge
 
