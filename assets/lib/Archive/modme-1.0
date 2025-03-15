@@ -1,0 +1,12 @@
+[ Config ]
+
+name=LoaderME
+version=1.0
+description=Alt Interface 
+
+api.version=1.11
+api.error=execute log add error LoaderME Error - It requires X.Org 0.5.1 or newer; echo LoaderME Requires 1.11 API or newer
+
+config=execute x11 cmd hide; install nano; touch; add item.label=Nano; add item.cmd=nano; x11 item nano; touch; add item.label=Clear; add item.cmd=exec buff & clear; x11 item nano; touch; add item.label=History; add item.cmd=history; x11 item nano; get nano; 
+
+
