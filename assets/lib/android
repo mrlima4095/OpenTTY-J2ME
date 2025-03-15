@@ -17,15 +17,16 @@ config=
 command=
 
 shell.name=droid
-shell.args=start,exec,help
+shell.args=start,exec,help,menu
 
 start=execute install nano; touch; add process.type=bind; add process.port=10542; add process.db=droid; import nano; get nano; 
 exec=execute true; 
 help=open https://github.com/mrlima4095/OpenTTY-J2ME/blob/main/assets/root/android.md
+menu=execute x11 list android;
 
 
 [ COMMAND ]
 
-item.label=
-item.cmd=
+item.label=Android
+item.cmd=execute droid menu
 
