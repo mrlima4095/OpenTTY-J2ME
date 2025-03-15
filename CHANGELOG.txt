@@ -12,5 +12,6 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Added new package `Android API`
-- 
-- 
+- `JBenckmark` API updated to support **1.14**
+- `LoaderME` updated to **1.1**
+- `ImmersiveShell` API updated to support **1.14**
