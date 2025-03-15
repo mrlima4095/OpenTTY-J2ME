@@ -28,3 +28,13 @@ sh ~/start.sh
 It you start a host of **OpenTTY Server** directly from you Phone, if you already have this, skip this step!  
  
 ## Using the API
+
+After you import **Android API** you can 
+
+
+
+## API had been crashed?
+
+Some checks in API requires the process `android` to be running, if you kill it by your self, when **Android API** will run anything in this, it crashes. 
+
+J2ME Loader and other emulators of Java MicroEdition for Android dont support PushRegistry or another method to fix it automaticly, by this unsupport the MIDlet is closed and need to be reopen manually by user. Before MIDlet closes, the logs is saved in the file `session-droid-crashed.logs`. 
