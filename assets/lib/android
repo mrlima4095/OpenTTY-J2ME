@@ -5,7 +5,7 @@ version=1.0
 description=API for Android
 
 api.version=1.14
-api.error=execute log add Android API requires OpenTTY 1.14; echo [ Android ] Required 1.14 OpenTTY API;
+api.error=execute log add error Android API requires OpenTTY 1.14; echo [ Android ] Required 1.14 OpenTTY API;
 
 process.name=android
 process.type=service
@@ -13,20 +13,32 @@ process.port=10542
 
 include=forge
 
-config=
+config=execute set DROID_VERSION=1.0; log add info Running Android API $DROID_VERSION; echo [ Android ] Running Android API $DROID_VERSION; x11 item android;
 command=
 
 shell.name=droid
-shell.args=start,exec,help,menu
+shell.args=help,menu,stop,crash
 
-start=execute install nano; touch; add process.type=bind; add process.port=10542; add process.db=droid; import nano; get nano; 
-exec=execute true; 
 help=open https://github.com/mrlima4095/OpenTTY-J2ME/blob/main/assets/root/android.md
 menu=execute x11 list android;
+stop=execute case trace (android) exec log add debug Android API stopped & unset DROID_VERSION & @reload; case !trace (android) droid crash;
+crash=execute exec log add error Android API had been killed; log swap session-droid-crashed.logs; exit;
 
 
 [ COMMAND ]
 
 item.label=Android
 item.cmd=execute droid menu
+
+[ DISPLAY ]
+
+list.title=Android API
+list.content=
+list.button=Select
+
+
+Yang Repository=
+
+Stop Android API=execute droid stop
+Online README=
 
