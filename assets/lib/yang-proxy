@@ -46,7 +46,7 @@ PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install; yang;
 X Server 0.4=execute set RESOURCE=xorg-client; yang install; yang;
 ImmersiveShell=execute set RESOURCE=sh2me; yang install; yang;
 Auto Syntax=execute set RESOURCE=tab; yang install; yang;
-Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install; yang;
+Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install; set RESOURCE=debuggers; yang install; yang;
 ViaVersion=execute set RESOURCE=viaversion; yang install; yang;
 Updater=execute set RESOURCE=sync; yang install; yang;
 
