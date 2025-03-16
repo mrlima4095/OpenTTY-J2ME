@@ -8,7 +8,6 @@ api.version=1.14
 api.error=execute log add error Android API requires OpenTTY 1.14; echo [ Android ] Required 1.14 OpenTTY API;
 
 process.name=android
-process.type=service
 process.port=10542
 
 include=forge
