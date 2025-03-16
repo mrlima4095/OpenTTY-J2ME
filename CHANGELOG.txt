@@ -4,7 +4,7 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- ``: 
+- `clone [url]`: get a raw content from an HTTP server and run this as script  
 - ``:
 - ``:
 - ``:
@@ -14,4 +14,7 @@ Copyright (C) 2025 - Mr. Lima
 - Added new package `Android API`
 - `JBenckmark` API updated to support **1.14**
 - `LoaderME` updated to **1.1**
-- `ImmersiveShell` API updated to support **1.14**
+
+[ _Notes_ ]
+
+- Command `clone` is a builtin command, it uses proxy to acess HTTPS from old devices.
