@@ -4,3 +4,4 @@
 [2025-1.13-01x36]   Added package 'TAB'
 [2025-1.13-01x37]	Release 1.13
 [2025-1.13-01x38]	1.14 Suite case | Added package 'Android API'
+[2025-1.13-01x39]	Added Command 'CLONE'
