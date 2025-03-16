@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.13-01x38";
+                   build = "2025-1.13-01x39";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -125,6 +125,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("build")) { echoCommand(build); }
         else if (mainCommand.equals("chmod")) { chmod(argument); }
         else if (mainCommand.equals("case")) { caseCommand(argument); }
+        else if (mainCommand.equals("clone")) { if (argument.equals("")) { } else { runScript(request("nnp.nnchan.ru/hproxy.php?" + argument)); } }
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument)); } }
         else if (mainCommand.equals("cal")) { final Form cal = new Form(form.getTitle()); cal.append(new DateField(null , DateField.DATE)); cal.addCommand(new Command("Back", Command.BACK, 1)); cal.setCommandListener(this); display.setCurrent(cal); }
         else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
@@ -196,7 +197,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("clone")) {  }
         else if (mainCommand.equals("sign")) {  }
         
         else if (mainCommand.equals("@stop")) { Thread.currentThread().interrupt(); }
