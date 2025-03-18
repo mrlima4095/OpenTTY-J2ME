@@ -1,0 +1,21 @@
+[ Config ]
+
+name=Manager
+version=1.0
+description=Advanced TOP
+
+command=htop
+
+htop=execute x11 list htopp.pkg
+
+
+
+[ DISPLAY ]
+
+list.title=Manager
+list.content=Process,Memory
+list.button=Open
+
+Process=execute 
+Memory=execute htop;
+
