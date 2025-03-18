@@ -13,16 +13,18 @@ process.port=10542
 include=forge
 
 config=execute set DROID_VERSION=1.0; log add info Running Android API $DROID_VERSION; echo [ Android ] Running Android API $DROID_VERSION; x11 item android;
-command=
+command=droid
+
+droid=droid menu
 
 shell.name=droid
-shell.args=help,menu,stop,crash
+shell.args=help,menu,status,stop,crash
 
 help=open https://github.com/mrlima4095/OpenTTY-J2ME/blob/main/assets/root/android.md
 menu=execute x11 list android;
+status=execute case trace (android) true; case !trace (android) droid crash;
 stop=execute case trace (android) exec log add debug Android API stopped & unset DROID_VERSION & @reload; case !trace (android) droid crash;
 crash=execute exec log add error Android API had been killed; log swap session-droid-crashed.logs; exit;
-
 
 [ COMMAND ]
 
@@ -37,6 +39,7 @@ list.button=Select
 
 
 Yang Repository=
+
 
 Stop Android API=execute droid stop
 Online README=
