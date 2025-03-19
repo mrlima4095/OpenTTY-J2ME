@@ -67,145 +67,228 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
 
         if (mainCommand.equals("")) { }
+
+        // API 001 - (Registry) 
+        // |
+        // Aliases
+        else if (mainCommand.equals("alias")) { aliasCommand(argument); }
+        else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
+        // |
+        // Envirronment Keys
+        else if (mainCommand.equals("set")) { setCommand(argument); }
+        else if (mainCommand.equals("unset")) { unsetCommand(argument); }
+        else if (mainCommand.equals("export")) { if (argument.equals("")) { processCommand("env"); } else { attributes.put(argument, ""); } }
+        else if (mainCommand.equals("env")) { if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { Enumeration keys = attributes.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) attributes.get(key); if (!key.equals("OUTPUT") && !value.equals("")) { echoCommand(key + "=" + value.trim()); } } } }
         
-        // Network Utilities
-        else if (mainCommand.equals("query")) { query(argument); }
-        else if (mainCommand.equals("ping")) { pingCommand(argument); }
+        // API 002 - (Logs) 
+        // |
+        // OpenTTY Logging Manager
+        else if (mainCommand.equals("log")) { MIDletLogs(argument); }
+        else if (mainCommand.equals("logcat")) { echoCommand(logs); }
+        
+        // API 003 - (User-Integration) 
+        // |
+        // 
+        else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
+        else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(username); }
+        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh"); }
+
+        // API 004 - (LCDUI Interface) 
+        // |
+        // System UI
+        else if (mainCommand.equals("x11")) { xserver(argument); }
+        else if (mainCommand.equals("xterm")) { display.setCurrent(form); }       
+        else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); } 
+        else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
+        else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
+
+        // API 005 - (Operators) 
+        // |
+        // Operators
+        else if (mainCommand.equals("if")) { ifCommand(argument); }
+        else if (mainCommand.equals("for")) { forCommand(argument); }
+        else if (mainCommand.equals("case")) { caseCommand(argument); }
+        // |
+        // Long executors
+        else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { processCommand(argument, false); }
+        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { processCommand(argument); } }
+        else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument)); } }
+        else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (NumberFormatException e) { echoCommand(e.getMessage()); } } }
+        // | 
+        // Chain executors
+        else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
+        else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
+
+        // API 006 - (Process) 
+        // |
+        // Memory
+        else if (mainCommand.equals("gc")) { System.gc(); } 
+        else if (mainCommand.equals("kill")) { kill(argument); }
+        else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer(); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); } }
+        // |
+        // Process
+        else if (mainCommand.equals("stop")) { stop(argument); }
+        else if (mainCommand.equals("start")) { start(argument); }
+        else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
+        else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); } }
+        
+        // API 007 - (Bundle) 
+        // | 
+        // MIDlet
+        else if (mainCommand.equals("build")) { echoCommand(build); }
+        else if (mainCommand.equals("version")) { echoCommand(env("OpenTTY $VERSION")); }
+        else if (mainCommand.equals("vendor")) { echoCommand(getAppProperty("MIDlet-Vendor")); }
+        else if (mainCommand.equals("github")) { processCommand("open " + getAppProperty("MIDlet-Info-URL")); }
+        else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }        
+        // |
+        // Device
+        else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); } 
+        else if (mainCommand.equals("uname")) { echoCommand(env("$TYPE $CONFIG $PROFILE")); }
+        else if (mainCommand.equals("hostid")) { String data = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int hash = 7; for (int i = 0; i < data.length(); i++) { hash = hash * 31 + data.charAt(i); } echoCommand(Integer.toHexString(hash).toLowerCase()); }
+
+        // API 008 - (Logic I/O) Text 
+        // |
+        // TTY
+        else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
+        else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
+        // |
+        // Text related commands
+        else if (mainCommand.equals("echo")) { echoCommand(argument); }
+        else if (mainCommand.equals("buff")) { stdin.setString(argument); }
+        else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
+        else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
+        else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
+        else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
+        else if (mainCommand.equals("clear") || mainCommand.equals("cls")) { stdout.setText(""); } 
+        else if (mainCommand.equals("time")) { echoCommand(split(new java.util.Date().toString(), ' ')[3]); }
+        else if (mainCommand.equals("seed")) { try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
+        else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand("" + read(argument).hashCode()); } else if (argument.equals("nano")) { echoCommand("" + nanoContent.hashCode()); } else { echoCommand("" + loadRMS(argument, 1).hashCode()); } } }
+        
+        // API 009 - (Threads) 
+        // |
+        // MIDlet Tracker
+        else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
+        else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }, "Background").start(); }
+        
+        // API 010 - (Requests) 
+        // |
+        // Connecting to Device API
+        else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
+        else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
+        
+
+        // API 011 - (Network) 
+        // |
+        // Servers
         else if (mainCommand.equals("bind")) { new Bind(env("$PORT")); }
-        else if (mainCommand.equals("gaddr")) { new GetAddress(argument); }
+        else if (mainCommand.equals("server")) { new Server(env("$PORT $RESPONSE")); }
+        // |
+        // HTTP Interfaces
+        else if (mainCommand.equals("ping")) { pingCommand(argument); }
         else if (mainCommand.equals("http")) { new InjectorHTTP(argument); }
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
-        else if (mainCommand.equals("prscan")) { new PortScanner(argument); }
-        else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
-        else if (mainCommand.equals("server")) { new Server(env("$PORT $RESPONSE")); }
         else if (mainCommand.equals("curl")) { if (argument.equals("")) { return; } else { echoCommand(request(argument)); } }
         else if (mainCommand.equals("wget")) { if (argument.equals("")) { return; } else { nanoContent = request(argument); } }
+        else if (mainCommand.equals("clone")) { if (argument.equals("")) { } else { runScript(request("nnp.nnchan.ru/hproxy.php?" + argument)); } }
+        else if (mainCommand.equals("proxy")) { if (argument.equals("")) { } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
+        // |
+        // Socket Interfaces
+        else if (mainCommand.equals("query")) { query(argument); }
+        else if (mainCommand.equals("gaddr")) { new GetAddress(argument); }
+        else if (mainCommand.equals("prscan")) { new PortScanner(argument); }
+        else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
+        // |
+        // IP Tools 
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
         else if (mainCommand.equals("org")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "org" : argument + "/org"))); }
         else if (mainCommand.equals("genip")) { echoCommand(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256)); }
-        else if (mainCommand.equals("netstat")) { try { HttpConnection conn = (HttpConnection) Connector.open("http://ipinfo.io/ip"); conn.setRequestMethod(HttpConnection.GET); if (conn.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } conn.close(); } catch (Exception e) { echoCommand("false"); } }
         else if (mainCommand.equals("ifconfig")) { try { SocketConnection socketConnection = (SocketConnection) Connector.open("socket://1.1.1.1:53"); echoCommand(socketConnection.getLocalAddress()); socketConnection.close(); } catch (IOException e) { echoCommand("null"); } }
+        // |
+        else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
+        else if (mainCommand.equals("mail")) { echoCommand(request("nnp.nnchan.ru/hproxy.php?raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
+        else if (mainCommand.equals("netstat")) { try { HttpConnection conn = (HttpConnection) Connector.open("http://ipinfo.io/ip"); conn.setRequestMethod(HttpConnection.GET); if (conn.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } conn.close(); } catch (Exception e) { echoCommand("false"); } }
 
-        // File Utilities
+
+        // API 012 - (File)
+        // |
+        // Directories Manager
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
+        else if (mainCommand.equals("unmount")) { paths = new Hashtable(); }
+        else if (mainCommand.equals("ls")) { viewer("Resources", read("/java/resources.txt")); }
+        else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano")) { mount(nanoContent); } else { mount(loadRMS(argument, 1)); } } }
+        else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else { if (argument.startsWith("/")) { if (paths.containsKey(argument)) { path = argument; } else { echoCommand("cd: " + basename(argument) + ": not found"); } } else if (argument.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { processCommand(path.equals("/") ? "cd " + "/" + argument : "cd " + path + "/" + argument); } } }
+        else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(); } else if (argument.equals("v")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { echoCommand(recordStores[i]); } } } } catch (RecordStoreException e) { } } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }        
+        // | 
+        // Device Files
+        else if (mainCommand.equals("fdisk")) { StringBuffer result = new StringBuffer(); Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { result.append((String) roots.nextElement()).append("\n"); } echoCommand(result.toString()); }
+        else if (mainCommand.equals("dd")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { try { String[] args = split(argument, ' '); FileConnection fileConn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); if (!fileConn.exists()) fileConn.create(); OutputStream os = fileConn.openOutputStream(); String content = args[1]; os.write(content.startsWith("/") ? read(content).getBytes() : content.equals("nano") ? nanoContent.getBytes() : loadRMS(content, 1).getBytes()); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
+        // |
+        // RMS Files
         else if (mainCommand.equals("rm")) { deleteFile(argument); }
+        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
+        else if (mainCommand.equals("touch") || mainCommand.equals("rnano")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
+        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), loadRMS(getCommand(argument), 1)); } }
+        // |
+        // Text Manager
         else if (mainCommand.equals("sed")) { StringEditor(argument); }
         else if (mainCommand.equals("raw")) { echoCommand(nanoContent); }
-        else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
-        else if (mainCommand.equals("unmount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("rraw")) { stdout.setText(nanoContent); }
         else if (mainCommand.equals("getty")) { nanoContent = stdout.getText(); }
-        else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
-        else if (mainCommand.equals("ls")) { viewer("Resources", read("/java/resources.txt")); }
-        else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
-        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
-        else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : loadRMS(argument, 1))); }
-        else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument + "\n" : nanoContent + "\n" + argument; }
-        else if (mainCommand.equals("touch") || mainCommand.equals("rnano")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
+        else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument + "\n" : nanoContent + "\n" + argument; } 
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand(read(argument)); } else { echoCommand(loadRMS(argument, 1)); } } }
         else if (mainCommand.equals("get")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { nanoContent = read(argument); } else { nanoContent = loadRMS(argument, 1); } } }
-        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), loadRMS(getCommand(argument), 1)); } }
-        else if (mainCommand.equals("fdisk")) { StringBuffer result = new StringBuffer(); Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { result.append((String) roots.nextElement()).append("\n"); } echoCommand(result.toString()); }
-        else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand(basename(argument) + " (Size: " + read(argument).length() + " B)"); } else if (argument.equals("nano")) { echoCommand(argument + " (Size: " + nanoContent.length() + " B)"); } else { echoCommand(argument + " (Size: " + loadRMS(argument, 1).length() + " B)"); } } }
-        else if (mainCommand.equals("ph2s")) { StringBuffer script = new StringBuffer(); for (int i = 0; i < commandHistory.size() - 1; i++) { script.append(commandHistory.elementAt(i)); if (i < commandHistory.size() - 1) { script.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } }
-        else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else { if (argument.startsWith("/")) { if (paths.containsKey(argument)) { path = argument; } else { echoCommand("cd: " + basename(argument) + ": not found"); } } else if (argument.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { processCommand(path.equals("/") ? "cd " + "/" + argument : "cd " + path + "/" + argument); } } }
-        else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(); } else if (argument.equals("v")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { echoCommand(recordStores[i]); } } } } catch (RecordStoreException e) { } } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }
-        else if (mainCommand.equals("dd")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { try { String[] args = split(argument, ' '); FileConnection fileConn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); if (!fileConn.exists()) fileConn.create(); OutputStream os = fileConn.openOutputStream(); String content = args[1]; os.write(content.startsWith("/") ? read(content).getBytes() : content.equals("nano") ? nanoContent.getBytes() : loadRMS(content, 1).getBytes()); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
-        else if (mainCommand.equals("find")) {if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } String value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
         else if (mainCommand.equals("grep")) {if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } echoCommand(file.indexOf(args[0]) != -1 ? "true" : "false"); } }
-        else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano")) { mount(nanoContent); } else { mount(loadRMS(argument, 1)); } } }
-        
-        // General 
-        else if (mainCommand.equals("alias")) { aliasCommand(argument); }
-        else if (mainCommand.equals("buff")) { stdin.setString(argument); }
-        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { processCommand(argument); } }
-        else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }, "Background").start(); }
-        else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { processCommand(argument, false); }
-        else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
-        else if (mainCommand.equals("build")) { echoCommand(build); }
-        else if (mainCommand.equals("chmod")) { chmod(argument); }
-        else if (mainCommand.equals("case")) { caseCommand(argument); }
-        else if (mainCommand.equals("clone")) { if (argument.equals("")) { } else { runScript(request("nnp.nnchan.ru/hproxy.php?" + argument)); } }
-        else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument)); } }
-        else if (mainCommand.equals("cal")) { final Form cal = new Form(form.getTitle()); cal.append(new DateField(null , DateField.DATE)); cal.addCommand(new Command("Back", Command.BACK, 1)); cal.setCommandListener(this); display.setCurrent(cal); }
-        else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
-        else if (mainCommand.equals("clear") || mainCommand.equals("cls")) { stdout.setText(""); } 
-        else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); } 
-        else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
-        else if (mainCommand.equals("env")) { if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { Enumeration keys = attributes.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) attributes.get(key); if (!key.equals("OUTPUT") && !value.equals("")) { echoCommand(key + "=" + value.trim()); } } } }
-        else if (mainCommand.equals("echo")) { echoCommand(argument); }
-        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
-        else if (mainCommand.equals("export")) { if (argument.equals("")) { processCommand("env"); } else { attributes.put(argument, ""); } }
-        else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
-        else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
-        else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
-        else if (mainCommand.equals("for")) { forCommand(argument); }
-        else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("github")) { processCommand("open " + getAppProperty("MIDlet-Info-URL")); }
-        else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); } 
-        else if (mainCommand.equals("htop")) { new HTopViewer(); }
-        else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
-        else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand("" + read(argument).hashCode()); } else if (argument.equals("nano")) { echoCommand("" + nanoContent.hashCode()); } else { echoCommand("" + loadRMS(argument, 1).hashCode()); } } }
-        else if (mainCommand.equals("hostid")) { String data = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int hash = 7; for (int i = 0; i < data.length(); i++) { hash = hash * 31 + data.charAt(i); } echoCommand(Integer.toHexString(hash).toLowerCase()); }
-        else if (mainCommand.equals("history")) { new History(); }
-        else if (mainCommand.equals("if")) { ifCommand(argument); }
-        else if (mainCommand.equals("java")) { java(argument); }
-        else if (mainCommand.equals("kill")) { kill(argument); }
-        else if (mainCommand.equals("log")) { MIDletLogs(argument); }
-        else if (mainCommand.equals("logcat")) { echoCommand(logs); }
-        else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
-        else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
-        else if (mainCommand.equals("lock")) { new LockScreen(); }
-        else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
-        else if (mainCommand.equals("mail")) { echoCommand(request("nnp.nnchan.ru/hproxy.php?raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
-        else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
-        else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
-        else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }       
-        else if (mainCommand.equals("proxy")) { if (argument.equals("")) { } else { nanoContent = request("nnp.nnchan.ru/hproxy.php?" + argument); } }
-        else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
-        else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
-        else if (mainCommand.equals("reset")) { try { long alarmTime = System.currentTimeMillis() + 5000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); processCommand("exit"); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
-        else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (NumberFormatException e) { echoCommand(e.getMessage()); } } }
-        else if (mainCommand.equals("seed")) { try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
-        else if (mainCommand.equals("set")) { setCommand(argument); }
-        else if (mainCommand.equals("start")) { start(argument); }
-        else if (mainCommand.equals("stop")) { stop(argument); }
-        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh"); }
-        else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
-        else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
-        else if (mainCommand.equals("time")) { echoCommand(split(new java.util.Date().toString(), ' ')[3]); }
-        else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
-        else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
-        else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
-        else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
-        else if (mainCommand.equals("todo")) { if (argument.equals("") || argument.equals("list")) { new MyTaskManager(); } else { writeRMS(".tasks", loadRMS(".tasks", 1) + "\n" + (argument.startsWith("/") ? read(argument) : argument.equals("nano") ? nanoContent : loadRMS(argument, 1))); } }
-        else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); } }
-        else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer(); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); } }
-        else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
-        else if (mainCommand.equals("uname")) { echoCommand(env("$TYPE $CONFIG $PROFILE")); }
-        else if (mainCommand.equals("unset")) { unsetCommand(argument); }
+        else if (mainCommand.equals("find")) {if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } String value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
+        // |
+        // Text Parsers
+        else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
+        else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : loadRMS(argument, 1))); }
         else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String in = getCommand(argument); String out = getArgument(in); if (in.startsWith("/")) { in = read(in); } else if (in.equals("nano")) { in = nanoContent; } else { in = loadRMS(in, 1); } if (out.equals("")) { nanoContent = text2note(in); } else { writeRMS(out, text2note(in)); } } }
-        else if (mainCommand.equals("vendor")) { echoCommand(getAppProperty("MIDlet-Vendor")); }
-        else if (mainCommand.equals("version")) { echoCommand(env("OpenTTY $VERSION")); }
-        else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(username); } 
-        else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); }
-        else if (mainCommand.equals("xterm")) { display.setCurrent(form); }
-        else if (mainCommand.equals("x11")) { xserver(argument); }
+        else if (mainCommand.equals("ph2s")) { StringBuffer script = new StringBuffer(); for (int i = 0; i < commandHistory.size() - 1; i++) { script.append(commandHistory.elementAt(i)); if (i < commandHistory.size() - 1) { script.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } }
+        // |
+        // Interfaces
+        else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
+        else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
+        // |
+        else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand(basename(argument) + " (Size: " + read(argument).length() + " B)"); } else if (argument.equals("nano")) { echoCommand(argument + " (Size: " + nanoContent.length() + " B)"); } else { echoCommand(argument + " (Size: " + loadRMS(argument, 1).length() + " B)"); } } }
         
-        else if (mainCommand.equals("about")) { about(argument); }
-        else if (mainCommand.equals("import")) { importScript(argument); }
-
-        //else if (mainCommand.equals("")) {  }
+        
+        // API 013 - (MIDlet)
+        // |
+        // General Utilities
+        else if (mainCommand.equals("java")) { java(argument); }
+        else if (mainCommand.equals("chmod")) { chmod(argument); }
+        else if (mainCommand.equals("htop")) { new HTopViewer(); }
+        else if (mainCommand.equals("lock")) { new LockScreen(); }
+        else if (mainCommand.equals("history")) { new History(); }
+        else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
+        else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
+        else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
+        else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
+        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
+        else if (mainCommand.equals("todo")) { if (argument.equals("") || argument.equals("list")) { new MyTaskManager(); } else { writeRMS(".tasks", loadRMS(".tasks", 1) + "\n" + (argument.startsWith("/") ? read(argument) : argument.equals("nano") ? nanoContent : loadRMS(argument, 1))); } }
+        
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("sign")) {  }
         
+        // API 014 - (OpenTTY)
+        // |
+        // Low-level commands
         else if (mainCommand.equals("@stop")) { Thread.currentThread().interrupt(); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@screen")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
+        else if (mainCommand.equals("@reset")) { try { long alarmTime = System.currentTimeMillis() + 5000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); processCommand("exit"); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); MIDletLogs("add debug API reloaded"); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
-        else if (mainCommand.startsWith("@")) { if (attributes.containsKey(replace(mainCommand, "@", ""))) { echoCommand(env(replace(mainCommand, "@", "$"))); } }
+        else if (mainCommand.startsWith("@")) {  }
+
+        // API 015 - (Scripts)
+        // |
+        // OpenTTY Packages
+        else if (mainCommand.equals("about")) { about(argument); }
+        else if (mainCommand.equals("import")) { importScript(argument); }
+        else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { runScript(read(argument)); } else { runScript(read(path + "/" + argument)); } } }
@@ -234,7 +317,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     private Font newFont(String style) { if (style == null || style.length() == 0 || style.equals("default")) { return Font.getDefaultFont(); } else if (style.equals("bold")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM); } else if (style.equals("italic")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_ITALIC, Font.SIZE_MEDIUM); } else if (style.equals("ul")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_UNDERLINED, Font.SIZE_MEDIUM); } else if (style.equals("small")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL); } else if (style.equals("large")) { return Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE); } else { return newFont("default"); } }
 
-    // Registry API (aliases & env keys)
+    // API 001
     private void aliasCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else { Enumeration keys = aliases.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); if (!key.equals("xterm") && !value.equals("")) { echoCommand("alias " + key + "='" + value.trim() + "'"); } } } return; } String aliasName = argument.substring(0, equalsIndex).trim(); String aliasCommand = argument.substring(equalsIndex + 1).trim(); aliases.put(aliasName, aliasCommand); }
     private void setCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { /* Exportation File */ } return; } String key = argument.substring(0, equalsIndex).trim(); String value = argument.substring(equalsIndex + 1).trim(); attributes.put(key, value); }
     private void unaliasCommand(String aliasName) { if (aliasName == null || aliasName.length() == 0) { echoCommand("unalias: missing [alias]"); return; } if (aliases.containsKey(aliasName)) { aliases.remove(aliasName); } else { echoCommand("unalias: " + aliasName + ": not found"); } }
