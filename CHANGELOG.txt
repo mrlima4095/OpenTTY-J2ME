@@ -18,3 +18,4 @@ Copyright (C) 2025 - Mr. Lima
 [ _Notes_ ]
 
 - Command `clone` is a builtin command, it uses proxy to acess HTTPS from old devices.
+- Code have been reorganized
