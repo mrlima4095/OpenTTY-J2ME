@@ -15,6 +15,7 @@ Copyright (C) 2025 - Mr. Lima
 - `JBenckmark` API updated to support **1.14**
 - `LoaderME` updated to **1.1**
 - Help Screen title charged to sync with Main Title
+- Proxy url can be charged in **MANIFEST.MF** in attribute `MIDlet-Proxy`
 
 [ _Notes_ ]
 
