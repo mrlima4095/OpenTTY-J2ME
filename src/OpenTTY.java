@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.13-01x39";
+                   build = "2025-1.13-01x40";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -263,7 +263,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
-        else if (mainCommand.equals("help")) { viewer("OpenTTY Help", read("/java/help.txt")); }
+        else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/help.txt")); }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
         else if (mainCommand.equals("todo")) { if (argument.equals("") || argument.equals("list")) { new MyTaskManager(); } else { writeRMS(".tasks", loadRMS(".tasks", 1) + "\n" + (argument.startsWith("/") ? read(argument) : argument.equals("nano") ? nanoContent : loadRMS(argument, 1))); } }
