@@ -34,7 +34,7 @@ item.cmd=execute droid menu
 [ DISPLAY ]
 
 list.title=Android API
-list.content=
+list.content=Yang Repository,Stop Android API,Online README
 list.button=Select
 
 
