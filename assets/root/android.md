@@ -7,7 +7,7 @@ The Android API is a Package of OpenTTY that improve experience of users in emul
 
 You can install **Android API** from **Yang** repository, or if you dont have a host of **OpenTTY Server** yet, you can run the command:  
 
-```
+```shell
 execute install nano; tick Downloading...; wget raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/android; install android; tick; get nano; echo [ OK ] Android API downloaded;
 ```
 
@@ -17,7 +17,7 @@ The **Android API** dont requires to root device, but you will need install the 
 
 Inside `Termux` you will need run this commands:  
 
-```
+```shell
 pkg install python3 python3-pip git -y  
 git clone https://github.com/mrlima4095/OpenTTY-J2ME.git  
 echo -e '#!/bin/sh\ncd ~/OpenTTY-J2ME/assets\npython3 server.py' > ~/start.sh  
