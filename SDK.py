@@ -17,6 +17,7 @@ class OpenTTYSDK:
         file_menu.add_command(label="Open", command=self.open_file)
         file_menu.add_command(label="Save", command=self.save_file)
         file_menu.add_command(label="Save as...", command=self.save_file_as)
+        file_menu.add_command(label="Clear", command=self.clear)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
         menubar.add_cascade(label="File", menu=file_menu)
@@ -61,7 +62,7 @@ class OpenTTYSDK:
             self.line_numbers.insert(tk.END, f"{i}\n")
 
     def open_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("INI files", "*.ini"), ("All files", "*.*")])
+        file_path = filedialog.askopenfilename(filetypes=[("All files", "*")])
         if file_path:
             self.filename = file_path
             with open(file_path, "r") as file:
@@ -71,43 +72,22 @@ class OpenTTYSDK:
             self.update_line_numbers()
 
     def save_file(self):
-        if self.filename:
-            content = self.text_editor.get(1.0, tk.END)
-            with open(self.filename, "w") as file:
-                file.write(content)
-            messagebox.showinfo("", "App saved")
-        else:
-            self.save_file_as()
+        if self.filename: 
+            content = self.text_editor.get(1.0, tk.END);
+            with open(self.filename, "w") as file: file.write(content); messagebox.showinfo("", "Saved");
+        else: self.save_file_as();
 
-    def save_file_as(self):
-        file_path = filedialog.asksaveasfilename(defaultextension=".ini", filetypes=[("INI files", "*.ini")])
-        if file_path:
-            self.filename = file_path
-            self.save_file()
+    def save_file_as(self): 
+        file_path = filedialog.asksaveasfilename(defaultextension=".ini", filetypes=[("INI files", "*.ini")]);
+        if file_path: self.filename = file_path; self.save_file();
 
-    def create_deamon(self):
-        self.text_editor.delete(1.0, tk.END)
-        template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\n\nprocess.name=\nprocess.type=\nprocess.port=\nprocess.host=\nprocess.db=\n\ninclude=\n\nconfig=\ncommand=\n\n"
-        self.text_editor.insert(tk.END, template)
-        self.update_line_numbers()
+    def clear(self): self.filename = ""; self.text_editor.delete(1.0, tk.END); self.text_editor.insert(tk.END, "");
 
-    def create_server(self):
-        self.text_editor.delete(1.0, tk.END)
-        template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\n\nprocess.port=\nprocess.host=\n\nconfig=\n\n"
-        self.text_editor.insert(tk.END, template)
-        self.update_line_numbers()
 
-    def create_canvas(self):
-        self.text_editor.delete(1.0, tk.END)
-        template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\n\ninclude=\n\nconfig=\ncommand=\n\n[ DISPLAY ]\n\nscreen.title=\nscreen.content=\nscreen.content.style=\nscreen.back.label=\nscreen.back=\nscreen.button=\nscreen.button.cmd=\n\ncanvas.title=\ncanvas.content=\ncanvas.content.type=\ncanvas.content.link=\ncanvas.content.style=\ncanvas.button=\ncanvas.button.cmd=\ncanvas.back.label=\ncanvas.back=\ncanvas.mouse=\ncanvas.background=\ncanvas.background.type=\n\nquest.title=\nquest.label=\nquest.key=\nquest.cmd=\nquest.back=\n\nlist.title=\nlist.content=\nlist.back.label=\nlist.back=\nlist.button=\n\n"
-        self.text_editor.insert(tk.END, template)
-        self.update_line_numbers()
-
-    def create_advanced(self):
-        self.text_editor.delete(1.0, tk.END)
-        template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\nprocess.name=\nprocess.type=\nprocess.port=\nprocess.host=\nprocess.db=\n\ninclude=\n\nconfig=\ncommand=\n\nshell.name=\nshell.args=\n\n[ COMMAND ]\n\nitem.label=\nitem.cmd=\n\n[ DISPLAY ]\n\nscreen.title=\nscreen.content=\nscreen.content.style=\nscreen.back.label=\nscreen.back=\nscreen.button=\nscreen.button.cmd=\n\ncanvas.title=\ncanvas.content=\ncanvas.content.type=\ncanvas.content.link=\ncanvas.content.style=\ncanvas.button=\ncanvas.button.cmd=\ncanvas.back.label=\ncanvas.back=\ncanvas.mouse=\ncanvas.background=\ncanvas.background.type=\n\nquest.title=\nquest.label=\nquest.key=\nquest.cmd=\nquest.back=\n\nlist.title=\nlist.content=\nlist.back.label=\nlist.back=\nlist.button=\n\n"
-        self.text_editor.insert(tk.END, template)
-        self.update_line_numbers()
+    def create_deamon(self): self.text_editor.delete(1.0, tk.END); template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\n\nprocess.name=\nprocess.type=\nprocess.port=\nprocess.host=\nprocess.db=\n\ninclude=\n\nconfig=\ncommand=\n\n"; self.text_editor.insert(tk.END, template); self.update_line_numbers();
+    def create_server(self): self.text_editor.delete(1.0, tk.END); template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\n\nprocess.port=\nprocess.host=\n\nconfig=\n\n"; self.text_editor.insert(tk.END, template); self.update_line_numbers();
+    def create_canvas(self): self.text_editor.delete(1.0, tk.END); template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\n\ninclude=\n\nconfig=\ncommand=\n\n[ DISPLAY ]\n\nscreen.title=\nscreen.content=\nscreen.content.style=\nscreen.back.label=\nscreen.back=\nscreen.button=\nscreen.button.cmd=\n\ncanvas.title=\ncanvas.content=\ncanvas.content.type=\ncanvas.content.link=\ncanvas.content.style=\ncanvas.button=\ncanvas.button.cmd=\ncanvas.back.label=\ncanvas.back=\ncanvas.mouse=\ncanvas.background=\ncanvas.background.type=\n\nquest.title=\nquest.label=\nquest.key=\nquest.cmd=\nquest.back=\n\nlist.title=\nlist.content=\nlist.back.label=\nlist.back=\nlist.button=\n\n"; self.text_editor.insert(tk.END, template); self.update_line_numbers();
+    def create_advanced(self): self.text_editor.delete(1.0, tk.END); template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\nprocess.name=\nprocess.type=\nprocess.port=\nprocess.host=\nprocess.db=\n\ninclude=\n\nconfig=\ncommand=\n\nshell.name=\nshell.args=\n\n[ COMMAND ]\n\nitem.label=\nitem.cmd=\n\n[ DISPLAY ]\n\nscreen.title=\nscreen.content=\nscreen.content.style=\nscreen.back.label=\nscreen.back=\nscreen.button=\nscreen.button.cmd=\n\ncanvas.title=\ncanvas.content=\ncanvas.content.type=\ncanvas.content.link=\ncanvas.content.style=\ncanvas.button=\ncanvas.button.cmd=\ncanvas.back.label=\ncanvas.back=\ncanvas.mouse=\ncanvas.background=\ncanvas.background.type=\n\nquest.title=\nquest.label=\nquest.key=\nquest.cmd=\nquest.back=\n\nlist.title=\nlist.content=\nlist.back.label=\nlist.back=\nlist.button=\n\n"; self.text_editor.insert(tk.END, template); self.update_line_numbers();
 
 if __name__ == "__main__":
     root = tk.Tk()
