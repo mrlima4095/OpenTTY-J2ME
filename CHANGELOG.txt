@@ -14,6 +14,7 @@ Copyright (C) 2025 - Mr. Lima
 - Added new package `Android API`
 - `JBenckmark` API updated to support **1.14**
 - `LoaderME` updated to **1.1**
+- Help Screen title charged to sync with Main Title
 
 [ _Notes_ ]
 
