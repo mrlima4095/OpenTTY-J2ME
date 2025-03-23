@@ -21,7 +21,7 @@ apps=execute x11 list mxos;
 
 [ COMMAND ]
 
-item.label=
+item.label=MobiX
 item.cmd=
 
 [ DISPLAY ]
