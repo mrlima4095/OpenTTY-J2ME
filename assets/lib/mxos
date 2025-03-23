@@ -7,19 +7,17 @@ description=Java Mobile
 api.version=1.14
 api.error=execute log add error MobiX requires OpenTTY API 1.14; title MobiX Loader; warn MobiX requires OpenTTY API 1.14 or newer!; bg exec sleep 5 & exit; @stop; 
 
-process.name=
-process.type=
-process.port=
-process.host=
-process.db=
+process.name=mobix
 
-include=
+include=forge
 
-config=
-command=
+config=execute set MobiX=1; x11 stop; x11 xfinit stdout; x11 item mxos; log add info Running MobiX $MobiX; 
+command=mx
 
-shell.name=
-shell.args=
+shell.name=mx
+shell.args=apps
+
+apps=execute x11 list mxos;
 
 [ COMMAND ]
 
@@ -36,28 +34,14 @@ screen.back=
 screen.button=
 screen.button.cmd=
 
-canvas.title=
-canvas.content=
-canvas.content.type=
-canvas.content.link=
-canvas.content.style=
-canvas.button=
-canvas.button.cmd=
-canvas.back.label=
-canvas.back=
-canvas.mouse=
-canvas.background=
-canvas.background.type=
-
-quest.title=
-quest.label=
-quest.key=
-quest.cmd=
-quest.back=
+quest.title=$TITLE
+quest.label=$LABEL
+quest.key=$INPUT
+quest.cmd=execute $CMD $INPUT; unset CMD; unset LABEL; unset INPUT;
+quest.back=execute $BACK; unset BACK; unset CMD; unset LABEL; 
 
 list.title=
 list.content=
 list.back.label=
 list.back=
 list.button=
-
