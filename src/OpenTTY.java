@@ -269,7 +269,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("todo")) { if (argument.equals("") || argument.equals("list")) { new MyTaskManager(); } else { writeRMS(".tasks", loadRMS(".tasks", 1) + "\n" + (argument.startsWith("/") ? read(argument) : argument.equals("nano") ? nanoContent : loadRMS(argument, 1))); } }
         
         //else if (mainCommand.equals("")) {  }
+        //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("sign")) {  }
+        else if (mainCommand.equals("pong")) {  }
+        else if (mainCommand.equals("lang")) {  }
+        else if (mainCommand.equals("track")) {  }
+        else if (mainCommand.equals("spell")) {  }
+        else if (mainCommand.equals("catch")) {  }
+        else if (mainCommand.equals("throw")) {  }
         
         // API 014 - (OpenTTY)
         // |
