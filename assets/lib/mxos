@@ -1,0 +1,63 @@
+[ Config ]
+
+name=MobiX
+version=1
+description=Java Mobile
+
+api.version=1.14
+api.error=execute log add error MobiX requires OpenTTY API 1.14; title MobiX Loader; warn MobiX requires OpenTTY API 1.14 or newer!; bg exec sleep 5 & exit; @stop; 
+
+process.name=
+process.type=
+process.port=
+process.host=
+process.db=
+
+include=
+
+config=
+command=
+
+shell.name=
+shell.args=
+
+[ COMMAND ]
+
+item.label=
+item.cmd=
+
+[ DISPLAY ]
+
+screen.title=
+screen.content=
+screen.content.style=
+screen.back.label=
+screen.back=
+screen.button=
+screen.button.cmd=
+
+canvas.title=
+canvas.content=
+canvas.content.type=
+canvas.content.link=
+canvas.content.style=
+canvas.button=
+canvas.button.cmd=
+canvas.back.label=
+canvas.back=
+canvas.mouse=
+canvas.background=
+canvas.background.type=
+
+quest.title=
+quest.label=
+quest.key=
+quest.cmd=
+quest.back=
+
+list.title=
+list.content=
+list.back.label=
+list.back=
+list.button=
+
