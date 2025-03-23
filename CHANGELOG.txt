@@ -16,6 +16,8 @@ Copyright (C) 2025 - Mr. Lima
 - `LoaderME` updated to **1.1**
 - Help Screen title charged to sync with Main Title
 - Proxy url can be charged in **MANIFEST.MF** in attribute `MIDlet-Proxy`
+- `ImmersiveShell` API support for **Legacy** added 
+- `ImmersiveShell` updated to 1.2 version
 
 [ _Notes_ ]
 
