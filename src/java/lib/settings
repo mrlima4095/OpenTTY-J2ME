@@ -1,18 +1,23 @@
 [ Config ]
 
 name=Settings
-version=1.1
+version=1.2
 description=Config. Menu
 
-command=cfg,cfg.info
+command=cfg
 
 cfg=execute x11 list /java/lib/settings;
-cfg.info=execute about /java/lib/settings;
+
+shell.name=cfg
+shell.args=run,info
+
+run=execute x11 quest /java/lib/settings;
+info=execute about /java/lib/settings;
 
 [ DISPLAY ]
 
 quest.title=Settings
-quest.label=Set value for '$VALUE'
+quest.label=$LABEL
 quest.back=execute if ($RETURN) x11 list /java/lib/settings; unset RETURN; unset VALUE; unset CFG;
 quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset CFG;
 quest.key=CFG
@@ -20,8 +25,13 @@ quest.key=CFG
 list.title=Settings
 list.content=Locale,Hostname,Query Storage,Server Port,Repo Adress
 
-Locale=execute set VALUE=LOCALE; x11 quest /java/lib/settings;
+Locale=execute set VALUE=LOCALE; 
 Hostname=execute set VALUE=HOSTNAME; x11 quest /java/lib/settings;
 Query Storage=execute set VALUE=QUERY; x11 quest /java/lib/settings;
 Server Port=execute set VALUE=PORT; x11 quest /java/lib/settings;
 Repo Adress=execute set VALUE=REPO; x11 quest /java/lib/settings;
+
+Locale=execute set VALUE=LOCALE; 
+Hostname
+Query Storage
+Server Page
