@@ -23,16 +23,12 @@ quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset LABEL; unset
 quest.key=CFG
 
 list.title=Settings
-list.content=Locale,Hostname,Query Storage,Server Port,Repo Adress
+list.content=Locale,Hostname,Query Storage,Server Page,
 
-Locale=execute set VALUE=LOCALE; 
-Hostname=execute set VALUE=HOSTNAME; x11 quest /java/lib/settings;
-Query Storage=execute set VALUE=QUERY; x11 quest /java/lib/settings;
-Server Port=execute set VALUE=PORT; x11 quest /java/lib/settings;
-Repo Adress=execute set VALUE=REPO; x11 quest /java/lib/settings;
 
 Locale=execute set VALUE=LOCALE; set LABEL=Device Language; cfg run;
 Hostname=execute set VALUE=HOSTNAME; set LABEL=Set host name; cfg run;
 Query Storage=execute set VALUE=QUERY; set LABEL=Query file name; cfg run;
 Server Page=execute set VALUE=RESPONSE; set LABEL=Page for Server (HTML files with HEADERS); cfg run;
+Network Port=execute set VALUE=PORT; set LABEL=Service Port (Bind and Server); cfg run;
 Repo Adress=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); cfg run;
