@@ -18,8 +18,8 @@ info=execute about /java/lib/settings;
 
 quest.title=Settings
 quest.label=$LABEL
-quest.back=execute if ($RETURN) x11 list /java/lib/settings; unset RETURN; unset VALUE; unset CFG;
-quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset CFG;
+quest.back=execute if ($RETURN) x11 list /java/lib/settings; unset RETURN; unset VALUE; unset LABEL; unset CFG;
+quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset LABEL; unset CFG;
 quest.key=CFG
 
 list.title=Settings
@@ -31,7 +31,8 @@ Query Storage=execute set VALUE=QUERY; x11 quest /java/lib/settings;
 Server Port=execute set VALUE=PORT; x11 quest /java/lib/settings;
 Repo Adress=execute set VALUE=REPO; x11 quest /java/lib/settings;
 
-Locale=execute set VALUE=LOCALE; 
-Hostname
-Query Storage
-Server Page
+Locale=execute set VALUE=LOCALE; set LABEL=Device Language; cfg run;
+Hostname=execute set VALUE=HOSTNAME; set LABEL=Set host name; cfg run;
+Query Storage=execute set VALUE=QUERY; set LABEL=Query file name; cfg run;
+Server Page=execute set VALUE=RESPONSE; set LABEL=Page for Server (HTML files with HEADERS); cfg run;
+Repo Adress=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); cfg run;
