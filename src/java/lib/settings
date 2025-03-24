@@ -23,7 +23,7 @@ quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset LABEL; unset
 quest.key=CFG
 
 list.title=Settings
-list.content=Locale,Hostname,Query Storage,Server Page,
+list.content=Locale,Hostname,Query Storage,Server Page,Network Port,Repo Adress
 
 
 Locale=execute set VALUE=LOCALE; set LABEL=Device Language; cfg run;
