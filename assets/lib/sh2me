@@ -20,8 +20,8 @@ list.title=ImmersiveShell
 list.content=Legacy (Old UI),Enhanced
 list.back=execute echo Loading cancelled!
 
-Legacy (Old UI)=find LEGACY_INIT sh2me; execute $OUTPUT;
-Enhanced=find ENHANCED_INIT sh2me; execute $OUTPUT;
+Legacy (Old UI)=execute find LEGACY_INIT sh2me; $OUTPUT;
+Enhanced=execute find ENHANCED_INIT sh2me; $OUTPUT;
 
 
 LEGACY_INIT=execute sh; x11 stop; title; x11 item sh2me; install nano; touch; add item.label=View; add item.cmd=exec install nano & getty & add <title>$TITLE</title> & html & get nano; x11 item nano; get nano;  
