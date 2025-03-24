@@ -5,7 +5,7 @@ version=1.2
 
 include=forge
  
-config=bg exec if ($VERSION startswith 1.12) execute find LEGACY_INIT sh2me; execute $OUTPUT; @stop & x11 list sh2me & true
+config=bg exec if ($VERSION startswith 1.12) execute find LEGACY_INIT sh2me; $OUTPUT; @stop; true & x11 list sh2me & true
 
 item.label=Run
 item.cmd=execute x11 quest sh2me;
