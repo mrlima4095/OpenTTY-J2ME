@@ -5,6 +5,8 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `clone [url]`: get a raw content from an HTTP server and run this as script  
+- `throw [code]`: stop current Thread with **code**
+- `prg [time]`: **PushRegistry** Manager - Create MIDlet callers
 - ``:
 - ``:
 - ``:
