@@ -183,7 +183,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 argument = "5";
             }
             try { 
-                long alarmTime = System.currentTimeMillis() + Integer.parseInt(argument); 
+                long alarmTime = System.currentTimeMillis() + Integer.parseInt(argument) * 1000; 
                 PushRegistry.registerAlarm(getClass().getName(), alarmTime); 
                 processCommand("exit"); 
             } catch (NumberFormatException e) { 
