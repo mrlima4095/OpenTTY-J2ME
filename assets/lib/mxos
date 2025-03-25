@@ -26,22 +26,24 @@ item.cmd=
 
 [ DISPLAY ]
 
-screen.title=
+screen.title=$TITLE
 screen.content=
 screen.content.style=
 screen.back.label=
 screen.back=
-screen.button=
+screen.button=Apps
 screen.button.cmd=
 
 quest.title=$TITLE
 quest.label=$LABEL
-quest.key=$INPUT
+quest.key=INPUT
 quest.cmd=execute $CMD $INPUT; unset CMD; unset LABEL; unset INPUT;
 quest.back=execute $BACK; unset BACK; unset CMD; unset LABEL; 
 
-list.title=
-list.content=
-list.back.label=
-list.back=
-list.button=
+list.title=MobiX Apps
+list.content=Phone,Message
+list.back=execute x11 make mxos;
+list.button=Open
+
+Phone=execute set $LABEL=Phone Number; set BACK=execute mx apps; set CMD=open tel:; x11 quest mxos;
+Message=execute set LABEL=Phone Number; set BACK=execute mx apps; set CMD=open sms:; x11 quest mxos;
