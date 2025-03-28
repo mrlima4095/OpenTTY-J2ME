@@ -7,4 +7,4 @@
 [2025-1.13-01x39]	Added Command 'CLONE'
 [2025-1.13-01x40]	Help Screen synchronized
 [2025-1.13-01x41]	X Server new render 'XFINIT' to force an level	
-[2025-1.13-01x42]	Command 'THROW', 'PRG'
+[2025-1.13-01x42]	Command 'THROW' & 'PRG'
