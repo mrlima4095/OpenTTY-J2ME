@@ -7,7 +7,7 @@ description=OpenTTY Package Manager
 command=yang,setrepo
 
 yang=execute x11 list yang-proxy;
-setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; cfg run;
+setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; x11 quest /java/lib/settings;
 
 shell.name=yang
 shell.args=install,update,query,run,setrepo
