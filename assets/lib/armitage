@@ -9,13 +9,14 @@ include=/java/lib/netkit
 config=execute x11 make armitage;
 command=armitage,browser,whois
 
-armitage=execute x11 make armitage;
+armitage=execute x11 list armitage;
 browser=execute open http://mini.opera.com;
 whois=query whois.iana.org:43
 
 [ DISPLAY ]
 
 screen.title=Armitage
+screen.content=
 screen.button=Tools
 screen.button.cmd=execute x11 list armitage 
 
@@ -39,4 +40,4 @@ GoBuster=execute set TOOL=gobuster; set LABEL=URL; x11 quest armitage;
 Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress; x11 quest armitage;
 IP Generator=execute genip; install nano; touch; add <title>$OUTPUT Info</title>; fw $OUTPUT; add $OUTPUT; html; get nano;
 HTTPS Requester=execute set TOOL=query $REPO http; set LABEL=URL; x11 quest armitage;
-Charge Server IP=execute set VALUE=REPO; export RETURN; x11 quest /java/lib/settings;
+Charge Server IP=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; x11 quest /java/lib/settings;
