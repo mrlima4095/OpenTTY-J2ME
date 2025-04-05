@@ -279,8 +279,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
         else if (mainCommand.equals("spell")) {  }
-        else if (mainCommand.equals("catch")) {  }  
-        else if (mainCommand.equals("local")) {  }  
+        else if (mainCommand.equals("catch")) {  }
+        else if (mainCommand.equals("local")) {  }
+        else if (mainCommand.equals("neofetch")) {  }
 
         // API 014 - (OpenTTY)
         // |
@@ -349,7 +350,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); form.removeCommand(enterCommand); }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); if (argument.equals("")) { current.setTicker(null); } else { current.setTicker(new Ticker(argument)); } }
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
-        else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
+        else if (mainCommand.equals("cmd")) { if (argument.2equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
         else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default"); } else { stdout.setFont(newFont(argument)); } } 
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
         
