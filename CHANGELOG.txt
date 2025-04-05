@@ -7,7 +7,7 @@ Copyright (C) 2025 - Mr. Lima
 - `clone [url]`: get a raw content from an HTTP server and run this as script  
 - `throw [code]`: stop current Thread with **code**
 - `prg [time]`: **PushRegistry** Manager - Create MIDlet Launcher
-- ``:
+- `wrl`: Show wireless API client number
 - ``:
 - ``:
 
@@ -28,4 +28,5 @@ Copyright (C) 2025 - Mr. Lima
 
 - Command `clone` is a builtin command, it uses proxy to access HTTPS from old devices.
 - Command `prg` requires that user run command `exit` by their self. It's different of old **function** `@reset` that have been removed. 
+- Command `wrl`
 - Code have been reorganized
