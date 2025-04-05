@@ -1,0 +1,53 @@
+[ Config ]
+
+name=Attributes
+version=1.0
+description=Check Properties
+
+command=chkattr
+
+chkattr=execute x11 list chkattr
+
+
+[ DISPLAY ]
+
+list.title=Check Properties
+list.content=
+
+microedition.locale=
+microedition.platform
+microedition.profiles
+microedition.encoding
+microedition.configuration
+
+fileconn.dir.graphics
+fileconn.dir.memorycard
+fileconn.dir.music
+fileconn.dir.photos
+fileconn.dir.recordings
+fileconn.dir.tones
+fileconn.dir.videos
+fileconn.dir.private
+
+supports.video.capture
+audio3d.simultaneouslocations
+
+wireless.messaging.version
+wireless.messaging.sms.smsc
+
+microedition.pim.version
+supports.audio.capture
+supports.mixing
+supports.recording
+
+microedition.jtwi.version
+
+file.separator
+microedition.io.file.FileConnection.version
+microedition.commports
+
+fileconn.dir.roots.names
+
+microedition.media.version
+
+javax.microedition.io.Connector.protocolpath
