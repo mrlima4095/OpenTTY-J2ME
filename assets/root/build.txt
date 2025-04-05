@@ -9,3 +9,4 @@
 [2025-1.13-01x41]	X Server new render 'XFINIT' to force an level	
 [2025-1.13-01x42]	Command 'THROW' & 'PRG'
 [2025-1.14-01x43]	Build "debug.sh" in package
+[2025-1.14-01x44]	Nano buffer size increased to 10000
