@@ -28,5 +28,5 @@ Copyright (C) 2025 - Mr. Lima
 
 - Command `clone` is a builtin command, it uses proxy to access HTTPS from old devices.
 - Command `prg` requires that user run command `exit` by their self. It's different of old **function** `@reset` that have been removed. 
-- Command `wrl`
+- Command `wrl` will be released completely in possible 1.16 LTS update
 - Code have been reorganized
