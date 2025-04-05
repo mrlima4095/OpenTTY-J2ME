@@ -1,37 +1,57 @@
 microedition.locale
+microedition.encoding
 microedition.platform
+microedition.profiles
 microedition.configuration
 
-fileconn.dir.graphics
-fileconn.dir.memorycard
-fileconn.dir.music
-fileconn.dir.photos
-fileconn.dir.recordings
-fileconn.dir.tones
-fileconn.dir.videos
-fileconn.dir.private
+microedition.pim.version
+microedition.m3g.version
+microedition.media.version
+microedition.sensor.version
+microedition.io.file.FileConnection.version
 
 supports.video.capture
-audio3d.simultaneouslocations
-
-wireless.messaging.version
-wireless.messaging.sms.smsc
-
-microedition.pim.version
 supports.audio.capture
 supports.mixing
 supports.recording
 
-microedition.jtwi.version
-microedition.profiles
+os.name
+os.arch
+os.version
 
-file.separator
-microedition.io.file.FileConnection.version
-microedition.commports
+user.dir
+user.name
+user.region
+uesr.variant
+user.language
+
+java.home
+java.vendor
+java.vm.name
+java.version
+java.compiler
+java.ext.dirs
+java.vm.vendor
+java.io.tmpdir
+java.class.path
+java.vendor.url
+java.library.path
+java.runtime.name
+java.class.version
+java.runtime.version
+java.specification.name
+java.vm.specification.name
+java.vm.specification.vendor
 
 fileconn.dir.roots.names
 
-microedition.encoding
-microedition.media.version
+file.encoding
 
-javax.microedition.io.Connector.protocolpath
+file.separator
+line.separator
+path.separator
+
+http.agent
+
+wireless.messaging.version
+wireless.messaging.sms.smsc
