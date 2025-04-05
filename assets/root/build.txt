@@ -10,3 +10,4 @@
 [2025-1.13-01x42]	Command 'THROW' & 'PRG'
 [2025-1.14-01x43]	Build "debug.sh" in package
 [2025-1.14-01x44]	Nano buffer size increased to 31522
+[2025-1.14-01x45]	Added Command 'WRL'
