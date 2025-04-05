@@ -452,7 +452,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (mainCommand.equals("")) {  }
 
-            else if (mainCommand.equals("init")) { if (argument.equals("")) { } else { key = getCommand(argument); handler = getArgument(handler); } start() }
+            else if (mainCommand.equals("init")) { if (argument.equals("")) { } else { key = getCommand(argument); handler = getArgument(handler); } init(); }
             else if (mainCommand.equals("send")) {
                 if (argument.equals("")) { } else {
                     try {
@@ -469,7 +469,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (mainCommand.equals("id")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
             else { echoCommand(": " + mainCommand + ": not found"); }
         }
-        private start() {
+        private init() {
             if (env("$PORT").length() == 0) { setCommand("PORT=31522"); }
 
             try {
