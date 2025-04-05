@@ -1,6 +1,7 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
+import javax.wireless.messaging.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
 import javax.bluetooh.*;
@@ -281,6 +282,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("spell")) {  }
         else if (mainCommand.equals("catch")) {  }
         else if (mainCommand.equals("local")) {  }
+        else if (mainCommand.equals("msg")) { new Messaging(argument); }
         else if (mainCommand.equals("neofetch")) {  }
 
         // API 014 - (OpenTTY)
@@ -439,7 +441,62 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class GetAddress { public GetAddress(String args) { if (args == null || args.length() == 0) { processCommand("ifconfig"); } else { String result = performNSLookup(args); echoCommand(result); } } private String performNSLookup(String domain) { try { DatagramConnection conn = (DatagramConnection) Connector.open("datagram://1.1.1.1:53"); byte[] query = createDNSQuery(domain); Datagram request = conn.newDatagram(query, query.length); conn.send(request); Datagram response = conn.newDatagram(512); conn.receive(response); conn.close(); return parseDNSResponse(response.getData()); } catch (IOException e) { return e.getMessage(); } } private byte[] createDNSQuery(String domain) throws IOException { ByteArrayOutputStream out = new ByteArrayOutputStream(); out.write(0x12); out.write(0x34); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); String[] parts = split(domain, '.'); for (int i = 0; i < parts.length; i++) { out.write(parts[i].length()); out.write(parts[i].getBytes()); } out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x01); return out.toByteArray(); } private String parseDNSResponse(byte[] response) { if ((response[3] & 0x0F) != 0) { return "DNS response error"; } int answerOffset = 12; while (response[answerOffset] != 0) { answerOffset++; } answerOffset += 5; if (response[answerOffset + 2] == 0x00 && response[answerOffset + 3] == 0x01) { StringBuffer ip = new StringBuffer(); for (int i = answerOffset + 12; i < answerOffset + 16; i++) { ip.append(response[i] & 0xFF); if (i < answerOffset + 15) ip.append("."); } return ip.toString(); } else { return "not found"; } } }
     public class PortScanner implements CommandListener, Runnable { private List ports; private String host; public PortScanner(String args) { if (args == null || args.length() == 0) { return; } host = args; ports = new List(host + " Ports", List.IMPLICIT); ports.addCommand(new Command("Connect", Command.OK, 1)); ports.addCommand(new Command("Back", Command.BACK, 2)); ports.setCommandListener(this); new Thread(this).start(); display.setCurrent(ports); } public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.OK) { new RemoteConnection(host + ":" + ports.getString(ports.getSelectedIndex())); } else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); } } public void run() { for (int port = 1; port <= 65535; port++) { try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); ports.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } } }
     public class RemoteConnection implements CommandListener, Runnable { private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream; private String host; private Form remote = new Form(form.getTitle()); private TextField inputField = new TextField("Command", "", 256, TextField.ANY); private Command sendCommand = new Command("Send", Command.OK, 1), backCommand = new Command("Back", Command.SCREEN, 2), clearCommand = new Command("Clear", Command.SCREEN, 3), infoCommand = new Command("Show info", Command.SCREEN, 4); private StringItem console = new StringItem("", ""); public RemoteConnection(String args) { if (args == null || args.length() == 0) { return; } host = args; inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); remote.append(console); remote.append(inputField); remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(infoCommand); remote.addCommand(sendCommand); remote.setCommandListener(this); try { socket = (SocketConnection) Connector.open("socket://" + args); inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); } catch (IOException e) { echoCommand(e.getMessage()); return; } new Thread(this).start(); display.setCurrent(remote); } public void commandAction(Command c, Displayable d) { if (c == sendCommand) { String data = inputField.getString().trim(); inputField.setString(""); try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } catch (IOException e) { processCommand("warn " + e.getMessage()); } } else if (c == backCommand) { try { outputStream.write("".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); } catch (IOException e) { } writeRMS("remote", console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); } else if (c == infoCommand) { try { warnCommand("Informations", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Port: " + Integer.toString(socket.getLocalPort())); } catch (IOException e) { } } } public void run() { while (true) { try { byte[] buffer = new byte[4096]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (IOException e) { processCommand("warn " + e.getMessage()); break; } } } }
-    
+    public class Messaging implements Runnable {
+        private String key = "PAYLOAD", handler = "execute echo $" + key +"; true";
+        private MessageConnection conn;
+
+        public Messaging(String args) {
+            command = env(command.trim());
+            String mainCommand = getCommand(command).toLowerCase();
+            String argument = getArgument(command);
+
+            if (mainCommand.equals("")) {  }
+
+            else if (mainCommand.equals("init")) { if (argument.equals("")) { } else { key = getCommand(argument); handler = getArgument(handler); } start() }
+            else if (mainCommand.equals("send")) {
+                if (argument.equals("")) { } else {
+                    try {
+                        conn = (MessageConnection) Connector.open("sms://" + getCommand(argument));
+                        TextMessage msg = (TextMessage) conn.newMessage(MessageConnection.TEXT_MESSAGE);
+                        msg.setPayloadText(getArgument(argument));
+                        conn.send(msg);
+                        conn.close();
+                    } catch (Exception e) {
+                        echoCommand(e.getMessage());
+                    }
+                }
+            }
+            else if (mainCommand.equals("id")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
+            else { echoCommand(": " + mainCommand + ": not found"); }
+        }
+        private start() {
+            if (env("$PORT").length() == 0) { setCommand("PORT=31522"); }
+
+            try {
+                conn = (MessageConnection) Connector.open(env("sms://:$PORT"));
+                start("msgserver"); new Thread(this).start();
+            } catch (Exception e) {
+                echoCommand(e.getMessage());
+            }
+        }
+
+        public void run() {
+            while (trace.containsKey("msgserver")) {
+                try {
+                    Message msg = conn.receive();
+                    if (msg instanceof TextMessage) {
+                        String sender = msg.getAddress();
+                        setCommand(key + "=" + ((TextMessage) msg).getPayloadText());
+                        processCommand(handler);
+                    }
+                } catch (Exception e) {
+                    echoCommand(e.getMessage());
+                    stop("msgserver"); return;
+                }
+            } echoCommand("[-] Server stopped"); try { conn.close(); } catch (Exception e) { }
+        }
+    }
+
     // API 012 - (File)
     // |
     // Directories Manager
