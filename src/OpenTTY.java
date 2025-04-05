@@ -469,7 +469,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (mainCommand.equals("id")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
             else { echoCommand(": " + mainCommand + ": not found"); }
         }
-        private init() {
+        private void init() {
             if (env("$PORT").length() == 0) { setCommand("PORT=31522"); }
 
             try {
