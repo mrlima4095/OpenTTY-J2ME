@@ -1,7 +1,9 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
-import javax.wireless.messaging.*;
+import javax.wireless.messaging.TextMessage;
+import javax.wireless.messaging.MessageConnection;
+import javax.wireless.messaging.Message;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
 import javax.bluetooh.*;
