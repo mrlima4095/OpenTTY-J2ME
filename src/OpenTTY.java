@@ -444,7 +444,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String key = "PAYLOAD", handler = "execute echo $" + key +"; true";
         private MessageConnection conn;
 
-        public Messaging(String args) {
+        public TextMMS(String args) {
             command = env(command.trim());
             String mainCommand = getCommand(command).toLowerCase();
             String argument = getArgument(command);
