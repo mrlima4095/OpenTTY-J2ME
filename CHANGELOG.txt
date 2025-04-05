@@ -21,6 +21,7 @@ Copyright (C) 2025 - Mr. Lima
 - `ImmersiveShell` API support for **Legacy** added 
 - `ImmersiveShell` updated to 1.2 version
 - `/scripts/debug.sh` have been rewrote
+- `Nano` buffer size increased to 10000 characters
 
 [ _Notes_ ]
 
