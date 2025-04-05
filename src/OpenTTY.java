@@ -1,6 +1,7 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.file.*;
+import javax.wireless.messaging.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
 import javax.bluetooh.*;
@@ -451,7 +452,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (mainCommand.equals("")) {  }
 
             else if (mainCommand.equals("init")) { if (argument.equals("")) { } else { key = getCommand(argument); handler = getArgument(handler); } init(); }
-            else if (mainCommand.equals("send")) {
+            /*else if (mainCommand.equals("send")) {
                 if (argument.equals("")) { } else {
                     try {
                         conn = (MessageConnection) Connector.open("sms://" + getCommand(argument));
@@ -463,7 +464,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         echoCommand(e.getMessage());
                     }
                 }
-            }
+            }*/
             else if (mainCommand.equals("id")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
             else { echoCommand(": " + mainCommand + ": not found"); }
         }
