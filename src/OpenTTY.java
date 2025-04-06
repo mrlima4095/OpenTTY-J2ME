@@ -278,7 +278,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
-        else if (mainCommand.equals("spell")) {  }
+        else if (mainCommand.equals("spell")) { stdout.setLabel("Saida de Texto: "); }
         else if (mainCommand.equals("catch")) {  }
         else if (mainCommand.equals("local")) {  }
         else if (mainCommand.equals("neofetch")) {  }
