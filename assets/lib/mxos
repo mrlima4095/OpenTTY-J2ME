@@ -11,8 +11,10 @@ process.name=mobix
 
 include=forge
 
-config=execute set MobiX=1; x11; tick Loading...;x11 stop; x11 xfinit stdout; x11 title MobiX $MobiX; x11 item mxos; clear; log add info Running MobiX $MobiX; spell Console:;
+config=execute set MobiX=1; x11; tick Loading...; x11 stop; x11 xfinit stdout; x11 title MobiX $MobiX; x11 item mxos; clear; log add info Running MobiX $MobiX; spell Console:;
 command=mx
+
+mx=execute x11 screen mxos;
 
 shell.name=mx
 shell.args=apps
@@ -22,7 +24,7 @@ apps=execute x11 list mxos;
 [ COMMAND ]
 
 item.label=MobiX
-item.cmd=
+item.cmd=execute x11 screen mxos;
 
 [ DISPLAY ]
 
