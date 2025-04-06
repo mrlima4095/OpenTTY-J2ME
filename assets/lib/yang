@@ -10,13 +10,12 @@ yang=execute x11 list yang;
 setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; x11 quest /java/lib/settings;
 
 shell.name=yang
-shell.args=install,update,query,run,setrepo
+shell.args=install,update,query,setrepo
 
 install=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; tick Installing...; query $REPO get lib/$RESOURCE; tick; set QUERY=$OLD_QUERY; unset OLD_QUERY; unset RESOURCE; 
 update=execute set RESOURCE=yang; yang install; import yang;
 query=execute x11 quest yang;
 
-run=for RESOURCE (nano) exec yang install & echo [Yang] installed '$RESOURCE' & tick
 
 [ DISPLAY ]
 
