@@ -11,7 +11,7 @@ process.name=mobix
 
 include=forge
 
-config=execute set MobiX=1; x11 stop; x11 xfinit stdout; x11 title MobiX $MobiX; x11 item mxos; clear; log add info Running MobiX $MobiX; spell Console:; x11 term;
+config=execute set MobiX=1; x11 stop; x11 xfinit stdout; x11 title MobiX $MobiX; x11 item mxos; clear; log add info Running MobiX $MobiX; spell Console:; 
 command=xterm
 
 xterm=execute x11 make mxos;
