@@ -34,7 +34,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $"); 
             
-            
             if (username.equals("")) { new Login(); }
             else { runScript(loadRMS("initd", 1)); }
         }    
@@ -80,18 +79,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("export")) { if (argument.equals("")) { processCommand("env"); } else { attributes.put(argument, ""); } }
         else if (mainCommand.equals("env")) { if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { Enumeration keys = attributes.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) attributes.get(key); if (!key.equals("OUTPUT") && !value.equals("")) { echoCommand(key + "=" + value.trim()); } } } }
         
+
         // API 002 - (Logs) 
         // |
         // OpenTTY Logging Manager
         else if (mainCommand.equals("log")) { MIDletLogs(argument); }
         else if (mainCommand.equals("logcat")) { echoCommand(logs); }
         
+
         // API 003 - (User-Integration) 
         // |
         //
         else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(username); }
         else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh"); }
+
 
         // API 004 - (LCDUI Interface) 
         // |
@@ -102,6 +104,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); } 
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
+
 
         // API 005 - (Operators) 
         // |
@@ -120,6 +123,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
         else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
 
+
         // API 006 - (Process) 
         // |
         // Memory
@@ -134,6 +138,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
         else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); } }
         
+
         // API 007 - (Bundle) 
         // | 
         // MIDlet
@@ -166,6 +171,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("seed")) { try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand("" + read(argument).hashCode()); } else if (argument.equals("nano")) { echoCommand("" + nanoContent.hashCode()); } else { echoCommand("" + loadRMS(argument, 1).hashCode()); } } }
         
+
         // API 009 - (Threads) 
         // |
         // MIDlet Tracker
@@ -173,6 +179,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
         else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }, "Background").start(); }
         
+
         // API 010 - (Requests) 
         // |
         // Connecting to Device API
@@ -180,16 +187,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
         // | 
         // PushRegistry
-        else if (mainCommand.equals("prg")) { 
-            if (argument.equals("")) { argument = "5"; } 
-            try { 
-                PushRegistry.registerAlarm(
-                    getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), 
-                    System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); 
-            } 
-            catch (NumberFormatException e) { echoCommand(e.getMessage()); } 
-            catch (ClassNotFoundException e) { echoCommand(e.getMessage()); }
-            catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
+        else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } catch (ClassNotFoundException e) { echoCommand(e.getMessage()); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
         
 
         // API 011 - (Network) 
@@ -292,6 +290,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("local")) {  }
         else if (mainCommand.equals("neofetch")) {  }
 
+
         // API 014 - (OpenTTY)
         // |
         // Low-level commands
@@ -300,6 +299,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); MIDletLogs("add debug API reloaded"); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
         else if (mainCommand.startsWith("@")) {  }
+
 
         // API 015 - (Scripts)
         // |
