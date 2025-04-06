@@ -12,3 +12,4 @@
 [2025-1.14-01x44]	Nano buffer size increased to 31522
 [2025-1.14-01x45]	Added Command 'WRL'
 [2025-1.14-01x46]	Added Command 'SPELL' | Clear patterns of some config files | Debugging behaviors packages
+[2025-1.14-01x47]	Fixing some bugs in Yang script installation
