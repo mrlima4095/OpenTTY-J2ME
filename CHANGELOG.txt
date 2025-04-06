@@ -8,7 +8,7 @@ Copyright (C) 2025 - Mr. Lima
 - `throw [code]`: stop current Thread with **code**
 - `prg [time]`: **PushRegistry** Manager - Create MIDlet Launcher
 - `wrl`: Show wireless API client number
-- ``:
+- `spell [text]`: Set a title for _Text Output_ 
 - ``:
 
 [ _Updates_ ]
