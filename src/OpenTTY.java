@@ -184,7 +184,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { argument = "5"; } 
             try { 
                 PushRegistry.registerAlarm(
-                    getArgument(argument) ? getArgument(argument) : "OpenTTY", 
+                    getArgument(argument).equals("") ? getArgument(argument) : "OpenTTY", 
                     System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); 
             } 
             catch (NumberFormatException e) { echoCommand(e.getMessage()); } 
