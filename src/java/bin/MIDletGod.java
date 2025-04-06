@@ -35,4 +35,8 @@ public class MIDletGod extends MIDlet implements CommandListener {
         }
     }
 
+    private void echoCommand(String message) { echoCommand(message, text); }
+    private void echoCommand(String message, StringItem console) { console.setText(console.getText().equals("") ? message.trim() : console.getText() + "\n" + message.trim()); }
+    
+
 }
