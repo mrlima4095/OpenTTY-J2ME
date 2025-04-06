@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14-01x47";
+                   build = "2025-1.14-01x48";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -180,7 +180,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
         // | 
         // PushRegistry
-        else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { long alarmTime = System.currentTimeMillis() + Integer.parseInt(argument) * 1000; PushRegistry.registerAlarm(getClass().getName(), alarmTime); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
+        else if (mainCommand.equals("prg")) { 
+            if (argument.equals("")) { argument = "5 OpenTTY"; } 
+            try { 
+                long alarmTime = System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000; PushRegistry.registerAlarm(getArgument(argument), alarmTime); 
+            } 
+            catch (NumberFormatException e) { echoCommand(e.getMessage()); } 
+            catch (ClassNotFoundException e) { echoCommand(e.getMessage()); }
+            catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
         
 
         // API 011 - (Network) 
