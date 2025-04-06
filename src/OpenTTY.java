@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14-01x45";
+                   build = "2025-1.14-01x46";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -97,7 +97,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // System UI
         else if (mainCommand.equals("x11")) { xserver(argument); }
-        else if (mainCommand.equals("xterm")) { display.setCurrent(form); }       
+        else if (mainCommand.equals("xterm")) { display.setCurrent(form); }     
+        else if (mainCommand.equals("spell")) { stdout.setLabel(argument); }  
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); } 
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
@@ -278,7 +279,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
-        else if (mainCommand.equals("spell")) { stdout.setLabel("Saida de Texto: "); }
         else if (mainCommand.equals("catch")) {  }
         else if (mainCommand.equals("local")) {  }
         else if (mainCommand.equals("neofetch")) {  }
