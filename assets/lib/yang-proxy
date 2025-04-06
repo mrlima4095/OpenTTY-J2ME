@@ -28,7 +28,7 @@ quest.cmd=execute yang install;
 [ Index ]
 
 list.title=Repository
-list.content=Armitage,PasteBin,DeviceFS,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,PackJ (Update),PackJ (Proxy),X Server 0.4,ImmersiveShell,Auto Syntax,Android ME,MobiX Loader,ViaVersion,Updater 
+list.content=Armitage,PasteBin,DeviceFS,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,Github (MIDlet),Discord (MIDlet),PackJ (Update),PackJ (Proxy),X Server 0.4,ImmersiveShell,Auto Syntax,Android ME,MobiX Loader,ViaVersion,Updater 
 list.button=Install
 
 Armitage=execute set RESOURCE=armitage; yang install;
@@ -41,6 +41,8 @@ JAuth2=execute set RESOURCE=jauth2; yang install;
 JBenchmark=execute set RESOURCE=debuggers; yang install;
 J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
 SmartME SDK=execute set RESOURCE=sdkme; yang install; set RESOURCE=forge; yang install;
+Github (MIDlet)=execute warn This is a 3rd MIDlet from 'shinovon'; bg exec sleep 3 & open http://nnp.nnchan.ru/dl/GH2ME.jar;
+Discord (MIDlet)=execute warn This is a 3rd MIDlet from 'gtrxac'; bg exec sleep 3 & open http://146.59.80.3/discord_midp2_beta.jar;
 PackJ (Update)=execute set RESOURCE=yang; yang install;
 PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install;
 X Server 0.4=execute set RESOURCE=xorg-client; yang install;
