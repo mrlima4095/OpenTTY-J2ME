@@ -6,7 +6,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - `clone [url]`: get a raw content from an HTTP server and run this as script  
 - `throw [code]`: stop current Thread with **code**
-- `prg [time]`: **PushRegistry** Manager - Create MIDlet Launcher
+- `prg [time] [class]`: **PushRegistry** Manager - Create MIDlet Launcher
 - `wrl`: Show wireless API client number
 - `spell [text]`: Set a title for _Text Output_ 
 - ``:
@@ -28,5 +28,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - Command `clone` is a builtin command, it uses proxy to access HTTPS from old devices.
 - Command `prg` requires that user run command `exit` by their self. It's different of old **function** `@reset` that have been removed. 
-- Command `wrl` will be released completely in possible 1.16 LTS update
-- Code have been reorganized
+- Command `prg` missing class is by default filled by name **OpenTTY**, use if it have more then one MIDlet in package.
+- Command `wrl` will be released completely in possible 1.16 LTS update.
+- Code have been reorganized.
+
