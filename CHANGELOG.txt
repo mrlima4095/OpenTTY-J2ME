@@ -23,6 +23,7 @@ Copyright (C) 2025 - Mr. Lima
 - `/scripts/debug.sh` have been rewrote
 - `Nano` buffer size increased to **31522** characters
 - `HTTP Headers` buffer size increased to **31522** characters
+- `Sync` updated to **1.1**
 
 [ _Notes_ ]
 
@@ -31,4 +32,3 @@ Copyright (C) 2025 - Mr. Lima
 - Command `prg` missing class is by default filled by name **OpenTTY**, use if it have more then one MIDlet in package.
 - Command `wrl` will be released completely in possible 1.16 LTS update.
 - Code have been reorganized.
-
