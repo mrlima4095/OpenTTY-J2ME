@@ -26,6 +26,7 @@ Copyright (C) 2025 - Mr. Lima
 - `Sync` updated to **1.1**
 - Command `query` now is a global connector 
 - Command `unalias` removed missing message
+- Command `if` have new comparators `!startswith`, `!endswith`, `contains` and `!contains`
 
 [ _Notes_ ]
 
