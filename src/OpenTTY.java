@@ -495,7 +495,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else if (conn instanceof HttpConnection) {
                 echoCommand("query: http: not supported\nquery: try use 'curl' or 'wget'");
                 return;
-            }
 
             } else {
                 echoCommand("query: " + mainCommand + ": invalid protocol");
