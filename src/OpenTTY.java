@@ -523,7 +523,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         } catch (IOException e) {
             echoCommand(e.getMessage());
-        } catch (Exception ex) {
+        } catch (Exception e) {
             echoCommand(e.getMessage());
         }
     }
