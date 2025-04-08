@@ -458,7 +458,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (argument.equals("")) { echoCommand("query: missing [data]"); return; }
 
         try {
-            Connection conn = Connector.open(mainCommand);
+            Connection conn = (Connection) Connector.open(mainCommand);
             InputStream inputStream = conn.openInputStream();
             OutputStream outputStream = conn.openOutputStream();
 
