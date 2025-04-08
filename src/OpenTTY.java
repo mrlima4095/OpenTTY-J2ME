@@ -462,7 +462,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             InputStream inputStream = null;
             OutputStream outputStream = null;
 
-            if (conn instanceof SocketConnection) {
+            /*if (conn instanceof SocketConnection) {
                 SocketConnection sc = (SocketConnection) conn;
                 inputStream = sc.openInputStream();
                 outputStream = sc.openOutputStream();
@@ -472,17 +472,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 inputStream = cc.openInputStream();
                 outputStream = cc.openOutputStream();
 
-            } else if (conn instanceof FileConnection) {
-                FileConnection fc = (FileConnection) conn;
-                if (!fc.exists()) fc.create();
-                inputStream = fc.openInputStream();
-                outputStream = fc.openOutputStream();
-
             } else if (conn instanceof DatagramConnection) {
                 DatagramConnection dc = (DatagramConnection) conn;
                 byte[] dataBytes = argument.getBytes();
                 Datagram datagram = dc.newDatagram(dataBytes, dataBytes.length);
                 dc.send(datagram);
+                echoCommand("query: UDP packet '" + argument +"' was send to '" + mainCommand + "'");
 
                 dc.close();
                 return;
@@ -492,14 +487,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 inputStream = sc.openInputStream();
                 outputStream = sc.openOutputStream();
 
-            } else if (conn instanceof HttpConnection) {
-                echoCommand("query: http: not supported\nquery: try use 'curl' or 'wget'");
-                return;
-
-            } else {
-                echoCommand("query: " + mainCommand + ": invalid protocol");
-                return;
-            }
+            } */
 
             outputStream.write(argument.getBytes());
             outputStream.flush();
