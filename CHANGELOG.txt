@@ -34,3 +34,10 @@ Copyright (C) 2025 - Mr. Lima
 - Command `wrl` will be released completely in possible 1.16 LTS update.
 - When you will connect with anything with command `query` now you will need to fill protocol type like `query socket://ip:port payload`
 - Code have been reorganized.
+
+[ _Protocols_ ]
+
+- `socket://[ip]:[port]`: Socket Connections.
+- `datagram://[ip]:[port]`: UDP Connections.
+- `file://[path]`: Read and Write in a file (Dont create files or folders, recommended use of command `dd`).
+- `http://[url]`: HTTP GET Connections.
