@@ -32,7 +32,7 @@ public class Registry extends MIDlet implements CommandListener {
             try { 
                 PushRegistry.registerAlarm(stdin.getString().trim(), System.currentTimeMillis() + 5000); 
             } catch (ClassNotFoundException e) { 
-                AlertCommand("PushRegistry", "MIDlet Class '" + stdin.getString().trim() + "' not found!")
+                AlertCommand("PushRegistry", "MIDlet Class '" + stdin.getString().trim() + "' not found!");
             } catch (Exception e) { 
                 AlertCommand("PushRegistry", e.getMessage()); 
             }
