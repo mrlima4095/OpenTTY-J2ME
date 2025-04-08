@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14-01x49";
+                   build = "2025-1.14-01x50";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -387,7 +387,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 005 - (Operators) 
     // |
     // Operators
-    private void ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); String command = argument.substring(lastParenthesis + 1).trim(); String[] parts = split(expression, ' '); if (parts.length == 3) { if (parts[1].equals("startswith")) { if (parts[0].startsWith(parts[2])) { processCommand(command); } } else if (parts[1].equals("endswith")) { if (parts[0].endsWith(parts[2])) { processCommand(command); } } else if (parts[1].equals("!=")) { if (!parts[0].equals(parts[2])) { processCommand(command); } } else if (parts[1].equals("==")) { if (parts[0].equals(parts[2])) { processCommand(command); } } } else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } else if (parts.length == 1) { if (!parts[0].equals("")) { processCommand(command); } } }
+    private void ifCommand(String argument) { 
+        argument = argument.trim(); 
+
+        int firstParenthesis = argument.indexOf('('); 
+        int lastParenthesis = argument.indexOf(')'); 
+
+        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } 
+
+        String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); 
+        String command = argument.substring(lastParenthesis + 1).trim(); 
+
+        String[] parts = split(expression, ' '); 
+
+        if (parts.length == 3) { 
+            if (parts[1].equals("startswith")) { if (parts[0].startsWith(parts[2])) { processCommand(command); } } 
+            else if (parts[1].equals("!startswith")) { if (!parts[0].startsWith(parts[2])) { processCommand(command); } } 
+            else if (parts[1].equals("endswith")) { if (parts[0].endsWith(parts[2])) { processCommand(command); } } 
+            else if (parts[1].equals("!endswith")) { if (!parts[0].endsWith(parts[2])) { processCommand(command); } } 
+            else if (parts[1].equals("contains")) { if (parts[0].indexOf(parts[2]) != -1) { processCommand(command); } }
+            else if (parts[1].equals("!contains")) { if (parts[0].indexOf(parts[2]) == -1) { processCommand(command); } }
+            else if (parts[1].equals("!=")) { if (!parts[0].equals(parts[2])) { processCommand(command); } } 
+            else if (parts[1].equals("==")) { if (parts[0].equals(parts[2])) { processCommand(command); } } 
+        } else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } else if (parts.length == 1) { if (!parts[0].equals("")) { processCommand(command); } } 
+    }
     private void forCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return; } String key = getCommand(argument); String file = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); String command = argument.substring(lastParenthesis + 1).trim(); if (key.startsWith("(")) { return; } if (key.startsWith("$")) { key = replace(key, "$", ""); } if (file.startsWith("/")) { file = read(file); } else if (file.equals("nano")) { file = nanoContent; } else { file = loadRMS(file, 1); } String[] lines = split(file, '\n'); for (int i = 0; i < lines.length; i++) { if (lines[i] != null || lines[i].length() == 0) { processCommand("set " + key + "=" + lines[i]); processCommand(command); processCommand("unset " + key); } } }
     private void caseCommand(String argument) {
         argument = argument.trim();
