@@ -15,3 +15,4 @@
 [2025-1.14-01x47]	Fixing some bugs in Yang script installation
 [2025-1.14-01x48]	Command 'PRG' search for MIDlet Class
 [2025-1.14-01x49]	Command 'QUERY' updated - Global connector - required protocol
+[2025-1.14-01x50]	New 'IF' comparators
