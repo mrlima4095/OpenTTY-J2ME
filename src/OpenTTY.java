@@ -451,47 +451,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     private void query(String command) {
         command = env(command.trim());
-        String mainCommand = getCommand(command).toLowerCase(); // ex: socket://192.168.0.1:23
-        String argument = getArgument(command); // dados a enviar
+        String mainCommand = getCommand(command); 
+        String argument = getArgument(command); 
 
         if (mainCommand.equals("")) { echoCommand("query: missing [addr]"); return; }
-        if (argument.equals("")) { echoCommand("query: missing [data]"); return; }
 
         try {
             StreamConnection conn = (StreamConnection) Connector.open(mainCommand);
             InputStream inputStream = conn.openInputStream();
             OutputStream outputStream = conn.openOutputStream();
 
-            /*if (conn instanceof SocketConnection) {
-                SocketConnection sc = (SocketConnection) conn;
-                inputStream = sc.openInputStream();
-                outputStream = sc.openOutputStream();
-
-            } else if (conn instanceof CommConnection) {
-                CommConnection cc = (CommConnection) conn;
-                inputStream = cc.openInputStream();
-                outputStream = cc.openOutputStream();
-
-            } else if (conn instanceof DatagramConnection) {
-                DatagramConnection dc = (DatagramConnection) conn;
-                byte[] dataBytes = argument.getBytes();
-                Datagram datagram = dc.newDatagram(dataBytes, dataBytes.length);
-                dc.send(datagram);
-                echoCommand("query: UDP packet '" + argument +"' was send to '" + mainCommand + "'");
-
-                dc.close();
-                return;
-
-            } else if (conn instanceof StreamConnection) {
-                StreamConnection sc = (StreamConnection) conn;
-                inputStream = sc.openInputStream();
-                outputStream = sc.openOutputStream();
-
-            } */
-
-            outputStream.write(argument.getBytes());
-            outputStream.flush();
-
+            
+            if (argument.equals("")) {
+                outputStream.write(argument.getBytes());
+                outputStream.flush();
+            }
+               
             byte[] buffer = new byte[4096];
             int length = inputStream.read(buffer);
 
@@ -514,8 +489,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             outputStream.close();
             conn.close();
 
-        } catch (IOException e) {
-            echoCommand(e.getMessage());
         } catch (Exception e) {
             echoCommand(e.getMessage());
         }
