@@ -449,41 +449,84 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class PortScanner implements CommandListener, Runnable { private List ports; private String host; public PortScanner(String args) { if (args == null || args.length() == 0) { return; } host = args; ports = new List(host + " Ports", List.IMPLICIT); ports.addCommand(new Command("Connect", Command.OK, 1)); ports.addCommand(new Command("Back", Command.BACK, 2)); ports.setCommandListener(this); new Thread(this).start(); display.setCurrent(ports); } public void commandAction(Command c, Displayable d) { if (c.getCommandType() == Command.OK) { new RemoteConnection(host + ":" + ports.getString(ports.getSelectedIndex())); } else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); } } public void run() { for (int port = 1; port <= 65535; port++) { try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); ports.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } } }
     public class RemoteConnection implements CommandListener, Runnable { private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream; private String host; private Form remote = new Form(form.getTitle()); private TextField inputField = new TextField("Command", "", 256, TextField.ANY); private Command sendCommand = new Command("Send", Command.OK, 1), backCommand = new Command("Back", Command.SCREEN, 2), clearCommand = new Command("Clear", Command.SCREEN, 3), infoCommand = new Command("Show info", Command.SCREEN, 4); private StringItem console = new StringItem("", ""); public RemoteConnection(String args) { if (args == null || args.length() == 0) { return; } host = args; inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); remote.append(console); remote.append(inputField); remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(infoCommand); remote.addCommand(sendCommand); remote.setCommandListener(this); try { socket = (SocketConnection) Connector.open("socket://" + args); inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); } catch (IOException e) { echoCommand(e.getMessage()); return; } new Thread(this).start(); display.setCurrent(remote); } public void commandAction(Command c, Displayable d) { if (c == sendCommand) { String data = inputField.getString().trim(); inputField.setString(""); try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } catch (IOException e) { processCommand("warn " + e.getMessage()); } } else if (c == backCommand) { try { outputStream.write("".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); } catch (IOException e) { } writeRMS("remote", console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); } else if (c == infoCommand) { try { warnCommand("Informations", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Port: " + Integer.toString(socket.getLocalPort())); } catch (IOException e) { } } } public void run() { while (true) { try { byte[] buffer = new byte[4096]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (IOException e) { processCommand("warn " + e.getMessage()); break; } } } }
     
-    private void query(String command) { 
-        command = env(command.trim()); 
-        String mainCommand = getCommand(command).toLowerCase(); 
-        String argument = getArgument(command); 
+    private void query(String command) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command).toLowerCase(); // ex: socket://192.168.0.1:23
+        String argument = getArgument(command); // dados a enviar
 
-        if (mainCommand.equals("")) { echoCommand("query: missing [addr]"); return; } 
-        if (argument.equals("")) { echoCommand("query: missing [data]"); return; } 
-        try { 
-            Object socket = (Object) Connector.open(mainCommand); 
-            OutputStream outputStream = socket.openOutputStream(); 
+        if (mainCommand.equals("")) { echoCommand("query: missing [addr]"); return; }
+        if (argument.equals("")) { echoCommand("query: missing [data]"); return; }
 
-            outputStream.write((argument + "\n").getBytes()); 
-            outputStream.flush(); 
+        try {
+            Connection conn = Connector.open(mainCommand);
+            InputStream inputStream = null;
+            OutputStream outputStream = null;
 
-            InputStream inputStream = socket.openInputStream(); 
+            if (conn instanceof SocketConnection) {
+                SocketConnection sc = (SocketConnection) conn;
+                inputStream = sc.openInputStream();
+                outputStream = sc.openOutputStream();
 
-            byte[] buffer = new byte[4096]; 
-            int length = inputStream.read(buffer); 
+            } else if (conn instanceof CommConnection) {
+                CommConnection cc = (CommConnection) conn;
+                inputStream = cc.openInputStream();
+                outputStream = cc.openOutputStream();
 
-            if (length != -1) { 
-                String data = new String(buffer, 0, length); 
-                if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { 
-                    echoCommand(data); 
-                    MIDletLogs("add warn Query storage setting not found"); 
-                } 
-                else if (env("$QUERY").toLowerCase().equals("show")) { 
-                    echoCommand(data); 
-                } else if (env("$QUERY").toLowerCase().equals("nano")) { 
-                    nanoContent = data; echoCommand("query: data retrived"); 
-                } else { 
-                    writeRMS(env("$QUERY"), data); 
-                } 
-            } 
-        } catch (IOException e) { echoCommand(e.getMessage()); } }
+            } else if (conn instanceof FileConnection) {
+                FileConnection fc = (FileConnection) conn;
+                if (!fc.exists()) fc.create();
+                inputStream = fc.openInputStream();
+                outputStream = fc.openOutputStream();
 
+            } else if (conn instanceof DatagramConnection) {
+                DatagramConnection dc = (DatagramConnection) conn;
+                byte[] dataBytes = argument.getBytes();
+                Datagram datagram = dc.newDatagram(dataBytes, dataBytes.length);
+                dc.send(datagram);
+
+                dc.close();
+                return;
+
+            } else if (conn instanceof StreamConnection) {
+                StreamConnection sc = (StreamConnection) conn;
+                inputStream = sc.openInputStream();
+                outputStream = sc.openOutputStream();
+
+            } else {
+                echoCommand("query: " + mainCommand + ": invalid protocol");
+                return;
+            }
+
+            outputStream.write(argument.getBytes());
+            outputStream.flush();
+
+            byte[] buffer = new byte[4096];
+            int length = inputStream.read(buffer);
+            if (length != -1) {
+                String data = new String(buffer, 0, length);
+                if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) {
+                    echoCommand(data);
+                    MIDletLogs("add warn Query storage setting not found");
+                } else if (env("$QUERY").toLowerCase().equals("show")) {
+                    echoCommand(data);
+                } else if (env("$QUERY").toLowerCase().equals("nano")) {
+                    nanoContent = data;
+                    echoCommand("query: data retrived");
+                } else {
+                    writeRMS(env("$QUERY"), data);
+                }
+            }
+
+            inputStream.close();
+            outputStream.close();
+            conn.close();
+
+        } catch (IOException e) {
+            echoCommand(e.getMessage());
+        } catch (Exception ex) {
+            echoCommand(e.getMessage());
+        }
+    }
 
     // API 012 - (File)
     // |
