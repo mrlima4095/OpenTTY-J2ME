@@ -492,6 +492,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 inputStream = sc.openInputStream();
                 outputStream = sc.openOutputStream();
 
+            } else if (conn instanceof HttpConnection) {
+                echoCommand("query: http: not supported\nquery: try use 'curl' or 'wget'");
+                return;
+            }
+
             } else {
                 echoCommand("query: " + mainCommand + ": invalid protocol");
                 return;
@@ -502,6 +507,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             byte[] buffer = new byte[4096];
             int length = inputStream.read(buffer);
+
             if (length != -1) {
                 String data = new String(buffer, 0, length);
                 if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) {
