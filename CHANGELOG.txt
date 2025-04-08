@@ -24,6 +24,7 @@ Copyright (C) 2025 - Mr. Lima
 - `Nano` buffer size increased to **31522** characters
 - `HTTP Headers` buffer size increased to **31522** characters
 - `Sync` updated to **1.1**
+- Command `query` now is a global connector  
 
 [ _Notes_ ]
 
@@ -31,4 +32,5 @@ Copyright (C) 2025 - Mr. Lima
 - Command `prg` requires that user run command `exit` by their self. It's different of old **function** `@reset` that have been removed. 
 - Command `prg` missing class is by default filled by name **OpenTTY**, use if it have more then one MIDlet in package.
 - Command `wrl` will be released completely in possible 1.16 LTS update.
+- When you will connect with anything with command `query` now you will need to fill protocol type like `query socket://ip:port payload`
 - Code have been reorganized.
