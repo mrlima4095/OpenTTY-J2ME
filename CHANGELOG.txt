@@ -27,6 +27,7 @@ Copyright (C) 2025 - Mr. Lima
 - Command `query` now is a global connector 
 - Command `unalias` removed missing message
 - Command `if` have new comparators `!startswith`, `!endswith`, `contains` and `!contains`
+- Command `ifconfig` now accept arguments, like `1.1.1.1:53` to check your ip adress
 
 [ _Notes_ ]
 
@@ -34,6 +35,7 @@ Copyright (C) 2025 - Mr. Lima
 - Command `prg` requires that user run command `exit` by their self. It's different of old **function** `@reset` that have been removed. 
 - Command `prg` missing class is by default filled by name **OpenTTY**, use if it have more then one MIDlet in package.
 - Command `wrl` will be released completely in possible 1.16 LTS update.
+- Command `ifconfig` before it fail in some networks that Cloudflare DNS `1.1.1.1` dont works, now if it happens you can put an IP Adress to manual connect and finish the local IP capture.
 - When you will connect with anything with command `query` now you will need to fill protocol type like `query socket://ip:port payload`
 - Code have been reorganized.
 
