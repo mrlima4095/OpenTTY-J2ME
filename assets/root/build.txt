@@ -18,3 +18,4 @@
 [2025-1.14-01x50]	New 'IF' comparators
 [2025-1.14-01x51]	Command 'IFCONFIG' accepting third connection check adress
 [2025-1.14-01x52]	Run 'initd' user-script after attemp a Login 
+[2025-1.14-01x53]	Added Command 'GAUGE' 
