@@ -1,18 +1,21 @@
 [ Config ]
 
 name=JBuntu
-version=1.3
+version=1.3.1
 description=Desktop for OpenTTY
 
 api.version=1.14
-api.error=execute log add error JBuntu requires OpenTTY 1.14; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.14; title $OLD_TITLE; unset OLD_TITLE:
+api.error=execute log add error JBuntu requires OpenTTY 1.14; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.14; title $OLD_TITLE; unset OLD_TITLE;
 
 process.name=jbuntu
 
-include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
-
-config=execute set JVERSION=1.3; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat; 
+config=execute set JVERSION=1.3.1; x11 stop x11 init; x11 cmd hide; x11 item jbuntu; x11 title JBuntu $JVERSION;
+config.post=execute cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; set DISPLAY=$OUTPUT;
 command=xterm,jbuntu
+
+file=.jbuntu-desktop
+
+.jbuntu-desktop=make
 
 xterm=execute x11 $DISPLAY jbuntu;
 jbuntu=execute alias xterm=execute x11 $DISPLAY jbuntu; xterm;
@@ -20,12 +23,12 @@ jbuntu=execute alias xterm=execute x11 $DISPLAY jbuntu; xterm;
 shell.name=jbuntu
 shell.args=menu,gmenu,jnome,explorer,sync
 
-menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Desktop Settings,JBuntu Updater,Logout,Exit; add list.back=x11 $DISPLAY jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; add JBuntu Updater=jbuntu sync; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
-gmenu=execute install nano; touch; add list.title=Menu; add list.content=Desktop Settings,Write Notes; add list.button=Open; add Desktop Settings=jbuntu jnome; add Write Notes=x11 quest jbuntu; x11 list nano; get nano;
+menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Desktop Settings,JBuntu Updater,Logout,Exit; add list.back=x11 $DISPLAY jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; add JBuntu Updater=jbuntu sync; add Logout=logout; add Exit=exit; x11 list nano; get nano;
+gmenu=execute install nano; touch; add list.title=Menu; add list.content=Desktop Settings,Write	Notes; add list.button=Open; add Desktop Settings=jbuntu jnome; add Write Notes=x11 quest jbuntu; x11 list nano; get nano;
 jnome=execute install nano; touch; add list.title=Desktop Settings; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add Legacy=exec install nano & touch & add make & install .jbuntu-desktop & log add info Desktop Type charged to 'LEGACY' & log add warn JBuntu has request an API reload & @reload & set DISPLAY=make & jbuntu & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-desktop & log add info Desktop Type charged to 'Enhanced' & log add warn JBuntu has request an API reload & @reload & set DISPLAY=canvas & jbuntu & get nano; x11 list nano; get nano;
 explorer=execute install nano; touch; add list.title=File Explorer; add list.content=My Files,Device Files,Resources; add list.back=x11 list jbuntu; add list.button=Open; add My Files=builtin dir f; add Device Files=builtin dir s; add Resources=builtin ls; x11 list nano; get nano;
 
-sync=execute install nano; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu; find version nano; if ($OUTPUT == $JVERSION) warn JBuntu already is updated; if ($OUTPUT != $JVERSION) exec touch & add screen.title=JBuntu Updater & add screen.content=A new version of JBuntu is avaliable! Do you want to update? & add screen.back=jbuntu menu & add screen.back.label=Back & add screen.button=Update & add screen.button.cmd=execute clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/update_jbuntu.sh & x11 make nano & get nano; get nano;
+sync=execute install nano; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu; find version nano; if ($OUTPUT == $JVERSION) warn JBuntu already is updated!; if ($OUTPUT != $JVERSION) exec touch & add screen.title=JBuntu Updater & add screen.content=A new version of JBuntu is avaliable! Do you want to update? & add screen.back=jbuntu menu & add screen.back.label=Back & add screen.button=Update & add screen.button.cmd=execute clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/update_jbuntu.sh & x11 make nano & get nano; get nano;
 
 [ COMMAND ]
 
@@ -35,7 +38,7 @@ item.cmd=execute jbuntu;
 [ DISPLAY ]
 
 screen.title=JBuntu $JVERSION
-screen.content=$JBUNTU_NOTES
+screen.content=$JBUNTU_NOTES 
 screen.back.label=Menu
 screen.back=execute jbuntu menu;
 screen.button=Apps
@@ -43,7 +46,7 @@ screen.button.cmd=execute x11 list jbuntu;
 
 canvas.title=JBuntu $JVERSION
 canvas.content=$JBUNTU_NOTES
-canvas.content.link=execute jbuntu gmenu;
+canvas.content.link=execute jbuntu gnome;
 canvas.button=Apps
 canvas.button.cmd=execute x11 list jbuntu;
 canvas.back.label=Menu
@@ -61,7 +64,7 @@ list.button=Open
 Text Editor=execute nano;
 File Explorer=execute jbuntu explorer;
 Network Tools=execute nk;
-OpenTTY Store=execute yang; 
+OpenTTY Store=execute yang;
 My Tasks=execute todo;
 Terminal=execute x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; unalias xterm; x11 term;
 Monitor=execute htop;
