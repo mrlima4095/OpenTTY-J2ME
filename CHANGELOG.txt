@@ -9,6 +9,7 @@ Copyright (C) 2025 - Mr. Lima
 - `prg [time] [class]`: **PushRegistry** Manager - Create MIDlet Launcher
 - `wrl`: Show wireless API client number
 - `spell [text]`: Set a title for _Text Output_ 
+- `gauge [text]`: Alert Window with a infinity loading progress bar
 - ``:
 
 [ _Updates_ ]
