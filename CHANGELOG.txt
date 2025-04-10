@@ -28,6 +28,7 @@ Copyright (C) 2025 - Mr. Lima
 - Command `unalias` removed missing message
 - Command `if` have new comparators `!startswith`, `!endswith`, `contains` and `!contains`
 - Command `ifconfig` now accept arguments, like `1.1.1.1:53` to check your ip adress
+- After user attemp login it run `initd` user-script it already exists
 
 [ _Notes_ ]
 
