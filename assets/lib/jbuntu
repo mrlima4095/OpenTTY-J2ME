@@ -43,7 +43,7 @@ screen.button.cmd=execute x11 list jbuntu;
 
 canvas.title=JBuntu $JVERSION
 canvas.content=$JBUNTU_NOTES
-canvas.content.link=execute jbuntu jnome;
+canvas.content.link=execute jbuntu gmenu;
 canvas.button=Apps
 canvas.button.cmd=execute x11 list jbuntu;
 canvas.back.label=Menu
