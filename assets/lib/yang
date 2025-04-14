@@ -16,7 +16,6 @@ install=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; tick Installing...; q
 update=execute set RESOURCE=yang; yang install; import yang;
 query=execute x11 quest yang;
 
-
 [ DISPLAY ]
 
 quest.title=PackJ Query
