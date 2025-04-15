@@ -51,3 +51,4 @@ Copyright (C) 2025 - Mr. Lima
 - `file://[path]`: Read and Write in a file (Dont create files or folders, recommended use of command `dd`).
 - `http://[url]`: HTTP GET Connections.
 
+
