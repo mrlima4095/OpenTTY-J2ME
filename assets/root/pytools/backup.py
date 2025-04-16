@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # 
+#   python backup.py [HOST] [PORT]
+#
+#       Connect to OpenTTY and backup your RMS files in 
+#   local Device. Required to host a Bind Server in OpenTTY
+#   and prompt the HOST IP Address and PORT of Server to 
+#   make the connection.
 
 import os
 import sys
