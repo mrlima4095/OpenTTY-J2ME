@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # 
-#   OpenTTY SDK 
+#   python SDK.py
+#
+#       Default OpenTTY Package Creator Tool, official SDK to
+#   create Applications/ Services/ Daemon to OpenTTY API and
+#   it based forks available.
+#
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
@@ -28,7 +33,7 @@ class OpenTTYSDK:
         menubar.add_cascade(label="File", menu=file_menu)
 
         project_menu = Menu(menubar, tearoff=0)
-        project_menu.add_command(label="New Deamon", command=self.create_deamon)
+        project_menu.add_command(label="New Daemon", command=self.create_deamon)
         project_menu.add_command(label="New Server", command=self.create_server)
         project_menu.add_command(label="New Canvas", command=self.create_canvas)
         project_menu.add_command(label="New Enhanced", command=self.create_advanced)
