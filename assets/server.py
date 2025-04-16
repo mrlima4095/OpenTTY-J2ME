@@ -1,3 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# 
+#   python server.py
+#
+#       OpenTTY Proxy Server (default) to provide Yang Packages, and it
+#   connections to World Wide Web if device haven't support to HTTPS and 
+#   TLS. You can use the HTTP Proxy (by nnproject, can charge this url at
+#   attribute 'MIDlet-Proxy' of MANIFEST.MF). Recommended host your own
+#   session if you wanna modify this software or don't like to leave logs
+#   that you have connected there. (I'M NOT PARTNER OF nnproject).
+# 
+
 import sys
 import socket
 import subprocess
@@ -7,7 +20,7 @@ import urllib.parse
 import http.client
 import os
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 class Server:
     def __init__(self, host='0.0.0.0', port=31522, blacklist_file=None):
@@ -138,7 +151,7 @@ if __name__ == '__main__':
                     print("OpenTTY Server has a new version released!\n\n")
                     print(f"Installed Version - {__version__}")
                     print(f"Avaliable Version - {github_version}")
-                    print("\n\nGithub Repository: https://github.com/mrlima4095/OpenTTY-Repo")
+                    print("\n\nGithub Repository: https://github.com/mrlima4095/OpenTTY-J2ME")
                 else:
                     print("OpenTTY Server is updated")
         except Exception as e: print(f"Error accessing URL: {e}")
