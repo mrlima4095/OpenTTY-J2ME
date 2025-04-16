@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# 
-#	Parse INI files to Python Dictionary format and 
-#	JSON Strings to files
+#
+#	NOTE: This file is a Python library
+#
+#		Parse INI files to JSON and Python dictionaries
+#	You can use it to parse OpenTTY Packages to JSON if 
+#	by a fuck you need
 
 import json
 
