@@ -1,4 +1,7 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# 
+#   OpenTTY SDK 
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, Menu

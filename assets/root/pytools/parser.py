@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # 
 #	Parse INI files to Python Dictionary format and 
+#	JSON Strings to files
 
 import json
 
