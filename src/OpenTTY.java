@@ -556,15 +556,9 @@ class Process {
     public Lua lua = null;
     public ELF elf = null;
     
-    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable scope) {
-        this.lua = new Lua(midlet, uid, pid, this, stdout, scope);
-        this.name = name; this.owner = owner; this.uid = uid; this.pid = pid;
-        this.stdout = stdout; this.stderr = stdout; this.scope = scope;
-        this.startTime = System.currentTimeMillis();
-    }
+    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable scope) { this.lua = new Lua(midlet, uid, pid, this, stdout, scope); this.name = name; this.owner = owner; this.uid = uid; this.pid = pid; this.stdout = stdout; this.stderr = stdout; this.scope = scope; this.startTime = System.currentTimeMillis(); }
     public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable args, Hashtable scope) {
-        this.elf = new ELF(midlet, args, stdout, scope, uid, pid, this);
-        this.name = name; this.owner = owner; this.uid = uid; this.pid = pid;
+        this.elf = new ELF(midlet, args, stdout, scope, uid, pid, this); this.name = name; this.owner = owner; this.uid = uid; this.pid = pid;
         this.stdout = stdout; this.stderr = stdout; this.scope = scope;
         this.startTime = System.currentTimeMillis();
     }
