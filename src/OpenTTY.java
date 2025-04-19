@@ -223,6 +223,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("netstat")) { try { HttpConnection conn = (HttpConnection) Connector.open("http://ipinfo.io/ip"); conn.setRequestMethod(HttpConnection.GET); if (conn.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } conn.close(); } catch (Exception e) { echoCommand("false"); } }
 
 
+
         // API 012 - (File)
         // |
         // Directories Manager
