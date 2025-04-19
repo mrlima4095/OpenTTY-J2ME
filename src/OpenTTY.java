@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14-01x53";
+                   build = "2025-1.14-01x54";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -329,7 +329,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 001 - (Registry) 
     // |
     // Aliases
-    private void aliasCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else if (aliases.containsKey(argument)) { echoCommand("alias: " + argument + ": not found"); } else { Enumeration keys = aliases.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); if (!key.equals("xterm") && !value.equals("")) { echoCommand("alias " + key + "='" + value.trim() + "'"); } } } return; } String key = argument.substring(0, equalsIndex).trim(); String value = argument.substring(equalsIndex + 1).trim(); aliases.put(key, value); }
+    private void aliasCommand(String argument) { 
+        int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { 
+            if (argument.equals("")) { 
+                Enumeration keys = aliases.keys(); 
+
+                while (keys.hasMoreElements()) { 
+                    String key = (String) keys.nextElement(); 
+                    String value = (String) aliases.get(key); 
+
+                    if (!key.equals("xterm") && !value.equals("")) { 
+                        echoCommand("alias " + key + "='" + value.trim() + "'"); 
+                    } } } else if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else { echoCommand("alias: " + argument + ": not found"); } return; } aliases.put(argument.substring(0, equalsIndex).trim(), argument.substring(equalsIndex + 1).trim()); }
     private void unaliasCommand(String key) { if (key == null || key.length() == 0) { return; } if (aliases.containsKey(key)) { aliases.remove(key); } else { echoCommand("unalias: " + key + ": not found"); } }
     // |
     // Envirronment Keys
