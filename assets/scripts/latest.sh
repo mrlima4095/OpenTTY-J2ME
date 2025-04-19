@@ -1,4 +1,5 @@
 #!/java/bin/sh
+# -*- coding: utf-8 -*-
 
 set ONLINE_VERSION=1.13
 

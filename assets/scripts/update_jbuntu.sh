@@ -1,4 +1,5 @@
 #!/java/bin/sh
+# -*- coding: utf-8 -*-
 
 install nano
 proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu
