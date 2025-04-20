@@ -27,7 +27,7 @@ quest.cmd=execute tick Connecting...; $TOOL $INPUT; unset LABEL; unset TOOL; uns
 quest.back=execute x11 list armitage;
 
 list.title=Armitage Tools
-list.content=Connect (Remote),Connect - Server,Get Local Adress,Search IP Info,WhoIS Search,GoBuster,Port Scanner,IP Generator,HTTP Requester,HTTPS (Via Proxy),Charge Server IP
+list.content=Connect (Remote),Connect - Server,Get Local Adress,Search IP Info,WhoIS Search,GoBuster,Port Scanner,IP Generator,HTTPS Requester,HTTPS (Via Proxy),Charge Server IP
 list.button=Open
 list.back=execute x11 make armitage
 
