@@ -301,7 +301,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("track")) {  }
         else if (mainCommand.equals("catch")) {  }
         else if (mainCommand.equals("local")) {  }
-        else if (mainCommand.equals("neofetch")) { whoisTest(argument); }
+        else if (mainCommand.equals("neofetch")) {  }
 
 
         // API 014 - (OpenTTY)
@@ -456,40 +456,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    private void whoisTest(String domain) {
-    try {
-        String whoisServer = "socket://whois.iana.org:43";
-        StreamConnection conn = (StreamConnection) Connector.open(whoisServer);
-
-        InputStream inputStream = conn.openInputStream();
-        OutputStream outputStream = conn.openOutputStream();
-
-        // WHOIS requer \r\n ao final da query
-        String query = domain + "\r\n";
-        outputStream.write(query.getBytes());
-        outputStream.flush();
-
-        // Lê a resposta
-        StringBuffer response = new StringBuffer();
-        byte[] buffer = new byte[256];
-        int length;
-
-        while ((length = inputStream.read(buffer)) != -1) {
-            response.append(new String(buffer, 0, length));
-        }
-
-        inputStream.close();
-        outputStream.close();
-        conn.close();
-
-        // Exibe a resposta no terminal do MIDlet
-        echoCommand(response.toString());
-
-    } catch (Exception e) {
-        echoCommand("Erro: " + e.getMessage());
-    }
-}
-
     private void query(String command) { 
         command = env(command.trim()); 
         String mainCommand = getCommand(command); 
@@ -502,7 +468,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             InputStream inputStream = conn.openInputStream(); 
             OutputStream outputStream = conn.openOutputStream(); 
 
-            if (!argument.equals("")) { outputStream.write(argument.getBytes()); outputStream.flush(); } 
+            if (!argument.equals("")) { outputStream.write((argument + "\r\n").getBytes()); outputStream.flush(); } 
 
             byte[] buffer = new byte[4096]; 
             int length = inputStream.read(buffer); 
