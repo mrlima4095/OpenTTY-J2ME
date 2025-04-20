@@ -33,6 +33,7 @@ Copyright (C) 2025 - Mr. Lima
 - Added new attribute support `config.post` to run after load all other modules of package
 - `JBuntu` updated to **1.3.1**
 - `JBuntu` switch to **Yang Proxy** automatically if it is installed
+- Shell ToolKit support for `shell.unknown` run if no argument defined
 
 [ _Notes_ ]
 
