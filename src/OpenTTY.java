@@ -89,7 +89,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("set")) { setCommand(argument); }
         else if (mainCommand.equals("unset")) { unsetCommand(argument); }
         else if (mainCommand.equals("export")) { if (argument.equals("")) { processCommand("env"); } else { attributes.put(argument, ""); } }
-        else if (mainCommand.equals("env")) { if (argument.equals("")) { Enumeration keys = attributes.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) attributes.get(key); if (!key.equals("OUTPUT") && !value.equals("")) { echoCommand(key + "=" + value.trim()); } } } if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { echoCommand("env: " + argument + ": not found"); } }
+        else if (mainCommand.equals("env")) { if (argument.equals("")) { Enumeration keys = attributes.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) attributes.get(key); if (!key.equals("OUTPUT") && !value.equals("")) { echoCommand(key + "=" + value.trim()); } } } else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { echoCommand("env: " + argument + ": not found"); } }
         
 
         // API 002 - (Logs) 
