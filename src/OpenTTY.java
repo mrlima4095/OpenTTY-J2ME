@@ -546,8 +546,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             shellTable.put(argName, (argValue != null) ? argValue : ""); 
         } 
 
-        shell.put(name, shellTable); 
-    }
+        if (lib.containsKey("shell.unknown")) {
+            shellTable.put("shell.unknown", (String) lib.get("shell.unknown"));
+        } shell.put(name, shellTable); }
     private void runScript(String script) { String[] commands = split(script, '\n'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
     
     
