@@ -535,21 +535,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("shell.name") && lib.containsKey("shell.args")) { build(lib); }
         
     }
-    private void build(Hashtable lib) { 
-        String name = (String) lib.get("shell.name"); 
-        String[] args = split((String) lib.get("shell.args"), ','); 
-        Hashtable shellTable = new Hashtable(); 
-
-        for (int i = 0; i < args.length; i++) { 
-            String argName = args[i].trim(); 
-            String argValue = (String) lib.get(argName); 
-            shellTable.put(argName, (argValue != null) ? argValue : ""); 
-        } 
-
-        if (lib.containsKey("shell.unknown")) {
-            shellTable.put("shell.unknown", (String) lib.get("shell.unknown"));
-        } shell.put(name, shellTable); }
+    private void build(Hashtable lib) { String name = (String) lib.get("shell.name"); String[] args = split((String) lib.get("shell.args"), ','); Hashtable shellTable = new Hashtable(); for (int i = 0; i < args.length; i++) { String argName = args[i].trim(); String argValue = (String) lib.get(argName); shellTable.put(argName, (argValue != null) ? argValue : ""); } if (lib.containsKey("shell.unknown")) { shellTable.put("shell.unknown", (String) lib.get("shell.unknown")); } shell.put(name, shellTable); }
     private void runScript(String script) { String[] commands = split(script, '\n'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
-    
     
 }
