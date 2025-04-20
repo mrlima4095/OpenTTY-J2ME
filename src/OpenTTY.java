@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14-01x54";
+                   build = "2025-1.14-01x55";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -61,7 +61,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command).toLowerCase();
         String argument = getArgument(command);
         
-        if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand)); } } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); } return; }
+        if (shell.containsKey(mainCommand) && ignore) { 
+            Hashtable args = (Hashtable) shell.get(mainCommand); 
+
+            if (argument.equals("")) { 
+                if (aliases.containsKey(mainCommand)) { 
+                    processCommand((String) aliases.get(mainCommand)); 
+                } 
+            } else if (args.containsKey(getCommand(argument).toLowerCase())) { 
+                processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); 
+            } else { 
+                if (args.containsKey("shell.unknown")) { processCommand((String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument)); }
+                else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); }
+            } return; }
         if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument); return; }
         
 
@@ -523,7 +535,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("shell.name") && lib.containsKey("shell.args")) { build(lib); }
         
     }
-    private void build(Hashtable lib) { String name = (String) lib.get("shell.name"); String[] args = split((String) lib.get("shell.args"), ','); Hashtable shellTable = new Hashtable(); for (int i = 0; i < args.length; i++) { String argName = args[i].trim(); String argValue = (String) lib.get(argName); shellTable.put(argName, (argValue != null) ? argValue : ""); } shell.put(name, shellTable); }
+    private void build(Hashtable lib) { 
+        String name = (String) lib.get("shell.name"); 
+        String[] args = split((String) lib.get("shell.args"), ','); 
+        Hashtable shellTable = new Hashtable(); 
+
+        for (int i = 0; i < args.length; i++) { 
+            String argName = args[i].trim(); 
+            String argValue = (String) lib.get(argName); 
+            shellTable.put(argName, (argValue != null) ? argValue : ""); 
+        } 
+
+        shell.put(name, shellTable); 
+    }
     private void runScript(String script) { String[] commands = split(script, '\n'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
     
     
