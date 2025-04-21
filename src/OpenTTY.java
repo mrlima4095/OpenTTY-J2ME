@@ -547,7 +547,7 @@ class Process {
     public String name, owner, pid, cmd;
     public Hashtable scope, db = new Hashtable();
     public final long startTime;
-    public int uid, priority = DEFAULT_PRIORITY;
+    public int uid = 1000, priority = DEFAULT_PRIORITY;
 
     public static final int MIN_PRIORITY = 0, DEFAULT_PRIORITY = 10, MAX_PRIORITY = 20;
 
