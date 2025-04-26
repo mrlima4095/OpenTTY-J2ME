@@ -11,6 +11,7 @@ Copyright (C) 2025 - Mr. Lima
 - `spell [text]`: Set a title for _Text Output_ 
 - `gauge [text]`: Alert Window with a infinity loading progress bar
 - `lsblk`: List all accessible/ recognized file systems
+- `sign`: Enable/ Disable all shells **CASE SENSITIVE**
 
 [ _Updates_ ]
 
@@ -34,6 +35,7 @@ Copyright (C) 2025 - Mr. Lima
 - `JBuntu` updated to **1.3.1**
 - `JBuntu` switch to **Yang Proxy** automatically if it is installed
 - Shell ToolKit support for `shell.unknown` run if no argument defined
+- Shell command checker now consider **case sensitive** to run commands
 
 [ _Notes_ ]
 
@@ -41,8 +43,9 @@ Copyright (C) 2025 - Mr. Lima
 - Command `prg` requires that user run command `exit` by their self. It's different of old **function** `@reset` that have been removed. 
 - Command `prg` missing class is by default filled by name **OpenTTY**, use if it have more then one MIDlet in package.
 - Command `wrl` will be released completely in possible 1.16 LTS update.
-- Command `ifconfig` before it fail in some networks that Cloud flare DNS `1.1.1.1` don't works, now if it happens you can put an IP Adress to manual connect and finish the local IP capture.
+- Command `ifconfig` before it fail in some networks that Cloud flare DNS `1.1.1.1` don't works, now if it happens you can put an IP Address to manual connect and finish the local IP capture.
 - When you will connect with anything with command `query` now you will need to fill protocol type like `query socket://ip:port payload`
+- Case sensitive is **ENABLED**, you can charge it by running command `sign`. In next LTS release all support of case sensitive will be disabled, migrate old code if you don't need to get a bad experience in future. Yang packages will be updated soon!
 - Code have been reorganized.
 
 [ _Protocols_ ]
@@ -51,3 +54,8 @@ Copyright (C) 2025 - Mr. Lima
 - `datagram://[ip]:[port]`: UDP Connections.
 - `file://[path]`: Read and Write in a file (Dont create files or folders, recommended use of command `dd`).
 - `http://[url]`: HTTP GET Connections.
+
+[ _LSBLK Arguments_ ]
+
+- `-x`: Return file system list in already formatted to Package format `MIDlet;RMS;Storage;SD Card;`
+- `-l`: List partitions of Device Storage, it includes link of **SD Card** mount point, same as command `fdisk`
