@@ -241,8 +241,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             Enumeration roots = FileSystemRegistry.listRoots();
             while (roots.hasMoreElements()) {
-                String root = (String) roots.nextElement().toLowerCase();
-                if (root.indexOf("card") != -1 || root.indexOf("sd") != -1 || root.indexOf("e:") != -1 || root.indexOf("d:") != -1) {
+                String root = (String) roots.nextElement();
+                if (root.toLowerCase().indexOf("card") != -1 || root.toLowerCase().indexOf("sd") != -1 || root.toLowerCase().indexOf("e:") != -1 || root.toLowerCase().indexOf("d:") != -1) {
                     hascard = true;
                 }
             }
