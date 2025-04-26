@@ -21,3 +21,4 @@
 [2025-1.14-01x53]	Added Command 'GAUGE'
 [2025-1.14-01x54]	Performance issues fixing
 [2025-1.14-01x55]	Advanced Shell TK new support for key 'shell.unknown' run if no argument is found
+[2025-1.14-01x56]	Added Command 'LSBLK'
