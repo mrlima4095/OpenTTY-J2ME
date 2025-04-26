@@ -10,6 +10,7 @@ import java.io.*;
 
 public class OpenTTY extends MIDlet implements CommandListener {
     private int cursorX = 10, cursorY = 10; 
+    private boolean sensitive = true;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable paths = new Hashtable(), shell = new Hashtable(),
@@ -58,7 +59,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void processCommand(String command) { processCommand(command, true); }
     private void processCommand(String command, boolean ignore) {
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
-        String mainCommand = getCommand(command).toLowerCase();
+        String mainCommand = sensitive == true ? getCommand(command) : getCommand(command).toLowerCase();
         String argument = getArgument(command);
         
         if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand)); } } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { if (args.containsKey("shell.unknown")) { processCommand((String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument)); } else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); } } return; }
@@ -239,27 +240,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("lsblk")) { 
             boolean hascard = false;
             
-            Enumeration roots = FileSystemRegistry.listRoots();
-            while (roots.hasMoreElements()) {
-                String root = (String) roots.nextElement();
-                if (root.toLowerCase().indexOf("card") != -1 || root.toLowerCase().indexOf("sd") != -1 || root.toLowerCase().indexOf("e:") != -1 || root.toLowerCase().indexOf("d:") != -1) {
-                    hascard = true;
-                }
-            }
+            if (!argument.equals("-l")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { String root = (String) roots.nextElement(); if (root.toLowerCase().indexOf("card") != -1 || root.toLowerCase().indexOf("sd") != -1 || root.toLowerCase().indexOf("e:") != -1 || root.toLowerCase().indexOf("d:") != -1) { hascard = true; } } }
 
-            if (argument.equals("")) { 
-                echoCommand("OpenTTY\n| MIDlet\tassets\n| RMS\tpartition\nDevice\n| Storage\tdisk" + (hascard == true ? "\n| SD Card\tdisk" : ""));
-            }
+            if (argument.equals("")) { echoCommand("OpenTTY\n| MIDlet\n| RMS\nDevice\n| Storage" + (hascard == true ? "\n| SD Card" : "")); }
             else if (argument.equals("-x")) { echoCommand("MIDlet;RMS;Storage;" + (hascard == true ? "SD Card;" : "")); }
-            else if (argument.equals("-l")) {
-                StringBuffer result = new StringBuffer(); 
-                Enumeration roots = FileSystemRegistry.listRoots(); 
-                while (roots.hasMoreElements()) { 
-                    result.append((String) roots.nextElement()).append("\n"); 
-                } echoCommand(result.toString()); 
-            }  
-            else { echoCommand("lsblk: " + argument + ": not found"); }
-        }
+            else if (argument.equals("-p")) { StringBuffer result = new StringBuffer(); Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { result.append((String) roots.nextElement()).append("\n"); } echoCommand(result.toString()); } 
+            else { echoCommand("lsblk: " + argument + ": not found"); } }
         else if (mainCommand.equals("dd")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { try { String[] args = split(argument, ' '); FileConnection fileConn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); if (!fileConn.exists()) fileConn.create(); OutputStream os = fileConn.openOutputStream(); String content = args[1]; os.write(content.startsWith("/") ? read(content).getBytes() : content.equals("nano") ? nanoContent.getBytes() : loadRMS(content, 1).getBytes()); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
         // |
         // RMS Files
@@ -299,6 +285,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("chmod")) { chmod(argument); }
         else if (mainCommand.equals("lock")) { new LockScreen(); }
         else if (mainCommand.equals("history")) { new History(); }
+        else if (mainCommand.equals("sign")) { sensitive = !sensitive; }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/help.txt")); }
@@ -307,7 +294,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("todo")) { if (argument.equals("") || argument.equals("list")) { new MyTaskManager(); } else { writeRMS(".tasks", loadRMS(".tasks", 1) + "\n" + (argument.startsWith("/") ? read(argument) : argument.equals("nano") ? nanoContent : loadRMS(argument, 1))); } }
         
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("sign")) {  }
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
