@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14-01x55";
+                   build = "2025-1.14-01x56";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -235,7 +235,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(); } else if (argument.equals("v")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { echoCommand(recordStores[i]); } } } } catch (RecordStoreException e) { } } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }        
         // | 
         // Device Files
-        else if (mainCommand.equals("fdisk")) { StringBuffer result = new StringBuffer(); Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { result.append((String) roots.nextElement()).append("\n"); } echoCommand(result.toString()); }
+        else if (mainCommand.equals("fdisk")) { processCommand("lsblk -l"); }
+        else if (mainCommand.equals("lsblk")) { 
+            boolean hascard = false;
+            
+            Enumeration roots = FileSystemRegistry.listRoots();
+            while (roots.hasMoreElements()) {
+                String root = (String) roots.nextElement().toLowerCase();
+                if (root.indexOf("card") != -1 || root.indexOf("sd") != -1 || root.indexOf("e:") != -1 || root.indexOf("d:") != -1) {
+                    hascard = true;
+                }
+            }
+
+            if (argument.equals("")) { 
+                echoCommand("OpenTTY\n| MIDlet\tassets\n| RMS\tpartition\nDevice\n| Storage\tdisk" + hascard ? "\n| SD Card\tdisk" : "");
+            }
+            else if (argument.equals("-x")) { echoCommand("MIDlet;RMS;Storage;" + hascard ? "SD Card;" : ""); }
+            else if (argument.equals("-l")) {
+                StringBuffer result = new StringBuffer(); 
+                Enumeration roots = FileSystemRegistry.listRoots(); 
+                while (roots.hasMoreElements()) { 
+                    result.append((String) roots.nextElement()).append("\n"); 
+                } echoCommand(result.toString()); 
+            }  
+            else { echoCommand("lsblk: " + argument + ": not found"); }
+        }
         else if (mainCommand.equals("dd")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { try { String[] args = split(argument, ' '); FileConnection fileConn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); if (!fileConn.exists()) fileConn.create(); OutputStream os = fileConn.openOutputStream(); String content = args[1]; os.write(content.startsWith("/") ? read(content).getBytes() : content.equals("nano") ? nanoContent.getBytes() : loadRMS(content, 1).getBytes()); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
         // |
         // RMS Files
