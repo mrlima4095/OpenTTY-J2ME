@@ -176,7 +176,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // MIDlet Tracker
         else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); if (argument.equals("")) { } else { MIDletLogs("add warn " + argument); } }
-        else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-", "MIDlet")); }
+        else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
         else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }, "Background").start(); }
         
 
