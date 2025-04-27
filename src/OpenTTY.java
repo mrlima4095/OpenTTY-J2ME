@@ -810,7 +810,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         
         public void run() { 
-            ports.setTicker(new Ticker("Searching..."));
+            ports.setTicker(new Ticker("Scanning..."));
             
             for (int port = 1; port <= 65535; port++) { 
                 try { 
