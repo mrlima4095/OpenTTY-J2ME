@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14-01x56";
+                   build = "2025-1.14-01x57";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -319,6 +319,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 014 - (OpenTTY)
         // |
         // Low-level commands
+        else if (mainCommand.equals("@focus")) { display.setCurrentItem(stdin); }
         else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
@@ -441,20 +442,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Memory
     public class HTopViewer implements CommandListener { 
-        private Form htop = new Form(form.getTitle()); 
+        private Form screen = new Form(form.getTitle()); 
         private Command backCommand = new Command("Back", Command.BACK, 1), 
                         refreshCommand = new Command("Refresh", Command.SCREEN, 2); 
         private StringItem memoryStatus = new StringItem("", ""); 
 
         public HTopViewer() { 
-            htop.append(memoryStatus); 
-            htop.addCommand(backCommand); 
-            htop.addCommand(refreshCommand); 
-            htop.setCommandListener(this); 
+            screen.append(memoryStatus); 
+            screen.addCommand(backCommand); 
+            screen.addCommand(refreshCommand); 
+            screen.setCommandListener(this); 
 
             MemoryStatus(); 
 
-            display.setCurrent(htop); 
+            display.setCurrent(screen); 
         } public void commandAction(Command c, Displayable d) { 
             if (c == backCommand) { processCommand("xterm"); } 
             else if (c == refreshCommand) { Runtime.getRuntime().gc(); MemoryStatus(); } 
@@ -611,7 +612,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void pingCommand(String url) { if (url == null || url.length() == 0) { return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } long startTime = System.currentTimeMillis(); try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); long endTime = System.currentTimeMillis(); echoCommand("Ping to " + url + " successful, time=" + (endTime - startTime) + "ms"); conn.close(); } catch (IOException e) { echoCommand("Ping to " + url + " failed: " + e.getMessage()); } }
     public class InjectorHTTP implements CommandListener { 
         private String url; 
-        private TextBox editor = new TextBox("HTTP Header", read("/java/etc/headers"), 31522, TextField.ANY); 
+        private TextBox screen = new TextBox("HTTP Header", read("/java/etc/headers"), 31522, TextField.ANY); 
         private Command backCommand = new Command("Back", Command.BACK, 1), 
                         clearCommand = new Command("Clear", Command.OK, 2), 
                         curlCommand = new Command("Run 'CURL'", Command.OK, 3), 
@@ -621,29 +622,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             url = args; 
 
-            editor.addCommand(backCommand); 
-            editor.addCommand(clearCommand); 
-            editor.addCommand(curlCommand); 
-            editor.addCommand(wgetCommand); 
-            editor.setCommandListener(this); 
+            screen.addCommand(backCommand); 
+            screen.addCommand(clearCommand); 
+            screen.addCommand(curlCommand); 
+            screen.addCommand(wgetCommand); 
+            screen.setCommandListener(this); 
 
-            display.setCurrent(editor); 
+            display.setCurrent(screen); 
         } 
 
         public void commandAction(Command c, Displayable d) { 
             if (c == backCommand) { processCommand("xterm"); } 
-            else if (c == clearCommand) { editor.setString(""); } 
+            else if (c == clearCommand) { screen.setString(""); } 
             else if (c == curlCommand) { 
                 processCommand("xterm"); 
-                echoCommand(request(url, parseProperties(env(editor.getString())))); 
+                echoCommand(request(url, parseProperties(env(screen.getString())))); 
             } else if (c == wgetCommand) { 
                 processCommand("xterm"); 
-                nanoContent = request(url, parseProperties(env(editor.getString()))); 
+                nanoContent = request(url, parseProperties(env(screen.getString()))); 
             } 
         } 
     }
     public class GoBuster implements CommandListener, Runnable { 
-        private List pages; 
+        private List screen; 
         private String url, fullUrl; 
         private String[] wordlist; 
         private Command backCommand = new Command("Back", Command.BACK, 1), 
@@ -655,41 +656,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             url = args; 
 
-            pages = new List("GoBuster (" + url + ")", List.IMPLICIT); 
+            screen = new List("GoBuster (" + url + ")", List.IMPLICIT); 
 
             wordlist = split(loadRMS("gobuster", 1), '\n'); 
             if (wordlist == null || wordlist.length == 0) { wordlist = split(read("/java/etc/gobuster"), '\n'); } 
 
-            pages.addCommand(openCommand); 
-            pages.addCommand(saveCommand); 
-            pages.addCommand(backCommand); 
-            pages.setCommandListener(this); 
+            screen.addCommand(openCommand); 
+            screen.addCommand(saveCommand); 
+            screen.addCommand(backCommand); 
+            screen.setCommandListener(this); 
 
             new Thread(this, "GoBuster").start(); 
 
-            display.setCurrent(pages); 
+            display.setCurrent(screen); 
         } 
 
         public void commandAction(Command c, Displayable d) { 
             if (c == backCommand) { processCommand("xterm"); } 
-            else if (c == openCommand) { processCommand("bg execute wget " + url + pages.getString(pages.getSelectedIndex()) + "; nano;"); } 
-            else if (c == saveCommand && pages.size() != 0) { nanoContent = GoSave(pages); new NanoEditor(""); } 
+            else if (c == openCommand) { processCommand("bg execute wget " + url + screen.getString(screen.getSelectedIndex()) + "; nano;"); } 
+            else if (c == saveCommand && screen.size() != 0) { nanoContent = GoSave(screen); new NanoEditor(""); } 
         }  
 
         public void run() { 
-            pages.setTicker(new Ticker("Searching..."));
+            screen.setTicker(new Ticker("Searching..."));
 
             for (int i = 0; i < wordlist.length; i++) { 
                 if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { 
                     String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; 
 
                     try { 
-                        if (GoVerify(fullUrl)) { pages.append("/" + wordlist[i], null); } 
+                        if (GoVerify(fullUrl)) { screen.append("/" + wordlist[i], null); } 
                     } catch (IOException e) { } 
                 } 
             }
 
-            pages.setTicker(null);
+            screen.setTicker(null);
         } 
 
         private boolean GoVerify(String fullUrl) throws IOException { 
@@ -709,13 +710,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
         } 
 
-        private String GoSave(List pages) { 
+        private String GoSave() { 
             StringBuffer sb = new StringBuffer(); 
 
-            for (int i = 0; i < pages.size(); i++) { 
-                sb.append(pages.getString(i)); 
+            for (int i = 0; i < screen.size(); i++) { 
+                sb.append(screen.getString(i)); 
 
-                if (i < pages.size() - 1) { 
+                if (i < screen.size() - 1) { 
                     sb.append("\n"); 
                 } 
             } 
@@ -786,7 +787,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return ip.toString(); 
             } else { return "not found"; } } }
     public class PortScanner implements CommandListener, Runnable { 
-        private List ports; 
+        private List screen; 
         private String host; 
         
         public PortScanner(String args) { 
@@ -794,38 +795,130 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             host = args; 
             
-            ports = new List(host + " Ports", List.IMPLICIT); 
-            ports.addCommand(new Command("Connect", Command.OK, 1)); 
-            ports.addCommand(new Command("Back", Command.BACK, 2)); 
-            ports.setCommandListener(this); 
+            screen = new List(host + " Ports", List.IMPLICIT); 
+            screen.addCommand(new Command("Connect", Command.OK, 1)); 
+            screen.addCommand(new Command("Back", Command.BACK, 2)); 
+            screen.setCommandListener(this); 
             
             new Thread(this, "Port-Scanner").start(); 
-            display.setCurrent(ports);
+            display.setCurrent(screen);
         }
         
         public void commandAction(Command c, Displayable d) { 
             if (c.getCommandType() == Command.BACK) { processCommand("xterm"); } 
-            else if (c.getCommandType() == Command.OK) { new RemoteConnection(host + ":" + ports.getString(ports.getSelectedIndex())); } 
+            else if (c.getCommandType() == Command.OK) { new RemoteConnection(host + ":" + screen.getString(screen.getSelectedIndex())); } 
         } 
         
         public void run() { 
-            ports.setTicker(new Ticker("Scanning..."));
+            screen.setTicker(new Ticker("Scanning..."));
             
             for (int port = 1; port <= 65535; port++) { 
+                screen.setTicker(new Ticker("Scanning Port " + port + "..."));
                 try { 
                     SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); 
-                    ports.append(Integer.toString(port), null); 
+                    screen.append(Integer.toString(port), null); 
                     
                     socket.close(); 
                 } catch (IOException e) { } 
             } 
             
-            ports.setTicker(null);
+            screen.setTicker(null);
         } 
     }
-    public class RemoteConnection implements CommandListener, Runnable { private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream; private String host; private Form remote = new Form(form.getTitle()); private TextField inputField = new TextField("Command", "", 256, TextField.ANY); private Command sendCommand = new Command("Send", Command.OK, 1), backCommand = new Command("Back", Command.SCREEN, 2), clearCommand = new Command("Clear", Command.SCREEN, 3), infoCommand = new Command("Show info", Command.SCREEN, 4); private StringItem console = new StringItem("", ""); public RemoteConnection(String args) { if (args == null || args.length() == 0) { return; } host = args; inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); remote.append(console); remote.append(inputField); remote.addCommand(backCommand); remote.addCommand(clearCommand); remote.addCommand(infoCommand); remote.addCommand(sendCommand); remote.setCommandListener(this); try { socket = (SocketConnection) Connector.open("socket://" + args); inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); } catch (IOException e) { echoCommand(e.getMessage()); return; } new Thread(this).start(); display.setCurrent(remote); } public void commandAction(Command c, Displayable d) { if (c == sendCommand) { String data = inputField.getString().trim(); inputField.setString(""); try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } catch (IOException e) { processCommand("warn " + e.getMessage()); } } else if (c == backCommand) { try { outputStream.write("".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); } catch (IOException e) { } writeRMS("remote", console.getText()); processCommand("xterm"); } else if (c == clearCommand) { console.setText(""); } else if (c == infoCommand) { try { warnCommand("Informations", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Port: " + Integer.toString(socket.getLocalPort())); } catch (IOException e) { } } } public void run() { while (true) { try { byte[] buffer = new byte[4096]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (IOException e) { processCommand("warn " + e.getMessage()); break; } } } }
+    public class RemoteConnection implements CommandListener, Runnable { 
+        private SocketConnection socket; 
+        private InputStream inputStream; 
+        private OutputStream outputStream; 
+
+        private String host; 
+        private Form remote = new Form(form.getTitle()); 
+        private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
+        private Command sendCommand = new Command("Send", Command.OK, 1), 
+                        backCommand = new Command("Back", Command.SCREEN, 2), 
+                        clearCommand = new Command("Clear", Command.SCREEN, 3), 
+                        infoCommand = new Command("Show info", Command.SCREEN, 4); 
+        private StringItem console = new StringItem("", ""); 
+
+        public RemoteConnection(String args) { 
+            if (args == null || args.length() == 0) { return; } 
+
+            host = args; 
+
+            inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); 
+
+            remote.append(console); 
+            remote.append(inputField); 
+
+            remote.addCommand(backCommand); 
+            remote.addCommand(clearCommand); 
+            remote.addCommand(infoCommand); 
+            remote.addCommand(sendCommand); 
+            remote.setCommandListener(this); 
+
+            try { 
+                socket = (SocketConnection) Connector.open("socket://" + args); 
+                inputStream = socket.openInputStream(); 
+                outputStream = socket.openOutputStream(); 
+            } catch (IOException e) { 
+                echoCommand(e.getMessage()); 
+                return; 
+            } 
+
+            start("remote");
+            new Thread(this, "Remote").start(); 
+            display.setCurrent(remote); 
+            display.setCurrentItem(inputField);
+        } 
+
+        public void commandAction(Command c, Displayable d) { 
+            if (c == sendCommand) { 
+                String data = inputField.getString().trim(); 
+                inputField.setString(""); 
+
+                try { 
+                    outputStream.write((data + "\n").getBytes()); 
+                    outputStream.flush(); 
+                } catch (IOException e) { 
+                    processCommand("warn " + e.getMessage()); 
+                } 
+            } 
+            else if (c == backCommand) { 
+                try { 
+                    outputStream.write("".getBytes()); 
+                    outputStream.flush(); 
+
+                    inputStream.close(); 
+                    outputStream.close(); 
+                } catch (IOException e) { } 
+
+                writeRMS("remote", console.getText()); 
+                stop("remote"); processCommand("xterm"); 
+            } 
+            else if (c == clearCommand) { console.setText(""); } 
+            else if (c == infoCommand) { 
+                try { 
+                    warnCommand("Informations", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Address" + socket.getLocalAddress() + "\n" + "Local Port: " + Integer.toString(socket.getLocalPort())); 
+                } catch (IOException e) { } 
+            } 
+        } 
+
+        public void run() { 
+            while (trace.containsKey("remote")) { 
+                try { 
+                    byte[] buffer = new byte[4096]; 
+                    int length = inputStream.read(buffer); 
+                    if (length != -1) { 
+                        echoCommand(new String(buffer, 0, length), console); 
+                    } 
+                } catch (IOException e) { 
+                    processCommand("warn " + e.getMessage()); 
+                    stop("remote"); 
+                } 
+            } 
+        } 
+    }
     
-    
+
     // API 012 - (File)
     // |
     // Directories Manager
