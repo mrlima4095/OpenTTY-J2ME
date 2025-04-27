@@ -732,7 +732,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class GetAddress { 
         public GetAddress(String args) { 
             if (args == null || args.length() == 0) { processCommand("ifconfig"); } 
-            else { (performNSLookup(args)); } 
+            else { echoCommand(performNSLookup(args)); } 
         } 
 
         private String performNSLookup(String domain) { 
