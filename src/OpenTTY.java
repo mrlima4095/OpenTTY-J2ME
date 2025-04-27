@@ -814,8 +814,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             for (int port = 1; port <= 65535; port++) { 
                 screen.setTicker(new Ticker("Scanning Port " + port + "..."));
-                try { 
-                    SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); 
+                try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false);
+            
+                    //SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); 
                     screen.append(Integer.toString(port), null); 
                     
                     socket.close(); 
