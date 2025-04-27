@@ -814,9 +814,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             for (int port = 1; port <= 65535; port++) { 
                 screen.setTicker(new Ticker("Scanning Port " + port + "..."));
-                try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false);
-            
-                    //SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port); 
+                try { 
+                    SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false);
                     screen.append(Integer.toString(port), null); 
                     
                     socket.close(); 
@@ -898,7 +897,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == clearCommand) { console.setText(""); } 
             else if (c == infoCommand) { 
                 try { 
-                    warnCommand("Informations", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Address" + socket.getLocalAddress() + "\n" + "Local Port: " + Integer.toString(socket.getLocalPort())); 
+                    warnCommand("Informations", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Address: " + socket.getLocalAddress() + "\n" + "Local Port: " + Integer.toString(socket.getLocalPort())); 
                 } catch (IOException e) { } 
             } 
         } 
