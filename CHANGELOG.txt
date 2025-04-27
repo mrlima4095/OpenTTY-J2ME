@@ -38,6 +38,8 @@ Copyright (C) 2025 - Mr. Lima
 - Fixed a add blank file initialize automatic line break when `add` the first line
 - Command `gaddr` charged message _DNS Response error_ to _not found_
 - Removed Command `todo`
+- Remote show IP Address in information warning
+- Remote Thread control now using Process Manager (trace)
 
 [ _Notes_ ]
 
