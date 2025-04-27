@@ -674,7 +674,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) { 
             if (c == backCommand) { processCommand("xterm"); } 
             else if (c == openCommand) { processCommand("bg execute wget " + url + screen.getString(screen.getSelectedIndex()) + "; nano;"); } 
-            else if (c == saveCommand && screen.size() != 0) { nanoContent = GoSave(screen); new NanoEditor(""); } 
+            else if (c == saveCommand && screen.size() != 0) { nanoContent = GoSave(); new NanoEditor(""); } 
         }  
 
         public void run() { 
@@ -831,7 +831,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private OutputStream outputStream; 
 
         private String host; 
-        private Form remote = new Form(form.getTitle()); 
+        private Form screen = new Form(form.getTitle()); 
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private Command sendCommand = new Command("Send", Command.OK, 1), 
                         backCommand = new Command("Back", Command.SCREEN, 2), 
@@ -846,14 +846,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); 
 
-            remote.append(console); 
-            remote.append(inputField); 
+            screen.append(console); 
+            screen.append(inputField); 
 
-            remote.addCommand(backCommand); 
-            remote.addCommand(clearCommand); 
-            remote.addCommand(infoCommand); 
-            remote.addCommand(sendCommand); 
-            remote.setCommandListener(this); 
+            screen.addCommand(backCommand); 
+            screen.addCommand(clearCommand); 
+            screen.addCommand(infoCommand); 
+            screen.addCommand(sendCommand); 
+            screen.setCommandListener(this); 
 
             try { 
                 socket = (SocketConnection) Connector.open("socket://" + args); 
@@ -866,7 +866,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             start("remote");
             new Thread(this, "Remote").start(); 
-            display.setCurrent(remote); 
+            display.setCurrent(screen); 
             display.setCurrentItem(inputField);
         } 
 
