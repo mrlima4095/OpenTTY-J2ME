@@ -41,6 +41,7 @@ Copyright (C) 2025 - Mr. Lima
 - Remote show IP Address in information warning
 - Remote Thread control now using Process Manager (trace)
 - Command `prscan` now match the a second argument, that is a start port, if it is missing start scanning from port 0
+- Java Runtime don't cache other class run cache, it is only accessible in current file
 
 [ _Notes_ ]
 
