@@ -26,7 +26,7 @@ quest.cmd=execute yang install;
 [ Index ]
 
 list.title=Repository
-list.content=Armitage,PasteBin,DeviceFS,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,Github (MIDlet),Discord (MIDlet),PackJ (Update),PackJ (Proxy),X Server 0.4,ImmersiveShell,Auto Syntax,Android ME,MobiX Loader,ViaVersion,Updater 
+list.content=Armitage,PasteBin,DeviceFS,FilesME,Forge,JBuntu,JAuth2,JBenchmark,J2ME Loader,SmartME SDK,Github (MIDlet),Discord (MIDlet),PackJ (Update),PackJ (Proxy),X Server 0.4,ImmersiveShell,Auto Syntax,Auto Clean,Android ME,MobiX Loader,ViaVersion,Updater 
 list.button=Install
 
 Armitage=execute set RESOURCE=armitage; yang install;
