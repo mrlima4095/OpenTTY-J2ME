@@ -774,7 +774,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         public PortScanner(String args) { 
             if (args == null || args.length() == 0) { return; } 
-            if (getArgument(args) != null || getArgument(args).length() != 0 || !getArgument(args).equals("null")) { 
+            if (getArgument(args) != null || getArgument(args).length() != 0 || !"".equals(argument)) { 
                 try { start = Integer.parseInt(getArgument(args)); }
                 catch (NumberFormatException e) { echoCommand("prscan: " + getArgument(args) + ": invalid start port"); return; }
             }
