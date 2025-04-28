@@ -62,6 +62,5 @@ Text Editor=execute nano;
 File Explorer=execute jbuntu explorer;
 Network Tools=execute nk;
 OpenTTY Store=execute yang;
-My Tasks=execute todo;
 Terminal=execute x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; unalias xterm; x11 term;
 Monitor=execute htop;
