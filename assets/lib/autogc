@@ -1,0 +1,11 @@
+[ Config ] 
+
+name=AutoClean
+version=1.0
+description=Auto Garbage Collector
+
+process.name=autogc
+mod=execute sleep $TIMEOUT_GC; gc;
+
+config=execute log add info Running Auto Clean 1.0;
+command=
