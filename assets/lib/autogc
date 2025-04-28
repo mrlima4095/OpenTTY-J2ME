@@ -7,19 +7,4 @@ description=Auto Garbage Collector
 process.name=autogc
 mod=execute sleep $TIMEOUT_GC; gc;
 
-config=execute log add info Running Auto Clean 1.0;
-command=autogc
-
-autogc=execute set VALUE=TIMEOUT_GC; set LABEL=AutoClean Delay; export RETURN; x11 quest /java/lib/settings;
-
-[ DISPLAY ]
-
-list.title=AutoClean Delay
-list.content=5,10,20,30,60,120
-
-5=execute set TIMEOUT_GC=5;
-10=execute set TIMEOUT_GC=10;
-20=execute set TIMEOUT_GC=20;
-30=execute set TIMEOUT_GC=30;
-60=execute set TIMEOUT_GC=60;
-120=execute set TIMEOUT_GC=120;
+config=execute log add info Running Auto Clean 1.0; set TIMEOUT_GC=10;
