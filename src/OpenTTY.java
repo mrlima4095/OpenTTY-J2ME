@@ -307,7 +307,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // General Utilities
         else if (mainCommand.equals("java")) { java(argument); }
         else if (mainCommand.equals("chmod")) { chmod(argument); }
-        else if (mainCommand.equals("lock")) { new LockScreen(); }
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
