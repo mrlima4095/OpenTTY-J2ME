@@ -1181,12 +1181,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     stdin.setString(screen.getString(index)); 
                 } 
             } 
-            else if (c == clearCommand) {
-                commandHistory = new Vector(); load();
-            }
         } 
 
         private void load() {
+            screen.deleteAll(); 
+            
             for (int i = 0; i < commandHistory.size(); i++) { 
                 screen.append((String) commandHistory.elementAt(i), null); 
             } 
