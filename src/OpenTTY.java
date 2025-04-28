@@ -247,7 +247,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (argument.equals("")) { echoCommand("OpenTTY\n| MIDlet\n| RMS\nDevice\n| Storage" + (hascard == true ? "\n| SD Card" : "")); }
             else if (argument.equals("-x")) { echoCommand("MIDlet;RMS;Storage;" + (hascard == true ? "SD Card;" : "")); }
-            else if (argument.equals("-p")) { StringBuffer result = new StringBuffer(); while (roots.hasMoreElements()) { result.append((String) roots.nextElement()).append("\n"); } echoCommand(result.toString()); } 
+            else if (argument.equals("-p")) { StringBuffer result = new StringBuffer(); Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { result.append((String) roots.nextElement()).append("\n"); } echoCommand(result.toString()); } 
             else { echoCommand("lsblk: " + argument + ": not found"); } }
         else if (mainCommand.equals("dd")) { 
             if (argument.equals("") || split(argument, ' ').length < 2) { } 
