@@ -774,13 +774,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         public PortScanner(String args) { 
             if (args == null || args.length() == 0) { return; } 
-            if (getArgument(args) != null || getArgument(args).length() != 0) { 
+            if (getArgument(args) != null || getArgument(args).length() != 0 || !getArgument(args).equals("null")) { 
                 try { start = Integer.parseInt(getArgument(args)); }
                 catch (NumberFormatException e) { echoCommand("prscan: " + getArgument(args) + ": invalid start port"); return; }
             }
 
             host = getCommand(args); 
-            
+
             screen = new List(host + " Ports", List.IMPLICIT); 
             screen.addCommand(new Command("Connect", Command.OK, 1)); 
             screen.addCommand(new Command("Back", Command.BACK, 2)); 
