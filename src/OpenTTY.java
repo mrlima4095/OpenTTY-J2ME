@@ -1153,13 +1153,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command backCommand = new Command("Back", Command.BACK, 1), 
                         runCommand = new Command("Run", Command.OK, 2), 
                         editCommand = new Command("Edit", Command.OK, 3),
-                        clearCommand = new Command("Clear", Command.OK, 4); 
-
+                        
         public History() { 
             screen.addCommand(backCommand); 
             screen.addCommand(runCommand); 
             screen.addCommand(editCommand); 
-            screen.addCommand(clearCommand); 
             screen.setCommandListener(this); 
 
             load(); display.setCurrent(screen); 
