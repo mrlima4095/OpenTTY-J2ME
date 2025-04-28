@@ -941,6 +941,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
 
         private void load() {
+            screen.deleteAll();
+            
             try { 
                 String[] recordStores = RecordStore.listRecordStores(); 
 
