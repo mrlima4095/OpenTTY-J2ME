@@ -23,3 +23,4 @@
 [2025-1.14-01x55]	Advanced Shell TK new support for key 'shell.unknown' run if no argument is found
 [2025-1.14-01x56]	Added Command 'LSBLK' | Enabled case sensitive
 [2025-1.14-01x57]	Removed Command 'TODO'
+[2025-1.14-01x58]	Removed Command 'LOCK' | Java Runtime don't caching 
