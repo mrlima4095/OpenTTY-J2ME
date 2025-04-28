@@ -1159,6 +1159,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.addCommand(backCommand); 
             screen.addCommand(runCommand); 
             screen.addCommand(editCommand); 
+            screen.addCommand(clearCommand); 
             screen.setCommandListener(this); 
 
             load(); display.setCurrent(screen); 
