@@ -17,9 +17,9 @@ autogc=execute set VALUE=TIMEOUT_GC; set LABEL=AutoClean Delay; export RETURN; x
 list.title=AutoClean Delay
 list.content=5,10,20,30,60,120
 
-5=execute set TIMEOUT_GC=;
-10=execute set TIMEOUT_GC=;
-20=execute set TIMEOUT_GC=;
-30=execute set TIMEOUT_GC=;
-60=execute set TIMEOUT_GC=;
-120=execute set TIMEOUT_GC=;
+5=execute set TIMEOUT_GC=5;
+10=execute set TIMEOUT_GC=10;
+20=execute set TIMEOUT_GC=20;
+30=execute set TIMEOUT_GC=30;
+60=execute set TIMEOUT_GC=60;
+120=execute set TIMEOUT_GC=120;
