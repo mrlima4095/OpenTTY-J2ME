@@ -7,7 +7,7 @@ description=Advanced Perms
 include=forge
 
 config=execute if ($USERNAME == root) echo [JAuth2] Username may not be String 'root';
-command=sudo,exit,logout
+command=sudo,exit,logout,lock
 
 sudo=execute
 
@@ -18,3 +18,11 @@ yang=execute x11 list /java/lib/yang;
 setrepo=execute x11 quest x11 quest /java/lib/yang;
 cfg=execute x11 list /java/lib/settings;
 su=execute @login root; 
+
+[ DISPLAY ]
+
+quest.title=$TITLE - Locked
+quest.label=Username
+quest.key=INPUT
+quest.cmd=execute if ($INPUT != $USERNAME) exec @alert & lock; if ($INPUT == $USERNAME) xterm;
+quest.back=execute exit
