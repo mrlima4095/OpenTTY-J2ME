@@ -1115,29 +1115,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else { String code; Hashtable objects = new Hashtable(); if (mainCommand.startsWith("/")) { code = read(mainCommand); } else if (mainCommand.equals("nano")) { code = nanoContent; } else { code = loadRMS(mainCommand, 1); } if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return; } String[] lines = split(code, ';'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); if (line.length() == 0) { continue; } try { if (line.indexOf('=') != -1) { String[] parts = split(line, '='); String objectName = parts[0].trim(); String className = parts[1].trim(); Class clazz = Class.forName(className); Object instance = clazz.newInstance(); objects.put(objectName, instance); } else if (line.indexOf('.') != -1) { String[] parts = split(line, '.'); String objectName = parts[0].trim(); if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } for (int j = 1; j < parts.length; j++) { Object object = (Object) objects.get(objectName); Class clazz = object.getClass(); echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); } } else if (line.startsWith("//")) { } else { throw new IOException("Invalid syntax"); } } catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return; } } }                
     }
     private void chmod(String node) { if (node == null || node.length() == 0) { return; } int status = 0; try { if (node.equals("http")) { node = "javax.microedition.io.Connector.http"; ((HttpConnection) Connector.open("http://ipinfo.io")).close(); status = 1; } else if (node.equals("socket")) { node = "javax.microedition.io.Connector.socket"; ((SocketConnection) Connector.open("socket://1.1.1.1:53")).close(); status = 1; } else if (node.equals("file")) {  node = "javax.microedition.io.Connector.file"; FileSystemRegistry.listRoots(); status = 1; } else if (node.equals("prg")) { node = "javax.microedition.io.PushRegistry"; PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); status = 1; } else { echoCommand("chmod: " + node + ": not found"); } } catch (SecurityException e) { status = 2; } catch (Exception e) { echoCommand(e.getMessage());  } if (status == 1) { MIDletLogs("add info Permission '" + node + "' granted"); } else if (status == 2) { MIDletLogs("add error Permission '" + node + "' denied"); } }
-    public class History implements CommandListener { 
-        private List screen = new List(form.getTitle(), List.IMPLICIT); 
-        private Command backCommand = new Command("Back", Command.BACK, 1), 
-                        runCommand = new Command("Run", Command.OK, 1), 
-                        editCommand = new Command("Edit", Command.OK, 1);
-                        
-        public History() { 
-            screen.addCommand(backCommand); screen.addCommand(runCommand); screen.addCommand(editCommand); 
-            screen.setCommandListener(this); 
-
-            load(); display.setCurrent(screen); 
-        } 
-
-        public void commandAction(Command c, Displayable d) { 
-            if (c == backCommand) { processCommand("xterm"); } 
-            else if (c == runCommand) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } 
-            else if (c == editCommand) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } 
-            
-        } 
-
-        private void load() { screen.deleteAll(); for (int i = 0; i < commandHistory.size(); i++) { screen.append((String) commandHistory.elementAt(i), null); } } 
-    
-    }
+    public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command backCommand = new Command("Back", Command.BACK, 1), runCommand = new Command("Run", Command.OK, 1), editCommand = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(backCommand); screen.addCommand(runCommand); screen.addCommand(editCommand); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); } else if (c == runCommand) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == editCommand) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < commandHistory.size(); i++) { screen.append((String) commandHistory.elementAt(i), null); } } }
     
 
     // API 015 - (Scripts)
