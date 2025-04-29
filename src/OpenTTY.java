@@ -821,8 +821,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private Command backCommand = new Command("Back", Command.OK, 1), 
                         sendCommand = new Command("Send", Command.OK, 1), 
-                        clearCommand = new Command("Clear", Command.OK, 1), 
-                        infoCommand = new Command("Show info", Command.OK, 1); 
+                        clearCommand = new Command("Clear", Command.SCREEN, 1), 
+                        infoCommand = new Command("Show info", Command.SCREEN, 1); 
         private StringItem console = new StringItem("", ""); 
 
         public RemoteConnection(String args) { 
