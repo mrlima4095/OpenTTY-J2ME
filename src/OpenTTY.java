@@ -23,8 +23,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
-    private Command enterCommand = new Command("Send", Command.OK, 1), helpCommand = new Command("Help", Command.SCREEN, 2), nanoCommand = new Command("Nano", Command.SCREEN, 3), 
-                    clearCommand = new Command("Clear", Command.SCREEN, 4), historyCommand = new Command("History", Command.SCREEN, 5);
+    private Command EXECUTE = new Command("Send", Command.OK, 1), HELP = new Command("Help", Command.SCREEN, 2), NANO = new Command("Nano", Command.SCREEN, 3), 
+                    CLEAR = new Command("Clear", Command.SCREEN, 4), HISTORY = new Command("History", Command.SCREEN, 5);
 
     public void startApp() {
         if (!trace.containsKey("sh")) {
@@ -42,12 +42,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == enterCommand) { String command = stdin.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
+        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
             
-        else if (c == clearCommand) { stdout.setText(""); }
-        else if (c == helpCommand) { processCommand("help"); }
-        else if (c == nanoCommand) { new NanoEditor(""); }
-        else if (c == historyCommand) { new History(); }
+        else if (c == HELP) { processCommand("help"); }
+        else if (c == NANO) { new NanoEditor(""); }
+        else if (c == CLEAR) { stdout.setText(""); }
+        else if (c == HISTORY) { new History(); }
         
         else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); }
         else if (c.getCommandType() == Command.EXIT) { processCommand("exit"); }
@@ -88,7 +88,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         // API 003 - (User-Integration) 
         // |
-        //
+        // Session
         else if (mainCommand.equals("logout")) { writeRMS("OpenRMS", ""); processCommand("exit"); }
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(username); }
         else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh"); }
@@ -98,8 +98,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // System UI
         else if (mainCommand.equals("x11")) { xserver(argument); }
-        else if (mainCommand.equals("xterm")) { display.setCurrent(form); }     
-        else if (mainCommand.equals("spell")) { stdout.setLabel(argument); }  
+        else if (mainCommand.equals("xterm")) { display.setCurrent(form); }
         else if (mainCommand.equals("gauge")) { xserver("gauge " + argument); }
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); } 
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
@@ -323,7 +322,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 014 - (OpenTTY)
         // |
         // Low-level commands
-        else if (mainCommand.equals("@exec")) { commandAction(enterCommand, display.getCurrent()); }
+        else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
         else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS", 1); } else { username = argument; } }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS", 1); MIDletLogs("add debug API reloaded"); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
@@ -383,10 +382,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("term")) { display.setCurrent(form); } 
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
         else if (mainCommand.equals("buffer")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
-        else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); form.removeCommand(enterCommand); stdout.setLabel(""); }
+        else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); if (argument.equals("")) { current.setTicker(null); } else { current.setTicker(new Ticker(argument)); } }
-        else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(enterCommand); xserver("cmd"); form.setCommandListener(this); }
-        else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(helpCommand); form.removeCommand(nanoCommand); form.removeCommand(clearCommand); form.removeCommand(historyCommand); } else { form.addCommand(helpCommand); form.addCommand(nanoCommand); form.addCommand(clearCommand); form.addCommand(historyCommand); } }
+        else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd"); form.setCommandListener(this); }
+        else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(HELP); form.removeCommand(NANO); form.removeCommand(CLEAR); form.removeCommand(HISTORY); } else { form.addCommand(HELP); form.addCommand(NANO); form.addCommand(CLEAR); form.addCommand(HISTORY); } }
         else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default"); } else { stdout.setFont(newFont(argument)); } } 
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
         
