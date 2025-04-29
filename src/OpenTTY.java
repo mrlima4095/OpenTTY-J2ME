@@ -254,7 +254,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("") || split(argument, ' ').length < 2) { } 
             else { 
                 try { 
-                    Hashtable args = parseProperties(argument);
                     String[] args = split(argument, ' '); 
 
                     FileConnection fileConn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); 
