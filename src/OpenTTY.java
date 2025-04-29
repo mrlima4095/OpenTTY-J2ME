@@ -644,9 +644,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             wordlist = split(loadRMS("gobuster", 1), '\n'); 
             if (wordlist == null || wordlist.length == 0) { wordlist = split(read("/java/etc/gobuster"), '\n'); } 
 
-            screen.addCommand(openCommand); 
-            screen.addCommand(saveCommand); 
-            screen.addCommand(backCommand); 
+            screen.addCommand(openCommand); screen.addCommand(saveCommand); screen.addCommand(backCommand); 
             screen.setCommandListener(this); 
 
             new Thread(this, "GoBuster").start(); 
@@ -822,7 +820,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Form screen = new Form(form.getTitle()); 
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private Command sendCommand = new Command("Send", Command.OK, 1), 
-                        backCommand = new Command("Back", Command.SCREEN, 2), 
+                        backCommand = new Command("Back", Command.BACK, 2), 
                         clearCommand = new Command("Clear", Command.SCREEN, 3), 
                         infoCommand = new Command("Show info", Command.SCREEN, 4); 
         private StringItem console = new StringItem("", ""); 
@@ -914,10 +912,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class Explorer implements CommandListener { 
         private List screen = new List(form.getTitle(), List.IMPLICIT); 
         private Command backCommand = new Command("Back", Command.BACK, 1), 
-                        openCommand = new Command("Open", Command.SCREEN, 2), 
-                        deleteCommand = new Command("Delete", Command.SCREEN, 3), 
-                        runCommand = new Command("Run Script", Command.SCREEN, 4), 
-                        importCommand = new Command("Import File", Command.SCREEN, 5); 
+                        openCommand = new Command("Open", Command.OK, 1), 
+                        deleteCommand = new Command("Delete", Command.OK, 1), 
+                        runCommand = new Command("Run Script", Command.OK, 1), 
+                        importCommand = new Command("Import File", Command.OK, 1); 
 
         public Explorer() { 
             screen.addCommand(backCommand); 
@@ -956,9 +954,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class FileExplorer implements CommandListener { 
         private String currentPath = "file:///"; 
         private List screen = new List(form.getTitle(), List.IMPLICIT); 
-        private Command openCommand = new Command("Open", Command.OK, 1), 
-                        backCommand = new Command("Back", Command.BACK, 1); 
-
+        private Command backCommand = new Command("Back", Command.BACK, 1), openCommand = new Command("Open", Command.OK, 1);
+                        
         public FileExplorer() { 
             screen.addCommand(openCommand); 
             screen.addCommand(backCommand); 
@@ -1081,7 +1078,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Interfaces
     public class NanoEditor implements CommandListener { 
         private TextBox screen = new TextBox("Nano", "", 31522, TextField.ANY); 
-        private Command backCommand = new Command("Back", Command.BACK, 1), clearCommand = new Command("Clear", Command.OK, 2), runCommand = new Command("Run Script", Command.OK, 3), importCommand = new Command("Import File", Command.OK, 4), viewCommand = new Command("View as HTML", Command.OK, 5); 
+        private Command backCommand = new Command("Back", Command.BACK, 1), 
+                        clearCommand = new Command("Clear", Command.OK, 1), 
+                        runCommand = new Command("Run Script", Command.OK, 1), 
+                        importCommand = new Command("Import File", Command.OK, 1), 
+                        viewCommand = new Command("View as HTML", Command.OK, 1); 
 
         public NanoEditor(String args) { 
             screen.setString((args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1)); 
@@ -1121,8 +1122,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class History implements CommandListener { 
         private List screen = new List(form.getTitle(), List.IMPLICIT); 
         private Command backCommand = new Command("Back", Command.BACK, 1), 
-                        runCommand = new Command("Run", Command.OK, 2), 
-                        editCommand = new Command("Edit", Command.OK, 3);
+                        runCommand = new Command("Run", Command.OK, 1), 
+                        editCommand = new Command("Edit", Command.OK, 1);
                         
         public History() { 
             screen.addCommand(backCommand); screen.addCommand(runCommand); screen.addCommand(editCommand); 
