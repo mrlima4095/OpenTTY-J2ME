@@ -1133,9 +1133,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         editCommand = new Command("Edit", Command.OK, 3);
                         
         public History() { 
-            screen.addCommand(backCommand); 
-            screen.addCommand(runCommand); 
-            screen.addCommand(editCommand); 
+            screen.addCommand(backCommand); screen.addCommand(runCommand); screen.addCommand(editCommand); 
             screen.setCommandListener(this); 
 
             load(); display.setCurrent(screen); 
@@ -1143,17 +1141,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void commandAction(Command c, Displayable d) { 
             if (c == backCommand) { processCommand("xterm"); } 
-            else if (c == runCommand) { 
-                int index = screen.getSelectedIndex(); 
-                if (index >= 0) { 
-                    processCommand("xterm"); 
-                    processCommand(screen.getString(index)); 
-                } 
-            } 
-            else if (c == editCommand) { int index = screen.getSelectedIndex(); 
-                if (index >= 0) { 
-                    processCommand("xterm"); 
-                    stdin.setString(screen.getString(index)); } } 
+            else if (c == runCommand) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } 
+            else if (c == editCommand) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } 
+            
         } 
 
         private void load() { screen.deleteAll(); for (int i = 0; i < commandHistory.size(); i++) { screen.append((String) commandHistory.elementAt(i), null); } } 
