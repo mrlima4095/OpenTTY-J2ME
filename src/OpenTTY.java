@@ -918,11 +918,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         importCommand = new Command("Import File", Command.OK, 1); 
 
         public Explorer() { 
-            screen.addCommand(backCommand); 
-            screen.addCommand(openCommand); 
-            screen.addCommand(deleteCommand); 
-            screen.addCommand(runCommand); 
-            screen.addCommand(importCommand); 
+            screen.addCommand(backCommand); screen.addCommand(openCommand); screen.addCommand(deleteCommand); screen.addCommand(runCommand); screen.addCommand(importCommand); 
             screen.setCommandListener(this); 
 
             load(); display.setCurrent(screen); 
