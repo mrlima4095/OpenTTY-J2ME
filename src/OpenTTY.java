@@ -1090,11 +1090,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public NanoEditor(String args) { 
             screen.setString((args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1)); 
 
-            screen.addCommand(backCommand); 
-            screen.addCommand(clearCommand); 
-            screen.addCommand(runCommand); 
-            screen.addCommand(importCommand); 
-            screen.addCommand(viewCommand); 
+            screen.addCommand(backCommand); screen.addCommand(clearCommand); screen.addCommand(runCommand); screen.addCommand(importCommand); screen.addCommand(viewCommand); 
             screen.setCommandListener(this); 
 
             display.setCurrent(screen); 
