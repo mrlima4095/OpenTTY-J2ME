@@ -55,7 +55,7 @@ quest.key=JBUNTU_NOTES
 quest.cmd=execute install nano; touch; add $JBUNTU_NOTES; install .jbuntu-notes; get nano;
 
 list.title=JBuntu Apps
-list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,My Tasks,Terminal,Monitor
+list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Monitor
 list.button=Open
 
 Text Editor=execute nano;
