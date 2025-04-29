@@ -1082,10 +1082,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class NanoEditor implements CommandListener { 
         private TextBox screen = new TextBox("Nano", "", 31522, TextField.ANY); 
         private Command backCommand = new Command("Back", Command.BACK, 1), 
-                        clearCommand = new Command("Clear", Command.SCREEN, 2), 
-                        runCommand = new Command("Run Script", Command.SCREEN, 3), 
-                        importCommand = new Command("Import File", Command.SCREEN, 4), 
-                        viewCommand = new Command("View as HTML", Command.SCREEN, 5); 
+                        clearCommand = new Command("Clear", Command.OK, 2), 
+                        runCommand = new Command("Run Script", Command.OK, 3), 
+                        importCommand = new Command("Import File", Command.OK, 4), 
+                        viewCommand = new Command("View as HTML", Command.OK, 5); 
 
         public NanoEditor(String args) { 
             screen.setString((args == null || args.length() == 0) ? nanoContent : loadRMS(args, 1)); 
