@@ -1150,22 +1150,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     processCommand(screen.getString(index)); 
                 } 
             } 
-            else if (c == editCommand) { 
-                int index = screen.getSelectedIndex(); 
+            else if (c == editCommand) { int index = screen.getSelectedIndex(); 
                 if (index >= 0) { 
                     processCommand("xterm"); 
-                    stdin.setString(screen.getString(index)); 
-                } 
-            } 
+                    stdin.setString(screen.getString(index)); } } 
         } 
 
-        private void load() {
-            screen.deleteAll(); 
-            
-            for (int i = 0; i < commandHistory.size(); i++) { 
-                screen.append((String) commandHistory.elementAt(i), null); 
-            } 
-        }
+        private void load() { screen.deleteAll(); for (int i = 0; i < commandHistory.size(); i++) { screen.append((String) commandHistory.elementAt(i), null); } } 
+    
     }
     
 
