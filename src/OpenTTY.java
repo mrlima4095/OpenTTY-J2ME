@@ -13,14 +13,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
-                      paths = new Hashtable(), trace = new Hashtable();
+                      paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
                    build = "2025-1.14-01x58";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
-    private Displayable cache = null;
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
@@ -392,8 +391,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { xserver("init"); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } else { xserver("init"); } }
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
 
-        else if (mainCommand.equals("xfset")) { cache = display.getCurrent(); }
-        else if (mainCommand.equals("xfback")) { display.setCurrent(cache); } 
+        else if (mainCommand.equals("xfset")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
+        else if (mainCommand.equals("xfload")) { if (argument.equals("")) { } else {  } } 
 
         else if (mainCommand.equals("make")) { new Screen(argument); } 
         else if (mainCommand.equals("list")) { new ScreenList(argument); }
