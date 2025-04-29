@@ -392,7 +392,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
 
         else if (mainCommand.equals("xfset")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
-        else if (mainCommand.equals("xfload")) { if (argument.equals("")) { } else {  } } 
+        else if (mainCommand.equals("xfload")) { if (argument.equals("")) { } else { if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } } } 
 
         else if (mainCommand.equals("make")) { new Screen(argument); } 
         else if (mainCommand.equals("list")) { new ScreenList(argument); }
