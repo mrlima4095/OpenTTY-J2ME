@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                    build = "2025-1.14-01x58";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
-    private Displayable cache = null
+    private Displayable cache = null;
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
