@@ -17,10 +17,10 @@ quest.cmd=execute $TOOL $INPUT; unset TOOL; unset INPUT;
 quest.key=INPUT
 
 list.title=NetKit Tools
-list.content=Remote,IP Adress,Port Scanner,GoBuster Search,Ping Test,Run Server
+list.content=Remote,IP Address,Port Scanner,GoBuster Search,Ping Test,Run Server
 
 Remote=execute set TOOL=nc; set LABEL=IP Adress; x11 quest /java/lib/netkit;
-IP Adress=execute install nano; getty; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true 
+IP Address=execute x11 list /java/lib/netkit; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
 Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress; x11 quest /java/lib/netkit;
 GoBuster Search=execute set TOOL=gobuster; set LABEL=Domain; x11 quest /java/lib/netkit;
 Ping Test=execute set TOOL=pingw; set LABEL=URL; x11 quest /java/lib/netkit;
