@@ -39,7 +39,7 @@ screen.content=$JBUNTU_NOTES
 screen.back.label=Menu
 screen.back=execute jbuntu menu;
 screen.button=Apps
-screen.button.cmd=execute x11 list jbuntu;
+screen.button.cmd=execute x11 list jbtext = replace(text, "$USERNAME", username); untu;
 
 canvas.title=JBuntu $JVERSION
 canvas.content=$JBUNTU_NOTES
