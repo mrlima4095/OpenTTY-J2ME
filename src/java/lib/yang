@@ -16,7 +16,7 @@ install=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; tick Installing...; q
 update=execute set RESOURCE=yang; yang install; import yang;
 query=execute x11 quest /java/lib/yang;
 
-info=execute echo PackJ 1.3 ( Edition)
+info=execute echo PackJ 1.3 (Default)
 
 [ DISPLAY ]
 
