@@ -24,3 +24,4 @@
 [2025-1.14-01x56]	Added Command 'LSBLK' | Enabled case sensitive
 [2025-1.14-01x57]	Removed Command 'TODO'
 [2025-1.14-01x58]	Removed Command 'LOCK' | Java Runtime don't caching 
+[2025-1.14-01x59]	X11 Multi-Window Control System (desktops)
