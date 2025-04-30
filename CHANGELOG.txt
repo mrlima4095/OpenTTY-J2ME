@@ -14,6 +14,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Added new package `Android API`
+- `JAuth2`  updated to **1.2**
 - `JBenckmark` API updated to support **1.14**
 - `LoaderME` updated to **1.1**
 - Help Screen title charged to sync with Main Title
@@ -41,6 +42,7 @@ Copyright (C) 2025 - Mr. Lima
 - Remote Thread control now using Process Manager (trace)
 - Command `prscan` now match the a second argument, that is a start port, if it is missing start scanning from port 0
 - Java Runtime don't cache other class run cache, it is only accessible in current file
+- **Quest** screen support for key `quest.back.label` to charge label of back button
 
 [ _Notes_ ]
 
@@ -58,7 +60,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - `socket://[ip]:[port]`: Socket Connections.
 - `datagram://[ip]:[port]`: UDP Connections.
-- `file://[path]`: Read and Write in a file (Dont create files or folders, recommended use of command `dd`).
+- `file://[path]`: Read and Write in a file (Don't create files or folders, recommended use of command `dd`).
 - `http://[url]`: HTTP GET Connections.
 
 [ _LSBLK Arguments_ ]
