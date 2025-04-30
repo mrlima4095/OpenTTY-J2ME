@@ -16,6 +16,8 @@ shell.name=sudo
 shell.args=yang,setrepo,cfg,su
 
 yang=execute import /java/lib/yang; yang;
+setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; x11 quest /java/lib/settings;
+cfg=execute import /java/lib/settings; cfg;
 su=execute @login root;
 
 
