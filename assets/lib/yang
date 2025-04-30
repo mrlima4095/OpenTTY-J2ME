@@ -16,7 +16,7 @@ install=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; tick Installing...; q
 update=execute set RESOURCE=yang; yang install; import yang;
 query=execute x11 quest yang;
 
-info=execute set OLD_TITLE=$TITLE; title PackJ 1.3; warn PackJ 1.3\n\nLocal Edition; title $OLD_TITLE; unset OLD_TITLE;
+info=execute PackJ 1.3 (Local Edition);
 
 [ DISPLAY ]
 
