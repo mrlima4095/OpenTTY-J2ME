@@ -1,51 +1,51 @@
 [ Config ]
 
 name=MobiX
-version=1
+version=1.0
 description=Java Mobile
 
 api.version=1.14
-api.error=execute log add error MobiX requires OpenTTY API 1.14; title MobiX Loader; warn MobiX requires OpenTTY API 1.14 or newer!; bg exec sleep 5 & exit; @stop; 
+api.error=execute 
 
-process.name=mobix
+process.name=mxos
 
-include=forge
+config=
+command=
 
-config=execute set MobiX=1; x11 stop; x11 xfinit stdout; x11 title MobiX $MobiX; x11 item mxos; clear; log add info Running MobiX $MobiX; spell Console:; 
-command=xterm
+shell.name=mxos
+shell.args=init
 
-xterm=execute x11 make mxos;
-
-shell.name=mx
-shell.args=apps
-
-apps=execute x11 list mxos;
 
 [ COMMAND ]
 
 item.label=MobiX
-item.cmd=execute x11 make mxos;
+item.cmd=execute mxos
 
 [ DISPLAY ]
 
-screen.title=$TITLE
-screen.content=
-screen.content.style=
-screen.back.label=
-screen.back=
-screen.button=Apps
-screen.button.cmd=
+canvas.title=$TITLE
+canvas.content=
+canvas.content.type=
+canvas.content.link=
+canvas.content.style=
+canvas.button=
+canvas.button.cmd=
+canvas.back.label=
+canvas.back=
+canvas.mouse=
+canvas.background=
+canvas.background.type=
 
 quest.title=$TITLE
 quest.label=$LABEL
-quest.key=INPUT
-quest.cmd=execute $CMD $INPUT; unset CMD; unset LABEL; unset INPUT;
-quest.back=execute $BACK; unset BACK; unset CMD; unset LABEL; 
+quest.key=
+quest.cmd=
+quest.back=
+quest.back.label=
 
-list.title=MobiX Apps
-list.content=Phone,Message
-list.back=execute x11 make mxos;
-list.button=Open
+list.title=
+list.content=
+list.back.label=
+list.back=
+list.button=
 
-Phone=execute set $LABEL=Phone Number; set BACK=execute mx apps; set CMD=open tel:; x11 quest mxos;
-Message=execute set LABEL=Phone Number; set BACK=execute mx apps; set CMD=open sms:; x11 quest mxos;
