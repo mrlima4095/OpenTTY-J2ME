@@ -1,28 +1,29 @@
 [ Config ]
 
 name=JAuth2
-version=1.1
+version=1.2
 description=Advanced Perms
 
-include=forge
+config=execute if ($USERNAME == root) bg exec x11 stop & x11 title JAuth2 & x11 xfinit stdout & clear & echo [JAuth2] User name may not be String 'root' & echo [JAuth2] Logging out... & sleep 5 & builtin logout & builtin exit;
+command=sudo,exit,logout,lock
 
-config=execute if ($USERNAME == root) echo [JAuth2] Username may not be String 'root';
-command=sudo,lock
-
-lock=execute x11 quest jauth2
 sudo=execute
+exit=execute if ($.USERNAME != root) builtin exit; if ($.USERNAME == root) @login
+logout=execute if ($.USERNAME != root) builtin logout; if ($.USERNAME == root) @login
 
 shell.name=sudo
 shell.args=yang,setrepo,cfg,su
 
-yang=execute x11 list /java/lib/yang;
-cfg=execute x11 list /java/lib/settings;
-su=execute @login root; 
+yang=execute import /java/lib/yang; yang;
+su=execute @login root;
+
 
 [ DISPLAY ]
 
 quest.title=$TITLE - Locked
 quest.label=Username
 quest.key=INPUT
-quest.cmd=execute if ($INPUT != $USERNAME) exec @alert & lock; if ($INPUT == $USERNAME) xterm;
-quest.back=execute exit
+quest.cmd=execute if ($INPUT != $USERNAME) exec @alert & lock; if ($INPUT == $USERNAME) xterm; unset INPUT;
+quest.back=execute exit;
+quest.back.label=Exit
+
