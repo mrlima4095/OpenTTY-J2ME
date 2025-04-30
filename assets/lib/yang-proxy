@@ -10,11 +10,13 @@ yang=execute x11 list yang-proxy;
 setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; x11 quest /java/lib/settings;
 
 shell.name=yang
-shell.args=install,update,query,setrepo
+shell.args=install,update,query,setrepo,info
 
 install=execute install nano; tick Installing...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/$RESOURCE; install $RESOURCE; get nano; unset RESOURCE;
 update=execute set RESOURCE=yang-proxy; yang install; import yang-proxy;
 query=execute x11 quest yang-proxy;
+
+info=execute set OLD_TITLE=$TITLE; title PackJ 1.3; warn PackJ 1.3\n\nProxy Edition; title $OLD_TITLE; unset OLD_TITLE;
 
 [ DISPLAY ]
 
