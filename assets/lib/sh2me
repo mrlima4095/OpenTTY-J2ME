@@ -5,10 +5,7 @@ version=1.2
 
 include=forge
  
-config=bg execute if ($VERSION startswith 1.12) exec legacy_init & throw; x11 list sh2me;
-command=legacy_init,enhanced_init 
-
-
+config=execute x11 list sh2me;
 
 item.label=Run
 item.cmd=execute x11 quest sh2me;
@@ -18,14 +15,9 @@ quest.label=$USERNAME $PATH $
 quest.cmd=$CMD
 quest.key=CMD
 
-
 list.title=ImmersiveShell
 list.content=Legacy (Old UI),Enhanced
 list.back=execute echo Loading cancelled!
 
-Legacy (Old UI)=execute legacy_init;
-Enhanced=execute enhanced_init;
-
-
-legacy_init=execute sh; x11 stop; title; x11 item sh2me; install nano; touch; add item.label=View; add item.cmd=exec install nano & getty & add <title>$TITLE</title> & html & get nano; x11 item nano; get nano;  
-enhanced_init=execute sh; x11 stop; title; x11 item sh2me; x11 xfinit stdout;
+Legacy (Old UI)=execute sh; x11 stop; title; x11 item sh2me; install nano; touch; add item.label=View; add item.cmd=exec install nano & getty & add <title>$TITLE</title> & html & get nano; x11 item nano; get nano;  
+Enhanced=execute sh; x11 stop; title; x11 item sh2me; x11 xfinit stdout;
