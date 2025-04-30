@@ -8,6 +8,7 @@ config=execute if ($USERNAME == root) bg exec x11 stop & x11 title JAuth2 & x11 
 command=sudo,exit,logout,lock
 
 sudo=execute
+lock=execute x11 quest jauth2;
 exit=execute if ($.USERNAME != root) builtin exit; if ($.USERNAME == root) @login
 logout=execute if ($.USERNAME != root) builtin logout; if ($.USERNAME == root) @login
 
