@@ -13,36 +13,37 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Updates_ ]
 
-- Added new package `Android API`
-- `JAuth2`  updated to **1.2**
-- `JBenckmark` API updated to support **1.14**
-- `LoaderME` updated to **1.1**
-- Help Screen title charged to sync with Main Title
-- Proxy url can be charged in **MANIFEST.MF** in attribute `MIDlet-Proxy`
-- `ImmersiveShell` API support for **Legacy** added 
-- `ImmersiveShell` updated to 1.2 version
-- `/scripts/debug.sh` have been rewrote
-- `Nano` buffer size increased to **31522** characters
-- `HTTP Headers` buffer size increased to **31522** characters
-- `Sync` updated to **1.1**
-- Command `query` now is a global connector 
-- Command `unalias` removed missing message
-- Command `if` have new comparators `!startswith`, `!endswith`, `contains` and `!contains`
-- Command `ifconfig` now accept arguments, like `1.1.1.1:53` to check your ip address
-- After user attempt login it run `initd` user-script it already exists
-- Added new attribute support `config.post` to run after load all other modules of package
-- `JBuntu` updated to **1.3.1**
-- `JBuntu` switch to **Yang Proxy** automatically if it is installed
-- Shell ToolKit support for `shell.unknown` run if no argument defined
-- Shell command checker now consider **case sensitive** to run commands
-- Fixed a add blank file initialize automatic line break when `add` the first line
-- Command `gaddr` charged message _DNS Response error_ to _not found_
-- Removed Command `todo`
-- Remote show IP Address in information warning
-- Remote Thread control now using Process Manager (trace)
-- Command `prscan` now match the a second argument, that is a start port, if it is missing start scanning from port 0
-- Java Runtime don't cache other class run cache, it is only accessible in current file
-- **Quest** screen support for key `quest.back.label` to charge label of back button
+- Added new package `Android API`.
+- `JAuth2`  updated to **1.2**.
+- `JBenckmark` API updated to support **1.14**.
+- `LoaderME` updated to **1.1**.
+- Help Screen title charged to sync with Main Title.
+- Proxy url can be charged in **MANIFEST.MF** in attribute `MIDlet-Proxy`.
+- `ImmersiveShell` API support for **Legacy** added. 
+- `ImmersiveShell` updated to 1.2 version.
+- `/scripts/debug.sh` have been rewrote.
+- `Nano` buffer size increased to **31522** characters.
+- `HTTP Headers` buffer size increased to **31522** characters.
+- `Sync` updated to **1.1**.
+- Command `query` now is a global connector. 
+- Command `unalias` removed missing message.
+- Command `if` have new comparators `!startswith`, `!endswith`, `contains` and `!contains`.
+- Command `ifconfig` now accept arguments, like `1.1.1.1:53` to check your ip address.
+- After user attempt login it run `initd` user-script it already exists.
+- Added new attribute support `config.post` to run after load all other modules of package.
+- `JBuntu` updated to **1.3.1**.
+- `JBuntu` switch to **Yang Proxy** automatically if it is installed.
+- Shell ToolKit support for `shell.unknown` run if no argument defined.
+- Shell command checker now consider **case sensitive** to run commands.
+- Fixed a add blank file initialize automatic line break when `add` the first line.
+- Command `gaddr` charged message _DNS Response error_ to _not found_.
+- Removed Command `todo`.
+- Remote show IP Address in information warning.
+- Remote Thread control now using Process Manager (trace).
+- Command `prscan` now match the a second argument, that is a start port, if it is missing start scanning from port 0.
+- Java Runtime don't cache other class run cache, it is only accessible in current file.
+- **Quest** screen support for key `quest.back.label` to charge label of back button.
+- Runtime `.` now can run all file types as script.
 
 [ _Notes_ ]
 
@@ -51,6 +52,7 @@ Copyright (C) 2025 - Mr. Lima
 - Command `prg` missing class is by default filled by name **OpenTTY**, use if it have more then one MIDlet in package.
 - Command `wrl` will be released completely in possible 1.16 LTS update.
 - Command `ifconfig` before it fail in some networks that Cloud flare DNS `1.1.1.1` don't works, now if it happens you can put an IP Address to manual connect and finish the local IP capture.
+- In next LTS release, command `run` will be removed and users have a time to migrate your code and packages to `run`.
 - If you wanna use the Task Manager you can build it with a J2ME SDK or download the **JAR Package** that is attached in the 1.14 (this) release.
 - When you will connect with anything with command `query` now you will need to fill protocol type like `query socket://ip:port payload`
 - Case sensitive is **ENABLED**. All Yang packages have been updated to support it.
