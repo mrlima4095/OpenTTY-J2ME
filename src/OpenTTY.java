@@ -339,7 +339,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("run")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(loadRMS(argument, 1)); } }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
-        else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { runScript(getcontent(argument)); } } }
+        else if (mainCommand.equals(".")) { if (argument.equals("")) { } else { runScript(getcontent(argument)); } }
         
         else { echoCommand(mainCommand + ": not found"); }
 
