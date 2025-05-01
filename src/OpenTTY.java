@@ -228,7 +228,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("ls")) { viewer("Resources", read("/java/resources.txt")); }
-        else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { mount(read(argument)); } else if (argument.equals("nano")) { mount(nanoContent); } else { mount(loadRMS(argument, 1)); } } }
+        else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else { if (argument.startsWith("/")) { if (paths.containsKey(argument)) { path = argument; } else { echoCommand("cd: " + basename(argument) + ": not found"); } } else if (argument.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { processCommand(path.equals("/") ? "cd " + "/" + argument : "cd " + path + "/" + argument); } } }
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(); } else if (argument.equals("v")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { echoCommand(recordStores[i]); } } } } catch (RecordStoreException e) { } } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }        
         // | 
@@ -273,7 +273,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Text Parsers
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : loadRMS(argument, 1))); }
-        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String in = getCommand(argument); String out = getArgument(in); if (in.startsWith("/")) { in = read(in); } else if (in.equals("nano")) { in = nanoContent; } else { in = loadRMS(in, 1); } if (out.equals("")) { nanoContent = text2note(in); } else { writeRMS(out, text2note(in)); } } }
+        else if (mainCommand.equals("vnt")) { 
+            if (argument.equals("")) { } 
+            else { 
+                String in = getCommand(argument); 
+                String out = getArgument(in); 
+
+                if (in.startsWith("/")) { in = read(in); } 
+                else if (in.equals("nano")) { in = nanoContent; } 
+                else { in = loadRMS(in, 1); } 
+
+                if (out.equals("")) { nanoContent = text2note(in); } 
+                else { writeRMS(out, text2note(in)); } 
+            } 
+        }
         else if (mainCommand.equals("ph2s")) { StringBuffer script = new StringBuffer(); for (int i = 0; i < commandHistory.size() - 1; i++) { script.append(commandHistory.elementAt(i)); if (i < commandHistory.size() - 1) { script.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } }
         // |
         // Interfaces
