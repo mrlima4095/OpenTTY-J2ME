@@ -27,7 +27,7 @@ explorer=execute install nano; touch; add list.title=File Explorer; add list.con
 
 sync=execute install nano; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu; find version nano; if ($OUTPUT == $JVERSION) warn JBuntu already is updated; if ($OUTPUT != $JVERSION) exec touch & add screen.title=JBuntu Updater & add screen.content=A new version of JBuntu is avaliable! Do you want to update? & add screen.back=jbuntu menu & add screen.back.label=Back & add screen.button=Update & add screen.button.cmd=execute clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/update_jbuntu.sh & x11 make nano & get nano; get nano;
 
-run=execute install nano; touch; add quest.title=$TITLE; add quest.label=$USERNAME $PATH $; add quest.key=COMMAND; add quest.cmd=exec $COMMAND & unset COMMAND; x11 quest nano; 
+run=execute install nano; touch; add quest.title=$TITLE; add quest.label=$USERNAME $PATH $; add quest.key=COMMAND; add quest.cmd=exec $COMMAND & unset COMMAND; x11 quest nano; get nano;
 
 [ COMMAND ]
 
