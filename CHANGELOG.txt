@@ -43,6 +43,7 @@ Copyright (C) 2025 - Mr. Lima
 - Command `prscan` now match the a second argument, that is a start port, if it is missing start scanning from port 0.
 - Java Runtime don't cache other class run cache, it is only accessible in current file.
 - **Quest** screen support for key `quest.back.label` to charge label of back button.
+- COmmand `dd` behavior like the linux **dd**, support to `if` and `of`
 - Runtime `.` now can run all file types as script.
 
 [ _Notes_ ]
