@@ -267,26 +267,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand(read(argument)); } else { echoCommand(loadRMS(argument, 1)); } } }
         else if (mainCommand.equals("get")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { nanoContent = read(argument); } else { nanoContent = loadRMS(argument, 1); } } }
-        else if (mainCommand.equals("grep")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } echoCommand(file.indexOf(args[0]) != -1 ? "true" : "false"); } }
-        else if (mainCommand.equals("find")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file; if (args[1].startsWith("/")) { file = read(args[1]); } else if (args[1].equals("nano")) { file = nanoContent; } else { file = loadRMS(args[1], 1); } String value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
+        else if (mainCommand.equals("grep")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file = getcontent(args[1]); echoCommand(file.indexOf(args[0]) != -1 ? "true" : "false"); } }
+        else if (mainCommand.equals("find")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file = getcontent(args[1]); String value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
         // |
         // Text Parsers
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : loadRMS(argument, 1))); }
-        else if (mainCommand.equals("vnt")) { 
-            if (argument.equals("")) { } 
-            else { 
-                String in = getCommand(argument); 
-                String out = getArgument(in); 
-
-                if (in.startsWith("/")) { in = read(in); } 
-                else if (in.equals("nano")) { in = nanoContent; } 
-                else { in = loadRMS(in, 1); } 
-
-                if (out.equals("")) { nanoContent = text2note(in); } 
-                else { writeRMS(out, text2note(in)); } 
-            } 
-        }
+        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String in = getcontent(getCommand(argument)); String out = getArgument(argument); if (out.equals("")) { nanoContent = text2note(in); } else { writeRMS(out, text2note(in)); } } }
         else if (mainCommand.equals("ph2s")) { StringBuffer script = new StringBuffer(); for (int i = 0; i < commandHistory.size() - 1; i++) { script.append(commandHistory.elementAt(i)); if (i < commandHistory.size() - 1) { script.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } }
         // |
         // Interfaces
