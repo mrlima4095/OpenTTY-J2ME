@@ -4,12 +4,13 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- `clone [url]`: get a raw content from an HTTP server and run this as script  
-- `throw [code]`: stop current Thread with **code**
-- `prg [time] [class]`: **PushRegistry** Manager - Create MIDlet Launcher
-- `wrl`: Show wireless API client number
-- `gauge [text]`: Alert Window with a infinity loading progress bar
-- `lsblk`: List all accessible/ recognized file systems
+- `clone [url]`: get a raw content from an HTTP server and run this as script.  
+- `throw [code]`: stop current Thread with **code**.
+- `prg [time] [class]`: **PushRegistry** Manager - Create MIDlet Launcher.
+- `wrl`: Show wireless API client number.
+- `gauge [text]`: Alert Window with a infinity loading progress bar.
+- `lsblk`: List all accessible/ recognized file systems.
+- `local [path]`: Open Device File Explorer in specified **path**.
 
 [ _Updates_ ]
 
