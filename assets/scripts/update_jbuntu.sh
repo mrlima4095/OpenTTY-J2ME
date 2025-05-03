@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 install nano
+tick Installing...
 proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu
 install jbuntu
 
