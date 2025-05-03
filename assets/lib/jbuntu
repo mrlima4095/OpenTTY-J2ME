@@ -14,13 +14,13 @@ include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 config=execute set JVERSION=1.3.1; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; hash yang-proxy; if ($OUTPUT != 0) import yang-proxy; if ($OUTPUT == 0) rm yang-proxy; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat; 
 command=xterm,jbuntu
 
-xterm=execute x11 set jb.back; x11 $DISPLAY jbuntu;
-jbuntu=execute alias xterm=execute x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
+xterm=execute x11 set previous; x11 $DISPLAY jbuntu;
+jbuntu=execute alias xterm=exec x11 set previous & x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
 
 shell.name=jbuntu
 shell.args=menu,gmenu,jnome,explorer,sync,run
 
-menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Previous Screen,Desktop Settings,JBuntu Updater,Logout,Exit; add list.back=x11 $DISPLAY jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Previous Screen=x11 load jb.back; add Desktop Settings=jbuntu jnome; add JBuntu Updater=jbuntu sync; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
+menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,Previous Screen,Desktop Settings,JBuntu Updater,Logout,Exit; add list.back=x11 $DISPLAY jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add Previous Screen=x11 load previous; add Desktop Settings=jbuntu jnome; add JBuntu Updater=jbuntu sync; add Logout=lock; add Exit=exit; x11 list nano; get nano; 
 gmenu=execute install nano; touch; add list.title=Menu; add list.content=Desktop Settings,Write Notes; add list.button=Open; add Desktop Settings=jbuntu jnome; add Write Notes=x11 quest jbuntu; x11 list nano; get nano;
 jnome=execute install nano; touch; add list.title=Desktop Settings; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add Legacy=exec install nano & touch & add make & install .jbuntu-desktop & log add info Desktop Type charged to 'LEGACY' & log add warn JBuntu has request an API reload & @reload & set DISPLAY=make & jbuntu & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-desktop & log add info Desktop Type charged to 'Enhanced' & log add warn JBuntu has request an API reload & @reload & set DISPLAY=canvas & jbuntu & get nano; x11 list nano; get nano;
 explorer=execute install nano; touch; add list.title=File Explorer; add list.content=My Files,Device Files,Resources,Run; add list.back=x11 list jbuntu; add list.button=Open; add My Files=builtin dir f; add Device Files=builtin dir s; add Resources=builtin ls; add Run=jbuntu run; x11 list nano; get nano;
