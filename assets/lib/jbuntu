@@ -66,4 +66,3 @@ Network Tools=execute nk;
 OpenTTY Store=execute yang;
 Terminal=execute x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; unalias xterm; x11 term;
 Monitor=execute htop;
-
