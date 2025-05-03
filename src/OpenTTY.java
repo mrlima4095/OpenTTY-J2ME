@@ -499,7 +499,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List screen = new List(form.getTitle(), List.IMPLICIT); 
         private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Open", Command.OK, 1); 
         public FileExplorer(String args) { 
-            if (!args.equals("")) { path = path + args; init = path}
+            if (!args.equals("")) { path = path + args; init = path; }
 
             screen.addCommand(BACK); screen.addCommand(OPEN); 
             screen.setCommandListener(this); 
