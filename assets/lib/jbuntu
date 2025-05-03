@@ -26,7 +26,7 @@ explorer=execute install nano; touch; add list.title=File Explorer; add list.con
 
 run=execute install nano; touch; add quest.title=$TITLE; add quest.label=(Run) $USERNAME $PATH $; add quest.key=COMMAND; add quest.cmd=exec $COMMAND & unset COMMAND; x11 quest nano; get nano;
 
-sync=execute install nano; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu; hash jbuntu; set LOCAL_HASH=$OUTPUT; hash nano; if ($LOCAL_HASH == $OUTPUT) warn JBuntu is already updated!; if ($LOCAL_HASH != $OUTPUT) exec touch & add screen.title=JBuntu Updater & add screen.content=A new version of JBuntu is avaliable! Do you want to update? & screen.button=Update & screen.button.cmd=clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/update_jbuntu.sh & x11 make nano & get nano; get nano;
+sync=execute install nano; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu; hash jbuntu; set LOCAL_HASH=$OUTPUT; hash nano; if ($LOCAL_HASH == $OUTPUT) warn JBuntu is already updated!; if ($LOCAL_HASH != $OUTPUT) exec touch & add screen.title=JBuntu Updater & add screen.content=A new version of JBuntu is avaliable! Do you want to update? & add screen.button=Update & add screen.button.cmd=clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/update_jbuntu.sh & x11 make nano & get nano; get nano;
 
 
 [ COMMAND ]
