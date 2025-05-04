@@ -28,3 +28,4 @@
 [2025-1.14-01x60]	New method 'getcontent'
 [2025-1.14-01x61]	Command 'LOCAL'
 [2025-1.14-01x62]	Release 1.14 | X Server 0.6.1 
+[2025-1.14.1-01x63]	1.14.1 Suite case
