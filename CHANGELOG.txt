@@ -45,6 +45,7 @@ Copyright (C) 2025 - Mr. Lima
 - Java Runtime don't cache other class run cache, it is only accessible in current file.
 - **Quest** screen support for key `quest.back.label` to charge label of back button.
 - Runtime `.` now can run all file types as script.
+- **X Server** updated to **0.6.1**
 
 [ _Notes_ ]
 
