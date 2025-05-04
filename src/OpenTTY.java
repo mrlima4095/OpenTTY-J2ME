@@ -280,6 +280,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
         
         //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("read")) { 
+            if (argument.equals("") || split(argument, ' ').length < 2) { } 
+            else { 
+                String[] args = split(argument, ' '); 
+                
+                String file = getcontent(args[1]); 
+                String value = (String) parseProperties(file).get(args[0]); 
+                
+                attributes.put(args[0], getcontent(args[1])); 
+            }
+        }
         else if (mainCommand.equals("snap")) { if (argument.equals("")) { } else { processCommand("execute " + getArgument(argument) + "; bg exec sleep 3 & x11 set " + getCommand(argument) + "; "); } }
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
