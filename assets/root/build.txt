@@ -27,3 +27,4 @@
 [2025-1.14-01x59]	X11 Multi-Window Control System (desktops)
 [2025-1.14-01x60]	New method 'getcontent'
 [2025-1.14-01x61]	Command 'LOCAL'
+[2025-1.14-01x62]	Release 1.14 | X Server 0.6.1 
