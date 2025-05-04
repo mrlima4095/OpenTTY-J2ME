@@ -285,9 +285,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 String[] args = split(argument, ' '); 
                 
-                String file = getcontent(args[1]); 
-                String value = (String) parseProperties(file).get(args[0]); 
-                
                 attributes.put(args[0], getcontent(args[1])); 
             }
         }
