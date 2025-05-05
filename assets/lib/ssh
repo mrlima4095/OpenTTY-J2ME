@@ -1,14 +1,12 @@
 [ Config ]
 
 name=OpenSSH
-version=1.0
+version=1.1
 description=Secure-Shell for J2ME
 
 process.name=openssh
 process.type=bind
 process.port=22
-
-mod=case !trace (openssh) execute ssh stop; break
 
 command=ssh
 
@@ -18,7 +16,7 @@ shell.name=ssh
 shell.args=init,stop
 
 init=execute import ssh;
-stop=execute trace pid bind; kill $OUTPUT; 
+stop=execute stop bind;
 
 
 quest.title=OpenSSH
