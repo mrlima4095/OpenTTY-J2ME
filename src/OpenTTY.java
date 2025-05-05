@@ -251,6 +251,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { echoCommand(read(argument)); } else { echoCommand(loadRMS(argument, 1)); } } }
         else if (mainCommand.equals("get")) { if (argument.equals("")) { } else { if (argument.startsWith("/")) { nanoContent = read(argument); } else { nanoContent = loadRMS(argument, 1); } } }
+        else if (mainCommand.equals("read")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); attributes.put(args[0], getcontent(args[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
         else if (mainCommand.equals("find")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file = getcontent(args[1]), value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
         // |
@@ -280,14 +281,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
         
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("read")) { 
-            if (argument.equals("") || split(argument, ' ').length < 2) { } 
-            else { 
-                String[] args = split(argument, ' '); 
-                
-                attributes.put(args[0], getcontent(args[1])); 
-            }
-        }
         else if (mainCommand.equals("snap")) { if (argument.equals("")) { } else { processCommand("execute " + getArgument(argument) + "; bg exec sleep 3 & x11 set " + getCommand(argument) + "; "); } }
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
