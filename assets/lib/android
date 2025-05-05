@@ -10,7 +10,7 @@ api.error=execute log add error Android API requires OpenTTY 1.14; echo [ Androi
 process.name=android
 process.port=10542
 
-include=forge
+include=forge,jauth2
 
 config=execute set DROID_VERSION=1.0; log add info Running Android API $DROID_VERSION; echo [ Android ] Running Android API $DROID_VERSION; x11 item android;
 command=droid
