@@ -66,8 +66,3 @@ Network Tools=execute nk;
 OpenTTY Store=execute yang;
 Terminal=execute x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; unalias xterm; x11 term;
 Monitor=execute htop;
-
-# JBuntu have been wrote to OpenTTY
-# Try build it as a MIDlet without the
-# OpenTTY Kernel wont work or may damage
-# The software experience
