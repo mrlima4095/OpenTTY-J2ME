@@ -13,6 +13,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Better labels in **Settings**
+- **Settings** using back to return to previous screen
 - New case checkers `screen`, `!screen`, `alias`, `!alias`, `key` and `!key`
 - Added new Package **Back Previous**
 - 
