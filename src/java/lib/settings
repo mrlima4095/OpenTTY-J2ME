@@ -18,7 +18,7 @@ info=execute about /java/lib/settings;
 
 quest.title=Settings
 quest.label=$LABEL
-quest.back=execute if ($RETURN) cfg; unset RETURN; unset VALUE; unset LABEL; unset CFG;
+quest.back=execute #if ($RETURN) cfg; case screen (cfg.back) x11 load cfg.back; unset RETURN; unset VALUE; unset LABEL; unset CFG;
 quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset LABEL; unset CFG;
 quest.key=CFG
 
