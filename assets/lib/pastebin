@@ -4,6 +4,8 @@ name=PasteBin
 version=1.0
 description=Paste Client 
 
+include=/java/lib/settings
+
 config=echo [PasteBin] To setup your API Key use 'pastebin api'
 command=pastebin
 
