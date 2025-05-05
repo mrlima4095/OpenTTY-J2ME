@@ -24,5 +24,6 @@ Get Local Adress=execute x11 list /java/lib/netkit; ifconfig; set OLD_TITLE=$TIT
 Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress; x11 quest /java/lib/netkit;
 GoBuster Search=execute set TOOL=gobuster; set LABEL=Domain; x11 quest /java/lib/netkit;
 Ping Test=execute set TOOL=pingw; set LABEL=URL; x11 quest /java/lib/netkit;
+Run Bind=execute bind;
 Run Server=execute server; 
 
