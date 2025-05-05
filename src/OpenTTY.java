@@ -103,6 +103,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); } 
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { xserver("tick " + argument); } }
+        else if (mainCommand.equals("snap")) { if (argument.equals("")) { } else { processCommand("execute " + getArgument(argument) + "; bg exec sleep 3 & x11 set " + getCommand(argument) + "; "); } }
 
         // API 005 - (Operators) 
         // |
@@ -282,7 +283,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
         
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("snap")) { if (argument.equals("")) { } else { processCommand("execute " + getArgument(argument) + "; bg exec sleep 3 & x11 set " + getCommand(argument) + "; "); } }
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
