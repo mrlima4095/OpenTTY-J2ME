@@ -7,7 +7,7 @@ description=Network Center
 command=nk,pingw
 
 nk=execute x11 list /java/lib/netkit;
-pingw=execute install nano; getty; ping $.INPUT; set OLD_TITLE=$TITLE; title Ping; warn $.OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true 
+pingw=execute install nano; getty; ping $INPUT; set OLD_TITLE=$TITLE; title Ping; warn $.OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true 
 
 [ DISPLAY ]
 
