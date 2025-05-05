@@ -17,9 +17,9 @@ quest.cmd=execute $TOOL $INPUT; unset TOOL; unset INPUT;
 quest.key=INPUT
 
 list.title=NetKit Tools
-list.content=Connect,IP Address,Port Scanner,GoBuster Search,Ping Test,Run Server
+list.content=Connect To,Get Local Adress,Port Scanner,GoBuster Search,Ping Test,Run Server
 
-Remote=execute set TOOL=nc; set LABEL=IP Adress; x11 quest /java/lib/netkit;
+Connect To=execute set TOOL=nc; set LABEL=IP Adress; x11 quest /java/lib/netkit;
 Get Local Adress=execute x11 list /java/lib/netkit; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
 Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress; x11 quest /java/lib/netkit;
 GoBuster Search=execute set TOOL=gobuster; set LABEL=Domain; x11 quest /java/lib/netkit;
