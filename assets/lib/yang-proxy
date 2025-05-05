@@ -9,7 +9,7 @@ include=/java/lib/settings
 command=yang,setrepo
 
 yang=execute x11 list yang-proxy;
-setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; x11 quest /java/lib/settings;
+setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; cfg run;
 
 shell.name=yang
 shell.args=install,update,query,setrepo,info
