@@ -18,6 +18,7 @@ shell.args=init,stop
 init=execute import ssh;
 stop=execute stop bind;
 
+[ DISPLAY ]
 
 quest.title=OpenSSH
 quest.label=IP Adress
