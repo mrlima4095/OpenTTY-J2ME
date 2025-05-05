@@ -4,7 +4,7 @@ name=Armitage
 version=1.1
 description=OpenTTY Exploits 
 
-include=/java/lib/netkit
+include=/java/lib/settings,/java/lib/netkit
 
 config=execute x11 make armitage;
 command=armitage,browser,whois
