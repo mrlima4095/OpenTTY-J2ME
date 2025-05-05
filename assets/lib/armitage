@@ -6,7 +6,7 @@ description=OpenTTY Exploits
 
 include=/java/lib/settings,/java/lib/netkit
 
-config=execute x11 make armitage;
+config=execute x11 list armitage;
 command=armitage,browser,whois
 
 armitage=execute x11 list armitage;
@@ -14,11 +14,6 @@ browser=execute open http://mini.opera.com;
 whois=query socket://whois.iana.org:43
 
 [ DISPLAY ]
-
-screen.title=Armitage
-screen.content=
-screen.button=Tools
-screen.button.cmd=execute x11 list armitage 
 
 quest.title=Armitage
 quest.label=$LABEL
@@ -29,11 +24,10 @@ quest.back=execute x11 list armitage;
 list.title=Armitage Tools
 list.content=Connect (Remote),Connect - Server,Get Local Adress,Search IP Info,WhoIS Search,GoBuster,Port Scanner,IP Generator,HTTPS Requester,HTTPS (Via Proxy),Charge Server IP
 list.button=Open
-list.back=execute x11 make armitage
 
 Connect (Remote)=execute set TOOL=nc; set LABEL=IP Adress (Connect); x11 quest armitage;
 Connect - Server=execute nc $REPO;
-Get Local Adress=execute x11 list armitage; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
+Get Local Adress=execute x11 list armitage; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $.OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
 Search IP Info=execute set TOOL=fw; set LABEL=IP Adress (GeoIP Query); x11 quest armitage;
 WhoIS Search=execute set TOOL=whois; set LABEL=Domain (WhoIS Query); x11 quest armitage;
 GoBuster=execute set TOOL=gobuster; set LABEL=WebSite URL (GoBuster Query); x11 quest armitage;
