@@ -13,7 +13,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Better labels in **Settings**
--
+- New case checkers `screen`, `!screen`
 -
 -
 -
