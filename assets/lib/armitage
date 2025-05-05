@@ -41,4 +41,4 @@ Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress (Port Scanner); x11 qu
 IP Generator=execute genip; install nano; touch; add <title>$OUTPUT Info</title>; fw $OUTPUT; add $OUTPUT; html; get nano;
 HTTPS Requester=execute set TOOL=query socket://$REPO http; set LABEL=URL (HTTPS Proxy - Local); x11 quest armitage;
 HTTPS (Via Proxy)=execute set TOOL=query socket://$REPO http; set LABEL=URL (HTTPS Proxy); x11 quest armitage;
-Charge Server IP=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; x11 quest /java/lib/settings;
+Charge Server IP=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; cfg run;
