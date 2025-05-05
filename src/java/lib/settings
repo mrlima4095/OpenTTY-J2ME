@@ -11,14 +11,14 @@ cfg=execute x11 list /java/lib/settings;
 shell.name=cfg
 shell.args=run,info
 
-run=execute x11 quest /java/lib/settings;
+run=execute x11 set cfg.back; x11 quest /java/lib/settings;
 info=execute about /java/lib/settings;
 
 [ DISPLAY ]
 
 quest.title=Settings
 quest.label=$LABEL
-quest.back=execute if ($RETURN) x11 list /java/lib/settings; unset RETURN; unset VALUE; unset LABEL; unset CFG;
+quest.back=execute x11 load cfg.back; unset RETURN; unset VALUE; unset LABEL; unset CFG;
 quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset LABEL; unset CFG;
 quest.key=CFG
 
