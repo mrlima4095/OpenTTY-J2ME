@@ -13,9 +13,9 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Better labels in **Settings**
-- New case checkers `screen`, `!screen`
--
--
+- New case checkers `screen`, `!screen`, `alias`, `!alias`, `key` and `!key`
+- Added new Package **Back Previous**
+- 
 -
 -
 -
