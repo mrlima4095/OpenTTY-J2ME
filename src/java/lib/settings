@@ -23,12 +23,11 @@ quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset LABEL; unset
 quest.key=CFG
 
 list.title=Settings
-list.content=Locale,Hostname,Query Storage,Server Page,Network Port,Repo Adress
+list.content=Device Language,Device Name,Query Storage,Server Page,Network Port,PackJ Repository
 
-
-Locale=execute set VALUE=LOCALE; set LABEL=Device Language; cfg run;
-Hostname=execute set VALUE=HOSTNAME; set LABEL=Set host name; cfg run;
-Query Storage=execute set VALUE=QUERY; set LABEL=Query file name; cfg run;
-Server Page=execute set VALUE=RESPONSE; set LABEL=Page for Server (HTML files with HEADERS); cfg run;
+Device Language=execute set VALUE=LOCALE; set LABEL=Device Language; cfg run;
+Device Name=execute set VALUE=HOSTNAME; set LABEL=Device Name; cfg run;
+Query Storage=execute set VALUE=QUERY; set LABEL=Query target file; cfg run;
+Server Page=execute set VALUE=RESPONSE; set LABEL=Page for Server (file with headers); cfg run;
 Network Port=execute set VALUE=PORT; set LABEL=Service Port (Bind and Server); cfg run;
-Repo Adress=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); cfg run;
+PackJ Repository=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); cfg run;
