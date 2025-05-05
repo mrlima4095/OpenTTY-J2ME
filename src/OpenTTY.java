@@ -17,7 +17,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14.1-01x63";
+                   build = "2025-1.14.1-01x64";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -429,13 +429,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (method.equals("thread")) { if (replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(expression)) { processCommand(command); } }
         else if (method.equals("trace")) { if (trace.containsKey(expression)) { processCommand(command); } }
         else if (method.equals("screen")) { if (desktops.containsKey(expression)) { processCommand(command); } }
-        
+        else if (method.equals("alias")) { if (aliases.containsKey(expression)) { processCommand(command); } }
+        else if (method.equals("key")) { if (key.containsKey(expression)) { processCommand(command); } }
+
         else if (method.equals("!file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { return; } } } processCommand(command); } 
         else if (method.equals("!root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { return; } } processCommand(command); }
         else if (method.equals("!thread")) { if (replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(expression)) { } else { processCommand(command); } }
         else if (method.equals("!trace")) { if (trace.containsKey(expression)) { } else { processCommand(command); } }
         else if (method.equals("!screen")) { if (desktops.containsKey(expression)) { } else { processCommand(command); } }
-        
+        else if (method.equals("!alias")) { if (aliases.containsKey(expression)) { } else { processCommand(command); } }
+        else if (method.equals("!key")) { if (key.containsKey(expression)) { } else { processCommand(command); } }
+
     }   
     
     // API 006 - (Process) 
