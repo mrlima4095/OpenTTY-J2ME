@@ -23,4 +23,4 @@ info=execute about bprevious;
 [ COMMAND ]
 
 item.label=Back
-item.cmd=execute back;
+item.cmd=execute case screen (bp.back) execute x11 load bp.back;
