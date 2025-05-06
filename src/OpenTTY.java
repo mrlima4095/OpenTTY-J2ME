@@ -163,6 +163,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
         else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
+        else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
         else if (mainCommand.equals("clear") || mainCommand.equals("cls")) { stdout.setText(""); } 
@@ -282,7 +283,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("nano", nanoContent); notifyDestroyed(); }
         
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
