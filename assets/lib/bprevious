@@ -10,7 +10,7 @@ api.error=execute log add error BackPrevious requires OpenTTY 1.14 or newer!; ec
 command=xterm,back
 
 xterm=execute x11 set bp.back; x11 term;
-back=execute case screen (bp.back) x11 load bp.back;
+back=execute case screen (bp.back) execute x11 load bp.back;
 
 shell.name=back
 shell.args=item,info
