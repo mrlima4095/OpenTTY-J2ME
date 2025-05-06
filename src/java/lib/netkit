@@ -4,10 +4,15 @@ name=NetKit
 version=1.2
 description=Network Center
 
-command=nk,pingw
+command=nk
 
 nk=execute x11 list /java/lib/netkit;
-pingw=execute install nano; getty; ping $INPUT; set OLD_TITLE=$TITLE; title Ping; warn $.OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true 
+
+shell.name=nk
+shell.args=ping,gaddr
+
+ping=execute install nano; getty; ping $INPUT; set OLD_TITLE=$TITLE; title WebSite Ping; warn $.OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true 
+gaddr=execute install nano; getty; gaddr $INPUT; set OLD_TITLE=$TITLE; title Address Finder; warn $.OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true
 
 [ DISPLAY ]
 
@@ -23,7 +28,8 @@ Connect To=execute set TOOL=nc; set LABEL=IP Adress; x11 quest /java/lib/netkit;
 Get Local Adress=execute x11 list /java/lib/netkit; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $.OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
 Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress; x11 quest /java/lib/netkit;
 GoBuster Search=execute set TOOL=gobuster; set LABEL=WebSite URL; x11 quest /java/lib/netkit;
-Ping a WebSite=execute set TOOL=pingw; set LABEL=Web Domain; x11 quest /java/lib/netkit;
+Address Finder=execute set TOOL=nk gaddr; set LABEL=Web Domain; x11 quest /java/lib/netkit;
+Ping a WebSite=execute set TOOL=nk ping; set LABEL=Web Domain; x11 quest /java/lib/netkit;
 Run Bind=execute bind;
 Run Server=execute server; 
 
