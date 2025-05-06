@@ -1,5 +1,5 @@
 User-Agent=Mozilla/5.0 (OpenTTY $VERSION)
-Content-Type=application/json
+Content-Type=text/html,application/json,*/*
 Accept-Encoding=gzip, deflate, br
 Accept-Language=$LOCALE,en;q=0.9
 Accept-Charset=utf-8, iso-8859-1;q=0.8
