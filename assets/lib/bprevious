@@ -12,15 +12,3 @@ command=xterm,back
 xterm=execute x11 set bp.back; x11 term;
 back=execute case screen (bp.back) execute x11 load bp.back;
 
-shell.name=back
-shell.args=item,info
-
-item=execute x11 item bprevious;
-info=execute about bprevious;
-
-
-
-[ COMMAND ]
-
-item.label=Back
-item.cmd=execute case screen (bp.back) execute x11 load bp.back;
