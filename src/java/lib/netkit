@@ -11,8 +11,8 @@ nk=execute x11 list /java/lib/netkit;
 shell.name=nk
 shell.args=ping,gaddr
 
-ping=execute install nano; getty; ping $INPUT; set OLD_TITLE=$TITLE; title WebSite Ping; warn $.OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true 
-gaddr=execute install nano; getty; gaddr $INPUT; set OLD_TITLE=$TITLE; title Address Finder; warn $.OUTPUT; rraw; get nano; title $OLD_TITLE; unset OLD_TITLE; true
+ping=execute install nano; getty; ping $INPUT; set OLD_TITLE=$.TITLE; title WebSite Ping; warn $.OUTPUT; rraw; get nano; title $.OLD_TITLE; unset OLD_TITLE; true 
+gaddr=execute install nano; getty; gaddr $INPUT; set OLD_TITLE=$.TITLE; title Address Finder; warn $.OUTPUT; rraw; get nano; title $.OLD_TITLE; unset OLD_TITLE; true
 
 [ DISPLAY ]
 
