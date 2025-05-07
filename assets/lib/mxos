@@ -5,15 +5,19 @@ version=1.0
 description=Java Mobile
 
 api.version=1.14
-api.error=execute 
+api.error=execute log add error MobiX requires OpenTTY API 1.14; echo [ MobiX ] Loading failed!; echo [ MobiX ] See logs to more info.;
 
 process.name=mxos
 
-config=
-command=
+config=execute
+command=mxos
+
+mxos=execute mxos ;
 
 shell.name=mxos
-shell.args=init
+shell.args=load
+
+load=execute if 
 
 
 [ COMMAND ]
