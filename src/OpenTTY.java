@@ -287,9 +287,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
         else if (mainCommand.equals("catch")) {  }
-        else if (mainCommand.equals("neofetch")) { 
-            echoCommand("  mmm  " + env("$USERNAME") + "@" + env("$HOSTNAME") + "\n  #\" \"# " + "--------------" + "\n  #   # " + env("$TYPE") + "\n \"#m#\"" + env("$CONFIG $PROFILE")); 
-        }
+        else if (mainCommand.equals("neofetch")) {  }
 
         // API 014 - (OpenTTY)
         // |
