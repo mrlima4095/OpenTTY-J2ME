@@ -6,9 +6,6 @@ Copyright (C) 2025 - Mr. Lima
 
 - `read [key] [file]`: Read file and parse it content to **key**
 - `getopt [args]`: Remove command and return arguments
-- ``:
-- ``:
-- ``:
 
 [ _Updates_ ]
 
@@ -16,12 +13,3 @@ Copyright (C) 2025 - Mr. Lima
 - **Settings** using back to return to previous screen
 - New case checkers `screen`, `!screen`, `alias`, `!alias`, `key` and `!key`
 - Added new Package **Back Previous**
-- 
--
--
--
--
-
-[ _Notes_ ]
-
-- 
