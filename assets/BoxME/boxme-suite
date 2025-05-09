@@ -1,0 +1,6 @@
+shell.name=boxme-new
+shell.args=boxfile,boxname
+
+boxfile=execute install nano; touch; add quest.name=BoxMe (New Machine); add quest.label=
+quest.key=NAME
+quest.cmd=execute 
