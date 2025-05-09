@@ -4,6 +4,6 @@ From: Mr Lima (Lead Developer)
 
 ------------------------------
 
-In end of April, I will release officially OpenTTY 1.14 and in this release a lot of functions will be added. I will load a preview of JAR package in Yang and the API is free to be tested with ViaVersion. 
+Good morning, afternoon and evening for everyone!
 
-apr 15, 2025
+May 9, 2025
