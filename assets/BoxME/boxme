@@ -44,16 +44,15 @@ canvas.mouse=
 canvas.background=
 canvas.background.type=
 
-quest.title=
+quest.title=Machine Name
 quest.label=
 quest.key=
 quest.cmd=
 quest.back=
 quest.back.label=
 
-list.title=
-list.content=
-list.back.label=
+list.title=Machine Type
+list.content=Windows Mobile,Symbian,Native JVM,Android 2
 list.back=
 list.button=
 
