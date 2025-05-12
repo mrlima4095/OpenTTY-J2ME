@@ -48,7 +48,7 @@ Discord (MIDlet)=execute warn This is a 3rd MIDlet from 'gtrxac'; bg exec sleep 
 PackJ (Update)=execute set RESOURCE=yang; yang install;
 PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install;
 X Server 0.4=execute set RESOURCE=xorg-client; yang install;
-BoxME Setup=execute install nano; proxy raw.githubusercontent.com/mrlima4095/main/BoxME/install.sh; install .boxme-install.sh; get nano; run .boxme-install.sh;
+BoxME Setup=execute install nano; proxy raw.githubusercontent.com/mrlima4095/BoxME/main/install.sh; install .boxme-install.sh; get nano; run .boxme-install.sh;
 Back Previous=execute set RESOURCE=bprevious; yang install;
 ImmersiveShell=execute set RESOURCE=sh2me; yang install; 
 Auto Syntax=execute set RESOURCE=tab; yang install; 
