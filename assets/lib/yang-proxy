@@ -53,7 +53,6 @@ ImmersiveShell=execute set RESOURCE=sh2me; yang install;
 Auto Syntax=execute set RESOURCE=tab; yang install; 
 Auto Clean=execute set RESOURCE=autogc; yang install;
 Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install; set RESOURCE=debuggers; yang install; set RESOURCE=jauth2; yang install;
-MobiX Loader=execute set RESOURCE=mxos; yang install; set RESOURCE=forge; yang install;
+Mraw.githubusercontent.com/mrlima4095/main/BoxME/install.sh;ob e iX Loader=execute set RESOURCE=mxos; yang install; set RESOURCE=forge; yang install;
 ViaVersion=execute set RESOURCE=viaversion; yang install;
 Updater=execute set RESOURCE=sync; yang install;
-
