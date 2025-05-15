@@ -10,7 +10,7 @@ bug fix
 general
 
 - process structure
-- recovery menu reading list select button to open tool
+- recovery menu reading list select button to open to\ol
 - changed kill kernel request to `sendsig` with a table `{pid=[pid],signal=[signal]}`
 
 lua
