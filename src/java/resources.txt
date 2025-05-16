@@ -1,21 +1,20 @@
 .
-├── java
-│ ├── bin
-│ │ ├── icon.png
-│ │ ├── java
-│ │ └── sh
-│ ├── etc
-│ │ ├── fstab
-│ │ ├── gobuster
-│ │ ├── headers
-│ │ ├── index.html
-│ │ └── initd.sh
-│ ├── help.txt
-│ ├── lib
-│ │ ├── netkit
-│ │ ├── settings
-│ │ └── yang
-│ └── resources.txt
-├── OpenTTY.java
-└── scripts
-    └── debug.sh
+| java/
+| | bin/
+| | | icon.png
+| | | java
+| | | sh
+| | etc/
+| | | fstab
+| | | gobuster
+| | | headers
+| | | index.html
+| | | initd.sh
+| | help.txt
+| | lib/
+| | | netkit
+| | | settings
+| | | yang
+| | resources.txt
+| scripts/
+| | debug.sh
