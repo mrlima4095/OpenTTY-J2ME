@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# 
-#   python SDK.py
-#
-#       Default OpenTTY Package Creator Tool, official SDK to
-#   create Applications/ Services/ Daemon to OpenTTY API and
-#   it based forks available.
-#
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, Menu
@@ -49,15 +42,12 @@ class OpenTTYSDK:
         frame = tk.Frame(self.root)
         frame.pack(expand=1, fill="both")
 
-        # Create the line number display area
         self.line_numbers = tk.Text(frame, width=4, padx=3, takefocus=0, bd=0, bg='lightgray', fg='black', font=("Arial", 12))
         self.line_numbers.pack(side="left", fill="y")
 
-        # Create the main text editor area
         self.text_editor = tk.Text(frame, wrap="word", font=("Arial", 12))
         self.text_editor.pack(side="right", expand=1, fill="both")
 
-        # Sync the line numbers with the text editor
         self.text_editor.bind("<KeyRelease>", self.update_line_numbers)
         self.text_editor.bind("<ButtonRelease-1>", self.update_line_numbers)
         self.update_line_numbers()
