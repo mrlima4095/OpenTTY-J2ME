@@ -9,3 +9,4 @@ Copyright (C) 2025 - Mr. Lima
 
 - Added new Package **BoxME**
 - **Yang** updated to **1.4**
+- Better resources message
