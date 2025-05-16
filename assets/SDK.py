@@ -63,10 +63,8 @@ class OpenTTYSDK:
         self.update_line_numbers()
 
     def update_line_numbers(self, event=None):
-        # Get the number of lines in the text editor
         lines = int(self.text_editor.index('end-1c').split('.')[0])
 
-        # Update the line numbers
         self.line_numbers.delete(1.0, tk.END)
         for i in range(1, lines + 1):
             self.line_numbers.insert(tk.END, f"{i}\n")
@@ -99,9 +97,9 @@ class OpenTTYSDK:
     def create_canvas(self): self.text_editor.delete(1.0, tk.END); template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\n\ninclude=\n\nconfig=\ncommand=\n\n[ DISPLAY ]\n\nscreen.title=\nscreen.content=\nscreen.content.style=\nscreen.back.label=\nscreen.back=\nscreen.button=\nscreen.button.cmd=\n\ncanvas.title=\ncanvas.content=\ncanvas.content.type=\ncanvas.content.link=\ncanvas.content.style=\ncanvas.button=\ncanvas.button.cmd=\ncanvas.back.label=\ncanvas.back=\ncanvas.mouse=\ncanvas.background=\ncanvas.background.type=\n\nquest.title=\nquest.label=\nquest.key=\nquest.cmd=\nquest.back=\n\nlist.title=\nlist.content=\nlist.back.label=\nlist.back=\nlist.button=\n\n"; self.text_editor.insert(tk.END, template); self.update_line_numbers();
     def create_advanced(self): self.text_editor.delete(1.0, tk.END); template = "[ Config ]\n\nname=\nversion=\ndescription=\n\napi.version=\napi.error=\nprocess.name=\nprocess.type=\nprocess.port=\nprocess.host=\nprocess.db=\n\ninclude=\n\nconfig=\ncommand=\n\nshell.name=\nshell.args=\n\n[ COMMAND ]\n\nitem.label=\nitem.cmd=\n\n[ DISPLAY ]\n\nscreen.title=\nscreen.content=\nscreen.content.style=\nscreen.back.label=\nscreen.back=\nscreen.button=\nscreen.button.cmd=\n\ncanvas.title=\ncanvas.content=\ncanvas.content.type=\ncanvas.content.link=\ncanvas.content.style=\ncanvas.button=\ncanvas.button.cmd=\ncanvas.back.label=\ncanvas.back=\ncanvas.mouse=\ncanvas.background=\ncanvas.background.type=\n\nquest.title=\nquest.label=\nquest.key=\nquest.cmd=\nquest.back=\n\nlist.title=\nlist.content=\nlist.back.label=\nlist.back=\nlist.button=\n\n"; self.text_editor.insert(tk.END, template); self.update_line_numbers();
 
-    def build(self): 
-    def debug(self):
-    def run(self):
+    def build(self): return
+    def debug(self): return
+    def run(self): return
 
 
 if __name__ == "__main__":
