@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# 
+#
 #   python server.py
 #
 #       OpenTTY Proxy Server (default) to provide Yang Packages, and it
@@ -9,7 +9,7 @@
 #   attribute 'MIDlet-Proxy' of MANIFEST.MF). Recommended host your own
 #   session if you wanna modify this software or don't like to leave logs
 #   that you have connected there. (I'M NOT PARTNER OF nnproject).
-# 
+#
 
 import sys
 import socket
@@ -35,7 +35,7 @@ class Server:
     def start(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind((self.host, self.port))
-            server_socket.listen(50)
+            server_socket.listen(31522)
             print(f"Listening on port {self.port}")
 
             while True:
@@ -71,7 +71,7 @@ class Server:
     def parse_command(self, command):
         parts = command.split(maxsplit=1)
         cmd = parts[0]
-        
+
         if cmd == "get": return self.get_file_content(parts[1] if len(parts) > 1 else "")
         elif cmd == "http": return self.fetch_url(parts[1] if len(parts) > 1 else "")
         elif cmd == "post": return self.post_request(parts[1] if len(parts) > 1 else "")
@@ -106,7 +106,7 @@ class Server:
             parts = post_command.split(maxsplit=1)
             if len(parts) < 2:
                 return "URL or data is missing."
-                
+
             url, data = parts
             data_dict = dict(param.split('=') for param in data.split('&'))
             encoded_data = urllib.parse.urlencode(data_dict).encode('utf-8')
@@ -127,8 +127,6 @@ class Server:
             return f"[-] {e}"
 
     def execute_command(self, command):
-        if command.startswith("sudo"): return "SUDO IS BLOCKED!"
-
         try: return subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).decode('utf-8')
         except subprocess.CalledProcessError as e: return e.output.decode('utf-8')
 
