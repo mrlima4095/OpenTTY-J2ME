@@ -1,5 +1,5 @@
 OpenTTY $VERSION - $PATCH
-Copyright (C) 2024 - Mr. Lima
+Copyright (C) 2025 - Mr. Lima
 
 
 [ Commands Overview ]
@@ -19,14 +19,6 @@ General Utilities:
   execute, exec, env, hostname
   logout, whoami, start, ps, stop, kill
   uname, tty, ttysize, version
-
-[ API Info ]
-
-Package Manager:
-  local - /java/lib/yang
-
-  To acess it, import lib and
-  run command 'yang'
 
 [ Web Project ]
 
