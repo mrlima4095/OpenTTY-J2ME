@@ -1,14 +1,13 @@
 #!/java/bin/sh
 # -*- coding: utf-8 -*-
-#    
-#    . /java/etc/initd.sh 
-#    
+#
 
 set TTY=/java/optty1
 
 set HOSTNAME=localhost
 set RESPONSE=/java/etc/index.html
 
+set REPO=31.97.20.160
 set PORT=31522
 set QUERY=nano
 
