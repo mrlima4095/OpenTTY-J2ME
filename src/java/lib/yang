@@ -31,7 +31,7 @@ quest.cmd=execute yang install;
 [ Index ]
 
 list.title=Repository
-list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,Discord (MIDlet),DeviceFS,FilesME,Forge,Github (MIDlet),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,X Server 0.4
+list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,Discord (MIDlet),DeviceFS,FilesME,Forge,Github (MIDlet),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,LLM Client,MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,X Server 0.4
 list.button=Install
 
 Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install; set RESOURCE=debuggers; yang install; set RESOURCE=jauth2; yang install;
@@ -50,6 +50,7 @@ JAuth2=execute set RESOURCE=jauth2; yang install;
 JBuntu=execute set RESOURCE=jbuntu; yang install;
 JBenchmark=execute set RESOURCE=debuggers; yang install;
 J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
+LLM Client=execute set RESOURCE=llm; yang install;
 MobiX Loader=execute set RESOURCE=mxos; yang install; set RESOURCE=forge; yang install;
 PackJ (Update)=execute set RESOURCE=yang; yang install;
 PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install;
