@@ -32,3 +32,4 @@
 [2025-1.14.1-01x64]	New case operators 'screen', 'alias', 'key' and they negative forms
 [2025-1.14.1-01x65] Added Command 'GETOPT' 
 [2025-1.14.1-01x66] Release 1.14.1
+[2025-1.14.2-01x68] 1.14.2 Suite case | Added Command 'VIEW'
