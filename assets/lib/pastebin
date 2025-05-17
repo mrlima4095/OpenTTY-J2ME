@@ -6,7 +6,7 @@ description=Paste Client
 
 include=/java/lib/settings
 
-config=echo [PasteBin] To setup your API Key use 'pastebin api'
+config=echo [ PasteBin ] To setup your API Key use 'pastebin api'
 command=pastebin
 
 pastebin=execute x11 quest pastebin;
