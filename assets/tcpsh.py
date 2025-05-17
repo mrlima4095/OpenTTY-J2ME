@@ -37,7 +37,7 @@ class Server:
     def start(self):
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-            server_socket.bind((self.host, self.port))
+            server_socket.bind((self.host, int(self.port)))
             server_socket.listen(31522)
             print(f"[+] Listening on port {self.port}")
 
