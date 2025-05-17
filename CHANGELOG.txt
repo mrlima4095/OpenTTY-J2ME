@@ -13,6 +13,8 @@ Copyright (C) 2025 - Mr. Lima
 - Added new Package **BoxME**
 - **Yang** updated to **1.4**
 - Better resources message
+- Arguments clear pattern **"** when argument starts and ends with it
+- JSON and other parsers required inform file (not considering nano by default anymore)
 
 
 [ _Notes_ ]
