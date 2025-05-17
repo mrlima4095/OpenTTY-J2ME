@@ -70,7 +70,7 @@ class Server:
             return "Missing filename\n"
         elif not os.path.isfile(filename):
             return f"File '{filename}' not found.\n"
-        elif filename.startswith("/") or filename.startswith(".."):
+        elif filename.startswith("/") or ".." in filename :
             return "Permission Error\n"
         else:
             try:
