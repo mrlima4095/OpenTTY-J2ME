@@ -21,11 +21,21 @@ import http.client
 import os
 
 class Server:
-    def __init__(self, host='0.0.0.0', port=10141, blacklist_file=None):
-        self.host = host
-        self.port = port
+    def __init__(self):
+        self.config = {}
+
+        with open("server.properties", "r") as file:
+            for line in file.readlines():
+                line = line.strip()
+                elif "=" in line:
+                    key, value = line.split("=", 1)
+                    self.config[key.strip()] = value.strip()
+
+        self.host = self.config['host']
+        self.port = self.config['port']
 
     def start(self):
+
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind((self.host, self.port))
             server_socket.listen(31522)
@@ -38,6 +48,13 @@ class Server:
 
     def handle_client(self, client_socket, addr):
         print(f"[+] {addr[0]} connected")
+
+        passwd = client_socket.recv(256).decode('utf-8').strip()
+        if passwd != self.config['passwd']: 
+            client_socket.sendall("Wrong password".encode('utf-8'))
+            client_socket.close()
+
+            return
 
         try:
             while True:
