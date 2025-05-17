@@ -12,7 +12,7 @@ command=llm
 llm=execute llm chat
 
 shell.name=llm
-shell.args=server
+shell.args=server,post,chat
 
 server=execute set VALUE=LLM_SERVER; set LABEL=LLM Server Address; cfg run; 
 post=execute install nano; getty; install stdout-backup; tick Connecting...; set OLD_QUERY=$QUERY; query socket://$REPO post http://localhost:11434/api/generate model=gemma3:1b=prompt=$LLM_QUERY&stream=false; set QUERY=$OLD_QUERY; unset OLD_QUERY; tick Generating...; clear; cat stdout-backup; rm stdout-backup; pinc; grep response nano; get nano; tick;
