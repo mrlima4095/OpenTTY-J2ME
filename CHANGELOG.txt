@@ -5,6 +5,8 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `view [raw]`: Start a HTML Viewer window direct from argument 
+- `conf [file]`: Parse JSON to INI format
+- `pinc`: Parse JSON to INI format (Direct nano content) 
 
 [ _Updates_ ]
 
