@@ -27,7 +27,7 @@ class Server:
         with open("server.properties", "r") as file:
             for line in file.readlines():
                 line = line.strip()
-                elif "=" in line:
+                if "=" in line:
                     key, value = line.split("=", 1)
                     self.config[key.strip()] = value.strip()
 
