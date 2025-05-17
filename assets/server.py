@@ -63,16 +63,15 @@ class Server:
         if cmd == "get": return self.get_file_content(parts[1] if len(parts) > 1 else "")
         elif cmd == "http": return self.fetch_url(parts[1] if len(parts) > 1 else "")
         elif cmd == "post": return self.post_request(parts[1] if len(parts) > 1 else "")
-        elif cmd == "fetch": return self.fetch_repo()
-        else: return "Invalid API request"
+        else: return "Invalid API request\n"
 
     def get_file_content(self, filename):
         if not filename:
-            return "Missing filename"
+            return "Missing filename\n"
         elif not os.path.isfile(filename):
-            return f"File '{filename}' not found."
+            return f"File '{filename}' not found.\n"
         elif filename.startswith("/") or filename.startswith(".."):
-            return "Permission Error"
+            return "Permission Error\n"
         else:
             try:
                 with open(filename, "rt") as f:
@@ -82,20 +81,18 @@ class Server:
 
     def fetch_url(self, url):
         if not url:
-            return "Missing"
+            return "Missing URL\n"
         try:
             with urllib.request.urlopen(url if url.startswith("http://") or url.startswith("https://") else "http://" + url) as response:
                 return response.read().decode('utf-8')
         except Exception as e:
             return e
 
-    def fetch_repo(self): system("git pull"); return "Server updated!"
-
     def post_request(self, post_command):
         try:
             parts = post_command.split(maxsplit=1)
             if len(parts) < 2:
-                return "URL or data is missing."
+                return "URL or data is missing.\n"
 
             url, data = parts
             data_dict = dict(param.split('=') for param in data.split('&'))
