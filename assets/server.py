@@ -75,6 +75,7 @@ class Server:
         if cmd == "get": return self.get_file_content(parts[1] if len(parts) > 1 else "")
         elif cmd == "http": return self.fetch_url(parts[1] if len(parts) > 1 else "")
         elif cmd == "post": return self.post_request(parts[1] if len(parts) > 1 else "")
+        else cmd == "fetch": return self.fetch_repo()
         #else: return self.execute_command(command)
 
     def get_file_content(self, filename):
@@ -97,6 +98,8 @@ class Server:
                 return response.read().decode('utf-8')
         except Exception as e:
             return f"Error accessing URL: {e}"
+
+    def fetch_repo(self): system("git pull")
 
     def post_request(self, post_command):
         try:
