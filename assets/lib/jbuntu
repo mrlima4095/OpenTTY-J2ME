@@ -11,7 +11,7 @@ process.name=jbuntu
 
 include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 
-config=execute set JVERSION=1.3.1; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; hash yang-proxy; if ($OUTPUT != 0) import yang-proxy; if ($OUTPUT == 0) rm yang-proxy; hash jauth2; if ($OUTPUT != 0) import jauth2; if ($OUTPUT == 0) rm jauth2; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
+config=execute set JVERSION=1.3.1; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; hash jauth2; if ($OUTPUT != 0) import jauth2; if ($OUTPUT == 0) rm jauth2; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
 command=xterm,jbuntu
 
 xterm=execute x11 $DISPLAY jbuntu;
