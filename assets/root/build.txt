@@ -34,3 +34,4 @@
 [2025-1.14.1-01x66] Release 1.14.1
 [2025-1.14.2-01x68] 1.14.2 Suite case | Added Command 'VIEW'
 [2025-1.14.2-01x69]	Added Command 'CONF' and 'PINC'
+[2025-1.14.2-01x70]	Revert last build
