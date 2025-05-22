@@ -262,7 +262,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
-=======
+
         else if (mainCommand.equals("conf")) { if (argument.equals("")) { } else { echoCommand(parseConf(getcontent(argument))); } }
         else if (mainCommand.equals("json")) { if (argument.equals("")) { } else { echoCommand(parseJson(getcontent(argument))); } }
 >>>>>>> e550638 (Build "2025-1.14.2-01x70" | Revert last build)
