@@ -32,4 +32,3 @@ Address Finder=execute set TOOL=nk gaddr; set LABEL=Web Domain; x11 quest /java/
 Ping a WebSite=execute set TOOL=nk ping; set LABEL=Web Domain; x11 quest /java/lib/netkit;
 Run Bind=execute bind;
 Run Server=execute server; 
-
