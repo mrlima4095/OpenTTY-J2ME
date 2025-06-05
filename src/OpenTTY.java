@@ -90,7 +90,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(username); }
         else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh"); }
 
-
         // API 004 - (LCDUI Interface)
         // |
         // System UI
