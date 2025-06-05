@@ -279,7 +279,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).length() + "\t" + basename(argument)); } }
 
-
         // API 013 - (MIDlet)
         // |
         // General Utilities
