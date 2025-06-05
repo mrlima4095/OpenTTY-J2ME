@@ -7,6 +7,8 @@ Copyright (C) 2025 - Mr. Lima
 - `view [raw]`: Start a HTML Viewer window direct from argument 
 - `conf [file]`: Parse JSON to INI format
 - `time [command]`: Meter time of process in current Thread (ms)
+- `pushd [path]`: Add current directory to stack and charge to **path**
+- `popd`: Return to last directory in stack
 - `head [file]`: Read first 10 lines of **file**
 - `tail [file]`: Read last 10 lines of **file**
 
