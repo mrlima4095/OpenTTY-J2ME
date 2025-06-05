@@ -187,6 +187,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("server")) { new Server(env("$PORT $RESPONSE")); }
         // |
         // HTTP Interfaces
+        else if (mainCommand.equals("pong")) { pongCommand(argument); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); }
         else if (mainCommand.equals("http")) { new InjectorHTTP(argument); }
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
@@ -290,9 +291,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        
-
-        else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
         else if (mainCommand.equals("catch")) {  }
