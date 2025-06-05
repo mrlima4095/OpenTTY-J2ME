@@ -83,7 +83,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("log")) { MIDletLogs(argument); }
         else if (mainCommand.equals("logcat")) { echoCommand(logs); }
 
-
         // API 003 - (User-Integration)
         // |
         // Session
