@@ -19,7 +19,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String logs = "", path = "/", 
                    build = "2025-1.14.2-01x72";
     private Vector stack = new Vector(), 
-                   commandHistory = new Vector();
+                   history = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -43,7 +43,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("")) { commandHistory.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
+        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("")) { history.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
 
         else if (c == HELP) { processCommand("help"); }
         else if (c == NANO) { new NanoEditor(""); }
@@ -255,7 +255,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String in = getcontent(getCommand(argument)); String out = getArgument(argument); if (out.equals("")) { nanoContent = text2note(in); } else { writeRMS(out, text2note(in)); } } }
-        else if (mainCommand.equals("ph2s")) { StringBuffer script = new StringBuffer(); for (int i = 0; i < commandHistory.size() - 1; i++) { script.append(commandHistory.elementAt(i)); if (i < commandHistory.size() - 1) { script.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } }
+        else if (mainCommand.equals("ph2s")) { StringBuffer script = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { script.append(history.elementAt(i)); if (i < history.size() - 1) { script.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } }
         // |
         // Interfaces
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
@@ -270,7 +270,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("java")) { java(argument); }
         else if (mainCommand.equals("chmod")) { chmod(argument); }
         else if (mainCommand.equals("history")) { new History(); }
-        else if (mainCommand.equals("forget")) { commandHistory = new Vector(); }
+        else if (mainCommand.equals("forget")) { history = new Vector(); }
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/help.txt")); }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
@@ -496,7 +496,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else { String code; Hashtable objects = new Hashtable(); if (mainCommand.startsWith("/")) { code = read(mainCommand); } else if (mainCommand.equals("nano")) { code = nanoContent; } else { code = loadRMS(mainCommand, 1); } if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return; } String[] lines = split(code, ';'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); if (line.length() == 0) { continue; } try { if (line.indexOf('=') != -1) { String[] parts = split(line, '='); String objectName = parts[0].trim(); String className = parts[1].trim(); Class clazz = Class.forName(className); Object instance = clazz.newInstance(); objects.put(objectName, instance); } else if (line.indexOf('.') != -1) { String[] parts = split(line, '.'); String objectName = parts[0].trim(); if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } for (int j = 1; j < parts.length; j++) { Object object = (Object) objects.get(objectName); Class clazz = object.getClass(); echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); } } else if (line.startsWith("//")) { } else { throw new IOException("Invalid syntax"); } } catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return; } } }                
     }
     private void chmod(String node) { if (node == null || node.length() == 0) { return; } int status = 0; try { if (node.equals("http")) { node = "javax.microedition.io.Connector.http"; ((HttpConnection) Connector.open("http://ipinfo.io")).close(); status = 1; } else if (node.equals("socket")) { node = "javax.microedition.io.Connector.socket"; ((SocketConnection) Connector.open("socket://1.1.1.1:53")).close(); status = 1; } else if (node.equals("file")) {  node = "javax.microedition.io.Connector.file"; FileSystemRegistry.listRoots(); status = 1; } else if (node.equals("prg")) { node = "javax.microedition.io.PushRegistry"; PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); status = 1; } else { echoCommand("chmod: " + node + ": not found"); } } catch (SecurityException e) { status = 2; } catch (Exception e) { echoCommand(e.getMessage());  } if (status == 1) { MIDletLogs("add info Permission '" + node + "' granted"); } else if (status == 2) { MIDletLogs("add error Permission '" + node + "' denied"); } }
-    public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < commandHistory.size(); i++) { screen.append((String) commandHistory.elementAt(i), null); } } }
+    public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
 
     // API 015 - (Scripts)
     // |
