@@ -6,6 +6,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - `view [raw]`: Start a HTML Viewer window direct from argument 
 - `conf [file]`: Parse JSON to INI format
+- `pong [ip:port]`: Ping in a socket address
 - `time [command]`: Meter time of process in current Thread (ms)
 - `pushd [path]`: Add current directory to stack and charge to **path**
 - `popd`: Return to last directory in stack
