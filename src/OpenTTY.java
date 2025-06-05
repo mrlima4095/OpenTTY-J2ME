@@ -17,7 +17,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/",
-                   build = "2025-1.14.2-01x71";
+                   build = "2025-1.14.2-01x72";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -278,7 +278,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("time")) {
+            if (argument.equals("")) { } 
+            else {
+                long startTime = System.currentTimeMillis(); 
+                processCommand(argument);
+                long endTime = System.currentTimeMillis(); 
+                echoCommand("at " + (endTime - startTime) / 1000 + "s");  
+            }
+        }
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
@@ -507,7 +515,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         Hashtable lib = parseProperties(getcontent(script));
         // |
-        // Current API check
+        // Verify current API version
         if (lib.containsKey("api.version")) { if (!env("$VERSION").startsWith((String) lib.get("api.version"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
         // |
         // Process Handlers
