@@ -221,6 +221,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ls")) { viewer("Resources", read("/java/resources.txt")); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else { if (argument.startsWith("/")) { if (paths.containsKey(argument)) { path = argument; } else { echoCommand("cd: " + basename(argument) + ": not found"); } } else if (argument.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { processCommand(path.equals("/") ? "cd " + "/" + argument : "cd " + path + "/" + argument); } } }
+        else if (mainCommand.equals("pushd")) {
+            if (argument.equals("")) { echoCommand("pushd: missing directory"); } 
+            else {
+                if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } 
+                else { stack.addElement(path); path = argument; echoCommand(path); }
+            }
+        }
+        else if (mainCommand.equals("popd")) {
+            if (dirStack.isEmpty()) { echoCommand("popd: directory stack empty"); } 
+            else { path = (String) dirStack.lastElement(); dirStack.removeElementAt(dirStack.size() - 1); echoCommand(path); }
+        }
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(""); } else if (argument.equals("v")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { echoCommand(recordStores[i]); } } } } catch (RecordStoreException e) { } } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }        
         // |
         // Device Files
@@ -279,6 +290,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
+        
+
         else if (mainCommand.equals("pong")) {  }
         else if (mainCommand.equals("lang")) {  }
         else if (mainCommand.equals("track")) {  }
