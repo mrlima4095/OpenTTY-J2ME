@@ -245,24 +245,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("read")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); attributes.put(args[0], getcontent(args[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
         else if (mainCommand.equals("find")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file = getcontent(args[1]), value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
-        else if (mainCommand.equals("head")) {
-        if (argument.equals("")) { return; }
-            String content = getcontent(argument);
-            String[] lines = split(content, '\n');
-            int count = Math.min(10, lines.length);
-            for (int i = 0; i < count; i++) {
-                echoCommand(lines[i]);
-            }
-        }
-        else if (mainCommand.equals("tail")) {
-            if (argument.equals("")) { return; }
-            String content = getcontent(argument);
-            String[] lines = split(content, '\n');
-            int start = Math.max(0, lines.length - 10);
-            for (int i = start; i < lines.length; i++) {
-                echoCommand(lines[i]);
-            }
-        }
+        else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String content = getcontent(argument); String[] lines = split(content, '\n'); int count = Math.min(10, lines.length); for (int i = 0; i < count; i++) { echoCommand(lines[i]); } } }
+        else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String content = getcontent(argument); String[] lines = split(content, '\n'); int start = Math.max(0, lines.length - 10); for (int i = start; i < lines.length; i++) { echoCommand(lines[i]); } } }
         // |
         // Text Parsers
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
