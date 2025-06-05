@@ -160,7 +160,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
         else if (mainCommand.equals("clear") || mainCommand.equals("cls")) { stdout.setText(""); }
-        else if (mainCommand.equals("time")) { echoCommand(split(new java.util.Date().toString(), ' ')[3]); }
         else if (mainCommand.equals("seed")) { try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } }
 
         // API 009 - (Threads)
