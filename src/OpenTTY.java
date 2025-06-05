@@ -170,7 +170,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
         else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }, "Background").start(); }
 
-
         // API 010 - (Requests)
         // |
         // Connecting to Device API
@@ -179,7 +178,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // PushRegistry
         else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } catch (ClassNotFoundException e) { echoCommand(e.getMessage()); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
-
 
         // API 011 - (Network)
         // |
