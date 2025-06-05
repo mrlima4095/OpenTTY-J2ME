@@ -458,7 +458,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // HTTP Interfaces
     private void pingCommand(String url) { if (url == null || url.length() == 0) { return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } long startTime = System.currentTimeMillis(); try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); long endTime = System.currentTimeMillis(); echoCommand("Ping to " + url + " successful, time=" + (endTime - startTime) + "ms"); conn.close(); } catch (IOException e) { echoCommand("Ping to " + url + " failed: " + e.getMessage()); } }
     private void pongCommand(String address) { 
-        if (address != null || address.length() == 0) { } 
+        if (address == null || address.length() == 0) { } 
         else {
             long startTime = System.currentTimeMillis();
             SocketConnection socket = null;
