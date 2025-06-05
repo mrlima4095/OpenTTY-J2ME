@@ -37,3 +37,4 @@
 [2025-1.14.2-01x70]	Revert last build
 [2025-1.14.2-01x71] Added Command 'HEAD' and 'TAIL'
 [2025-1.14.2-01x72] Modified Command 'TIME'
+[2025-1.14.2-01x73] Modified history vector key
