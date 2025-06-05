@@ -17,7 +17,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/",
-                   build = "2025-1.14.2-01x70";
+                   build = "2025-1.14.2-01x71";
     private Vector commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -76,7 +76,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("unset")) { unsetCommand(argument); }
         else if (mainCommand.equals("export")) { if (argument.equals("")) { processCommand("env"); } else { attributes.put(argument, ""); } }
         else if (mainCommand.equals("env")) { if (argument.equals("")) { Enumeration keys = attributes.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) attributes.get(key); if (!key.equals("OUTPUT") && !value.equals("")) { echoCommand(key + "=" + value.trim()); } } } else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { echoCommand("env: " + argument + ": not found"); } }
-
 
         // API 002 - (Logs)
         // |
