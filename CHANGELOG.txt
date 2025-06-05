@@ -6,7 +6,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - `view [raw]`: Start a HTML Viewer window direct from argument 
 - `conf [file]`: Parse JSON to INI format
-- `time [command]`: Meter time of process in current Thread
+- `time [command]`: Meter time of process in current Thread (ms)
 - `head [file]`: Read first 10 lines of **file**
 - `tail [file]`: Read last 10 lines of **file**
 
