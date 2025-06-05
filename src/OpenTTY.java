@@ -229,8 +229,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         else if (mainCommand.equals("popd")) {
-            if (dirStack.isEmpty()) { echoCommand("popd: directory stack empty"); } 
-            else { path = (String) dirStack.lastElement(); dirStack.removeElementAt(dirStack.size() - 1); echoCommand(path); }
+            if (stack.isEmpty()) { echoCommand("popd: directory stack empty"); } 
+            else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(path); }
         }
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(""); } else if (argument.equals("v")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { echoCommand(recordStores[i]); } } } } catch (RecordStoreException e) { } } else { String[] files = (String[]) paths.get(path); for (int i = 0; i < files.length; i++) { if (!files[i].equals("..")) { echoCommand(files[i].trim()); } } } }        
         // |
