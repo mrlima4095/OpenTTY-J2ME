@@ -16,9 +16,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
-    private String logs = "", path = "/",
+    private String logs = "", path = "/", 
                    build = "2025-1.14.2-01x72";
-    private Vector commandHistory = new Vector();
+    private Vector stack = new Vector(), 
+                   commandHistory = new Vector();
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -283,7 +284,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 long startTime = System.currentTimeMillis(); 
                 processCommand(argument);
                 long endTime = System.currentTimeMillis(); 
-                echoCommand("at " + (endTime - startTime) / 1000 + "s");  
+                echoCommand("at " + (endTime - startTime) + "ms");  
             }
         }
         else if (mainCommand.equals("pong")) {  }
