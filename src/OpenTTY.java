@@ -516,7 +516,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (script == null || script.length() == 0) { return; }
 
         Hashtable lib = parseProperties(getcontent(script));
-
+        
+        // |
+        // Current API check
         if (lib.containsKey("api.version")) { if (!env("$VERSION").startsWith((String) lib.get("api.version"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
 
         if (lib.containsKey("process.name")) { start((String) lib.get("process.name")); }
