@@ -272,13 +272,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 }
 
-                // Verifica se o diretório existe
                 if (!paths.containsKey(base)) {
                     echoCommand("dir: " + basename(base) + ": not found");
                     return;
                 }
 
-                // Adiciona conteúdo do diretório atual
                 String[] files = (String[]) paths.get(base);
                 if (files != null) {
                     for (int i = 0; i < files.length; i++) {
