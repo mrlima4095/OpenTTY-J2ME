@@ -389,7 +389,34 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 005 - (Operators)
     // |
     // Operators
-    private void ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); String command = argument.substring(lastParenthesis + 1).trim(); String[] parts = split(expression, ' '); if (parts.length == 3) { if (parts[1].equals("startswith")) { if (parts[0].startsWith(parts[2])) { processCommand(command); } } else if (parts[1].equals("!startswith")) { if (!parts[0].startsWith(parts[2])) { processCommand(command); } } else if (parts[1].equals("endswith")) { if (parts[0].endsWith(parts[2])) { processCommand(command); } } else if (parts[1].equals("!endswith")) { if (!parts[0].endsWith(parts[2])) { processCommand(command); } } else if (parts[1].equals("contains")) { if (parts[0].indexOf(parts[2]) != -1) { processCommand(command); } } else if (parts[1].equals("!contains")) { if (parts[0].indexOf(parts[2]) == -1) { processCommand(command); } } else if (parts[1].equals("!=")) { if (!parts[0].equals(parts[2])) { processCommand(command); } } else if (parts[1].equals("==")) { if (parts[0].equals(parts[2])) { processCommand(command); } } } else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } else if (parts.length == 1) { if (!parts[0].equals("")) { processCommand(command); } } }
+    private void ifCommand(String argument) {
+        argument = argument.trim();
+
+        int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')');
+
+        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; }
+
+        String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim();
+        String command = argument.substring(lastParenthesis + 1).trim();
+        String[] parts = split(expression, ' ');
+
+        boolean result = false;
+
+        if (parts.length == 3) {
+            boolean negated = parts[1].startsWith("!");
+            if (negated) parts[1] = parts[1].substring(1);
+
+            if (parts[1].equals("startswith")) { result = parts[0].startsWith(parts[2]); } 
+            else if (parts[1].equals("endswith")) { result = parts[0].endsWith(parts[2]); } 
+            else if (parts[1].equals("contains")) { result = parts[0].indexOf(parts[2]) != -1; } 
+            else if (parts[1].equals("==")) { result = parts[0].equals(parts[2]); } 
+            else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); negated = false; }
+
+            if (result != negated) { processCommand(command); }
+        } 
+        else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } 
+        else if (parts.length == 1) { if (!parts[0].equals("")) { processCommand(command); } }
+    }
     private void forCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return; } String key = getCommand(argument); String file = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()); String command = argument.substring(lastParenthesis + 1).trim(); if (key.startsWith("(")) { return; } if (key.startsWith("$")) { key = replace(key, "$", ""); } String[] lines = split(file, '\n'); for (int i = 0; i < lines.length; i++) { if (lines[i] != null || lines[i].length() != 0) { processCommand("set " + key + "=" + lines[i]); processCommand(command); processCommand("unset " + key); } } }
     private void caseCommand(String argument) {
         argument = argument.trim();
@@ -418,7 +445,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (condition != negated) { processCommand(command); }
     }
-    
+
     // API 006 - (Process)
     // |
     // Memory
