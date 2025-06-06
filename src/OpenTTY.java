@@ -408,26 +408,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         boolean condition = false;
 
-        if (method.equals("file")) {
-            String[] recordStores = RecordStore.listRecordStores();
-            if (recordStores != null) {
-                for (int i = 0; i < recordStores.length; i++) {
-                    if (recordStores[i].equals(expression)) {
-                        condition = true;
-                        break;
-                    }
-                }
-            }
-        } 
-        else if (method.equals("root")) {
-            Enumeration roots = FileSystemRegistry.listRoots();
-            while (roots.hasMoreElements()) {
-                if (((String) roots.nextElement()).equals(expression)) {
-                    condition = true;
-                    break;
-                }
-            }
-        } 
+        if (method.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { condition = true; break; } } } } 
+        else if (method.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { condition = true; break; } } } 
         else if (method.equals("thread")) { condition = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(expression); } 
         else if (method.equals("trace")) { condition = trace.containsKey(expression); }
         else if (method.equals("screen")) { condition = desktops.containsKey(expression); } 
