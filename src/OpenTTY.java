@@ -237,7 +237,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     Vector results = new Vector();
 
-    // /home/ → RMS
     if (base.equals("/home/")) {
         try {
             String[] recordStores = RecordStore.listRecordStores();
@@ -249,11 +248,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
         } catch (RecordStoreException e) {
-            echoCommand("dir: erro no RMS: " + e.getMessage());
+            echoCommand(e.getMessage());
         }
     }
 
-    // 1. Adiciona arquivos montados via paths
     if (paths.containsKey(cleanBase)) {
         String[] files = (String[]) paths.get(cleanBase);
         if (files != null) {
@@ -266,7 +264,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
 
-    // 2. Adiciona arquivos do resources.txt (somente leitura)
     String[] entries = split(read("/java/resources.txt"), '\n');
     for (int i = 0; i < entries.length; i++) {
         String entry = entries[i].trim();
@@ -284,7 +281,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
 
-    // Exibição final
     if (results.isEmpty()) {
         echoCommand("dir: " + basename(cleanBase) + ": not found");
     } else {
