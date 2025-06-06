@@ -25,6 +25,7 @@ Copyright (C) 2025 - Mr. Lima
 - RMS files path setted in **/home**
 - **/java/etc/fstab** now contain file tree
 - Removed file **/java/resources.txt**
+- New **if** number operators **==**, **!=**, **> & >=** and **< & <=**
 
 [ _Notes_ ]
 
