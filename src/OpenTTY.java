@@ -259,9 +259,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         for (int i = 0; i < files.length; i++) {
                             String f = files[i].trim();
                             String fileName = f.startsWith("/") ? f.substring(1) : f;
-                            if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName + "/")) {
-                                results.addElement(fileName + "/");
-                            }
+                            if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName + "/")) { results.addElement(fileName + "/"); }
                         }
                     }
                 } else { return; }
@@ -277,14 +275,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     int slashIndex = relative.indexOf('/');
                     if (slashIndex == -1) {
-                        if (!results.contains(relative)) {
-                            results.addElement(relative);
-                        }
+                        if (!results.contains(relative)) { results.addElement(relative); }
                     } else {
                         String subdir = relative.substring(0, slashIndex);
-                        if (!results.contains(subdir + "/")) {
-                            results.addElement(subdir + "/");
-                        }
+                        if (!results.contains(subdir + "/")) { results.addElement(subdir + "/"); }
                     }
                 }
 
