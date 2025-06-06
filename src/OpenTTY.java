@@ -13,8 +13,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
-                      paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable(),
-                      thr = new Hashtable();
+                      desktops = new Hashtable(), trace = new Hashtable(), thr = new Hashtable();
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
