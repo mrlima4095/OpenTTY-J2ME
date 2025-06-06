@@ -254,7 +254,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 Vector results = new Vector();
 
-                // /home/ → listar RMS
+
                 if (base.equals("/home/")) {
                     try {
                         String[] recordStores = RecordStore.listRecordStores();
@@ -280,9 +280,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String[] files = (String[]) paths.get(base);
                 if (files != null) {
                     for (int i = 0; i < files.length; i++) {
-                        String f = files[i];
+                        String f = files[i].trim();
                         if (f == null || f.equals("..") || f.equals("/")) continue;
-                        if (!results.contains(f)) results.addElement(f);
+                        if (!results.contains(f) && !results.contains(f + "/")) { results.addElement(f); }
                     }
                 }
 
@@ -291,7 +291,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     boolean newline = base.equals("/home/");
                     for (int i = 0; i < results.size(); i++) {
                         String item = (String) results.elementAt(i);
-                        if (!item.equals("/")) sb.append(item).append(newline ? "\n" : "\t");
+                        if (!item.equals("/")) { sb.append(item).append(newline ? "\n" : "\t"); }
                     }
                     echoCommand(sb.toString().trim());
                 }
