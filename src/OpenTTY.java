@@ -226,11 +226,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) {
-            if (argument.equals("f")) {
-                new Explorer();
-            } else if (argument.equals("s")) {
-                new FileExplorer("");
-            } else {
+            if (argument.equals("f")) { new Explorer(); } 
+            else if (argument.equals("s")) { new FileExplorer(""); } 
+            else {
                 String base = argument.startsWith("/") ? argument :
                             (argument == null || argument.length() == 0 ? path :
                             (path.endsWith("/") ? path + argument : path + "/" + argument));
@@ -243,13 +241,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (base.equals("/home/")) {
                     try {
                         String[] recordStores = RecordStore.listRecordStores();
-                        if (recordStores != null) {
-                            for (int i = 0; i < recordStores.length; i++) {
-                                if (!recordStores[i].startsWith(".") && !results.contains(recordStores[i])) {
-                                    results.addElement(recordStores[i]);
-                                }
-                            }
-                        }
+                        if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".") && !results.contains(recordStores[i])) { results.addElement(recordStores[i]); } } }
                     } catch (RecordStoreException e) { echoCommand(e.getMessage()); }
                 }
 
