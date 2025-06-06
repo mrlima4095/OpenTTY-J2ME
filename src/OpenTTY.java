@@ -218,7 +218,42 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Directories Manager
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
-        else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
+        else if (mainCommand.equals("umount")) {
+            if (argument.equals("")) {
+                paths = new Hashtable();
+            }
+
+            String target = argument.endsWith("/") ? argument : argument + "/";
+
+            if (!paths.containsKey(argument) && !paths.containsKey(target)) {
+                echoCommand("umount: " + argument + ": not mounted");
+                return;
+            }
+
+            boolean isDir = paths.containsKey(target);
+            String fullPath = isDir ? target : argument;
+            paths.remove(fullPath);
+
+            // Remover do pai
+            String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/', fullPath.endsWith("/") ? fullPath.length() - 2 : fullPath.length() - 1) + 1);
+            String name = fullPath.substring(parentPath.length(), fullPath.endsWith("/") ? fullPath.length() - 1 : fullPath.length());
+
+            String[] parentContents = (String[]) paths.get(parentPath);
+            if (parentContents != null) {
+                Vector updated = new Vector();
+                for (int i = 0; i < parentContents.length; i++) {
+                    if (!parentContents[i].equals(name) && !parentContents[i].equals(name + "/")) {
+                        updated.addElement(parentContents[i]);
+                    }
+                }
+                String[] newContents = new String[updated.size()];
+                updated.copyInto(newContents);
+                paths.put(parentPath, newContents);
+            }
+
+            echoCommand("umounted: " + argument);
+        }
+
         else if (mainCommand.equals("local")) { new FileExplorer(argument); }
         else if (mainCommand.equals("ls")) { processCommand("execute dir f"); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
@@ -247,6 +282,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 if (!paths.containsKey(base)) { echoCommand("dir: " + basename(base) + ": not found"); return; }
+                if (!base.endsWith("/")) { echoCommand(basename(base)); return; }
 
                 String[] files = (String[]) paths.get(base);
                 if (files != null) {
