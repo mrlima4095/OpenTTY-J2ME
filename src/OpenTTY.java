@@ -227,10 +227,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(""); } 
             else {
-                String base = (argument == null || argument.length() == 0) ? path :
-                            (argument.startsWith("/") ? argument :
-                            (path.endsWith("/") ? path + argument : path + "/" + argument));
-
+                String base = (argument == null || argument.length() == 0) ? path : (argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument));
                 if (!base.endsWith("/")) { base += "/"; }
 
                 Vector results = new Vector();
@@ -246,8 +243,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; }
                 }
 
-                if (!paths.containsKey(base)) { if (!base.endsWith("/")) { echoCommand(basename(base)); return; } echoCommand("dir: " + basename(base) + ": not found"); return; }
-                
+                if (!paths.containsKey(base)) {
+                    if (paths.containsKey(base.substring(0, base.length() - 1))) {
+                        echoCommand("dir: " + basename(base) + ": not a directory");
+                    } else {
+                        echoCommand("dir: " + basename(base) + ": not found");
+                    }
+                    return;
+                }
+
 
                 String[] files = (String[]) paths.get(base);
                 if (files != null) {
