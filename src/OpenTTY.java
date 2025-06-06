@@ -392,14 +392,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); String command = argument.substring(lastParenthesis + 1).trim(); String[] parts = split(expression, ' '); boolean result = false;
 
         if (parts.length == 3) { 
-            boolean negated = parts[1].startsWith("!");
+            boolean negated = parts[1].startsWith("!") && !parts[1].equals("!=");
             if (negated) parts[1] = parts[1].substring(1);
 
             if (parts[1].equals("startswith")) { result = parts[0].startsWith(parts[2]); } 
             else if (parts[1].equals("endswith")) { result = parts[0].endsWith(parts[2]); } 
             else if (parts[1].equals("contains")) { result = parts[0].indexOf(parts[2]) != -1; } 
             else if (parts[1].equals("==")) { result = parts[0].equals(parts[2]); } 
-            else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); if (result) { negated = false; } }
+            else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); }
 
             if (result != negated) { processCommand(command); }
         } 
