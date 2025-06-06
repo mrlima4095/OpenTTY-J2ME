@@ -20,7 +20,8 @@ Copyright (C) 2025 - Mr. Lima
 - Better resources message
 - Arguments clear pattern **"** when argument starts and ends with it
 - JSON and other parsers required inform file (not considering nano by default anymore)
-
+- Command **ls** now show RMS files.
+- Assets can be viewed together in directory
 
 [ _Notes_ ]
 
