@@ -262,7 +262,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             
                 if (results.isEmpty()) {
-                    echoCommand("dir: " + base + ": not found");
+                    echoCommand("dir: " + basename(base) + ": not found");
                 } else {
                     StringBuffer sb = new StringBuffer();
                     for (int i = 0; i < results.size(); i++) {
