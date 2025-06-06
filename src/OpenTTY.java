@@ -251,7 +251,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 Vector results = new Vector();
 
-
                 if (base.equals("/home/")) {
                     try {
                         String[] recordStores = RecordStore.listRecordStores();
