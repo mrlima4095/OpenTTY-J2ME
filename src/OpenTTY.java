@@ -263,6 +263,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
     }
+    else { return; }
 
     String[] entries = split(read("/java/resources.txt"), '\n');
     for (int i = 0; i < entries.length; i++) {
