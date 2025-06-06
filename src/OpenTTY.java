@@ -234,9 +234,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             (path.endsWith("/") ? path + argument : path + "/" + argument));
                 if (!base.endsWith("/")) base += "/";
 
-                // base sem / para consulta em paths
                 String baseKey = (base.length() > 1 && base.endsWith("/")) ? base.substring(0, base.length() - 1) : base;
-
                 Vector results = new Vector();
 
                 if (base.equals("/home/")) {
@@ -244,14 +242,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String[] recordStores = RecordStore.listRecordStores();
                         if (recordStores != null) {
                             for (int i = 0; i < recordStores.length; i++) {
-                                if (!recordStores[i].startsWith(".") && !results.contains(recordStores[i])) {
-                                    results.addElement(recordStores[i]);
-                                }
+                                if (!recordStores[i].startsWith(".") && !results.contains(recordStores[i])) { results.addElement(recordStores[i]); }
                             }
                         }
-                    } catch (RecordStoreException e) {
-                        echoCommand(e.getMessage());
-                    }
+                    } catch (RecordStoreException e) { echoCommand(e.getMessage()); return; }
                 }
 
                 if (paths.containsKey(baseKey)) {
@@ -260,15 +254,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         for (int i = 0; i < files.length; i++) {
                             String f = files[i].trim();
                             String fileName = f.startsWith("/") ? f.substring(1) : f;
-                            if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName + "/")) {
-                                results.addElement(fileName + "/");
-                            }
+                            if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName + "/")) { results.addElement(fileName + "/"); }
                         }
                     }
-                } else {
-                    echoCommand("dir: " + basename(baseKey) + ": not found");
-                    return; // <- evita processar resources.txt à toa
-                }
+                } else { echoCommand("dir: " + basename(baseKey) + ": not found"); return; }
 
                 String[] entries = split(read("/java/resources.txt"), '\n');
                 for (int i = 0; i < entries.length; i++) {
@@ -281,22 +270,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     int slashIndex = relative.indexOf('/');
                     if (slashIndex == -1) {
-                        if (!results.contains(relative)) results.addElement(relative);
-                    } else {
+                        if (!results.contains(relative)) { results.addElement(relative); }
+                    } 
+                    else {
                         String subdir = relative.substring(0, slashIndex);
-                        if (!results.contains(subdir + "/")) results.addElement(subdir + "/");
+                        if (!results.contains(subdir + "/")) { results.addElement(subdir + "/"); }
                     }
                 }
 
-                if (results.isEmpty()) {
-                    echoCommand("dir: " + basename(baseKey) + ": not found");
-                } else {
+                if (results.isEmpty()) { } 
+                else {
                     StringBuffer sb = new StringBuffer();
                     for (int i = 0; i < results.size(); i++) {
                         String item = (String) results.elementAt(i);
-                        if (!item.equals("/")) {
-                            sb.append(item).append(base.equals("/home/") ? "\n" : "\t");
-                        }
+                        if (!item.equals("/")) { sb.append(item).append(base.equals("/home/") ? "\n" : "\t"); }
                     }
                     echoCommand(sb.toString().trim());
                 }
@@ -540,7 +527,49 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Directories Manager
     private void mount(String script) { String[] lines = split(script, '\n'); for (int i = 0; i < lines.length; i++) { String line = ""; if (lines[i] != null) { line = lines[i].trim(); } if (line.startsWith("#")) { } else if (line.length() != 0) { if (line.startsWith("/")) { String fullPath = ""; int start = 0; for (int j = 1; j < line.length(); j++) { if (line.charAt(j) == '/') { String dir = line.substring(start + 1, j); fullPath += "/" + dir; addDirectory(fullPath); start = j; } } String dir = line.substring(start + 1); fullPath += "/" + dir; addDirectory(fullPath); } } } }
-    private void addDirectory(String fullPath) { if (!paths.containsKey(fullPath)) { paths.put(fullPath, new String[] { ".." }); String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/')); if (parentPath.length() == 0) { parentPath = "/"; } String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } updatedContents.addElement(fullPath.substring(fullPath.lastIndexOf('/') + 1)); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } }
+    private void addDirectory(String fullPath) {
+        boolean isDirectory = fullPath.endsWith("/");
+        if (!paths.containsKey(fullPath)) {
+            if (isDirectory) {
+                // adiciona diretório com conteúdo padrão
+                paths.put(fullPath, new String[] { ".." });
+
+                String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/', fullPath.length() - 2) + 1);
+                String[] parentContents = (String[]) paths.get(parentPath);
+                Vector updatedContents = new Vector();
+
+                if (parentContents != null) {
+                    for (int k = 0; k < parentContents.length; k++) {
+                        updatedContents.addElement(parentContents[k]);
+                    }
+                }
+
+                String dirName = fullPath.substring(parentPath.length(), fullPath.length() - 1);
+                updatedContents.addElement(dirName + "/");
+                String[] newContents = new String[updatedContents.size()];
+                updatedContents.copyInto(newContents);
+                paths.put(parentPath, newContents);
+
+            } else {
+                // arquivo: registra como conteúdo do diretório pai
+                String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1);
+                String fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1);
+                String[] parentContents = (String[]) paths.get(parentPath);
+                Vector updatedContents = new Vector();
+
+                if (parentContents != null) {
+                    for (int k = 0; k < parentContents.length; k++) {
+                        updatedContents.addElement(parentContents[k]);
+                    }
+                }
+
+                updatedContents.addElement(fileName);
+                String[] newContents = new String[updatedContents.size()];
+                updatedContents.copyInto(newContents);
+                paths.put(parentPath, newContents);
+            }
+        }
+    }
     public class Explorer implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Open", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1); public Explorer() { screen.addCommand(BACK); screen.addCommand(OPEN); screen.addCommand(DELETE); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == OPEN) { new NanoEditor(screen.getString(screen.getSelectedIndex())); } else if (c == DELETE) { deleteFile(screen.getString(screen.getSelectedIndex())); load(); } else if (c == RUN) { processCommand("xterm"); processCommand("run " + screen.getString(screen.getSelectedIndex())); } else if (c == IMPORT) { processCommand("xterm"); importScript(screen.getString(screen.getSelectedIndex())); } } private void load() { screen.deleteAll(); try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { } else { screen.append((String) recordStores[i], null); } } } } catch (RecordStoreException e) { } } }
     public class FileExplorer implements CommandListener { private String path = "file:///", init; private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Open", Command.OK, 1); public FileExplorer(String args) { if (!args.equals("")) { path = path + args; init = path; } screen.addCommand(BACK); screen.addCommand(OPEN); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { if (path.equals("file:///") || init == path) { processCommand("xterm"); } else { int lastSlash = path.lastIndexOf('/', path.length() - 2); if (lastSlash != -1) { path = path.substring(0, lastSlash + 1); load(); } } } else if (c == OPEN) { int selectedIndex = screen.getSelectedIndex(); if (selectedIndex >= 0) { String selected = screen.getString(selectedIndex); if (selected.endsWith("/")) { path = path + selected; load(); } else { writeRMS(selected, read(path + selected)); warnCommand(null, "File '" + selected + "' successfully saved!"); } } } } private void load() { screen.deleteAll(); try { if (path.equals("file:///")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), null); } } else { FileConnection dir = (FileConnection) Connector.open(path, Connector.READ); Enumeration content = dir.list(); Vector dirs = new Vector(), files = new Vector(); while (content.hasMoreElements()) { String filename = (String) content.nextElement(); if (filename.endsWith("/")) { dirs.addElement(filename); } else { files.addElement(filename); } } while (!dirs.isEmpty()) { screen.append(getFirstString(dirs), null); } while (!files.isEmpty()) { screen.append(getFirstString(files), null); } dir.close(); } } catch (IOException e) { } } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } private String read(String file) { try { FileConnection fileConn = (FileConnection) Connector.open(file, Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return content.toString(); } catch (IOException e) { return ""; } } }
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
