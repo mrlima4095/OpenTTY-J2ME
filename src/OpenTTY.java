@@ -291,7 +291,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                     else {
                         String subdir = relative.substring(0, slashIndex);
-                        if (!results.contains(subdir + "/")) { results.addElement(subdir + "/"); }
+                        if (!results.contains(subdir)) { results.addElement(subdir); }
                     }
                 }
 
