@@ -262,7 +262,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             String f = files[i].trim();
                             String fileName = f.startsWith("/") ? f.substring(1) : f;
                             if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName)) {
-                                results.addElement(fileName);
+                                results.addElement(fileName + "/");
                             }
                         }
                     }
