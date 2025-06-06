@@ -246,8 +246,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; }
                 }
 
-                if (!paths.containsKey(base)) { echoCommand("dir: " + basename(base) + ": not found"); return; }
-                if (!base.endsWith("/")) { echoCommand(basename(base)); return; }
+                if (!paths.containsKey(base)) { if (!base.endsWith("/")) { echoCommand(basename(base)); return; } echoCommand("dir: " + basename(base) + ": not found"); return; }
+                
 
                 String[] files = (String[]) paths.get(base);
                 if (files != null) {
