@@ -249,62 +249,57 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String base = (argument == null || argument.length() == 0) ? path :
                             (argument.startsWith("/") ? argument :
                             (path.endsWith("/") ? path + argument : path + "/" + argument));
+
                 if (!base.endsWith("/")) base += "/";
 
-                String baseKey = (base.length() > 1 && base.endsWith("/")) ? base.substring(0, base.length() - 1) : base;
                 Vector results = new Vector();
 
+                // /home/ → listar RMS
                 if (base.equals("/home/")) {
                     try {
                         String[] recordStores = RecordStore.listRecordStores();
                         if (recordStores != null) {
                             for (int i = 0; i < recordStores.length; i++) {
-                                if (!recordStores[i].startsWith(".") && !results.contains(recordStores[i])) { results.addElement(recordStores[i]); }
+                                String name = recordStores[i];
+                                if (!name.startsWith(".") && !results.contains(name)) {
+                                    results.addElement(name);
+                                }
                             }
                         }
-                    } catch (RecordStoreException e) { echoCommand(e.getMessage()); return; }
-                }
-
-                if (paths.containsKey(baseKey)) {
-                    String[] files = (String[]) paths.get(baseKey);
-                    if (files != null) {
-                        for (int i = 0; i < files.length; i++) {
-                            String f = files[i].trim();
-                            String fileName = f.startsWith("/") ? f.substring(1) : f;
-                            if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName + "/")) { results.addElement(fileName + "/"); }
-                        }
-                    }
-                } else { echoCommand("dir: " + basename(baseKey) + ": not found"); return; }
-
-                String[] entries = split(read("/java/resources.txt"), '\n');
-                for (int i = 0; i < entries.length; i++) {
-                    String entry = entries[i].trim();
-                    if (entry.length() == 0 || entry.equals("/")) continue;
-                    if (!entry.startsWith(base)) continue;
-
-                    String relative = entry.substring(base.length());
-                    if (relative.length() == 0 || relative.equals("/")) continue;
-
-                    int slashIndex = relative.indexOf('/');
-                    if (slashIndex == -1) {
-                        if (!results.contains(relative)) { results.addElement(relative); }
-                    } 
-                    else {
-                        String subdir = relative.substring(0, slashIndex);
-                        if (!results.contains(subdir)) { results.addElement(subdir); }
+                    } catch (RecordStoreException e) {
+                        echoCommand("dir: " + e.getMessage());
+                        return;
                     }
                 }
 
-                if (results.isEmpty()) { } 
-                else {
+                // Verifica se o diretório existe
+                if (!paths.containsKey(base)) {
+                    echoCommand("dir: " + basename(base) + ": not found");
+                    return;
+                }
+
+                // Adiciona conteúdo do diretório atual
+                String[] files = (String[]) paths.get(base);
+                if (files != null) {
+                    for (int i = 0; i < files.length; i++) {
+                        String f = files[i];
+                        if (f == null || f.equals("..") || f.equals("/")) continue;
+                        if (!results.contains(f)) results.addElement(f);
+                    }
+                }
+
+                // Mostrar resultado
+                if (!results.isEmpty()) {
                     StringBuffer sb = new StringBuffer();
+                    boolean newline = base.equals("/home/");
                     for (int i = 0; i < results.size(); i++) {
                         String item = (String) results.elementAt(i);
-                        if (!item.equals("/")) { sb.append(item).append(base.equals("/home/") ? "\n" : "\t"); }
+                        if (!item.equals("/")) sb.append(item).append(newline ? "\n" : "\t");
                     }
                     echoCommand(sb.toString().trim());
                 }
             }
+
 
         }
         // |
