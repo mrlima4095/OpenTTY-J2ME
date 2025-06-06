@@ -390,54 +390,43 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 005 - (Operators)
     // |
     // Operators
-    private void ifCommand(String argument) { 
-    argument = argument.trim(); 
+    private void ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); 
+        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } 
 
-    int firstParenthesis = argument.indexOf('('); 
-    int lastParenthesis = argument.indexOf(')'); 
-    if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { 
-        echoCommand("if (expr) [command]"); 
-        return; 
-    } 
+        String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); 
+        String command = argument.substring(lastParenthesis + 1).trim(); 
+        String[] parts = split(expression, ' '); 
 
-    String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); 
-    String command = argument.substring(lastParenthesis + 1).trim(); 
-    String[] parts = split(expression, ' '); 
+        if (parts.length == 3) { 
+            boolean result = false;
+            boolean negated = parts[1].startsWith("!") && !parts[1].equals("!="); 
+            if (negated) parts[1] = parts[1].substring(1); 
 
-    if (parts.length == 3) { 
-        boolean result = false;
-        boolean negated = parts[1].startsWith("!") && !parts[1].equals("!="); 
-        if (negated) parts[1] = parts[1].substring(1); 
+            Double n1 = getNumber(parts[0]); 
+            Double n2 = getNumber(parts[2]); 
 
-        Double n1 = getNumber(parts[0]); 
-        Double n2 = getNumber(parts[2]); 
+            if (n1 != null && n2 != null) {
+                if (parts[1].equals("==")) { result = n1.doubleValue() == n2.doubleValue(); } 
+                else if (parts[1].equals("!=")) { result = n1.doubleValue() != n2.doubleValue(); } 
+                else if (parts[1].equals(">")) { result = n1.doubleValue() > n2.doubleValue(); } 
+                else if (parts[1].equals("<")) { result = n1.doubleValue() < n2.doubleValue(); } 
+                else if (parts[1].equals(">=")) { result = n1.doubleValue() >= n2.doubleValue(); } 
+                else if (parts[1].equals("<=")) { result = n1.doubleValue() <= n2.doubleValue(); } 
+            } else {
+                if (parts[1].equals("startswith")) { result = parts[0].startsWith(parts[2]); } 
+                else if (parts[1].equals("endswith")) { result = parts[0].endsWith(parts[2]); } 
+                else if (parts[1].equals("contains")) { result = parts[0].indexOf(parts[2]) != -1; } 
+                else if (parts[1].equals("==")) { result = parts[0].equals(parts[2]); } 
+                else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); } 
+            }
 
-        if (n1 != null && n2 != null) {
-            if (parts[1].equals("==")) { result = n1.doubleValue() == n2.doubleValue(); } 
-            else if (parts[1].equals("!=")) { result = n1.doubleValue() != n2.doubleValue(); } 
-            else if (parts[1].equals(">")) { result = n1.doubleValue() > n2.doubleValue(); } 
-            else if (parts[1].equals("<")) { result = n1.doubleValue() < n2.doubleValue(); } 
-            else if (parts[1].equals(">=")) { result = n1.doubleValue() >= n2.doubleValue(); } 
-            else if (parts[1].equals("<=")) { result = n1.doubleValue() <= n2.doubleValue(); } 
-        } else {
-            if (parts[1].equals("startswith")) { result = parts[0].startsWith(parts[2]); } 
-            else if (parts[1].equals("endswith")) { result = parts[0].endsWith(parts[2]); } 
-            else if (parts[1].equals("contains")) { result = parts[0].indexOf(parts[2]) != -1; } 
-            else if (parts[1].equals("==")) { result = parts[0].equals(parts[2]); } 
-            else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); } 
-        }
-
-        if (result != negated) { 
-            processCommand(command); 
+            if (result != negated) { 
+                processCommand(command); 
+            } 
         } 
-    } 
-    else if (parts.length == 2) { 
-        if (parts[0].equals(parts[1])) { processCommand(command); } 
-    } 
-    else if (parts.length == 1) { 
-        if (!parts[0].equals("")) { processCommand(command); } 
+        else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } 
+        else if (parts.length == 1) { if (!parts[0].equals("")) { processCommand(command); }  }
     }
-}
 
     private void forCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return; } String key = getCommand(argument); String file = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()); String command = argument.substring(lastParenthesis + 1).trim(); if (key.startsWith("(")) { return; } if (key.startsWith("$")) { key = replace(key, "$", ""); } String[] lines = split(file, '\n'); for (int i = 0; i < lines.length; i++) { if (lines[i] != null || lines[i].length() != 0) { processCommand("set " + key + "=" + lines[i]); processCommand(command); processCommand("unset " + key); } } }
     private void caseCommand(String argument) {
