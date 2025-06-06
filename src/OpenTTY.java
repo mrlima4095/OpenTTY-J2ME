@@ -303,8 +303,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
         }
-
-
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
