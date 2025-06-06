@@ -239,38 +239,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                 } catch (RecordStoreException e) { } } 
             else {
-    String base = argument.startsWith("/") ? argument : (argument == null || argument.length() == 0 ? path : (path.endsWith("/") ? path + argument : path + "/" + argument));
-    if (!base.endsWith("/")) base += "/";
-
-    String[] entries = split(read("/java/resources.txt"), '\n');
-    Vector results = new Vector();
-
-    for (int i = 0; i < entries.length; i++) {
-        String entry = entries[i].trim();
-        if (!entry.startsWith(base)) continue;
-
-        String relative = entry.substring(base.length());
-        if (relative.length() == 0) continue;
-
-        int slashIndex = relative.indexOf('/');
-        if (slashIndex == -1) {
-            if (!results.contains(relative)) results.addElement(relative); // arquivo
-        } else {
-            String subdir = relative.substring(0, slashIndex);
-            if (!results.contains(subdir + "/")) results.addElement(subdir + "/"); // subpasta
-        }
-    }
-
-    if (results.isEmpty()) {
-        echoCommand("dir: " + base + ": not found");
-    } else {
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < results.size(); i++) {
-            sb.append(results.elementAt(i)).append("\t");
-        }
-        echoCommand(sb.toString().trim());
-    }
-}
+                String base = argument.startsWith("/") ? argument : (argument == null || argument.length() == 0 ? path : (path.endsWith("/") ? path + argument : path + "/" + argument));
+                if (!base.endsWith("/")) base += "/";
+            
+                String[] entries = split(read("/java/resources.txt"), '\n');
+                Vector results = new Vector();
+            
+                for (int i = 0; i < entries.length; i++) {
+                    String entry = entries[i].trim();
+                    if (!entry.startsWith(base)) continue;
+            
+                    String relative = entry.substring(base.length());
+                    if (relative.length() == 0) continue;
+            
+                    int slashIndex = relative.indexOf('/');
+                    if (slashIndex == -1) {
+                        if (!results.contains(relative)) results.addElement(relative);
+                    } else {
+                        String subdir = relative.substring(0, slashIndex);
+                        if (!results.contains(subdir + "/")) results.addElement(subdir + "/");
+                    }
+                }
+            
+                if (results.isEmpty()) {
+                    echoCommand("dir: " + base + ": not found");
+                } else {
+                    StringBuffer sb = new StringBuffer();
+                    for (int i = 0; i < results.size(); i++) {
+                        sb.append(results.elementAt(i)).append("\t");
+                    }
+                    echoCommand(sb.toString().trim());
+                }
+            }
         }        
         // |
         // Device Files
