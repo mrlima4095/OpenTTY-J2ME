@@ -233,11 +233,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String targetPath = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument);
                 if (!targetPath.endsWith("/")) targetPath += "/";
 
-                if (paths.containsKey(targetPath)) {
-                    path = targetPath;
-                } else {
-                    echoCommand("cd: " + basename(targetPath) + ": not a directory");
-                }
+                if (paths.containsKey(targetPath)) { path = targetPath; } 
+                else { echoCommand("cd: " + basename(targetPath) + ": not a directory"); }
             }
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
