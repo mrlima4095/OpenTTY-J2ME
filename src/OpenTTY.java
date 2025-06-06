@@ -250,9 +250,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 }
                             }
                         }
-                    } catch (RecordStoreException e) {
-                        echoCommand(e.getMessage());
-                    }
+                    } catch (RecordStoreException e) { echoCommand(e.getMessage()); }
                 }
 
                 if (paths.containsKey(cleanBase)) {
@@ -261,14 +259,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         for (int i = 0; i < files.length; i++) {
                             String f = files[i].trim();
                             String fileName = f.startsWith("/") ? f.substring(1) : f;
-                            if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName)) {
+                            if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName + "/")) {
                                 results.addElement(fileName + "/");
                             }
                         }
                     }
-                } else {
-                    return;
-                }
+                } else { return; }
 
                 String[] entries = split(read("/java/resources.txt"), '\n');
                 for (int i = 0; i < entries.length; i++) {
