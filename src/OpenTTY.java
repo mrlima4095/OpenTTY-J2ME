@@ -399,7 +399,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (parts[1].equals("endswith")) { result = parts[0].endsWith(parts[2]); } 
             else if (parts[1].equals("contains")) { result = parts[0].indexOf(parts[2]) != -1; } 
             else if (parts[1].equals("==")) { result = parts[0].equals(parts[2]); } 
-            else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); negated = !negated; }
+            else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); if (result) { negated = false; } }
 
             if (result != negated) { processCommand(command); }
         } 
