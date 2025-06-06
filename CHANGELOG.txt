@@ -24,6 +24,7 @@ Copyright (C) 2025 - Mr. Lima
 - Assets can be viewed together in directory
 - RMS files path setted in **/home**
 - **/java/etc/fstab** now contain file tree
+- Removed file **/java/resources.txt**
 
 [ _Notes_ ]
 
