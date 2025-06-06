@@ -286,7 +286,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 }
 
-                // Mostrar resultado
                 if (!results.isEmpty()) {
                     StringBuffer sb = new StringBuffer();
                     boolean newline = base.equals("/home/");
