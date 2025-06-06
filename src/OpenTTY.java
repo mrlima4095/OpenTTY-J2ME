@@ -229,6 +229,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else {
                 String base = (argument == null || argument.length() == 0) ? path : (argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument));
                 if (!base.endsWith("/")) { base += "/"; }
+                if (!argument.endsWith("/") && paths.containsKey(base.substring(0, base.length() - 1))) {
+                    echoCommand(basename(base));
+                    return;
+                }
+
 
                 Vector results = new Vector();
                 if (base.equals("/home/")) {
@@ -243,14 +248,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; }
                 }
 
-                if (!paths.containsKey(base)) {
-                    if (paths.containsKey(base.substring(0, base.length() - 1))) {
-                        echoCommand("dir: " + basename(base) + ": not a directory");
-                    } else {
-                        echoCommand("dir: " + basename(base) + ": not found");
-                    }
-                    return;
-                }
+                if (!paths.containsKey(base)) { echoCommand("dir: " + basename(base) + ": not found"); return; }
 
 
                 String[] files = (String[]) paths.get(base);
