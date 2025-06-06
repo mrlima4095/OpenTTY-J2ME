@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14.2-01x76";
+                   build = "2025-1.14.2-01x77";
     private Vector stack = new Vector(), 
                    history = new Vector();
     private Display display = Display.getDisplay(this);
@@ -397,29 +397,46 @@ public class OpenTTY extends MIDlet implements CommandListener {
         int firstParenthesis = argument.indexOf('(');
         int lastParenthesis = argument.indexOf(')');
 
-        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return; }
+        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) return;
 
         String method = getCommand(argument);
+        boolean negated = method.startsWith("!");
+        if (negated) method = method.substring(1);
+
         String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim();
         String command = argument.substring(lastParenthesis + 1).trim();
 
-        if (method.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { processCommand(command); } } } }
-        else if (method.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { processCommand(command); } } }
-        else if (method.equals("thread")) { if (replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(expression)) { processCommand(command); } }
-        else if (method.equals("trace")) { if (trace.containsKey(expression)) { processCommand(command); } }
-        else if (method.equals("screen")) { if (desktops.containsKey(expression)) { processCommand(command); } }
-        else if (method.equals("alias")) { if (aliases.containsKey(expression)) { processCommand(command); } }
-        else if (method.equals("key")) { if (attributes.containsKey(expression)) { processCommand(command); } }
+        boolean condition = false;
 
-        else if (method.equals("!file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { return; } } } processCommand(command); }
-        else if (method.equals("!root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { return; } } processCommand(command); }
-        else if (method.equals("!thread")) { if (replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(expression)) { } else { processCommand(command); } }
-        else if (method.equals("!trace")) { if (trace.containsKey(expression)) { } else { processCommand(command); } }
-        else if (method.equals("!screen")) { if (desktops.containsKey(expression)) { } else { processCommand(command); } }
-        else if (method.equals("!alias")) { if (aliases.containsKey(expression)) { } else { processCommand(command); } }
-        else if (method.equals("!key")) { if (attributes.containsKey(expression)) { } else { processCommand(command); } }
+        if (method.equals("file")) {
+            String[] recordStores = RecordStore.listRecordStores();
+            if (recordStores != null) {
+                for (int i = 0; i < recordStores.length; i++) {
+                    if (recordStores[i].equals(expression)) {
+                        condition = true;
+                        break;
+                    }
+                }
+            }
+        } 
+        else if (method.equals("root")) {
+            Enumeration roots = FileSystemRegistry.listRoots();
+            while (roots.hasMoreElements()) {
+                if (((String) roots.nextElement()).equals(expression)) {
+                    condition = true;
+                    break;
+                }
+            }
+        } 
+        else if (method.equals("thread")) { condition = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(expression); } 
+        else if (method.equals("trace")) { condition = trace.containsKey(expression); }
+        else if (method.equals("screen")) { condition = desktops.containsKey(expression); } 
+        else if (method.equals("alias")) { condition = aliases.containsKey(expression); } 
+        else if (method.equals("key")) { condition = attributes.containsKey(expression); }
 
+        if (condition != negated) { processCommand(command); }
     }
+
 
     // API 006 - (Process)
     // |
