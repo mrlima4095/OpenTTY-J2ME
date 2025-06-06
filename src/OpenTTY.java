@@ -389,20 +389,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 005 - (Operators)
     // |
     // Operators
-    private void ifCommand(String argument) {
-        argument = argument.trim();
+    private void ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); String command = argument.substring(lastParenthesis + 1).trim(); String[] parts = split(expression, ' '); boolean result = false;
 
-        int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')');
-
-        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; }
-
-        String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim();
-        String command = argument.substring(lastParenthesis + 1).trim();
-        String[] parts = split(expression, ' ');
-
-        boolean result = false;
-
-        if (parts.length == 3) {
+        if (parts.length == 3) { 
             boolean negated = parts[1].startsWith("!");
             if (negated) parts[1] = parts[1].substring(1);
 
