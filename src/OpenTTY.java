@@ -229,83 +229,60 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("f")) { new Explorer(); } 
             else if (argument.equals("s")) { new FileExplorer(""); } 
             else {
-    String base = (argument == null || argument.length() == 0) ? path :
-                  (argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument));
-    if (!base.endsWith("/")) base += "/";
-    String cleanBase = base.length() > 1 ? base.substring(0, base.length() - 1) : base;
+                String base = argument.startsWith("/") ? argument :
+                            (argument == null || argument.length() == 0 ? path :
+                            (path.endsWith("/") ? path + argument : path + "/" + argument));
 
-    Vector results = new Vector();
+                if (!base.endsWith("/")) base += "/";
+                String cleanBase = base.length() > 1 && base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
 
-    // Helper para adicionar sem duplicar
-    final CommandHelper self = this; // necessário para chamadas dentro de escopo anônimo
-    CommandHelper.addResult(results, String name, boolean isDir) {
-        if (name == null || name.length() == 0 || name.equals("/") || name.equals("..")) return;
-        String entry = isDir ? name + "/" : name;
-        if (!results.contains(entry)) results.addElement(entry);
-    }
+                Vector results = new Vector();
 
-    // /home = lista RMS
-    if (base.equals("/home/")) {
-        try {
-            String[] stores = RecordStore.listRecordStores();
-            if (stores != null) {
-                for (int i = 0; i < stores.length; i++) {
-                    String rs = stores[i];
-                    if (!rs.startsWith(".")) self.addResult(results, rs, false);
+                if (base.equals("/home/")) {
+                    try {
+                        String[] recordStores = RecordStore.listRecordStores();
+                        if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".") && !results.contains(recordStores[i])) { results.addElement(recordStores[i]); } } }
+                    } catch (RecordStoreException e) { echoCommand(e.getMessage()); }
+                }
+
+                if (paths.containsKey(cleanBase)) {
+                    String[] files = (String[]) paths.get(cleanBase);
+                    if (files != null) {
+                        for (int i = 0; i < files.length; i++) {
+                            String f = files[i].trim();
+                            String fileName = f.startsWith("/") ? f.substring(1) : f;
+                            if (!fileName.equals("..") && !fileName.equals("") && !results.contains(fileName + "/")) { results.addElement(fileName + "/"); }
+                        }
+                    }
+                } else { return; }
+
+                String[] entries = split(read("/java/resources.txt"), '\n');
+                for (int i = 0; i < entries.length; i++) {
+                    String entry = entries[i].trim();
+                    if (entry.length() == 0 || entry.equals("/")) continue;
+                    if (!entry.startsWith(base)) continue;
+
+                    String relative = entry.substring(base.length());
+                    if (relative.length() == 0 || relative.equals("/")) continue;
+
+                    int slashIndex = relative.indexOf('/');
+                    if (slashIndex == -1) {
+                        if (!results.contains(relative)) { results.addElement(relative); }
+                    } else {
+                        String subdir = relative.substring(0, slashIndex);
+                        if (!results.contains(subdir + "/")) { results.addElement(subdir + "/"); }
+                    }
+                }
+
+                if (results.isEmpty()) { echoCommand("dir: " + basename(cleanBase) + ": not found"); } 
+                else {
+                    StringBuffer sb = new StringBuffer();
+                    for (int i = 0; i < results.size(); i++) {
+                        if(!results.elementAt(i).equals("/")) { sb.append(results.elementAt(i)).append(base.equals("/home/") ? "\n" : "\t"); }
+                    }
+                    echoCommand(sb.toString().trim());
                 }
             }
-        } catch (RecordStoreException e) {
-            echoCommand("dir: RMS error: " + e.getMessage());
-        }
-    }
-
-    // paths
-    String[] files = (String[]) paths.get(cleanBase);
-    if (files != null) {
-        for (int i = 0; i < files.length; i++) {
-            String f = files[i];
-            if (f != null && f.length() > 0 && !f.equals("..") && !f.equals("/")) {
-                if (f.startsWith("/")) f = f.substring(1);
-                self.addResult(results, f, true);
-            }
-        }
-    } else {
-        return; // diretório não montado
-    }
-
-    // resources.txt
-    String[] entries = split(read("/java/resources.txt"), '\n');
-    for (int i = 0; i < entries.length; i++) {
-        String entry = entries[i];
-        if (entry == null || entry.length() == 0 || !entry.startsWith(base)) continue;
-
-        String relative = entry.substring(base.length());
-        if (relative.length() == 0 || relative.equals("/")) continue;
-
-        int slash = relative.indexOf('/');
-        if (slash == -1) {
-            self.addResult(results, relative, false);
-        } else {
-            self.addResult(results, relative.substring(0, slash), true);
-        }
-    }
-
-    // Mostrar resultado
-    if (results.isEmpty()) {
-        echoCommand("dir: " + basename(cleanBase) + ": not found");
-    } else {
-        StringBuffer sb = new StringBuffer();
-        boolean isHome = base.equals("/home/");
-        for (int i = 0; i < results.size(); i++) {
-            String r = (String) results.elementAt(i);
-            if (!r.equals("/")) {
-                sb.append(r).append(isHome ? "\n" : "\t");
-            }
-        }
-        echoCommand(sb.toString().trim());
-    }
-}
-
         }
         // |
         // Device Files
