@@ -240,7 +240,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (RecordStoreException e) { } } 
             else { 
                 StringBuffer sb = new StringBuffer();
-                String[] files = (String[]) paths.get(path); 
+                String[] files = (String[]) paths.get(argument.startsWith("/") && paths.containsKey(argument) ? argument : argument == null || argument.length() == 0 ? path : path + "/" + argument); 
                 for (int i = 0; i < files.length; i++) { 
                     if (!files[i].equals("..")) { sb.append(files[i].trim() + "\t"); } 
                 } 
