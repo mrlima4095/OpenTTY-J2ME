@@ -239,7 +239,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                 } catch (RecordStoreException e) { } } 
             else {
-                else {
     String base = argument.startsWith("/") ? argument : (argument == null || argument.length() == 0 ? path : (path.endsWith("/") ? path + argument : path + "/" + argument));
     if (!base.endsWith("/")) base += "/";
 
@@ -272,7 +271,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         echoCommand(sb.toString().trim());
     }
 }
-
         }        
         // |
         // Device Files
