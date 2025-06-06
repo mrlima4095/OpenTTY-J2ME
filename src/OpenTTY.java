@@ -321,22 +321,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
 
     private String[] split(String content, char div) {
-    ArrayList result = new ArrayList();
-    int start = 0;
+    int count = 1;
     for (int i = 0; i < content.length(); i++) {
         if (content.charAt(i) == div) {
-            result.add(content.substring(start, i));
+            count++;
+        }
+    }
+
+    String[] result = new String[count];
+    int start = 0;
+    int index = 0;
+
+    for (int i = 0; i < content.length(); i++) {
+        if (content.charAt(i) == div) {
+            result[index++] = content.substring(start, i);
             start = i + 1;
         }
     }
-    if (start <= content.length()) {
-        result.add(content.substring(start));
-    }
-    String[] array = new String[result.size()];
-    result.toArray(array);
-    return array;
+    result[index] = content.substring(start);
+
+    return result;
 }
-    private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
+private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
 
     public class Login implements CommandListener { private Form screen = new Form("Login"); private TextField userField = new TextField("Username", "", 256, TextField.ANY); private Command loginCommand = new Command("Login", Command.OK, 1), exitCommand = new Command("Exit", Command.SCREEN, 2); public Login() { screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); screen.append(userField); screen.addCommand(loginCommand); screen.addCommand(exitCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == loginCommand) { username = userField.getString(); if (username.equals("")) { } else { writeRMS("OpenRMS", username); display.setCurrent(form); runScript(loadRMS("initd", 1)); } } else if (c == exitCommand) { processCommand("exit"); } } }
 
