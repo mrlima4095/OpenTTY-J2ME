@@ -225,53 +225,63 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else { if (argument.startsWith("/")) { if (paths.containsKey(argument)) { path = argument; } else { echoCommand("cd: " + basename(argument) + ": not found"); } } else if (argument.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { processCommand(path.equals("/") ? "cd " + "/" + argument : "cd " + path + "/" + argument); } } }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
-        else if (mainCommand.equals("dir")) { 
-            if (argument.equals("f")) { new Explorer(); } 
-            else if (argument.equals("s")) { new FileExplorer(""); } 
-            else if (argument.equals("v")) { 
-                try { 
-                    String[] recordStores = RecordStore.listRecordStores(); 
-                    if (recordStores != null) { 
-                        for (int i = 0; i < recordStores.length; i++) { 
-                            if (recordStores[i].startsWith(".")) { } 
-                            else { echoCommand(recordStores[i]); } 
-                        } 
-                    } 
-                } catch (RecordStoreException e) { } } 
-            else {
-                String base = argument.startsWith("/") ? argument : (argument == null || argument.length() == 0 ? path : (path.endsWith("/") ? path + argument : path + "/" + argument));
-                if (!base.endsWith("/")) base += "/";
-            
-                String[] entries = split(read("/java/resources.txt"), '\n');
-                Vector results = new Vector();
-            
-                for (int i = 0; i < entries.length; i++) {
-                    String entry = entries[i].trim();
-                    if (!entry.startsWith(base)) continue;
-            
-                    String relative = entry.substring(base.length());
-                    if (relative.length() == 0) continue;
-            
-                    int slashIndex = relative.indexOf('/');
-                    if (slashIndex == -1) {
-                        if (!results.contains(relative)) results.addElement(relative);
-                    } else {
-                        String subdir = relative.substring(0, slashIndex);
-                        if (!results.contains(subdir + "/")) results.addElement(subdir + "/");
-                    }
-                }
-            
-                if (results.isEmpty()) {
-                    echoCommand("dir: " + basename(base) + ": not found");
-                } else {
+        else if (mainCommand.equals("dir")) {
+    if (argument.equals("f")) {
+        new Explorer();
+    } else if (argument.equals("s")) {
+        new FileExplorer("");
+    } else {
+        String base = argument.startsWith("/") ? argument : (argument == null || argument.length() == 0 ? path : (path.endsWith("/") ? path + argument : path + "/" + argument));
+        if (!base.endsWith("/")) { base += "/"; }
+
+        if (base.equals("/home/")) {
+            try {
+                String[] recordStores = RecordStore.listRecordStores();
+                if (recordStores != null && recordStores.length > 0) {
                     StringBuffer sb = new StringBuffer();
-                    for (int i = 0; i < results.size(); i++) {
-                        sb.append(results.elementAt(i)).append("\t");
+                    for (int i = 0; i < recordStores.length; i++) {
+                        if (!recordStores[i].startsWith(".")) {
+                            sb.append(recordStores[i]).append("\t");
+                        }
                     }
                     echoCommand(sb.toString().trim());
+                } else { }
+            } catch (RecordStoreException e) {
+                echoCommand(e.getMessage());
+            }
+        } else {
+            String[] entries = split(read("/java/resources.txt"), '\n');
+            Vector results = new Vector();
+
+            for (int i = 0; i < entries.length; i++) {
+                String entry = entries[i].trim();
+                if (!entry.startsWith(base)) continue;
+
+                String relative = entry.substring(base.length());
+                if (relative.length() == 0) continue;
+
+                int slashIndex = relative.indexOf('/');
+                if (slashIndex == -1) {
+                    if (!results.contains(relative)) results.addElement(relative);
+                } else {
+                    String subdir = relative.substring(0, slashIndex);
+                    if (!results.contains(subdir + "/")) results.addElement(subdir + "/");
                 }
             }
-        }        
+
+            if (results.isEmpty()) {
+                echoCommand("dir: " + basename(base) + ": not found");
+            } else {
+                StringBuffer sb = new StringBuffer();
+                for (int i = 0; i < results.size(); i++) {
+                    sb.append(results.elementAt(i)).append("\t");
+                }
+                echoCommand(sb.toString().trim());
+            }
+        }
+    }
+}
+
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
