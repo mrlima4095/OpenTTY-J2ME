@@ -1,20 +1,14 @@
-.
-| java/
-| | bin/
-| | | icon.png
-| | | java
-| | | sh
-| | etc/
-| | | fstab
-| | | gobuster
-| | | headers
-| | | index.html
-| | | initd.sh
-| | help.txt
-| | lib/
-| | | netkit
-| | | settings
-| | | yang
-| | resources.txt
-| scripts/
-| | debug.sh
+/java/bin/sh
+/java/bin/java
+/java/bin/icon.png
+/java/etc/initd.sh
+/java/etc/index.html
+/java/etc/gobuster
+/java/etc/headers
+/java/etc/fstab
+/java/lib/yang
+/java/lib/netkit
+/java/lib/settings
+/java/resources.txt
+/java/help.txt
+/scripts/debug.sh
