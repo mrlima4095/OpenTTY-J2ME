@@ -535,8 +535,44 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 012 - (File)
     // |
     // Directories Manager
-    private void mount(String script) { String[] lines = split(script, '\n'); for (int i = 0; i < lines.length; i++) { String line = ""; if (lines[i] != null) { line = lines[i].trim(); } if (line.startsWith("#")) { } else if (line.length() != 0) { if (line.startsWith("/")) { String fullPath = ""; int start = 0; for (int j = 1; j < line.length(); j++) { if (line.charAt(j) == '/') { String dir = line.substring(start + 1, j); fullPath += "/" + dir; addDirectory(fullPath); start = j; } } String dir = line.substring(start + 1); fullPath += "/" + dir; addDirectory(fullPath); } } } }
-    private void addDirectory(String fullPath) {
+    private void mount(String script) {
+    String[] lines = split(script, '\n');
+
+    for (int i = 0; i < lines.length; i++) {
+        String line = "";
+        if (lines[i] != null) {
+            line = lines[i].trim();
+        }
+
+        if (line.length() == 0 || line.startsWith("#")) continue;
+
+        if (line.startsWith("/")) {
+            String fullPath = "";
+            int start = 0;
+
+            // monta diretórios intermediários
+            for (int j = 1; j < line.length(); j++) {
+                if (line.charAt(j) == '/') {
+                    String dir = line.substring(start + 1, j);
+                    fullPath += "/" + dir;
+                    addDirectory(fullPath + "/"); // diretório intermediário
+                    start = j;
+                }
+            }
+
+            // trata último segmento
+            String finalPart = line.substring(start + 1);
+            fullPath += "/" + finalPart;
+
+            if (line.endsWith("/")) {
+                addDirectory(fullPath + "/"); // é diretório final
+            } else {
+                addDirectory(fullPath); // é arquivo final
+            }
+        }
+    }
+}
+        private void addDirectory(String fullPath) {
         boolean isDirectory = fullPath.endsWith("/");
         if (!paths.containsKey(fullPath)) {
             if (isDirectory) {
