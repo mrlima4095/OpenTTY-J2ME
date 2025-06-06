@@ -6,11 +6,11 @@
 /java/bin/java
 /java/bin/icon.png
 /java/etc/
+/java/etc/fstab
+/java/etc/headers
+/java/etc/gobuster
 /java/etc/initd.sh
 /java/etc/index.html
-/java/etc/gobuster
-/java/etc/headers
-/java/etc/fstab
 /java/lib/
 /java/lib/yang
 /java/lib/netkit
