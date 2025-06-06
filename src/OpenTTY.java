@@ -222,7 +222,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("local")) { new FileExplorer(argument); }
         else if (mainCommand.equals("ls")) { processCommand("execute dir f"); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
-        else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else { if (argument.startsWith("/")) { if (paths.containsKey(argument)) { path = argument; } else { echoCommand("cd: " + basename(argument) + ": not found"); } } else if (argument.equals("..")) { int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == 0) { path = "/"; } else { path = path.substring(0, lastSlashIndex); } } else { processCommand(path.equals("/") ? "cd " + "/" + argument : "cd " + path + "/" + argument); } } }
+        else if (mainCommand.equals("cd")) {
+            if (argument.equals("")) {
+                path = "/";
+            } else if (argument.equals("..")) {
+                if (path.equals("/")) return;
+                int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1);
+                path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1);
+            } else {
+                String targetPath = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument);
+                if (!targetPath.endsWith("/")) targetPath += "/";
+
+                if (paths.containsKey(targetPath)) {
+                    path = targetPath;
+                } else {
+                    echoCommand("cd: " + basename(targetPath) + ": not a directory");
+                }
+            }
+        }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) {
