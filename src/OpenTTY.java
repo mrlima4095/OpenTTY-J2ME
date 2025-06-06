@@ -222,21 +222,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("local")) { new FileExplorer(argument); }
         else if (mainCommand.equals("ls")) { processCommand("execute dir f"); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
-        else if (mainCommand.equals("cd")) {
-            if (argument.equals("")) { path = "/"; } 
-            else if (argument.equals("..")) {
-                if (path.equals("/")) return;
-                int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1);
-                path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1);
-            } 
-            else {
-                String targetPath = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument);
-                if (!targetPath.endsWith("/")) targetPath += "/";
-
-                if (paths.containsKey(targetPath)) { path = targetPath; } 
-                else { echoCommand("cd: " + basename(targetPath) + ": not a directory"); }
-            }
-        }
+        else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/"; } else if (argument.equals("..")) { if (path.equals("/")) { return; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } else { String targetPath = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); if (!targetPath.endsWith("/")) { targetPath += "/"; } if (paths.containsKey(targetPath)) { path = targetPath; } else { echoCommand("cd: " + basename(targetPath) + ": not a directory"); } } }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) {
@@ -247,47 +233,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             (argument.startsWith("/") ? argument :
                             (path.endsWith("/") ? path + argument : path + "/" + argument));
 
-                if (!base.endsWith("/")) base += "/";
+                if (!base.endsWith("/")) { base += "/"; }
 
                 Vector results = new Vector();
-
                 if (base.equals("/home/")) {
                     try {
                         String[] recordStores = RecordStore.listRecordStores();
                         if (recordStores != null) {
                             for (int i = 0; i < recordStores.length; i++) {
                                 String name = recordStores[i];
-                                if (!name.startsWith(".") && !results.contains(name)) {
-                                    results.addElement(name);
-                                }
+                                if (!name.startsWith(".") && !results.contains(name)) { results.addElement(name); }
                             }
                         }
-                    } catch (RecordStoreException e) {
-                        echoCommand("dir: " + e.getMessage());
-                        return;
-                    }
+                    } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; }
                 }
 
-                if (!paths.containsKey(base)) {
-                    echoCommand("dir: " + basename(base) + ": not found");
-                    return;
-                }
+                if (!paths.containsKey(base)) { echoCommand("dir: " + basename(base) + ": not found"); return; }
 
                 String[] files = (String[]) paths.get(base);
                 if (files != null) {
                     for (int i = 0; i < files.length; i++) {
                         String f = files[i].trim();
-                        if (f == null || f.equals("..") || f.equals("/")) continue;
+                        if (f == null || f.equals("..") || f.equals("/")) { continue; }
                         if (!results.contains(f) && !results.contains(f + "/")) { results.addElement(f); }
                     }
                 }
 
                 if (!results.isEmpty()) {
                     StringBuffer sb = new StringBuffer();
-                    boolean newline = base.equals("/home/");
+                    String newline = base.equals("/home/") ? "\n" : "\t";
                     for (int i = 0; i < results.size(); i++) {
                         String item = (String) results.elementAt(i);
-                        if (!item.equals("/")) { sb.append(item).append(newline ? "\n" : "\t"); }
+                        if (!item.equals("/")) { sb.append(item).append(newline); }
                     }
                     echoCommand(sb.toString().trim());
                 }
