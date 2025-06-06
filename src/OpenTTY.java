@@ -227,16 +227,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(""); } 
             else {
-                String base = (argument == null || argument.length() == 0) ? path : (argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument));
-                if (!base.endsWith("/")) { base += "/"; }
-                if (!argument.endsWith("/") && paths.containsKey(base.substring(0, base.length() - 1))) {
-                    echoCommand(basename(base));
-                    return;
-                }
-
-
                 Vector results = new Vector();
-                if (base.equals("/home/")) {
+                if (path.equals("/home/")) {
                     try {
                         String[] recordStores = RecordStore.listRecordStores();
                         if (recordStores != null) {
@@ -248,10 +240,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; }
                 }
 
-                if (!paths.containsKey(base)) { echoCommand("dir: " + basename(base) + ": not found"); return; }
-
-
-                String[] files = (String[]) paths.get(base);
+                String[] files = (String[]) paths.get(path);
                 if (files != null) {
                     for (int i = 0; i < files.length; i++) {
                         String f = files[i].trim();
@@ -262,7 +251,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (!results.isEmpty()) {
                     StringBuffer sb = new StringBuffer();
-                    String newline = base.equals("/home/") ? "\n" : "\t";
+                    String newline = path.equals("/home/") ? "\n" : "\t";
                     for (int i = 0; i < results.size(); i++) {
                         String item = (String) results.elementAt(i);
                         if (!item.equals("/")) { sb.append(item).append(newline); }
