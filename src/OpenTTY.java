@@ -238,15 +238,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } 
                     } 
                 } catch (RecordStoreException e) { } } 
-            else { 
+            else {
+                String currentPath = argument.startsWith("/") ? argument : (argument == null || argument.length() == 0 ? path : (path.endsWith("/") ? path + argument : path + "/" + argument));
+                String[] entries = split(read("/java/resources.txt"), '\n');
+                Vector results = new Vector();
+            
+                for (int i = 0; i < entries.length; i++) {
+                    String entry = entries[i].trim();
+                    if (entry.startsWith(currentPath)) {
+                        String relative = entry.substring(currentPath.length());
+                        if (relative.indexOf('/') == -1 && relative.length() > 0) {
+                            results.addElement(relative);
+                        } else if (relative.indexOf('/') != -1) {
+                            String subdir = relative.substring(0, relative.indexOf('/'));
+                            if (!results.contains(subdir)) {
+                                results.addElement(subdir + "/");
+                            }
+                        }
+                    }
+                }
+            
                 StringBuffer sb = new StringBuffer();
-                String[] files = (String[]) paths.get(argument.startsWith("/") && paths.containsKey(argument) ? argument : argument == null || argument.length() == 0 ? path : path + "/" + argument); 
-                for (int i = 0; i < files.length; i++) { 
-                    if (!files[i].equals("..")) { sb.append(files[i].trim() + "\t"); } 
-                } 
-
-                echoCommand(sb.toString());
-            } 
+                for (int i = 0; i < results.size(); i++) {
+                    sb.append(results.elementAt(i)).append("\t");
+                }
+            
+                echoCommand(sb.toString().trim());
+            }
         }        
         // |
         // Device Files
