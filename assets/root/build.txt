@@ -40,6 +40,7 @@
 [2025-1.14.2-01x73] Modified history vector key
 [2025-1.14.2-01x74] Added Command 'PUSHD' and 'POPD'
 [2025-1.14.2-01x75] Added Command 'PONG'
-[2025-1.14.2-01x76] Modified FS handler and mountpoints
+[2025-1.14.2-01x76] Modified FS handler and mount points
 [2025-1.14.2-01x77] Modified 'CASE' - Performance debugging
 [2025-1.14.2-01x78] Modified Font generators
+[2025-1.14.2-01x79] Modified 'LSBLK' - Adapt to "new" file system structure
