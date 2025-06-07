@@ -243,7 +243,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.DEVICE", argument.equals("-x") ? ";" : "\t")); }
             else if (argument.equals("-p")) { echoCommand(roots.toString()); } 
-            else if (mainCommand.equals("lsblk")) {
             else if (argument.equals("-l")) {
                 echoCommand("NAME\tTYPE\tSIZE");
                 Enumeration storage = FileSystemRegistry.listRoots();
