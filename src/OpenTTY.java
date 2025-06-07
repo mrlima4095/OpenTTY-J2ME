@@ -501,8 +501,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         Hashtable nodes = parseProperties(read("/java/etc/perms.ini"));
         
+        int status = 0;
         if (nodes.containsKey(node)) {
-            int status = 0;
 
             try {
                 if (node.equals("http")) { ((HttpConnection) Connector.open("http://localhost")).close(); }
