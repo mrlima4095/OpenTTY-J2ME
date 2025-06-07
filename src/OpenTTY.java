@@ -292,7 +292,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 RecordStore rs = RecordStore.openRecordStore(argument, true);
                 byte[] block = new byte[128]; 
 
-                int written = 0; start("zero")
+                int written = 0; start("zero");
                 while (trace.containsKey("zero")) {
                     rs.addRecord(block, 0, block.length);
                     written += block.length;
