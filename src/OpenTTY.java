@@ -156,6 +156,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("echo")) { echoCommand(argument); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
         else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
+        else if (mainCommand.equals("expr")) { echoCommand(exprCommand(argument)); }
         else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
         else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
@@ -283,7 +284,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("expr")) { echoCommand(exprCommand(argument)); }
 
         // API 014 - (OpenTTY)
         // |
@@ -306,81 +306,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else { echoCommand(mainCommand + ": not found"); }
 
-    }
-
-    private String exprCommand(String expr) {
-    char[] tokens = expr.toCharArray();
-    double[] vals = new double[32];
-    char[] ops = new char[32];
-    int valTop = -1, opTop = -1;
-    int i = 0, len = tokens.length;
-
-    while (i < len) {
-        char c = tokens[i];
-
-        if (c == ' ') { i++; continue; }
-
-        if (c >= '0' && c <= '9') {
-            double num = 0;
-            while (i < len && tokens[i] >= '0' && tokens[i] <= '9') {
-                num = num * 10 + (tokens[i++] - '0');
-            }
-            if (i < len && tokens[i] == '.') {
-                i++;
-                double frac = 0, div = 10;
-                while (i < len && tokens[i] >= '0' && tokens[i] <= '9') {
-                    frac += (tokens[i++] - '0') / div;
-                    div *= 10;
-                }
-                num += frac;
-            }
-            vals[++valTop] = num;
-        } else if (c == '(') {
-            ops[++opTop] = c;
-            i++;
-        } else if (c == ')') {
-            while (opTop >= 0 && ops[opTop] != '(') {
-                double b = vals[valTop--], a = vals[valTop--];
-                char op = ops[opTop--];
-                vals[++valTop] = applyOpSimple(op, a, b);
-            }
-            opTop--; i++; // remove '('
-        } else if (c == '+' || c == '-' || c == '*' || c == '/') {
-            while (opTop >= 0 && prec(ops[opTop]) >= prec(c)) {
-                double b = vals[valTop--], a = vals[valTop--];
-                char op = ops[opTop--];
-                vals[++valTop] = applyOpSimple(op, a, b);
-            }
-            ops[++opTop] = c;
-            i++;
-        } else {
-            return "expr: invalid char '" + c + "'";
-        }
-    }
-
-    while (opTop >= 0) {
-        double b = vals[valTop--], a = vals[valTop--];
-        char op = ops[opTop--];
-        vals[++valTop] = applyOpSimple(op, a, b);
-    }
-
-    double result = vals[valTop];
-    return ((int) result == result) ? String.valueOf((int) result) : String.valueOf(result);
-}
-
-private int prec(char op) {
-    if (op == '+' || op == '-') return 1;
-    if (op == '*' || op == '/') return 2;
-    return 0;
-}
-
-private double applyOpSimple(char op, double a, double b) {
-    if (op == '+') return a + b;
-    if (op == '-') return a - b;
-    if (op == '*') return a * b;
-    if (op == '/') return b == 0 ? 0 : a / b;
-    return 0;
-}
+    }private String exprCommand(String expr) { char[] tokens = expr.toCharArray(); double[] vals = new double[32]; char[] ops = new char[32]; int valTop = -1, opTop = -1; int i = 0, len = tokens.length; while (i < len) { char c = tokens[i];         if (c == ' ') { i++; continue; } if (c >= '0' && c <= '9') { double num = 0; while (i < len && tokens[i] >= '0' && tokens[i] <= '9') { num = num * 10 + (tokens[i++] - '0'); } if (i < len && tokens[i] == '.') { i++; double frac = 0, div = 10; while (i < len && tokens[i] >= '0' && tokens[i] <= '9') { frac += (tokens[i++] - '0') / div; div *= 10; } num += frac; } vals[++valTop] = num; } else if (c == '(') { ops[++opTop] = c; i++; } else if (c == ')') { while (opTop >= 0 && ops[opTop] != '(') { double b = vals[valTop--], a = vals[valTop--]; char op = ops[opTop--]; vals[++valTop] = applyOpSimple(op, a, b); } opTop--; i++; } else if (c == '+' || c == '-' || c == '*' || c == '/') { while (opTop >= 0 && prec(ops[opTop]) >= prec(c)) { double b = vals[valTop--], a = vals[valTop--]; char op = ops[opTop--]; vals[++valTop] = applyOpSimple(op, a, b); } ops[++opTop] = c; i++; } else { return "expr: invalid char '" + c + "'"; } } while (opTop >= 0) { double b = vals[valTop--], a = vals[valTop--]; char op = ops[opTop--]; vals[++valTop] = applyOpSimple(op, a, b); } double result = vals[valTop]; return ((int) result == result) ? String.valueOf((int) result) : String.valueOf(result); } private int prec(char op) { if (op == '+' || op == '-') return 1; if (op == '*' || op == '/') return 2; return 0; } private double applyOpSimple(char op, double a, double b) { if (op == '+') return a + b; if (op == '-') return a - b; if (op == '*') return a * b; if (op == '/') return b == 0 ? 0 : a / b; return 0; }
 
 
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
