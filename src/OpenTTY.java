@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private String logs = "", path = "/", 
-                   build = "2025-1.14.2-01x78";
+                   build = "2025-1.14.2-01x79";
     private Vector stack = new Vector(), 
                    history = new Vector();
     private Display display = Display.getDisplay(this);
@@ -229,35 +229,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
-        else if (mainCommand.equals("lsblk")) { 
-            boolean hascard = false; 
-
-            StringBuffer roots = new StringBuffer(); 
-            Enumeration storage = FileSystemRegistry.listRoots(); 
-            while (storage.hasMoreElements()) { 
-                String root = (String) storage.nextElement(); 
-                roots.append(root).append("\n"); 
-
-                if (root.toLowerCase().indexOf("card") != -1 || root.toLowerCase().indexOf("sd") != -1 || root.toLowerCase().indexOf("e:") != -1 || root.toLowerCase().indexOf("d:") != -1) { hascard = true; } 
-            } 
-
-            if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.DEVICE", ".", argument.equals("-x") ? ";" : "\t")); }
-            else if (argument.equals("-p")) { echoCommand(roots.toString()); } 
-            else if (argument.equals("-l")) {
-                echoCommand("NAME\tTYPE\tSIZE");
-                Enumeration storage = FileSystemRegistry.listRoots();
-                while (storage.hasMoreElements()) {
-                    String root = (String) storage.nextElement();
-                    String type = (root.toLowerCase().indexOf("card") != -1 || root.toLowerCase().indexOf("sd") != -1) ? "disk" : "storage";
-                    long freeSpace = getFreeSpace(root);
-                    String sizeStr = freeSpace >= 0 ? (freeSpace / 1024) + "KB" : "N/A";
-                    echoCommand(root + "\t" + type + "\t" + sizeStr);
-                }
-                echoCommand("RMS\tstorage\tN/A");
-                echoCommand("MIDlet\tapp\tN/A");
-            }
-            else { echoCommand("lsblk: " + argument + ": not found"); } 
-        }
+        else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else if (argument.equals("-p")) { StringBuffer roots = new StringBuffer(); Enumeration storage = FileSystemRegistry.listRoots(); while (storage.hasMoreElements()) { String root = (String) storage.nextElement(); roots.append(root).append("\n"); } echoCommand(roots.toString()); } else { echoCommand("lsblk: " + argument + ": not found"); } }
         else if (mainCommand.equals("dd")) { if (argument.equals("")) { } else { try { String[] args = split(argument, ' '); FileConnection conn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); if (!conn.exists()) conn.create(); OutputStream os = conn.openOutputStream(); String content = args[1]; os.write(getcontent(content).getBytes()); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
         // |
         // RMS Files
@@ -313,7 +285,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("zero")) {
+            if (argument.equals("")) { argument = "zero"; }
+
+            try {
+                RecordStore rs = RecordStore.openRecordStore(argument, true);
+                byte[] block = new byte[blockSize]; 
+
+                int written = 0;
+                while (true) {
+                    rs.addRecord(block, 0, block.length);
+                    written += block.length;
+                }
+            } catch (RecordStoreFullException e) { echoCommand("Full! " + written + " bytes writted."); } 
+            catch (RecordStoreException e) { echoCommand(e.getMessage()); }
+        }
 
         // API 014 - (OpenTTY)
         // |
@@ -351,21 +337,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
-    private long getFreeSpace(String root) {
-    try {
-        FileConnection conn = (FileConnection) Connector.open("file:///" + root, Connector.READ);
-        if (conn.exists()) {
-            long free = conn.availableSize();
-            conn.close();
-            return free;
-        }
-    } catch (IOException e) {
-        // Ignorar erro e retornar -1
-    }
-    return -1;
-}
-
-
+    
     public class Login implements CommandListener { private Form screen = new Form("Login"); private TextField userField = new TextField("Username", "", 256, TextField.ANY); private Command loginCommand = new Command("Login", Command.OK, 1), exitCommand = new Command("Exit", Command.SCREEN, 2); public Login() { screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); screen.append(userField); screen.addCommand(loginCommand); screen.addCommand(exitCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == loginCommand) { username = userField.getString(); if (username.equals("")) { } else { writeRMS("OpenRMS", username); display.setCurrent(form); runScript(loadRMS("initd", 1)); } } else if (c == exitCommand) { processCommand("exit"); } } }
 
     // API 001 - (Registry)
