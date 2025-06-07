@@ -44,3 +44,4 @@
 [2025-1.14.2-01x77] Modified 'CASE' - Performance debugging
 [2025-1.14.2-01x78] Modified Font generators
 [2025-1.14.2-01x79] Modified 'LSBLK' - Adapt to "new" file system structure
+[2025-1.14.2-01x80] Modified 'CHMOD' - Generated file '/java/etc/perms.ini'
