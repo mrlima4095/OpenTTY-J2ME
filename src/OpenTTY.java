@@ -506,7 +506,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             try {
                 if (node.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); }
-                else if (node.equals("socket")) { ((SocketConnection) Connector.open("socket://$REPO")).close(); }
+                else if (node.equals("socket")) { ((SocketConnection) Connector.open(env("socket://$REPO"))).close(); }
                 else if (node.equals("file")) { FileSystemRegistry.listRoots(); }
                 else if (node.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); }
             } 
