@@ -14,7 +14,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
-    private String logs = "", path = "/", build = "2025-1.14.2-01x81";
+    private String logs = "", path = "/", build = "2025-1.14.2-01x82";
     private String username = loadRMS("OpenRMS", 1);
     private String nanoContent = loadRMS("nano", 1);
     private Vector stack = new Vector(), 
