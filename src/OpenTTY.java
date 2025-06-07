@@ -500,7 +500,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (node == null || node.length() == 0) { return; }
 
         Hashtable nodes = parseProperties(read("/java/etc/perms.ini"));
-        String address = split(node, ' ').length > 0 ? node.substring(node.indexOf(' ') + 1).trim() : (node.equals("http") || node.equals("https") ? "ipinfo.io" : (node.equals("socket") ? env("$REPO") : "8.8.8.8:53"))
+        String address = split(node, ' ').length > 0 ? node.substring(node.indexOf(' ') + 1).trim() : (node.equals("http") || node.equals("https") ? "ipinfo.io" : (node.equals("socket") ? env("$REPO") : "8.8.8.8:53"));
         node = node.substring(0, node.indexOf(' ') - 1).trim(); 
         
         int status = 1;
