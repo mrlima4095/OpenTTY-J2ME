@@ -501,7 +501,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         Hashtable nodes = parseProperties(read("/java/etc/perms.ini"));
         
-        int status = 0;
+        int status = 1;
         if (nodes.containsKey(node)) {
 
             try {
@@ -509,8 +509,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (node.equals("socket")) { ((SocketConnection) Connector.open("socket://localhost:0")).close(); }
                 else if (node.equals("file")) { FileSystemRegistry.listRoots(); }
                 else if (node.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); }
-
-                status = 1;
             } 
             catch (SecurityException e) { status = 2; } 
             catch (Exception e) { echoCommand(e.getMessage()); return; }
