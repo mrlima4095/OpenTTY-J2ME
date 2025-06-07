@@ -303,6 +303,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 echoCommand("Full! " + written + " bytes writted.");
             } catch (RecordStoreException e) {
                 echoCommand(e.getMessage());
+            } finally {
+                try {
+                    rs.close();
+                } catch (Exception e) { }
             }
             stop("zero");
         }
