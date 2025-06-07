@@ -302,7 +302,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
         
                 while (trace.containsKey("zero")) {
-                    block = new byte[block.length + 128];
+                    block = new byte[block.length + 1048576];
                     rs.setRecord(1, block, 0, block.length);
                     written = block.length;
                 }
