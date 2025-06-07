@@ -245,7 +245,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (argument.equals("-x")) { echoCommand("MIDlet;RMS;Storage;" + (hascard == true ? "SD Card;" : "")); } 
             else if (argument.equals("-p")) { echoCommand(roots.toString()); } 
             else { echoCommand("lsblk: " + argument + ": not found"); } }
-        else if (mainCommand.equals("dd")) { if (argument.equals("")) { } else { try { String[] args = split(argument, ' '); FileConnection conn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); if (!conn.exists()) conn.create(); OutputStream os = conn.openOutputStream(); String content = args[1]; os.write(getcontent(content).getBytes()); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
+        else if (mainCommand.equals("dd")) { 
+            if (argument.equals("")) { } 
+            else { 
+                try { 
+                    String[] args = split(argument, ' '); 
+                    FileConnection conn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); 
+                    if (!conn.exists()) conn.create(); 
+
+                    OutputStream os = conn.openOutputStream(); 
+                    String content = args[1]; 
+                    os.write(getcontent(content).getBytes()); 
+                    os.flush(); 
+                    echoCommand("operation finish"); 
+                } catch (IOException e) { echoCommand(e.getMessage()); } 
+            } 
+        }
         // |
         // RMS Files
         else if (mainCommand.equals("rm")) { deleteFile(argument); }
