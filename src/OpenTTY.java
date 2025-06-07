@@ -229,7 +229,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
-        else if (mainCommand.equals("lsblk")) { boolean hascard = false; StringBuffer roots = new StringBuffer(); Enumeration storage = FileSystemRegistry.listRoots(); while (storage.hasMoreElements()) { String root = (String) storage.nextElement(); roots.append(root).append("\n"); if (root.toLowerCase().indexOf("card") != -1 || root.toLowerCase().indexOf("sd") != -1 || root.toLowerCase().indexOf("e:") != -1 || root.toLowerCase().indexOf("d:") != -1) { hascard = true; } } if (argument.equals("")) { echoCommand("OpenTTY\n| MIDlet\n| RMS\nDevice\n| Storage" + (hascard == true ? "\n| SD Card" : "")); } else if (argument.equals("-x")) { echoCommand("MIDlet;RMS;Storage;" + (hascard == true ? "SD Card;" : "")); } else if (argument.equals("-p")) { echoCommand(roots.toString()); } else { echoCommand("lsblk: " + argument + ": not found"); } }
+        else if (mainCommand.equals("lsblk")) { 
+            boolean hascard = false; 
+
+            StringBuffer roots = new StringBuffer(); 
+            Enumeration storage = FileSystemRegistry.listRoots(); 
+            while (storage.hasMoreElements()) { 
+                String root = (String) storage.nextElement(); 
+                roots.append(root).append("\n"); 
+
+                if (root.toLowerCase().indexOf("card") != -1 || root.toLowerCase().indexOf("sd") != -1 || root.toLowerCase().indexOf("e:") != -1 || root.toLowerCase().indexOf("d:") != -1) { hascard = true; } 
+            } 
+
+            if (argument.equals("")) { echoCommand("OpenTTY\n| MIDlet\n| RMS\nDevice\n| Storage" + (hascard == true ? "\n| SD Card" : "")); } 
+            else if (argument.equals("-x")) { echoCommand("MIDlet;RMS;Storage;" + (hascard == true ? "SD Card;" : "")); } 
+            else if (argument.equals("-p")) { echoCommand(roots.toString()); } 
+            else { echoCommand("lsblk: " + argument + ": not found"); } }
         else if (mainCommand.equals("dd")) { if (argument.equals("")) { } else { try { String[] args = split(argument, ' '); FileConnection conn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); if (!conn.exists()) conn.create(); OutputStream os = conn.openOutputStream(); String content = args[1]; os.write(getcontent(content).getBytes()); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
         // |
         // RMS Files
