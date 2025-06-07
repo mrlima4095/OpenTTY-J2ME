@@ -559,7 +559,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         for (int t = 0; t < args.length; t++) types[t] = args[t].getClass();
 
                         try {
-                            java.lang.reflect.Method method = clazz.getMethod(methodName, types);
+                            Method method = clazz.getMethod(methodName, types);
                             Object result = method.invoke(obj, args);
                             echoCommand("Return: " + (result == null ? "void" : result.toString()));
                         } catch (Exception ex) {
@@ -567,7 +567,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     } else {
                         try {
-                            java.lang.reflect.Method method = clazz.getMethod(methodCall, new Class[0]);
+                            Method method = clazz.getMethod(methodCall, new Class[0]);
                             Object result = method.invoke(obj);
                             echoCommand("Return: " + (result == null ? "void" : result.toString()));
                         } catch (Exception ex) {
