@@ -241,7 +241,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (root.toLowerCase().indexOf("card") != -1 || root.toLowerCase().indexOf("sd") != -1 || root.toLowerCase().indexOf("e:") != -1 || root.toLowerCase().indexOf("d:") != -1) { hascard = true; } 
             } 
 
-            if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.DEVICE", argument.equals("-x") ? ";" : "\t")); }
+            if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.DEVICE", ".", argument.equals("-x") ? ";" : "\t")); }
             else if (argument.equals("-p")) { echoCommand(roots.toString()); } 
             else if (argument.equals("-l")) {
                 echoCommand("NAME\tTYPE\tSIZE");
