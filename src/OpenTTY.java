@@ -287,19 +287,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("zero")) {
             if (argument.equals("")) { argument = "zero"; }
-
+        
+            int written = 0; start("zero");
             try {
                 RecordStore rs = RecordStore.openRecordStore(argument, true);
-                byte[] block = new byte[128]; 
-
-                int written = 0; start("zero");
+                byte[] block = new byte[128];
+        
+                
                 while (trace.containsKey("zero")) {
                     rs.addRecord(block, 0, block.length);
-                    written = written + block.length;
-                } echoCommand(written + " bytes writted.");
-            } catch (RecordStoreFullException e) { echoCommand("Full! " + written + " bytes writted."); } 
-            catch (RecordStoreException e) { echoCommand(e.getMessage()); }
+                    written += block.length;
+                }
+                echoCommand(written + " bytes writted.");
+            } catch (RecordStoreFullException e) {
+                echoCommand("Full! " + written + " bytes writted.");
+            } catch (RecordStoreException e) {
+                echoCommand(e.getMessage());
+            }
+            stop("zero");
         }
+
+        
 
         // API 014 - (OpenTTY)
         // |
