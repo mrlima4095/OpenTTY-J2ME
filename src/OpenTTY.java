@@ -295,7 +295,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int written = 0; start("zero");
                 while (trace.containsKey("zero")) {
                     rs.addRecord(block, 0, block.length);
-                    written += block.length;
+                    written = written + block.length;
                 } echoCommand(written + " bytes writted.");
             } catch (RecordStoreFullException e) { echoCommand("Full! " + written + " bytes writted."); } 
             catch (RecordStoreException e) { echoCommand(e.getMessage()); }
