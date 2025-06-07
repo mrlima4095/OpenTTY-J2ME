@@ -236,6 +236,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), loadRMS(getCommand(argument), 1)); } }
+        else if (mainCommand.equals("mv")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); writeRMS(args[1], loadRMS(getcontent(args[0]), 1)); deleteFile(args[0]); } }
         // |
         // Text Manager
         else if (mainCommand.equals("sed")) { StringEditor(argument); }
@@ -281,8 +282,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("")) {  }
 
         // API 014 - (OpenTTY)
         // |
