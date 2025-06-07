@@ -21,7 +21,7 @@ query=execute x11 quest viaversion;
 quest.title=Select API
 quest.label=Version
 quest.key=REQUEST
-quest.cmd=execute find $REQUEST viaversion; if ($OUTPUT == null) exec echo [ViaVersion] Invalid API '$REQUEST' & @alert & set OUTPUT=true; $OUTPUT;
+quest.cmd=execute find $REQUEST viaversion; if ($OUTPUT == null) exec echo [ ViaVersion ] Invalid API '$REQUEST' & @alert & set OUTPUT=true; $OUTPUT;
 
 
 list.title=Select API
@@ -42,3 +42,4 @@ list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.1
 1.14=execute set REQUEST=1.14; set PATCH=Renders Update; axrz run;
 1.14.1=execute set REQUEST=1.14.1; set PATCH=Renders Update; axrz run;
 1.14.2=execute set REQUEST=1.14.2; set PATCH=Renders Update; axrz run;
+1.14.3=execute set REQUEST=1.14.2; set PATCH=Renders Update; axrz run;
