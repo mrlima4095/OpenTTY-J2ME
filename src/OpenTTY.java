@@ -290,13 +290,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             try {
                 RecordStore rs = RecordStore.openRecordStore(argument, true);
-                byte[] block = new byte[blockSize]; 
+                byte[] block = new byte[128]; 
 
-                int written = 0;
-                while (true) {
+                int written = 0; start("zero")
+                while (trace.containsKey("zero")) {
                     rs.addRecord(block, 0, block.length);
                     written += block.length;
-                }
+                } echoCommand(written + " bytes writted.");
             } catch (RecordStoreFullException e) { echoCommand("Full! " + written + " bytes writted."); } 
             catch (RecordStoreException e) { echoCommand(e.getMessage()); }
         }
