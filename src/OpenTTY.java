@@ -501,7 +501,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         int status = 1; 
 
         if (nodes.containsKey(node)) { try { if (node.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } else if (node.equals("socket")) { ((SocketConnection) Connector.open(env("socket://$REPO"))).close(); } else if (node.equals("file")) { FileSystemRegistry.listRoots(); } else if (node.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } } catch (SecurityException e) { status = 2; } catch (Exception e) { echoCommand("chmod: " + e.getMessage()); return; } } 
-        else if (node.equals("*")) { Enumeration keys = nodes.keys(); while (keys.hasMoreElements()) { chmod((String) keys.nextElement()); } }
+        else if (node.equals("*")) { Enumeration keys = nodes.keys(); while (keys.hasMoreElements()) { chmod((String) keys.nextElement()); } return; }
         else { echoCommand("chmod: " + node + ": not found"); return; } 
 
         if (status == 1) MIDletLogs("add info Permission '" + (String) nodes.get(node) + "' granted"); 
