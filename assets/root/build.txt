@@ -45,5 +45,6 @@
 [2025-1.14.2-01x78] Modified Font generators
 [2025-1.14.2-01x79] Modified 'LSBLK' - Adapt to "new" file system structure
 [2025-1.14.2-01x80] Modified 'CHMOD' - Generated file '/java/etc/perms.ini'
-[2025-1.14.2-01x81] Modified java runtime
+[2025-1.14.2-01x81] Modified Java Runtime
 [2025-1.14.2-01x82] Release 1.14.2
+[2025-1.14.3-01x83] 1.14.3 Suite case | Added command 'EXPR'

@@ -1,32 +1,17 @@
-OpenTTY Java Edition 1.14.2
+OpenTTY Java Edition 1.14.3
 Copyright (C) 2025 - Mr. Lima
 
 
 [ _Commands_ ]
 
-- `view [raw]`: Start a HTML Viewer window direct from argument 
-- `conf [file]`: Parse JSON to INI format
-- `pong [ip:port]`: Ping in a socket address
-- `time [command]`: Meter time of process in current Thread (ms)
-- `pushd [path]`: Add current directory to stack and charge to **path**
-- `popd`: Return to last directory in stack
-- `head [file]`: Read first 10 lines of **file**
-- `tail [file]`: Read last 10 lines of **file**
+- ``: 
+- ``: 
+- ``: 
+- ``: 
 
 [ _Updates_ ]
 
-- Added new Package **BoxME**
-- **Yang** updated to **1.4**
-- Better resources message
-- Arguments clear pattern **"** when argument starts and ends with it
-- JSON and other parsers required inform file (not considering nano by default anymore)
-- Command **ls** now show RMS files.
-- Assets can be viewed together in directory
-- RMS files path setted in **/home**
-- **/java/etc/fstab** now contain file tree
-- Removed file **/java/resources.txt**
-- New **if** number operators **==**, **!=**, **> & >=** and **< & <=**
-
-[ _Notes_ ]
-
-- OpenTTY Server default IP is my VPS with a session of it
+- 
+-
+- 
+- 
