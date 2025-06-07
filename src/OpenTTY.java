@@ -315,7 +315,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 echoCommand(e.getMessage());
             } finally {
                 try {
-                    if (rs != null) rs.close();
+                    if (rs != null) rs.closeRecordStore();
                 } catch (Exception e) { }
             }
         
