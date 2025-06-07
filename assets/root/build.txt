@@ -48,3 +48,4 @@
 [2025-1.14.2-01x81] Modified Java Runtime
 [2025-1.14.2-01x82] Release 1.14.2
 [2025-1.14.3-01x83] 1.14.3 Suite case | Added command 'EXPR'
+[2025-1.14.3-01x84] Removed Commands 'FORGET', 'CLS' and 'RNANO' | Added clear patterns 'stdout', 'stdin', 'logs' and 'history'
