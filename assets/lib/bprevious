@@ -5,7 +5,7 @@ version=1.0
 description=Auto Save Screens
 
 api.version=1.14
-api.error=execute log add error BackPrevious requires OpenTTY 1.14 or newer!; echo [BackPrevious] Required OpenTTY 1.14 or newer;
+api.error=execute log add error BackPrevious requires OpenTTY 1.14 or newer!; echo [ BackPrevious ] Required OpenTTY 1.14 or newer;
 
 command=xterm,back
 
