@@ -284,7 +284,50 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
+<<<<<<< HEAD
         //else if (mainCommand.equals("")) {  }        
+=======
+        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("zero")) {
+            if (argument.equals("")) { argument = "zero"; }
+        
+            int written = 0;
+            RecordStore rs = null;
+            start("zero");
+        
+            try {
+                rs = RecordStore.openRecordStore(argument, true);
+        
+                byte[] block = new byte[1048576];
+                if (rs.getNumRecords() == 0) {
+                    rs.addRecord(block, 0, block.length);
+                    written += block.length;
+                }
+        
+                while (trace.containsKey("zero")) {
+                    block = new byte[block.length + 128];
+                    rs.setRecord(1, block, 0, block.length);
+                    written = block.length;
+                }
+        
+                echoCommand(written + " bytes writted.");
+        
+            } catch (RecordStoreFullException e) {
+                echoCommand("Full! " + written + " bytes writted.");
+            } catch (RecordStoreException e) {
+                echoCommand(e.getMessage());
+            } finally {
+                try {
+                    if (rs != null) rs.closeRecordStore();
+                } catch (Exception e) { }
+            }
+        
+            stop("zero");
+        }
+
+
+        
+>>>>>>> parent of c369fe3 (update OpenTTY.java)
 
         // API 014 - (OpenTTY)
         // |
