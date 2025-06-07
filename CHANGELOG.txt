@@ -6,6 +6,8 @@ Copyright (C) 2025 - Mr. Lima
 
 - `expr (expression)`: run math expressions 
 - `mv [origin] [new]`: move a RMS file 
+- `uuid`: generate random uuid 
+- ``: 
 - ``: 
 - ``: 
 
