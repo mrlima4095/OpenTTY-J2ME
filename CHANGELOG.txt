@@ -11,7 +11,11 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Updates_ ]
 
+- Removed commands `forget`, `cls` and `rnano`
 - 
--
 - 
 - 
+
+[ _Notes_ ]
+
+- To clear history you can use `clear history`
