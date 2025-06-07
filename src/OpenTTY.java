@@ -9,7 +9,7 @@ import java.io.*;
 
 
 public class OpenTTY extends MIDlet implements CommandListener {
-    private int cursorX = 10, cursorY = 10, page = 1;
+    private int cursorX = 10, cursorY = 10;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
