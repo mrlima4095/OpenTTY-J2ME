@@ -284,54 +284,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("zero")) {
-    if (argument.equals("")) { 
-        echoCommand("Usage: zero file:///path/to/file");
-        return;
-    }
-
-    if (!argument.startsWith("file:///")) {
-        echoCommand("zero: only supports file:/// paths");
-        return;
-    }
-
-    int written = 0;
-    OutputStream os = null;
-    FileConnection conn = null;
-    start("zero");
-
-    try {
-        conn = (FileConnection) Connector.open(argument, Connector.READ_WRITE);
-
-        if (!conn.exists()) {
-            conn.create();
-        }
-
-        os = conn.openOutputStream();
-        byte[] block = new byte[1024 * 64]; // 64KB por bloco
-
-        while (trace.containsKey("zero")) {
-            os.write(block);
-            written += block.length;
-        }
-
-        echoCommand(written + " bytes writted.");
-
-    } catch (IOException e) {
-        echoCommand("IOException: " + e.getMessage() + " (" + written + " bytes writted)");
-    } finally {
-        try {
-            if (os != null) os.close();
-            if (conn != null) conn.close();
-        } catch (Exception e) { }
-        stop("zero");
-    }
-}
-
-
-
-        
+        //else if (mainCommand.equals("")) {  }        
 
         // API 014 - (OpenTTY)
         // |
