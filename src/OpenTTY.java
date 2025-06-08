@@ -229,9 +229,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 String targetPath = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
                 if (!targetPath.endsWith("/")) { targetPath += "/"; } 
-                if (paths.containsKey(targetPath)) { path = targetPath; } 
-                else { echoCommand("cd: " + basename(targetPath) + ": not found"); } 
-            } 
+                if (paths.containsKey(targetPath)) {
+    path = targetPath;
+} else if (targetPath.startsWith("/mnt/")) {
+    try {
+        String realPath = "file:///" + targetPath.substring(5);
+        if (!realPath.endsWith("/")) realPath += "/";
+        FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ);
+        if (fc.exists() && fc.isDirectory()) {
+            path = targetPath;
+        } else {
+            echoCommand("cd: " + basename(targetPath) + ": not a directory");
+        }
+        fc.close();
+    } catch (IOException e) {
+        echoCommand("cd: " + basename(targetPath) + ": " + e.getMessage());
+    }
+} else {
+    echoCommand("cd: " + basename(targetPath) + ": not found");
+}
+} 
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
@@ -240,7 +257,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (argument.equals("s")) { new FileExplorer(""); } 
             else { 
                 Vector results = new Vector(); 
-                if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } 
+                if (path.equals("/mnt/")) {
+            try {
+                Enumeration roots = FileSystemRegistry.listRoots();
+                while (roots.hasMoreElements()) {
+                    String root = (String) roots.nextElement();
+                    if (!results.contains(root)) {
+                        results.addElement(root);
+                    }
+                }
+            } catch (Exception e) {
+                echoCommand("dir: " + e.getMessage());
+                return;
+            }
+        }
+        // Se for dentro de /mnt/, lista conteúdo real
+        else if (path.startsWith("/mnt/")) {
+            try {
+                String realPath = "file:///" + path.substring(5); // Remove "/mnt" e vira "file:///"
+                if (!realPath.endsWith("/")) realPath += "/";
+                FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ);
+                Enumeration content = fc.list();
+                while (content.hasMoreElements()) {
+                    String item = (String) content.nextElement();
+                    results.addElement(item);
+                }
+                fc.close();
+            } catch (IOException e) {
+                echoCommand("dir: " + e.getMessage());
+                return;
+            }
+        }
+                else if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } 
                 
                 String[] files = (String[]) paths.get(path); 
                 if (files != null) { 
