@@ -34,6 +34,7 @@ GoBuster=execute set TOOL=gobuster; set LABEL=WebSite URL (GoBuster Query); x11 
 Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress (Port Scanner); x11 quest armitage;
 Address Finder=execute set TOOL=nk gaddr; set LABEL=Web Domain; x11 quest /java/lib/netkit;
 Ping a WebSite=execute set TOOL=nk ping; set LABEL=Web Domain; x11 quest /java/lib/netkit;
+Ping a Server=execute set TOOL=nk pong; set LABEL=IP Address; x11 quest /java/lib/netkit;
 IP Generator=execute genip; install nano; touch; add <title>$OUTPUT Info</title>; fw $OUTPUT; add $OUTPUT; html; get nano;
 HTTPS Requester=execute set TOOL=query socket://$REPO http; set LABEL=URL (HTTPS Proxy - Local); x11 quest armitage;
 HTTPS (Via Proxy)=execute set TOOL=query socket://$REPO http; set LABEL=URL (HTTPS Proxy); x11 quest armitage;
