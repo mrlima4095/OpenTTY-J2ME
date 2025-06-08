@@ -202,6 +202,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gaddr")) { new GetAddress(argument); }
         else if (mainCommand.equals("prscan")) { new PortScanner(argument); }
         else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
+        // |
         else if (mainCommand.equals("wrl")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
         // |
         // IP Tools
