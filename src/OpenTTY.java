@@ -347,29 +347,34 @@ public class OpenTTY extends MIDlet implements CommandListener {
         command = env(command.trim());
         String mainCommand = getCommand(command);
         String argument = getArgument(command);
-
+        
         if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2025-05-04\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); }
-        else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
-        else if (mainCommand.equals("term")) { display.setCurrent(form); }
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
         else if (mainCommand.equals("buffer")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
+        // |
+        // X11 Loader
+        else if (mainCommand.equals("term")) { display.setCurrent(form); }
         else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); form.removeCommand(EXECUTE); }
-        else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); if (argument.equals("")) { current.setTicker(null); } else { current.setTicker(new Ticker(argument)); } }
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd"); form.setCommandListener(this); }
-        else if (mainCommand.equals("cmd")) { if (argument.equals("hide")) { form.removeCommand(HELP); form.removeCommand(NANO); form.removeCommand(CLEAR); form.removeCommand(HISTORY); } else { form.addCommand(HELP); form.addCommand(NANO); form.addCommand(CLEAR); form.addCommand(HISTORY); } }
+        else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { xserver("init"); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
+        else if (mainCommand.equals("cmd")) { Command[] cmds = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < cmds.length; i++) { if (argument.equals("hide")) { form.removeCommand(cmds[i]); } else { form.addCommand(cmds[i]); } } }
+        // | 
+        // Screen MODs
+        else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
         else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default"); } else { stdout.setFont(newFont(argument)); } }
-        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
-
-        else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { xserver("init"); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } else { xserver("init"); } }
+        else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
-
+        // |
+        // Screen Manager
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
         else if (mainCommand.equals("load")) { if (argument.equals("")) { } else { if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); } } }
-
+        // |
+        // Interfaces
         else if (mainCommand.equals("make")) { new Screen(argument); }
         else if (mainCommand.equals("list")) { new ScreenList(argument); }
         else if (mainCommand.equals("item")) { new ItemLoader(argument); }
         else if (mainCommand.equals("quest")) { new ScreenQuest(argument); }
+        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); }
     }
