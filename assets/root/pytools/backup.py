@@ -46,7 +46,7 @@ class BackupApp:
     def get(self, command):
         try:
             self.s.sendall((command + "\n").encode())
-            return self.s.recv(4096).decode()
+            return self.s.recv(1000000).decode()
         except Exception as e:
             self.s.close()
             return e
