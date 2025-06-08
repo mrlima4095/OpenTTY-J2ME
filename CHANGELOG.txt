@@ -21,4 +21,3 @@ Copyright (C) 2025 - Mr. Lima
 [ _Notes_ ]
 
 - To clear history you can use `clear history`
-- Run `ls -a` to see full list of RMS (including hidden files)
