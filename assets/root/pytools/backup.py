@@ -15,7 +15,7 @@ import socket
 
 
 class BackupApp:
-    def __init__(self, host='192.168.1.33', port=31522): 
+    def __init__(self, host='192.168.1.17', port=31522): 
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect((host, int(port)))
@@ -26,7 +26,7 @@ class BackupApp:
         self.connect()
         
     def connect(self):
-        files = self.get("dir v").split('\n')
+        files = self.get("execute cd /home; dir").split('\n')
 
         for file in files:
             content = self.get("cat " + file).strip()
