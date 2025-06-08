@@ -28,11 +28,12 @@ class BackupApp:
     def connect(self):
         files = self.get("execute cd /home; dir").split('\n')
 
+        try: os.makedirs("backup")
+        except: pass
+        
         for file in files:
             content = self.get("cat " + file).strip()
 
-            try: os.makedirs("backup")
-            except: pass
 
             with open("backup/" + file, "wt+") as output:
                 output.write(content)
