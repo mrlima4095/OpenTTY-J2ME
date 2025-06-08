@@ -51,7 +51,7 @@ canvas.back=execute jbuntu menu;
 canvas.button=Apps
 canvas.button.cmd=execute x11 list jbuntu;
 
-quest.title=JBuntu Apps
+quest.title=JBuntu Settings
 quest.label=Notes
 quest.key=JBUNTU_NOTES
 quest.cmd=execute install nano; touch; add $JBUNTU_NOTES; install .jbuntu-notes; get nano;
