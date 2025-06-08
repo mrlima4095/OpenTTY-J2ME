@@ -235,7 +235,37 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
-        else if (mainCommand.equals("dir")) { if (argument.equals("f")) { new Explorer(); } else if (argument.equals("s")) { new FileExplorer(""); } else { Vector results = new Vector(); if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } String[] files = (String[]) paths.get(path); if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!results.contains(f) && !results.contains(f + "/")) { results.addElement(f); } } } if (!results.isEmpty()) { StringBuffer sb = new StringBuffer(); String newline = path.equals("/home/") ? "\n" : "\t"; for (int i = 0; i < results.size(); i++) { String item = (String) results.elementAt(i); if (!item.equals("/")) { sb.append(item).append(newline); } } echoCommand(sb.toString().trim()); } } }
+        else if (mainCommand.equals("dir")) { 
+            if (argument.equals("f")) { new Explorer(); } 
+            else if (argument.equals("s")) { new FileExplorer(""); } 
+            else { 
+                Vector results = new Vector(); 
+                if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } 
+                
+                String[] files = (String[]) paths.get(path); 
+                if (files != null) { 
+                    for (int i = 0; i < files.length; i++) { 
+                        String f = files[i].trim(); 
+                        if (f == null || f.equals("..") || f.equals("/")) { continue; }
+                        if (!results.contains(f) && !results.contains(f + "/")) { results.addElement(f); } 
+                        
+                    } 
+                } 
+                if (!results.isEmpty()) { 
+                    StringBuffer sb = new StringBuffer(); 
+                    String newline = path.equals("/home/") ? "\n" : "\t"; 
+                    
+                    for (int i = 0; i < results.size(); i++) { 
+                        String item = (String) results.elementAt(i); 
+                        if (!item.equals("/")) { 
+                            sb.append(item).append(newline);
+                        } 
+                    } 
+                    
+                    echoCommand(sb.toString().trim()); 
+                } 
+            } 
+        }
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
