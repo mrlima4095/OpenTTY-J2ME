@@ -264,7 +264,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     }
                 } catch (Exception e) {
-                    echoCommand("dir: " + e.getMessage());
+                    echoCommand(e.getMessage());
                     return;
                 }
             }
@@ -280,7 +280,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                     fc.close();
                 } catch (IOException e) {
-                    echoCommand("dir: " + e.getMessage());
+                    echoCommand(e.getMessage());
                     return;
                 }
             }
@@ -386,7 +386,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return getpattern(input.substring(spaceIndex + 1).trim()); } }
 
-    private String read(String filename) { try { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } catch (IOException e) { return e.getMessage(); } }
+    private String read(String filename) {
+        try {
+            if (filename.startsWith("/mnt/")) {
+                String filePath = "file:///" + filename.substring(5);
+                FileConnection fc = (FileConnection) Connector.open(filePath, Connector.READ);
+                if (!fc.exists()) {
+                    fc.close();
+                    return ""; 
+                }
+    
+                InputStream is = fc.openInputStream();
+                StringBuffer content = new StringBuffer();
+                int ch;
+                while ((ch = is.read()) != -1) {
+                    content.append((char) ch);
+                }
+                is.close();
+                fc.close();
+                return env(content.toString());
+            } else {
+                StringBuffer content = new StringBuffer();
+                InputStream is = getClass().getResourceAsStream(filename);
+                if (is == null) return ""; 
+                InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+                int ch;
+                while ((ch = isr.read()) != -1) {
+                    content.append((char) ch);
+                }
+                isr.close();
+                return env(content.toString());
+            }
+        } catch (IOException e) {
+            return "";
+        }
+    }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
     
