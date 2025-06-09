@@ -307,7 +307,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("cp")) {
             if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
-            else { writeRMS(argument, content); }
+            else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), getcontent(getCommand(argument))); }
         }
 
         else if (mainCommand.equals("mv")) {
