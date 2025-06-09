@@ -351,9 +351,8 @@ else if (mainCommand.equals("cp")) {
         if (target.equals("")) target = origin + "-copy";
 
         
-        if (!target.startsWith("/mnt/")) {
-            writeRMS(target, content);
-        } else {
+        if (target.startsWith("/mnt/")) {
+            
             try {
                 String filePath = "file:///" + target.substring(5);
                 FileConnection fc = (FileConnection) Connector.open(filePath, Connector.WRITE);
@@ -366,6 +365,11 @@ else if (mainCommand.equals("cp")) {
                 echoCommand("cp: " + e.getMessage());
             }
         }
+        else if (argument.startsWith("/home/")) { processCommand("cp " + argument.substring(6), false); }
+        else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
+        else {
+            writeRMS(target, content);
+        }
     }
 }
 
@@ -374,7 +378,8 @@ else if (mainCommand.equals("mv")) {
         echoCommand("mv: missing [origin] or [target]");
     } else {
         String origin = getcontent(getCommand(argument));
-        String target = args[1];
+        String target = getArgument(argument);
+        
 
         String content = origin.startsWith("/mnt/") ? read(origin) : loadRMS(origin, 1);
         if (!target.startsWith("/mnt/")) {
