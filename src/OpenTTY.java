@@ -787,12 +787,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             catch (Exception e) { echoCommand(e.getMessage()); }
         }
-        else if (argument.startsWith("/home/")) { 
+        else if (filename.startsWith("/home/")) { 
             try { RecordStore.deleteRecordStore(filename.substring(6)); } 
             catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } 
             catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } 
         }
-        else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
+        else if (filename.startsWith("/")) { echoCommand("read-only storage"); }
         else { deleteFile(path + filename); }
     }
     private void writeRMS(String filename, String data) { 
