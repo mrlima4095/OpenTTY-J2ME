@@ -14,7 +14,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Removed commands `forget`, `cls` and `rnano`
-- Device File Explorer go back in parent directory method changed 
+- Removed Device File Explorer
 - File Explorer save status alerted by a Ticker
 - 
 
