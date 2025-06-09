@@ -662,7 +662,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else if (path.startsWith("/mnt/")) {
                     try {
-                        FileConnection dir = (FileConnection) Connector.open(path, Connector.READ);
+                        FileConnection dir = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ);
                         Enumeration content = dir.list();
                         Vector dirs = new Vector(), files = new Vector();
                         while (content.hasMoreElements()) {
@@ -706,7 +706,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
     }
-
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
