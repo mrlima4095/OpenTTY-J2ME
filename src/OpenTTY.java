@@ -248,8 +248,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) { 
-            if (argument.equals("")) {  }
+            if (argument.equals("")) { }
             Vector results = new Vector(); 
+
             if (path.equals("/mnt/")) {
                 try {
                     Enumeration roots = FileSystemRegistry.listRoots();
@@ -285,7 +286,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
             } 
 
-            if (!results.isEmpty()) { StringBuffer sb = new StringBuffer(); String newline = "\t"; /* path.equals("/home/") ? "\n" : */ for (int i = 0; i < results.size(); i++) { String item = (String) results.elementAt(i); if (!item.equals("/")) { sb.append(item).append(newline); } } echoCommand(sb.toString().trim()); } 
+            if (!results.isEmpty()) { StringBuffer sb = new StringBuffer(); String newline = path.equals("/home/") ? "\n" : "\t"; for (int i = 0; i < results.size(); i++) { String item = (String) results.elementAt(i); if (!item.equals("/")) { sb.append(item).append(newline); } } echoCommand(sb.toString().trim()); } 
         } 
         // |
         // Device Files
@@ -296,8 +297,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { deleteFile(argument); } }
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
-        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
-            else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), getcontent(getCommand(argument))); }
+        else if (mainCommand.equals("cp")) { 
+            if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
+            else { 
+                String origin = getCommand(argument), target = getArgument(argument);
+                writeRMS(target.equals("") ? origin + "-copy" : target, getcontent(origin)); 
+            } 
         }
         else if (mainCommand.equals("mv")) {
             if (argument.equals("") || split(argument, ' ').length < 2) {
