@@ -11,7 +11,6 @@ set REPO=31.97.20.160:31522
 set PORT=31522
 set QUERY=nano
 
-
 mount /java/etc/fstab
 
 x11 init
