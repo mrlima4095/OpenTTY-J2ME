@@ -31,7 +31,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("PATCH", "Renders Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.6.1");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
-            runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
+            runScript(getcontent("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
 
             if (username.equals("")) { new Login(); }
             else { runScript(getcontent("/home/initd")); }
@@ -295,80 +295,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // RMS Files
         else if (mainCommand.equals("rm")) { 
             if (argument.equals("")) { }
-            else if (argument.startsWith("/mnt/")) {
-                try {
-                    String realPath = "file:///" + argument.substring(5);
-                    FileConnection conn = (FileConnection) Connector.open(realPath, Connector.READ_WRITE);
-                    if (conn.exists()) { conn.delete(); } 
-                    else { echoCommand("rm: " + basename(argument) + ": not found"); }
-                    conn.close();
-                } 
-                catch (Exception e) { echoCommand(e.getMessage()); }
-            }
-            else if (argument.startsWith("/home/")) { processCommand("rm " + argument.substring(6), false); }
-            else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
             else { deleteFile(argument); } 
         }
         else if (mainCommand.equals("install")) { 
             if (argument.equals("")) { } 
-            else if (argument.startsWith("/mnt/")) {
-                try { 
-                    FileConnection conn = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); 
-                    if (!conn.exists()) { conn.create(); }
-
-                    OutputStream os = conn.openOutputStream(); 
-                    os.write(nanoContent.getBytes()); 
-                    os.flush();
-                } 
-                catch (Exception e) { echoCommand(e.getMessage()); } 
-            }
-            else if (argument.startsWith("/home/")) { processCommand("install " + argument.substring(6), false); }
-            else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
             else { writeRMS(argument, nanoContent); } 
         }
         else if (mainCommand.equals("touch")) { 
             if (argument.equals("")) { nanoContent = ""; } 
-            else if (argument.startsWith("/mnt/")) {
-                try { 
-                    FileConnection conn = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); 
-                    if (!conn.exists()) { conn.create(); }
-
-                    OutputStream os = conn.openOutputStream(); 
-                    os.write(nanoContent.getBytes()); 
-                    os.flush();
-                } 
-                catch (Exception e) { echoCommand(e.getMessage()); } 
-            }
-            else if (argument.startsWith("/home/")) { processCommand("touch " + argument.substring(6), false); }
-            else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
             else { writeRMS(argument, ""); } 
         }
         else if (mainCommand.equals("cp")) {
             if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
-            else {
-                String origin = getcontent(getCommand(argument));
-                String target = getArgument(argument);
-                String content = getcontent(getCommand(argument));
-                
-                if (target.equals("")) target = origin + "-copy";
-                
-                if (target.startsWith("/mnt/")) {
-                    
-                    try {
-                        String filePath = "file:///" + target.substring(5);
-                        FileConnection fc = (FileConnection) Connector.open(filePath, Connector.READ_WRITE);
-                        if (!fc.exists()) fc.create();
-                        OutputStream os = fc.openOutputStream();
-                        os.write(content.getBytes("UTF-8"));
-                        os.close();
-                        fc.close();
-                    } 
-                    catch (Exception e) { echoCommand(e.getMessage()); }
-                }
-                else if (target.startsWith("/home/")) { processCommand("cp " + argument.substring(6), false); }
-                else if (target.startsWith("/")) { echoCommand("read-only storage"); }
-                else { writeRMS(target, content); }
-            }
+            else { writeRMS(target, content); }
         }
 
         else if (mainCommand.equals("mv")) {
@@ -454,7 +393,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals(".")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(getcontent(argument)); } }
 
         else { echoCommand(mainCommand + ": not found"); }
-
     }
 
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
