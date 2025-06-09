@@ -684,7 +684,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (c == BACK) { processCommand("xterm"); } 
             else if (c == OPEN) {
-                if (selectedPath != null) {
+                if (selected != null) {
                     if (selected.equals("..")) {
                         int lastSlash = path.lastIndexOf('/', path.length() - 2);
                         if (lastSlash != -1) {
