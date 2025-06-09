@@ -341,16 +341,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (argument.startsWith("/home/")) { processCommand("touch " + argument.substring(6), false); }
             else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
-            else { writeRMS(argument, ""); } }
+            else { writeRMS(argument, ""); } 
+        }
 else if (mainCommand.equals("cp")) {
-    if (argument.equals("")) {
-        echoCommand("cp: missing [origin]");
-    } else {
-        String origin = getCommand(argument);
+    if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
+    else {
+        String origin = getcontent(getCommand(argument));
         String target = getArgument(argument);
         if (target.equals("")) target = origin + "-copy";
 
-        String content = origin.startsWith("/mnt/") ? read(origin) : loadRMS(origin, 1);
+        
         if (!target.startsWith("/mnt/")) {
             writeRMS(target, content);
         } else {
@@ -373,8 +373,7 @@ else if (mainCommand.equals("mv")) {
     if (argument.equals("") || split(argument, ' ').length < 2) {
         echoCommand("mv: missing [origin] or [target]");
     } else {
-        String[] args = split(argument, ' ');
-        String origin = args[0];
+        String origin = getcontent(getCommand(argument));
         String target = args[1];
 
         String content = origin.startsWith("/mnt/") ? read(origin) : loadRMS(origin, 1);
