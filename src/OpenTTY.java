@@ -474,7 +474,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 fileConn.close();
                 return env(content.toString());
             } 
-            else if (filename.startsWith("/home/")) { return loadRMS(filename.substring(6), 1) }
+            else if (filename.startsWith("/home/")) { return loadRMS(filename.substring(6), 1); }
             else {
                 StringBuffer content = new StringBuffer();
                 InputStream is = getClass().getResourceAsStream(filename);
