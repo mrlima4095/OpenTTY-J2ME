@@ -624,7 +624,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             load();
                         }
                     } else if (selected.endsWith("/")) {
-                        path += screen.getString(screen.getSelectedIndex()) 
+                        path += screen.getString(screen.getSelectedIndex()); 
                         stdin.setLabel(username + " " + path + " $");
                         load();
                     } else { new NanoEditor(selected); }
