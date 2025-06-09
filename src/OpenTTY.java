@@ -290,12 +290,47 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
         else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else if (argument.equals("-p")) { StringBuffer roots = new StringBuffer(); Enumeration storage = FileSystemRegistry.listRoots(); while (storage.hasMoreElements()) { String root = (String) storage.nextElement(); roots.append(root).append("\n"); } echoCommand(roots.toString()); } else { echoCommand("lsblk: " + argument + ": not found"); } }
-        else if (mainCommand.equals("dd")) { if (argument.equals("")) { } else { try { String[] args = split(argument, ' '); FileConnection conn = (FileConnection) Connector.open("file:///" + args[0], Connector.READ_WRITE); if (!conn.exists()) conn.create(); OutputStream os = conn.openOutputStream(); String content = args[1]; os.write(getcontent(content).getBytes()); os.flush(); echoCommand("operation finish"); } catch (IOException e) { echoCommand(e.getMessage()); } } }
         // |
         // RMS Files
-        else if (mainCommand.equals("rm")) { deleteFile(argument); }
-        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
-        else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
+        else if (mainCommand.equals("rm")) { 
+            if (argument.equals("")) { }
+            else if (argument.startsWith("/mnt/")) {
+                try {
+                    String realPath = "file:///" + argument.substring(5);
+                    FileConnection conn = (FileConnection) Connector.open(realPath, Connector.READ_WRITE);
+                    if (conn.exists()) { conn.delete(); } 
+                    else { echoCommand("rm: " + basename(argument) + ": not found"); }
+                    conn.close();
+                } catch (IOException e) {
+                    echoCommand("rm: " + basename(argument) + ": " + e.getMessage());
+                }
+            }
+            else if (argument.startsWith("/home/")) { processCommand("rm " + argument.substring(6), false); }
+            else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
+            deleteFile(argument); 
+        }
+        else if (mainCommand.equals("install")) { 
+            if (argument.equals("")) { } 
+            else if (argument.startsWith("/mnt/")) {
+                try { 
+                    FileConnection conn = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); 
+                    if (!conn.exists()) { conn.create(); }
+
+                    OutputStream os = conn.openOutputStream(); 
+                    os.write(nanoContent.getBytes()); 
+                    os.flush();
+                } 
+                catch (IOException e) { echoCommand(e.getMessage()); } 
+            }
+            else if (argument.startsWith("/home/")) { processCommand("install " + argument.substring(6), false); }
+            else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
+            else { writeRMS(argument, nanoContent); } 
+        }
+        else if (mainCommand.equals("touch")) { 
+            if (argument.equals("")) { nanoContent = ""; } 
+            else if (argument.startsWith("/home/")) { processCommand("touch " + argument.substring(6), false); }
+            else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
+            else { writeRMS(argument, ""); } }
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), loadRMS(getCommand(argument), 1)); } }
         else if (mainCommand.equals("mv")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); writeRMS(args[1], loadRMS(args[0], 1)); deleteFile(args[0]); } }
         // |
@@ -389,7 +424,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 is.close();
                 fileConn.close();
                 return env(content.toString());
-            } else {
+            } 
+            else if (filename.startsWith("/home/")) { return loadRMS(filename.substring(6), 1) }
+            else {
                 StringBuffer content = new StringBuffer();
                 InputStream is = getClass().getResourceAsStream(filename);
                 if (is == null) { return ""; }
@@ -401,9 +438,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 isr.close();
                 return env(content.toString());
             }
-        } catch (IOException e) {
-            return "";
-        }
+        } catch (IOException e) { return ""; }
     }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
