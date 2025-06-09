@@ -336,7 +336,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     os.write(nanoContent.getBytes()); 
                     os.flush();
                 } 
-                catch (IOException e) { echoCommand(e.getMessage()); } 
+                catch (Exception e) { echoCommand(e.getMessage()); } 
             }
             else if (argument.startsWith("/home/")) { processCommand("touch " + argument.substring(6), false); }
             else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
