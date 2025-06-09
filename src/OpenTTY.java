@@ -285,7 +285,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
             } 
 
-            if (!results.isEmpty()) { StringBuffer sb = new StringBuffer(); String newline = path.equals("/home/") ? "\n" : "\t"; for (int i = 0; i < results.size(); i++) { String item = (String) results.elementAt(i); if (!item.equals("/")) { sb.append(item).append(newline); } } echoCommand(sb.toString().trim()); } 
+            if (!results.isEmpty()) { StringBuffer sb = new StringBuffer(); String newline = "\t"; /* path.equals("/home/") ? "\n" : */ for (int i = 0; i < results.size(); i++) { String item = (String) results.elementAt(i); if (!item.equals("/")) { sb.append(item).append(newline); } } echoCommand(sb.toString().trim()); } 
         } 
         // |
         // Device Files
@@ -630,7 +630,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             load();
                         }
                     } else if (selected.endsWith("/")) {
-                        path = path + selected;
+                        path += replace(selected, path, ""); 
+                        stdin.setLabel(username + " " + path + " $");
                         load();
                     } else { new NanoEditor(selected); }
                 }
@@ -738,32 +739,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void writeRMS(String filename, String data) { 
         if (filename == null || filename.length() == 0) { return; }
 
-        if (filename.startsWith("/mnt/")) {
-            try { 
-                FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
-                if (!conn.exists()) { conn.create(); }
-
-                OutputStream os = conn.openOutputStream(); 
-                os.write(data.getBytes()); 
-                os.flush();
-            } 
-            catch (Exception e) { echoCommand(e.getMessage()); } 
-        }
-        else if (filename.equals("/home/")) {
-            RecordStore recordStore = null; 
-
-            try { 
-                recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
-                byte[] byteData = data.getBytes(); 
-
-                if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } 
-                else { recordStore.addRecord(byteData, 0, byteData.length); } 
-            } 
-            catch (RecordStoreException e) { } 
-            finally { 
-                if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } 
-            } 
-        }
+        if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!conn.exists()) { conn.create(); } OutputStream os = conn.openOutputStream(); os.write(data.getBytes()); os.flush(); } catch (Exception e) { echoCommand(e.getMessage()); } }
+        else if (filename.equals("/home/")) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } }  catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); }
         else { writeRMS("/home/" + filename, data); }
     }
