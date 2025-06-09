@@ -16,7 +16,7 @@ Copyright (C) 2025 - Mr. Lima
 - Removed commands `forget`, `cls` and `rnano`
 - Removed Device File Explorer
 - File Explorer save status alerted by a Ticker
-- 
+- Using `install /mnt/[path]` to write nano content in a file at Device Storage
 
 [ _Notes_ ]
 
