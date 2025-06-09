@@ -51,3 +51,4 @@
 [2025-1.14.3-01x84] Removed Commands 'FORGET', 'CLS' and 'RNANO' | Added clear patterns 'stdout', 'stdin', 'logs' and 'history'
 [2025-1.14.3-01x85] File Explorer revisions
 [2025-1.14.3-01x86] Removed File Explorer
+[2025-1.14.3-01x87] New File Explorer
