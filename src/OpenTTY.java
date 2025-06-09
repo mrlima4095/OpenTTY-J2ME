@@ -704,7 +704,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             v.removeElement(result);
             return result;
         }
-
     }
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
