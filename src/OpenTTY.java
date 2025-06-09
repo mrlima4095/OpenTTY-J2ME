@@ -31,10 +31,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("PATCH", "Renders Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.6.1");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
-            runScript(getcontent("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
+            runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
+
+            writeRMS("OpenRMS", "");
 
             if (username.equals("")) { new Login(); }
-            else { runScript(getcontent("/home/initd")); }
+            else { runScript(read("/home/initd")); }
         }
     }
 
