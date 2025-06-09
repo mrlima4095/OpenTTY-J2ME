@@ -782,7 +782,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String realPath = "file:///" + filename.substring(5);
                 FileConnection conn = (FileConnection) Connector.open(realPath, Connector.READ_WRITE);
                 if (conn.exists()) { conn.delete(); } 
-                else { echoCommand("rm: " + basename(argument) + ": not found"); }
+                else { echoCommand("rm: " + basename(filename) + ": not found"); }
                 conn.close();
             } 
             catch (Exception e) { echoCommand(e.getMessage()); }
