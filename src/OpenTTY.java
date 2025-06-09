@@ -729,7 +729,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else if (path.startsWith("/mnt/")) {
                     try {
-                        FileConnection dir = (FileConnection) Connector.open(realPath, Connector.READ);
+                        FileConnection dir = (FileConnection) Connector.open(path, Connector.READ);
                         Enumeration content = dir.list();
                         Vector dirs = new Vector(), files = new Vector();
                         while (content.hasMoreElements()) {
