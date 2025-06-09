@@ -223,7 +223,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { 
-            if (argument.equals("")) { path = "/"; } 
+            if (argument.equals("")) { path = "/home/"; } 
             else if (argument.equals("..")) { if (path.equals("/")) { return; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } 
             else { 
                 String target = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
@@ -247,8 +247,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
-        else if (mainCommand.equals("dir")) { 
-            if (argument.equals("")) { }
+        else if (mainCommand.equals("dir")) {
             Vector results = new Vector(); 
 
             if (path.equals("/mnt/")) {
@@ -275,8 +274,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     fc.close();
                 } catch (Exception e) { echoCommand(e.getMessage()); return; }
             }
-            else if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } 
-                
+            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } 
+            else if (path.equals("/home/")) { new Explorer(); return; }
+
             String[] files = (String[]) paths.get(path); 
             if (files != null) { 
                 for (int i = 0; i < files.length; i++) { 
