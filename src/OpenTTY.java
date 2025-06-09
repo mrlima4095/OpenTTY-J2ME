@@ -301,7 +301,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (conn.exists()) { conn.delete(); } 
                     else { echoCommand("rm: " + basename(argument) + ": not found"); }
                     conn.close();
-                } catch (IOException e) { echoCommand(e.getMessage()); }
+                } 
+                catch (IOException e) { echoCommand(e.getMessage()); }
             }
             else if (argument.startsWith("/home/")) { processCommand("rm " + argument.substring(6), false); }
             else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
