@@ -293,23 +293,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else if (argument.equals("-p")) { StringBuffer roots = new StringBuffer(); Enumeration storage = FileSystemRegistry.listRoots(); while (storage.hasMoreElements()) { String root = (String) storage.nextElement(); roots.append(root).append("\n"); } echoCommand(roots.toString()); } else { echoCommand("lsblk: " + argument + ": not found"); } }
         // |
         // RMS Files
-        else if (mainCommand.equals("rm")) { 
-            if (argument.equals("")) { }
-            else { deleteFile(argument); } 
-        }
-        else if (mainCommand.equals("install")) { 
-            if (argument.equals("")) { } 
-            else { writeRMS(argument, nanoContent); } 
-        }
-        else if (mainCommand.equals("touch")) { 
-            if (argument.equals("")) { nanoContent = ""; } 
-            else { writeRMS(argument, ""); } 
-        }
-        else if (mainCommand.equals("cp")) {
-            if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
+        else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { deleteFile(argument); } }
+        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
+        else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
+        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
             else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), getcontent(getCommand(argument))); }
         }
-
         else if (mainCommand.equals("mv")) {
             if (argument.equals("") || split(argument, ' ').length < 2) {
                 echoCommand("mv: missing [origin] or [target]");
@@ -740,7 +729,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (filename == null || filename.length() == 0) { return; }
 
         if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!conn.exists()) { conn.create(); } OutputStream os = conn.openOutputStream(); os.write(data.getBytes()); os.flush(); } catch (Exception e) { echoCommand(e.getMessage()); } }
-        else if (filename.equals("/home/")) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } }  catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
+        else if (filename.startsWith("/home/")) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } }  catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); }
         else { writeRMS("/home/" + filename, data); }
     }
