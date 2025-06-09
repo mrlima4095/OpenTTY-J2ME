@@ -356,7 +356,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                     try {
                         String filePath = "file:///" + target.substring(5);
-                        FileConnection fc = (FileConnection) Connector.open(filePath, Connector.WRITE);
+                        FileConnection fc = (FileConnection) Connector.open(filePath, Connector.READ_WRITE);
                         if (!fc.exists()) fc.create();
                         OutputStream os = fc.openOutputStream();
                         os.write(content.getBytes("UTF-8"));
