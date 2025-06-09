@@ -756,6 +756,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } catch (IOException e) {
             }
         }
+        private boolean canWriteToPath(String path) {
+            return path.startsWith("/home/") || path.startsWith("/mnt/");
+        }
 
         private static String getFirstString(Vector v) {
             String result = null;
