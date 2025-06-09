@@ -342,8 +342,75 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (argument.startsWith("/home/")) { processCommand("touch " + argument.substring(6), false); }
             else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
             else { writeRMS(argument, ""); } }
-        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { writeRMS(getArgument(argument).equals("") ? getCommand(argument) + "-copy" : getArgument(argument), loadRMS(getCommand(argument), 1)); } }
-        else if (mainCommand.equals("mv")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); writeRMS(args[1], loadRMS(args[0], 1)); deleteFile(args[0]); } }
+else if (mainCommand.equals("cp")) {
+    if (argument.equals("")) {
+        echoCommand("cp: missing [origin]");
+    } else {
+        String origin = getCommand(argument);
+        String target = getArgument(argument);
+        if (target.equals("")) target = origin + "-copy";
+
+        String content = origin.startsWith("/mnt/") ? read(origin) : loadRMS(origin, 1);
+        if (!target.startsWith("/mnt/")) {
+            writeRMS(target, content);
+        } else {
+            try {
+                String filePath = "file:///" + target.substring(5);
+                FileConnection fc = (FileConnection) Connector.open(filePath, Connector.WRITE);
+                if (!fc.exists()) fc.create();
+                OutputStream os = fc.openOutputStream();
+                os.write(content.getBytes("UTF-8"));
+                os.close();
+                fc.close();
+            } catch (IOException e) {
+                echoCommand("cp: " + e.getMessage());
+            }
+        }
+    }
+}
+
+else if (mainCommand.equals("mv")) {
+    if (argument.equals("") || split(argument, ' ').length < 2) {
+        echoCommand("mv: missing [origin] or [target]");
+    } else {
+        String[] args = split(argument, ' ');
+        String origin = args[0];
+        String target = args[1];
+
+        String content = origin.startsWith("/mnt/") ? read(origin) : loadRMS(origin, 1);
+        if (!target.startsWith("/mnt/")) {
+            writeRMS(target, content);
+        } else {
+            try {
+                String filePath = "file:///" + target.substring(5);
+                FileConnection fc = (FileConnection) Connector.open(filePath, Connector.WRITE);
+                if (!fc.exists()) fc.create();
+                OutputStream os = fc.openOutputStream();
+                os.write(content.getBytes("UTF-8"));
+                os.close();
+                fc.close();
+            } catch (IOException e) {
+                echoCommand("mv: " + e.getMessage());
+                return;
+            }
+        }
+
+        // Agora apaga o original
+        if (origin.startsWith("/mnt/")) {
+            try {
+                String filePath = "file:///" + origin.substring(5);
+                FileConnection fc = (FileConnection) Connector.open(filePath);
+                if (fc.exists()) fc.delete();
+                fc.close();
+            } catch (IOException e) {
+                echoCommand("mv: warning: failed to delete source: " + e.getMessage());
+            }
+        } else {
+            deleteFile(origin);
+        }
+    }
+}
+
         // |
         // Text Manager
         else if (mainCommand.equals("sed")) { StringEditor(argument); }
