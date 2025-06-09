@@ -14,9 +14,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
-    private String logs = "", path = "/", build = "2025-1.14.3-01x86";
-    private String username = loadRMS("OpenRMS", 1);
-    private String nanoContent = loadRMS("nano", 1);
+    private String logs = "", path = "/home/", build = "2025-1.14.3-01x87";
+    private String username = loadRMS("OpenRMS");
+    private String nanoContent = loadRMS("nano");
     private Vector stack = new Vector(), 
                    history = new Vector();
     private Display display = Display.getDisplay(this);
@@ -474,7 +474,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 fileConn.close();
                 return env(content.toString());
             } 
-            else if (filename.startsWith("/home/")) { return loadRMS(filename.substring(6), 1); }
+            else if (filename.startsWith("/home/")) { 
+                RecordStore recordStore = null; 
+                String content = ""; 
+
+                try { 
+                    recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
+                    if (recordStore.getNumRecords() >= 1) { 
+                        byte[] data = recordStore.getRecord(1); 
+                        if (data != null) { content = new String(data); } 
+                    } 
+                } 
+                catch (RecordStoreException e) { content = ""; } 
+                finally { 
+                    if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } 
+                } 
+
+                return content; 
+            }
             else {
                 StringBuffer content = new StringBuffer();
                 InputStream is = getClass().getResourceAsStream(filename);
@@ -644,13 +661,173 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Directories Manager
     private void mount(String script) { String[] lines = split(script, '\n'); for (int i = 0; i < lines.length; i++) { String line = ""; if (lines[i] != null) { line = lines[i].trim(); } if (line.length() == 0 || line.startsWith("#")) { continue; } if (line.startsWith("/")) { String fullPath = ""; int start = 0; for (int j = 1; j < line.length(); j++) { if (line.charAt(j) == '/') { String dir = line.substring(start + 1, j); fullPath += "/" + dir; addDirectory(fullPath + "/"); start = j; } } String finalPart = line.substring(start + 1); fullPath += "/" + finalPart; if (line.endsWith("/")) { addDirectory(fullPath + "/"); } else { addDirectory(fullPath); } } } }
     private void addDirectory(String fullPath) { boolean isDirectory = fullPath.endsWith("/"); if (!paths.containsKey(fullPath)) { if (isDirectory) { paths.put(fullPath, new String[] { ".." }); String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/', fullPath.length() - 2) + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } String dirName = fullPath.substring(parentPath.length(), fullPath.length() - 1); updatedContents.addElement(dirName + "/"); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } else { String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); String fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } updatedContents.addElement(fileName); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } } }
-    public class Explorer implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Open", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1); public Explorer() { screen.addCommand(BACK); screen.addCommand(OPEN); screen.addCommand(DELETE); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { String file = screen.getString(screen.getSelectedIndex()); if (c == BACK) { processCommand("xterm"); } else if (c == OPEN) { new NanoEditor(file); } else if (c == DELETE) { deleteFile(file); load(); } else if (c == RUN) { processCommand("xterm"); runScript(getcontent(file)); } else if (c == IMPORT) { processCommand("xterm"); importScript(file); } } private void load() { screen.deleteAll(); try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].startsWith(".")) { continue; } screen.append((String) recordStores[i], null); } } } catch (RecordStoreException e) { } } }
+    public class Explorer implements CommandListener {
+        private List screen = new List(form.getTitle(), List.IMPLICIT);
+        private Command BACK = new Command("Back", Command.BACK, 1),
+                        OPEN = new Command("Open", Command.OK, 1),
+                        DELETE = new Command("Delete", Command.OK, 2),
+                        RUN = new Command("Run Script", Command.OK, 3),
+                        IMPORT = new Command("Import File", Command.OK, 4);
+
+        public Explorer() {
+            screen.addCommand(BACK);
+            screen.addCommand(OPEN);
+            screen.addCommand(RUN);
+            screen.addCommand(IMPORT);
+            screen.setCommandListener(this);
+            load();
+            display.setCurrent(screen);
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            String selected = path + screen.getString(screen.getSelectedIndex());
+
+            if (c == BACK) { processCommand("xterm"); } 
+            else if (c == OPEN) {
+                if (selectedPath != null) {
+                    if (selected.equals("..")) {
+                        int lastSlash = path.lastIndexOf('/', path.length() - 2);
+                        if (lastSlash != -1) {
+                            path = path.substring(0, lastSlash + 1);
+                            load();
+                        }
+                    } else if (selected.endsWith("/")) {
+                        path = path + selected;
+                        load();
+                    } else { new NanoEditor(selected); }
+                }
+            }
+            else if (c == DELETE) { deleteFile(selected); load(); } 
+            else if (c == RUN) { processCommand("xterm"); runScript(getcontent(selected)); } 
+            else if (c == IMPORT) { processCommand("xterm"); importScript(selected); }
+        }
+
+        private void load() {
+            screen.deleteAll();
+            if (!path.equals("/")) { screen.append("..", null); } 
+
+
+            if (canWriteToPath(path)) { screen.addCommand(DELETE); }
+            else { screen.removeCommand(DELETE); }
+
+            try {
+                if (path.startsWith("/home/")) {
+                    try {
+                        String[] recordStores = RecordStore.listRecordStores();
+                        for (int i = 0; i < recordStores.length; i++) {
+                            if (!recordStores[i].startsWith(".")) {
+                                screen.append(recordStores[i], null);
+                            }
+                        }
+                    } catch (RecordStoreException e) { }
+                } 
+                else if (path.equals("/mnt/")) {
+                    Enumeration roots = FileSystemRegistry.listRoots();
+                    while (roots.hasMoreElements()) {
+                        screen.append((String) roots.nextElement(), null);
+                    }
+                } 
+                else if (path.startsWith("/mnt/")) {
+                    try {
+                        FileConnection dir = (FileConnection) Connector.open(realPath, Connector.READ);
+                        Enumeration content = dir.list();
+                        Vector dirs = new Vector(), files = new Vector();
+                        while (content.hasMoreElements()) {
+                            String name = (String) content.nextElement();
+                            if (name.endsWith("/")) dirs.addElement(name);
+                            else files.addElement(name);
+                        }
+                        while (!dirs.isEmpty()) screen.append(getFirstString(dirs), null);
+                        while (!files.isEmpty()) screen.append(getFirstString(files), null);
+                        dir.close();
+                    } catch (IOException e) { }
+                } 
+                else {
+                    String[] files = (String[]) paths.get(path);
+                    if (files != null) {
+                        for (int i = 0; i < files.length; i++) {
+                            String f = files[i];
+                            if (f != null && !f.equals("..") && !f.equals("/")) {
+                                screen.append(f, null);
+                            }
+                        }
+                    }
+                }
+            } catch (IOException e) {
+            }
+        }
+
+        private static String getFirstString(Vector v) {
+            String result = null;
+            for (int i = 0; i < v.size(); i++) {
+                String cur = (String) v.elementAt(i);
+                if (result == null || cur.compareTo(result) < 0) {
+                    result = cur;
+                }
+            }
+            v.removeElement(result);
+            return result;
+        }
+
+    }
+
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
-    private void deleteFile(String filename) { if (filename == null || filename.length() == 0) { return; } try { RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } }
-    private void writeRMS(String recordStoreName, String data) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
-    private String loadRMS(String recordStoreName, int recordId) { RecordStore recordStore = null; String result = ""; try { recordStore = RecordStore.openRecordStore(recordStoreName, true); if (recordStore.getNumRecords() >= recordId) { byte[] data = recordStore.getRecord(recordId); if (data != null) { result = new String(data); } } } catch (RecordStoreException e) { result = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return result; }
+    private void deleteFile(String filename) { 
+        if (filename == null || filename.length() == 0) { return; } 
+
+        else if (filename.startsWith("/mnt/")) {
+            try {
+                String realPath = "file:///" + filename.substring(5);
+                FileConnection conn = (FileConnection) Connector.open(realPath, Connector.READ_WRITE);
+                if (conn.exists()) { conn.delete(); } 
+                else { echoCommand("rm: " + basename(argument) + ": not found"); }
+                conn.close();
+            } 
+            catch (Exception e) { echoCommand(e.getMessage()); }
+        }
+        else if (argument.startsWith("/home/")) { 
+            try { RecordStore.deleteRecordStore(filename.substring(6)); } 
+            catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } 
+            catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } 
+        }
+        else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
+        else { deleteFile(path + filename); }
+    }
+    private void writeRMS(String filename, String data) { 
+        if (filename == null || filename.length() == 0) { return; }
+
+        if (filename.startsWith("/mnt/")) {
+            try { 
+                FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
+                if (!conn.exists()) { conn.create(); }
+
+                OutputStream os = conn.openOutputStream(); 
+                os.write(data.getBytes()); 
+                os.flush();
+            } 
+            catch (Exception e) { echoCommand(e.getMessage()); } 
+        }
+        else if (filename.equals("/home/")) {
+            RecordStore recordStore = null; 
+
+            try { 
+                recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
+                byte[] byteData = data.getBytes(); 
+
+                if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } 
+                else { recordStore.addRecord(byteData, 0, byteData.length); } 
+            } 
+            catch (RecordStoreException e) { } 
+            finally { 
+                if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } 
+            } 
+        }
+        else if (filename.startsWith("/")) { echoCommand("read-only storage"); }
+        else { writeRMS("/home/" + filename, data); }
+    }
+    private String loadRMS(String filename) { return read("/home/" + filename.substring(5)); }
     // |
     // Text Manager
     private void StringEditor(String command) { command = env(command.trim()); String mainCommand = getCommand(command); String argument = getArgument(command); if (mainCommand.equals("-2u")) { nanoContent = nanoContent.toUpperCase(); } else if (mainCommand.equals("-2l")) { nanoContent = nanoContent.toLowerCase(); } else if (mainCommand.equals("-d")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], ""); } else if (mainCommand.equals("-a")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } else if (mainCommand.equals("-r")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], split(argument, ' ')[1]); } else if (mainCommand.equals("-l")) { int i = 0; try { i = Integer.parseInt(argument); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return; } echoCommand(split(nanoContent, '\n')[i]); } else if (mainCommand.equals("-s")) { int i = 0; try { i = Integer.parseInt(getCommand(argument)); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return; } Vector lines = new Vector(); String div = getArgument(argument); int start = 0, index; while ((index = nanoContent.indexOf(div, start)) != -1) { lines.addElement(nanoContent.substring(start, index)); start = index + div.length(); } if (start < nanoContent.length()) { lines.addElement(nanoContent.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); if (i >= 0 && i < result.length) { echoCommand(result[i]); } else { echoCommand("null"); } } else if (mainCommand.equals("-p")) { String[] contentLines = split(nanoContent, '\n'); StringBuffer updatedContent = new StringBuffer(); for (int i = 0; i < contentLines.length; i++) { updatedContent.append(argument).append(contentLines[i]).append("\n"); } nanoContent = updatedContent.toString().trim(); } else if (mainCommand.equals("-v")) { String[] lines = split(nanoContent, '\n'); StringBuffer reversed = new StringBuffer(); for (int i = lines.length - 1; i >= 0; i--) { reversed.append(lines[i]).append("\n"); } nanoContent = reversed.toString().trim(); } }
