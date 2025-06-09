@@ -360,7 +360,7 @@ else if (mainCommand.equals("cp")) {
                 os.write(content.getBytes("UTF-8"));
                 os.close();
                 fc.close();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 echoCommand("cp: " + e.getMessage());
             }
         }
