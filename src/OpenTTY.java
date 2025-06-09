@@ -27,7 +27,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     CLEAR = new Command("Clear", Command.SCREEN, 4), HISTORY = new Command("History", Command.SCREEN, 5);
 
     public void startApp() {
-        if (!trace.containsKey("sh")) {
+        /* if (!trace.containsKey("sh")) {
             attributes.put("PATCH", "Renders Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.6.1");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
@@ -35,7 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (username.equals("")) { new Login(); }
             else { runScript(read("/home/initd")); }
-        } display.setCurrent(form);
+        } */ processCommand(". /java/etc/initd.sh"); display.setCurrent(form);
     }
 
     public void pauseApp() { }
@@ -720,8 +720,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (filename.startsWith("/mnt/")) {
             try {
-                String realPath = "file:///" + filename.substring(5);
-                FileConnection conn = (FileConnection) Connector.open(realPath, Connector.READ_WRITE);
+                FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE);
                 if (conn.exists()) { conn.delete(); } 
                 else { echoCommand("rm: " + basename(filename) + ": not found"); }
                 conn.close();
