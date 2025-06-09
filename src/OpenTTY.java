@@ -241,17 +241,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             echoCommand("cd: " + basename(target) + ": not " + (!fc.exists() ? "found" : "a directory"));
                         }
                         fc.close();
-                    } catch (IOException e) {
-                        echoCommand("cd: " + basename(target) + ": " + e.getMessage());
-                    }
-                } else {
-                    echoCommand("cd: " + basename(target) + ": not found");
-                }
-            } 
+                    } catch (IOException e) { echoCommand("cd: " + basename(target) + ": " + e.getMessage()); }
+                } else { echoCommand("cd: " + basename(target) + ": not " + (!paths.containsKey(target.substring(0, target.length() - 1)) ? "found" : "a directory")); }
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) { 
+            if (argument.equals("")) {  }
             Vector results = new Vector(); 
             if (path.equals("/mnt/")) {
                 try {
