@@ -19,7 +19,7 @@ quest.title=Armitage
 quest.label=$LABEL
 quest.key=INPUT
 quest.cmd=execute tick Connecting...; $TOOL $INPUT; unset LABEL; unset TOOL; unset INPUT; 
-quest.back=execute x11 list armitage;
+quest.back=execute x11 list armitage; unset LABEL; unset TOOL; unset INPUT; 
 
 list.title=Armitage Tools
 list.content=Connect (Remote),Connect - Server,Get Local Adress,Search IP Info,WhoIS Search,GoBuster,Port Scanner,Address Finder,Ping a WebSite,Ping a Server,IP Generator,HTTPS Requester,HTTPS (Via Proxy),Charge Server IP
