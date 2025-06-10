@@ -15,7 +15,7 @@ config=execute set JVERSION=1.3.1; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; 
 command=xterm,jbuntu
 
 xterm=execute x11 $DISPLAY jbuntu;
-jbuntu=execute alias xterm=execute x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
+jbuntu=execute alias xterm=exec cd & x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
 
 shell.name=jbuntu
 shell.args=menu,jnome,explorer,run,sync
