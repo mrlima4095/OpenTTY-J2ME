@@ -19,7 +19,7 @@ install=execute cd; case file (.yang-lock) exec rm .yang-lock & set OLD_QUERY=$Q
 update=execute cd; case file (.yang-lock) exec rm .yang-lock & set OLD_QUERY=$QUERY & set QUERY=yang & tick Updating... & query socket://$REPO get lib/yang & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & touch .yang-lock & import yang; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
 query=execute x11 quest /java/lib/yang;
 
-info=execute echo PackJ 1.3 (Default);
+info=execute echo PackJ 1.4 (Default);
 
 [ DISPLAY ]
 
