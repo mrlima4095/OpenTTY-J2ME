@@ -269,13 +269,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { deleteFile(argument); } }
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
-        else if (mainCommand.equals("cp")) { 
-            if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
-            else { 
-                String origin = getCommand(argument), target = getArgument(argument);
-                writeRMS(target.equals("") ? origin + "-copy" : target, getcontent(origin)); 
-            } 
-        }
+        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { String origin = getCommand(argument), target = getArgument(argument); writeRMS(target.equals("") ? origin + "-copy" : target, getcontent(origin)); } }
         else if (mainCommand.equals("mv")) {
             if (argument.equals("") || split(argument, ' ').length < 2) {
                 echoCommand("mv: missing [origin] or [target]");
@@ -691,7 +685,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (conn.exists()) { conn.delete(); } 
                 else { echoCommand("rm: " + basename(filename) + ": not found"); }
                 conn.close(); 
-            } catch (Exception e) { echoCommand(e.getClass().getName() + ": " + e.getMessage()); } }
+            } catch (Exception e) { echoCommand(e.getMessage()); } }
         else if (filename.startsWith("/home/")) { try { RecordStore.deleteRecordStore(filename.substring(6)); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } }
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); }
         else { deleteFile(path + filename); }
