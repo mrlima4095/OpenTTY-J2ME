@@ -53,3 +53,4 @@
 [2025-1.14.3-01x86] Removed File Explorer
 [2025-1.14.3-01x87] New File Explorer
 [2025-1.14.3-01x88] Removed buffer limits
+[2025-1.14.3-01x89] Revert 01x88 build
