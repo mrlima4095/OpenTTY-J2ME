@@ -1,25 +1,86 @@
+<index>
 OpenTTY $VERSION - $PATCH
 Copyright (C) 2025 - Mr. Lima
 
 
-[ Commands Overview ]
-
-Network Utilities:
-  bind, gaddr, curl, wget, fw, ping
-  server, netstat, ifconfig, query
-  nc, prscan, gobuster
-  
-File Utilities:
-  nano, html, json, dir, pwd, rm, cat
-  ls, install, cp, du, mount, unmount
-  find, grep, touch, hash, sed
-
-General Utilities:
-  alias, about, clear, date, echo, exit
-  execute, exec, env, hostname
-  logout, whoami, start, ps, stop, kill
-  uname, tty, ttysize, version
-
-[ Web Project ]
-
+[ GitHub Repository ]
 https://github.com/mrlima4095/OpenTTY-J2ME
+</index>
+
+<about>
+Usage: about [FILE]
+
+- If FILE is a OpenTTY Package, show it basic information.
+</about>
+<add>
+Usage: add [TEXT]
+
+- Add TEXT in nano buffer;
+- Without TEXT it add a line break.
+</add>
+<alias>
+Usage: alias [KEY]=[COMMAND]
+
+- Define or display aliases;
+- Without arguments, 'alias' prints the list of aliases;
+- Otherwise, an alias is defined for each KEY whose COMMAND is given;
+- When only KEY is found and it is an alias prints it value.
+</alias>
+<basename>
+Usage: basename [FILENAME]
+
+- Print FILENAME with any leading directory components removed.
+</basename>
+<bg>
+Usage: bg [COMMAND]
+
+- Start a new Thread to run COMMAND;
+</bg>
+<bind>
+Usage: bind [PORT]
+
+- Listen at PORT for connections;
+- Without PORT 'bind' takes the PORT from the environment key.
+
+You can connect it with other client. 
+The payloads received is run and it output is sent to client.
+</bind>
+<bruteforce>
+Usage: bruteforce [COMMAND]
+
+- Run COMMAND while process 'bruteforce' is alive;
+- You can stop this killing it process;
+- All bruteforce instance stop when process is killed. 
+</bruteforce>
+<buff>
+Usage: buff [TEXT]
+
+- Set value at standard input as TEXT.
+</buff>
+<build>
+Usage: build
+
+- Prints MIDlet build information.
+</build>
+<call>
+Usage: call [PHONE]
+
+- Request Device API to make a call to PHONE.
+</call>
+<case>
+Usage: case [TYPE] (NAME) [COMMMAND]
+
+- Advanced search for NAME in TYPE's context;
+- If  
+
+Valid TYPE's:
+- alias - An alias with NAME 
+- file - A RMS file with NAME
+- key - An environment key with NAME
+- root - A Device Filesystem with NAME
+- screen - A X11 Saved screen 
+- thread - Current Thread Type is NAME
+- trace - A Process with NAME 
+
+
+</case>
