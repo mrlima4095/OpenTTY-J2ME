@@ -18,6 +18,7 @@ Copyright (C) 2025 - Mr. Lima
 - File Explorer save status alerted by a Ticker
 - Using `install /mnt/[path]` to write nano content in a file at Device Storage
 - MIDlet start path charged to **/home/**
+- **nc** and **query** max reading bytes removed
 
 [ _Notes_ ]
 
