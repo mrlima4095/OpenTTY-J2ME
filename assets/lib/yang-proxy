@@ -19,7 +19,7 @@ install=execute cd; case file (.yang-lock) exec rm .yang-lock & install nano & t
 update=execute cd; case file (.yang-lock) exec rm .yang-lock & install nano & tick Updating... & proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/yang-proxy & install yang-proxy & get nano & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
 query=execute x11 quest yang-proxy;
 
-info=execute echo PackJ 1.3 (Proxy Edition);
+info=execute echo PackJ 1.4 (Proxy Edition);
 
 [ DISPLAY ]
 
