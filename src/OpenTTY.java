@@ -246,7 +246,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { echoCommand("cd: " + basename(target) + ": not " + (paths.containsKey(target/*.substring(0, target.length() - 1)*/) ? "a directory" : "found")); }
         } 
         }
-        else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
+        else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!argument.endsWith("/")) { argument += "/"; }if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) {
             Vector results = new Vector(); 
@@ -265,11 +265,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
         else if (mainCommand.equals("lsblk")) { 
-            if (argument.equals("") || argument.equals("-x")) { 
-               // echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); 
-                echoCommand("MIDlet\t/\tr--");
-                echoCommand("Device\t/mnt/\trw-");
-                echoCommand("Storage\t/home/\trwx");
+            if (argument.equals("") || argument.equals("-x")) {  echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); 
             } 
             else if (argument.equals("-p")) { 
                 
