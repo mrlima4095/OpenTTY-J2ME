@@ -243,8 +243,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         fc.close();
                     } catch (IOException e) { echoCommand("cd: " + basename(target) + ": " + e.getMessage()); }
                 } 
-                else { echoCommand("cd: " + basename(target) + ": not " + (paths.containsKey(target/*.substring(0, target.length() - 1)*/) ? "a directory" : "found")); }
-        } 
+                else { 
+                    echoCommand("cd: " + basename(target) + ": not " + (!paths.containsKey(target.substring(0, target.endsWith("/") ? target.length() - 2 : target.length() - 1)) ? "found" : "a directory"));
+                    
+                    //echoCommand("cd: " + basename(target) + ": not found")
+                    //echoCommand("cd: " + basename(target) + ": not a directory")
+                }
+            } 
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!argument.endsWith("/")) { argument += "/"; }if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
@@ -265,11 +270,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
         else if (mainCommand.equals("lsblk")) { 
-            if (argument.equals("") || argument.equals("-x")) {  echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); 
-            } 
+            if (argument.equals("") || argument.equals("-x")) {  echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } 
             else if (argument.equals("-p")) { 
                 
-            } else { echoCommand("lsblk: " + argument + ": not found"); } 
+            } 
+            else { echoCommand("lsblk: " + argument + ": not found"); } 
         }
         // |
         // RMS Files
