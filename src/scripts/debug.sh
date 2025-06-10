@@ -1,10 +1,6 @@
 #!/java/bin/sh
 # -*- coding: utf-8 -*-
-#    
-#    . /scripts/debug.sh 
-#    
-#  Copyright (C) 2025 "Mr. Lima"
-#  
+#
 
 echo OpenTTY Debug Script
 echo -------------------------
@@ -21,11 +17,15 @@ version
 build
 
 echo
+echo Current Thread:
+mmspt
+
+echo
 echo [ Device ]
 
 locale
-hostname
 hostid
+hostname
 
 echo 
 echo [ TTY ]
