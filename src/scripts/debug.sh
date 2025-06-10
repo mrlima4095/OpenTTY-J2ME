@@ -36,9 +36,7 @@ hostname
 hostid
 
 echo
-
-echo PATH=$PATH
-if ($PATH == /) echo You are in root directory
+echo PWD=$PATH;
 
 echo
 echo [ TTY ]
