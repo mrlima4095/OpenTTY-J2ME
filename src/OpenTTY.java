@@ -250,25 +250,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("dir")) {
             Vector results = new Vector(); 
 
-            if (path.equals("/mnt/")) {
-                try {
-                    Enumeration roots = FileSystemRegistry.listRoots();
-                    while (roots.hasMoreElements()) {
-                        String root = (String) roots.nextElement();
-                        if (!results.contains(root)) {
-                            results.addElement(root);
-                        }
-                    }
-                } catch (Exception e) { echoCommand(e.getMessage()); return; }
-            }
-            else if (path.startsWith("/mnt/")) {
-                try {
-                    String realPath = "file:///" + path.substring(5); 
-                    if (!realPath.endsWith("/")) realPath += "/";
-                    FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ);
-                    Enumeration content = fc.list();
-                    while (content.hasMoreElements()) { 
-                        String item = (String) content.nextElement(); results.addElement(item); } fc.close(); } catch (Exception e) { echoCommand(e.getMessage()); return; } }
+            if (path.equals("/mnt/")) { try { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { String root = (String) roots.nextElement(); if (!results.contains(root)) { results.addElement(root); } } } catch (Exception e) { echoCommand(e.getMessage()); return; } }
+            else if (path.startsWith("/mnt/")) { try { String realPath = "file:///" + path.substring(5); if (!realPath.endsWith("/")) realPath += "/"; FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ); Enumeration content = fc.list(); while (content.hasMoreElements()) { String item = (String) content.nextElement(); results.addElement(item); } fc.close(); } catch (Exception e) { echoCommand(e.getMessage()); return; } }
             else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } 
             else if (path.equals("/home/")) { new Explorer(); return; }
 
