@@ -264,7 +264,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
-        else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else if (argument.equals("-p")) { StringBuffer roots = new StringBuffer(); Enumeration storage = FileSystemRegistry.listRoots(); while (storage.hasMoreElements()) { String root = (String) storage.nextElement(); roots.append(root).append("\n"); } echoCommand(roots.toString()); } else { echoCommand("lsblk: " + argument + ": not found"); } }
+        else if (mainCommand.equals("lsblk")) { 
+            if (argument.equals("") || argument.equals("-x")) { 
+                echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); 
+            } 
+            else if (argument.equals("-p")) { StringBuffer roots = new StringBuffer(); Enumeration storage = FileSystemRegistry.listRoots(); while (storage.hasMoreElements()) { String root = (String) storage.nextElement(); roots.append(root).append("\n"); } echoCommand(roots.toString()); } else { echoCommand("lsblk: " + argument + ": not found"); } }
         // |
         // RMS Files
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { deleteFile(argument); } }
@@ -357,48 +361,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     private String read(String filename) {
         try {
-            if (filename.startsWith("/mnt/")) {
-                FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ);
-                InputStream is = fileConn.openInputStream();
-                StringBuffer content = new StringBuffer();
-                int ch;
-                while ((ch = is.read()) != -1) {
-                    content.append((char) ch);
-                }
-                is.close();
-                fileConn.close();
-                return env(content.toString());
-            } 
-            else if (filename.startsWith("/home/")) { 
-                RecordStore recordStore = null; 
-                String content = ""; 
-
-                try { 
-                    recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
-                    if (recordStore.getNumRecords() >= 1) { 
-                        byte[] data = recordStore.getRecord(1); 
-                        if (data != null) { content = new String(data); } 
-                    } 
-                } 
-                catch (RecordStoreException e) { content = ""; } 
-                finally { 
-                    if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } 
-                } 
-
-                return content; 
-            }
-            else {
-                StringBuffer content = new StringBuffer();
-                InputStream is = getClass().getResourceAsStream(filename);
-                if (is == null) { return ""; }
-                InputStreamReader isr = new InputStreamReader(is, "UTF-8");
-                int ch;
-                while ((ch = isr.read()) != -1) {
-                    content.append((char) ch);
-                }
-                isr.close();
-                return env(content.toString());
-            }
+            if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } 
+            else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; }
+            else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); }
         } catch (IOException e) { return ""; }
     }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
