@@ -18,16 +18,14 @@ xterm=execute x11 $DISPLAY jbuntu;
 jbuntu=execute alias xterm=exec cd & x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
 
 shell.name=jbuntu
-shell.args=menu,jnome,explorer,run,sync
+shell.args=menu,jnome,run,sync
 
 menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,General Settings,Desktop Settings,JBuntu Updater,Logout,Exit; add list.back=x11 $DISPLAY jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add General Settings=cfg; add Desktop Settings=jbuntu jnome; add JBuntu Updater=jbuntu sync; add Logout=lock; add Exit=exit; x11 list nano; get nano;
 jnome=execute install nano; touch; add list.title=Desktop Settings; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add Legacy=exec install nano & touch & add make & install .jbuntu-desktop & log add info Charged Desktop Type to 'LEGACY' & log add warn JBuntu has request API reload & @reload & set DISPLAY=make & import jbuntu & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-desktop & log add info Charged Desktop Type to 'LEGACY' & log add warn JBuntu has request API reload & @reload & set DISPLAY=canvas & import jbuntu & get nano; x11 list nano; get nano;
-explorer=execute install nano; touch; add list.title=File Explorer; add list.content=My Files,Device Files,Resources,Run; add list.back=x11 list jbuntu; add list.button=Open; add My Files=builtin dir f; add Device Files=builtin dir s; add Resources=builtin ls; add Run=jbuntu run; x11 list nano; get nano;
 
 run=execute install nano; touch; add quest.title=$TITLE; add quest.label=(Run) $USERNAME $PATH $; add quest.key=COMMAND; add quest.cmd=exec $COMMAND & unset COMMAND; x11 quest nano; get nano;
 
 sync=execute install nano; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu; hash jbuntu; set LOCAL_HASH=$OUTPUT; hash nano; if ($LOCAL_HASH == $OUTPUT) warn JBuntu is already updated!; if ($LOCAL_HASH != $OUTPUT) exec touch & add screen.title=JBuntu Updater & add screen.content=A new version of JBuntu is avaliable! Do you want to update? & add screen.button=Update & add screen.button.cmd=clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/update_jbuntu.sh & x11 make nano & get nano; get nano;
-
 
 [ COMMAND ]
 
@@ -61,7 +59,7 @@ list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Moni
 list.button=Open
 
 Text Editor=execute nano;
-File Explorer=execute jbuntu explorer;
+File Explorer=execute dir f;
 Network Tools=execute nk;
 OpenTTY Store=execute yang;
 Terminal=execute x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; unalias xterm; x11 term;
