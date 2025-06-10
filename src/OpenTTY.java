@@ -267,13 +267,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (!realPath.endsWith("/")) realPath += "/";
                     FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ);
                     Enumeration content = fc.list();
-                    while (content.hasMoreElements()) {
-                        String item = (String) content.nextElement();
-                        results.addElement(item);
-                    }
-                    fc.close();
-                } catch (Exception e) { echoCommand(e.getMessage()); return; }
-            }
+                    while (content.hasMoreElements()) { 
+                        String item = (String) content.nextElement(); results.addElement(item); } fc.close(); } catch (Exception e) { echoCommand(e.getMessage()); return; } }
             else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } 
             else if (path.equals("/home/")) { new Explorer(); return; }
 
