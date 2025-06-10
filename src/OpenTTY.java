@@ -638,7 +638,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         dir.close();
                     } catch (IOException e) { }
                 } 
-                else if (path.startsWith("/home/")) {
+                else if (path.equals("/home/")) {
                     try {
                         String[] recordStores = RecordStore.listRecordStores();
                         for (int i = 0; i < recordStores.length; i++) {
