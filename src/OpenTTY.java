@@ -280,7 +280,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 processCommand("rm " + origin, false); 
             }
         }
-
         // |
         // Text Manager
         else if (mainCommand.equals("sed")) { StringEditor(argument); }
