@@ -690,7 +690,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         private boolean canWriteToPath(String path) {
-            return path.startsWith("/home/") || path.startsWith("/mnt/");
+            return path.startsWith("/home/") || (path.startsWith("/mnt/") && path.equals("/mnt/"));
         }
 
         private static String getFirstString(Vector v) {
