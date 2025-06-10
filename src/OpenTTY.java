@@ -622,16 +622,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         dir.close();
                     } catch (IOException e) { }
                 } 
-                else if (path.equals("/home/")) {
-                    try {
-                        String[] recordStores = RecordStore.listRecordStores();
-                        for (int i = 0; i < recordStores.length; i++) {
-                            if (!recordStores[i].startsWith(".")) {
-                                screen.append(recordStores[i], null);
-                            }
-                        }
-                    } catch (RecordStoreException e) { }
-                } 
+                else if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], null); } } } catch (RecordStoreException e) { } } 
 
                 String[] files = (String[]) paths.get(path);
                 if (files != null) {
@@ -644,12 +635,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
             } catch (IOException e) { }
         }
-        private boolean isWritable(String path) {
-            return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"));
-        }
-        private boolean isRoot(String path) {
-            return path.equals("/") || path.equals("/mnt/");
-        }
+        private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); }
+        private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); }
 
         private static String getFirstString(Vector v) {
             String result = null;
