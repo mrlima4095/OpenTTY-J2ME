@@ -640,7 +640,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (!path.equals("/")) { screen.append("..", null); } 
 
 
-            if (canWriteToPath(path)) { screen.addCommand(DELETE); }
+            if (isWritable(path)) { screen.addCommand(DELETE); }
             else { screen.removeCommand(DELETE); }
 
             try {
@@ -689,8 +689,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } catch (IOException e) {
             }
         }
-        private boolean canWriteToPath(String path) {
+        private boolean isWritable(String path) {
             return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"));
+        }
+        private boolean isRoot(String path) {
+            return path.equals("/") || path.equals("/mnt/");
         }
 
         private static String getFirstString(Vector v) {
