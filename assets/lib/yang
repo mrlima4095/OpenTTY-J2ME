@@ -15,8 +15,8 @@ setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RET
 shell.name=yang
 shell.args=install,update,query,setrepo,info
 
-install=execute case file (.yang-lock) exec rm .yang-lock & set OLD_QUERY=$QUERY & set QUERY=$RESOURCE & tick Installing... & query socket://$REPO get lib/$RESOURCE & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & unset RESOURCE & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
-update=execute case file (.yang-lock) exec rm .yang-lock & set OLD_QUERY=$QUERY & set QUERY=yang & tick Updating... & query socket://$REPO get lib/yang & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & touch .yang-lock & import yang; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
+install=execute cd; case file (.yang-lock) exec rm .yang-lock & set OLD_QUERY=$QUERY & set QUERY=$RESOURCE & tick Installing... & query socket://$REPO get lib/$RESOURCE & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & unset RESOURCE & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
+update=execute cd; case file (.yang-lock) exec rm .yang-lock & set OLD_QUERY=$QUERY & set QUERY=yang & tick Updating... & query socket://$REPO get lib/yang & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & touch .yang-lock & import yang; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
 query=execute x11 quest /java/lib/yang;
 
 info=execute echo PackJ 1.3 (Local Edition);
