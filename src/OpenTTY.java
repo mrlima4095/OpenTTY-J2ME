@@ -329,7 +329,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("")) {  }
 
@@ -576,7 +575,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void commandAction(Command c, Displayable d) {
-            String selected = path + screen.getString(screen.getSelectedIndex());
+            String selected = screen.getString(screen.getSelectedIndex());
 
             if (c == BACK) { processCommand("xterm"); } 
             else if (c == OPEN) {
@@ -591,12 +590,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         path += screen.getString(screen.getSelectedIndex()); 
                         stdin.setLabel(username + " " + path + " $");
                         load();
-                    } else { new NanoEditor(selected); }
+                    } else { new NanoEditor(path + selected); }
                 }
             }
             else if (c == DELETE) { deleteFile(selected); load(); } 
-            else if (c == RUN) { processCommand("xterm"); runScript(getcontent(selected)); } 
-            else if (c == IMPORT) { processCommand("xterm"); importScript(selected); }
+            else if (c == RUN) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
+            else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); }
         }
 
         private void load() {
