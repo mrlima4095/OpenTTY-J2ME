@@ -604,8 +604,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public Explorer() {
             screen.addCommand(BACK);
             screen.addCommand(OPEN);
-            screen.addCommand(RUN);
-            screen.addCommand(IMPORT);
             screen.setCommandListener(this);
             load();
             display.setCurrent(screen);
@@ -639,8 +637,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.deleteAll();
             if (!path.equals("/")) { screen.append("..", null); } 
 
-
             if (isWritable(path)) { screen.addCommand(DELETE); }
+            else { screen.removeCommand(DELETE); }
+
+            if (isRoot(path)) { screen.addCommand(DELETE); }
             else { screen.removeCommand(DELETE); }
 
             try {
