@@ -242,7 +242,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                         fc.close();
                     } catch (IOException e) { echoCommand("cd: " + basename(target) + ": " + e.getMessage()); }
-                } else { echoCommand("cd: " + basename(target) + ": not " + (paths.containsKey(target.substring(0, target.length() - 1)) ? "found" : "a directory")); }
+                } 
+                else { echoCommand("cd: " + basename(target) + ": not " + (paths.containsKey(target.substring(0, target.length() - 1)) ? "a directory" : "found")); }
         } 
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
