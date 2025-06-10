@@ -6,7 +6,7 @@ description=OpenTTY Package Manager
 
 include=/java/lib/settings
 
-config=execute touch .yang-lock;
+config=execute cd; touch .yang-lock;
 command=yang,setrepo
 
 yang=execute x11 list /java/lib/yang;
