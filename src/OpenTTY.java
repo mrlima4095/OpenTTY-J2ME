@@ -566,13 +566,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         RUN = new Command("Run Script", Command.OK, 3),
                         IMPORT = new Command("Import File", Command.OK, 4);
 
-        public Explorer() {
-            screen.addCommand(BACK);
-            screen.addCommand(OPEN);
-            screen.setCommandListener(this);
-            load();
-            display.setCurrent(screen);
-        }
+        public Explorer() { screen.addCommand(BACK); screen.addCommand(OPEN); screen.setCommandListener(this); load(); display.setCurrent(screen); }
 
         public void commandAction(Command c, Displayable d) {
             String selected = screen.getString(screen.getSelectedIndex());
@@ -590,7 +584,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     stdin.setLabel(username + " " + path + " $"); load();
                 }
             }
-            else if (c == DELETE) { deleteFile(selected); load(); } 
+            else if (c == DELETE) { deleteFile(path + selected); load(); } 
             else if (c == RUN) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
             else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); }
         }
@@ -607,32 +601,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             try {
                 if (path.equals("/mnt/")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), null); } } 
-                else if (path.startsWith("/mnt/")) {
-                    try {
-                        FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
-                        Enumeration content = dir.list();
-                        Vector dirs = new Vector(), files = new Vector();
-                        while (content.hasMoreElements()) {
-                            String name = (String) content.nextElement();
-                            if (name.endsWith("/")) dirs.addElement(name);
-                            else files.addElement(name);
-                        }
-                        while (!dirs.isEmpty()) screen.append(getFirstString(dirs), null);
-                        while (!files.isEmpty()) screen.append(getFirstString(files), null);
-                        dir.close();
-                    } catch (IOException e) { }
-                } 
+                else if (path.startsWith("/mnt/")) { try { FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ); Enumeration content = dir.list(); Vector dirs = new Vector(), files = new Vector(); while (content.hasMoreElements()) { String name = (String) content.nextElement(); if (name.endsWith("/")) { dirs.addElement(name); } else { files.addElement(name); } } while (!dirs.isEmpty()) { screen.append(getFirstString(dirs), null); } while (!files.isEmpty()) { screen.append(getFirstString(files), null); } dir.close(); } catch (IOException e) { } } 
                 else if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], null); } } } catch (RecordStoreException e) { } } 
 
                 String[] files = (String[]) paths.get(path);
-                if (files != null) {
-                    for (int i = 0; i < files.length; i++) {
-                        String f = files[i];
-                        if (f != null && !f.equals("..") && !f.equals("/")) {
-                            screen.append(f, null);
-                        }
-                    }
-                } 
+                if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i]; if (f != null && !f.equals("..") && !f.equals("/")) { screen.append(f, null); } } } 
             } catch (IOException e) { }
         }
         private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); }

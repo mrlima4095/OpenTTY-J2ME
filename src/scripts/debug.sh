@@ -12,33 +12,22 @@ echo
 
 log add debug Debug script had been executed 
 
-echo [ Version ]
+echo [ MIDlet ]
+pkg MIDlet-1
+echo
 
 !
 version
 build
 
-echo 
-echo [ MIDlet ]
-
-pkg MIDlet-1
-pkg MIDlet-Proxy
-
 echo
-echo Current Thread: 
-mmspt
-
-echo 
 echo [ Device ]
 
 locale
 hostname
 hostid
 
-echo
-echo PWD=$PATH;
-
-echo
+echo 
 echo [ TTY ]
 
 tty
