@@ -622,22 +622,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             try {
-                if (path.startsWith("/home/")) {
-                    try {
-                        String[] recordStores = RecordStore.listRecordStores();
-                        for (int i = 0; i < recordStores.length; i++) {
-                            if (!recordStores[i].startsWith(".")) {
-                                screen.append(recordStores[i], null);
-                            }
-                        }
-                    } catch (RecordStoreException e) { }
-                } 
-                else if (path.equals("/mnt/")) {
-                    Enumeration roots = FileSystemRegistry.listRoots();
-                    while (roots.hasMoreElements()) {
-                        screen.append((String) roots.nextElement(), null);
-                    }
-                } 
+                if (path.equals("/mnt/")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), null); } } 
                 else if (path.startsWith("/mnt/")) {
                     try {
                         FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
@@ -653,19 +638,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         dir.close();
                     } catch (IOException e) { }
                 } 
-                else {
-                    String[] files = (String[]) paths.get(path);
-                    if (files != null) {
-                        for (int i = 0; i < files.length; i++) {
-                            String f = files[i];
-                            if (f != null && !f.equals("..") && !f.equals("/")) {
-                                screen.append(f, null);
+                else if (path.startsWith("/home/")) {
+                    try {
+                        String[] recordStores = RecordStore.listRecordStores();
+                        for (int i = 0; i < recordStores.length; i++) {
+                            if (!recordStores[i].startsWith(".")) {
+                                screen.append(recordStores[i], null);
                             }
                         }
+                    } catch (RecordStoreException e) { }
+                } 
+
+                String[] files = (String[]) paths.get(path);
+                if (files != null) {
+                    for (int i = 0; i < files.length; i++) {
+                        String f = files[i];
+                        if (f != null && !f.equals("..") && !f.equals("/")) {
+                            screen.append(f, null);
+                        }
                     }
-                }
-            } catch (IOException e) {
-            }
+                } 
+            } catch (IOException e) { }
         }
         private boolean isWritable(String path) {
             return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"));
