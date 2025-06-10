@@ -582,15 +582,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (selected != null) {
                     if (selected.endsWith("..")) {
                         int lastSlash = path.lastIndexOf('/', path.length() - 2);
-                        if (lastSlash != -1) {
-                            path = path.substring(0, lastSlash + 1);
-                            load();
-                        }
-                    } else if (selected.endsWith("/")) {
-                        path += selected
-                        stdin.setLabel(username + " " + path + " $");
-                        load();
-                    } else { new NanoEditor(path + selected); }
+                        if (lastSlash != -1) { path = path.substring(0, lastSlash + 1); }
+                    } 
+                    else if (selected.endsWith("/")) { path += selected; } 
+                    else { new NanoEditor(path + selected); }
+                    
+                    stdin.setLabel(username + " " + path + " $"); load();
                 }
             }
             else if (c == DELETE) { deleteFile(selected); load(); } 
@@ -605,14 +602,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (isWritable(path)) { screen.addCommand(DELETE); }
             else { screen.removeCommand(DELETE); }
 
-            if (isRoot(path)) {
-                screen.removeCommand(RUN);
-                screen.removeCommand(IMPORT);
-            }
-            else { 
-                screen.addCommand(RUN);
-                screen.addCommand(IMPORT);
-            }
+            if (isRoot(path)) { screen.removeCommand(RUN); screen.removeCommand(IMPORT); }
+            else { screen.addCommand(RUN); screen.addCommand(IMPORT); }
 
             try {
                 if (path.equals("/mnt/")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), null); } } 
