@@ -152,7 +152,6 @@ Usage: date
 Usage: debug
 
 - Run MIDlet debug script.
-- 
 </debug>
 <dir>
 Usage: dir [OPTions]
