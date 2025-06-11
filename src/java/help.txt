@@ -216,31 +216,65 @@ Usage: genip
 </genip>
 <get>
 Usage: get [FILE]
-* Set content of nano FILE.
+* Replace nano buffer by content of FILE.
 </get>
 <getopt>
+Usage: getopt [TEXT]
+* 
 </getopt>
 <getty>
+Usage: getty
+* Replace nano buffer by content of standard output (stdout).
 </getty>
 <gobuster>
+Usage: gobuster [URL]
+* Run GoBuster in URL
+
+	GoBuster search for valid files and directories at a WebServer.
+	Default wordlist file is '/java/etc/gobuster', if a file named as 'gobuster' is found at home and it isn't blank, GoBuster uses it. 
 </gobuster>
 <grep>
+Usage: grep [FILE] [PATTERN]
+* Look for PATTERN in FILE, print 'true' or 'false'.
 </grep>
 <hash>
+Usage: hash [FILE]
+* Print hash of FILE.
 </hash>
 <head>
+Usage: head [FILE]
+* Print first 10 lines of FILE.
 </head>
 <help>
+Usage: help [PAGE]
+* Display OpenTTY help.
+
+	You can read specific help for commands 
 </help>
 <history>
+Usage: history
+* Display commands history of current session.
 </history>
 <hostname>
-</hostname>
+Usage: hostname
+* Print MIDlet host name.
+
 <hostid>
+Usage: hostid
+* Print MIDlet host id.
+
 </hostid>
 <htop>
+Usage: htop
+* Display Memory Usage Panel
+
+	Button 'Refresh' triggers Garbage Collector.
 </htop>
 <http>
+Usage: http [URL]
+* Make a HTTP request into URL.
+
+	
 </http>
 <html>
 </html>
