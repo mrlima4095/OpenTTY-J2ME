@@ -269,7 +269,3 @@ Usage: get [FILE]
 - Read content of FILE;
 - Set it as content in nano buffer.
 </get>
-<getopt>
-Usage: getopt [TEXT];
-
-- Return argument part of TEXT.
