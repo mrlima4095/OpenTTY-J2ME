@@ -191,16 +191,28 @@ Usage: find [FILE] [PATTERN]
 <for>
 </for>
 <fw>
-Usage: fw [IP ADDRESS]
-* Look for FILE in
+Usage: fw [ADDRESS]
+* Look for information about an IP ADDRESS.
+
+	This command uses API at 'http://ipinfo.io'.
 </fw>
 <gc>
+Usage: gc
+* Trigger Garbage Collector.
 </gc>
 <gaddr>
+Usage: gaddr [DOMAIN]
+* Resolve IP Address of DOMAIN.
+
+	This command uses Cloudflare DNS (1.1.1.1), if it isn't avaliable it may not work.
 </gaddr>
 <gauge>
+Usage: gauge [TEXT]
+* Display an Alert for TEXT with a loading progress bar.
 </gauge>
 <genip>
+Usage: genip
+* Generate a random IP Address
 </genip>
 <get>
 </get>
