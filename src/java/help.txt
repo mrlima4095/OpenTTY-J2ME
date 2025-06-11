@@ -62,12 +62,12 @@ Usage: call [PHONE]
 * Request Device API make a call to PHONE number
 </call>
 <case>
-Usage: case [TYPE] ([NAME]) [COMMAND]
-* Look for NAME in context of TYPE. If found, run COMMAND.
+Usage: case [CONTEXT] ([NAME]) [COMMAND]
+* Look for NAME in CONTEXT. If found, run COMMAND.
 
-	Put '!' as prefix in TYPE to invert the operation.
+	Put '!' as prefix in CONTEXT to invert the operation.
 
-Valid TYPE's:
+Avaliable CONTEXT's:
 - alias - file - key - root
 - screen - thread - trace
 </case>
@@ -287,30 +287,76 @@ Usage: if ([EXPRESSION]) [COMMAND]
 
 </if>
 <ifconfig>
+Usage: ifconfig
+* Print Device IP Address.
 </ifconfig>
 <import>
+Usage: import [FILE]
+* Load an OpenTTY Package from FILE.
+
+
 </import>
 <install>
+Usage: install [FILE]
+* Save nano buffer into FILE.
 </install>
 <java>
+Usage: java [OPTIONS...] [FILE]
+* Virtual Java Runtime
+
+OPTIONS:
+	--version
+	-class [CLASS]
+
+	With FILE, it run it as a Java
 </java>
 <kill>
+Usage: kill [PID]
+* Kill process of PID.
 </kill>
 <locale>
+Usage: locale
+* Print MIDlet language settings.
 </locale>
 <login>
+Usage: login
+* This command is disabled until 1.8.4 release. Now you requires to login with a username in MIDlet loading.
 </login>
 <log>
+Usage: log [OPTIONS ...]
+* Manage MIDlet logs.
+
+OPTIONS:
+	view
+	clear
+	swap [FILE]
+	add [TYPE] [TEXT] 
+	
+LOG Types:
+- info - debug - warn - error
 </log>
 <logcat>
+Usage: logcat
+* Print session logs.
 </logcat>
 <logname>
+Usage: logname
+* Print session user name.
 </logname>
 <logout>
+Usage: logout
+* End user session and close MIDlet.
 </logout>
 <ls>
+Usage: ls
+* Display File Explorer.
 </ls>
 <lsblk>
+Usage: lsblk [OPTIONS]
+* View information about Storages.
+
+OPTIONS:
+	-x
 </lsblk>
 <mail>
 </mail>
