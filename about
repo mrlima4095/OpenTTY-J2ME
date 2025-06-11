@@ -34,10 +34,10 @@ fdisk
 	for
 	fw
 	gaddr
-gauge
-genip
-get
-getopt
+	gauge
+	genip
+	get
+	getopt
 getty
 github
 go
