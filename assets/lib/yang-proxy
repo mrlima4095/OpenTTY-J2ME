@@ -13,13 +13,14 @@ yang=execute x11 list yang-proxy;
 setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; cfg run;
 
 shell.name=yang
-shell.args=install,update,query,setrepo,info
+shell.args=install,update,query,setrepo,info,help
 
 install=execute cd; case file (.yang-lock) exec rm .yang-lock & install nano & tick Installing... & proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/$RESOURCE & install $RESOURCE & get nano & unset RESOURCE & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
 update=execute cd; case file (.yang-lock) exec rm .yang-lock & install nano & tick Updating... & proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/yang-proxy & install yang-proxy & get nano & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
 query=execute x11 quest yang-proxy;
 
 info=execute echo PackJ 1.4 (Proxy Edition);
+help=execute help yang;
 
 [ DISPLAY ]
 
