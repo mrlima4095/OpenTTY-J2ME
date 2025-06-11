@@ -181,7 +181,7 @@ Usage: exit
 </exit>
 <expr>
 Usage: expr [EXPR]
-* Perform the math EXPR.
+* Perform the math EXPRession.
 </expr>
 <export>
 Usage: export [KEY]
