@@ -326,7 +326,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) {
                 processCommand(mainCommand + " index", false);
             } else {
-                String content = read("/java/help.txt"), startTag = "<" + argument.toLowerCase() + ">", endTag = "</" + argument.toLowerCase() + ">";
+                String content = read("/java/etc/help.html"), startTag = "<" + argument.toLowerCase() + ">", endTag = "</" + argument.toLowerCase() + ">";
                 int start = content.indexOf(startTag), end = content.indexOf(endTag);
                 if (start != -1 && end != -1 && end > start) {
                     if (mainCommand.equals("help")) { viewer(form.getTitle(), content.substring(start + startTag.length(), end).trim()); }
