@@ -109,14 +109,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Long executors
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { processCommand(argument, false); }
-        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { processCommand(argument); } }
+        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { processCommand(argument, ignore); } }
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument)); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (NumberFormatException e) { echoCommand(e.getMessage()); } } }
-        else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long startTime = System.currentTimeMillis(); processCommand(argument); long endTime = System.currentTimeMillis(); echoCommand("at " + (endTime - startTime) + "ms"); } }
+        else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long startTime = System.currentTimeMillis(); processCommand(argument, ignore); long endTime = System.currentTimeMillis(); echoCommand("at " + (endTime - startTime) + "ms"); } }
         // |
         // Chain executors
-        else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
-        else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
+        else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim(), ignore); } }
+        else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim(), ignore); } }
 
         // API 006 - (Process)
         // |
@@ -326,16 +326,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) {
                 processCommand("help index", false);
             } else {
-                String content = read("/java/help.txt");
-                String startTag = "<" + argument.toLowerCase() + ">";
-                String endTag = "</" + argument.toLowerCase() + ">";
+                String content = read("/java/help.txt"), startTag = "<" + argument.toLowerCase() + ">", endTag = "</" + argument.toLowerCase() + ">";
                 int start = content.indexOf(startTag);
                 int end = content.indexOf(endTag);
                 if (start != -1 && end != -1 && end > start) {
                     String section = content.substring(start + startTag.length(), end).trim();
-                    viewer("Ajuda: " + argument, section);
+                    viewer(form.getTitle(), section);
                 } else {
-                    echoCommand("help: '" + argument + "' not found");
+                    echoCommand("help: " + argument + ": not found");
                 }
 
             }
