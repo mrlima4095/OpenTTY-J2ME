@@ -356,15 +356,28 @@ Usage: lsblk [OPTIONS]
 * View information about Storages.
 
 OPTIONS:
-	-x
+	-x	Print in digested format.
+	-p	List Device Partitions.
+	
+Mount points:
+
+MIDlet	/
+Device	/mnt/
+Records	/home/
 </lsblk>
 <mail>
 </mail>
 <mmspt>
+Usage: mmspt
+* Print current Thread Type.
 </mmspt>
 <mount>
+Usage: mount [FILE]
+* Mount a Storage from FILE.
 </mount>
 <nano>
+Usage: nano [FILE]
+* Display Nano Editor
 </nano>
 <nc>
 </nc>
