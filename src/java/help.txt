@@ -13,7 +13,7 @@ Usage: about [PACKAGE]
 </about>
 <add>
 Usage: add [TEXT]
-- Add TEXT in nano buffer, without TEXT it add a line break.
+- Add TEXT in nano buffer, without TEXT add a line break.
 </add>
 <alias>
 Usage: alias [KEY]=[COMMAND]
@@ -153,7 +153,7 @@ Usage: du [FILE]
 </du>
 <echo>
 Usage: echo [TEXT]
-* Prints TEXT, without TEXT it prints a line break.
+* Prints TEXT, without TEXT prints a line break.
 </echo>
 <env>
 Usage: env [KEY]
