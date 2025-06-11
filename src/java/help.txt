@@ -116,7 +116,7 @@ MIDlet PAGE's:
 Usage: clone [URL]
 
 - Make a HTTP GET request in URL;
-- Run response as a script.
+- Run response as script.
 
 It uses MIDlet-Proxy by default.
 </clone>
