@@ -9,7 +9,7 @@ https://github.com/mrlima4095/OpenTTY-J2ME
 
 <about>
 Usage: about [FILE]
-* Prints information about FILE if it is a Package.
+* Print information about FILE if it is a Package.
 </about>
 <add>
 Usage: add [TEXT]
@@ -25,11 +25,16 @@ Usage: alias [KEY]=[COMMAND]
 </alias>
 <basename>
 Usage: basename [PATH]
-* Prints PAT
+* Print PATH with any leading directory components removed.
 </basename>
 <bg>
+Usage: bg [COMMAND]
+* Run COMMAND in another Thread.
 </bg>
 <bind>
+Usage: bind [PORT]
+* Remote Shell server
+
 </bind>
 <bruteforce>
 </bruteforce>
