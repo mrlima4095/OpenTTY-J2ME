@@ -217,9 +217,7 @@ Usage: gaddr [DOMAIN]
 </gaddr>
 <gauge>
 Usage: gauge [TEXT]
-
-- Open a Alert with TEXT;
-- It contains a infinity loading progress bar.
+* Display an Alert for TEXT with a infinity loading progress bar.
 </gauge>
 <genip>
 Usage: genip
@@ -227,7 +225,5 @@ Usage: genip
 </genip>
 <get>
 Usage: get [FILE]
-
-- Read content of FILE;
-- Set it as content in nano buffer.
+* Set buffer of nano as FILE content.
 </get>
