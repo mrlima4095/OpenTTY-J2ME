@@ -181,7 +181,7 @@ Usage: exit
 </exit>
 <expr>
 Usage: expr [EXPR]
-* Perform EXPR and prints it result.
+* Perform the math EXPR.
 </expr>
 <export>
 Usage: export [KEY]
@@ -191,35 +191,29 @@ Usage: export [KEY]
 </export>
 <find>
 Usage: find [FILE] [PATTERN]
-* Look for PATTERN in FILE;
-- Prints 'true' or 'false' in console;
+* Look for PATTERN in FILE, prints 'true' or 'false';
 </find>
 <for>
 Usage: for [KEY] ([FILE]) [COMMAND]
+* Run COMMAND based in FILE content.
 
-- Read content of FILE;
-- Set VALUE of KEY as current LINE and run COMMAND;
-- COMMAND will be run for with KEY.
+	Set VALUE of KEY as current LINE and run COMMAND. It will run until file end, parsing LINE for KEY.
 </for>
 <fw>
 Usage: fw [ADDRESS]
+* Look for information about an IP ADDRESS.
 
-- Look for information about an IP ADDRESS.
-
-This command uses API from http://ipinfo.io.
+	This command uses API from http://ipinfo.io.
 </fw>
 <gc>
 Usage: gc
-
-- Trigger garbage collector.
+* Trigger Garbage Collector.
 </gc>
 <gaddr>
 Usage: gaddr [DOMAIN]
+* Look for IP Address of DOMAIN.
 
-- Look for IP Address of DOMAIN;
-- Prints it result in console.
-
-This command uses Cloudflare DNS (1.1.1.1), if it isn't available in your network, it may not work.
+	This command uses Cloudflare DNS (1.1.1.1), if it isn't available in your network, it may not work.
 </gaddr>
 <gauge>
 Usage: gauge [TEXT]
@@ -229,9 +223,7 @@ Usage: gauge [TEXT]
 </gauge>
 <genip>
 Usage: genip
-
-- Generate a random IP Address;
-- Prints it result in console.
+* Generate a random IP Address.
 </genip>
 <get>
 Usage: get [FILE]
