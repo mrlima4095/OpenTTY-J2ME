@@ -191,9 +191,8 @@ Usage: export [KEY]
 </export>
 <find>
 Usage: find [FILE] [PATTERN]
-
-- Look for PATTERN in FILE;
-- It prints 'true' or 'false' in console;
+* Look for PATTERN in FILE;
+- Prints 'true' or 'false' in console;
 </find>
 <for>
 Usage: for [KEY] ([FILE]) [COMMAND]
