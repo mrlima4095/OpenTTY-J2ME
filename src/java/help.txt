@@ -272,13 +272,19 @@ Usage: htop
 </htop>
 <http>
 Usage: http [URL]
-* Make a HTTP request into URL.
+* Make a HTTP request with custumized Headers.
 
-	
+	Display a Editor to change Headers.
+	It given options to run 'curl' and 'wget' with the custumized Headers.
 </http>
 <html>
+Usage: html
+* View content in nano buffer as HTML.
 </html>
 <if>
+Usage: if ([EXPRESSION]) [COMMAND]
+* Perform EXPRESSION to run COMMAND.
+
 </if>
 <ifconfig>
 </ifconfig>
