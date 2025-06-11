@@ -8,9 +8,9 @@ https://github.com/mrlima4095/OpenTTY-J2ME
 </index>
 
 <about>
-Usage: about [FILE]
+Usage: about [PACKAGE]
 
-- If FILE is a Package, show it basic information.
+- Prints information about PACKAGE.
 </about>
 <add>
 Usage: add [TEXT]
@@ -21,7 +21,6 @@ Usage: add [TEXT]
 <alias>
 Usage: alias [KEY]=[COMMAND]
 
-- Define or display aliases;
 - Without arguments, 'alias' prints the list of aliases;
 - Otherwise, an alias is defined for each KEY whose COMMAND is given;
 - When only KEY is found and it is an alias prints it value.
@@ -49,22 +48,22 @@ Usage: bruteforce [COMMAND]
 
 - Run COMMAND while process 'bruteforce' is alive;
 - You can stop this killing it process;
-- All bruteforce instance stop when process is killed. 
+- All bruteforce instance stop when process is killed.
 </bruteforce>
 <buff>
 Usage: buff [TEXT]
 
-- Set value at standard input as TEXT.
+- Set content of standard input as TEXT.
 </buff>
 <build>
 Usage: build
 
-- Prints MIDlet build information.
+- Prints MIDlet build code.
 </build>
 <builtin>
 Usage: builtin [COMMAND]
 
-- Run COMMAND, without considering aliases
+- Run COMMAND, without considering aliases.
 </builtin>
 <call>
 Usage: call [PHONE]
@@ -72,17 +71,16 @@ Usage: call [PHONE]
 - Request Device API to make a call to PHONE.
 </call>
 <case>
-Usage: case [TYPE] ([NAME]) [COMMMAND]
+Usage: case [TYPE] ([NAME]) [COMMAND]
 
-- Advanced search for NAME in TYPE's context;
 - Look for NAME in context of TYPE;
 - If found, run COMMAND.
 
 Valid TYPE's:
-- alias - file - key - root 
+- alias - file - key - root
 - screen - thread - trace
 
-	Put '!' as prefix in TYPE to invert the operation.
+Put '!' as prefix in TYPE to invert the operation.
 </case>
 <cat>
 Usage: cat [FILE]
@@ -109,7 +107,7 @@ Permission NODE's:
 Usage: clear [PAGE]
 
 - Clear PAGE content;
-- Without PAGE, clears standard output.
+- Without PAGE, clears console (stdout).
 
 MIDlet PAGE's:
 - stdin - stdout - history - logs
@@ -120,12 +118,12 @@ Usage: clone [URL]
 - Make a HTTP GET request in URL;
 - Run response as a script.
 
-	It uses MIDlet-Proxy by default.
+It uses MIDlet-Proxy by default.
 </clone>
 <conf>
 Usage: conf [FILE]
 
-- Prints FILE in ini format;
+- Prints FILE in INI format;
 - The parsing only works if source FILE is in Json format.
 </conf>
 <cp>
@@ -143,7 +141,7 @@ Usage: cron [TIME] [COMMAND]
 Usage: curl [URL]
 
 - Make a HTTP GET request in URL;
-- Prints response in standard output.
+- Prints response in console.
 </curl>
 <date>
 Usage: date
@@ -154,8 +152,7 @@ Usage: date
 Usage: debug
 
 - Run MIDlet debug script.
-
-	. /scripts/debug.sh
+- 
 </debug>
 <dir>
 Usage: dir [OPTions]
@@ -164,8 +161,8 @@ Usage: dir [OPTions]
 - If you're in home it open File Explorer.
 
 OPTions:
-	-a	Include hidden files in listing;
-	-v	Prints listing when you're in home.
+-a	Include hidden files in listing;
+-v	Prints listing when you're in home.
 </dir>
 <du>
 Usage: du [FILE]
@@ -175,7 +172,7 @@ Usage: du [FILE]
 <echo>
 Usage: echo [TEXT]
 
-- Prints TEXT in standard output;
+- Prints TEXT in console;
 - Without TEXT it prints a line break.
 </echo>
 <env>
@@ -190,7 +187,7 @@ Usage: exec [COMMAND &]
 - Run more then one COMMAND in once process call;
 - You can split COMMANDs with char '&'.
 
-	See also about command 'execute'. 
+See also about command 'execute'.
 </exec>
 <execute>
 Usage: execute [COMMAND &]
@@ -198,7 +195,7 @@ Usage: execute [COMMAND &]
 - Run more then one COMMAND in once process call;
 - You can split COMMANDs with char ';'.
 
-	See also about command 'exec'. 
+See also about command 'exec'.
 </execute>
 <exit>
 Usage: exit
@@ -209,7 +206,7 @@ Usage: exit
 Usage: expr [EXPR]
 
 - Perform math EXPRession;
-- Prints it result in standard output. 
+- Prints it result in console.
 </expr>
 <export>
 Usage: export [KEY]
@@ -221,7 +218,7 @@ Usage: export [KEY]
 Usage: find [FILE] [PATTERN]
 
 - Look for PATTERN in FILE;
-- It prints 'true' or 'false' in standard output;
+- It prints 'true' or 'false' in console;
 </find>
 <for>
 Usage: for [KEY] ([FILE]) [COMMAND]
@@ -236,7 +233,7 @@ Usage: fw [ADDRESS]
 
 - Look for information about an IP ADDRESS.
 
-	This command uses API from http://ipinfo.io.
+This command uses API from http://ipinfo.io.
 </fw>
 <gc>
 Usage: gc
@@ -247,9 +244,9 @@ Usage: gc
 Usage: gaddr [DOMAIN]
 
 - Look for IP Address of DOMAIN;
-- Prints it result in standard output.
+- Prints it result in console.
 
-	This command uses Cloudflare DNS (1.1.1.1), if it isn't available in your network, it may not work.
+This command uses Cloudflare DNS (1.1.1.1), if it isn't available in your network, it may not work.
 </gaddr>
 <gauge>
 Usage: gauge [TEXT]
@@ -261,7 +258,7 @@ Usage: gauge [TEXT]
 Usage: genip
 
 - Generate a random IP Address;
-- Prints it result in standard output.
+- Prints it result in console.
 </genip>
 <get>
 Usage: get [FILE]
