@@ -10,7 +10,7 @@ https://github.com/mrlima4095/OpenTTY-J2ME
 <about>
 Usage: about [FILE]
 
-- If FILE is a OpenTTY Package, show it basic information.
+- If FILE is a Package, show it basic information.
 </about>
 <add>
 Usage: add [TEXT]
@@ -29,12 +29,12 @@ Usage: alias [KEY]=[COMMAND]
 <basename>
 Usage: basename [FILENAME]
 
-- Print FILENAME with any leading directory components removed.
+- Prints FILENAME with any leading directory components removed.
 </basename>
 <bg>
 Usage: bg [COMMAND]
 
-- Start a new Thread to run COMMAND;
+- Start a new Thread to run COMMAND.
 </bg>
 <bind>
 Usage: bind [PORT]
@@ -42,8 +42,7 @@ Usage: bind [PORT]
 - Listen at PORT for connections;
 - Without PORT 'bind' takes the PORT from the environment key.
 
-You can connect it with other client. 
-The payloads received is run and it output is sent to client.
+You can connect it with other client. The payloads received is run and it output is sent to client.
 </bind>
 <bruteforce>
 Usage: bruteforce [COMMAND]
@@ -62,25 +61,215 @@ Usage: build
 
 - Prints MIDlet build information.
 </build>
+<builtin>
+Usage: builtin [COMMAND]
+
+- Run COMMAND, without considering aliases
+</builtin>
 <call>
 Usage: call [PHONE]
 
 - Request Device API to make a call to PHONE.
 </call>
 <case>
-Usage: case [TYPE] (NAME) [COMMMAND]
+Usage: case [TYPE] ([NAME]) [COMMMAND]
 
 - Advanced search for NAME in TYPE's context;
-- If  
+- Look for NAME in context of TYPE;
+- If found, run COMMAND.
 
 Valid TYPE's:
-- alias - An alias with NAME 
-- file - A RMS file with NAME
-- key - An environment key with NAME
-- root - A Device Filesystem with NAME
-- screen - A X11 Saved screen 
-- thread - Current Thread Type is NAME
-- trace - A Process with NAME 
+- alias - file - key - root 
+- screen - thread - trace
 
-
+	Put '!' as prefix in TYPE to invert the operation.
 </case>
+<cat>
+Usage: cat [FILE]
+
+- Prints content of FILE;
+- If FILE not found, prints anything.
+</cat>
+<cd>
+Usage: cd [DIR]
+
+- Change current working directory to DIR;
+- Without DIR return to '/home/'.
+</cd>
+<chmod>
+Usage: chmod [NODE]
+
+- Request Device API looking for Permission NODE;
+- Log NODE status into MIDlet logs.
+
+Permission NODE's:
+- http - socket - file - prg
+</chmod>
+<clear>
+Usage: clear [PAGE]
+
+- Clear PAGE content;
+- Without PAGE, clears standard output.
+
+MIDlet PAGE's:
+- stdin - stdout - history - logs
+</clear>
+<clone>
+Usage: clone [URL]
+
+- Make a HTTP GET request in URL;
+- Run response as a script.
+
+	It uses MIDlet-Proxy by default.
+</clone>
+<conf>
+Usage: conf [FILE]
+
+- Prints FILE in ini format;
+- The parsing only works if source FILE is in Json format.
+</conf>
+<cp>
+Usage: cp [ORIGIN] [COPY]
+
+- Copy ORIGIN into COPY;
+- Without COPY the new FILE name is 'ORIGIN-copy'.
+</cp>
+<cron>
+Usage: cron [TIME] [COMMAND]
+
+- Wait TIME before run COMMAND.
+</cron>
+<curl>
+Usage: curl [URL]
+
+- Make a HTTP GET request in URL;
+- Prints response in standard output.
+</curl>
+<date>
+Usage: date
+
+- Prints current Device date and time.
+</date>
+<debug>
+Usage: debug
+
+- Run MIDlet debug script.
+
+	. /scripts/debug.sh
+</debug>
+<dir>
+Usage: dir [OPTions]
+
+- Prints FILES of current working directory;
+- If you're in home it open File Explorer.
+
+OPTions:
+	-a	Include hidden files in listing;
+	-v	Prints listing when you're in home.
+</dir>
+<du>
+Usage: du [FILE]
+
+- Prints length (in Bytes) of FILE.
+</du>
+<echo>
+Usage: echo [TEXT]
+
+- Prints TEXT in standard output;
+- Without TEXT it prints a line break.
+</echo>
+<env>
+Usage: env [KEY]
+
+- Display environment keys;
+- With KEY prints it VALUE.
+</env>
+<exec>
+Usage: exec [COMMAND &]
+
+- Run more then one COMMAND in once process call;
+- You can split COMMANDs with char '&'.
+
+	See also about command 'execute'. 
+</exec>
+<execute>
+Usage: execute [COMMAND &]
+
+- Run more then one COMMAND in once process call;
+- You can split COMMANDs with char ';'.
+
+	See also about command 'exec'. 
+</execute>
+<exit>
+Usage: exit
+
+- Stop MIDlet.
+</exit>
+<expr>
+Usage: expr [EXPR]
+
+- Perform math EXPRession;
+- Prints it result in standard output. 
+</expr>
+<export>
+Usage: export [KEY]
+
+- Display environment keys;
+- With KEY clear it VALUE.
+</export>
+<find>
+Usage: find [FILE] [PATTERN]
+
+- Look for PATTERN in FILE;
+- It prints 'true' or 'false' in standard output;
+</find>
+<for>
+Usage: for [KEY] ([FILE]) [COMMAND]
+
+- Read content of FILE;
+- Set VALUE of KEY as current LINE and run COMMAND;
+- COMMAND will be run for with KEY.
+
+</for>
+<fw>
+Usage: fw [ADDRESS]
+
+- Look for information about an IP ADDRESS.
+
+	This command uses API from http://ipinfo.io.
+</fw>
+<gc>
+Usage: gc
+
+- Trigger garbage collector.
+</gc>
+<gaddr>
+Usage: gaddr [DOMAIN]
+
+- Look for IP Address of DOMAIN;
+- Prints it result in standard output.
+
+	This command uses Cloudflare DNS (1.1.1.1), if it isn't available in your network, it may not work.
+</gaddr>
+<gauge>
+Usage: gauge [TEXT]
+
+- Open a Alert with TEXT;
+- It contains a infinity loading progress bar.
+</gauge>
+<genip>
+Usage: genip
+
+- Generate a random IP Address;
+- Prints it result in standard output.
+</genip>
+<get>
+Usage: get [FILE]
+
+- Read content of FILE;
+- Set it as content in nano buffer.
+</get>
+<getopt>
+Usage: getopt [TEXT];
+
+- Return argument part of TEXT.

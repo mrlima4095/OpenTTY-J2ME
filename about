@@ -7,34 +7,33 @@
 	bruteforce
 	buff
 	build
-call
-case
-cat
-cd
-chmod
-clear
-clone
-command
-conf
-cp
-cron
-curl
-date
-debug
-dir
-du
-echo
-env
-exec
-execute
-exit
-expr
-export
+	call
+	case
+	cat
+	cd
+	chmod
+	clear
+	clone
+	conf
+	cp
+	cron
+	curl
+	date
+	debug
+	dir
+	du
+	echo
+	env
+	exec
+	execute
+	exit
+	expr
+	export
 fdisk
-find
-for
-fw
-gaddr
+	find
+	for
+	fw
+	gaddr
 gauge
 genip
 get
