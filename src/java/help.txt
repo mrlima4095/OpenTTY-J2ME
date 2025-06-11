@@ -378,36 +378,88 @@ Usage: mount [FILE]
 <nano>
 Usage: nano [FILE]
 * Display Nano Editor
+
+	Without FILE continue editing last buffer.
+	Otherwise if FILE is give buffer is replaced by the FILE content.
 </nano>
 <nc>
+Usage: nc [HOST:PORT]
+* Connect to HOST at PORT.
 </nc>
 <netstat>
+Usage: netstat
+* Look for network connection, print 'true' or 'false'.
 </netstat>
 <open>
+Usage: open [API]
+* Request Device API.
+
+Common suported API's:
+- http - https - mailto
+- tel - sms - mms
 </open>
 <org>
 </org>
-<ping>
+<ping
+Usage: ping [DOMAIN]
+* Meter time to connect into DOMAIN.
 </ping>
 <pkg>
+Usage: pkg [SPEC]
+* Look for a MIDlet or System Property and print it VALUE.
+
+	
 </pkg>
 <pinc>
+Usage: pinc
+* Parse content of nano buffer to INI format.
+
+	The parsing only work if content at buffer is in Json format.
 </pinc>
 <ph2s>
+Usage: ph2s
+* Save session commands history in nano buffer.
 </ph2s>
 <pjnc>
+Usage: pjnc
+* Parse content of nano buffer to Json format.
+
+	The parsing only work if content at buffer is in INI format.
 </pjnc>
 <pong>
+Usage: ping [HOST:PORT]
+* Meter time to connect into HOST at PORT.
 </pong>
 <prg>
+Usage: prg [TIME] [MIDlet]
+* Create an Alarm to MIDlet.
+
+	The MIDlet need to be in attached into Jar/ JAD Package.
+	Avaliable only if Device supports JSR-118.
 </prg>
 <prscan>
+Usage: prscan [ADDRESS] [INIT]
+* Look for open ports at ADDRESS.
+
+	Without INIT the scanning starts in PORT 0.
 </prscan>
 <proxy>
+Usage: proxy [URL]
+* Make a HTTP GET request in URL and print response.
+
+	This command uses MIDlet-Proxy by default. Some J2ME Devices don't have support for certificates and without this cannot connect directly in a HTTPS server. 
 </proxy>
 <ps>
+Usage: ps
+* Display running process.
 </ps>
 <pushd>
+Usage: cd [PATH]
+* Change current directory to PATH;
+
+	Without PATH return to path '/home/'.
+	See also help page 'lsblk' to read about mount points.
+
 </pushd>
 <pwd>
 </pwd>
