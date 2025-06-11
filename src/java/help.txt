@@ -127,79 +127,67 @@ Usage: cron [TIME] [COMMAND]
 </cron>
 <curl>
 Usage: curl [URL]
-
-- Make a HTTP GET request in URL;
-- Prints response in console.
+* Make a HTTP GET request in URL and print response.
 </curl>
 <date>
 Usage: date
-
-- Prints current Device date and time.
+* Prints Device date and time.
 </date>
 <debug>
 Usage: debug
-
-- Run MIDlet debug script.
+* Run MIDlet debug script.
 </debug>
 <dir>
 Usage: dir [OPTIONS]
-
-- Prints FILES of current working directory;
-- If you're in home it open File Explorer.
+* Prints FILES of current directory.
 
 OPTIONS:
 	-a	Include hidden files in listing;
 	-v	Prints listing when you're in home.
+
+	If you're in home directory it open File Explorer.
 </dir>
 <du>
 Usage: du [FILE]
-
-- Prints length (in Bytes) of FILE.
+* Prints length (in Bytes) of FILE.
 </du>
 <echo>
 Usage: echo [TEXT]
-
-- Prints TEXT in console;
-- Without TEXT it prints a line break.
+* Prints TEXT, without TEXT it prints a line break.
 </echo>
 <env>
 Usage: env [KEY]
+* Prints environment keys.
 
-- Prints environment keys;
-- With KEY prints it VALUE.
+	With KEY, if it exists, prints it VALUE.
 </env>
 <exec>
 Usage: exec [COMMAND &]
+* Run more then one COMMAND in once process call;
 
-- Run more then one COMMAND in once process call;
-- You can split COMMANDs with char '&'.
-
-See also about command 'execute'.
+	You can split COMMAND's with char '&'.
+	See also help page 'execute'.
 </exec>
 <execute>
 Usage: execute [COMMAND &]
+* Run more then one COMMAND in once process call;
 
-- Run more then one COMMAND in once process call;
-- You can split COMMANDs with char ';'.
-
-See also about command 'exec'.
+	You can split COMMAND's with char ';'.
+	See also help page 'exec'.
 </execute>
 <exit>
 Usage: exit
-
-- Stop MIDlet.
+* Stop MIDlet.
 </exit>
 <expr>
 Usage: expr [EXPR]
-
-- Perform a math EXPRession;
-- Prints it result in console.
+* Perform EXPR and prints it result.
 </expr>
 <export>
 Usage: export [KEY]
+* Prints environment keys.
 
-- Display environment keys;
-- With KEY clear it VALUE.
+	With KEY clear it VALUE.
 </export>
 <find>
 Usage: find [FILE] [PATTERN]
