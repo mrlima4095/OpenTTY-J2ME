@@ -8,12 +8,12 @@ https://github.com/mrlima4095/OpenTTY-J2ME
 </index>
 
 <about>
-Usage: about [PACKAGE]
-* Prints information about PACKAGE.
+Usage: about [FILE]
+* Prints information about FILE if it is a Package.
 </about>
 <add>
 Usage: add [TEXT]
-- Add TEXT in nano buffer, without TEXT add a line break.
+* Add TEXT in nano buffer, without TEXT add a line break.
 </add>
 <alias>
 Usage: alias [KEY]=[COMMAND]
@@ -24,41 +24,22 @@ Usage: alias [KEY]=[COMMAND]
 	When only KEY is found and it is an alias prints it value.
 </alias>
 <basename>
-Usage: basename [FILENAME]
-* Prints FILENAME with any leading directory components removed.
+Usage: basename [PATH]
+* Prints PAT
 </basename>
 <bg>
-Usage: bg [COMMAND]
-* Start a new Thread to run COMMAND.
 </bg>
 <bind>
-Usage: bind [PORT]
-* Listen at PORT for connections.
-
-	Without PORT 'bind' takes the PORT from the environment key.
-	You can connect it with other client. The payloads received is run and it output is sent to client.
 </bind>
 <bruteforce>
-Usage: bruteforce [COMMAND]
-* Run COMMAND while process 'bruteforce' is alive.
-
-	You can stop this killing it process. All bruteforce instance stop when process is killed.
 </bruteforce>
 <buff>
-Usage: buff [TEXT]
-* Set content of standard input (stdin) as TEXT.
 </buff>
 <build>
-Usage: build
-* Prints MIDlet build code.
 </build>
 <builtin>
-Usage: builtin [COMMAND]
-* Run COMMAND, without considering aliases.
 </builtin>
 <call>
-Usage: call [PHONE]
-* Request Device API to make a call to PHONE.
 </call>
 <case>
 Usage: case [TYPE] ([NAME]) [COMMAND]
@@ -156,78 +137,34 @@ Usage: echo [TEXT]
 * Prints TEXT, without TEXT prints a line break.
 </echo>
 <env>
-Usage: env [KEY]
-* Prints environment keys.
-
-	With KEY, if it exists, prints it VALUE.
 </env>
 <exec>
-Usage: exec [COMMAND &]
-* Run more then one COMMAND in once process call;
-
-	You can split COMMAND's with char '&'.
-	See also help page 'execute'.
 </exec>
 <execute>
-Usage: execute [COMMAND &]
-* Run more then one COMMAND in once process call;
-
-	You can split COMMAND's with char ';'.
-	See also help page 'exec'.
 </execute>
 <exit>
-Usage: exit
-* Stop MIDlet.
 </exit>
 <expr>
-Usage: expr [EXPR]
-* Perform the math EXPRession.
 </expr>
 <export>
-Usage: export [KEY]
-* Prints environment keys.
-
-	With KEY clear it VALUE.
 </export>
 <false>
 </false>
 <find>
-Usage: find [FILE] [PATTERN]
-* Look for PATTERN in FILE, prints 'true' or 'false';
 </find>
 <for>
-Usage: for [KEY] ([FILE]) [COMMAND]
-* Run COMMAND based in FILE content.
-
-	Set VALUE of KEY as current LINE and run COMMAND. It will run until file end, parsing LINE for KEY.
 </for>
 <fw>
-Usage: fw [ADDRESS]
-* Look for information about an IP ADDRESS.
-
-	This command uses API from http://ipinfo.io.
 </fw>
 <gc>
-Usage: gc
-* Trigger Garbage Collector.
 </gc>
 <gaddr>
-Usage: gaddr [DOMAIN]
-* Look for IP Address of DOMAIN.
-
-	This command uses Cloudflare DNS (1.1.1.1), if it isn't available in your network, it may not work.
 </gaddr>
 <gauge>
-Usage: gauge [TEXT]
-* Display an Alert for TEXT with a infinity loading progress bar.
 </gauge>
 <genip>
-Usage: genip
-* Generate a random IP Address.
 </genip>
 <get>
-Usage: get [FILE]
-* Set buffer of nano as FILE content.
 </get>
 <getopt>
 </getopt>
