@@ -322,17 +322,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // General Utilities
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
-        else if (mainCommand.equals("help")) {
+        else if (mainCommand.equals("help") || mainCommand.equals("man")) {
             if (argument.equals("")) {
-                processCommand("help index", false);
+                processCommand(mainCommand + " index", false);
             } else {
                 String content = read("/java/help.txt"), startTag = "<" + argument.toLowerCase() + ">", endTag = "</" + argument.toLowerCase() + ">";
-                int start = content.indexOf(startTag);
-                int end = content.indexOf(endTag);
+                int start = content.indexOf(startTag), end = content.indexOf(endTag);
                 if (start != -1 && end != -1 && end > start) {
-                    viewer(form.getTitle(), content.substring(start + startTag.length(), end).trim());
+                    if (mainCommand.equals("help")) { viewer(form.getTitle(), content.substring(start + startTag.length(), end).trim()); }
+                    else if (mainCommand.equals("man")) { echoCommand(content.substring(start + startTag.length(), end).trim()); }
                 } else {
-                    echoCommand("help: " + argument + ": not found");
+                    echoCommand(mainCommand + ": " + argument + ": not found");
                 }
 
             }
