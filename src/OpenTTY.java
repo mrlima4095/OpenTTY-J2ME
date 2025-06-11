@@ -330,8 +330,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int start = content.indexOf(startTag);
                 int end = content.indexOf(endTag);
                 if (start != -1 && end != -1 && end > start) {
-                    String section = content.substring(start + startTag.length(), end).trim();
-                    viewer(form.getTitle(), section);
+                    viewer(form.getTitle(), content.substring(start + startTag.length(), end).trim());
                 } else {
                     echoCommand("help: " + argument + ": not found");
                 }
