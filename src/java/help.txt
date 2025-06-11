@@ -9,90 +9,80 @@ https://github.com/mrlima4095/OpenTTY-J2ME
 
 <about>
 Usage: about [PACKAGE]
-
-- Prints information about PACKAGE.
+* Prints information about PACKAGE.
 </about>
 <add>
 Usage: add [TEXT]
-
-- Add TEXT in nano buffer;
-- Without TEXT it add a line break.
+- Add TEXT in nano buffer, without TEXT it add a line break.
 </add>
 <alias>
 Usage: alias [KEY]=[COMMAND]
+* Manage MIDlet aliases.
 
-- Without arguments, 'alias' prints the list of aliases;
-- Otherwise, an alias is defined for each KEY whose COMMAND is given;
-- When only KEY is found and it is an alias prints it value.
+	Without arguments, 'alias' prints the list of aliases;
+	Otherwise, an alias is defined for each KEY whose COMMAND is given;
+	When only KEY is found and it is an alias prints it value.
 </alias>
 <basename>
 Usage: basename [FILENAME]
-
-- Prints FILENAME with any leading directory components removed.
+* Prints FILENAME with any leading directory components removed.
 </basename>
 <bg>
 Usage: bg [COMMAND]
-
-- Start a new Thread to run COMMAND.
+* Start a new Thread to run COMMAND.
 </bg>
 <bind>
 Usage: bind [PORT]
+* Listen at PORT for connections.
 
-- Listen at PORT for connections;
-- Without PORT 'bind' takes the PORT from the environment key.
-
-You can connect it with other client. The payloads received is run and it output is sent to client.
+	Without PORT 'bind' takes the PORT from the environment key.
+	You can connect it with other client. The payloads received is run and it output is sent to client.
 </bind>
 <bruteforce>
 Usage: bruteforce [COMMAND]
+* Run COMMAND while process 'bruteforce' is alive.
 
-- Run COMMAND while process 'bruteforce' is alive;
-- You can stop this killing it process;
-- All bruteforce instance stop when process is killed.
+	You can stop this killing it process. All bruteforce instance stop when process is killed.
 </bruteforce>
 <buff>
 Usage: buff [TEXT]
-
-- Set content of standard input as TEXT.
+* Set content of standard input (stdin) as TEXT.
 </buff>
 <build>
 Usage: build
-
-- Prints MIDlet build code.
+* Prints MIDlet build code.
 </build>
 <builtin>
 Usage: builtin [COMMAND]
-
-- Run COMMAND, without considering aliases.
+* Run COMMAND, without considering aliases.
 </builtin>
 <call>
 Usage: call [PHONE]
-
-- Request Device API to make a call to PHONE.
+* Request Device API to make a call to PHONE.
 </call>
 <case>
 Usage: case [TYPE] ([NAME]) [COMMAND]
+* 
 
-- Look for NAME in context of TYPE;
-- If found, run COMMAND.
+	Look for NAME in context of TYPE;
+	If found, run COMMAND.
 
 Valid TYPE's:
 - alias - file - key - root
 - screen - thread - trace
 
-Put '!' as prefix in TYPE to invert the operation.
+	Put '!' as prefix in TYPE to invert the operation.
 </case>
 <cat>
 Usage: cat [FILE]
-
-- Prints content of FILE;
-- If FILE not found, prints anything.
+* Prints content of FILE.
 </cat>
 <cd>
-Usage: cd [DIR]
+Usage: cd [PATH]
+* Change current directory to PATH;
 
-- Change current working directory to DIR;
-- Without DIR return to '/home/'.
+	Without PATH return to path '/home/'.
+	See also man page 'lsblk' to read about mount points.
 </cd>
 <chmod>
 Usage: chmod [NODE]
@@ -105,37 +95,35 @@ Permission NODE's:
 </chmod>
 <clear>
 Usage: clear [PAGE]
+* Clear PAGE content;
 
-- Clear PAGE content;
-- Without PAGE, clears console (stdout).
+	Without PAGE, clear console (stdout).
 
 MIDlet PAGE's:
 - stdin - stdout - history - logs
 </clear>
 <clone>
 Usage: clone [URL]
+* Make a HTTP GET request in URL and run response as script.
 
-- Make a HTTP GET request in URL;
-- Run response as script.
-
-It uses MIDlet-Proxy by default.
+	This command uses MIDlet-Proxy by default. Some J2ME Devices don't have support for certificates and without this cannot connect directly in a HTTPS server. 
 </clone>
 <conf>
 Usage: conf [FILE]
+* Prints FILE in INI format;
 
-- Prints FILE in INI format;
-- The parsing only works if source FILE is in Json format.
+	Parsing only works if source FILE is in Json format.
 </conf>
 <cp>
-Usage: cp [ORIGIN] [COPY]
+Usage: cp [SOURCE] [COPY]
+* Make a copy of SOURCE.
 
-- Copy ORIGIN into COPY;
-- Without COPY the new FILE name is 'ORIGIN-copy'.
+	Copy SOURCE into COPY;
+	Without COPY the new FILE name is 'SOURCE-copy'.
 </cp>
 <cron>
 Usage: cron [TIME] [COMMAND]
-
-- Wait TIME before run COMMAND.
+* Wait TIME before run COMMAND.
 </cron>
 <curl>
 Usage: curl [URL]
@@ -154,14 +142,14 @@ Usage: debug
 - Run MIDlet debug script.
 </debug>
 <dir>
-Usage: dir [OPTions]
+Usage: dir [OPTIONS]
 
 - Prints FILES of current working directory;
 - If you're in home it open File Explorer.
 
-OPTions:
--a	Include hidden files in listing;
--v	Prints listing when you're in home.
+OPTIONS:
+	-a	Include hidden files in listing;
+	-v	Prints listing when you're in home.
 </dir>
 <du>
 Usage: du [FILE]
@@ -177,7 +165,7 @@ Usage: echo [TEXT]
 <env>
 Usage: env [KEY]
 
-- Display environment keys;
+- Prints environment keys;
 - With KEY prints it VALUE.
 </env>
 <exec>
@@ -204,7 +192,7 @@ Usage: exit
 <expr>
 Usage: expr [EXPR]
 
-- Perform math EXPRession;
+- Perform a math EXPRession;
 - Prints it result in console.
 </expr>
 <export>
@@ -225,7 +213,6 @@ Usage: for [KEY] ([FILE]) [COMMAND]
 - Read content of FILE;
 - Set VALUE of KEY as current LINE and run COMMAND;
 - COMMAND will be run for with KEY.
-
 </for>
 <fw>
 Usage: fw [ADDRESS]
