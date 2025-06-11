@@ -454,8 +454,8 @@ Usage: ps
 * Display running process.
 </ps>
 <pushd>
-Usage: cd [PATH]
-* Change current directory to PATH;
+Usage: pushd [PATH]
+* Add current PATH to stack and change current directory to PATH.
 
 	Without PATH return to path '/home/'.
 	See also help page 'lsblk' to read about mount points.
