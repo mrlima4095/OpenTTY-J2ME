@@ -29,39 +29,51 @@ Usage: basename [PATH]
 </basename>
 <bg>
 Usage: bg [COMMAND]
-* Run COMMAND in another Thread.
+* Run COMMAND in Background.
 </bg>
 <bind>
 Usage: bind [PORT]
 * Remote Shell server
 
+	Listen at PORT for connections, without PORT take from environment key.
+	Connect into 
 </bind>
 <bruteforce>
+Usage: bruteforce [COMMAND]
+* Run COMMAND while process 'bruteforce' is alive.
+
+	When process 'bruteforce' die, all instances of it stops.
+	Use command 'kill [PID]' or 'stop bruteforce' to kill it. 
 </bruteforce>
 <buff>
-</buff>
+Usage: buff [TEXT]
+* Set content of standard input (stdin) as TEXT.
+</buff>on
 <build>
+Usage: build
+* Print MIDlet build code.
 </build>
 <builtin>
+Usage: builtin [COMMAND]
+* Run COMMAND bypassing aliases.
 </builtin>
 <call>
+Usage: call [PHONE]
+* Request Device API make a call to PHONE number
 </call>
 <case>
 Usage: case [TYPE] ([NAME]) [COMMAND]
-* 
+* Look for NAME in context of TYPE. If found, run COMMAND.
 
-	Look for NAME in context of TYPE;
-	If found, run COMMAND.
+	Put '!' as prefix in TYPE to invert the operation.
 
 Valid TYPE's:
 - alias - file - key - root
 - screen - thread - trace
-
-	Put '!' as prefix in TYPE to invert the operation.
 </case>
 <cat>
 Usage: cat [FILE]
-* Prints content of FILE.
+* Print content of FILE.
 </cat>
 <cd>
 Usage: cd [PATH]
@@ -72,9 +84,9 @@ Usage: cd [PATH]
 </cd>
 <chmod>
 Usage: chmod [NODE]
+* Request Device API looking for Permission NODE;
 
-- Request Device API looking for Permission NODE;
-- Log NODE status into MIDlet logs.
+	Log NODE status into MIDlet Logs.
 
 Permission NODE's:
 - http - socket - file - prg
@@ -117,7 +129,7 @@ Usage: curl [URL]
 </curl>
 <date>
 Usage: date
-* Prints Device date and time.
+* Print Device date and time.
 </date>
 <debug>
 Usage: debug
@@ -125,7 +137,7 @@ Usage: debug
 </debug>
 <dir>
 Usage: dir [OPTIONS]
-* Prints FILES of current directory.
+* Print FILES of current directory.
 
 OPTIONS:
 	-a	Include hidden files in listing;
@@ -135,27 +147,46 @@ OPTIONS:
 </dir>
 <du>
 Usage: du [FILE]
-* Prints length (in Bytes) of FILE.
+* Print length (in Bytes) of FILE.
 </du>
 <echo>
 Usage: echo [TEXT]
-* Prints TEXT, without TEXT prints a line break.
+* Print TEXT, without TEXT prints a line break.
 </echo>
 <env>
+Usage: env [KEY]
+* Print VALUE of KEY, without KEY list all environment keys.
 </env>
 <exec>
+Usage: exec [COMMAND &]
+* Run more then one command in a process.
+
+	Split COMMAND's by char '&'.
 </exec>
 <execute>
 </execute>
 <exit>
+Usage: exit
+* Close MIDlet.
 </exit>
 <expr>
+Usage: expr [EXPRESSION]
+* Perform a math EXPRESSION and print it result.
 </expr>
 <export>
+Usage: export [KEY]
+* Clear VALUE of KEY, without KEY list all environment keys.
 </export>
 <false>
+Usage: false [TEXT]
+* Do anything, return false.
 </false>
 <find>
+Usage: find [FILE] [PATTERN]
+* Search for PATTERN in FILE, print VALUE in standard output (stdout).
+
+	If PATTERN not found in FILE, it will print 'null'.
+	The search only work if source FILE is in INI format.
 </find>
 <for>
 </for>
