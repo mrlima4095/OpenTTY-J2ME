@@ -212,9 +212,11 @@ Usage: gauge [TEXT]
 </gauge>
 <genip>
 Usage: genip
-* Generate a random IP Address
+* Generate a random IP Address.
 </genip>
 <get>
+Usage: get [FILE]
+* Set content of nano FILE.
 </get>
 <getopt>
 </getopt>
