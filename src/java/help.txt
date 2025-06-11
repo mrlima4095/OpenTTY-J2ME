@@ -183,7 +183,7 @@ Usage: false [TEXT]
 </false>
 <find>
 Usage: find [FILE] [PATTERN]
-* Search for PATTERN in FILE, print VALUE in standard output (stdout).
+* Search PATTERN in FILE, print VALUE in standard output (stdout).
 
 	If PATTERN not found in FILE, it will print 'null'.
 	The search only work if source FILE is in INI format.
@@ -191,6 +191,8 @@ Usage: find [FILE] [PATTERN]
 <for>
 </for>
 <fw>
+Usage: fw [IP ADDRESS]
+* Look for FILE in
 </fw>
 <gc>
 </gc>
