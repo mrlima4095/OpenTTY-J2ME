@@ -56,3 +56,4 @@
 [2025-1.14.3-01x89] Revert 01x88 build
 [2025-1.14.3-01x90] Added Command 'MAN'
 [2025-1.14.3-01x91] Yang now set OpenTTY Server mirror
+[2025-1.14.3-01x92] Added Command 'MKDIR'
