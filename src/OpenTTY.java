@@ -324,7 +324,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
         else if (mainCommand.equals("man")) {
-            boolean verbose = argument.contains("-v");
+            boolean verbose = argument.indexOf("-v") != -1;
             if (verbose) { argument = replace(argument, "-v", "").trim(); }
 
             if (argument.equals("")) { processCommand("man sh" + (verbose ? " -v" : ""), false); return; }
