@@ -332,7 +332,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (content.equals("")) { echoCommand("man: download it with yang."); return; }
                 if (start != -1 && end != -1 && end > start) {
-                    if (argument.indexOf("-v") != -1) { echoCommand(content.substring(start + startTag.length(), end).trim()); }
+                    if (verbose) { echoCommand(content.substring(start + startTag.length(), end).trim()); }
                     else { viewer(form.getTitle(), content.substring(start + startTag.length(), end).trim()); }
                 } else {
                     echoCommand("man: " + argument + ": not found");
