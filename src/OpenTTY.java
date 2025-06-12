@@ -551,7 +551,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     while (trace.containsKey("ftp")) {
                         String cmd = readLine();
                         if (cmd == null || cmd.length() == 0) continue;
-                        if (!logged) { send("550 Access denied") }
+                        if (!logged) { send("550 Access denied"); continue; }
 
                         String command = getCommand(cmd).toUpperCase();
                         String argument = getArgument(cmd);
