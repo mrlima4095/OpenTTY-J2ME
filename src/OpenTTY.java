@@ -326,7 +326,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("man")) {
             if (argument.equals("")) { processCommand("man sh", false); }
             else {
-                boolean verbose = argument.indexOf("-v") ? true : false; if (verbose) { argument = replace(argument, "-v", ""); }
+                boolean verbose = argument.indexOf("-v") != -1 ? true : false; if (verbose) { argument = replace(argument, "-v", ""); }
                 String content = read("/home/man.html"), startTag = "<" + argument.toLowerCase() + ">", endTag = "</" + argument.toLowerCase() + ">";
                 int start = content.indexOf(startTag), end = content.indexOf(endTag);
 
