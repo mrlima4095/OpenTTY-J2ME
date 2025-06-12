@@ -618,7 +618,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private InputStream is;
     private OutputStream os;
 
-    private ServerSocketConnection dataServerSocket = null;
+    private ServerSocketConnection dataServerSocket = null, serverSocket = null;
     private SocketConnection dataConnection = null;
     private InputStream dataIs = null;
     private OutputStream dataOs = null;
@@ -629,7 +629,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
     public void run() {
-        ServerSocketConnection serverSocket = null;
         try {
             serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
             echoCommand("[+] listening at port " + port);
