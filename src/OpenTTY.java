@@ -330,7 +330,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { processCommand("man sh" + (verbose ? " -v" : ""), false); return; }
 
             String content = read("/home/man.html");
-            if (content.equals("")) { echoCommand("man: resource not download"); return; }
+            if (content.equals("")) { echoCommand("man: not installed"); return; }
 
             String tag = argument.toLowerCase(), startTag = "<" + tag + ">", endTag = "</" + tag + ">";
             int start = content.indexOf(startTag), end = content.indexOf(endTag);
