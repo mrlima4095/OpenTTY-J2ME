@@ -9,11 +9,10 @@ command=cfg
 cfg=execute x11 list /java/lib/settings;
 
 shell.name=cfg
-shell.args=run,info,help
+shell.args=run,info
 
 run=execute x11 set cfg.back; x11 quest /java/lib/settings;
 info=execute about /java/lib/settings;
-help=execute help netkit;
 
 [ DISPLAY ]
 
