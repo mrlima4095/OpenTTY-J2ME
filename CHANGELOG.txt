@@ -8,7 +8,7 @@ Copyright (C) 2025 - Mr. Lima
 - `mv [origin] [new]`: move a RMS file 
 - `uuid`: generate random uuid 
 - `man [page]`: Read manual pages
-- ``:  
+- `mkdir [dir]`: create a new directory 
 - ``: 
 
 [ _Updates_ ]
@@ -24,3 +24,4 @@ Copyright (C) 2025 - Mr. Lima
 
 - To clear history you can use `clear history`
 - You need to download manual page from PackJ, the item is **Manual [English]**.
+- Command `mkdir` only create directories in Device Storage
