@@ -14,7 +14,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
-    private String logs = "", path = "/home/", build = "2025-1.14.3-01x89";
+    private String logs = "", path = "/home/", build = "2025-1.14.3-01x90";
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Vector stack = new Vector(), 
@@ -322,19 +322,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // General Utilities
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
-        else if (mainCommand.equals("help") || mainCommand.equals("man")) {
-            if (argument.equals("")) {
-                processCommand(mainCommand + " sh", false);
-            } else {
-                String content = read("/java/etc/help.html"), startTag = "<" + argument.toLowerCase() + ">", endTag = "</" + argument.toLowerCase() + ">";
+        else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
+        else if (mainCommand.equals("man")) {
+            if (argument.equals("")) { processCommand("man sh", false); }
+            else {
+                boolean verbose = argument.indexOf("-v") ? true : false; if (verbose) { argument = replace(argument, "-v", ""); }
+                String content = read("/home/man.html"), startTag = "<" + argument.toLowerCase() + ">", endTag = "</" + argument.toLowerCase() + ">";
                 int start = content.indexOf(startTag), end = content.indexOf(endTag);
-                if (start != -1 && end != -1 && end > start) {
-                    if (mainCommand.equals("help")) { viewer(form.getTitle(), content.substring(start + startTag.length(), end).trim()); }
-                    else if (mainCommand.equals("man")) { echoCommand(content.substring(start + startTag.length(), end).trim()); }
-                } else {
-                    echoCommand(mainCommand + ": " + argument + ": not found");
-                }
 
+                if (content.equals("")) { echoCommand("man: download it with yang."); return; }
+                if (start != -1 && end != -1 && end > start) {
+                    if (argument.indexOf("-v") != -1) { echoCommand(content.substring(start + startTag.length(), end).trim()); }
+                    else { viewer(form.getTitle(), content.substring(start + startTag.length(), end).trim()); }
+                } else {
+                    echoCommand("man: " + argument + ": not found");
+                }
             }
         }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
@@ -343,7 +345,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("")) {  }
+        
 
         // API 014 - (OpenTTY)
         // |
