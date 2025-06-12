@@ -286,7 +286,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (argument.startsWith("/mnt/")) {
                     try {
                         FileConnection fc = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE);
-                        if (!fc.exists()) { fc.mkdir(); fc.close(); } else { echoCommand("mkdir: " + basename(target) + ": found"); }
+                        if (!fc.exists()) { fc.mkdir(); fc.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); }
                     } catch (IOException e) { echoCommand(e.getMessage()); } 
                 }
                 else if (argument.startsWith("/home/")) { echoCommand(""); }
