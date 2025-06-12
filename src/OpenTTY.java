@@ -660,7 +660,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } else {
                             send("530 Invalid user");
                         }
-                    } else if (command.equals("PASS")) {
+                    } 
+                    else if (command.equals("PASS")) {
                         if (ftpUser != null && ftpUser.equals(username)) {
                             send("230 Login successful");
                             logged = true;
@@ -668,11 +669,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             send("530 Login incorrect");
                         }
 
-                    } else if (!logged) {
+                    } 
+                    else if (!logged) {
                         send("530 Please login first");
-                    } else if (command.equals("PWD")) {
+                    } 
+                    else if (command.equals("PWD")) {
                         send("257 \"" + path + "\" is current directory");
-                    } else if (command.equals("CWD")) {
+                    } 
+                    else if (command.equals("CWD")) {
                         String cache = path;
                         processCommand("cd " + argument, false);
                         if (!path.equals(cache)) {
@@ -680,20 +684,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } else {
                             send("550 Access denied");
                         }
-                    } else if (command.equals("TYPE")) {
+                    } 
+                    else if (command.equals("TYPE")) {
                         send("200 Type set to " + argument);
-                    } else if (command.equals("NOOP")) {
+                    } 
+                    else if (command.equals("NOOP")) {
                         send("200 OK");
-                    } else if (command.equals("DELE")) {
+                    } 
+                    else if (command.equals("DELE")) {
                         processCommand("rm " + argument, false);
                         send("250 File deleted");
-                    } else if (command.equals("MKD")) {
+                    } 
+                    else if (command.equals("MKD")) {
                         processCommand("mkdir " + argument, false);
                         send("257 \"" + argument + "\" directory created");
-                    } else if (command.equals("RMD")) {
+                    } 
+                    else if (command.equals("RMD")) {
                         processCommand("rm " + argument, false);
                         send("250 Directory removed");
-                    } else if (command.equals("PASV")) {
+                    } 
+                    else if (command.equals("PASV")) {
                         try {
                             if (dataServerSocket != null) dataServerSocket.close();
                             dataServerSocket = (ServerSocketConnection) Connector.open("socket://:2121");
@@ -704,7 +714,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } catch (IOException e) {
                             send("425 Can't open data connection");
                         }
-                    } else if (command.equals("LIST")) {
+                    } 
+                    else if (command.equals("LIST")) {
                         send("150 Here comes directory listing");
                         if (openDataConnection()) {
                             String before = stdout != null ? stdout.getText() : "";
@@ -717,7 +728,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             closeDataConnection();
                         }
                         send("226 Directory send OK");
-                    } else if (command.equals("RETR")) {
+                    } 
+                    else if (command.equals("RETR")) {
                         String content = getcontent(argument);
                         if (content == null) {
                             send("550 File not found");
@@ -730,7 +742,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             }
                             send("226 Transfer complete");
                         }
-                    } else if (command.equals("STOR")) {
+                    } 
+                    else if (command.equals("STOR")) {
                         send("150 Ready to receive " + argument);
                         if (openDataConnection()) {
                             byte[] buffer = new byte[4096];
@@ -742,10 +755,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } else {
                             send("425 Can't open data connection");
                         }
-                    } else if (command.equals("QUIT")) {
+                    } 
+                    else if (command.equals("FEAT")) {
+                        send("211-Features:\r\n PASV\r\n UTF8\r\n211 End");
+                    } 
+                    else if (command.equals("SYST")) {
+                        send("215 UNIX Type: L8");
+                    } 
+                    else if (command.equals("OPTS")) {
+                        if (argument.toUpperCase().startsWith("UTF8")) {
+                            send("200 UTF8 option is set to " + getArgument(argument).toUpperCase());
+                        } else {
+                            send("501 Option not recognized");
+                        }
+                    } 
+                    else if (command.equals("EPSV")) {
+                        send("502 EPSV not implemented");
+                    }
+                    else if (command.equals("QUIT")) {
                         send("221 Goodbye");
                         break;
-                    } else {
+                    } 
+                    else {
                         send("502 Command not implemented");
                     }
                 }
