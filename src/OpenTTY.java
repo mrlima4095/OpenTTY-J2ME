@@ -541,6 +541,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 start("ftp");
                 while (trace.containsKey("ftp")) {
+                    boolean logged = false;
                     clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
                     is = clientSocket.openInputStream();
                     os = clientSocket.openOutputStream();
@@ -550,6 +551,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     while (trace.containsKey("ftp")) {
                         String cmd = readLine();
                         if (cmd == null || cmd.length() == 0) continue;
+                        if (!logged) { send("550 Access denied") }
 
                         String command = getCommand(cmd).toUpperCase();
                         String argument = getArgument(cmd);
@@ -558,10 +560,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             if (argument.equals(username)) {
                                 send("331 Username OK, need password");
                             } else {
-                                send("550 Access denied");
+                                send("550 Access denied"); break;
                             }
                         } else if (command.equals("PASS")) {
-                            send("230 Login successful");
+                            send("230 Login successful"); logged = true;
                         } else if (command.equals("PWD")) {
                             send("257 \"" + path + "\" is current directory");
                         } else if (command.equals("CWD")) {
@@ -577,7 +579,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             String beforeCommand = stdout != null ? stdout.getText() : "";
                             processCommand("dir -v");
                             String afterCommand = stdout != null ? stdout.getText() : "";
-                            send(afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n");
+                            send(replace(afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n", "\t", "\n"));
                             send("226 Directory send OK");
                         } else if (command.equals("RETR")) {
                             String content = getcontent(argument);
