@@ -340,16 +340,20 @@ Usage: log [OPTIONS ...]
 
 OPTIONS:
 	view
+	| Display logs.
 	clear
+	| Clear logs.
 	swap [FILE]
+	| Save logs in FILE.
 	add [TYPE] [TEXT] 
+	| Add a new log with TEXT in context of TYPE.
 	
 	LOG Types:
 	info  debug  warn  error
 </log>
 <logcat>
 Usage: logcat
-* Print session logs.
+* Print logs.
 </logcat>
 <logname>
 Usage: logname
@@ -368,11 +372,12 @@ Usage: lsblk [OPTIONS]
 * View information about Device Storage.
 
 OPTIONS:
-	-x	Print in digested format.
-	-p	List Device Partitions.
+	-x
+	| Print in digested format.
+	-p
+	| List Device Partitions.
 	
 	
-
 <lsblk>
 <man>
 Usage: man [PAGE]
@@ -518,15 +523,24 @@ Usage: sed [OPTIONS ...]
 	Use it to modify content at nano buffer.
 
 OPTIONS:
-	-2u	Parse all buffer to upper case.
-	-2l Parse all buffer to lower case.
-	-a	[TEXT] Add a new line in end of buffer.
-	-d 	[PATTERN] Remove all cases of PATTERN from buffer.
-	-r  [PATTERN] [NEW] Replace all cases of PATTERN by NEW in buffer.
-	-s	[PATTERN] [INDEX] Split buffer by PATTERN and print part INDEX 
-	-l	[INDEX] Print line INDEX.
-	-p	[PATTERN] add PATTERN in front of all lines.
-	-v	View nano buffer content inverted.
+	-2u
+	| Parse all buffer to upper case.
+	-2l
+	| Parse all buffer to lower case.
+	-a [TEXT]
+	| Add a new line in end of buffer.
+	-d [PATTERN]
+	| Remove all cases of PATTERN from buffer.
+	-r [PATTERN] [NEW]
+	| Replace all cases of PATTERN by NEW in buffer.
+	-s [PATTERN] [INDEX]
+	| Split buffer by PATTERN and print part INDEX 
+	-l [INDEX] 
+	| Print line INDEX.
+	-p [PATTERN]
+	| Add PATTERN in front of all lines.
+	-v
+	| View nano buffer content inverted.
 </sed>
 <server>
 Usage: server
@@ -583,9 +597,9 @@ Usage: top [OPTIONS]
 * Print information about memory usage.
 
 OPTIONS:
-	free	
-	used	
-	total	
+	free
+	used
+	total
 </top>
 <touch>
 Usage: touch [FILE]
@@ -599,8 +613,10 @@ Usage: trace [OPTIONS ...]
 * Look for state of a PROCESS or PID.
 
 OPTIONS:
-	pid 	[PID] print associated PROCESS name of PID.
-	check 	[PROCESS] print 'true' or 'false' for PROCESS status (is alive).
+	pid [PID]
+	| Print associated PROCESS name of PID.
+	check [PROCESS]
+	| Print 'true' or 'false' for PROCESS status (is alive).
 </trace> 
 <trim>
 </trim>
@@ -732,4 +748,4 @@ Usage: cfg
 * Default Settings Manager
 
 	To load Settings use command 'import /java/lib/settings'.
-</settings>
+</settings> 
