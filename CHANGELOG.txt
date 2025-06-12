@@ -23,3 +23,4 @@ Copyright (C) 2025 - Mr. Lima
 [ _Notes_ ]
 
 - To clear history you can use `clear history`
+- You need to download manual page from PackJ, the item is **Manual [English]**.
