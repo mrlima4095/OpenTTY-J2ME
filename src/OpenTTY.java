@@ -324,21 +324,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
         else if (mainCommand.equals("man")) {
-            if (argument.equals("")) { processCommand("man sh", false); }
-            else {
-                boolean verbose = argument.indexOf("-v") != -1 ? true : false; if (verbose) { argument = replace(argument, "-v", "").trim(); }
-                String content = read("/home/man.html"), startTag = "<" + argument.toLowerCase() + ">", endTag = "</" + argument.toLowerCase() + ">";
-                int start = content.indexOf(startTag), end = content.indexOf(endTag);
+            boolean verbose = argument.contains("-v");
+            if (verbose) { argument = replace(argument, "-v", "").trim(); }
 
-                if (content.equals("")) { echoCommand("man: download it with yang."); return; }
-                if (start != -1 && end != -1 && end > start) {
-                    if (verbose) { echoCommand(content.substring(start + startTag.length(), end).trim()); }
-                    else { viewer(form.getTitle(), content.substring(start + startTag.length(), end).trim()); }
-                } else {
-                    echoCommand("man: " + argument + ": not found");
-                }
+            if (argument.equals("")) { processCommand("man sh" + (verbose ? " -v" : ""), false); return; }
+
+            String content = read("/home/man.html");
+            if (content.equals("")) { echoCommand("man: resource not download"); return; }
+
+            String tag = argument.toLowerCase(), startTag = "<" + tag + ">", endTag = "</" + tag + ">";
+            int start = content.indexOf(startTag), end = content.indexOf(endTag);
+
+            if (start != -1 && end != -1 && end > start) {
+                String section = content.substring(start + startTag.length(), end).trim();
+                if (verbose) { echoCommand(section); } 
+                else { viewer(form.getTitle(), section); }
+            } else {
+                echoCommand("man: " + argument + ": not found");
             }
         }
+
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
