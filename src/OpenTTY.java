@@ -517,28 +517,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
-    private void deleteFile(String filename) { 
-        if (filename == null || filename.length() == 0) { return; } 
-
-        else if (filename.startsWith("/mnt/")) {
-            try {
-                FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE);
-                if (conn.exists()) { conn.delete(); } 
-                else { echoCommand("rm: " + basename(filename) + ": not found"); }
-                conn.close(); 
-            } catch (Exception e) { echoCommand(e.getMessage()); } }
-        else if (filename.startsWith("/home/")) { try { RecordStore.deleteRecordStore(filename.substring(6)); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } }
-        else if (filename.startsWith("/")) { echoCommand("read-only storage"); }
-        else { deleteFile(path + filename); }
-    }
-    private void writeRMS(String filename, String data) { 
-        if (filename == null || filename.length() == 0) { return; }
-
-        if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!conn.exists()) { conn.create(); } OutputStream os = conn.openOutputStream(); os.write(data.getBytes()); os.flush(); } catch (Exception e) { echoCommand(e.getMessage()); } }
-        else if (filename.startsWith("/home/")) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } }  catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } }
-        else if (filename.startsWith("/")) { echoCommand("read-only storage"); }
-        else { writeRMS(path + filename, data); }
-    }
+    private void deleteFile(String filename) { if (filename == null || filename.length() == 0) { return; } else if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (conn.exists()) { conn.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); } conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { try { RecordStore.deleteRecordStore(filename.substring(6)); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); } else { deleteFile(path + filename); } }
+    private void writeRMS(String filename, String data) { if (filename == null || filename.length() == 0) { return; } if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!conn.exists()) { conn.create(); } OutputStream os = conn.openOutputStream(); os.write(data.getBytes()); os.flush(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } }  catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); } else { writeRMS(path + filename, data); } }
     private String loadRMS(String filename) { return read("/home/" + filename); }
     // |
     // Text Manager
