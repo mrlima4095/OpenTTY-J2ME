@@ -339,13 +339,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
-        else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; if (verbose) { argument = replace(argument, "-v", "").trim(); } if (argument.equals("")) { processCommand("man sh" + (verbose ? " -v" : ""), false); return; } String content = read("/home/man.html"); if (content.equals("")) { echoCommand("man: not installed"); return; } String tag = argument.toLowerCase(), startTag = "<" + tag + ">", endTag = "</" + tag + ">"; int start = content.indexOf(startTag), end = content.indexOf(endTag); if (start != -1 && end != -1 && end > start) { String section = content.substring(start + startTag.length(), end).trim(); if (verbose) { echoCommand(section); } else { viewer(form.getTitle(), section); } } else { echoCommand("man: " + argument + ": not found"); } }
+        else if (mainCommand.equals("man")) { 
+            boolean verbose = argument.indexOf("-v") != -1; if (verbose) { argument = replace(argument, "-v", "").trim(); } 
+            if (argument.equals("")) { processCommand("man sh" + (verbose ? " -v" : ""), false); return; } 
+            String content = read("/home/man.html"); 
+
+            if (content.equals("")) { echoCommand("man: not installed"); return; } 
+            String tag = argument.toLowerCase(), startTag = "<" + tag + ">", endTag = "</" + tag + ">"; 
+            int start = content.indexOf(startTag), end = content.indexOf(endTag); 
+            if (start != -1 && end != -1 && end > start) { 
+                String section = content.substring(start + startTag.length(), end).trim(); 
+                if (verbose) { echoCommand(section); } 
+                else { viewer(form.getTitle(), section); } 
+            } else { echoCommand("man: " + argument + ": not found"); } }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("ftp")) { FTPServer(argument); }
+        else if (mainCommand.equals("ftp")) { new FTPServer(argument); }
 
 
         // API 014 - (OpenTTY)
