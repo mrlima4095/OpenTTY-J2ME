@@ -7,7 +7,6 @@ set TTY=/java/optty1
 set HOSTNAME=localhost
 set RESPONSE=/java/etc/index.html
 
-set REPO=opentty.xyz:31522
 set PORT=31522
 set QUERY=nano
 
