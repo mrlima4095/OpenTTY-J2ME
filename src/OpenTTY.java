@@ -14,7 +14,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
-    private String logs = "", path = "/home/", build = "2025-1.14.3-01x91";
+    private String logs = "", path = "/home/", build = "2025-1.14.3-01x92";
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Vector stack = new Vector(), 
@@ -277,6 +277,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // RMS Files
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { deleteFile(argument); } }
+        else if (mainCommand.equals("mkdir")) {
+            if (argument.equals("")) { }
+            else {
+                argument = argument.endsWith("/") ? argument : argument + "/";
+                argument = argument.startsWith("/") ? argument : path + argument;
+
+                if (argument.startsWith("/mnt/")) {
+                    try {
+                        FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ_WRITE);
+                        if (!fc.exists()) { fc.mkdir(); fc.close(); } else { echoCommand("mkdir: " + basename(target) + ": found"); }
+                    } catch (IOException e) { echoCommand(e.getMessage()); } 
+                }
+                else if (argument.startsWith("/home/")) { echoCommand(""); }
+                else if (argument.startsWith("/")) { echoCommand("read-only storage"); }
+            }
+        }
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { String origin = getCommand(argument), target = getArgument(argument); writeRMS(target.equals("") ? origin + "-copy" : target, getcontent(origin)); } }
@@ -330,7 +346,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("")) {  }
-        
+
 
         // API 014 - (OpenTTY)
         // |
