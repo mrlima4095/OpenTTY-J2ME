@@ -14,7 +14,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
-    private String logs = "", path = "/home/", build = "2025-1.14.3-01x92";
+    private String logs = "", path = "/home/", build = "2025-1.14.3-01x93";
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Vector stack = new Vector(), 
@@ -28,7 +28,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public void startApp() {
         if (!trace.containsKey("sh")) {
-            attributes.put("PATCH", "Renders Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.6.1");
+            attributes.put("PATCH", "Renders Update"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "beta"); attributes.put("XVERSION", "0.6.2");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
@@ -459,7 +459,235 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class ScreenQuest implements CommandListener { private Hashtable lib; private Form screen; private TextField content; private Command backCommand, userCommand; public ScreenQuest(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); if (!lib.containsKey("quest.title") || !lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } screen = new Form(env((String) lib.get("quest.title"))); content = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY); backCommand = new Command(lib.containsKey("quest.back.label") ? env((String) lib.get("quest.back.label")) : "Cancel", Command.SCREEN, 2); userCommand = new Command("Send", Command.OK, 1); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) {if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true"); } else if (c == userCommand) { if (!content.getString().trim().equals("")) { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(content.getString().trim())); processCommand("xterm"); processCommand((String) lib.get("quest.cmd")); } } } }
     public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseProperties(getcontent(args)); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, env((String) lib.get("item.label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
     // |
-    public class MyCanvas extends Canvas implements CommandListener { private Hashtable lib; private Graphics screen; private Command backCommand, userCommand; private final int cursorSize = 5; public MyCanvas(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); backCommand = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.OK, 1); userCommand = new Command(lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu", Command.SCREEN, 2); addCommand(backCommand); if (lib.containsKey("canvas.button")) { addCommand(userCommand); } if (lib.containsKey("canvas.mouse")) { try { cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } } setCommandListener(this); } protected void paint(Graphics g) { if (screen == null) { screen = g; } g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); if (lib.containsKey("canvas.background")) { String backgroundType = lib.containsKey("canvas.background.type") ? env((String) lib.get("canvas.background.type")) : "default"; if (backgroundType.equals("color") || backgroundType.equals("default")) { try { g.setColor(Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); } g.fillRect(0, 0, getWidth(), getHeight());  } else if (backgroundType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.background"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } } } if (lib.containsKey("canvas.title")) { g.setColor(50, 50, 50); g.fillRect(0, 0, getWidth(), 30); g.setColor(255, 255, 255); g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER); g.setColor(50, 50, 50);  g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); } if (lib.containsKey("canvas.content")) { String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default"; g.setFont(Font.getDefaultFont()); if (lib.containsKey("canvas.content.style")) { g.setFont(newFont((String) lib.get("canvas.content.style"))); } if (contentType.equals("text") || contentType.equals("default")) { g.setColor(255, 255, 255); String content = env((String) lib.get("canvas.content")); int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight(); g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); } else if (contentType.equals("shape")) { String[] shapes = split(env((String) lib.get("canvas.content")), ';'); for (int i = 0; i < shapes.length; i++) { String[] parts = split(shapes[i], ','); String type = parts[0].toLowerCase(); if (type.equals("line") && parts.length == 5) { g.setColor(255, 255, 255); g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } else if (type.equals("circle") && parts.length == 4) { g.setColor(0, 255, 0); int radius = Integer.parseInt(parts[3]); g.drawArc(Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360); } else if (type.equals("rect") && parts.length == 5) { g.setColor(0, 0, 255); g.drawRect(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } else if (type.equals("text") && parts.length == 4) { g.setColor(255, 255, 255); g.drawString(parts[3], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Graphics.TOP | Graphics.LEFT); } } } } g.setColor(255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } else if (gameAction == FIRE) { if (lib.containsKey("canvas.content")) { String content = env((String) lib.get("canvas.content")); int contentWidth = screen.getFont().stringWidth(content); int contentHeight = screen.getFont().getHeight(); int textX = (getWidth() - contentWidth) / 2; int textY = (getHeight() - contentHeight) / 2; if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); } } } repaint(); } protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } } }
+    // public class MyCanvas extends Canvas implements CommandListener { private Hashtable lib; private Graphics screen; private Command backCommand, userCommand; private final int cursorSize = 5; public MyCanvas(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); backCommand = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.OK, 1); userCommand = new Command(lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu", Command.SCREEN, 2); addCommand(backCommand); if (lib.containsKey("canvas.button")) { addCommand(userCommand); } if (lib.containsKey("canvas.mouse")) { try { cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } } setCommandListener(this); } protected void paint(Graphics g) { if (screen == null) { screen = g; } g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); if (lib.containsKey("canvas.background")) { String backgroundType = lib.containsKey("canvas.background.type") ? env((String) lib.get("canvas.background.type")) : "default"; if (backgroundType.equals("color") || backgroundType.equals("default")) { try { g.setColor(Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); } g.fillRect(0, 0, getWidth(), getHeight());  } else if (backgroundType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.background"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } } } if (lib.containsKey("canvas.title")) { g.setColor(50, 50, 50); g.fillRect(0, 0, getWidth(), 30); g.setColor(255, 255, 255); g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER); g.setColor(50, 50, 50);  g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); } if (lib.containsKey("canvas.content")) { String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default"; g.setFont(Font.getDefaultFont()); if (lib.containsKey("canvas.content.style")) { g.setFont(newFont((String) lib.get("canvas.content.style"))); } if (contentType.equals("text") || contentType.equals("default")) { g.setColor(255, 255, 255); String content = env((String) lib.get("canvas.content")); int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight(); g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); } else if (contentType.equals("shape")) { String[] shapes = split(env((String) lib.get("canvas.content")), ';'); for (int i = 0; i < shapes.length; i++) { String[] parts = split(shapes[i], ','); String type = parts[0].toLowerCase(); if (type.equals("line") && parts.length == 5) { g.setColor(255, 255, 255); g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } else if (type.equals("circle") && parts.length == 4) { g.setColor(0, 255, 0); int radius = Integer.parseInt(parts[3]); g.drawArc(Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360); } else if (type.equals("rect") && parts.length == 5) { g.setColor(0, 0, 255); g.drawRect(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } else if (type.equals("text") && parts.length == 4) { g.setColor(255, 255, 255); g.drawString(parts[3], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Graphics.TOP | Graphics.LEFT); } } } } g.setColor(255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } else if (gameAction == FIRE) { if (lib.containsKey("canvas.content")) { String content = env((String) lib.get("canvas.content")); int contentWidth = screen.getFont().stringWidth(content); int contentHeight = screen.getFont().getHeight(); int textX = (getWidth() - contentWidth) / 2; int textY = (getHeight() - contentHeight) / 2; if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); } } } repaint(); } protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } } }
+        public class MyCanvas extends Canvas implements CommandListener {
+        private Hashtable lib;
+        private Graphics screen;
+        private Command backCommand, userCommand;
+        private Image cursorImg = null;
+        private final int cursorSize = 5;
+        private int cursorX = 10, cursorY = 10;
+
+        public MyCanvas(String args) {
+            if (args == null || args.length() == 0) {
+                return;
+            }
+
+            lib = parseProperties(getcontent(args));
+
+            backCommand = new Command(
+                lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back",
+                Command.OK,
+                1
+            );
+
+            userCommand = new Command(
+                lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu",
+                Command.SCREEN,
+                2
+            );
+
+            addCommand(backCommand);
+            if (lib.containsKey("canvas.button")) {
+                addCommand(userCommand);
+            }
+
+            if (lib.containsKey("canvas.mouse")) {
+                try {
+                    cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]);
+                    cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]);
+                } catch (NumberFormatException e) {
+                    MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number");
+                    cursorX = 10;
+                    cursorY = 10;
+                }
+            }
+
+            if (lib.containsKey("canvas.mouse.img")) {
+                try {
+                    cursorImg = Image.createImage((String) lib.get("canvas.mouse.img")); 
+                } catch (IOException e) {
+                    MIDletLogs("add warn Cursor loading error: " + e.getMessage());
+                }
+            }
+
+            setCommandListener(this);
+        }
+
+        protected void paint(Graphics g) {
+            if (screen == null) {
+                screen = g;
+            }
+
+            g.setColor(0, 0, 0);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
+            if (lib.containsKey("canvas.background")) {
+                String backgroundType = lib.containsKey("canvas.background.type")
+                    ? env((String) lib.get("canvas.background.type"))
+                    : "default";
+
+                if (backgroundType.equals("color") || backgroundType.equals("default")) {
+                    try {
+                        g.setColor(
+                            Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]),
+                            Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]),
+                            Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])
+                        );
+                    } catch (NumberFormatException e) {
+                        MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number");
+                        g.setColor(0, 0, 0);
+                    }
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                } else if (backgroundType.equals("image")) {
+                    try {
+                        Image content = Image.createImage(env((String) lib.get("canvas.background")));
+                        g.drawImage(
+                            content,
+                            (getWidth() - content.getWidth()) / 2,
+                            (getHeight() - content.getHeight()) / 2,
+                            Graphics.TOP | Graphics.LEFT
+                        );
+                    } catch (IOException e) {
+                        processCommand("xterm");
+                        processCommand("execute log add error Malformed Image, " + e.getMessage());
+                    }
+                }
+            }
+
+            if (lib.containsKey("canvas.title")) {
+                g.setColor(50, 50, 50);
+                g.fillRect(0, 0, getWidth(), 30);
+                g.setColor(255, 255, 255);
+                g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER);
+                g.setColor(50, 50, 50);
+                g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
+                g.drawRect(1, 1, getWidth() - 3, getHeight() - 3);
+            }
+
+            if (lib.containsKey("canvas.content")) {
+                String contentType = lib.containsKey("canvas.content.type")
+                    ? env((String) lib.get("canvas.content.type"))
+                    : "default";
+
+                g.setFont(Font.getDefaultFont());
+
+                if (lib.containsKey("canvas.content.style")) {
+                    g.setFont(newFont((String) lib.get("canvas.content.style")));
+                }
+
+                if (contentType.equals("text") || contentType.equals("default")) {
+                    g.setColor(255, 255, 255);
+                    String content = env((String) lib.get("canvas.content"));
+                    int contentWidth = g.getFont().stringWidth(content);
+                    int contentHeight = g.getFont().getHeight();
+                    g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
+                } else if (contentType.equals("shape")) {
+                    String[] shapes = split(env((String) lib.get("canvas.content")), ';');
+                    for (int i = 0; i < shapes.length; i++) {
+                        String[] parts = split(shapes[i], ',');
+                        String type = parts[0].toLowerCase();
+
+                        if (type.equals("line") && parts.length == 5) {
+                            g.setColor(255, 255, 255);
+                            g.drawLine(
+                                Integer.parseInt(parts[1]),
+                                Integer.parseInt(parts[2]),
+                                Integer.parseInt(parts[3]),
+                                Integer.parseInt(parts[4])
+                            );
+                        } else if (type.equals("circle") && parts.length == 4) {
+                            g.setColor(0, 255, 0);
+                            int radius = Integer.parseInt(parts[3]);
+                            g.drawArc(
+                                Integer.parseInt(parts[1]) - radius,
+                                Integer.parseInt(parts[2]) - radius,
+                                radius * 2,
+                                radius * 2,
+                                0,
+                                360
+                            );
+                        } else if (type.equals("rect") && parts.length == 5) {
+                            g.setColor(0, 0, 255);
+                            g.drawRect(
+                                Integer.parseInt(parts[1]),
+                                Integer.parseInt(parts[2]),
+                                Integer.parseInt(parts[3]),
+                                Integer.parseInt(parts[4])
+                            );
+                        } else if (type.equals("text") && parts.length == 4) {
+                            g.setColor(255, 255, 255);
+                            g.drawString(
+                                parts[3],
+                                Integer.parseInt(parts[1]),
+                                Integer.parseInt(parts[2]),
+                                Graphics.TOP | Graphics.LEFT
+                            );
+                        }
+                    }
+                }
+            }
+
+            if (cursorImg != null) {
+                g.drawImage(cursorImg, cursorX, cursorY, Graphics.TOP | Graphics.LEFT);
+            } else {
+                g.setColor(255, 255, 255);
+                g.fillRect(cursorX, cursorY, cursorSize, cursorSize);
+            }
+
+        }
+
+        protected void keyPressed(int keyCode) {
+            int gameAction = getGameAction(keyCode);
+
+            if (gameAction == LEFT) {
+                cursorX = Math.max(0, cursorX - 5);
+            } else if (gameAction == RIGHT) {
+                cursorX = Math.min(getWidth() - cursorSize, cursorX + 5);
+            } else if (gameAction == UP) {
+                cursorY = Math.max(0, cursorY - 5);
+            } else if (gameAction == DOWN) {
+                cursorY = Math.min(getHeight() - cursorSize, cursorY + 5);
+            } else if (gameAction == FIRE) {
+                if (lib.containsKey("canvas.content")) {
+                    String content = env((String) lib.get("canvas.content"));
+                    int contentWidth = screen.getFont().stringWidth(content);
+                    int contentHeight = screen.getFont().getHeight();
+                    int textX = (getWidth() - contentWidth) / 2;
+                    int textY = (getHeight() - contentHeight) / 2;
+
+                    if (cursorX >= textX && cursorX <= textX + contentWidth &&
+                        cursorY >= textY && cursorY <= textY + contentHeight) {
+                        processCommand(lib.containsKey("canvas.content.link")
+                            ? (String) lib.get("canvas.content.link")
+                            : "true");
+                    }
+                }
+            }
+
+            repaint();
+        }
+
+        protected void pointerPressed(int x, int y) {
+            cursorX = x;
+            cursorY = y;
+            repaint();
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            if (c == backCommand) {
+                processCommand("xterm");
+                processCommand(lib.containsKey("canvas.back")
+                    ? (String) lib.get("canvas.back")
+                    : "true");
+            } else if (c == userCommand) {
+                processCommand("xterm");
+                processCommand(lib.containsKey("canvas.button.cmd")
+                    ? (String) lib.get("canvas.button.cmd")
+                    : "log add warn An error occurred, 'canvas.button.cmd' not found");
+            }
+        }
+    }
     // |
     // Font Generator
     private Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
