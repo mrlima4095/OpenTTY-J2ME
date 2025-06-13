@@ -686,7 +686,7 @@ public class FTPServer implements Runnable {
                             send("530 Invalid user");
                         }
                     } else if ("PASS".equals(command)) {
-                        if (ftpUser != null && ftpUser.equals(username) && password.equals(username)) {
+                        if (ftpUser != null && ftpUser.equals(username) && argument.equals(username)) {
                             loggedIn = true;
                             send("230 Login successful");
                         } else {
