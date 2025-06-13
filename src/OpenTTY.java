@@ -612,17 +612,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private void build(Hashtable lib) { String name = (String) lib.get("shell.name"); String[] args = split((String) lib.get("shell.args"), ','); Hashtable shellTable = new Hashtable(); for (int i = 0; i < args.length; i++) { String argName = args[i].trim(); String argValue = (String) lib.get(argName); shellTable.put(argName, (argValue != null) ? argValue : ""); } if (lib.containsKey("shell.unknown")) { shellTable.put("shell.unknown", (String) lib.get("shell.unknown")); } shell.put(name, shellTable); }
     private void runScript(String script) { String[] commands = split(script, '\n'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim()); } }
-    import javax.microedition.io.*;
-import java.io.*;
-import java.util.*;
 
 public class FTPServer implements Runnable {
 
     private String port;
     private ServerSocketConnection serverSocket;
 
-    private final String username = "user";  // Defina seu usuário
-    private final String password = "pass";  // Defina sua senha
 
     public FTPServer(String port) {
         this.port = (port == null || port.isEmpty() || port.equals("$PORT")) ? "21" : port;
@@ -693,7 +688,7 @@ public class FTPServer implements Runnable {
                             send("530 Invalid user");
                         }
                     } else if ("PASS".equals(command)) {
-                        if (ftpUser != null && ftpUser.equals(username) && password.equals(argument)) {
+                        if (ftpUser != null && ftpUser.equals(username) && password.equals(username)) {
                             loggedIn = true;
                             send("230 Login successful");
                         } else {
