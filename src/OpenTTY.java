@@ -485,7 +485,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu",
                 Command.SCREEN,
                 2
-            );
+            ); 
 
             addCommand(backCommand);
             if (lib.containsKey("canvas.button")) {
