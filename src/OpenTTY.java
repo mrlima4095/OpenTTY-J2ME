@@ -466,7 +466,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command backCommand, userCommand;
         private Image cursorImg = null;
         private final int cursorSize = 5;
-        private int cursorX = 10, cursorY = 10;
 
         public MyCanvas(String args) {
             if (args == null || args.length() == 0) {
