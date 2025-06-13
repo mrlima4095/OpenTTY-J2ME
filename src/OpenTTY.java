@@ -620,7 +620,7 @@ public class FTPServer implements Runnable {
 
 
     public FTPServer(String port) {
-        this.port = (port == null || port.isEmpty() || port.equals("$PORT")) ? "21" : port;
+        this.port = (port == null || port.length() == 0 || port.equals("$PORT")) ? "21" : port;
         new Thread(this, "FTP-Server-Main").start();
     }
 
