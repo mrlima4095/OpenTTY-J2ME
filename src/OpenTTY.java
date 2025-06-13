@@ -360,7 +360,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
 
-
         // API 014 - (OpenTTY)
         // |
         // Low-level commands
