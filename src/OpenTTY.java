@@ -344,7 +344,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { processCommand("man sh" + (verbose ? " -v" : ""), false); return; } 
             String content = read("/home/man.html"); 
 
-            if (content.equals("")) { processCommand("clone ", false); return; } 
+            if (content.equals("") || argument.equals("--update")) { processCommand("", false); return; } 
             String tag = argument.toLowerCase(), startTag = "<" + tag + ">", endTag = "</" + tag + ">"; 
             int start = content.indexOf(startTag), end = content.indexOf(endTag); 
             if (start != -1 && end != -1 && end > start) { 
