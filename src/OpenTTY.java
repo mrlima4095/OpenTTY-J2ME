@@ -663,7 +663,6 @@ public class FTPServer implements Runnable {
             this.clientSocket = clientSocket;
         }
 
-        @Override
         public void run() {
             try {
                 is = clientSocket.openInputStream();
