@@ -672,7 +672,7 @@ public class FTPServer implements Runnable {
 
                 while (true) {
                     String cmdLine = readLine();
-                    if (cmdLine == null || cmdLine.isEmpty()) continue;
+                    if (cmdLine == null || cmdLine.length() == 0) continue;
 
                     String command = getCommand(cmdLine).toUpperCase();
                     String argument = getArgument(cmdLine);
@@ -841,7 +841,7 @@ public class FTPServer implements Runnable {
         private boolean changeDirectory(String dir) {
             // Implemente lógica para mudar currentPath
             // Exemplo simplificado, sem acesso real ao filesystem
-            if (dir == null || dir.isEmpty()) return false;
+            if (dir == null || dir.length() == 0) return false;
             if (dir.equals("..")) {
                 if (!currentPath.equals("/")) {
                     int lastSlash = currentPath.lastIndexOf('/', currentPath.length() - 2);
