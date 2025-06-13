@@ -338,13 +338,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // General Utilities
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("debug")) { runScript(read("/scripts/debug.sh")); }
-        else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
+        else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/help.txt")); }
         else if (mainCommand.equals("man")) { 
             boolean verbose = argument.indexOf("-v") != -1; if (verbose) { argument = replace(argument, "-v", "").trim(); } 
             if (argument.equals("")) { processCommand("man sh" + (verbose ? " -v" : ""), false); return; } 
             String content = read("/home/man.html"); 
 
-            if (content.equals("") || argument.equals("--update")) { processCommand("", false); return; } 
+            if (content.equals("") || argument.equals("--update")) { processCommand("execute install /home/nano; netstat; if ($OUTPUT == true) exec tick Downloading... & proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html & install /home/man.html & get /home/nano & tick; if ($OUTPUT == false) exec echo [Manual] MIDlet cannot access Internet! & echo [Manual] Verfiy your connection and try again.", false); return; } 
             String tag = argument.toLowerCase(), startTag = "<" + tag + ">", endTag = "</" + tag + ">"; 
             int start = content.indexOf(startTag), end = content.indexOf(endTag); 
             if (start != -1 && end != -1 && end > start) { 
