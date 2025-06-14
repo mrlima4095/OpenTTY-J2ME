@@ -48,6 +48,7 @@ canvas.back.label=Menu
 canvas.back=execute jbuntu menu;
 canvas.button=Apps
 canvas.button.cmd=execute x11 list jbuntu;
+canvas.mouse.img=/java/bin/cursor.png
 
 quest.title=JBuntu Settings
 quest.label=Notes
