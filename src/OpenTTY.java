@@ -493,25 +493,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (TYPE == LIST) { processCommand(getvalue("list.back", "true")); }
                 else if (TYPE == QUEST) { processCommand(getvalue("quest.back", "true")); }
             } else if (c == USER) {
-                if (TYPE == QUEST) {
-                    String value = input.getString().trim();
-                    if (!value.equals("")) {
-                        processCommand("set " + getenv("quest.key") + "=" + env(value));
-                        processCommand("xterm");
-                        processCommand(getvalue("quest.cmd", "true"));
-                    }
-                } 
-                else if (TYPE == LIST) {
-                    int index = list.getSelectedIndex();
-                    if (index >= 0) {
-                        processCommand("xterm"); String key = env(list.getString(index));
-                        processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"));
-                    }
-                } 
-                else if (TYPE == SCREEN) {
-                    processCommand("xterm");
-                    processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found"));
-                }
+                if (TYPE == QUEST) { String value = input.getString().trim(); if (!value.equals("")) { processCommand("set " + getenv("quest.key") + "=" + env(value)); processCommand("xterm"); processCommand(getvalue("quest.cmd", "true")); } } 
+                else if (TYPE == LIST) { int index = list.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); String key = env(list.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found")); } } 
+                else if (TYPE == SCREEN) { processCommand("xterm"); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found")); }
             }
         }
 
@@ -721,6 +705,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } 
             else if (c == USER) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); }
         }
+        
+        private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
+        private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
+        private String getenv(String key) { return env(getvalue(key, "")); }
     }
     // |
     // Item MOD Loader
