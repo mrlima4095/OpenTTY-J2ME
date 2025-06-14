@@ -440,7 +440,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class Screen implements CommandListener {
         private Hashtable lib;
         private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3;
-        private From screen;
+        private Form screen;
         private List list;
         private Command BACK, USER;
         private StringItem content;
