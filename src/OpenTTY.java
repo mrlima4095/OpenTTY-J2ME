@@ -393,7 +393,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
         else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest")) { new Screen(mainCommand, argument); }
-        else if (mainCommand.equals("item")) { new ItemLoader(form, "item" argument); }
+        else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); }
     }
