@@ -33,6 +33,7 @@ quest.cmd=execute yang install;
 list.title=Repository
 list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,Discord (MIDlet),DeviceFS,FilesME,Forge,Github (MIDlet),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,X Server 0.4
 list.button=Install
+list.icon=/java/etc/icons/exec.png
 
 Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install; set RESOURCE=debuggers; yang install; set RESOURCE=jauth2; yang install;
 Armitage=execute set RESOURCE=armitage; yang install;
