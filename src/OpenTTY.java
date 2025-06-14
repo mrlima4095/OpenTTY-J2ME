@@ -513,7 +513,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 try {
                     icon = Image.createImage((String) lib.get("list.icon"));
                 } catch (IOException e) {
-                    MIDletLogs("add warn Resource '" + (String) lib.get("list.icon") + "' cannot be loaded")
+                    MIDletLogs("add warn Resource '" + (String) lib.get("list.icon") + "' cannot be loaded");
                 }
             }
 
