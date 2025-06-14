@@ -546,7 +546,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
-        private getenv(String key, String fallback) { return env(getvalue(key, value)); }
+        private getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
         private getenv(String key) { return env(getvalue(key, "")); }
     }
 
