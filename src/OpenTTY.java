@@ -909,12 +909,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void load() {
             screen.deleteAll();
 
-            Image fileIcon = null;
-            Image dirIcon = null;
+            Image fileIcon = null, dirIcon = null, upIcon = null;
 
             try {
                 fileIcon = Image.createImage("/java/etc/icons/file.png");
-                dirIcon = Image.createImage("/java/etc/icons/directory.png");
+                dirIcon = Image.createImage("/java/etc/icons/dir.png");
+                upIcon = Image.createImage("/java/etc/icons/up.png");
             } catch (IOException e) {
             }
 
