@@ -930,7 +930,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (path.equals("/mnt/")) {
                     Enumeration roots = FileSystemRegistry.listRoots();
                     while (roots.hasMoreElements()) {
-                        screen.append((String) roots.nextElement(), dirIcon);
+                        screen.append((String) roots.nextElement(), DIR);
                     }
                 } else if (path.startsWith("/mnt/")) {
                     try {
