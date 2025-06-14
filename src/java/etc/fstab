@@ -5,8 +5,6 @@
 /java/bin/
 /java/bin/sh
 /java/bin/java
-/java/bin/icon.png
-/java/bin/cursor.png
 /java/etc/
 /java/etc/fstab
 /java/etc/headers
@@ -14,6 +12,12 @@
 /java/etc/initd.sh
 /java/etc/index.html
 /java/etc/perms.ini
+/java/etc/icons/
+/java/etc/icons/up.png
+/java/etc/icons/dir.png
+/java/etc/icons/file.png
+/java/etc/icons/icon.png
+/java/etc/icons/cursor.png
 /java/lib/
 /java/lib/yang
 /java/lib/netkit
