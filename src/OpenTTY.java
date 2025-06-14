@@ -427,7 +427,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String[] fields = split(getenv("screen.fields"), ',');
                     for (int i = 0; i < fields.length; i++) {
                         String field = fields[i].trim();
-                        String type = getenv("screen." + field + ".type")
+                        String type = getenv("screen." + field + ".type");
                         if (type.equals("image") && lib.containsKey("screen." + field + ".img")) {
                             try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
                             catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); }
