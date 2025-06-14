@@ -428,10 +428,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (int i = 0; i < fields.length; i++) {
                         String field = fields[i].trim();
                         String type = getenv("screen." + field + ".type");
-                        if (type.equals("image") && lib.containsKey("screen." + field + ".img")) {
-                            try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
-                            catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); }
-                        }
+                        if (type.equals("image") && lib.containsKey("screen." + field + ".img")) { try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); } }
                         else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); }
                         else if (type.equals("text")) {
                             StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".content"));
@@ -704,6 +701,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Hashtable lib; 
         private Command run; 
         private StringItem s; 
+        private String ;
         public ItemLoader(Form screen, String prefix, String args) { 
             if (args == null || args.length() == 0) { return; } 
             else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
@@ -720,7 +718,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             s.setDefaultCommand(run); 
             s.setItemCommandListener(this); 
             screen.append(s); 
-        } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
+        } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get( + ".cmd")); } } }
     // |
     // Font Generator
     private Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
