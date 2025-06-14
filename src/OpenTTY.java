@@ -393,7 +393,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
         else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest")) { new Screen(mainCommand, argument); }
-        else if (mainCommand.equals("item")) { new ItemLoader(form, argument); }
+        else if (mainCommand.equals("item")) { new ItemLoader(form, "item" argument); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); }
     }
@@ -423,29 +423,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); 
                 screen.addCommand(BACK); if (lib.containsKey("screen.button")) { screen.addCommand(USER); } 
 
-                if (lib.containsKey("screen.content")) {
-                    StringItem content = new StringItem(null, null);
-                    if (lib.containsKey("screen.content.style")) { content.setFont(newFont(getenv("screen.content.style", "default"))); }
-                    echoCommand(getenv("screen.content"), content); screen.append(content);
-                }
                 if (lib.containsKey("screen.fields")) {
                     String[] fields = split(getenv("screen.fields"), ',');
                     for (int i = 0; i < fields.length; i++) {
                         String field = fields[i].trim();
-                        if (field.equals("image") && lib.containsKey("screen.image")) {
-                            try { screen.append(new ImageItem(null, Image.createImage(getenv("screen.image")), ImageItem.LAYOUT_CENTER, null)); } 
-                            catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen.image") + "' could not be loaded"); }
+                        String type = getenv("screen." + field + ".type")
+                        if (type.equals("image") && lib.containsKey("screen." + field + ".img")) {
+                            try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
+                            catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); }
                         }
-                        else if (field.equals("item")) { new ItemLoader(screen, args); }
-                        else if (field.equals("content")) {
-                            if (lib.containsKey("screen.content.style")) { content.setFont(newFont(getenv("screen.content.style"))); }
-                            echoCommand(getenv("screen.content"), content); screen.append(content);
+                        else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); }
+                        else if (type.equals("text")) {
+                            StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".content"));
+                            content.setFont(newFont(getenv("screen." + field + ".style", "default")));
+                            screen.append(content);
                         }
 
                     }
                 }
-
-
                 
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
@@ -508,22 +503,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
         private String getenv(String key) { return env(getvalue(key, "")); }
 
-        private int getQuest(String mode) {
-            if (mode == null || mode.length() == 0) { return TextField.ANY; }
-
-            boolean password = false;
-            if (mode.indexOf("password") != -1) {
-                password = true;
-                mode = replace(mode, "password", "").trim();
-            }
-
-            int base = TextField.ANY;
-            if (mode.equals("number")) { base = TextField.NUMERIC; }
-            else if (mode.equals("email")) { base = TextField.EMAILADDR; }
-            else if (mode.equals("phone")) { base = TextField.PHONENUMBER; }
-            else if (mode.equals("decimal")) { base = TextField.DECIMAL; }
-            return password ? (base | TextField.PASSWORD) : base;
-        }
+        private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = TextField.ANY; if (mode.equals("number")) { base = TextField.NUMERIC; } else if (mode.equals("email")) { base = TextField.EMAILADDR; } else if (mode.equals("phone")) { base = TextField.PHONENUMBER; } else if (mode.equals("decimal")) { base = TextField.DECIMAL; } return password ? (base | TextField.PASSWORD) : base; }
     }
     public class MyCanvas extends Canvas implements CommandListener {
         private Hashtable lib;
@@ -730,7 +710,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Item MOD Loader
-    public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(Form screen, String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseProperties(getcontent(args)); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command(env((String) lib.get("item.label")), Command.ITEM, 1); s = new StringItem(null, env((String) lib.get("item.label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); screen.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
+    public class ItemLoader implements ItemCommandListener { 
+        private Hashtable lib; 
+        private Command run; 
+        private StringItem s; 
+        public ItemLoader(Form screen, String prefix, String args) { 
+            if (args == null || args.length() == 0) { return; } 
+            else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
+
+            lib = parseProperties(getcontent(args)); 
+
+            if (!lib.containsKey(prefix + ".label") || !lib.containsKey(prefix + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
+
+            run = new Command(env((String) lib.get(prefix + ".label")), Command.ITEM, 1); 
+            s = new StringItem(null, env((String) lib.get(prefix + ".label")), StringItem.BUTTON); 
+            s.setFont(Font.getDefaultFont()); 
+            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
+            s.addCommand(run); 
+            s.setDefaultCommand(run); 
+            s.setItemCommandListener(this); 
+            screen.append(s); 
+        } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
     // |
     // Font Generator
     private Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
