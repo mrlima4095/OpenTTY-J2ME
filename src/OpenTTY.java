@@ -440,8 +440,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class Screen implements CommandListener {
         private Hashtable lib;
         private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3;
-        private Displayable screen;
+        private From screen;
+        private List list;
         private Command BACK, USER;
+        private StringItem content;
         private TextField input;
 
         public Screen(String type, String args) {
@@ -456,7 +458,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (!lib.containsKey("screen.title")) { MIDletLogs("add error Screen crashed while init, malformed settings"); return; }
 
                 screen = new Form(getenv("screen.title"));
-                StringItem content = new StringItem("", lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : "");
+                content = new StringItem("", getenv("screen.content"));
 
                 if (lib.containsKey("screen.content.style")) { content.setFont(newFont((String) lib.get("screen.content.style"))); }
 
@@ -466,6 +468,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 screen.append(content);
                 screen.addCommand(BACK);
                 screen.addCommand(USER);
+                screen.setCommandListener(this);
+                display.setCurrent(screen);
             }
             else if (type.equals("list")) {
                 TYPE = LIST;
@@ -474,25 +478,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (!lib.containsKey("list.title") && !lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; }
                 if (lib.containsKey("list.icon")) {
                     try {
-                        IMG = Image.createImage((String) lib.get("list.icon"));
+                        IMG = Image.createImage(getenv("list.icon"));
                     } catch (IOException e) {
-                        MIDletLogs("add warn Resource '" + (String) lib.get("list.icon") + "' cannot be loaded");
+                        MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded");
                     }
                 }
 
-                screen = new List(getenv("list.title"), List.IMPLICIT);
+                list = new List(getenv("list.title"), List.IMPLICIT);
 
-                BACK = new Command(lib.containsKey("list.back.label") ? env((String) lib.get("list.back.label")) : "Back", Command.OK, 1);
-                USER = new Command(lib.containsKey("list.button") ? env((String) lib.get("list.button")) : "Select", Command.SCREEN, 2);
+                BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1);
+                USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2);
 
-                String[] content = split(env((String) lib.get("list.content")), ',');
+                String[] content = split(getenv("list.content"), ',');
 
                 for (int i = 0; i < content.length; i++) {
-                    screen.append(content[i], IMG);
+                    list.append(content[i], IMG);
                 }
 
-                screen.addCommand(BACK);
-                screen.addCommand(USER);
+                list.addCommand(BACK);
+                list.addCommand(USER);
+                list.setCommandListener(this);
+                display.setCurrent(list);
             }
             else if (type.equals("quest")) {
                 TYPE = QUEST;
@@ -504,16 +510,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 screen = new Form(env((String) lib.get("quest.title")));
                 input = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY);
 
-                BACK = new Command(env(getvalue("quest.back.label", "Cancel")), Command.SCREEN, 2);
-                USER = new Command(env(getvalue("quest.cmd.label", "Send")), Command.OK, 1);
+                BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2);
+                USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1);
 
                 screen.append(input);
                 screen.addCommand(BACK);
                 screen.addCommand(USER);
+                screen.setCommandListener(this);
+                display.setCurrent(screen);
             } else { return; }
 
-            screen.setCommandListener(this);
-            display.setCurrent(screen);
         }
 
         public void commandAction(Command c, Displayable d) {
@@ -532,9 +538,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 } 
                 else if (TYPE == LIST) {
-                    int index = screen.getSelectedIndex();
+                    int index = list.getSelectedIndex();
                     if (index >= 0) {
-                        processCommand("xterm"); String key = env(screen.getString(index));
+                        processCommand("xterm"); String key = env(list.getString(index));
                         processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"));
                     }
                 } 
@@ -589,7 +595,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == USER) { processCommand("xterm"); processCommand(lib.containsKey("screen.button.cmd") ? (String) lib.get("screen.button.cmd") : "log add warn An error occurred, 'screen.button.cmd' not found"); }
         }
     }
-
     public class ScreenList implements CommandListener {
         private Hashtable lib;
         private List screen;
@@ -636,7 +641,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == USER) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(lib.containsKey(screen.getString(index)) ? (String) lib.get(env(screen.getString(index))) : "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found"); } }
         }
     }
-
     public class ScreenQuest implements CommandListener {
         private Hashtable lib;
         private Form screen;
