@@ -40,6 +40,12 @@ screen.back.label=Menu
 screen.back=execute jbuntu menu;
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
+screen.fields=notes
+screen.notes.type=logo,text
+screen.logo.type=image
+screen.logo.img=/java/etc/icons/icon.png
+screen.text.type=text
+screen.text.content=$JBUNTU_NOTES
 
 canvas.title=JBuntu $JVERSION
 canvas.content=$JBUNTU_NOTES
