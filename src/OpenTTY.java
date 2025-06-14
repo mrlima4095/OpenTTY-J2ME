@@ -404,34 +404,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class Screen implements CommandListener {
         private Hashtable lib;
         private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3;
-        private Form screen;
-        private List list;
+        private Form screen = new Form(form.getTitle());
+        private List list = new List(form.getTitle(), List.IMPLICIT);
         private Command BACK, USER;
-        private StringItem content;
+        private StringItem content = new StringItem(null, null);
         private TextField input;
 
         public Screen(String type, String args) {
-            if (type == null || type.length() == 0) { return; }
-            if (args == null || args.length() == 0) { return; }
+            if (type == null || type.length() == 0 || args == null || args.length() == 0) { return; }
 
             lib = parseProperties(getcontent(args));
 
             if (type.equals("make")) {
                 TYPE = SCREEN;
 
-                if (!lib.containsKey("screen.title")) { MIDletLogs("add error Screen crashed while init, malformed settings"); return; }
+                if (lib.containsKey("screen.title")) { screen.getTitle(getenv("screen.title")); }
 
-                screen = new Form(getenv("screen.title"));
-                content = new StringItem("", getenv("screen.content"));
+                BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); 
+                USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); 
+                screen.addCommand(BACK);  screen.addCommand(USER); 
+                
 
-                if (lib.containsKey("screen.content.style")) { content.setFont(newFont((String) lib.get("screen.content.style"))); }
+                if (lib.containsKey("screen.content")) {
+                    if (lib.containsKey("screen.content.style")) { content.setFont(newFont(getenv("screen.content.style"))); }
+                    echoCommand(getenv("screen.content"), content); screen.append(content);
+                }
 
-                BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1);
-                USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2);
-
-                screen.append(content);
-                screen.addCommand(BACK);
-                screen.addCommand(USER);
+                
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
             }
@@ -439,28 +438,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TYPE = LIST;
                 Image IMG = null;
 
-                if (!lib.containsKey("list.title") && !lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; }
-                if (lib.containsKey("list.icon")) {
-                    try {
-                        IMG = Image.createImage(getenv("list.icon"));
-                    } catch (IOException e) {
-                        MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded");
-                    }
-                }
-
-                list = new List(getenv("list.title"), List.IMPLICIT);
-
+                if (!lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; }
+                
+                if (lib.containsKey("list.title")) { list.setTitle(getenv("list.title")); }
+                if (lib.containsKey("list.icon")) { try { IMG = Image.createImage(getenv("list.icon")); } catch (IOException e) { MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded"); } }
+                
                 BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1);
                 USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2);
+                list.addCommand(BACK); list.addCommand(USER);
 
                 String[] content = split(getenv("list.content"), ',');
 
-                for (int i = 0; i < content.length; i++) {
-                    list.append(content[i], IMG);
-                }
+                for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); }
 
-                list.addCommand(BACK);
-                list.addCommand(USER);
                 list.setCommandListener(this);
                 display.setCurrent(list);
             }
@@ -469,17 +459,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (args == null || args.length() == 0) { return; }
 
-                if (!lib.containsKey("quest.title") || !lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; }
+                if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; }
 
-                screen = new Form(env((String) lib.get("quest.title")));
-                input = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY);
+                if (lib.containsKey("quest.title")) { screen.getTitle(getenv("quest.title")); }
+                input = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type")));
+
+
 
                 BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2);
                 USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1);
 
                 screen.append(input);
-                screen.addCommand(BACK);
-                screen.addCommand(USER);
+                screen.addCommand(BACK); screen.addCommand(USER);
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
             } else { return; }
@@ -502,6 +493,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
         private String getenv(String key) { return env(getvalue(key, "")); }
+
+        private int getQuest(String mode) {
+            if (mode == null || mode.length() == 0) { return TextField.ANY; }
+
+            boolean password = false;
+            if (mode.indexOf("password") != -1) {
+                password = true;
+                mode = replace(mode, "password", "").trim();
+            }
+
+            int base = TextField.ANY;
+            if (mode.equals("number")) { base = TextField.NUMERIC; }
+            else if (mode.equals("email")) { base = TextField.EMAILADDR; }
+            else if (mode.equals("phone")) { base = TextField.PHONENUMBER; }
+            else if (mode.equals("decimal")) { base = TextField.DECIMAL; }
+            return password ? (base | TextField.PASSWORD) : base;
+        }
     }
     public class MyCanvas extends Canvas implements CommandListener {
         private Hashtable lib;
@@ -705,7 +713,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } 
             else if (c == USER) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); }
         }
-        
+
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
         private String getenv(String key) { return env(getvalue(key, "")); }
