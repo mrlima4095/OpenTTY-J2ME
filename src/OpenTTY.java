@@ -453,7 +453,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             lib = parseProperties(getcontent(args));
 
-            if (type.equals("screen")) {
+            if (type.equals("make")) {
                 TYPE = SCREEN;
 
                 if (!lib.containsKey("screen.title")) { MIDletLogs("add error Screen crashed while init, malformed settings"); return; }
@@ -463,8 +463,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (lib.containsKey("screen.content.style")) { content.setFont(newFont((String) lib.get("screen.content.style"))); }
 
-                BACK = new Command(lib.containsKey("screen.back.label") ? env((String) lib.get("screen.back.label")) : "Back", Command.OK, 1);
-                USER = new Command(lib.containsKey("screen.button") ? env((String) lib.get("screen.button")) : "Menu", Command.SCREEN, 2);
+                BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1);
+                USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2);
 
                 screen.append(content);
                 screen.addCommand(BACK);
