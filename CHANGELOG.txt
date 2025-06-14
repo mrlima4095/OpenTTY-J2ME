@@ -22,6 +22,7 @@ Copyright (C) 2025 - Mr. Lima
 - Canvas new attribute `canvas.mouse.img`
 - Quest new attribute `quest.cmd.label` that charges label of send button
 - Quest new attribute `quest.content` that set the default quest text in input
+- Canvas title not in window format anymore
 - New asset **/java/bin/cursor.png**
 
 [ _Notes_ ]
