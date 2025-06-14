@@ -230,40 +230,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (!target.endsWith("/")) { target += "/"; } 
 
                 if (paths.containsKey(target)) { path = target; } 
-                else if (target.startsWith("/mnt/")) {
-                    try {
-                        String realPath = "file:///" + target.substring(5);
-                        if (!realPath.endsWith("/")) realPath += "/";
-                        FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ);
-                        if (fc.exists() && fc.isDirectory()) {
-                            path = target;
-                        } else {
-                            echoCommand("cd: " + basename(target) + ": not " + (!fc.exists() ? "found" : "a directory"));
-                        }
-                        fc.close();
-                    } catch (IOException e) { echoCommand("cd: " + basename(target) + ": " + e.getMessage()); }
-                } 
+                else if (target.startsWith("/mnt/")) { try { String realPath = "file:///" + target.substring(5); if (!realPath.endsWith("/")) realPath += "/"; FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ); if (fc.exists() && fc.isDirectory()) { path = target; } else { echoCommand("cd: " + basename(target) + ": not " + (!fc.exists() ? "found" : "a directory")); } fc.close(); } catch (IOException e) { echoCommand("cd: " + basename(target) + ": " + e.getMessage()); } } 
                 else { 
                     echoCommand("cd: " + basename(target) + ": not " + (!paths.containsKey(target.substring(0, target.endsWith("/") ? target.length() - 2 : target.length() - 1)) ? "found" : "a directory"));
-                    
                 }
             } 
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!argument.endsWith("/")) { argument += "/"; }if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
-        else if (mainCommand.equals("dir")) {
-            Vector results = new Vector(); 
-
-            if (path.equals("/mnt/")) { try { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { String root = (String) roots.nextElement(); if (!results.contains(root)) { results.addElement(root); } } } catch (Exception e) { echoCommand(e.getMessage()); return; } }
-            else if (path.startsWith("/mnt/")) { try { String realPath = "file:///" + path.substring(5); if (!realPath.endsWith("/")) realPath += "/"; FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ); Enumeration content = fc.list(); while (content.hasMoreElements()) { String item = (String) content.nextElement(); results.addElement(item); } fc.close(); } catch (Exception e) { echoCommand(e.getMessage()); return; } }
-            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } 
-            else if (path.equals("/home/")) { new Explorer(); return; }
-
-            String[] files = (String[]) paths.get(path); 
-            if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!results.contains(f) && !results.contains(f + "/")) { results.addElement(f); } } } 
-
-            if (!results.isEmpty()) { StringBuffer sb = new StringBuffer(); String newline = path.equals("/home/") ? "\n" : "\t"; for (int i = 0; i < results.size(); i++) { String item = (String) results.elementAt(i); if (!item.equals("/")) { sb.append(item).append(newline); } } echoCommand(sb.toString().trim()); } 
-        } 
+        else if (mainCommand.equals("dir")) { Vector results = new Vector(); if (path.equals("/mnt/")) { try { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { String root = (String) roots.nextElement(); if (!results.contains(root)) { results.addElement(root); } } } catch (Exception e) { echoCommand(e.getMessage()); return; } } else if (path.startsWith("/mnt/")) { try { String realPath = "file:///" + path.substring(5); if (!realPath.endsWith("/")) realPath += "/"; FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ); Enumeration content = fc.list(); while (content.hasMoreElements()) { String item = (String) content.nextElement(); results.addElement(item); } fc.close(); } catch (Exception e) { echoCommand(e.getMessage()); return; } } else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } else if (path.equals("/home/")) { new Explorer(); return; } String[] files = (String[]) paths.get(path); if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!results.contains(f) && !results.contains(f + "/")) { results.addElement(f); } } } if (!results.isEmpty()) { StringBuffer sb = new StringBuffer(); String newline = path.equals("/home/") ? "\n" : "\t"; for (int i = 0; i < results.size(); i++) { String item = (String) results.elementAt(i); if (!item.equals("/")) { sb.append(item).append(newline); } } echoCommand(sb.toString().trim()); } } 
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk -p"); }
@@ -358,11 +333,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return getpattern(input.substring(spaceIndex + 1).trim()); } }
 
-    private String read(String filename) { 
-        try { 
-            if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } 
-            else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; }
-            else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } } catch (IOException e) { return ""; } }
+    private String read(String filename) { try { if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } } catch (IOException e) { return ""; } }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
     
