@@ -454,41 +454,143 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void warnCommand(String title, String message) { if (message == null || message.length() == 0) { return; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); }
     private void viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); display.setCurrent(viewer); }
     // |
-    public class Screen implements CommandListener { private Hashtable lib; private Form screen; private StringItem content; private Command backCommand, userCommand; public Screen(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); if (!lib.containsKey("screen.title")) { MIDletLogs("add error Screen crashed while init, malformed settings"); return; } screen = new Form(env((String) lib.get("screen.title"))); content = new StringItem("", lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : ""); if (lib.containsKey("screen.content.style")) { content.setFont(newFont((String) lib.get("screen.content.style"))); } backCommand = new Command(lib.containsKey("screen.back.label") ? env((String) lib.get("screen.back.label")) : "Back", Command.OK, 1); userCommand = new Command(lib.containsKey("screen.button") ? env((String) lib.get("screen.button")) : "Menu", Command.SCREEN, 2); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("screen.back") ? (String) lib.get("screen.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("screen.button.cmd") ? (String) lib.get("screen.button.cmd") : "log add warn An error occurred, 'screen.button.cmd' not found"); } } }
-    public class ScreenList implements CommandListener { private Hashtable lib; private List screen; private Command backCommand, userCommand; public ScreenList(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); if (!lib.containsKey("list.title") && !lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } screen = new List(env((String) lib.get("list.title")), List.IMPLICIT); backCommand = new Command(lib.containsKey("list.back.label") ? env((String) lib.get("list.back.label")) : "Back", Command.OK, 1); userCommand = new Command(lib.containsKey("list.button") ? env((String) lib.get("list.button")) : "Select", Command.SCREEN, 2); String[] content = split(env((String) lib.get("list.content")), ','); for (int i = 0; i < content.length; i++) { screen.append(content[i], null); } screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("list.back") ? env((String) lib.get("list.back")) : "true"); } else if (c == userCommand) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(lib.containsKey(screen.getString(index)) ? (String) lib.get(env(screen.getString(index))) : "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found"); } } } }
-    public class ScreenQuest implements CommandListener { private Hashtable lib; private Form screen; private TextField content; private Command backCommand, userCommand; public ScreenQuest(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); if (!lib.containsKey("quest.title") || !lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } screen = new Form(env((String) lib.get("quest.title"))); content = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY); backCommand = new Command(lib.containsKey("quest.back.label") ? env((String) lib.get("quest.back.label")) : "Cancel", Command.SCREEN, 2); userCommand = new Command("Send", Command.OK, 1); screen.append(content); screen.addCommand(backCommand); screen.addCommand(userCommand); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) {if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true"); } else if (c == userCommand) { if (!content.getString().trim().equals("")) { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(content.getString().trim())); processCommand("xterm"); processCommand((String) lib.get("quest.cmd")); } } } }
-    public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseProperties(getcontent(args)); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, env((String) lib.get("item.label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
-    // |
-    // public class MyCanvas extends Canvas implements CommandListener { private Hashtable lib; private Graphics screen; private Command backCommand, userCommand; private final int cursorSize = 5; public MyCanvas(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); backCommand = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.OK, 1); userCommand = new Command(lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu", Command.SCREEN, 2); addCommand(backCommand); if (lib.containsKey("canvas.button")) { addCommand(userCommand); } if (lib.containsKey("canvas.mouse")) { try { cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } } setCommandListener(this); } protected void paint(Graphics g) { if (screen == null) { screen = g; } g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); if (lib.containsKey("canvas.background")) { String backgroundType = lib.containsKey("canvas.background.type") ? env((String) lib.get("canvas.background.type")) : "default"; if (backgroundType.equals("color") || backgroundType.equals("default")) { try { g.setColor(Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); } g.fillRect(0, 0, getWidth(), getHeight());  } else if (backgroundType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.background"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } } } if (lib.containsKey("canvas.title")) { g.setColor(50, 50, 50); g.fillRect(0, 0, getWidth(), 30); g.setColor(255, 255, 255); g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER); g.setColor(50, 50, 50);  g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); } if (lib.containsKey("canvas.content")) { String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default"; g.setFont(Font.getDefaultFont()); if (lib.containsKey("canvas.content.style")) { g.setFont(newFont((String) lib.get("canvas.content.style"))); } if (contentType.equals("text") || contentType.equals("default")) { g.setColor(255, 255, 255); String content = env((String) lib.get("canvas.content")); int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight(); g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); } else if (contentType.equals("shape")) { String[] shapes = split(env((String) lib.get("canvas.content")), ';'); for (int i = 0; i < shapes.length; i++) { String[] parts = split(shapes[i], ','); String type = parts[0].toLowerCase(); if (type.equals("line") && parts.length == 5) { g.setColor(255, 255, 255); g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } else if (type.equals("circle") && parts.length == 4) { g.setColor(0, 255, 0); int radius = Integer.parseInt(parts[3]); g.drawArc(Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360); } else if (type.equals("rect") && parts.length == 5) { g.setColor(0, 0, 255); g.drawRect(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } else if (type.equals("text") && parts.length == 4) { g.setColor(255, 255, 255); g.drawString(parts[3], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Graphics.TOP | Graphics.LEFT); } } } } g.setColor(255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } else if (gameAction == FIRE) { if (lib.containsKey("canvas.content")) { String content = env((String) lib.get("canvas.content")); int contentWidth = screen.getFont().stringWidth(content); int contentHeight = screen.getFont().getHeight(); int textX = (getWidth() - contentWidth) / 2; int textY = (getHeight() - contentHeight) / 2; if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); } } } repaint(); } protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } } }
-    public class MyCanvas extends Canvas implements CommandListener {
+    public class Screen implements CommandListener {
         private Hashtable lib;
-        private Graphics screen;
-        private Command backCommand, userCommand;
-        private Image cursorImg = null;
-        private final int cursorSize = 5;
+        private Form screen;
+        private StringItem content;
+        private Command BACK, USER;
 
-        public MyCanvas(String args) {
+        public Screen(String args) {
+            if (args == null || args.length() == 0) { return; }
+
+            lib = parseProperties(getcontent(args));
+
+            if (!lib.containsKey("screen.title")) {
+                MIDletLogs("add error Screen crashed while init, malformed settings");
+                return;
+            }
+
+            screen = new Form(env((String) lib.get("screen.title")));
+            content = new StringItem("", lib.containsKey("screen.content") ? env((String) lib.get("screen.content")) : "");
+
+            if (lib.containsKey("screen.content.style")) {
+                content.setFont(newFont((String) lib.get("screen.content.style")));
+            }
+
+            BACK = new Command(lib.containsKey("screen.back.label") ? env((String) lib.get("screen.back.label")) : "Back", Command.OK, 1);
+            USER = new Command(lib.containsKey("screen.button") ? env((String) lib.get("screen.button")) : "Menu", Command.SCREEN, 2);
+
+            screen.append(content);
+            screen.addCommand(BACK);
+            screen.addCommand(USER);
+            screen.setCommandListener(this);
+
+            display.setCurrent(screen);
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            if (c == BACK) { processCommand("xterm"); processCommand(lib.containsKey("screen.back") ? (String) lib.get("screen.back") : "true"); } 
+            else if (c == USER) { processCommand("xterm"); processCommand(lib.containsKey("screen.button.cmd") ? (String) lib.get("screen.button.cmd") : "log add warn An error occurred, 'screen.button.cmd' not found"); }
+        }
+    }
+
+    public class ScreenList implements CommandListener {
+        private Hashtable lib;
+        private List screen;
+        private Command BACK, USER;
+
+        public ScreenList(String args) {
+            if (args == null || args.length() == 0) { return; }
+
+            lib = parseProperties(getcontent(args));
+
+            if (!lib.containsKey("list.title") && !lib.containsKey("list.content")) {
+                MIDletLogs("add error List crashed while init, malformed settings");
+                return;
+            }
+
+            screen = new List(env((String) lib.get("list.title")), List.IMPLICIT);
+
+            BACK = new Command(lib.containsKey("list.back.label") ? env((String) lib.get("list.back.label")) : "Back", Command.OK, 1);
+            USER = new Command(lib.containsKey("list.button") ? env((String) lib.get("list.button")) : "Select", Command.SCREEN, 2);
+
+            String[] content = split(env((String) lib.get("list.content")), ',');
+
+            for (int i = 0; i < content.length; i++) {
+                screen.append(content[i], null);
+            }
+
+            screen.addCommand(BACK);
+            screen.addCommand(USER);
+            screen.setCommandListener(this);
+
+            display.setCurrent(screen);
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            if (c == BACK) { processCommand("xterm"); processCommand(lib.containsKey("list.back") ? env((String) lib.get("list.back")) : "true"); } 
+            else if (c == USER) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(lib.containsKey(screen.getString(index)) ? (String) lib.get(env(screen.getString(index))) : "log add warn An error occurred, '" + env(screen.getString(index)) + "' not found"); } }
+        }
+    }
+
+    public class ScreenQuest implements CommandListener {
+        private Hashtable lib;
+        private Form screen;
+        private TextField content;
+        private Command BACK, USER;
+
+        public ScreenQuest(String args) {
             if (args == null || args.length() == 0) {
                 return;
             }
 
             lib = parseProperties(getcontent(args));
 
-            backCommand = new Command(
-                lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back",
-                Command.OK,
-                1
-            );
+            if (!lib.containsKey("quest.title") || !lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) {
+                MIDletLogs("add error Quest crashed while init, malformed settings");
+                return;
+            }
 
-            userCommand = new Command(
-                lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu",
-                Command.SCREEN,
-                2
-            ); 
+            screen = new Form(env((String) lib.get("quest.title")));
+            content = new TextField(env((String) lib.get("quest.label")), "", 256, TextField.ANY);
 
-            addCommand(backCommand);
+            BACK = new Command(lib.containsKey("quest.back.label") ? env((String) lib.get("quest.back.label")) : "Cancel", Command.SCREEN, 2);
+            USER = new Command("Send", Command.OK, 1);
+
+            screen.append(content);
+            screen.addCommand(BACK);
+            screen.addCommand(USER);
+            screen.setCommandListener(this);
+
+            display.setCurrent(screen);
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            if (c == BACK) { processCommand("xterm"); processCommand(lib.containsKey("quest.back") ? env((String) lib.get("quest.back")) : "true"); } 
+            else if (c == USER) { if (!content.getString().trim().equals("")) { processCommand("set " + env((String) lib.get("quest.key")) + "=" + env(content.getString().trim())); processCommand("xterm"); processCommand((String) lib.get("quest.cmd")); } }
+        }
+    }
+    public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; public ItemLoader(String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseProperties(getcontent(args)); if (!lib.containsKey("item.label") || !lib.containsKey("item.cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command((String) lib.get("item.label"), Command.ITEM, 1); s = new StringItem(null, env((String) lib.get("item.label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); form.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get("item.cmd")); } } }
+    // |
+    // public class MyCanvas extends Canvas implements CommandListener { private Hashtable lib; private Graphics screen; private Command backCommand, userCommand; private final int cursorSize = 5; public MyCanvas(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); backCommand = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.OK, 1); userCommand = new Command(lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu", Command.SCREEN, 2); addCommand(backCommand); if (lib.containsKey("canvas.button")) { addCommand(userCommand); } if (lib.containsKey("canvas.mouse")) { try { cursorX = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[0]); cursorY = Integer.parseInt(split((String) lib.get("canvas.mouse"), ',')[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } } setCommandListener(this); } protected void paint(Graphics g) { if (screen == null) { screen = g; } g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); if (lib.containsKey("canvas.background")) { String backgroundType = lib.containsKey("canvas.background.type") ? env((String) lib.get("canvas.background.type")) : "default"; if (backgroundType.equals("color") || backgroundType.equals("default")) { try { g.setColor(Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]), Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); } g.fillRect(0, 0, getWidth(), getHeight());  } else if (backgroundType.equals("image")) { try { Image content = Image.createImage(env((String) lib.get("canvas.background"))); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } } } if (lib.containsKey("canvas.title")) { g.setColor(50, 50, 50); g.fillRect(0, 0, getWidth(), 30); g.setColor(255, 255, 255); g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER); g.setColor(50, 50, 50);  g.drawRect(0, 0, getWidth() - 1, getHeight() - 1); g.drawRect(1, 1, getWidth() - 3, getHeight() - 3); } if (lib.containsKey("canvas.content")) { String contentType = lib.containsKey("canvas.content.type") ? env((String) lib.get("canvas.content.type")) : "default"; g.setFont(Font.getDefaultFont()); if (lib.containsKey("canvas.content.style")) { g.setFont(newFont((String) lib.get("canvas.content.style"))); } if (contentType.equals("text") || contentType.equals("default")) { g.setColor(255, 255, 255); String content = env((String) lib.get("canvas.content")); int contentWidth = g.getFont().stringWidth(content); int contentHeight = g.getFont().getHeight(); g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT); } else if (contentType.equals("shape")) { String[] shapes = split(env((String) lib.get("canvas.content")), ';'); for (int i = 0; i < shapes.length; i++) { String[] parts = split(shapes[i], ','); String type = parts[0].toLowerCase(); if (type.equals("line") && parts.length == 5) { g.setColor(255, 255, 255); g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } else if (type.equals("circle") && parts.length == 4) { g.setColor(0, 255, 0); int radius = Integer.parseInt(parts[3]); g.drawArc(Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360); } else if (type.equals("rect") && parts.length == 5) { g.setColor(0, 0, 255); g.drawRect(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4])); } else if (type.equals("text") && parts.length == 4) { g.setColor(255, 255, 255); g.drawString(parts[3], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Graphics.TOP | Graphics.LEFT); } } } } g.setColor(255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } else if (gameAction == FIRE) { if (lib.containsKey("canvas.content")) { String content = env((String) lib.get("canvas.content")); int contentWidth = screen.getFont().stringWidth(content); int contentHeight = screen.getFont().getHeight(); int textX = (getWidth() - contentWidth) / 2; int textY = (getHeight() - contentHeight) / 2; if (cursorX >= textX && cursorX <= textX + contentWidth && cursorY >= textY && cursorY <= textY + contentHeight) { processCommand(lib.containsKey("canvas.content.link") ? (String) lib.get("canvas.content.link") : "true"); } } } repaint(); } protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); } public void commandAction(Command c, Displayable d) { if (c == backCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } else if (c == userCommand) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); } } }
+    public class MyCanvas extends Canvas implements CommandListener {
+        private Hashtable lib;
+        private Graphics screen;
+        private Command BACK, USER;
+        private Image cursorImg = null;
+        private final int cursorSize = 5;
+
+        public MyCanvas(String args) {
+            if (args == null || args.length() == 0) { return; }
+
+            lib = parseProperties(getcontent(args));
+
+            BACK = new Command(lib.containsKey("canvas.back.label") ? env((String) lib.get("canvas.back.label")) : "Back", Command.OK, 1);
+            USER = new Command(lib.containsKey("canvas.button") ? env((String) lib.get("canvas.button")) : "Menu", Command.SCREEN, 2); 
+
+            addCommand(BACK);
             if (lib.containsKey("canvas.button")) {
-                addCommand(userCommand);
+                addCommand(USER);
             }
 
             if (lib.containsKey("canvas.mouse")) {
@@ -667,24 +769,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             repaint();
         }
 
-        protected void pointerPressed(int x, int y) {
-            cursorX = x;
-            cursorY = y;
-            repaint();
-        }
+        protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); }
 
         public void commandAction(Command c, Displayable d) {
-            if (c == backCommand) {
-                processCommand("xterm");
-                processCommand(lib.containsKey("canvas.back")
-                    ? (String) lib.get("canvas.back")
-                    : "true");
-            } else if (c == userCommand) {
-                processCommand("xterm");
-                processCommand(lib.containsKey("canvas.button.cmd")
-                    ? (String) lib.get("canvas.button.cmd")
-                    : "log add warn An error occurred, 'canvas.button.cmd' not found");
-            }
+            if (c == BACK) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } 
+            else if (c == USER) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); }
         }
     }
     // |
@@ -768,7 +857,165 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Directories Manager
     private void mount(String script) { String[] lines = split(script, '\n'); for (int i = 0; i < lines.length; i++) { String line = ""; if (lines[i] != null) { line = lines[i].trim(); } if (line.length() == 0 || line.startsWith("#")) { continue; } if (line.startsWith("/")) { String fullPath = ""; int start = 0; for (int j = 1; j < line.length(); j++) { if (line.charAt(j) == '/') { String dir = line.substring(start + 1, j); fullPath += "/" + dir; addDirectory(fullPath + "/"); start = j; } } String finalPart = line.substring(start + 1); fullPath += "/" + finalPart; if (line.endsWith("/")) { addDirectory(fullPath + "/"); } else { addDirectory(fullPath); } } } }
     private void addDirectory(String fullPath) { boolean isDirectory = fullPath.endsWith("/"); if (!paths.containsKey(fullPath)) { if (isDirectory) { paths.put(fullPath, new String[] { ".." }); String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/', fullPath.length() - 2) + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } String dirName = fullPath.substring(parentPath.length(), fullPath.length() - 1); updatedContents.addElement(dirName + "/"); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } else { String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); String fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } updatedContents.addElement(fileName); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } } }
-    public class Explorer implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Open", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 2), RUN = new Command("Run Script", Command.OK, 3), IMPORT = new Command("Import File", Command.OK, 4); public Explorer() { screen.addCommand(BACK); screen.addCommand(OPEN); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { String selected = screen.getString(screen.getSelectedIndex()); if (c == BACK) { processCommand("xterm"); } else if (c == OPEN) { if (selected != null) { if (selected.endsWith("..")) { int lastSlash = path.lastIndexOf('/', path.length() - 2); if (lastSlash != -1) { path = path.substring(0, lastSlash + 1); } } else if (selected.endsWith("/")) { path += selected; } else { new NanoEditor(path + selected); } stdin.setLabel(username + " " + path + " $"); load(); } } else if (c == DELETE) { deleteFile(path + selected); load(); } else if (c == RUN) { processCommand("xterm"); runScript(getcontent(path + selected)); } else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } } private void load() { screen.deleteAll(); if (!path.equals("/")) { screen.append("..", null); } if (isWritable(path)) { screen.addCommand(DELETE); } else { screen.removeCommand(DELETE); } if (isRoot(path)) { screen.removeCommand(RUN); screen.removeCommand(IMPORT); } else { screen.addCommand(RUN); screen.addCommand(IMPORT); } try { if (path.equals("/mnt/")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), null); } } else if (path.startsWith("/mnt/")) { try { FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ); Enumeration content = dir.list(); Vector dirs = new Vector(), files = new Vector(); while (content.hasMoreElements()) { String name = (String) content.nextElement(); if (name.endsWith("/")) { dirs.addElement(name); } else { files.addElement(name); } } while (!dirs.isEmpty()) { screen.append(getFirstString(dirs), null); } while (!files.isEmpty()) { screen.append(getFirstString(files), null); } dir.close(); } catch (IOException e) { } } else if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], null); } } } catch (RecordStoreException e) { } } String[] files = (String[]) paths.get(path); if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i]; if (f != null && !f.equals("..") && !f.equals("/")) { screen.append(f, null); } } } } catch (IOException e) { } } private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); } private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } }
+    public class Explorer implements CommandListener {
+
+        private List screen = new List(form.getTitle(), List.IMPLICIT);
+        private Command BACK = new Command("Back", Command.BACK, 1),
+                        OPEN = new Command("Open", Command.OK, 1),
+                        DELETE = new Command("Delete", Command.OK, 2),
+                        RUN = new Command("Run Script", Command.OK, 3),
+                        IMPORT = new Command("Import File", Command.OK, 4);
+
+        public Explorer() {
+            screen.addCommand(BACK);
+            screen.addCommand(OPEN);
+            screen.setCommandListener(this);
+            load();
+            display.setCurrent(screen);
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            String selected = screen.getString(screen.getSelectedIndex());
+
+            if (c == BACK) {
+                processCommand("xterm");
+            } else if (c == OPEN) {
+                if (selected != null) {
+                    if (selected.endsWith("..")) {
+                        int lastSlash = path.lastIndexOf('/', path.length() - 2);
+                        if (lastSlash != -1) {
+                            path = path.substring(0, lastSlash + 1);
+                        }
+                    } else if (selected.endsWith("/")) {
+                        path += selected;
+                    } else {
+                        new NanoEditor(path + selected);
+                    }
+                    stdin.setLabel(username + " " + path + " $");
+                    load();
+                }
+            } else if (c == DELETE) {
+                deleteFile(path + selected);
+                load();
+            } else if (c == RUN) {
+                processCommand("xterm");
+                runScript(getcontent(path + selected));
+            } else if (c == IMPORT) {
+                processCommand("xterm");
+                importScript(path + selected);
+            }
+        }
+
+        private void load() {
+            screen.deleteAll();
+
+            Image fileIcon = null;
+            Image dirIcon = null;
+
+            try {
+                fileIcon = Image.createImage("/java/etc/icons/file.png");
+                dirIcon = Image.createImage("/java/etc/icons/directory.png");
+            } catch (IOException e) {
+            }
+
+            if (!path.equals("/")) {
+                screen.append("..", dirIcon);
+            }
+
+            if (isWritable(path)) {
+                screen.addCommand(DELETE);
+            } else {
+                screen.removeCommand(DELETE);
+            }
+
+            if (isRoot(path)) {
+                screen.removeCommand(RUN);
+                screen.removeCommand(IMPORT);
+            } else {
+                screen.addCommand(RUN);
+                screen.addCommand(IMPORT);
+            }
+
+            try {
+                if (path.equals("/mnt/")) {
+                    Enumeration roots = FileSystemRegistry.listRoots();
+                    while (roots.hasMoreElements()) {
+                        screen.append((String) roots.nextElement(), dirIcon);
+                    }
+                } else if (path.startsWith("/mnt/")) {
+                    try {
+                        FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
+                        Enumeration content = dir.list();
+                        Vector dirs = new Vector(), files = new Vector();
+
+                        while (content.hasMoreElements()) {
+                            String name = (String) content.nextElement();
+                            if (name.endsWith("/")) {
+                                dirs.addElement(name);
+                            } else {
+                                files.addElement(name);
+                            }
+                        }
+
+                        while (!dirs.isEmpty()) {
+                            screen.append(getFirstString(dirs), dirIcon);
+                        }
+                        while (!files.isEmpty()) {
+                            screen.append(getFirstString(files), fileIcon);
+                        }
+
+                        dir.close();
+                    } catch (IOException e) { }
+                } else if (path.equals("/home/")) {
+                    try {
+                        String[] recordStores = RecordStore.listRecordStores();
+                        for (int i = 0; i < recordStores.length; i++) {
+                            if (!recordStores[i].startsWith(".")) {
+                                screen.append(recordStores[i], fileIcon);
+                            }
+                        }
+                    } catch (RecordStoreException e) { }
+                }
+
+                String[] files = (String[]) paths.get(path);
+                if (files != null) {
+                    for (int i = 0; i < files.length; i++) {
+                        String f = files[i];
+                        if (f != null && !f.equals("..") && !f.equals("/")) {
+                            if (f.endsWith("/")) {
+                                screen.append(f, dirIcon);
+                            } else {
+                                screen.append(f, fileIcon);
+                            }
+                        }
+                    }
+                }
+
+            } catch (IOException e) { }
+        }
+
+
+        private boolean isWritable(String path) {
+            return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"));
+        }
+
+        private boolean isRoot(String path) {
+            return path.equals("/") || path.equals("/mnt/");
+        }
+
+        private static String getFirstString(Vector v) {
+            String result = null;
+            for (int i = 0; i < v.size(); i++) {
+                String cur = (String) v.elementAt(i);
+                if (result == null || cur.compareTo(result) < 0) {
+                    result = cur;
+                }
+            }
+            v.removeElement(result);
+            return result;
+        }
+    }
+
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
