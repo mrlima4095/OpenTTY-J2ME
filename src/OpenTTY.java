@@ -865,6 +865,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         DELETE = new Command("Delete", Command.OK, 2),
                         RUN = new Command("Run Script", Command.OK, 3),
                         IMPORT = new Command("Import File", Command.OK, 4);
+        private Image upIcon = null, dirIcon = null, fileIcon = null;
 
         public Explorer() {
             screen.addCommand(BACK);
@@ -909,8 +910,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void load() {
             screen.deleteAll();
 
-            Image fileIcon = null, dirIcon = null, upIcon = null;
-
+            
             try {
                 fileIcon = Image.createImage("/java/etc/icons/file.png");
                 dirIcon = Image.createImage("/java/etc/icons/dir.png");
