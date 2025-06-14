@@ -584,16 +584,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
 
-            if (lib.containsKey("canvas.title")) {
-                g.setColor(50, 50, 50);
-                g.fillRect(0, 0, getWidth(), 30);
-                g.setColor(255, 255, 255);
-                g.drawString(env((String) lib.get("canvas.title")), getWidth() / 2, 5, Graphics.TOP | Graphics.HCENTER);
-                g.setColor(50, 50, 50);
-                g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
-                g.drawRect(1, 1, getWidth() - 3, getHeight() - 3);
-            }
-
             if (lib.containsKey("canvas.content")) {
                 String contentType = lib.containsKey("canvas.content.type")
                     ? env((String) lib.get("canvas.content.type"))
