@@ -528,7 +528,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (!value.equals("")) {
                         processCommand("set " + getenv("quest.key") + "=" + env(value));
                         processCommand("xterm");
-                        processCommand(getvalue("quest.cmd"));
+                        processCommand(getvalue("quest.cmd", "true"));
                     }
                 } 
                 else if (TYPE == LIST) {
