@@ -7,8 +7,10 @@
 /java/bin/sh
 /java/etc/
 /java/etc/icons/
+/java/etc/icons/app.png
 /java/etc/icons/cursor.png
 /java/etc/icons/dir.png
+/java/etc/icons/exec.png
 /java/etc/icons/file.png
 /java/etc/icons/icon.png
 /java/etc/icons/up.png
