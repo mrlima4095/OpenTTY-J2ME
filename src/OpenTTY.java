@@ -538,7 +538,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (lib.containsKey("canvas.mouse.img")) { 
                 try { 
                     CURSOR = Image.createImage(getenv("canvas.mouse.img")); 
-                } catch (IOException e) { MIDletLogs("add warn Cursor " + getenv("canvas.mouse.img") + " could not be loaded") } }
+                } catch (IOException e) { MIDletLogs("add warn Cursor " + getenv("canvas.mouse.img") + " could not be loaded"); } }
 
             setCommandListener(this);
         }
