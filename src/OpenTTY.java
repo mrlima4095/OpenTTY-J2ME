@@ -428,13 +428,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String field = fields[i].trim();
                         String type = getenv("screen." + field + ".type");
 
-                        if (type.equals("image") && lib.containsKey("screen." + field + ".img")) { try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); } }
+                        if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) { try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); } }
+                        else if (type.equals("text") && !getenv("screen." + field + ".content").equals("")) { StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".content")); content.setFont(newFont(getenv("screen." + field + ".style", "default"))); screen.append(content); }
                         else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); }
-                        else if (type.equals("text")) {
-                            StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".content"));
-                            content.setFont(newFont(getenv("screen." + field + ".style", "default")));
-                            screen.append(content);
-                        }
 
                     }
                 }
@@ -463,8 +459,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (type.equals("quest")) {
                 TYPE = QUEST;
-
-                if (args == null || args.length() == 0) { return; }
 
                 if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; }
 
