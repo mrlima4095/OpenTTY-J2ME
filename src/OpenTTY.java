@@ -919,7 +919,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             if (!path.equals("/")) {
-                screen.append("..", dirIcon);
+                screen.append("..", upIcon);
             }
 
             if (isWritable(path)) {
