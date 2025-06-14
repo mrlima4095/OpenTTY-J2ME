@@ -419,8 +419,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (lib.containsKey("screen.title")) { screen.setTitle(getenv("screen.title")); }
 
-                BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); 
-                USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); 
+                BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); 
                 screen.addCommand(BACK); if (lib.containsKey("screen.button")) { screen.addCommand(USER); } 
 
                 if (lib.containsKey("screen.fields")) {
@@ -428,6 +427,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (int i = 0; i < fields.length; i++) {
                         String field = fields[i].trim();
                         String type = getenv("screen." + field + ".type");
+
                         if (type.equals("image") && lib.containsKey("screen." + field + ".img")) { try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); } }
                         else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); }
                         else if (type.equals("text")) {
@@ -451,8 +451,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (lib.containsKey("list.title")) { list.setTitle(getenv("list.title")); }
                 if (lib.containsKey("list.icon")) { try { IMG = Image.createImage(getenv("list.icon")); } catch (IOException e) { MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded"); } }
                 
-                BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1);
-                USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2);
+                BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2);
                 list.addCommand(BACK); list.addCommand(USER);
 
                 String[] content = split(getenv("list.content"), ',');
@@ -472,8 +471,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (lib.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); }
                 input = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type")));
 
-                BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2);
-                USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1);
+                BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1);
 
                 screen.append(input);
                 screen.addCommand(BACK); screen.addCommand(USER);
