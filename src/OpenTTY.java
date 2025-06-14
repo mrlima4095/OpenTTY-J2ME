@@ -858,19 +858,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         DELETE = new Command("Delete", Command.OK, 2),
                         RUN = new Command("Run Script", Command.OK, 3),
                         IMPORT = new Command("Import File", Command.OK, 4);
-        private Image upIcon = null, dirIcon = null, fileIcon = null;
+        private Image DIR = null, FILE = null, UP = null;
 
         public Explorer() {
             screen.addCommand(BACK);
             screen.addCommand(OPEN);
             screen.setCommandListener(this);
-            load();
             try {
-                fileIcon = Image.createImage("/java/etc/icons/file.png");
-                dirIcon = Image.createImage("/java/etc/icons/dir.png");
-                upIcon = Image.createImage("/java/etc/icons/up.png");
-            } catch (IOException e) {
-            }
+                FILE = Image.createImage("/java/etc/icons/file.png");
+                DIR = Image.createImage("/java/etc/icons/dir.png");
+                UP = Image.createImage("/java/etc/icons/up.png");
+            } catch (IOException e) { }
+            load();
             display.setCurrent(screen);
         }
 
@@ -910,7 +909,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.deleteAll();
 
             if (!path.equals("/")) {
-                screen.append("..", upIcon);
+                screen.append("..", UP);
             }
 
             if (isWritable(path)) {
@@ -949,10 +948,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
 
                         while (!dirs.isEmpty()) {
-                            screen.append(getFirstString(dirs), dirIcon);
+                            screen.append(getFirstString(dirs), DIR);
                         }
                         while (!files.isEmpty()) {
-                            screen.append(getFirstString(files), fileIcon);
+                            screen.append(getFirstString(files), FILE);
                         }
 
                         dir.close();
@@ -962,7 +961,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String[] recordStores = RecordStore.listRecordStores();
                         for (int i = 0; i < recordStores.length; i++) {
                             if (!recordStores[i].startsWith(".")) {
-                                screen.append(recordStores[i], fileIcon);
+                                screen.append(recordStores[i], FILE);
                             }
                         }
                     } catch (RecordStoreException e) { }
@@ -974,9 +973,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String f = files[i];
                         if (f != null && !f.equals("..") && !f.equals("/")) {
                             if (f.endsWith("/")) {
-                                screen.append(f, dirIcon);
+                                screen.append(f, DIR);
                             } else {
-                                screen.append(f, fileIcon);
+                                screen.append(f, FILE);
                             }
                         }
                     }
