@@ -18,9 +18,9 @@ Copyright (C) 2025 - Mr. Lima
 - File Explorer save status alerted by a Ticker
 - Using `install /mnt/[path]` to write nano content in a file at Device Storage
 - MIDlet start path charged to **/home/**
-- Moved help file to **/java/etc/help.html**
 - Updated X Server 0.6.2
 - Canvas new attribute `canvas.mouse.img`
+- New asset **/java/bin/cursor.png**
 
 [ _Notes_ ]
 
