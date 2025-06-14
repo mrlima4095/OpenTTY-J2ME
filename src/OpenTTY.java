@@ -535,7 +535,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int index = listScreen.getSelectedIndex();
                     if (index >= 0) {
                         processCommand("xterm"); String key = env(listScreen.getString(index);
-                        processCommand(getvalue(key), "log add warn An error occurred, '" + key + "' not found"));
+                        processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"));
                     }
                 } 
                 else if (TYPE == SCREEN) {
