@@ -498,6 +498,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Hashtable lib;
         private List screen;
         private Command BACK, USER;
+        private Image icon = null;
 
         public ScreenList(String args) {
             if (args == null || args.length() == 0) { return; }
@@ -507,6 +508,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (!lib.containsKey("list.title") && !lib.containsKey("list.content")) {
                 MIDletLogs("add error List crashed while init, malformed settings");
                 return;
+            }
+            if (lib.containsKey("list.icon")) {
+                try {
+                    icon = Image.createImage((String) lib.get("list.icon"));
+                } catch (IOException e) {
+                    MIDletLogs("add warn Resource '" + (String) lib.get("list.icon") + "' cannot be loaded")
+                }
             }
 
             screen = new List(env((String) lib.get("list.title")), List.IMPLICIT);
