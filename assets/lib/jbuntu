@@ -44,8 +44,7 @@ screen.fields=logo,notes
 screen.notes.type=text
 screen.logo.type=image
 screen.logo.img=/java/etc/icons/icon.png
-screen.text.type=text
-screen.text.content=$JBUNTU_NOTES
+screen.notes.content=$JBUNTU_NOTES
 
 canvas.title=JBuntu $JVERSION
 canvas.content=$JBUNTU_NOTES
