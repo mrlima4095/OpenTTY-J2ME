@@ -42,10 +42,11 @@ screen.back.label=Menu
 screen.back=execute jbuntu menu;
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
-screen.fields=message
+screen.fields=message,files
 screen.message.type=text
 screen.message.label=Notes:
 screen.message.content=$JBUNTU_NOTES
+screen.files.type=
 
 canvas.title=JBuntu $JVERSION
 canvas.fields=files,label1,xterm,label2,back,label3
