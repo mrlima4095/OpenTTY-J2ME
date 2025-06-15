@@ -571,6 +571,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         try {
                             Image IMG = Image.createImage(val);
                             g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT);
+
+                            if (w == 0) { f.put("w", new Integer(IMG.getWidth())); }
+                            if (h == 0) { f.put("h", new Integer(IMG.getHeight())); }
                         } catch (IOException e) {
                             MIDletLogs("add error Malformed Image, " + e.getMessage());
                         }
