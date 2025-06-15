@@ -515,8 +515,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (lib.containsKey("canvas.mouse")) {
                 try {
-                    cursorX = Integer.parseInt(split(getenv("canvas.mouse"), ',')[0]);
-                    cursorY = Integer.parseInt(split(getenv("canvas.mouse"), ',')[1]);
+                    String[] pos = split(getenv("canvas.mouse"), ',');
+                    cursorX = Integer.parseInt(pos[0]);
+                    cursorY = Integer.parseInt(pos[1]);
                 } catch (NumberFormatException e) {
                     MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number");
                     cursorX = 10;
