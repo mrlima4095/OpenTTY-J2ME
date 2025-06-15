@@ -533,8 +533,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String backgroundType = getenv("canvas.background.type", "default");
 
                 if (backgroundType.equals("color") || backgroundType.equals("default")) {
-                    try { String[] pallete = split(getenv("canvas.background"), ',') g.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } 
-                    catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); }
+                    try { String[] pallete = split(getenv("canvas.background"), ','); g.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } 
+                    catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (r,g,b) may be a int number"); g.setColor(0, 0, 0); }
                     
                     g.fillRect(0, 0, getWidth(), getHeight());
                 } else if (backgroundType.equals("image")) {
@@ -563,8 +563,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String type = parts[0].toLowerCase();
 
                         if (type.equals("line") && parts.length == 5) {
-
                             g.setColor(255, 255, 255);
+                            
                             g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4]));
                         } else if (type.equals("circle") && parts.length == 4) {
                             g.setColor(0, 255, 0);
@@ -617,7 +617,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); }
         }
 
-        private int getpallete(String key, )
+        private int getpallete(String key, ) {
+            try { 
+                String[] pallete = split(getenv("canvas." + node), ',');
+                g.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } 
+            catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.line.color' - (r,g,b) may be a int number"); g.setColor(0, 0, 0); }
+                            
+        }
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
         private String getenv(String key) { return env(getvalue(key, "")); }
