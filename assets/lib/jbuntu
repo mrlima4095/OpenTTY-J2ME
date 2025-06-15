@@ -56,7 +56,7 @@ canvas.xterm.y=10
 canvas.xtext.type=text
 canvas.xtext.value=MIDlet
 canvas.xtext.style=small
-canvas.xtext.x=30
+canvas.xtext.x=10
 canvas.xtext.y=30
 canvas.content=$JBUNTU_NOTES
 canvas.content.link=execute install nano; touch; add list.title=Menu; add list.content=Write Notes,Desktop Settings; add list.button=Open; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; x11 list nano; get nano;
