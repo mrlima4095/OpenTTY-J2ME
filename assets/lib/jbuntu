@@ -54,40 +54,40 @@ canvas.fields=files,label1,xterm,label2,back,label3
 canvas.files.type=image
 canvas.files.value=/java/etc/icons/dir.png
 canvas.files.link=execute ls;
-canvas.files.x=32
+canvas.files.x=10
 canvas.files.y=10
 
 canvas.label1.type=text
 canvas.label1.value=Files
 canvas.label1.style=small
-canvas.label1.x=16
-canvas.label1.y=30
+canvas.label1.x=30
+canvas.label1.y=12
 canvas.label1.link=execute ls;
 
 canvas.xterm.type=image
 canvas.xterm.value=/java/etc/icons/icon.png
-canvas.xterm.x=32
-canvas.xterm.y=46
+canvas.xterm.x=10
+canvas.xterm.y=32
 canvas.xterm.link=execute jbuntu term;
 
 canvas.label2.type=text
 canvas.label2.value=MIDlet
 canvas.label2.style=small
-canvas.label2.x=10
-canvas.label2.y=66
+canvas.label2.x=30
+canvas.label2.y=34
 canvas.label2.link=execute jbuntu term;
 
 canvas.back.type=image
 canvas.back.value=/java/etc/icons/app.png
-canvas.back.x=32
-canvas.back.y=72
+canvas.back.x=10
+canvas.back.y=54
 canvas.back.link=execute case screen (jb.back) x11 load jb.back;
 
 canvas.label3.type=text
 canvas.label3.value=Back
 canvas.label3.style=small
-canvas.label3.x=10
-canvas.label3.y=92
+canvas.label3.x=30
+canvas.label3.y=56
 canvas.label3.link=execute case screen (jb.back) x11 load jb.back;
 
 canvas.content=$JBUNTU_NOTES
