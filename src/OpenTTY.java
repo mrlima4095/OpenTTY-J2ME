@@ -533,7 +533,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String backgroundType = getenv("canvas.background.type", "default");
 
                 if (backgroundType.equals("color") || backgroundType.equals("default")) {
-                    setpallete("background", g, 0, 0, 0)
+                    setpallete("background", g, 0, 0, 0);
                     g.fillRect(0, 0, getWidth(), getHeight());
                 } else if (backgroundType.equals("image")) {
                     try { Image content = Image.createImage(getenv("canvas.background")); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } 
