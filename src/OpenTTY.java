@@ -524,9 +524,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         protected void paint(Graphics g) {
-            if (screen == null) {
-                screen = g;
-            }
+            if (screen == null) { screen = g; }
 
             g.setColor(0, 0, 0);
             g.fillRect(0, 0, getWidth(), getHeight());
@@ -535,22 +533,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String backgroundType = getenv("canvas.background.type", "default");
 
                 if (backgroundType.equals("color") || backgroundType.equals("default")) {
-                    try {
-                        String[] pallete = split(getenv("canvas.background"), ',')
-                        g.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2]));
-                    } catch (NumberFormatException e) {
-                        MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number");
-                        g.setColor(0, 0, 0);
-                    }
+                    try { String[] pallete = split(getenv("canvas.background"), ',') g.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } 
+                    catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number"); g.setColor(0, 0, 0); }
+                    
                     g.fillRect(0, 0, getWidth(), getHeight());
                 } else if (backgroundType.equals("image")) {
-                    try {
-                        Image content = Image.createImage(getenv("canvas.background"));
-                        g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
-                    } catch (IOException e) {
-                        processCommand("xterm");
-                        processCommand("execute log add error Malformed Image, " + e.getMessage());
-                    }
+                    try { Image content = Image.createImage(getenv("canvas.background")); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } 
+                    catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); }
                 }
             }
 
@@ -563,51 +552,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (contentType.equals("text") || contentType.equals("default")) {
                     g.setColor(255, 255, 255);
-                    String content = env((String) lib.get("canvas.content"));
+                    String content = getenv("canvas.content");
                     int contentWidth = g.getFont().stringWidth(content);
                     int contentHeight = g.getFont().getHeight();
                     g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
                 } else if (contentType.equals("shape")) {
-                    String[] shapes = split(env((String) lib.get("canvas.content")), ';');
+                    String[] shapes = split(getenv("canvas.content"), ';');
                     for (int i = 0; i < shapes.length; i++) {
                         String[] parts = split(shapes[i], ',');
                         String type = parts[0].toLowerCase();
 
                         if (type.equals("line") && parts.length == 5) {
+
                             g.setColor(255, 255, 255);
-                            g.drawLine(
-                                Integer.parseInt(parts[1]),
-                                Integer.parseInt(parts[2]),
-                                Integer.parseInt(parts[3]),
-                                Integer.parseInt(parts[4])
-                            );
+                            g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4]));
                         } else if (type.equals("circle") && parts.length == 4) {
                             g.setColor(0, 255, 0);
                             int radius = Integer.parseInt(parts[3]);
-                            g.drawArc(
-                                Integer.parseInt(parts[1]) - radius,
-                                Integer.parseInt(parts[2]) - radius,
-                                radius * 2,
-                                radius * 2,
-                                0,
-                                360
-                            );
+                            g.drawArc( Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360);
                         } else if (type.equals("rect") && parts.length == 5) {
                             g.setColor(0, 0, 255);
-                            g.drawRect(
-                                Integer.parseInt(parts[1]),
-                                Integer.parseInt(parts[2]),
-                                Integer.parseInt(parts[3]),
-                                Integer.parseInt(parts[4])
-                            );
+                            g.drawRect(Integer.parseInt(parts[1]),Integer.parseInt(parts[2]),Integer.parseInt(parts[3]),Integer.parseInt(parts[4]));
                         } else if (type.equals("text") && parts.length == 4) {
                             g.setColor(255, 255, 255);
-                            g.drawString(
-                                parts[3],
-                                Integer.parseInt(parts[1]),
-                                Integer.parseInt(parts[2]),
-                                Graphics.TOP | Graphics.LEFT
-                            );
+                            g.drawString(parts[3],Integer.parseInt(parts[1]),Integer.parseInt(parts[2]),Graphics.TOP | Graphics.LEFT);
                         }
                     }
                 }
@@ -649,6 +617,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); }
         }
 
+        private int getpallete(String key, )
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
         private String getenv(String key) { return env(getvalue(key, "")); }
