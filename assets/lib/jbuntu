@@ -14,13 +14,13 @@ include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 config=execute set JVERSION=1.3.1; cd; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; hash jauth2; if ($OUTPUT != 0) import jauth2; if ($OUTPUT == 0) rm jauth2; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
 command=xterm,jbuntu
 
-xterm=execute x11 set jb.back; x11 $DISPLAY jbuntu;
+xterm=execute cd; x11 set jb.back; x11 $DISPLAY jbuntu;
 jbuntu=execute alias xterm=exec cd & x11 set jb.back & x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
 
 shell.name=jbuntu
 shell.args=menu,jnome,run,term,sync
 
-menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,General Settings,Desktop Settings,JBuntu Updater,Logout,Exit; add list.back=x11 $DISPLAY jbuntu; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add General Settings=cfg; add Desktop Settings=jbuntu jnome; add JBuntu Updater=jbuntu sync; add Logout=lock; add Exit=exit; x11 list nano; get nano;
+menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,General Settings,Desktop Settings,JBuntu Updater,Logout,Exit; add list.back=xterm; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add General Settings=cfg; add Desktop Settings=jbuntu jnome; add JBuntu Updater=jbuntu sync; add Logout=lock; add Exit=exit; x11 list nano; get nano;
 jnome=execute install nano; touch; add list.title=Desktop Settings; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add Legacy=exec install nano & touch & add make & install .jbuntu-desktop & @reload & import jbuntu & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-desktop & @reload & import jbuntu & get nano; x11 list nano; get nano;
 
 run=execute install nano; touch; add quest.title=$TITLE; add quest.label=(Run) $USERNAME $PATH $; add quest.key=COMMAND; add quest.cmd=exec $COMMAND & unset COMMAND; x11 quest nano; get nano;
