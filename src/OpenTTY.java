@@ -637,7 +637,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             repaint();
         }
 
-        protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); }
+        protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; keyPressed(-5); /*repaint();*/ }
 
         public void commandAction(Command c, Displayable d) {
             if (c == BACK) { processCommand("xterm"); processCommand(getvalue("canvas.back", "true")); } 
