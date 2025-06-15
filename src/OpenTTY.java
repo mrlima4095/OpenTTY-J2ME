@@ -619,7 +619,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String[] pallete = split(getenv("canvas." + node), ',');
                 screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); 
             } 
-            catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); screen.setColor(r, g, b); }
+            catch (/*NumberFormatException*/Exception e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); echoCommand(e.getMessage()); screen.setColor(r, g, b); }
             
         }
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
