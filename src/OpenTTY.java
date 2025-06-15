@@ -542,7 +542,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             if (lib.containsKey("canvas.content")) {
-                String contentType = getenv("canvas.content.type", "default")
+                String contentType = getenv("canvas.content.type", "default");
 
                 g.setFont(Font.getDefaultFont());
 
