@@ -526,8 +526,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int y = Integer.parseInt(getenv("canvas." + id + ".y", "0"));
                     int w = Integer.parseInt(getenv("canvas." + id + ".w", "0"));
                     int h = Integer.parseInt(getenv("canvas." + id + ".h", "0"));
-                    String val = getenv("canvas." + id + ".value", "");
-                    String link = getenv("canvas." + id + ".link", "");
 
                     Hashtable field = new Hashtable();
                     field.put("type", type);
@@ -535,8 +533,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     field.put("y", new Integer(y));
                     field.put("w", new Integer(w));
                     field.put("h", new Integer(h));
-                    field.put("value", val);
-                    field.put("link", link);
+                    field.put("value", getenv("canvas." + id + ".value", ""));
+                    field.put("style", getenv("canvas." + id + ".style", ""));
+                    field.put("link", getenv("canvas." + id + ".link", ""));
                     fields.addElement(field);
                 }
             }
@@ -556,7 +555,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (backgroundType.equals("color") || backgroundType.equals("default")) { setpallete("background", g, 0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); } 
                 else if (backgroundType.equals("image")) { try { Image content = Image.createImage(getenv("canvas.background")); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } }
             }
-g.setFont(Font.getDefaultFont()); g.setFont(newFont((String) lib.get("canvas.content.style")));
 
             if (lib.containsKey("canvas.fields")) { 
                 for (int i = 0; i < fields.size(); i++) {
@@ -570,7 +568,8 @@ g.setFont(Font.getDefaultFont()); g.setFont(newFont((String) lib.get("canvas.con
 
                     if (type.equals("text")) {
                         setpallete("text.color", g, 255, 255, 255);
-                        g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT);
+                        g.setFont(newFont(getenv("canvas.text.style", "default")));
+                        g.drawString(val, x, y, Graphics.TOP | Graphirecs.LEFT);
                     } 
                     else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } 
                     else if (type.equals("circle")) { setpallete("circle.color", g, 0, 255, 0); g.drawArc(x - w, y - w, w * 2, w * 2, 0, 360); }  
@@ -599,8 +598,8 @@ g.setFont(Font.getDefaultFont()); g.setFont(newFont((String) lib.get("canvas.con
                     String link = (String) f.get("link");
 
                     if (link != null && !link.equals("") &&
-                        cursorX >= x && cursorX <= x + w &&
-                        cursorY >= y && cursorY <= y + h) {
+                        cursorX + cursorSize > x && cursorX < x + w &&
+                        cursorY + cursorSize > y && cursorY < y + h) {
                         processCommand(link);
                         break;
                     }
@@ -618,14 +617,7 @@ g.setFont(Font.getDefaultFont()); g.setFont(newFont((String) lib.get("canvas.con
             else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); }
         }
 
-        private void setpallete(String node, Graphics screen, int r, int g, int b) {
-            try { 
-                String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ',');
-                screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); 
-            } 
-            catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); }
-            
-        }
+        private void setpallete(String node, Graphics screen, int r, int g, int b) { try { String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } }
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
         private String getenv(String key) { return env(getvalue(key, "")); }
