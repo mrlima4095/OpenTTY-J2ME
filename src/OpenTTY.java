@@ -579,7 +579,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             if (CURSOR != null) { g.drawImage(CURSOR, cursorX, cursorY, Graphics.TOP | Graphics.LEFT); } 
-            else { g.setColor(255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); }
+            else { setpallete("mouse.color", g, 255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); }
         }
 
         protected void keyPressed(int keyCode) {
@@ -615,7 +615,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private void setpallete(String node, Graphics screen, int r, int g, int b) {
-            //screen.setColor(r, g, b);
             try { 
                 String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ',');
                 screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); 
