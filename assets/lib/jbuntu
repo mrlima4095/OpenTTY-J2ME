@@ -58,7 +58,7 @@ canvas.files.y=10
 canvas.label1.type=text
 canvas.label1.value=Files
 canvas.label1.style=small
-canvas.label1.x=10
+canvas.label1.x=16
 canvas.label1.y=30
 canvas.label1.link=execute ls;
 
