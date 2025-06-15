@@ -507,7 +507,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             lib = parseProperties(getcontent(args));
 
-            if (lib.containsKey("canvas.title")) { setTitle(getenv("canvas.title")); }
+            setTitle(getenv("canvas.title", form.getTitle()));
 
             BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1);
             USER = new Command(getenv("canvas.button"), Command.SCREEN, 2); 
@@ -560,15 +560,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int i = 0; i < fields.size(); i++) {
                     Hashtable f = (Hashtable) fields.elementAt(i);
                     String type = (String) f.get("type");
+                    String val = (String) f.get("value");
                     int x = ((Integer) f.get("x")).intValue();
                     int y = ((Integer) f.get("y")).intValue();
                     int w = ((Integer) f.get("w")).intValue();
                     int h = ((Integer) f.get("h")).intValue();
-                    String val = (String) f.get("value");
 
                     if (type.equals("text")) {
                         setpallete("text.color", g, 255, 255, 255);
-                        g.setFont(newFont(getenv("canvas.text.style", "default")));
+                        g.setFont(newFont(getenv((String) f.get("style"), "default")));
                         g.drawString(val, x, y, Graphics.TOP | Graphirecs.LEFT);
                     } 
                     else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } 
@@ -596,13 +596,32 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int w = ((Integer) f.get("w")).intValue();
                     int h = ((Integer) f.get("h")).intValue();
                     String link = (String) f.get("link");
+                    String val = (String) f.get("value");
 
-                    if (link != null && !link.equals("") &&
-                        cursorX + cursorSize > x && cursorX < x + w &&
-                        cursorY + cursorSize > y && cursorY < y + h) {
-                        processCommand(link);
-                        break;
-                    }
+                    if (link != null && !link.equals("")) {
+                        boolean hit = false;
+
+                        if (type.equals("circle")) {
+                            int dx = cursorX - x;
+                            int dy = cursorY - y;
+                            hit = (dx * dx + dy * dy) <= (w * w);
+                        } 
+                        else if (type.equals("text")) {
+                            Font font = newFont(getenv((String) f.get("style"), "default"));
+                            int textW = font.stringWidth(val);
+                            int textH = font.getHeight();
+                            hit = cursorX + cursorSize > x && cursorX < x + textW &&
+                                  cursorY + cursorSize > y && cursorY < y + textH;
+                        } 
+                        else if (type.equals("line")) { continue; } 
+                        else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; }
+
+                        if (hit) {
+                            //MIDletLogs("FIRE link: " + link + " (type=" + type + ")");
+                            processCommand(link);
+                            break;
+                        }
+                    }               
                 }
 
             }
