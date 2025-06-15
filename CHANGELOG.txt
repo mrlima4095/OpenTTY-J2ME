@@ -20,6 +20,7 @@ Copyright (C) 2025 - Mr. Lima
 - MIDlet start path charged to **/home/**
 - Updated X Server 0.6.2
 - Canvas new attribute `canvas.mouse.img`
+- Canvas new attribute `canvas.mouse.color`
 - Quest new attribute `quest.cmd.label` that charges label of send button
 - Quest new attribute `quest.content` that set the default quest text in input
 - Canvas title not in window format anymore
