@@ -499,6 +499,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Graphics screen;
         private Command BACK, USER;
         private Image CURSOR = null;
+        private Vector fields = new Vector();
         private final int cursorSize = 5;
 
         public MyCanvas(String args) {
@@ -513,12 +514,32 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             addCommand(BACK); if (lib.containsKey("canvas.button")) { addCommand(USER); }
 
-            if (lib.containsKey("canvas.mouse")) {
-                try { String[] pos = split(getenv("canvas.mouse"), ','); cursorX = Integer.parseInt(pos[0]); cursorY = Integer.parseInt(pos[1]); } 
-                catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; }
-            }
-
+            if (lib.containsKey("canvas.mouse")) { try { String[] pos = split(getenv("canvas.mouse"), ','); cursorX = Integer.parseInt(pos[0]); cursorY = Integer.parseInt(pos[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } }
             if (lib.containsKey("canvas.mouse.img")) { try { CURSOR = Image.createImage(getenv("canvas.mouse.img")); } catch (IOException e) { MIDletLogs("add warn Cursor " + getenv("canvas.mouse.img") + " could not be loaded"); } }
+
+            if (lib.containsKey("canvas.fields")) {
+                String[] names = split(getenv("canvas.fields"), ',');
+                for (int i = 0; i < names.length; i++) {
+                    String id = names[i].trim();
+                    String type = getenv("canvas." + id + ".type", "text");
+                    int x = Integer.parseInt(getenv("canvas." + id + ".x", "0"));
+                    int y = Integer.parseInt(getenv("canvas." + id + ".y", "0"));
+                    int w = Integer.parseInt(getenv("canvas." + id + ".w", "0"));
+                    int h = Integer.parseInt(getenv("canvas." + id + ".h", "0"));
+                    String val = getenv("canvas." + id + ".value", "");
+                    String link = getenv("canvas." + id + ".link", "");
+
+                    Hashtable field = new Hashtable();
+                    field.put("type", type);
+                    field.put("x", new Integer(x));
+                    field.put("y", new Integer(y));
+                    field.put("w", new Integer(w));
+                    field.put("h", new Integer(h));
+                    field.put("value", val);
+                    field.put("link", link);
+                    fields.addElement(field);
+                }
+            }
 
             setCommandListener(this);
         }
@@ -532,49 +553,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (lib.containsKey("canvas.background")) {
                 String backgroundType = getenv("canvas.background.type", "default");
 
-                if (backgroundType.equals("color") || backgroundType.equals("default")) {
-                    setpallete("background", g, 0, 0, 0);
-                    g.fillRect(0, 0, getWidth(), getHeight());
-                } else if (backgroundType.equals("image")) {
-                    try { Image content = Image.createImage(getenv("canvas.background")); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } 
-                    catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); }
-                }
+                if (backgroundType.equals("color") || backgroundType.equals("default")) { setpallete("background", g, 0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); } 
+                else if (backgroundType.equals("image")) { try { Image content = Image.createImage(getenv("canvas.background")); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } }
             }
+g.setFont(Font.getDefaultFont()); g.setFont(newFont((String) lib.get("canvas.content.style")));
 
-            if (lib.containsKey("canvas.content")) {
-                String contentType = getenv("canvas.content.type", "default");
+            if (lib.containsKey("canvas.fields")) { 
+                for (int i = 0; i < fields.size(); i++) {
+                    Hashtable f = (Hashtable) fields.elementAt(i);
+                    String type = (String) f.get("type");
+                    int x = ((Integer) f.get("x")).intValue();
+                    int y = ((Integer) f.get("y")).intValue();
+                    int w = ((Integer) f.get("w")).intValue();
+                    int h = ((Integer) f.get("h")).intValue();
+                    String val = (String) f.get("value");
 
-                g.setFont(Font.getDefaultFont());
-
-                if (lib.containsKey("canvas.content.style")) { g.setFont(newFont((String) lib.get("canvas.content.style"))); }
-
-                if (contentType.equals("text") || contentType.equals("default")) {
-                    g.setColor(255, 255, 255);
-                    String content = getenv("canvas.content");
-                    int contentWidth = g.getFont().stringWidth(content);
-                    int contentHeight = g.getFont().getHeight();
-                    g.drawString(content, (getWidth() - contentWidth) / 2, (getHeight() - contentHeight) / 2, Graphics.TOP | Graphics.LEFT);
-                } else if (contentType.equals("shape")) {
-                    String[] shapes = split(getenv("canvas.content"), ';');
-                    for (int i = 0; i < shapes.length; i++) {
-                        String[] parts = split(shapes[i], ',');
-                        String type = parts[0].toLowerCase();
-
-                        if (type.equals("line") && parts.length == 5) {
-                            setpallete("line.color", g, 255, 255, 255);
-                            g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4]));
-                        } else if (type.equals("circle") && parts.length == 4) {
-                            setpallete("circle.color", g, 0, 255, 0);
-                            int radius = Integer.parseInt(parts[3]);
-                            g.drawArc( Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360);
-                        } else if (type.equals("rect") && parts.length == 5) {
-                            setpallete("rect.color", g, 0, 0, 255);
-                            g.drawRect(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4]));
-                        } else if (type.equals("text") && parts.length == 4) {
-                            setpallete("text.color", g, 255, 255, 255);
-                            g.drawString(parts[3], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Graphics.TOP | Graphics.LEFT);
-                        }
-                    }
+                    if (type.equals("text")) {
+                        setpallete("text.color", g, 255, 255, 255);
+                        g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT);
+                    } 
+                    else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } 
+                    else if (type.equals("circle")) { setpallete("circle.color", g, 0, 255, 0); g.drawArc(x - w, y - w, w * 2, w * 2, 0, 360); }  
+                    else if (type.equals("line")) { setpallete("line.color", g, 255, 255, 255); g.drawLine(x, y, w, h); }
                 }
             }
 
@@ -590,18 +590,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } 
             else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } 
             else if (gameAction == FIRE) {
-                if (lib.containsKey("canvas.content")) {
-                    String content = getenv("canvas.content");
-                    int contentWidth = screen.getFont().stringWidth(content);
-                    int contentHeight = screen.getFont().getHeight();
-                    int textX = (getWidth() - contentWidth) / 2;
-                    int textY = (getHeight() - contentHeight) / 2;
+                for (int i = 0; i < fields.size(); i++) {
+                    Hashtable f = (Hashtable) fields.elementAt(i);
+                    int x = ((Integer) f.get("x")).intValue();
+                    int y = ((Integer) f.get("y")).intValue();
+                    int w = ((Integer) f.get("w")).intValue();
+                    int h = ((Integer) f.get("h")).intValue();
+                    String link = (String) f.get("link");
 
-                    if (cursorX >= textX && cursorX <= textX + contentWidth &&
-                        cursorY >= textY && cursorY <= textY + contentHeight) {
-                        processCommand(getvalue("canvas.content.link", "true"));
+                    if (link != null && !link.equals("") &&
+                        cursorX >= x && cursorX <= x + w &&
+                        cursorY >= y && cursorY <= y + h) {
+                        processCommand(link);
+                        break;
                     }
                 }
+
             }
 
             repaint();
