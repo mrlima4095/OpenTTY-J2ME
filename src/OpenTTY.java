@@ -620,7 +620,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); }
         }
 
-        private int[] getpallete(String key, ) {
+        private int[] getpallete(String key) {
             int[3] values = {0,0,0};
             try { 
                 String[] pallete = split(getenv("canvas." + node), ',');
