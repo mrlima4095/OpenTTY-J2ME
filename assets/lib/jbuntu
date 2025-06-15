@@ -47,18 +47,37 @@ screen.message.type=text
 screen.message.content=$JBUNTU_NOTES
 
 canvas.title=JBuntu $JVERSION
-canvas.fields=files,label1
+canvas.fields=files,label1,xterm,label2,back,label3
+
 canvas.files.type=image
 canvas.files.value=/java/etc/icons/dir.png
 canvas.files.link=execute ls;
 canvas.files.x=20
 canvas.files.y=10
+
 canvas.label1.type=text
 canvas.label1.value=Files
 canvas.label1.style=small
 canvas.label1.x=10
 canvas.label1.y=30
 canvas.label1.link=execute ls;
+
+canvas.xterm.type=image
+canvas.xterm.value=/java/etc/icons/icon.png
+canvas.xterm.x=20
+canvas.xterm.y=50
+canvas.xterm.link=execute jbuntu term;
+
+canvas.label2.type=text
+canvas.label2.value=MIDlet
+canvas.label2.style=small
+canvas.label2.x=10
+canvas.label2.y=70
+canvas.label2.link=execute jbuntu term;
+
+canvas.x
+
+
 canvas.content=$JBUNTU_NOTES
 canvas.content.link=execute install nano; touch; add list.title=Menu; add list.content=Write Notes,Desktop Settings; add list.button=Open; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; x11 list nano; get nano;
 canvas.back.label=Menu
