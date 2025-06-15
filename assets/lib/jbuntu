@@ -14,8 +14,8 @@ include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
 config=execute set JVERSION=1.3.1; cd; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; hash jauth2; if ($OUTPUT != 0) import jauth2; if ($OUTPUT == 0) rm jauth2; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
 command=xterm,jbuntu
 
-xterm=execute x11 $DISPLAY jbuntu;
-jbuntu=execute alias xterm=exec cd & x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
+xterm=execute x11 set jb.back; x11 $DISPLAY jbuntu;
+jbuntu=execute alias xterm=exec cd & x11 set jb.back & x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
 
 shell.name=jbuntu
 shell.args=menu,jnome,run,term,sync
@@ -59,20 +59,20 @@ canvas.label1.type=text
 canvas.label1.value=Files
 canvas.label1.style=small
 canvas.label1.x=10
-canvas.label1.y=35
+canvas.label1.y=30
 canvas.label1.link=execute ls;
 
 canvas.xterm.type=image
 canvas.xterm.value=/java/etc/icons/icon.png
 canvas.xterm.x=32
-canvas.xterm.y=40
+canvas.xterm.y=10
 canvas.xterm.link=execute jbuntu term;
 
 canvas.label2.type=text
 canvas.label2.value=MIDlet
 canvas.label2.style=small
 canvas.label2.x=10
-canvas.label2.y=65
+canvas.label2.y=
 canvas.label2.link=execute jbuntu term;
 
 canvas.back.type=image
