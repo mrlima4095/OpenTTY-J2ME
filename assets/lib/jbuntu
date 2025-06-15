@@ -75,7 +75,8 @@ canvas.label2.x=10
 canvas.label2.y=75
 canvas.label2.link=execute jbuntu term;
 
-canvas.x
+canvas.back.type=image
+canvas.back.value=/java/etc/icons/app.png
 
 
 canvas.content=$JBUNTU_NOTES
