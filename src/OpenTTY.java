@@ -616,12 +616,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); }
         }
 
-        private void setpallete(String node, Graphics g) {
+        private void setpallete(String node, Graphics g, int r, int g, int b) {
             try { 
                 String[] pallete = split(getenv("canvas." + node), ',');
                 g.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); 
             } 
-            catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); g.setColor(0, 0, 0); }
+            catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); g.setColor(r, g, b); }
             
         }
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
