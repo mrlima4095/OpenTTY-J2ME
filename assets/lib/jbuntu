@@ -44,6 +44,7 @@ screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
 screen.fields=message
 screen.message.type=text
+screen.message.label=Notes:
 screen.message.content=$JBUNTU_NOTES
 
 canvas.title=JBuntu $JVERSION
