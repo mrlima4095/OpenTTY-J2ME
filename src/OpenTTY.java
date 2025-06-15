@@ -595,6 +595,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int y = ((Integer) f.get("y")).intValue();
                     int w = ((Integer) f.get("w")).intValue();
                     int h = ((Integer) f.get("h")).intValue();
+                    String type = (String) f.get("type");
                     String link = (String) f.get("link");
                     String val = (String) f.get("value");
 
