@@ -534,7 +534,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     field.put("w", new Integer(w));
                     field.put("h", new Integer(h));
                     field.put("value", getenv("canvas." + id + ".value", ""));
-                    field.put("style", getenv("canvas." + id + ".style", ""));
+                    field.put("style", getenv("canvas." + id + ".style", "default"));
                     field.put("link", getenv("canvas." + id + ".link", ""));
                     fields.addElement(field);
                 }
@@ -566,7 +566,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int w = ((Integer) f.get("w")).intValue();
                     int h = ((Integer) f.get("h")).intValue();
 
-                    if (type.equals("text")) { setpallete("text.color", g, 255, 255, 255); g.setFont(newFont(getenv((String) f.get("style"), "default"))); g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT); } 
+                    if (type.equals("text")) { setpallete("text.color", g, 255, 255, 255); g.setFont(newFont((String) f.get("style"))); g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT); } 
                     else if (type.equals("image")) {
                         try {
                             Image IMG = Image.createImage(val);
