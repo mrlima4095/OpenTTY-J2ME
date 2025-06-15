@@ -563,17 +563,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String type = parts[0].toLowerCase();
 
                         if (type.equals("line") && parts.length == 5) {
+                            int[] pallete = getpallete("line.color");
                             g.setColor(255, 255, 255);
-                            
                             g.drawLine(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), Integer.parseInt(parts[4]));
                         } else if (type.equals("circle") && parts.length == 4) {
+                            int[] pallete = getpallete("circle.color");
                             g.setColor(0, 255, 0);
                             int radius = Integer.parseInt(parts[3]);
                             g.drawArc( Integer.parseInt(parts[1]) - radius, Integer.parseInt(parts[2]) - radius, radius * 2, radius * 2, 0, 360);
                         } else if (type.equals("rect") && parts.length == 5) {
+                            int[] pallete = getpallete("rect.color");
                             g.setColor(0, 0, 255);
                             g.drawRect(Integer.parseInt(parts[1]),Integer.parseInt(parts[2]),Integer.parseInt(parts[3]),Integer.parseInt(parts[4]));
                         } else if (type.equals("text") && parts.length == 4) {
+                            int[] pallete = getpallete("text.color");
                             g.setColor(255, 255, 255);
                             g.drawString(parts[3],Integer.parseInt(parts[1]),Integer.parseInt(parts[2]),Graphics.TOP | Graphics.LEFT);
                         }
@@ -617,8 +620,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); }
         }
 
-        private int getpallete(String key, ) {
-            int[3] values;
+        private int[] getpallete(String key, ) {
+            int[3] values = {0,0,0};
             try { 
                 String[] pallete = split(getenv("canvas." + node), ',');
                 values[0] = Integer.parseInt(pallete[0]); 
@@ -627,7 +630,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
             } 
             catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); }
-                            
+            return values;
         }
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
