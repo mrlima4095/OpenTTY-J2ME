@@ -514,21 +514,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             addCommand(BACK); if (lib.containsKey("canvas.button")) { addCommand(USER); }
 
             if (lib.containsKey("canvas.mouse")) {
-                try {
-                    String[] pos = split(getenv("canvas.mouse"), ',');
-                    cursorX = Integer.parseInt(pos[0]);
-                    cursorY = Integer.parseInt(pos[1]);
-                } catch (NumberFormatException e) {
-                    MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number");
-                    cursorX = 10;
-                    cursorY = 10;
-                }
+                try { String[] pos = split(getenv("canvas.mouse"), ','); cursorX = Integer.parseInt(pos[0]); cursorY = Integer.parseInt(pos[1]); } 
+                catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; }
             }
 
-            if (lib.containsKey("canvas.mouse.img")) { 
-                try { 
-                    CURSOR = Image.createImage(getenv("canvas.mouse.img")); 
-                } catch (IOException e) { MIDletLogs("add warn Cursor " + getenv("canvas.mouse.img") + " could not be loaded"); } }
+            if (lib.containsKey("canvas.mouse.img")) { try { CURSOR = Image.createImage(getenv("canvas.mouse.img")); } catch (IOException e) { MIDletLogs("add warn Cursor " + getenv("canvas.mouse.img") + " could not be loaded"); } }
 
             setCommandListener(this);
         }
@@ -542,17 +532,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             g.fillRect(0, 0, getWidth(), getHeight());
 
             if (lib.containsKey("canvas.background")) {
-                String backgroundType = lib.containsKey("canvas.background.type")
-                    ? env((String) lib.get("canvas.background.type"))
-                    : "default";
+                String backgroundType = getenv("canvas.background.type", "default");
 
                 if (backgroundType.equals("color") || backgroundType.equals("default")) {
                     try {
-                        g.setColor(
-                            Integer.parseInt(split((String) lib.get("canvas.background"), ',')[0]),
-                            Integer.parseInt(split((String) lib.get("canvas.background"), ',')[1]),
-                            Integer.parseInt(split((String) lib.get("canvas.background"), ',')[2])
-                        );
+                        String[] pallete = split(getenv("canvas.background"), ',')
+                        g.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2]));
                     } catch (NumberFormatException e) {
                         MIDletLogs("add warn Invalid value for 'canvas.background' - (x,y,z) may be a int number");
                         g.setColor(0, 0, 0);
@@ -560,13 +545,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     g.fillRect(0, 0, getWidth(), getHeight());
                 } else if (backgroundType.equals("image")) {
                     try {
-                        Image content = Image.createImage(env((String) lib.get("canvas.background")));
-                        g.drawImage(
-                            content,
-                            (getWidth() - content.getWidth()) / 2,
-                            (getHeight() - content.getHeight()) / 2,
-                            Graphics.TOP | Graphics.LEFT
-                        );
+                        Image content = Image.createImage(getenv("canvas.background"));
+                        g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
                     } catch (IOException e) {
                         processCommand("xterm");
                         processCommand("execute log add error Malformed Image, " + e.getMessage());
@@ -575,15 +555,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             if (lib.containsKey("canvas.content")) {
-                String contentType = lib.containsKey("canvas.content.type")
-                    ? env((String) lib.get("canvas.content.type"))
-                    : "default";
+                String contentType = getenv("canvas.content.type", "default")
 
                 g.setFont(Font.getDefaultFont());
 
-                if (lib.containsKey("canvas.content.style")) {
-                    g.setFont(newFont((String) lib.get("canvas.content.style")));
-                }
+                if (lib.containsKey("canvas.content.style")) { g.setFont(newFont((String) lib.get("canvas.content.style"))); }
 
                 if (contentType.equals("text") || contentType.equals("default")) {
                     g.setColor(255, 255, 255);
@@ -637,29 +613,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
 
-            if (CURSOR != null) {
-                g.drawImage(CURSOR, cursorX, cursorY, Graphics.TOP | Graphics.LEFT);
-            } else {
-                g.setColor(255, 255, 255);
-                g.fillRect(cursorX, cursorY, cursorSize, cursorSize);
-            }
-
+            if (CURSOR != null) { g.drawImage(CURSOR, cursorX, cursorY, Graphics.TOP | Graphics.LEFT); } 
+            else { g.setColor(255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); }
         }
 
         protected void keyPressed(int keyCode) {
             int gameAction = getGameAction(keyCode);
 
-            if (gameAction == LEFT) {
-                cursorX = Math.max(0, cursorX - 5);
-            } else if (gameAction == RIGHT) {
-                cursorX = Math.min(getWidth() - cursorSize, cursorX + 5);
-            } else if (gameAction == UP) {
-                cursorY = Math.max(0, cursorY - 5);
-            } else if (gameAction == DOWN) {
-                cursorY = Math.min(getHeight() - cursorSize, cursorY + 5);
-            } else if (gameAction == FIRE) {
+            if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } 
+            else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } 
+            else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } 
+            else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } 
+            else if (gameAction == FIRE) {
                 if (lib.containsKey("canvas.content")) {
-                    String content = env((String) lib.get("canvas.content"));
+                    String content = getenv("canvas.content");
                     int contentWidth = screen.getFont().stringWidth(content);
                     int contentHeight = screen.getFont().getHeight();
                     int textX = (getWidth() - contentWidth) / 2;
@@ -667,9 +634,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     if (cursorX >= textX && cursorX <= textX + contentWidth &&
                         cursorY >= textY && cursorY <= textY + contentHeight) {
-                        processCommand(lib.containsKey("canvas.content.link")
-                            ? (String) lib.get("canvas.content.link")
-                            : "true");
+                        processCommand(getvalue("canvas.content.link", "true"));
                     }
                 }
             }
@@ -680,8 +645,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; repaint(); }
 
         public void commandAction(Command c, Displayable d) {
-            if (c == BACK) { processCommand("xterm"); processCommand(lib.containsKey("canvas.back") ? (String) lib.get("canvas.back") : "true"); } 
-            else if (c == USER) { processCommand("xterm"); processCommand(lib.containsKey("canvas.button.cmd") ? (String) lib.get("canvas.button.cmd") : "log add warn An error occurred, 'canvas.button.cmd' not found"); }
+            if (c == BACK) { processCommand("xterm"); processCommand(getvalue("canvas.back", "true")); } 
+            else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); }
         }
 
         private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
@@ -690,28 +655,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Item MOD Loader
-    public class ItemLoader implements ItemCommandListener { 
-        private Hashtable lib; 
-        private Command run; 
-        private StringItem s; 
-        private String node;
-        public ItemLoader(Form screen, String prefix, String args) { 
-            if (args == null || args.length() == 0) { return; } 
-            else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
-
-            lib = parseProperties(getcontent(args)); node = prefix;
-
-            if (!lib.containsKey(node + ".label") || !lib.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
-
-            run = new Command(env((String) lib.get(node + ".label")), Command.ITEM, 1); 
-            s = new StringItem(null, env((String) lib.get(node + ".label")), StringItem.BUTTON); 
-            s.setFont(Font.getDefaultFont()); 
-            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
-            s.addCommand(run); 
-            s.setDefaultCommand(run); 
-            s.setItemCommandListener(this); 
-            screen.append(s); 
-        } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get(node + ".cmd")); } } }
+    public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; private String node; public ItemLoader(Form screen, String prefix, String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseProperties(getcontent(args)); node = prefix; if (!lib.containsKey(node + ".label") || !lib.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command(env((String) lib.get(node + ".label")), Command.ITEM, 1); s = new StringItem(null, env((String) lib.get(node + ".label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); screen.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get(node + ".cmd")); } } }
     // |
     // Font Generator
     private Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
