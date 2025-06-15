@@ -569,7 +569,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (type.equals("text")) {
                         setpallete("text.color", g, 255, 255, 255);
                         g.setFont(newFont(getenv((String) f.get("style"), "default")));
-                        g.drawString(val, x, y, Graphics.TOP | Graphircs.LEFT);
+                        g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT);
                     } 
                     else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } 
                     else if (type.equals("circle")) { setpallete("circle.color", g, 0, 255, 0); g.drawArc(x - w, y - w, w * 2, w * 2, 0, 360); }  
