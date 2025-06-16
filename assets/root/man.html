@@ -384,8 +384,19 @@ Usage: lsblk [OPTIONS]
 OPTIONS:
 	-x
 	| Print in digested format.
-	-p
-	| List Device Partitions.
+
+	MIDlet Mount points:
+	/
+	| Name: Assets
+	| Type: read-only
+
+	/mnt/
+	| Name: Device 
+	| Type: read-write
+
+	/home/
+	| Name: RMS
+	| Type: read-write
 	
 	
 <lsblk>
