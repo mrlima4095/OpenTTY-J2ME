@@ -567,17 +567,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int h = ((Integer) f.get("h")).intValue();
 
                     if (type.equals("text")) { setpallete("text.color", g, 255, 255, 255); g.setFont(newFont((String) f.get("style"))); g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT); } 
-                    else if (type.equals("image")) {
-                        try {
-                            Image IMG = Image.createImage(val);
-                            g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT);
-
-                            if (w == 0) { f.put("w", new Integer(IMG.getWidth())); }
-                            if (h == 0) { f.put("h", new Integer(IMG.getHeight())); }
-                        } catch (IOException e) {
-                            MIDletLogs("add error Malformed Image, " + e.getMessage());
-                        }
-                    }
+                    else if (type.equals("image")) { try { Image IMG = Image.createImage(val); g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT); if (w == 0) { f.put("w", new Integer(IMG.getWidth())); } if (h == 0) { f.put("h", new Integer(IMG.getHeight())); } } catch (IOException e) { MIDletLogs("add error Malformed Image, " + e.getMessage()); } }
                     else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } 
                     else if (type.equals("circle")) { setpallete("circle.color", g, 0, 255, 0); g.drawArc(x - w, y - w, w * 2, w * 2, 0, 360); }  
                     else if (type.equals("line")) { setpallete("line.color", g, 255, 255, 255); g.drawLine(x, y, w, h); }
