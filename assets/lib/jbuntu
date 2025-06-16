@@ -53,8 +53,8 @@ screen.midlet.label=MIDlet
 screen.midlet.cmd=execute jbuntu term;
 
 screen.run.type=item
-screen.run.label=Back
-screen.run.cmd=execute case screen (jb.back) x11 load jb.back;
+screen.run.label=Run
+screen.run.cmd=execute x11 load jb.back;
 
 canvas.title=JBuntu $JVERSION
 canvas.fields=files,label1,xterm,label2,back,label3,run,label4
