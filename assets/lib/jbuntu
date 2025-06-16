@@ -45,7 +45,6 @@ screen.button.cmd=execute x11 list jbuntu;
 screen.fields=message,files,midlet,goback
 
 screen.message.type=text
-screen.message.label=Notes:
 screen.message.content=$JBUNTU_NOTES
 
 screen.files.type=item
