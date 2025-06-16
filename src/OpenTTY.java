@@ -582,16 +582,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (cmd != null && !cmd.equals("")) {
                         boolean hit = false;
 
-                        if (type.equals("circle")) {
-                            int dx = cursorX - x, dy = cursorY - y;
-                            hit = (dx * dx + dy * dy) <= (w * w);
-                        } 
-                        else if (type.equals("text")) {
-                            Font font = newFont(getenv((String) f.get("style"), "default"));
-                            int textW = font.stringWidth(val), textH = font.getHeight();
-                            hit = cursorX + cursorSize > x && cursorX < x + textW &&
-                                  cursorY + cursorSize > y && cursorY < y + textH;
-                        } 
+                        if (type.equals("circle")) { int dx = cursorX - x, dy = cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } 
+                        else if (type.equals("text")) { Font font = newFont(getenv((String) f.get("style"), "default")); int textW = font.stringWidth(val), textH = font.getHeight(); hit = cursorX + cursorSize > x && cursorX < x + textW && cursorY + cursorSize > y && cursorY < y + textH; } 
                         else if (type.equals("line")) { continue; } 
                         else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; }
 
