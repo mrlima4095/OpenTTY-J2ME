@@ -43,7 +43,7 @@ class Server:
             command = client_socket.recv(4096).decode('utf-8').strip()
             if not command:
                 print(f"[-] {addr[0]} disconnected")
-                break
+                return
 
             print(f"[+] {addr[0]} -> {command}")
             response = self.parse_command(command)
