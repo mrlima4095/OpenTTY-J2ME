@@ -24,9 +24,11 @@ version=execute echo JBenchmark $JDB_VERSION;
 
 screen.title=JBenchmark
 screen.content=$LOGS
+
 screen.fields=logs
 screen.logs.type=text
-screen.logs.content=$LOGS
+screen.logs.value=$LOGS
+
 screen.back=execute unset LOGS;
 screen.button=Menu
 screen.button.cmd=execute x11 list debuggers;
