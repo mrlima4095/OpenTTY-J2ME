@@ -851,44 +851,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         dir.close();
                     } catch (IOException e) { }
                 } else if (path.equals("/home/")) {
-                    try {
-                        String[] recordStores = RecordStore.listRecordStores();
-                        for (int i = 0; i < recordStores.length; i++) {
-                            if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], FILE); }
-                        }
-                    } catch (RecordStoreException e) { }
-                }
-
-                String[] files = (String[]) paths.get(path);
-                if (files != null) {
-                    for (int i = 0; i < files.length; i++) {
-                        String f = files[i];
-                        if (f != null && !f.equals("..") && !f.equals("/")) {
-                            if (f.endsWith("/")) { screen.append(f, DIR); } 
-                            else { screen.append(f, FILE); }
-                        }
-                    }
-                }
-
-            } catch (IOException e) { }
-        }
-
-
-        private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); }
-        private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); }
-
-        private static String getFirstString(Vector v) {
-            String result = null;
-            for (int i = 0; i < v.size(); i++) {
-                String cur = (String) v.elementAt(i);
-                if (result == null || cur.compareTo(result) < 0) {
-                    result = cur;
-                }
-            }
-            v.removeElement(result);
-            return result;
-        }
-    }
+                    try { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], FILE); } } } catch (RecordStoreException e) { } } String[] files = (String[]) paths.get(path); if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i]; if (f != null && !f.equals("..") && !f.equals("/")) { if (f.endsWith("/")) { screen.append(f, DIR); } else { screen.append(f, FILE); } } } } } catch (IOException e) { } } private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); } private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } }
 
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
