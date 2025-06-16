@@ -41,10 +41,14 @@ screen.back.label=Menu
 screen.back=execute jbuntu menu;
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
-screen.fields=notes,space,files,midlet,run,
+screen.fields=space,notes,space,files,midlet,run,
 
 screen.notes.type=text
 screen.notes.value=$JBUNTU_NOTES
+
+screen.space.type=spacer
+screen.space.w=64
+screen.space.h=10
 
 screen.files.type=item
 screen.files.label=File Explorer
