@@ -535,7 +535,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     field.put("h", new Integer(h));
                     field.put("value", getenv("canvas." + id + ".value", ""));
                     field.put("style", getenv("canvas." + id + ".style", "default"));
-                    field.put("link", getenv("canvas." + id + ".cmd", ""));
+                    field.put("cmd", getenv("canvas." + id + ".cmd", ""));
                     fields.addElement(field);
                 }
             }
@@ -593,10 +593,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int w = ((Integer) f.get("w")).intValue();
                     int h = ((Integer) f.get("h")).intValue();
                     String type = (String) f.get("type");
-                    String link = (String) f.get("cmd");
+                    String cmd = (String) f.get("cmd");
                     String val = (String) f.get("value");
 
-                    if (link != null && !link.equals("")) {
+                    if (cmd != null && !cmd.equals("")) {
                         boolean hit = false;
 
                         if (type.equals("circle")) {
@@ -616,7 +616,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
 
                         if (hit) {
-                            processCommand(link);
+                            processCommand(cmd);
                             break;
                         }
                     }               
