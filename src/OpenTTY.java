@@ -516,10 +516,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int i = 0; i < names.length; i++) {
                     String id = names[i].trim();
                     String type = getenv("canvas." + id + ".type", "text");
-                    int x = Integer.parseInt(getenv("canvas." + id + ".x", "0"));
-                    int y = Integer.parseInt(getenv("canvas." + id + ".y", "0"));
-                    int w = Integer.parseInt(getenv("canvas." + id + ".w", "0"));
-                    int h = Integer.parseInt(getenv("canvas." + id + ".h", "0"));
+                    int x = Integer.parseInt(getenv("canvas." + id + ".x", "0")), y = Integer.parseInt(getenv("canvas." + id + ".y", "0"));
+                    int w = Integer.parseInt(getenv("canvas." + id + ".w", "0")), h = Integer.parseInt(getenv("canvas." + id + ".h", "0"));
 
                     Hashtable field = new Hashtable();
                     field.put("type", type);
@@ -553,12 +551,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (lib.containsKey("canvas.fields")) { 
                 for (int i = 0; i < fields.size(); i++) {
                     Hashtable f = (Hashtable) fields.elementAt(i);
-                    String type = (String) f.get("type");
-                    String val = (String) f.get("value");
-                    int x = ((Integer) f.get("x")).intValue();
-                    int y = ((Integer) f.get("y")).intValue();
-                    int w = ((Integer) f.get("w")).intValue();
-                    int h = ((Integer) f.get("h")).intValue();
+                    String type = (String) f.get("type"), val = (String) f.get("value");
+                    int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue();
 
                     if (type.equals("text")) { setpallete("text.color", g, 255, 255, 255); g.setFont(newFont((String) f.get("style"))); g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT); } 
                     else if (type.equals("image")) { try { Image IMG = Image.createImage(val); g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT); if (w == 0) { f.put("w", new Integer(IMG.getWidth())); } if (h == 0) { f.put("h", new Integer(IMG.getHeight())); } } catch (IOException e) { MIDletLogs("add error Malformed Image, " + e.getMessage()); } }
@@ -582,26 +576,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (gameAction == FIRE) {
                 for (int i = 0; i < fields.size(); i++) {
                     Hashtable f = (Hashtable) fields.elementAt(i);
-                    int x = ((Integer) f.get("x")).intValue();
-                    int y = ((Integer) f.get("y")).intValue();
-                    int w = ((Integer) f.get("w")).intValue();
-                    int h = ((Integer) f.get("h")).intValue();
-                    String type = (String) f.get("type");
-                    String cmd = (String) f.get("cmd");
-                    String val = (String) f.get("value");
+                    int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue();
+                    String type = (String) f.get("type"), cmd = (String) f.get("cmd"), val = (String) f.get("value");
 
                     if (cmd != null && !cmd.equals("")) {
                         boolean hit = false;
 
                         if (type.equals("circle")) {
-                            int dx = cursorX - x;
-                            int dy = cursorY - y;
+                            int dx = cursorX - x, dy = cursorY - y;
                             hit = (dx * dx + dy * dy) <= (w * w);
                         } 
                         else if (type.equals("text")) {
                             Font font = newFont(getenv((String) f.get("style"), "default"));
-                            int textW = font.stringWidth(val);
-                            int textH = font.getHeight();
+                            int textW = font.stringWidth(val), textH = font.getHeight();
                             hit = cursorX + cursorSize > x && cursorX < x + textW &&
                                   cursorY + cursorSize > y && cursorY < y + textH;
                         } 
