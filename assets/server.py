@@ -40,20 +40,21 @@ class Server:
         print(f"[+] {addr[0]} connected")
 
         try:
-            command = client_socket.recv(4096).decode('utf-8').strip()
-            if not command:
-                print(f"[-] {addr[0]} disconnected")
-                return
+            while True:
+                command = client_socket.recv(4096).decode('utf-8').strip()
+                if not command:
+                    print(f"[-] {addr[0]} disconnected")
+                    break
 
-            print(f"[+] {addr[0]} -> {command}")
-            response = self.parse_command(command)
-            client_socket.sendall(response.encode('utf-8'))
-            client_socket.close()
+                print(f"[+] {addr[0]} -> {command}")
+                response = self.parse_command(command)
+                client_socket.sendall(response.encode('utf-8'))
 
         except Exception as e:
             print(f"[-] {addr[0]} -- {e}")
+        finally:
             client_socket.close()
-
+            
     def parse_command(self, command):
         parts = command.split(maxsplit=1)
         cmd = parts[0]
