@@ -42,18 +42,30 @@ screen.back.label=Menu
 screen.back=execute jbuntu menu;
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
-screen.fields=message,files
+screen.fields=message,files,midlet,back
+
 screen.message.type=text
 screen.message.label=Notes:
 screen.message.content=$JBUNTU_NOTES
-screen.files.type=
+
+screen.files.type=item
+screen.files.label=File Explorer
+screen.files.cmd=execute ls;
+
+screen.midlet.type=item
+screen.midlet.label=MIDlet
+screen.midlet.cmd=execute jbuntu term;
+
+screen.back.type=item
+screen.back.label=Back
+screen.back.cmd=execute case screen (jb.back) x11 load jb.back;
 
 canvas.title=JBuntu $JVERSION
 canvas.fields=files,label1,xterm,label2,back,label3
 
 canvas.files.type=image
 canvas.files.value=/java/etc/icons/dir.png
-canvas.files.link=execute ls;
+canvas.files.cmd=execute ls;
 canvas.files.x=10
 canvas.files.y=10
 
@@ -62,33 +74,33 @@ canvas.label1.value=Files
 canvas.label1.style=small
 canvas.label1.x=30
 canvas.label1.y=12
-canvas.label1.link=execute ls;
+canvas.label1.cmd=execute ls;
 
 canvas.xterm.type=image
 canvas.xterm.value=/java/etc/icons/icon.png
 canvas.xterm.x=10
 canvas.xterm.y=32
-canvas.xterm.link=execute jbuntu term;
+canvas.xterm.cmd=execute jbuntu term;
 
 canvas.label2.type=text
 canvas.label2.value=MIDlet
 canvas.label2.style=small
 canvas.label2.x=30
 canvas.label2.y=34
-canvas.label2.link=execute jbuntu term;
+canvas.label2.cmd=execute jbuntu term;
 
 canvas.back.type=image
 canvas.back.value=/java/etc/icons/app.png
 canvas.back.x=10
 canvas.back.y=54
-canvas.back.link=execute case screen (jb.back) x11 load jb.back;
+canvas.back.cmd=execute case screen (jb.back) x11 load jb.back;
 
 canvas.label3.type=text
 canvas.label3.value=Back
 canvas.label3.style=small
 canvas.label3.x=30
 canvas.label3.y=56
-canvas.label3.link=execute case screen (jb.back) x11 load jb.back;
+canvas.label3.cmd=execute case screen (jb.back) x11 load jb.back;
 
 canvas.content=$JBUNTU_NOTES
 canvas.content.link=execute install nano; touch; add list.title=Menu; add list.content=Write Notes,Desktop Settings; add list.button=Open; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; x11 list nano; get nano;
