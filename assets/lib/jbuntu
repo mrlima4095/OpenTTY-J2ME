@@ -48,8 +48,8 @@ screen.message.type=text
 screen.message.content=$JBUNTU_NOTES
 
 screen.space.type=spacer
-screen.space.w=50
-screen.space.h=10
+screen.space.w=1
+screen.space.h=50
 
 screen.files.type=item
 screen.files.label=File Explorer
