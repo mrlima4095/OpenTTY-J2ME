@@ -242,13 +242,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk"); }
-        else if (mainCommand.equals("lsblk")) { 
-            if (argument.equals("") || argument.equals("-x")) {  echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } 
-            else if (argument.equals("-p")) { 
-                
-            } 
-            else { echoCommand("lsblk: " + argument + ": not found"); } 
-        }
+        else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) {  echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else { echoCommand("lsblk: " + argument + ": not found"); } }
         // |
         // RMS Files
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { deleteFile(argument); } }
