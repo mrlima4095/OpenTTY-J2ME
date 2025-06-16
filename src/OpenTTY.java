@@ -535,7 +535,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     field.put("h", new Integer(h));
                     field.put("value", getenv("canvas." + id + ".value", ""));
                     field.put("style", getenv("canvas." + id + ".style", "default"));
-                    field.put("link", getenv("canvas." + id + ".link", ""));
+                    field.put("link", getenv("canvas." + id + ".cmd", ""));
                     fields.addElement(field);
                 }
             }
@@ -593,7 +593,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int w = ((Integer) f.get("w")).intValue();
                     int h = ((Integer) f.get("h")).intValue();
                     String type = (String) f.get("type");
-                    String link = (String) f.get("link");
+                    String link = (String) f.get("cmd");
                     String val = (String) f.get("value");
 
                     if (link != null && !link.equals("")) {
@@ -719,42 +719,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command);
         String argument = getArgument(command);
 
-        if (mainCommand.equals("")) {
-            echoCommand("query: missing [address]");
-            return;
-        }
+        if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return; }
 
         try {
             StreamConnection conn = (StreamConnection) Connector.open(mainCommand);
             InputStream inputStream = conn.openInputStream();
             OutputStream outputStream = conn.openOutputStream();
 
-            if (!argument.equals("")) {
-                outputStream.write((argument + "\r\n").getBytes());
-                outputStream.flush();
-            }
+            if (!argument.equals("")) { outputStream.write((argument + "\r\n").getBytes()); outputStream.flush(); }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
             int length;
 
-            while ((length = inputStream.read(buffer)) != -1) {
-                baos.write(buffer, 0, length);
-            }
+            while ((length = inputStream.read(buffer)) != -1) { baos.write(buffer, 0, length); }
 
             String data = new String(baos.toByteArray(), "UTF-8");
 
-            if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) {
-                echoCommand(data);
-                MIDletLogs("add warn Query storage setting not found");
-            } else if (env("$QUERY").toLowerCase().equals("show")) {
-                echoCommand(data);
-            } else if (env("$QUERY").toLowerCase().equals("nano")) {
-                nanoContent = data;
-                echoCommand("query: data retrieved");
-            } else {
-                writeRMS(env("$QUERY"), data);
-            }
+            if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(data); MIDletLogs("add warn Query storage setting not found"); } 
+            else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(data); } 
+            else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = data; echoCommand("query: data retrieved"); } 
+            else { writeRMS(env("$QUERY"), data); }
 
             inputStream.close();
             outputStream.close();
@@ -831,30 +816,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void load() {
             screen.deleteAll();
 
-            if (!path.equals("/")) {
-                screen.append("..", UP);
-            }
+            if (!path.equals("/")) { screen.append("..", UP); }
 
-            if (isWritable(path)) {
-                screen.addCommand(DELETE);
-            } else {
-                screen.removeCommand(DELETE);
-            }
+            if (isWritable(path)) { screen.addCommand(DELETE); } 
+            else { screen.removeCommand(DELETE); }
 
-            if (isRoot(path)) {
-                screen.removeCommand(RUN);
-                screen.removeCommand(IMPORT);
-            } else {
-                screen.addCommand(RUN);
-                screen.addCommand(IMPORT);
-            }
+            if (isRoot(path)) { screen.removeCommand(RUN); screen.removeCommand(IMPORT); } 
+            else { screen.addCommand(RUN); screen.addCommand(IMPORT); }
 
             try {
                 if (path.equals("/mnt/")) {
                     Enumeration roots = FileSystemRegistry.listRoots();
-                    while (roots.hasMoreElements()) {
-                        screen.append((String) roots.nextElement(), DIR);
-                    }
+                    while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), DIR); }
                 } else if (path.startsWith("/mnt/")) {
                     try {
                         FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
@@ -870,12 +843,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             }
                         }
 
-                        while (!dirs.isEmpty()) {
-                            screen.append(getFirstString(dirs), DIR);
-                        }
-                        while (!files.isEmpty()) {
-                            screen.append(getFirstString(files), FILE);
-                        }
+                        while (!dirs.isEmpty()) { screen.append(getFirstString(dirs), DIR); }
+                        while (!files.isEmpty()) { screen.append(getFirstString(files), FILE); }
 
                         dir.close();
                     } catch (IOException e) { }
@@ -883,9 +852,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     try {
                         String[] recordStores = RecordStore.listRecordStores();
                         for (int i = 0; i < recordStores.length; i++) {
-                            if (!recordStores[i].startsWith(".")) {
-                                screen.append(recordStores[i], FILE);
-                            }
+                            if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], FILE); }
                         }
                     } catch (RecordStoreException e) { }
                 }
@@ -895,11 +862,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (int i = 0; i < files.length; i++) {
                         String f = files[i];
                         if (f != null && !f.equals("..") && !f.equals("/")) {
-                            if (f.endsWith("/")) {
-                                screen.append(f, DIR);
-                            } else {
-                                screen.append(f, FILE);
-                            }
+                            if (f.endsWith("/")) { screen.append(f, DIR); } 
+                            else { screen.append(f, FILE); }
                         }
                     }
                 }
@@ -908,13 +872,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
 
-        private boolean isWritable(String path) {
-            return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"));
-        }
-
-        private boolean isRoot(String path) {
-            return path.equals("/") || path.equals("/mnt/");
-        }
+        private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); }
+        private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); }
 
         private static String getFirstString(Vector v) {
             String result = null;
