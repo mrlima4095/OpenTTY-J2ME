@@ -55,4 +55,3 @@ PasteBin=execute set RESOURCE=pastebin; yang install;
 SmartME SDK=execute set RESOURCE=sdkme; yang install; set RESOURCE=forge; yang install;
 Updater=execute set RESOURCE=sync; yang install;
 ViaVersion=execute set RESOURCE=viaversion; yang install;
-X Server 0.4=execute set RESOURCE=xorg-client; yang install;
