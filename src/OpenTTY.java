@@ -429,7 +429,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String type = getenv("screen." + field + ".type");
 
                         if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) { try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); } }
-                        else if (type.equals("text") && !getenv("screen." + field + ".content").equals("")) { StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".content")); content.setFont(newFont(getenv("screen." + field + ".style", "default"))); screen.append(content); }
+                        else if (type.equals("text") && !getenv("screen." + field + ".value").equals("")) { StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".value")); content.setFont(newFont(getenv("screen." + field + ".style", "default"))); screen.append(content); }
                         else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); }
                         else if (type.equals("spacer")) {
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1"));
