@@ -433,9 +433,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); }
                         else if (type.equals("spacer")) {
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1"));
-int height = Integer.parseInt(getenv("screen." + field + ".h", "10"));
-screen.append(new Spacer(width, height));
-}
+                            int height = Integer.parseInt(getenv("screen." + field + ".h", "10"));
+                            screen.append(new Spacer(width, height));
+                        }
                     }
                 }
                 
