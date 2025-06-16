@@ -52,12 +52,12 @@ screen.midlet.type=item
 screen.midlet.label=MIDlet
 screen.midlet.cmd=execute jbuntu term;
 
-screen.goback.type=item
-screen.goback.label=Back
-canvas.fields=files,label1,xterm,label2,back,label3,run,label4
+screen.midlet.type=item
+screen.midlet.label=Back
+screen.midlet.cmd=execute case screen (jb.back) x11 load jb.back;
 
 canvas.title=JBuntu $JVERSION
-canvas.fields=files,label1,xterm,label2,back,label3
+canvas.fields=files,label1,xterm,label2,back,label3,run,label4
 
 canvas.files.type=image
 canvas.files.value=/java/etc/icons/dir.png
