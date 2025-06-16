@@ -42,7 +42,7 @@ screen.back.label=Menu
 screen.back=execute jbuntu menu;
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
-screen.fields=message,files,midlet,back
+screen.fields=message,files,midlet,goback
 
 screen.message.type=text
 screen.message.label=Notes:
@@ -56,9 +56,9 @@ screen.midlet.type=item
 screen.midlet.label=MIDlet
 screen.midlet.cmd=execute jbuntu term;
 
-screen.back.type=item
-screen.back.label=Back
-screen.back.cmd=execute case screen (jb.back) x11 load jb.back;
+screen.goback.type=item
+screen.goback.label=Back
+screen.goback.cmd=execute case screen (jb.back) x11 load jb.back;
 
 canvas.title=JBuntu $JVERSION
 canvas.fields=files,label1,xterm,label2,back,label3
