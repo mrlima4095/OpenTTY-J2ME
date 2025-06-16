@@ -54,7 +54,7 @@ screen.midlet.cmd=execute jbuntu term;
 
 screen.goback.type=item
 screen.goback.label=Back
-screen.goback.cmd=execute case screen (jb.back) x11 load jb.back;
+canvas.fields=files,label1,xterm,label2,back,label3,run,label4
 
 canvas.title=JBuntu $JVERSION
 canvas.fields=files,label1,xterm,label2,back,label3
@@ -97,6 +97,19 @@ canvas.label3.style=small
 canvas.label3.x=30
 canvas.label3.y=56
 canvas.label3.cmd=execute case screen (jb.back) x11 load jb.back;
+
+canvas.run.type=image
+canvas.run.value=/java/etc/icons/exec.png
+canvas.run.x=10
+canvas.run.y=76
+canvas.run.cmd=execute jbuntu run;
+
+canvas.label4.type=text
+canvas.label4.value=Run
+canvas.label4.style=small
+canvas.label4.x=30
+canvas.label4.y=78
+canvas.label4.cmd=execute jbuntu run;
 
 canvas.content=$JBUNTU_NOTES
 canvas.content.link=execute install nano; touch; add list.title=Menu; add list.content=Write Notes,Desktop Settings; add list.button=Open; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; x11 list nano; get nano;
