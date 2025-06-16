@@ -619,10 +619,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; }
 
 
-                        if (hit) {
-                            processCommand(cmd);
-                            break;
-                        }
+                        if (hit) { processCommand(cmd); break; }
                     }               
                 }
 
@@ -717,7 +714,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    //private void query(String command) { command = env(command.trim()); String mainCommand = getCommand(command); String argument = getArgument(command); if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return; } try { StreamConnection conn = (StreamConnection) Connector.open(mainCommand); InputStream inputStream = conn.openInputStream(); OutputStream outputStream = conn.openOutputStream(); if (!argument.equals("")) { outputStream.write((argument + "\r\n").getBytes()); outputStream.flush(); } byte[] buffer = new byte[31522]; int length = inputStream.read(buffer); if (length != -1) { String data = new String(buffer, 0, length); if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(data); MIDletLogs("add warn Query storage setting not found"); } else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(data); } else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = data; echoCommand("query: data retrieved"); } else { writeRMS(env("$QUERY"), data); } } inputStream.close(); outputStream.close(); conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } }
     private void query(String command) {
         command = env(command.trim());
         String mainCommand = getCommand(command);
@@ -762,97 +758,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Directories Manager
     private void mount(String script) { String[] lines = split(script, '\n'); for (int i = 0; i < lines.length; i++) { String line = ""; if (lines[i] != null) { line = lines[i].trim(); } if (line.length() == 0 || line.startsWith("#")) { continue; } if (line.startsWith("/")) { String fullPath = ""; int start = 0; for (int j = 1; j < line.length(); j++) { if (line.charAt(j) == '/') { String dir = line.substring(start + 1, j); fullPath += "/" + dir; addDirectory(fullPath + "/"); start = j; } } String finalPart = line.substring(start + 1); fullPath += "/" + finalPart; if (line.endsWith("/")) { addDirectory(fullPath + "/"); } else { addDirectory(fullPath); } } } }
     private void addDirectory(String fullPath) { boolean isDirectory = fullPath.endsWith("/"); if (!paths.containsKey(fullPath)) { if (isDirectory) { paths.put(fullPath, new String[] { ".." }); String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/', fullPath.length() - 2) + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } String dirName = fullPath.substring(parentPath.length(), fullPath.length() - 1); updatedContents.addElement(dirName + "/"); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } else { String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); String fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } updatedContents.addElement(fileName); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } } }
-    public class Explorer implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT);
-        private Command BACK = new Command("Back", Command.BACK, 1),
-                        OPEN = new Command("Open", Command.OK, 1),
-                        DELETE = new Command("Delete", Command.OK, 2),
-                        RUN = new Command("Run Script", Command.OK, 3),
-                        IMPORT = new Command("Import File", Command.OK, 4);
-        private Image DIR = null, FILE = null, UP = null;
-
-        public Explorer() {
-            screen.addCommand(BACK);
-            screen.addCommand(OPEN);
-            screen.setCommandListener(this);
-            try {
-                FILE = Image.createImage("/java/etc/icons/file.png");
-                DIR = Image.createImage("/java/etc/icons/dir.png");
-                UP = Image.createImage("/java/etc/icons/up.png");
-            } catch (IOException e) { }
-            load();
-            display.setCurrent(screen);
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            String selected = screen.getString(screen.getSelectedIndex());
-
-            if (c == BACK) {
-                processCommand("xterm");
-            } else if (c == OPEN) {
-                if (selected != null) {
-                    if (selected.endsWith("..")) {
-                        int lastSlash = path.lastIndexOf('/', path.length() - 2);
-                        if (lastSlash != -1) {
-                            path = path.substring(0, lastSlash + 1);
-                        }
-                    } else if (selected.endsWith("/")) {
-                        path += selected;
-                    } else {
-                        new NanoEditor(path + selected);
-                    }
-                    stdin.setLabel(username + " " + path + " $");
-                    load();
-                }
-            } else if (c == DELETE) {
-                deleteFile(path + selected);
-                load();
-            } else if (c == RUN) {
-                processCommand("xterm");
-                runScript(getcontent(path + selected));
-            } else if (c == IMPORT) {
-                processCommand("xterm");
-                importScript(path + selected);
-            }
-        }
-
-        private void load() {
-            screen.deleteAll();
-
-            if (!path.equals("/")) { screen.append("..", UP); }
-
-            if (isWritable(path)) { screen.addCommand(DELETE); } 
-            else { screen.removeCommand(DELETE); }
-
-            if (isRoot(path)) { screen.removeCommand(RUN); screen.removeCommand(IMPORT); } 
-            else { screen.addCommand(RUN); screen.addCommand(IMPORT); }
-
-            try {
-                if (path.equals("/mnt/")) {
-                    Enumeration roots = FileSystemRegistry.listRoots();
-                    while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), DIR); }
-                } else if (path.startsWith("/mnt/")) {
-                    try {
-                        FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
-                        Enumeration content = dir.list();
-                        Vector dirs = new Vector(), files = new Vector();
-
-                        while (content.hasMoreElements()) {
-                            String name = (String) content.nextElement();
-                            if (name.endsWith("/")) {
-                                dirs.addElement(name);
-                            } else {
-                                files.addElement(name);
-                            }
-                        }
-
-                        while (!dirs.isEmpty()) { screen.append(getFirstString(dirs), DIR); }
-                        while (!files.isEmpty()) { screen.append(getFirstString(files), FILE); }
-
-                        dir.close();
-                    } catch (IOException e) { }
-                } else if (path.equals("/home/")) {
-                    try { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], FILE); } } } catch (RecordStoreException e) { } } String[] files = (String[]) paths.get(path); if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i]; if (f != null && !f.equals("..") && !f.equals("/")) { if (f.endsWith("/")) { screen.append(f, DIR); } else { screen.append(f, FILE); } } } } } catch (IOException e) { } } private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); } private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } }
-
+    public class Explorer implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Open", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 2), RUN = new Command("Run Script", Command.OK, 3), IMPORT = new Command("Import File", Command.OK, 4); private Image DIR = null, FILE = null, UP = null; public Explorer() { screen.addCommand(BACK); screen.addCommand(OPEN); screen.setCommandListener(this); try { FILE = Image.createImage("/java/etc/icons/file.png"); DIR = Image.createImage("/java/etc/icons/dir.png"); UP = Image.createImage("/java/etc/icons/up.png"); } catch (IOException e) { } load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { String selected = screen.getString(screen.getSelectedIndex()); if (c == BACK) { processCommand("xterm"); } else if (c == OPEN) { if (selected != null) { if (selected.endsWith("..")) { int lastSlash = path.lastIndexOf('/', path.length() - 2); if (lastSlash != -1) { path = path.substring(0, lastSlash + 1); } } else if (selected.endsWith("/")) { path += selected; } else { new NanoEditor(path + selected); } stdin.setLabel(username + " " + path + " $"); load(); } } else if (c == DELETE) { deleteFile(path + selected); load(); } else if (c == RUN) { processCommand("xterm"); runScript(getcontent(path + selected)); } else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } } private void load() { screen.deleteAll(); if (!path.equals("/")) { screen.append("..", UP); } if (isWritable(path)) { screen.addCommand(DELETE); } else { screen.removeCommand(DELETE); } if (isRoot(path)) { screen.removeCommand(RUN); screen.removeCommand(IMPORT); } else { screen.addCommand(RUN); screen.addCommand(IMPORT); } try { if (path.equals("/mnt/")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), DIR); } } else if (path.startsWith("/mnt/")) { try { FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ); Enumeration content = dir.list(); Vector dirs = new Vector(), files = new Vector(); while (content.hasMoreElements()) { String name = (String) content.nextElement(); if (name.endsWith("/")) { dirs.addElement(name); } else { files.addElement(name); } } while (!dirs.isEmpty()) { screen.append(getFirstString(dirs), DIR); } while (!files.isEmpty()) { screen.append(getFirstString(files), FILE); } dir.close(); } catch (IOException e) { } } else if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], FILE); } } } catch (RecordStoreException e) { } } String[] files = (String[]) paths.get(path); if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i]; if (f != null && !f.equals("..") && !f.equals("/")) { if (f.endsWith("/")) { screen.append(f, DIR); } else { screen.append(f, FILE); } } } } } catch (IOException e) { } } private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); } private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } }
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
