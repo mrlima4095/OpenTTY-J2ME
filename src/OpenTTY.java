@@ -179,15 +179,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
         // |
         // PushRegistry
-        else if (mainCommand.equals("prg")) { 
-            if (argument.equals("")) { argument = "5"; } 
-            try { 
-                PushRegistry.registerAlarm(getArgument(argument).equals("") ? 
-                    "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); 
-            } 
-            catch (NumberFormatException e) { echoCommand(e.getMessage()); } 
-            catch (ClassNotFoundException e) { echoCommand(e.getMessage()); } 
-            catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
+        else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } catch (ClassNotFoundException e) { echoCommand(e.getMessage()); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
 
         // API 011 - (Network)
         // |
