@@ -9,6 +9,7 @@ Copyright (C) 2025 - Mr. Lima
 - `uuid`: generate random uuid 
 - `man [page]`: Read manual pages
 - `mkdir [dir]`: create a new directory 
+
 [ _Updates_ ]
 
 - Removed commands `forget`, `cls` and `rnano`
