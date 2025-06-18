@@ -59,3 +59,4 @@
 [2025-1.14.3-01x92] Added Command 'MKDIR'
 [2025-1.14.3-01x93] X Server 0.6.2
 [2025-1.14.3-01x94] Command 'QUERY' sorting buffers
+[2025-1.14.3-01x95] Release 1.14.3
