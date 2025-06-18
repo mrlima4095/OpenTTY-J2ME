@@ -179,7 +179,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); } } }
         // |
         // PushRegistry
-        else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (NumberFormatException e) { echoCommand(e.getMessage()); } catch (ClassNotFoundException e) { echoCommand(e.getMessage()); } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
+        else if (mainCommand.equals("prg")) { 
+            if (argument.equals("")) { argument = "5"; } 
+            try { 
+                PushRegistry.registerAlarm(getArgument(argument).equals("") ? 
+                    "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); 
+            } 
+            catch (NumberFormatException e) { echoCommand(e.getMessage()); } 
+            catch (ClassNotFoundException e) { echoCommand(e.getMessage()); } 
+            catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); } }
 
         // API 011 - (Network)
         // |
@@ -540,6 +548,35 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Servers
     public class Bind implements Runnable { private String port, prefix; public Bind(String args) { if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522"); new Bind("31522"); return; } port = getCommand(args); prefix = getArgument(args); new Thread(this, "Bind").start(); } public void run() { ServerSocketConnection serverSocket = null; try { serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); start("bind"); while (trace.containsKey("bind")) { SocketConnection clientSocket = null; InputStream is = null; OutputStream os = null; try { clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); echoCommand("[+] " + clientSocket.getAddress() + " connected"); is = clientSocket.openInputStream(); os = clientSocket.openOutputStream(); while (trace.containsKey("bind")) { byte[] buffer = new byte[4096]; int bytesRead = is.read(buffer); if (bytesRead == -1) break; String command = new String(buffer, 0, bytesRead).trim(); echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(command)); command = (prefix == null || prefix.length() == 0 || prefix.equals("null")) ? command : prefix + " " + command; String beforeCommand = stdout != null ? stdout.getText() : ""; processCommand(command); String afterCommand = stdout != null ? stdout.getText() : ""; String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n"; os.write(output.getBytes()); os.flush(); } } catch (IOException e) { echoCommand("[-] " + e.getMessage()); } finally { echoCommand("[-] " + clientSocket.getAddress() + " disconnected"); } } echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); } catch (IOException e) { echoCommand("[-] " + e.getMessage()); MIDletLogs("add error Server crashed '" + e.getMessage() + "'"); } try { if (serverSocket != null) serverSocket.close(); } catch (IOException e) { } } }
     public class Server implements Runnable { private String port, response; public Server(String args) { if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522"); new Server("31522"); return; } port = getCommand(args); response = getArgument(args); new Thread(this, "Server").start(); } public void run() { ServerSocketConnection serverSocket = null; try { serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); start("server"); while (trace.containsKey("server")) { SocketConnection clientSocket = null; InputStream is = null; OutputStream os = null; try { clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); is = clientSocket.openInputStream(); os = clientSocket.openOutputStream(); echoCommand("[+] " + clientSocket.getAddress() + " connected"); byte[] buffer = new byte[4096]; int bytesRead = is.read(buffer); String clientData = new String(buffer, 0, bytesRead); echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim())); if (response.startsWith("/")) { os.write(read(response).getBytes()); } else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } else { os.write(loadRMS(response).getBytes()); } os.flush(); } catch (IOException e) { } finally { try { if (is != null) is.close(); if (os != null) os.close(); if (clientSocket != null) clientSocket.close(); } catch (IOException e) { } } } echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); } catch (IOException e) { echoCommand("[-] " + e.getMessage()); MIDletLogs("add error Server crashed '" + e.getMessage() + "'");  } try { if (serverSocket != null) { serverSocket.close(); } } catch (IOException e) { } } }
+    private void PushManager(String command) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command);
+        String argument = getArgument(command);
+
+        if (mainCommand.equals("")) { }
+        else if (mainCommand.equals("list")) {
+            StringBuffer result = new StringBuffer();
+            String[] enabled = PushRegistry.listConnections(false);
+
+            for (int i = 0; i < enabled.length; i++) { result.append(enabled[i]).append("\n"); }
+            echoCommand(result.toString());
+        }
+        else if (mainCommand.equals("add")) {
+            if (argument.equals("")) { }
+            else {
+                try { 
+                PushRegistry.registerAlarm(, System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); 
+                } 
+                catch (NumberFormatException e) { echoCommand(e.getMessage()); } 
+                catch (ClassNotFoundException e) { echoCommand(e.getMessage()); } 
+                catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage());
+                PushRegistry.registerConnection("socket://:10141", getArgument(argument).equals("") ? 
+                    "OpenTTY" : getArgument(argument), "*");
+
+            }
+        }
+
+    }
     // |
     // HTTP Interfaces
     private void pingCommand(String url) { if (url == null || url.length() == 0) { return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } long startTime = System.currentTimeMillis(); try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); long endTime = System.currentTimeMillis(); echoCommand("Ping to " + url + " successful, time=" + (endTime - startTime) + "ms"); conn.close(); } catch (IOException e) { echoCommand("Ping to " + url + " failed: " + e.getMessage()); } }
