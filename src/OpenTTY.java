@@ -295,11 +295,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("@prg")) {
-            try {
-                PushRegistry.registerConnection("socket://:10141", getClass().getName(), "*");
-            } catch (Exception e) { echoCommand(e.getMessage()); }
-        }
 
         // API 014 - (OpenTTY)
         // |
