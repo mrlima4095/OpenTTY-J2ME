@@ -64,4 +64,3 @@
 [2025-1.14.4-01x97] Added Command 'DIFF' and 'WC'
 [2025-1.14.4-01x98] Added Command 'WHO'
 [2025-1.14.4-01x99] Improved GoBuster
-[2025-1.14.4-02x00] Improved Interfaces
