@@ -14,3 +14,4 @@ OpenTTY is an advanced Terminal Emulator designed to run on J2ME (Java 2 Micro E
 
 After install OpenTTY and start MIDlet, will appear the **Login Form** where you need to create an user name to acess. Press **Login** button and it will go to Terminal default screen. You will can see the _Text Input_ where you will type commands that you want to run, and the _Text Output_ where you can see the commands responses.
 
+Fell free to report issues and ask for it.
