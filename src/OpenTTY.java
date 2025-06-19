@@ -121,8 +121,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); }
-        else if (mainCommand.equals("htop")) { new HTopViewer(); }
-        else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer(); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); } }
+        else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
+        else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer("monitor"); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); } }
         // |
         // Process
         else if (mainCommand.equals("kill")) { kill(argument); }
@@ -553,24 +553,66 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 006 - (Process)
     // |
     // Memory
-    public class HTopViewer implements CommandListener { 
-        private Form screen = new Form(form.getTitle()); 
-        private Command BACK = new Command("Back", Command.BACK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2); 
+    public class HTopViewer implements CommandListener {
+        private Form monitor = new Form(form.getTitle());
+        private List process = new List(form.getTitle(), LIST.IMPLICIT);
+        private StringItem status = new StringItem("Memory Status:", "");
+        private Command BACK = new Command("Back", Command.BACK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2);
+        private int TYPE = 0, MONITOR = 1, PROCESS = 2;
 
-        private StringItem status = new StringItem("", ""); 
+        public HTopViewer(String args) {
+            if (args == null || args.length() == 0 || args.equals("memory")) { 
+                TYPE = MONITOR;
+                monitor.append(status); load();
+                monitor.addCommand(BACK); monitor.addCommand(REFRESH);
+                monitor.setCommandListener(this);
+                display.setCurrent(monitor);
+            }
+            else {
+                TYPE = PROCESS;
+                load();
+                process.addCommand(BACK); process.addCommand(KILL);
+                process.setCommandListener(this);
+                display.setCurrent(process);
+            }
+        }
 
-        public HTopViewer() { 
-            screen.append(status); 
-            screen.addCommand(BACK); screen.addCommand(REFRESH); 
-            screen.setCommandListener(this); load(); display.setCurrent(screen); 
-        } 
-        public void commandAction(Command c, Displayable d) { 
-            if (c == BACK) { processCommand("xterm"); } 
-            else if (c == REFRESH) { Runtime.getRuntime().gc(); load(); } 
-        } 
+        public void commandAction(Command c, Displayable d) {
+            if (c == BACK) {
+                processCommand("xterm");
+            } else if (c == REFRESH) {
+                Runtime.getRuntime().gc();
+                load();
+            } else if (c == KILL) {
+                int index = process.getSelectedIndex();
+                if (index >= 0) {
+                    processCommand("kill " + split(process.getString(index), '\t')[0]);
+                    load();
+                    
+                }
+            }
+        }
 
-        private void load() { status.setText("Memory Status:\n\nUsed Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\nFree Memory: " + runtime.freeMemory() / 1024 + " KB\nTotal Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
+        private void load() {
+            if (mode.equals("memory")) {
+                status.setText("Used Memory: " +
+                        (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\nFree Memory: " +
+                        runtime.freeMemory() / 1024 + " KB\nTotal Memory: " +
+                        runtime.totalMemory() / 1024 + " KB");
+            } else if (mode.equals("process")) {
+                process.deleteAll();
+                process.append("PID\tPROCESS", null);
+
+                Enumeration keys = trace.keys();
+                while (keys.hasMoreElements()) {
+                    String key = (String) keys.nextElement();
+                    String pid = (String) trace.get(key);
+                    process.append(pid + "\t" + key, null);
+                }
+            }
+        }
     }
+
     // |
     // Process
     private void kill(String pid) { if (pid == null || pid.length() == 0) { return; } Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); if (pid.equals(trace.get(key))) { trace.remove(key); echoCommand("Process with PID " + pid + " terminated"); if ("sh".equals(key)) { processCommand("exit"); } return; } } echoCommand("PID '" + pid + "' not found"); }
@@ -595,23 +637,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // HTTP Interfaces
     private void pingCommand(String url) { if (url == null || url.length() == 0) { return; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } long startTime = System.currentTimeMillis(); try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); int responseCode = conn.getResponseCode(); long endTime = System.currentTimeMillis(); echoCommand("Ping to " + url + " successful, time=" + (endTime - startTime) + "ms"); conn.close(); } catch (IOException e) { echoCommand("Ping to " + url + " failed: " + e.getMessage()); } }
     private void pongCommand(String address) { if (address == null || address.length() == 0) { }  else { long startTime = System.currentTimeMillis(); SocketConnection socket = null; try { socket = (SocketConnection) Connector.open("socket://" + address); long endTime = System.currentTimeMillis(); echoCommand("Pong to " + address + " successful, time=" + (endTime - startTime) + "ms"); } catch (IOException e) { echoCommand("Pong to " + address + " failed: " + e.getMessage()); } } }
-    public class GoBuster implements CommandListener, Runnable { 
-        private String url; 
-        private String[] wordlist; 
-        private List screen; 
-        private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Get Request", Command.OK, 1), SAVE = new Command("Save Result", Command.OK, 1); 
-
-        public GoBuster(String args) { 
-            if (args == null || args.length() == 0) { return; } 
-            url = getCommand(args); 
-            wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
-            if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; } 
-
-            screen = new List("GoBuster (" + url + ")", List.IMPLICIT); 
-            screen.addCommand(BACK); screen.addCommand(OPEN); screen.addCommand(SAVE); 
-            screen.setCommandListener(this); new Thread(this, "GoBuster").start(); 
-            display.setCurrent(screen); 
-        } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == OPEN) { processCommand("bg execute wget " + url + getArgument(screen.getString(screen.getSelectedIndex())) + "; nano;"); } else if (c == SAVE && screen.size() != 0) { nanoContent = GoSave(); new NanoEditor(""); } } public void run() { screen.setTicker(new Ticker("Searching...")); for (int i = 0; i < wordlist.length; i++) { if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; try { int code = GoVerify(fullUrl); if (code != 404) { screen.append(code + " /" + wordlist[i], null); } } catch (IOException e) { } } } screen.setTicker(null); } private int GoVerify(String fullUrl) throws IOException { HttpConnection conn = null; InputStream is = null; try { conn = (HttpConnection) Connector.open(fullUrl); conn.setRequestMethod(HttpConnection.GET); return conn.getResponseCode(); } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } } private String GoSave() { StringBuffer sb = new StringBuffer(); for (int i = 0; i < screen.size(); i++) { String line = getArgument(screen.getString(i)).trim(); sb.append(line.substring(1, line.length())).append("\n"); } return sb.toString().trim(); } }
+    public class GoBuster implements CommandListener, Runnable { private String url; private String[] wordlist; private List screen; private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Get Request", Command.OK, 1), SAVE = new Command("Save Result", Command.OK, 1); public GoBuster(String args) { if (args == null || args.length() == 0) { return; } url = getCommand(args); wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n'); if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; } screen = new List("GoBuster (" + url + ")", List.IMPLICIT); screen.addCommand(BACK); screen.addCommand(OPEN); screen.addCommand(SAVE); screen.setCommandListener(this); new Thread(this, "GoBuster").start(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == OPEN) { processCommand("bg execute wget " + url + getArgument(screen.getString(screen.getSelectedIndex())) + "; nano;"); } else if (c == SAVE && screen.size() != 0) { nanoContent = GoSave(); new NanoEditor(""); } } public void run() { screen.setTicker(new Ticker("Searching...")); for (int i = 0; i < wordlist.length; i++) { if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; try { int code = GoVerify(fullUrl); if (code != 404) { screen.append(code + " /" + wordlist[i], null); } } catch (IOException e) { } } } screen.setTicker(null); } private int GoVerify(String fullUrl) throws IOException { HttpConnection conn = null; InputStream is = null; try { conn = (HttpConnection) Connector.open(fullUrl); conn.setRequestMethod(HttpConnection.GET); return conn.getResponseCode(); } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } } private String GoSave() { StringBuffer sb = new StringBuffer(); for (int i = 0; i < screen.size(); i++) { String line = getArgument(screen.getString(i)).trim(); sb.append(line.substring(1, line.length())).append("\n"); } return sb.toString().trim(); } }
     private String request(String url, Hashtable headers) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); if (headers != null) { Enumeration keys = headers.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) headers.get(key); conn.setRequestProperty(key, value); } } InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return e.getMessage(); } }
     private String request(String url) { return request(url, null); }
     // |
