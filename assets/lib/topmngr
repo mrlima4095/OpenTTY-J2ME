@@ -1,0 +1,18 @@
+[ Config ]
+
+name=HTop Menu
+version=1.0
+description=Task Manager
+
+api.version=1.14.4
+
+command=htop
+htop=execute x11 list topmngr;
+
+[ DISPLAY ]
+
+list.title=$TITLE
+list.content=Memory,Process
+
+Memory=execute builtin htop;
+Process=execute builtin htop process;
