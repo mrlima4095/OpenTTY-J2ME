@@ -617,7 +617,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Socket Interfaces
     private void query(String command) { command = env(command.trim()); String mainCommand = getCommand(command); String argument = getArgument(command); if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return; } try { StreamConnection conn = (StreamConnection) Connector.open(mainCommand); InputStream inputStream = conn.openInputStream(); OutputStream outputStream = conn.openOutputStream(); if (!argument.equals("")) { outputStream.write((argument + "\r\n").getBytes()); outputStream.flush(); } ByteArrayOutputStream baos = new ByteArrayOutputStream(); byte[] buffer = new byte[1024]; int length; while ((length = inputStream.read(buffer)) != -1) { baos.write(buffer, 0, length); } String data = new String(baos.toByteArray(), "UTF-8"); if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(data); MIDletLogs("add warn Query storage setting not found"); } else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(data); } else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = data; echoCommand("query: data retrieved"); } else { writeRMS(env("$QUERY"), data); } inputStream.close(); outputStream.close(); conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } }
-    private void resolveAddress(String args) {
+    private void GetAddress(String args) {
     if (args == null || args.length() == 0) {
         processCommand("ifconfig");
         return;
