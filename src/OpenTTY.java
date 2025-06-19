@@ -15,7 +15,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
-    private String logs = "", path = "/home/", build = "2025-1.14.4-02x00"; 
+    private String logs = "", path = "/home/", build = "2025-1.14.4-02x01"; 
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Display display = Display.getDisplay(this);
@@ -530,65 +530,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 006 - (Process)
     // |
     // Memory
-    public class HTopViewer implements CommandListener {
-        private Form monitor = new Form(form.getTitle());
-        private List process = new List(form.getTitle(), List.IMPLICIT);
-        private StringItem status = new StringItem("Memory Status:", "");
-        private Command BACK = new Command("Back", Command.BACK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2);
-        private int TYPE = 0, MONITOR = 1, PROCESS = 2;
-
-        public HTopViewer(String args) {
-            if (args == null || args.length() == 0 || args.equals("memory")) { 
-                TYPE = MONITOR;
-                monitor.append(status); load();
-                monitor.addCommand(BACK); monitor.addCommand(REFRESH);
-                monitor.setCommandListener(this);
-                display.setCurrent(monitor);
-            }
-            else {
-                TYPE = PROCESS;
-                load();
-                process.addCommand(BACK); process.addCommand(KILL);
-                process.setCommandListener(this);
-                display.setCurrent(process);
-            }
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (c == BACK) {
-                processCommand("xterm");
-            } else if (c == REFRESH) {
-                Runtime.getRuntime().gc();
-                load();
-            } else if (c == KILL) {
-                int index = process.getSelectedIndex();
-                if (index >= 0) {
-                    processCommand("kill " + split(process.getString(index), '\t')[0]);
-                    load();
-                    
-                }
-            }
-        }
-
-        private void load() {
-            if (TYPE == MONITOR) {
-                status.setText("Used Memory: " +
-                        (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\nFree Memory: " +
-                        runtime.freeMemory() / 1024 + " KB\nTotal Memory: " +
-                        runtime.totalMemory() / 1024 + " KB");
-            } else if (TYPE == PROCESS) {
-                process.deleteAll();
-
-                Enumeration keys = trace.keys();
-                while (keys.hasMoreElements()) {
-                    String key = (String) keys.nextElement();
-                    String pid = (String) trace.get(key);
-                    process.append(pid + "\t" + key, null);
-                }
-            }
-        }
-    }
-
+    public class HTopViewer implements CommandListener { private Form monitor = new Form(form.getTitle()); private List process = new List(form.getTitle(), List.IMPLICIT); private StringItem status = new StringItem("Memory Status:", ""); private Command BACK = new Command("Back", Command.BACK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2); private int TYPE = 0, MONITOR = 1, PROCESS = 2; public HTopViewer(String args) { if (args == null || args.length() == 0 || args.equals("memory")) { TYPE = MONITOR; monitor.append(status); load(); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); } else if (args.equals("process")) { TYPE = PROCESS; load(); process.addCommand(BACK); process.addCommand(KILL); process.setCommandListener(this); display.setCurrent(process); } else { echoCommand("htop: " + args + ": not found"); } } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == REFRESH) { System.gc(); load(); } else if (c == KILL) { int index = process.getSelectedIndex(); if (index >= 0) { processCommand("kill " + split(process.getString(index), '\t')[0]); load(); } } } private void load() { if (TYPE == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\nFree Memory: " + runtime.freeMemory() / 1024 + " KB\nTotal Memory: " + runtime.totalMemory() / 1024 + " KB"); } else if (TYPE == PROCESS) { process.deleteAll(); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); process.append(pid + "\t" + key, null); } } } }
     // |
     // Process
     private void kill(String pid) { if (pid == null || pid.length() == 0) { return; } Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); if (pid.equals(trace.get(key))) { trace.remove(key); echoCommand("Process with PID " + pid + " terminated"); if ("sh".equals(key)) { processCommand("exit"); } return; } } echoCommand("PID '" + pid + "' not found"); }
