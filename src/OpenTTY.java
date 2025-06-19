@@ -264,10 +264,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String line1 = i < lines1.length ? lines1[i] : "";
                     String line2 = i < lines2.length ? lines2[i] : "";
 
-                    if (!line1.equals(line2) && !line1.equals("") && !lines2.equals("")) {
+                    if (!line1.equals(line2)) {
                         echoCommand("--- Line " + (i + 1) + " ---");
                         echoCommand("< " + line1);
                         echoCommand("> " + line2);
+                    } else if (i < lines1.length || i < lines2.length) {
+                        break;
                     }
                 }
             }
