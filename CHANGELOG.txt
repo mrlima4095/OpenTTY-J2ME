@@ -10,5 +10,5 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Locked process PID changing
-- 
+- GoBuster logging all found statuses
 - 
