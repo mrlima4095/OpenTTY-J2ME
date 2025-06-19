@@ -15,7 +15,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
-    private String logs = "", path = "/home/", build = "2025-1.14.4-01x97";
+    private String logs = "", path = "/home/", build = "2025-1.14.4-01x98";
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Display display = Display.getDisplay(this);
@@ -203,6 +203,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
         // |
         else if (mainCommand.equals("wrl")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
+        else if (mainCommand.equals("who")) {
+            for (int i = 0; i < usuarios.size(); i++) {
+                echoCommand(usuarios.get(i));
+            }
+        }
         // |
         // IP Tools
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
