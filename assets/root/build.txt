@@ -61,3 +61,4 @@
 [2025-1.14.3-01x94] Command 'QUERY' sorting buffers
 [2025-1.14.3-01x95] Release 1.14.3
 [2025-1.14.4-01x96] 1.14.4 Suite case
+[2025-1.14.4-01x97] Added Command 'diff'
