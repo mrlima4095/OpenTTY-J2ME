@@ -65,3 +65,4 @@
 [2025-1.14.4-01x98] Added Command 'WHO'
 [2025-1.14.4-01x99] Improved GoBuster
 [2025-1.14.4-02x00] Improved Interfaces
+[2025-1.14.4-02x01] Improved Monitor 'HTOP' 
