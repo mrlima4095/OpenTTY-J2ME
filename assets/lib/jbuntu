@@ -18,7 +18,7 @@ xterm=execute cd; x11 set jb.back; x11 $DISPLAY jbuntu;
 jbuntu=execute alias xterm=exec cd & x11 set jb.back & x11 $DISPLAY jbuntu; title JBuntu $JVERSION; xterm;
 
 shell.name=jbuntu
-shell.args=menu,jnome,run,term,sync
+shell.args=menu,jnome,run,term,sync,logout
 
 menu=execute install nano; touch; add list.title=Menu; add list.content=View Logs,Write Notes,General Settings,Desktop Settings,JBuntu Updater,Logout,Exit; add list.back=xterm; add list.button=Open; add View Logs=log view; add Write Notes=x11 quest jbuntu; add General Settings=cfg; add Desktop Settings=jbuntu jnome; add JBuntu Updater=jbuntu sync; add Logout=lock; add Exit=exit; x11 list nano; get nano;
 jnome=execute install nano; touch; add list.title=Desktop Settings; add list.content=Legacy,Enhanced; add list.back=jbuntu menu; add Legacy=exec install nano & touch & add make & install .jbuntu-desktop & @reload & import jbuntu & get nano; add Enhanced=exec install nano & touch & add canvas & install .jbuntu-desktop & @reload & import jbuntu & get nano; x11 list nano; get nano;
@@ -28,6 +28,8 @@ term=execute x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; unalias xterm; x
 
 sync=execute install nano; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/jbuntu; hash jbuntu; set LOCAL_HASH=$OUTPUT; hash nano; if ($LOCAL_HASH == $OUTPUT) warn JBuntu is updated!; if ($LOCAL_HASH != $OUTPUT) exec touch & add screen.title=JBuntu Updater & add screen.content=A new of JBuntu is avaliable! Do you want to update? & add screen.fields=notes & add screen.notes.type=text & add screen.notes.value=A new version of JBuntu is avaliable! Do you want to update? & add screen.button=Update & add screen.button.cmd=clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/update_jbuntu.sh & x11 make nano & get nano; get nano;
 
+logout=execute log add info JBuntu stopped; @reload; stop jbuntu;
+
 [ COMMAND ]
 
 item.label=JBuntu
@@ -35,6 +37,9 @@ item.cmd=execute jbuntu;
 
 [ DISPLAY ]
 
+# Desktops
+# |
+# | Legacy
 screen.title=JBuntu $JVERSION
 screen.content=$JBUNTU_NOTES
 screen.back.label=Menu
@@ -42,81 +47,82 @@ screen.back=execute jbuntu menu;
 screen.button=Apps
 screen.button.cmd=execute x11 list jbuntu;
 screen.fields=space,notes,space,files,midlet,run,
-
+# |
 screen.notes.type=text
 screen.notes.value=$JBUNTU_NOTES
-
+# |
 screen.space.type=spacer
 screen.space.w=64
 screen.space.h=10
-
+# |
 screen.files.type=item
 screen.files.label=File Explorer
 screen.files.cmd=execute ls;
-
+# |
 screen.midlet.type=item
 screen.midlet.label=MIDlet
 screen.midlet.cmd=execute jbuntu term;
-
+# |
 screen.run.type=item
 screen.run.label=Run
 screen.run.cmd=execute jbuntu run;
-
+# |
+# | Enhanced
 canvas.title=JBuntu $JVERSION
 canvas.fields=files,label1,xterm,label2,back,label3,run,label4
-
+# |
 canvas.files.type=image
 canvas.files.value=/java/etc/icons/dir.png
 canvas.files.cmd=execute ls;
 canvas.files.x=10
 canvas.files.y=10
-
+# |
 canvas.label1.type=text
 canvas.label1.value=Files
 canvas.label1.style=small
 canvas.label1.x=30
 canvas.label1.y=12
 canvas.label1.cmd=execute ls;
-
+# |
 canvas.xterm.type=image
 canvas.xterm.value=/java/etc/icons/icon.png
 canvas.xterm.x=10
 canvas.xterm.y=32
 canvas.xterm.cmd=execute jbuntu term;
-
+# |
 canvas.label2.type=text
 canvas.label2.value=MIDlet
 canvas.label2.style=small
 canvas.label2.x=30
 canvas.label2.y=34
 canvas.label2.cmd=execute jbuntu term;
-
+# |
 canvas.back.type=image
 canvas.back.value=/java/etc/icons/app.png
 canvas.back.x=10
 canvas.back.y=54
 canvas.back.cmd=execute case screen (jb.back) x11 load jb.back;
-
+# |
 canvas.label3.type=text
 canvas.label3.value=Back
 canvas.label3.style=small
 canvas.label3.x=30
 canvas.label3.y=56
 canvas.label3.cmd=execute case screen (jb.back) x11 load jb.back;
-
+# |
 canvas.run.type=image
 canvas.run.value=/java/etc/icons/exec.png
 canvas.run.x=10
 canvas.run.y=76
 canvas.run.cmd=execute jbuntu run;
-
+# |
 canvas.label4.type=text
 canvas.label4.value=Run
 canvas.label4.style=small
 canvas.label4.x=30
 canvas.label4.y=78
 canvas.label4.cmd=execute jbuntu run;
-
+# |
 canvas.content=$JBUNTU_NOTES
 canvas.content.link=execute install nano; touch; add list.title=Menu; add list.content=Write Notes,Desktop Settings; add list.button=Open; add Write Notes=x11 quest jbuntu; add Desktop Settings=jbuntu jnome; x11 list nano; get nano;
 canvas.back.label=Menu
@@ -124,20 +130,24 @@ canvas.back=execute jbuntu menu;
 canvas.button=Apps
 canvas.button.cmd=execute x11 list jbuntu;
 canvas.mouse.img=/java/etc/icons/cursor.png
-
+# |
+# |
+# Quest 
+# | Setting desktop notes
 quest.title=JBuntu Settings
 quest.label=Notes
 quest.key=JBUNTU_NOTES
 quest.cmd=execute install nano; touch; add $JBUNTU_NOTES; install .jbuntu-notes; get nano;
-
+# |
+# |
+# JBuntu Apps Menu
 list.title=JBuntu Apps
 list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Monitor
 list.button=Open
-
+# |
 Text Editor=execute nano;
 File Explorer=execute dir f;
 Network Tools=execute nk;
 OpenTTY Store=execute yang;
 Terminal=execute jbuntu term;
 Monitor=execute htop;
-
