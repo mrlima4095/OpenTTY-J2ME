@@ -589,7 +589,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public GoBuster(String args) { 
             if (args == null || args.length() == 0) { return; } 
             url = getCommand(args);  
-            wordlist = split(getArgument(args).equals("") ? read("/java/etc/gobuster") : loadRMS(getArgument(args)), '\n'); 
+            wordlist = split(getArgument(args).equals("") ? read("/java/etc/gobuster") : getcontent(getArgument(args)), '\n'); 
 
             screen = new List("GoBuster (" + url + ")", List.IMPLICIT);
 
