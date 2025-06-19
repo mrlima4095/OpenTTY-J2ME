@@ -4,7 +4,7 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- 
+- `diff [file] [file]`: Print differences between FILEs
 
 [ _Updates_ ]
 
