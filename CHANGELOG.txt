@@ -13,3 +13,5 @@ Copyright (C) 2025 - Mr. Lima
 - GoBuster logging all found statuses
 - GoBuster accepting in format `gobuster [domain] [word-list file]`
 - Removed assets `/java/etc/gobuster` and `/java/etc/headers`
+- Monitor **htop** using `System.gc()` to trigger the Garbage Collector
+- Title **Memory Status** at Monitor now is the label of StringItem not in body
