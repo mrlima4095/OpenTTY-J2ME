@@ -594,12 +594,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private void load() {
-            if (mode.equals("memory")) {
+            if (TYPE.equals(MONITOR)) {
                 status.setText("Used Memory: " +
                         (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\nFree Memory: " +
                         runtime.freeMemory() / 1024 + " KB\nTotal Memory: " +
                         runtime.totalMemory() / 1024 + " KB");
-            } else if (mode.equals("process")) {
+            } else if (TYPE.equals(PROCESS)) {
                 process.deleteAll();
                 process.append("PID\tPROCESS", null);
 
