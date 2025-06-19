@@ -212,20 +212,20 @@ Usage: fw [ADDRESS]
 
 	This command uses API at 'http://ipinfo.io'.
 </fw>
-<gc>
-Usage: gc
-* Trigger Garbage Collector.
-</gc>
 <gaddr>
-Usage: gaddr [DOMAIN]
+Usage: gaddr [DOMAIN] [DNS]
 * Resolve IP Address of DOMAIN.
 
-	This command uses Cloudflare DNS (1.1.1.1), if it isn't available it may not work.
+	Without DNS, 'gaddr' uses by default Cloudflare DNS (1.1.1.1:53).
 </gaddr>
 <gauge>
 Usage: gauge [TEXT]
 * Display an Alert with TEXT with a loading progress bar.
 </gauge>
+<gc>
+Usage: gc
+* Trigger Garbage Collector.
+</gc>
 <genip>
 Usage: genip
 * Generate a random IP Address.
