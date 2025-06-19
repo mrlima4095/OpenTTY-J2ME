@@ -295,9 +295,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 String filename = basename(argument);
-                if (SHOW_LINES) { echoCommand(lines + "\t" + filename); }
-                else if (SHOW_WORDS) { echoCommand(words + "\t" + filename); }
-                else if (SHOW_BYTES) { echoCommand(chars + "\t" + filename); }
+                if (SHOW_LINES) { echoCommand("" + lines + "\t" + filename); }
+                else if (SHOW_WORDS) { echoCommand("" + words + "\t" + filename); }
+                else if (SHOW_BYTES) { echoCommand("" + chars + "\t" + filename); }
                 else { echoCommand(lines + "\t" + words + "\t" + chars + "\t" + filename); }
             }
         }
