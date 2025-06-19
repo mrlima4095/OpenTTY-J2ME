@@ -601,7 +601,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         runtime.totalMemory() / 1024 + " KB");
             } else if (TYPE == PROCESS) {
                 process.deleteAll();
-                process.append("PID\tPROCESS", null);
 
                 Enumeration keys = trace.keys();
                 while (keys.hasMoreElements()) {
