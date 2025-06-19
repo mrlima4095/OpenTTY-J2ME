@@ -1,33 +1,13 @@
-OpenTTY Java Edition 1.14.3
+OpenTTY Java Edition 1.14.4
 Copyright (C) 2025 - Mr. Lima
 
 
 [ _Commands_ ]
 
-- `expr (expression)`: run math expressions 
-- `mv [origin] [new]`: move a RMS file 
-- `uuid`: generate random uuid 
-- `man [page]`: Read manual pages
-- `mkdir [dir]`: create a new directory 
+- 
 
 [ _Updates_ ]
 
-- Removed commands `forget`, `cls` and `rnano`
-- Removed Device File Explorer
-- File Explorer save status alerted by a Ticker
-- Using `install /mnt/[path]` to write nano content in a file at Device Storage
-- MIDlet start path charged to **/home/**
-- Updated X Server 0.6.2
-- Updated **JBuntu** to **1.3.2**
-- Canvas new attribute `canvas.mouse.img`
-- Canvas new attribute `canvas.mouse.color`
-- Quest new attribute `quest.cmd.label` that charges label of send button
-- Quest new attribute `quest.content` that set the default quest text in input
-- Canvas title not in window format anymore
-- New asset **/java/bin/cursor.png**
-- MIDlet-Proxy redirecting for `https://opentty.xyz/proxy.php?`
-
-[ _Notes_ ]
-
-- To clear history you can use `clear history`
-- Command `mkdir` only create directories in Device Storage
+- 
+- 
+- 
