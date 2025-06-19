@@ -243,11 +243,11 @@ Usage: getty
 * Replace nano buffer by content of standard output (stdout).
 </getty>
 <gobuster>
-Usage: gobuster [URL]
+Usage: gobuster [URL] [WORDLIST]
 * Run GoBuster in URL.
 
 	GoBuster search for valid files and directories at a WebServer.
-	Default word-list file is '/java/etc/gobuster', if a file named as 'gobuster' is found at home and it isn't blank, GoBuster uses it. 
+	Without WORDLIST file, it uses file '/home/gobuster'. The default WORDLIST can be downloaded with Yang.
 </gobuster>
 <grep>
 Usage: grep [FILE] [PATTERN]
