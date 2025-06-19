@@ -614,7 +614,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     try { 
                         int code = GoVerify(fullUrl); 
-                        // Aceita qualquer código diferente de 404
                         if (code != 404) { 
                             screen.append("/" + wordlist[i] + " [" + code + "]", null); 
                         } 
