@@ -555,7 +555,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Memory
     public class HTopViewer implements CommandListener {
         private Form monitor = new Form(form.getTitle());
-        private List list = new List(form.getTitle(), List.IMPLICIT);
+        private List process = new List(form.getTitle(), List.IMPLICIT);
         private StringItem status = new StringItem("Memory Status:", "");
         private Command BACK = new Command("Back", Command.BACK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2);
         private int TYPE = 0, MONITOR = 1, PROCESS = 2;
