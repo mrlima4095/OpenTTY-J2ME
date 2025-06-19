@@ -624,16 +624,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         echoCommand("[-] " + address + " disconnected"); sessions.removeElement(address);
                     } catch (IOException e) {
-                        echoCommand("[-] " + e.getMessage());
-                    } 
-                    try {
-                        if (clientSocket != null) { clientSocket.close(); }
-                        if (os != null) { os.close(); }
-                        if (is != null) { is.close(); }
-                    } catch (IOException e) {
-                        stop("bind");
+                        echoCommand("[-] " + e.getMessage()); stop("bind");
+                    } finally {
+                        try {
+                            if (clientSocket != null) { clientSocket.close(); }
+                            if (os != null) { os.close(); }
+                            if (is != null) { is.close(); }
+                        } catch (IOException e) {
+                            stop("bind");
+                        }
                     }
-                    
                 }
 
                 echoCommand("[-] Server stopped");
