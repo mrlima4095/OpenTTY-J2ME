@@ -268,7 +268,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         echoCommand("--- Line " + (i + 1) + " ---");
                         echoCommand("< " + line1);
                         echoCommand("> " + line2);
-                    } else if (i < lines1.length || i < lines2.length) {
+                    } else if (i > lines1.length || i > lines2.length) {
                         break;
                     }
                 }
