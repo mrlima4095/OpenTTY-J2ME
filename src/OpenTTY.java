@@ -253,11 +253,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String content = getcontent(argument); String[] lines = split(content, '\n'); int count = Math.min(10, lines.length); for (int i = 0; i < count; i++) { echoCommand(lines[i]); } } }
         else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String content = getcontent(argument); String[] lines = split(content, '\n'); int start = Math.max(0, lines.length - 10); for (int i = start; i < lines.length; i++) { echoCommand(lines[i]); } } }
         else if (mainCommand.equals("diff")) {
-            String[] files = split(argument, ' ');
-            if (files.length != 2) {
-                return;
-            } 
+            if (argument.equals("") || split(argument, ' ').length < 2) { return; } 
             else {
+                String[] files = split(argument, ' ');
                 String[] lines1 = split(getcontent(files[0]), '\n');
                 String[] lines2 = split(getcontent(files[1]), '\n');
 
@@ -266,12 +264,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String line1 = i < lines1.length ? lines1[i] : "";
                     String line2 = i < lines2.length ? lines2[i] : "";
 
-                    if (!line1.equals(line2)) {
-                        echoCommand("Line " + (i + 1) + " differs:");
+                    if (!line1.equals(line2) && !line1.equals("") && !lines2.equals("")) {
+                        echoCommand("--- Line " + (i + 1) + " ---");
                         echoCommand("< " + line1);
                         echoCommand("> " + line2);
                     }
                 }
+            }
+        }
+        else if (mainCommand.equals("wc")) {
+            if (argument.equals("")) { } 
+            else {
+                boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false;
+                if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; }
+                else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; }
+                else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; }
+                argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "");
+                
+                String content = getcontent(argument);
+                int lines = 0, words = 0, chars = content.length();
+
+                String[] lineArray = split(content, '\n');
+                lines = lineArray.length;
+
+                for (int i = 0; i < lineArray.length; i++) {
+                    String[] wordArray = split(lineArray[i], ' ');
+                    for (int j = 0; j < wordArray.length; j++) {
+                        if (!wordArray[j].trim().equals("")) { words++; }
+                    }
+                }
+
+                String filename = basename(argument);
+                if (SHOW_LINES) { echoCommand(lines + "\t" + filename); }
+                else if (SHOW_WORDS) { echoCommand(words + "\t" + filename); }
+                else if (SHOW_BYTES) { echoCommand(bytes + "\t" + filename); }
+                else { echoCommand(lines + "\t" + words + "\t" + chars + "\t" + filename); }
             }
         }
         // |
