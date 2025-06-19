@@ -204,8 +204,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("wrl")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
         else if (mainCommand.equals("who")) {
-            for (int i = 0; i < usuarios.size(); i++) {
-                echoCommand(usuarios.get(i));
+            for (int i = 0; i < sessions.size(); i++) {
+                echoCommand(sessions.get(i));
             }
         }
         // |
