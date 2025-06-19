@@ -15,7 +15,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
-    private String logs = "", path = "/home/", build = "2025-1.14.4-01x98";
+    private String logs = "", path = "/home/", build = "2025-1.14.4-01x99";
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Display display = Display.getDisplay(this);
@@ -580,18 +580,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             screen = new List("GoBuster (" + url + ")", List.IMPLICIT); 
             wordlist = split(loadRMS("gobuster"), '\n'); 
+            if (wordlist == null || wordlist.length == 0) { 
+                wordlist = split(read("/java/etc/gobuster"), '\n'); 
+            }
 
-            if (wordlist == null || wordlist.length == 0) { wordlist = split(read("/java/etc/gobuster"), '\n'); } 
-            screen.addCommand(BACK); screen.addCommand(OPEN); screen.addCommand(SAVE); 
+            screen.addCommand(BACK); 
+            screen.addCommand(OPEN); 
+            screen.addCommand(SAVE); 
 
-            screen.setCommandListener(this); new Thread(this, "GoBuster").start(); 
+            screen.setCommandListener(this); 
+            new Thread(this, "GoBuster").start(); 
             display.setCurrent(screen); 
         } 
 
         public void commandAction(Command c, Displayable d) { 
-            if (c == BACK) { processCommand("xterm"); } 
-            else if (c == OPEN) { processCommand("bg execute wget " + url + screen.getString(screen.getSelectedIndex()) + "; nano;"); } 
-            else if (c == SAVE && screen.size() != 0) { nanoContent = GoSave(); new NanoEditor(""); } 
+            if (c == BACK) { 
+                processCommand("xterm"); 
+            } else if (c == OPEN) { 
+                processCommand("bg execute wget " + url + screen.getString(screen.getSelectedIndex()).split(" ")[0] + "; nano;"); 
+            } else if (c == SAVE && screen.size() != 0) { 
+                nanoContent = GoSave(); 
+                new NanoEditor(""); 
+            } 
         } 
 
         public void run() { 
@@ -599,11 +609,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             for (int i = 0; i < wordlist.length; i++) { 
                 if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { 
-                    String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; 
+                    String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? 
+                                     url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; 
 
                     try { 
-                        if (GoVerify(fullUrl)) { 
-                            screen.append("/" + wordlist[i], null); 
+                        int code = GoVerify(fullUrl); 
+                        // Aceita qualquer código diferente de 404
+                        if (code != 404) { 
+                            screen.append("/" + wordlist[i] + " [" + code + "]", null); 
                         } 
                     } catch (IOException e) { } 
                 } 
@@ -612,21 +625,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.setTicker(null); 
         } 
 
-        private boolean GoVerify(String fullUrl) throws IOException { 
-            HttpConnection conn = null; InputStream is = null; 
+        private int GoVerify(String fullUrl) throws IOException { 
+            HttpConnection conn = null; 
+            InputStream is = null; 
 
             try { 
                 conn = (HttpConnection) Connector.open(fullUrl); 
                 conn.setRequestMethod(HttpConnection.GET); 
-                int responseCode = conn.getResponseCode(); 
-
-                return (responseCode == HttpConnection.HTTP_OK); 
-            } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } 
+                return conn.getResponseCode(); 
+            } finally { 
+                if (is != null) { is.close(); } 
+                if (conn != null) { conn.close(); } 
+            } 
         } 
+
         private String GoSave() { 
             StringBuffer sb = new StringBuffer(); 
-            for (int i = 0; i < screen.size(); i++) { sb.append(screen.getString(i)); if (i < screen.size() - 1) { sb.append("\n"); } } 
-
+            for (int i = 0; i < screen.size(); i++) {
+                String line = screen.getString(i);
+                String pathOnly = line.indexOf(" ") != -1 ? line.substring(0, line.indexOf(" ")) : line;
+                sb.append(pathOnly);
+                if (i < screen.size() - 1) { 
+                    sb.append("\n"); 
+                }
+            } 
             return replace(sb.toString(), "/", ""); 
         } 
     }
