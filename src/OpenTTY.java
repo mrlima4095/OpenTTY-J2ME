@@ -422,7 +422,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Form screen = new Form(form.getTitle());
         private List list = new List(form.getTitle(), List.IMPLICIT);
         private Command BACK, USER;
-        private TextField input;
+        private TextField INPUT;
 
         public Screen(String type, String args) {
             if (type == null || type.length() == 0 || args == null || args.length() == 0) { return; }
@@ -478,11 +478,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; }
 
                 if (lib.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); }
-                input = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type")));
+                INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type")));
 
                 BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1);
 
-                screen.append(input);
+                screen.append(INPUT);
                 screen.addCommand(BACK); screen.addCommand(USER);
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
@@ -497,7 +497,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (TYPE == LIST) { processCommand(getvalue("list.back", "true")); }
                 else if (TYPE == QUEST) { processCommand(getvalue("quest.back", "true")); }
             } else if (c == USER) {
-                if (TYPE == QUEST) { String value = input.getString().trim(); if (!value.equals("")) { processCommand("set " + getenv("quest.key") + "=" + env(value)); processCommand("xterm"); processCommand(getvalue("quest.cmd", "true")); } } 
+                if (TYPE == QUEST) { String value = INPUT.getString().trim(); if (!value.equals("")) { processCommand("set " + getenv("quest.key") + "=" + env(value)); processCommand("xterm"); processCommand(getvalue("quest.cmd", "true")); } } 
                 else if (TYPE == LIST) { int index = list.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); String key = env(list.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found")); } } 
                 else if (TYPE == SCREEN) { processCommand("xterm"); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found")); }
             }
