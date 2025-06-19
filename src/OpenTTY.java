@@ -15,7 +15,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
-    private String logs = "", path = "/home/", build = "2025-1.14.4-01x99";
+    private String logs = "", path = "/home/", build = "2025-1.14.4-02x00";
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Display display = Display.getDisplay(this);
@@ -611,13 +611,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.addCommand(BACK); screen.addCommand(OPEN); screen.addCommand(SAVE); 
             screen.setCommandListener(this); new Thread(this, "GoBuster").start(); 
             display.setCurrent(screen); 
-        } 
-
-        public void commandAction(Command c, Displayable d) { 
-            if (c == BACK) { processCommand("xterm"); } 
-            else if (c == OPEN) { processCommand("bg execute wget " + url + getArgument(screen.getString(screen.getSelectedIndex())) + "; nano;"); } 
-            else if (c == SAVE && screen.size() != 0) { nanoContent = GoSave(); new NanoEditor(""); } 
-        } public void run() { screen.setTicker(new Ticker("Searching...")); for (int i = 0; i < wordlist.length; i++) { if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; try { int code = GoVerify(fullUrl); if (code != 404) { screen.append(code + " /" + wordlist[i], null); } } catch (IOException e) { } } } screen.setTicker(null); } private int GoVerify(String fullUrl) throws IOException { HttpConnection conn = null; InputStream is = null; try { conn = (HttpConnection) Connector.open(fullUrl); conn.setRequestMethod(HttpConnection.GET); return conn.getResponseCode(); } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } } private String GoSave() { StringBuffer sb = new StringBuffer(); for (int i = 0; i < screen.size(); i++) { String line = getArgument(screen.getString(i)).trim(); sb.append(line.substring(1, line.length())).append("\n"); } return sb.toString().trim(); } }
+        } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == OPEN) { processCommand("bg execute wget " + url + getArgument(screen.getString(screen.getSelectedIndex())) + "; nano;"); } else if (c == SAVE && screen.size() != 0) { nanoContent = GoSave(); new NanoEditor(""); } } public void run() { screen.setTicker(new Ticker("Searching...")); for (int i = 0; i < wordlist.length; i++) { if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; try { int code = GoVerify(fullUrl); if (code != 404) { screen.append(code + " /" + wordlist[i], null); } } catch (IOException e) { } } } screen.setTicker(null); } private int GoVerify(String fullUrl) throws IOException { HttpConnection conn = null; InputStream is = null; try { conn = (HttpConnection) Connector.open(fullUrl); conn.setRequestMethod(HttpConnection.GET); return conn.getResponseCode(); } finally { if (is != null) { is.close(); } if (conn != null) { conn.close(); } } } private String GoSave() { StringBuffer sb = new StringBuffer(); for (int i = 0; i < screen.size(); i++) { String line = getArgument(screen.getString(i)).trim(); sb.append(line.substring(1, line.length())).append("\n"); } return sb.toString().trim(); } }
     private String request(String url, Hashtable headers) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); if (headers != null) { Enumeration keys = headers.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) headers.get(key); conn.setRequestProperty(key, value); } } InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return e.getMessage(); } }
     private String request(String url) { return request(url, null); }
     // |
