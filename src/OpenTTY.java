@@ -636,15 +636,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private String GoSave() { 
             StringBuffer sb = new StringBuffer(); 
-            for (int i = 0; i < screen.size(); i++) {
-                String line = screen.getString(i);
-                pathOnly = getArgument(line).trim();
-                sb.append(pathOnly);
-                if (i < screen.size() - 1) { 
-                    sb.append("\n"); 
-                }
+            for (int i = 0; i < screen.size(); i++) { 
+                String line = getArgument(screen.getString(i)).trim();
+                sb.append(line.substring(1, line.length())).append("\n");
             } 
-            return replace(sb.toString(), "/", ""); 
+            return sb.toString().trim(); 
         } 
     }
     private String request(String url, Hashtable headers) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); if (headers != null) { Enumeration keys = headers.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) headers.get(key); conn.setRequestProperty(key, value); } } InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return e.getMessage(); } }
