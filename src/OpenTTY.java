@@ -169,7 +169,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // MIDlet Tracker
         else if (mainCommand.equals("throw")) { if (argument.equals("")) { } else { MIDletLogs("add warn " + argument); } Thread.currentThread().interrupt(); }
         else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
-        else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread(new Runnable() { public void run() { processCommand(bgCommand); } }, "Background").start(); }
+        else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread("Background") { public void run() { processCommand(bgCommand); } }.start(); }
 
         // API 010 - (Requests)
         // |
@@ -190,20 +190,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pong")) { pongCommand(argument); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); }
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
-        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
-            if (argument.equals("")) { } 
-            else { 
-                String URL = getCommand(argument); 
-                if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } 
-
-                Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); 
-                String RESPONSE = request(URL, HEADERS); 
-
-                if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } 
-                else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; }
-                else if (mainCommand.equals("clone")) {runScript(RESPONSE); } 
-            } 
-        }
+        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) {runScript(RESPONSE); } } }
         // |
         // Socket Interfaces
         else if (mainCommand.equals("query")) { query(argument); }
