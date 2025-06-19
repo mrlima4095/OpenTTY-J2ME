@@ -227,7 +227,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/home/"; } else if (argument.equals("..")) { if (path.equals("/")) { return; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } else { String target = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); if (!target.endsWith("/")) { target += "/"; } if (paths.containsKey(target)) { path = target; } else if (target.startsWith("/mnt/")) { try { String realPath = "file:///" + target.substring(5); if (!realPath.endsWith("/")) realPath += "/"; FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ); if (fc.exists() && fc.isDirectory()) { path = target; } else { echoCommand("cd: " + basename(target) + ": not " + (!fc.exists() ? "found" : "a directory")); } fc.close(); } catch (IOException e) { echoCommand("cd: " + basename(target) + ": " + e.getMessage()); } } else { echoCommand("cd: " + basename(target) + ": not accessible"); } } }
-        else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!argument.endsWith("/")) { argument += "/"; }if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
+        else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { if (!argument.endsWith("/")) { argument += "/"; } if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } else { stack.addElement(path); path = argument; echoCommand(readStack()); } } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: stack empty"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) { Vector results = new Vector(); if (path.equals("/mnt/")) { try { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { String root = (String) roots.nextElement(); if (!results.contains(root)) { results.addElement(root); } } } catch (Exception e) { echoCommand(e.getMessage()); return; } } else if (path.startsWith("/mnt/")) { try { String realPath = "file:///" + path.substring(5); if (!realPath.endsWith("/")) realPath += "/"; FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ); Enumeration content = fc.list(); while (content.hasMoreElements()) { String item = (String) content.nextElement(); results.addElement(item); } fc.close(); } catch (Exception e) { echoCommand(e.getMessage()); return; } } else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { String name = recordStores[i]; if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } } } } catch (RecordStoreException e) { echoCommand("dir: " + e.getMessage()); return; } } else if (path.equals("/home/")) { new Explorer(); return; } String[] files = (String[]) paths.get(path); if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!results.contains(f) && !results.contains(f + "/")) { results.addElement(f); } } } if (!results.isEmpty()) { StringBuffer sb = new StringBuffer(); String newline = path.equals("/home/") ? "\n" : "\t"; for (int i = 0; i < results.size(); i++) { String item = (String) results.elementAt(i); if (!item.equals("/")) { sb.append(item).append(newline); } } echoCommand(sb.toString().trim()); } } 
         // |
@@ -552,7 +552,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Process
     private void kill(String pid) { if (pid == null || pid.length() == 0) { return; } Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); if (pid.equals(trace.get(key))) { trace.remove(key); echoCommand("Process with PID " + pid + " terminated"); if ("sh".equals(key)) { processCommand("exit"); } return; } } echoCommand("PID '" + pid + "' not found"); }
-    private void start(String app) { if (app == null || app.length() == 0 || trace.containsKey(app)) { return; } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); if (app.equals("sh")) { sessions.add("127.0.0.1"); } }
+    private void start(String app) { if (app == null || app.length() == 0 || trace.containsKey(app)) { return; } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); if (app.equals("sh")) { sessions.addElement("127.0.0.1"); } }
     private void stop(String app) { if (app == null || app.length() == 0) { return; } trace.remove(app); if (app.equals("sh")) { processCommand("exit"); } } 
 
     // API 008 - (Logic I/O) Text
@@ -598,7 +598,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     try {
                         clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); String address = clientSocket.getAddress();
                         echoCommand("[+] " + address + " connected");
-                        sessions.add(address);
+                        sessions.addElement(address);
                         is = clientSocket.openInputStream();
                         os = clientSocket.openOutputStream();
 
@@ -624,7 +624,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             os.flush();
                         }   
 
-                        echoCommand("[-] " + address + " disconnected"); sessions.remove(address);
+                        echoCommand("[-] " + address + " disconnected"); sessions.removeElement(address);
                         clientSocket.close(); os.close(); is.close();
                     } catch (IOException e) {
                         echoCommand("[-] " + e.getMessage());
