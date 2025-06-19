@@ -597,7 +597,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { 
                 processCommand("xterm"); 
             } else if (c == OPEN) { 
-                processCommand("bg execute wget " + url + screen.getString(screen.getSelectedIndex()).split(" ")[0] + "; nano;"); 
+                processCommand("bg execute wget " + url + split(screen.getString(screen.getSelectedIndex()), ' ')[0] + "; nano;"); 
             } else if (c == SAVE && screen.size() != 0) { 
                 nanoContent = GoSave(); 
                 new NanoEditor(""); 
