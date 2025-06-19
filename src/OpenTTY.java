@@ -569,7 +569,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String url; 
         private String[] wordlist; 
         private List screen; 
-
         private Command BACK = new Command("Back", Command.BACK, 1), 
                         OPEN = new Command("Get Request", Command.OK, 1), 
                         SAVE = new Command("Save Result", Command.OK, 1); 
@@ -597,7 +596,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { 
                 processCommand("xterm"); 
             } else if (c == OPEN) { 
-                processCommand("bg execute wget " + url + split(screen.getString(screen.getSelectedIndex()), ' ')[0] + "; nano;"); 
+                processCommand("bg execute wget " + url + getArgument(screen.getString(screen.getSelectedIndex())) + "; nano;"); 
             } else if (c == SAVE && screen.size() != 0) { 
                 nanoContent = GoSave(); 
                 new NanoEditor(""); 
@@ -609,14 +608,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             for (int i = 0; i < wordlist.length; i++) { 
                 if (!wordlist[i].startsWith("#") && !wordlist[i].equals("")) { 
-                    String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? 
-                                     url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; 
+                    String fullUrl = url.startsWith("http://") || url.startsWith("https://") ? url + "/" + wordlist[i] : "http://" + url + "/" + wordlist[i]; 
 
                     try { 
                         int code = GoVerify(fullUrl); 
-                        if (code != 404) { 
-                            screen.append("/" + wordlist[i] + " [" + code + "]", null); 
-                        } 
+                        if (code != 404) { screen.append(code + " /" + wordlist[i], null); } 
                     } catch (IOException e) { } 
                 } 
             } 
@@ -642,7 +638,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             StringBuffer sb = new StringBuffer(); 
             for (int i = 0; i < screen.size(); i++) {
                 String line = screen.getString(i);
-                String pathOnly = line.indexOf(" ") != -1 ? line.substring(0, line.indexOf(" ")) : line;
+                pathOnly = getArgument(line).trim();
                 sb.append(pathOnly);
                 if (i < screen.size() - 1) { 
                     sb.append("\n"); 
