@@ -190,7 +190,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pong")) { pongCommand(argument); }
         else if (mainCommand.equals("ping")) { pingCommand(argument); }
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
-        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) {runScript(RESPONSE); } } }
+        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
+            if (argument.equals("")) { } 
+            else { 
+                String URL = getCommand(argument); 
+                if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } 
+
+                Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); 
+                String RESPONSE = request(URL, HEADERS); 
+
+                if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } 
+                else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; }
+                else if (mainCommand.equals("clone")) {runScript(RESPONSE); } 
+            } 
+        }
         // |
         // Socket Interfaces
         else if (mainCommand.equals("query")) { query(argument); }
@@ -575,17 +588,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public GoBuster(String args) { 
             if (args == null || args.length() == 0) { return; } 
-            url = args; 
+            url = getCommand(args);  
+            wordlist = split(getArgument(args) ? loadRMS(getArgument(args)) : read("/java/etc/gobuster"), '\n'); 
 
-            screen = new List("GoBuster (" + url + ")", List.IMPLICIT); 
-            wordlist = split(loadRMS("gobuster"), '\n'); 
-            if (wordlist == null || wordlist.length == 0) { 
-                wordlist = split(read("/java/etc/gobuster"), '\n'); 
-            }
+            screen = new List("GoBuster (" + url + ")", List.IMPLICIT);
 
-            screen.addCommand(BACK); 
-            screen.addCommand(OPEN); 
-            screen.addCommand(SAVE); 
+            screen.addCommand(BACK); screen.addCommand(OPEN); screen.addCommand(SAVE); 
 
             screen.setCommandListener(this); 
             new Thread(this, "GoBuster").start(); 
