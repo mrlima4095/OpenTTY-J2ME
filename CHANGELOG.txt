@@ -5,6 +5,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `diff [file] [file]`: Print differences between FILEs
+- `wc [options] [file]`: Show a counting of words lines and bytes of FILE
 
 [ _Updates_ ]
 
