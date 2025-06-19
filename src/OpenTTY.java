@@ -596,8 +596,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     try {
                         clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); String address = clientSocket.getAddress();
-                        echoCommand("[+] " + address + " connected");
-                        sessions.addElement(address);
+                        if (address == null) { echoCommand("NULO"); break; }
+                        echoCommand("[+] " + address + " connected"); sessions.addElement(address);
                         is = clientSocket.openInputStream();
                         os = clientSocket.openOutputStream();
 
