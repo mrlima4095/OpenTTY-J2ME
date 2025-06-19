@@ -14,7 +14,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
-    private String logs = "", path = "/home/", build = "2025-1.14.4-01x96";
+    private String logs = "", path = "/home/", build = "2025-1.14.4-01x97";
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Vector stack = new Vector(), 
@@ -252,6 +252,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("find")) { if (argument.equals("") || split(argument, ' ').length < 2) { } else { String[] args = split(argument, ' '); String file = getcontent(args[1]), value = (String) parseProperties(file).get(args[0]); echoCommand(value != null ? value : "null"); } }
         else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String content = getcontent(argument); String[] lines = split(content, '\n'); int count = Math.min(10, lines.length); for (int i = 0; i < count; i++) { echoCommand(lines[i]); } } }
         else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String content = getcontent(argument); String[] lines = split(content, '\n'); int start = Math.max(0, lines.length - 10); for (int i = start; i < lines.length; i++) { echoCommand(lines[i]); } } }
+        else if (mainCommand.equals("diff")) {
+            String[] files = split(argument, ' ');
+            if (files.length != 2) {
+                return;
+            } 
+            else {
+                String[] lines1 = split(getcontent(files[0]), '\n');
+                String[] lines2 = split(getcontent(files[1]), '\n');
+
+                int maxLines = Math.max(lines1.length, lines2.length);
+                for (int i = 0; i < maxLines; i++) {
+                    String line1 = i < lines1.length ? lines1[i] : "";
+                    String line2 = i < lines2.length ? lines2[i] : "";
+
+                    if (!line1.equals(line2)) {
+                        echoCommand("Line " + (i + 1) + " differs:");
+                        echoCommand("< " + line1);
+                        echoCommand("> " + line2);
+                    }
+                }
+            }
+        }
         // |
         // Text Parsers
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
