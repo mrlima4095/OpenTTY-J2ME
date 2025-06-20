@@ -15,7 +15,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
-    private String logs = "", path = "/home/", build = "2025-1.14.4-02x02"; 
+    private String logs = "", path = "/home/", build = "2025-1.14.4-02x03"; 
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Display display = Display.getDisplay(this);
@@ -141,8 +141,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
         // |
         // Device
-        else if (mainCommand.equals("hostname")) { echoCommand(env("$HOSTNAME")); }
-        else if (mainCommand.equals("uname")) { echoCommand(env("$TYPE $CONFIG $PROFILE")); }
+        else if (mainCommand.equals("uname")) { 
+            String INFO;
+
+            if (argument.equals("") || argument.equals("-i")) { INFO = "$TYPE"; } 
+            else if (argument.equals("-a")) { INFO = "$TYPE OpenTTY $VERSION - $CONFIG $PROFILE"; } 
+            else if (argument.equals("-s")) { INFO = "J2ME"; } 
+            else if (argument.equals("-r")) { INFO = "$VERSION"; }
+            else if (argument.equals("-v")) { INFO = build; }
+            else if (argument.equals("-m")) { INFO = "$PROFILE"; } 
+            else if (argument.equals("-p")) { INFO = "$CONFIG"; } 
+            else if (argument.equals("-n")) { INFO = "$HOSTNAME"; }
+            else { INFO = "uname: " + argument + ": not found"; }
+
+            echoCommand(env(INFO));
+        }
+        else if (mainCommand.equals("hostname")) { if (argument.equals("")) { echoCommand(env("$HOSTNAME")); } else { processCommand("set HOSTNAME=" + getCommand(argument), false); } }
         else if (mainCommand.equals("hostid")) { String data = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int hash = 7; for (int i = 0; i < data.length(); i++) { hash = hash * 31 + data.charAt(i); } echoCommand(Integer.toHexString(hash).toLowerCase()); }
 
         // API 008 - (Logic I/O) Text
@@ -285,10 +299,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("javac") || mainCommand.equals("compile")) {
-            J2MEStringCompiler builder = new J2MEStringCompiler(getcontent(getCommand(argument)), getArgument(argument), null);
-            builder.compilar(); echoCommand("ok");
-        }
+        //else if (mainCommand.equals("")) {  }
+        
 
         // API 014 - (OpenTTY)
         // |
