@@ -15,3 +15,4 @@ Copyright (C) 2025 - Mr. Lima
 - Removed assets `/java/etc/gobuster` and `/java/etc/headers`
 - Monitor **htop** using `System.gc()` to trigger the Garbage Collector
 - Title **Memory Status** at Monitor now is the label of StringItem not in body
+- Improved Command `uname`
