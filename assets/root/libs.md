@@ -19,7 +19,7 @@ name=My Project
 version=1.0
 description=My Cool OpenTTY Package
 
-api.version=1.14
+api.version=1.15
 api.error=execute echo Incorrect OpenTTY Version;
 
 config=execute echo Is working; 
