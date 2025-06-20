@@ -1,8 +1,6 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
-import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
-import javax.microedition.media.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
 import javax.bluetooh.*;
@@ -18,7 +16,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
-    private String logs = "", path = "/home/", build = "2025-1.14.4-02x03"; 
+    private String logs = "", path = "/home/", build = "2025-1.14.4-02x04"; 
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Display display = Display.getDisplay(this);
@@ -280,7 +278,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("audio")) { audio(argument); }
+        //else if (mainCommand.equals("audio")) { audio(argument); }
         
 
         // API 014 - (OpenTTY)
