@@ -44,3 +44,4 @@ list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.1
 1.14.2=execute set REQUEST=1.14.2; set PATCH=Renders Update; axrz run;
 1.14.3=execute set REQUEST=1.14.3; set PATCH=Renders Update; axrz run;
 1.14.4=execute set REQUEST=1.14.4; set PATCH=Renders Update; axrz run;
+1.15=execute set REQUEST=1.15; set PATCH=Hidden Void; axrz run;
