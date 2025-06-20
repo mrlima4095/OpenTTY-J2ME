@@ -1,3 +1,0 @@
-interface np {
-   void a();
-}
