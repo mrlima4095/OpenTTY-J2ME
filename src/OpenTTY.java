@@ -142,13 +142,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (argument.equals("") || argument.equals("-i")) { INFO = "$TYPE"; } 
             else if (argument.equals("-a") || argument.equals("--all")) { INFO = "$TYPE OpenTTY $VERSION " + build + " - (J2ME) $CONFIG $PROFILE"; } 
-            else if (argument.equals("-s")) { INFO = "J2ME"; } 
-            else if (argument.equals("-r")) { INFO = "$VERSION"; }
-            else if (argument.equals("-v")) { INFO = build; }
+            else if (argument.equals("-r") || argument.equals("--release")) { INFO = "$VERSION"; }
+            else if (argument.equals("-v") || argument.equals("--build")) { INFO = build; }
+            else if (argument.equals("-s") ) { INFO = "J2ME"; } 
             else if (argument.equals("-m")) { INFO = "$PROFILE"; } 
             else if (argument.equals("-p")) { INFO = "$CONFIG"; } 
             else if (argument.equals("-n")) { INFO = "$HOSTNAME"; }
-            else if (argument.equals("-g") || argument.equals("--github")) { INFO = getAppProperty("MIDlet-Info-URL"); }
             else { INFO = "uname: " + argument + ": not found"; }
 
             echoCommand(env(INFO));
