@@ -8,4 +8,4 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Updates_ ]
 
-- 
+- Replaced **PATCH** by **Version codenamee**
