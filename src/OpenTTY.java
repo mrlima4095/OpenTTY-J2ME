@@ -286,7 +286,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("javac") || mainCommand.equals("compile")) {
-            
+            new J2MEStringCompiler(getcontent(getCommand(argument)), getArgument(argument))
         }
 
         // API 014 - (OpenTTY)
