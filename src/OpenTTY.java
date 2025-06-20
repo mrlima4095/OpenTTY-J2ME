@@ -355,7 +355,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.prefetch();
                     player.start();
 
-                    echoCommand("Playing: " + filepath);
+                    echoCommand("Playing: " + basename(argument));
                 } catch (Exception e) {
                     echoCommand(e.getMessage());
                 }
