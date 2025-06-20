@@ -330,23 +330,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("volume")) {
             if (player != null) {
                 VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
-                if (vc != null) {
-                    if (argument.equals("")) { 
-                        echoCommand("" + vc.getLevel());
-                    } 
-                    else { try { vc.setLevel(Integer.parseInt(argument)); } catch (Exception e) { echoCommand(e.getMessage()); }  }
-                } else { echoCommand("audio: codec not accessible."); }
-            } else { echoCommand("audio: codec not running."); }
+                if (argument.equals("")) { echoCommand("" + vc.getLevel()); } 
+                else { try { vc.setLevel(Integer.parseInt(argument)); } catch (Exception e) { echoCommand(e.getMessage()); } }
+            } else { echoCommand("audio: not running."); }
         }
         else if (mainCommand.equals("play")) {
             if (argument.equals("")) { }
             else {
                 if (argument.startsWith("/mnt/")) { argument = argument.substring(5); }
                 else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return; }
-                else { audio("play " + path + argument); }
+                else { audio("play " + path + argument); return; }
 
                 try {
-
                     FileConnection fc = (FileConnection) Connector.open("file:///" + argument, Connector.READ);
                     if (!fc.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return; }
 
@@ -355,26 +350,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.prefetch();
                     player.start();
 
-                    echoCommand("Playing: " + basename(argument));
+                    start("audio");
                 } catch (Exception e) {
                     echoCommand(e.getMessage());
                 }
             }
         }
-        else if (mainCommand.equals("stop")) {
-            try {
-                if (player != null) {
-                    player.stop();
-                    player.close();
-                    player = null;
-                    echoCommand("Stopped.");
-                }
-            } catch (Exception e) {
-                echoCommand(e.getMessage());
-            }
-        }
+        else if (mainCommand.equals("pause")) { try { if (player != null) { player.stop(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } }
+        else if (mainCommand.equals("resume")) { try { if (player != null) { player.start(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } }
+        else if (mainCommand.equals("stop")) { try { if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } } catch (Exception e) { echoCommand(e.getMessage()); } }
         else { echoCommand("audio: " + mainCommand + ": not found"); }
-    } private String getMimeType(String path) { if (path.toLowerCase().endsWith(".mp3")) { return "audio/mpeg"; } else if (path.toLowerCase().endsWith(".amr")) { return "audio/amr"; } else if (path.toLowerCase().endsWith(".wav")) { return "audio/x-wav"; } return "audio/mpeg"; }
+    } private String getMimeType(String filename) { filename = filename.toLowerCase(); if (filename.endsWith(".amr")) { return "audio/amr"; } else if (filename.endsWith(".wav")) { return "audio/x-wav"; } else { return "audio/mpeg"; } }
 
     // API 002 - (Logs)
     // |
