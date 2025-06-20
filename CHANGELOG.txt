@@ -5,7 +5,8 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `diff [file] [file]`: Print differences between FILEs
-- `wc [options] [file]`: Show a counting of words lines and bytes of FILE
+- `wc [options] [file]`: Print counting of words lines and bytes of FILE
+- `who`: Print all connected session
 
 [ _Updates_ ]
 
@@ -16,3 +17,4 @@ Copyright (C) 2025 - Mr. Lima
 - Monitor **htop** using `System.gc()` to trigger the Garbage Collector
 - Title **Memory Status** at Monitor now is the label of StringItem not in body
 - Improved Command `uname`
+- Command `set`
