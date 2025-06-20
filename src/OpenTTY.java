@@ -285,8 +285,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("javac")) {
+            try {
+                int sep = argument.indexOf(' ');
+                if (sep == -1) {
+                    echoCommand("Usage: javac <ClassName> <JavaCode>");
+                    return;
+                }
 
+                String className = argument.substring(0, sep).trim();
+                String javaCode = argument.substring(sep + 1).trim();
+
+                ha symbolTable = new ha(null) {
+                    protected qd c(String name) {
+                        return null; 
+                    }
+                };
+
+                J2MEStringCompiler compiler = new J2MEStringCompiler(javaCode, className, symbolTable);
+                byte[][] compiledClasses = compiler.compilar();
+
+                echoCommand("javac: compiled " + compiledClasses.length + " class(es)");
+            } catch (Exception e) {
+                echoCommand("javac: error - " + e.getMessage());
+            }
+        }
         // API 014 - (OpenTTY)
         // |
         // Low-level commands
