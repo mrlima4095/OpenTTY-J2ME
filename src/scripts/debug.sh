@@ -12,9 +12,7 @@ echo [ MIDlet ]
 pkg MIDlet-1
 echo
 
-!
-version
-build
+uname -a
 
 echo
 echo Current Thread:
