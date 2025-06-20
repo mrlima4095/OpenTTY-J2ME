@@ -499,7 +499,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (condition != negated) { processCommand(command); }
     }
-
+    
     // API 006 - (Process)
     // |
     // Memory
