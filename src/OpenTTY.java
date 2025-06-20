@@ -285,31 +285,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("javac")) {
+        else if (mainCommand.equals("javac") || mainCommand.equals("compile")) {
             try {
-                int sep = argument.indexOf(' ');
-                if (sep == -1) {
-                    echoCommand("Usage: javac <ClassName> <JavaCode>");
-                    return;
-                }
-
-                String className = argument.substring(0, sep).trim();
-                String javaCode = argument.substring(sep + 1).trim();
+                String code = nanoContent; // ou poderia vir de outro lugar
+                String className = argument.equals("") ? "Main" : argument;
 
                 ha symbolTable = new ha(null) {
                     protected qd c(String name) {
-                        return null; 
+                        return null; // Simples para testes: não resolve classes externas
                     }
                 };
+                symbolTable.a();
 
-                J2MEStringCompiler compiler = new J2MEStringCompiler(javaCode, className, symbolTable);
-                byte[][] compiledClasses = compiler.compilar();
+                J2MEStringCompiler compiler = new J2MEStringCompiler(code, className, symbolTable);
+                byte[][] classes = compiler.compilar();
+                
+                for (int i = 0; i < classes.length; i++) {
+                    echoCommand("Class[" + i + "] compiled: " + classes[i].length + " bytes");
+                }
 
-                echoCommand("javac: compiled " + compiledClasses.length + " class(es)");
             } catch (Exception e) {
-                echoCommand("javac: error - " + e.getMessage());
+                echoCommand("compile error: " + e.getMessage());
             }
         }
+
         // API 014 - (OpenTTY)
         // |
         // Low-level commands
