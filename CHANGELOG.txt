@@ -4,16 +4,8 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- `diff [file] [file]`: Print differences between FILEs
-- `wc [options] [file]`: Print counting of words lines and bytes of FILE
-- `who`: Print all connected session
+- `audio [options] [file]`: Audio Manager
 
 [ _Updates_ ]
 
-- Locked process PID changing
-- GoBuster logging all found statuses
-- GoBuster accepting in format `gobuster [domain] [word-list file]`
-- Removed assets `/java/etc/gobuster` and `/java/etc/headers`
-- Monitor **htop** using `System.gc()` to trigger the Garbage Collector
-- Title **Memory Status** at Monitor now is the label of StringItem not in body
-- Improved Command `uname`
+- 
