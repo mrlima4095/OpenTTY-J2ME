@@ -22,6 +22,28 @@ Usage: alias [NAME]=[COMMAND]
 	Otherwise, an alias is defined for each NAME whose COMMAND is given;
 	When only NAME is found and it is an alias prints it value.
 </alias>
+<audio>
+Usage: audio [OPTIONS] [FILE]
+* MIDlet Audio Manager.
+
+OPTIONS:
+	volume [LEVEL]
+	| Set volume LEVEL. Without LEVEL, 'audio' prints current setting.
+	play [FILE]
+	| Start codec and play FILE.
+	stop
+	| Stop codec.
+	pause
+	| Pause playing codec.
+	resume
+	| Resume playing codec.
+
+	Volume LEVEL changing is only possible while codec is playing.
+	Only supported source audio FILEs from Device Storage.
+
+Supported Media Type:
+	amr  wav  mpeg
+</audio>
 <basename>
 Usage: basename [PATH]
 * Print the final component of PATH, removing all leading directories.
