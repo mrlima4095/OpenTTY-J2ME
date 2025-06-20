@@ -1,6 +1,8 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
+import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
+import javax.microedition.media.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
 import javax.bluetooh.*;
@@ -16,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
-    private String logs = "", path = "/home/", build = "2025-1.14.4-02x04"; 
+    private String logs = "", path = "/home/", build = "2025-1.15-02x05"; 
     private String username = loadRMS("OpenRMS");
     private String nanoContent = loadRMS("nano");
     private Display display = Display.getDisplay(this);
@@ -121,8 +123,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 006 - (Process)
         // |
         // Memory
-        else if (mainCommand.equals("gc")) { System.gc(); }
-        else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
+        else if (mainCommand.equals("gc")) { System.gc(); } else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
         else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer("monitor"); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); } }
         // |
         // Process
@@ -258,7 +259,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
         else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument)), html2text(env(argument))); } }
-
+        // |
+        // Audio Manager
+        else if (mainCommand.equals("audio")) { audio(argument); }
+        
         // API 013 - (MIDlet)
         // |
         // Java Runtime
@@ -278,8 +282,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("audio")) { audio(argument); }
-        
 
         // API 014 - (OpenTTY)
         // |
@@ -318,47 +320,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     
     public class Login implements CommandListener { private Form screen = new Form("Login"); private TextField USER = new TextField("Username", "", 256, TextField.ANY); private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); public Login() { screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); screen.append(USER); screen.addCommand(LOGIN); screen.addCommand(EXIT); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == LOGIN) { username = USER.getString(); if (username.equals("")) { } else { writeRMS("/home/OpenRMS", username); display.setCurrent(form); runScript(loadRMS("initd")); } } else if (c == EXIT) { processCommand("exit"); } } }
-
-    private void audio(String command) {
-        command = env(command.trim()); 
-        String mainCommand = getCommand(command); 
-        String argument = getArgument(command); 
-
-        if (mainCommand.equals("")) { }
-        else if (mainCommand.equals("volume")) {
-            if (player != null) {
-                VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
-                if (argument.equals("")) { echoCommand("" + vc.getLevel()); } 
-                else { try { vc.setLevel(Integer.parseInt(argument)); } catch (Exception e) { echoCommand(e.getMessage()); } }
-            } else { echoCommand("audio: not running."); }
-        }
-        else if (mainCommand.equals("play")) {
-            if (argument.equals("")) { }
-            else {
-                if (argument.startsWith("/mnt/")) { argument = argument.substring(5); }
-                else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return; }
-                else { audio("play " + path + argument); return; }
-
-                try {
-                    FileConnection fc = (FileConnection) Connector.open("file:///" + argument, Connector.READ);
-                    if (!fc.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return; }
-
-                    InputStream is = fc.openInputStream();
-                    player = Manager.createPlayer(is, getMimeType(argument));
-                    player.prefetch();
-                    player.start();
-
-                    start("audio");
-                } catch (Exception e) {
-                    echoCommand(e.getMessage());
-                }
-            }
-        }
-        else if (mainCommand.equals("pause")) { try { if (player != null) { player.stop(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } }
-        else if (mainCommand.equals("resume")) { try { if (player != null) { player.start(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } }
-        else if (mainCommand.equals("stop")) { try { if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } } catch (Exception e) { echoCommand(e.getMessage()); } }
-        else { echoCommand("audio: " + mainCommand + ": not found"); }
-    } private String getMimeType(String filename) { filename = filename.toLowerCase(); if (filename.endsWith(".amr")) { return "audio/amr"; } else if (filename.endsWith(".wav")) { return "audio/x-wav"; } else { return "audio/mpeg"; } }
 
     // API 002 - (Logs)
     // |
@@ -600,6 +561,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class NanoEditor implements CommandListener { private TextBox screen = new TextBox("Nano", "", 31522, TextField.ANY); private Command BACK = new Command("Back", Command.BACK, 1), CLEAR = new Command("Clear", Command.OK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1); public NanoEditor(String args) { screen.setString((args == null || args.length() == 0) ? nanoContent : getcontent(args)); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.addCommand(VIEW); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { nanoContent = screen.getString(); processCommand("xterm"); } else if (c == CLEAR) { screen.setString(""); } else if (c == RUN) { nanoContent = screen.getString(); processCommand("xterm"); runScript(nanoContent); } else if (c == IMPORT) { nanoContent = screen.getString(); processCommand("xterm"); importScript("nano"); } else if (c == VIEW) { nanoContent = screen.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
     private String extractTitle(String htmlContent) { int titleStart = htmlContent.indexOf("<title>"); int titleEnd = htmlContent.indexOf("</title>"); if (titleStart != -1 && titleEnd != -1 && titleEnd > titleStart) { return htmlContent.substring(titleStart + 7, titleEnd).trim(); } return "HTML Viewer"; }
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
+    // |
+    // Audio Manager
+    private void audio(String command) { command = env(command.trim()); String mainCommand = getCommand(command); String argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("volume")) { if (player != null) { VolumeControl vc = (VolumeControl) player.getControl("VolumeControl"); if (argument.equals("")) { echoCommand("" + vc.getLevel()); } else { try { vc.setLevel(Integer.parseInt(argument)); } catch (Exception e) { echoCommand(e.getMessage()); } } } else { echoCommand("audio: not running."); } } else if (mainCommand.equals("play")) { if (argument.equals("")) { } else { if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return; } else { audio("play " + path + argument); return; } try { FileConnection fc = (FileConnection) Connector.open("file:///" + argument, Connector.READ); if (!fc.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return; } InputStream is = fc.openInputStream(); player = Manager.createPlayer(is, getMimeType(argument)); player.prefetch(); player.start(); start("audio"); } catch (Exception e) { echoCommand(e.getMessage()); } } } else if (mainCommand.equals("pause")) { try { if (player != null) { player.stop(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } } else if (mainCommand.equals("resume")) { try { if (player != null) { player.start(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } } else if (mainCommand.equals("stop")) { try { if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } } catch (Exception e) { echoCommand(e.getMessage()); } } else { echoCommand("audio: " + mainCommand + ": not found"); } } private String getMimeType(String filename) { filename = filename.toLowerCase(); if (filename.endsWith(".amr")) { return "audio/amr"; } else if (filename.endsWith(".wav")) { return "audio/x-wav"; } else { return "audio/mpeg"; } }
 
     // API 013 - (MIDlet)
     // |
