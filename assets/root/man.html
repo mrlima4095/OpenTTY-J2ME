@@ -669,8 +669,24 @@ Usage: ttysize
 * Print length of TTY (in Bytes).
 </ttysize>
 <uname>
-Usage: uname
+Usage: uname [OPTIONS]
 * Print information about Device.
+	
+	Without OPTIONS, print Device Identifier.
+
+OPTIONS:
+	-a
+	| All information.
+	-r
+	| MIDlet release.
+	-v
+	| MIDlet build code.
+	-m
+	| Machine JVM Profile.
+	-p
+	| JVM Configuration.
+	-n
+	| Node name.
 </uname>
 <unalias>
 Usage: unalias [NAME]
