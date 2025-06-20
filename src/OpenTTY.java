@@ -133,25 +133,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         // API 007 - (Bundle)
         // |
-        // MIDlet
+        // Properties
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
+        else if (mainCommand.equals("uname")) { String INFO; if (argument.equals("") || argument.equals("-i")) { INFO = "$TYPE"; } else if (argument.equals("-a") || argument.equals("--all")) { INFO = "$TYPE OpenTTY $VERSION " + build + " - (J2ME) $CONFIG $PROFILE"; } else if (argument.equals("-r") || argument.equals("--release")) { INFO = "$VERSION"; } else if (argument.equals("-v") || argument.equals("--build")) { INFO = build; } else if (argument.equals("-s") ) { INFO = "J2ME"; } else if (argument.equals("-m")) { INFO = "$PROFILE"; } else if (argument.equals("-p")) { INFO = "$CONFIG"; } else if (argument.equals("-n")) { INFO = "$HOSTNAME"; } else { INFO = "uname: " + argument + ": not found"; } echoCommand(env(INFO)); }
         // |
-        // Device
-        else if (mainCommand.equals("uname")) { 
-            String INFO;
-
-            if (argument.equals("") || argument.equals("-i")) { INFO = "$TYPE"; } 
-            else if (argument.equals("-a") || argument.equals("--all")) { INFO = "$TYPE OpenTTY $VERSION " + build + " - (J2ME) $CONFIG $PROFILE"; } 
-            else if (argument.equals("-r") || argument.equals("--release")) { INFO = "$VERSION"; }
-            else if (argument.equals("-v") || argument.equals("--build")) { INFO = build; }
-            else if (argument.equals("-s") ) { INFO = "J2ME"; } 
-            else if (argument.equals("-m")) { INFO = "$PROFILE"; } 
-            else if (argument.equals("-p")) { INFO = "$CONFIG"; } 
-            else if (argument.equals("-n")) { INFO = "$HOSTNAME"; }
-            else { INFO = "uname: " + argument + ": not found"; }
-
-            echoCommand(env(INFO));
-        }
+        // Device ID
         else if (mainCommand.equals("hostname")) { if (argument.equals("")) { echoCommand(env("$HOSTNAME")); } else { processCommand("set HOSTNAME=" + getCommand(argument), false); } }
         else if (mainCommand.equals("hostid")) { String data = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int hash = 7; for (int i = 0; i < data.length(); i++) { hash = hash * 31 + data.charAt(i); } echoCommand(Integer.toHexString(hash).toLowerCase()); }
 
