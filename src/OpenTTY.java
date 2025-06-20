@@ -67,13 +67,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 001 - (Registry)
         // |
         // Aliases
-        else if (mainCommand.equals("alias")) { aliasCommand(argument); }
-        else if (mainCommand.equals("unalias")) { unaliasCommand(argument); }
+        else if (mainCommand.equals("alias")) { if (argument.equals("")) { Enumeration keys = aliases.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); if (!key.equals("xterm") && !value.equals("")) { echoCommand("alias " + key + "='" + value.trim() + "'"); } } } else { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else { echoCommand("alias: " + argument + ": not found"); } } else { aliases.put(argument.substring(0, equalsIndex).trim(), argument.substring(equalsIndex + 1).trim()); } }  
+        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else if (aliases.containsKey(key)) { aliases.remove(key); } else { echoCommand("unalias: " + key + ": not found"); } }
         // |
         // Environment Keys
-        else if (mainCommand.equals("set")) { setCommand(argument); }
-        else if (mainCommand.equals("unset")) { unsetCommand(argument); }
-        else if (mainCommand.equals("export")) { if (argument.equals("")) { processCommand("env"); } else { attributes.put(argument, ""); } }
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { attributes.put(argument, ""); } else { attributes.put(argument.substring(0, equalsIndex).trim(), argument.substring(equalsIndex + 1).trim()); } } } 
+        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (attributes.containsKey(key)) { attributes.remove(key); } else { } }
+        else if (mainCommand.equals("export")) { processCommand(argument.equals("") ? "env" : "set " + argument, false); }
         else if (mainCommand.equals("env")) { if (argument.equals("")) { Enumeration keys = attributes.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) attributes.get(key); if (!key.equals("OUTPUT") && !value.equals("")) { echoCommand(key + "=" + value.trim()); } } } else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { echoCommand("env: " + argument + ": not found"); } }
 
         // API 002 - (Logs)
@@ -87,7 +87,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Session
         else if (mainCommand.equals("logout")) { writeRMS("/home/OpenRMS", ""); processCommand("exit"); }
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(username); }
-        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh"); }
+        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { processCommand("import /java/bin/sh", false); }
 
         // API 004 - (LCDUI Interface)
         // |
@@ -125,9 +125,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer("monitor"); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); } }
         // |
         // Process
-        else if (mainCommand.equals("kill")) { kill(argument); }
-        else if (mainCommand.equals("stop")) { stop(argument); }
-        else if (mainCommand.equals("start")) { start(argument); }
+        else if (mainCommand.equals("start")) { start(argument); } else if (mainCommand.equals("kill")) { kill(argument); } else if (mainCommand.equals("stop")) { stop(argument); }
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); echoCommand(pid + "\t" + key); } }
         else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); } }
 
@@ -322,16 +320,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     public class Login implements CommandListener { private Form screen = new Form("Login"); private TextField USER = new TextField("Username", "", 256, TextField.ANY); private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); public Login() { screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); screen.append(USER); screen.addCommand(LOGIN); screen.addCommand(EXIT); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == LOGIN) { username = USER.getString(); if (username.equals("")) { } else { writeRMS("/home/OpenRMS", username); display.setCurrent(form); runScript(loadRMS("initd")); } } else if (c == EXIT) { processCommand("exit"); } } }
 
-    // API 001 - (Registry)
-    // |
-    // Aliases
-    private void aliasCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (argument.equals("")) { Enumeration keys = aliases.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) aliases.get(key); if (!key.equals("xterm") && !value.equals("")) { echoCommand("alias " + key + "='" + value.trim() + "'"); } } } else if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else { echoCommand("alias: " + argument + ": not found"); } return; } aliases.put(argument.substring(0, equalsIndex).trim(), argument.substring(equalsIndex + 1).trim()); }
-    private void unaliasCommand(String key) { if (key == null || key.length() == 0) { return; } if (aliases.containsKey(key)) { aliases.remove(key); } else { echoCommand("unalias: " + key + ": not found"); } }
-    // |
-    // Environment Keys
-    private void setCommand(String argument) { int equalsIndex = argument.indexOf('='); if (equalsIndex == -1) { if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { /* Exportation File */ } return; } String key = argument.substring(0, equalsIndex).trim(); String value = argument.substring(equalsIndex + 1).trim(); attributes.put(key, value); }
-    private void unsetCommand(String key) { if (key == null || key.length() == 0) { return; } if (attributes.containsKey(key)) { attributes.remove(key); } }
-
     // API 002 - (Logs)
     // |
     // OpenTTY Logging Manager
@@ -482,7 +470,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Operators
     private void ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); String command = argument.substring(lastParenthesis + 1).trim(); String[] parts = split(expression, ' '); if (parts.length == 3) { boolean result = false; boolean negated = parts[1].startsWith("!") && !parts[1].equals("!="); if (negated) parts[1] = parts[1].substring(1); Double n1 = getNumber(parts[0]), n2 = getNumber(parts[2]); if (n1 != null && n2 != null) { if (parts[1].equals("==")) { result = n1.doubleValue() == n2.doubleValue(); } else if (parts[1].equals("!=")) { result = n1.doubleValue() != n2.doubleValue(); } else if (parts[1].equals(">")) { result = n1.doubleValue() > n2.doubleValue(); } else if (parts[1].equals("<")) { result = n1.doubleValue() < n2.doubleValue(); } else if (parts[1].equals(">=")) { result = n1.doubleValue() >= n2.doubleValue(); } else if (parts[1].equals("<=")) { result = n1.doubleValue() <= n2.doubleValue(); } } else { if (parts[1].equals("startswith")) { result = parts[0].startsWith(parts[2]); } else if (parts[1].equals("endswith")) { result = parts[0].endsWith(parts[2]); } else if (parts[1].equals("contains")) { result = parts[0].indexOf(parts[2]) != -1; } else if (parts[1].equals("==")) { result = parts[0].equals(parts[2]); } else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); } } if (result != negated) { processCommand(command); } } else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } else if (parts.length == 1) { if (!parts[0].equals("")) { processCommand(command); } } }
-    private void forCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return; } String key = getCommand(argument); String file = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()); String command = argument.substring(lastParenthesis + 1).trim(); if (key.startsWith("(")) { return; } if (key.startsWith("$")) { key = replace(key, "$", ""); } String[] lines = split(file, '\n'); for (int i = 0; i < lines.length; i++) { if (lines[i] != null || lines[i].length() != 0) { processCommand("set " + key + "=" + lines[i]); processCommand(command); processCommand("unset " + key); } } }
+    private void forCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return; } String key = getCommand(argument); String file = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()); String command = argument.substring(lastParenthesis + 1).trim(); if (key.startsWith("(")) { return; } if (key.startsWith("$")) { key = replace(key, "$", ""); } String[] lines = split(file, '\n'); for (int i = 0; i < lines.length; i++) { if (lines[i] != null || lines[i].length() != 0) { processCommand("set " + key + "=" + lines[i], false); processCommand(command); processCommand("unset " + key, false); } } }
     private void caseCommand(String argument) {
         argument = argument.trim();
 
