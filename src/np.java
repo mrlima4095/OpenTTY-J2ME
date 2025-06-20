@@ -1,0 +1,3 @@
+interface np {
+   void a();
+}
