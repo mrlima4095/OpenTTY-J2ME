@@ -9,4 +9,3 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Replaced **PATCH** by **Version codename**
-- New case context **display** that check if a saved screen with name at expression is displaying
