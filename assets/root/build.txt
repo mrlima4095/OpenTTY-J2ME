@@ -70,4 +70,4 @@
 [2025-1.14.4-02x03] Improved Command 'UNAME'
 [2025-1.14.4-02x04] Release 1.14.4
 [2025-1.15-02x05]	1.15 Suite case | Added Command 'AUDIO'
-[2025-1.15-02x06]	New case operator 'display'
+[2025-1.15-02x06]	New case operator 'display' (reverted)
