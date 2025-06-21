@@ -1,4 +1,4 @@
-OpenTTY Java Edition 1.14.4
+OpenTTY Java Edition 1.15
 Copyright (C) 2025 - Mr. Lima
 
 
@@ -8,4 +8,8 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Updates_ ]
 
-- Replaced **PATCH** by **Version codename**
+- Replaced **PATCH** by **Version code-name**
+
+[ _Notes_ ]
+
+- A new LTS release is coming, 1.16 will bring a big update package.
