@@ -1,7 +1,14 @@
 OpenTTY $VERSION [ $PATCH ]
 Copyright (C) 2025 - Mr. Lima
 
+[ Overview ] 
 
+
+[ Default Plugins ]
+
+[ CHANGELOG ]
+
+- Added command 'audio'
 
 [ Web Project ]
 https://github.com/mrlima4095/OpenTTY-J2ME
