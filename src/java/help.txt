@@ -3,8 +3,8 @@ Copyright (C) 2025 - Mr. Lima
 
 [ Overview ] 
 
-
-[ Default Plugins ]
+	OpenTTY is a Terminal Emulator for J2ME Phones.
+	Usage 'man [page]'. All commands have and defualt plugin have a page. 
 
 [ CHANGELOG ]
 
