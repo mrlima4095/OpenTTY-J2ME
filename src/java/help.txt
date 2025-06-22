@@ -20,7 +20,14 @@ nano  nc  netstat  open  ping
 pong  pkg  pinc  ph2s  pjnc  prg
 prscan  proxy  ps  pushd  popd
 pwd  query  raw read  rm  rraw
-run  sed  server
+run  sed  server  set  sh  sleep
+start  stop  tail  tick  time
+title  top  touch  trace  true
+tty  ttysize  uname  unalias
+unset  umount  uuid  view  vnt
+warn  wc  wget  who  whoami
+x11 xterm
+
 
 [ Web Project ]
 https://github.com/mrlima4095/OpenTTY-J2ME
