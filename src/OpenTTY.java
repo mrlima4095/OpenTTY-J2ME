@@ -63,9 +63,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String argument = getArgument(command);
 
         if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand)); } } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { if (args.containsKey("shell.unknown")) { processCommand((String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument)); } else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); } } return; }
-        if (functions.containsKey(mainCommand) && ignore) { processCommand((String) functions.get(mainCommand) + " " + argument); return; }
         if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument); return; }
-
+        if (functions.containsKey(mainCommand) && ignore) { runScript((String) functions.get(mainCommand)); return; }
+        
         if (mainCommand.equals("")) { }
 
         // API 001 - (Registry)
@@ -288,14 +288,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 while (keys.hasMoreElements()) {
                     String key = (String) keys.nextElement();
                     String value = (String) functions.get(key);
-                    echoCommand("function " + key + " {\n" + value + "\n}");
+                    echoCommand(key + " {\n" + value + "\n}");
                 }
             } else {
                 int braceIndex = argument.indexOf('{');
                 int braceEnd = argument.lastIndexOf('}');
                 if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) {
                     String name = getCommand(argument).trim();
-                    String body = argument.substring(braceIndex + 1, braceEnd).trim();
+                    String body = replace(argument.substring(braceIndex + 1, braceEnd), ";", "\n").trim();
                     functions.put(name, body);
                 } else {
                     echoCommand("invalid syntax");
