@@ -44,7 +44,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("")) { history.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
+        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("") && !command.equals("!!")) { history.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
 
         else if (c == HELP) { processCommand("help"); }
         else if (c == NANO) { new NanoEditor(""); }
@@ -300,6 +300,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("run")) { processCommand(". " + argument, false); }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
+        else if (mainCommand.equals("!!")) { if (history.size() > 0) { stdin.setString((String) history.elementAt(history.size() - 1)); } }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(getcontent(argument)); } }
 
         else { echoCommand(mainCommand + ": not found"); }
