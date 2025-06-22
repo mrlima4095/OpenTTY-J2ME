@@ -56,8 +56,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
     // OpenTTY Command Processor
-    private void processCommand(String command) { processCommand(command, true); }
-    private void processCommand(String command, boolean ignore) {
+    private void processCommand(String command) { processCommand(command, true, null, cloneattr()); }
+    private void processCommand(String command, boolean ignore) { processCommand(command, ignore, null, cloneattr()); }
+    private void processCommand(String command, boolean ignore, Vector args) { processCommand(command, ignore, args, cloneattr()); }
+    private void processCommand(String command, boolean ignore, Vector args, Hashtable scope) {
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command);
         String argument = getArgument(command);
@@ -331,13 +333,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     private String read(String filename) { try { if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } } catch (IOException e) { return ""; } }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
-    private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
-    
+    private String env(String text, Hashtable scope) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = scope.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) scope.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
+    private String env(String text) { return env(text, attributes); }
+
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
 
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
+    private Hashtable cloneAttributes() {
+        Hashtable copy = new Hashtable();
+        Enumeration keys = attributes.keys();
+        while (keys.hasMoreElements()) {
+            String key = (String) keys.nextElement();
+            copy.put(key, attributes.get(key));
+        }
+        return copy;
+    }
+    
+    private Vector splitToVector(String text) {
+        Vector vec = new Vector();
+        if (text == null || text.trim().equals("")) return vec;
+        String[] parts = split(text, ' ');
+        for (int i = 0; i < parts.length; i++) {
+            vec.addElement(parts[i].trim());
+        }
+        return vec;
+    }
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     
     public class Login implements CommandListener { private Form screen = new Form("Login"); private TextField USER = new TextField("Username", "", 256, TextField.ANY); private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); public Login() { screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); screen.append(USER); screen.addCommand(LOGIN); screen.addCommand(EXIT); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == LOGIN) { username = USER.getString(); if (username.equals("")) { } else { writeRMS("/home/OpenRMS", username); display.setCurrent(form); runScript(loadRMS("initd")); } } else if (c == EXIT) { processCommand("exit"); } } }
