@@ -8,6 +8,7 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Updates_ ]
 
+- Improved help message
 - Replaced **PATCH** by **Version code-name**
 
 [ _Notes_ ]
