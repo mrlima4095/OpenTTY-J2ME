@@ -1,32 +1,6 @@
 OpenTTY $VERSION [ $PATCH ]
 Copyright (C) 2025 - Mr. Lima
 
-about  add  alias  audio
-basename  bg  bind  bruteforce
-buff  builtin  call  case  cat
-cd  chmod  clear  clone  conf
-cp  cron  curl  date  diff  dir
-du  echo  env  exec  execute
-exit  expr  export  false  find
-for  fw  gaddr  gauge  gc  genip
-get  getopt  getty  gobuster
-grep  hash  head  help  history
-hostname  hostid  htop  html
-if  ifconfig  import  install
-java  kill  locale  login  log
-logcat  logname  logout  ls
-lsblk  man  mkdir  mmspt  mount
-nano  nc  netstat  open  ping
-pong  pkg  pinc  ph2s  pjnc  prg
-prscan  proxy  ps  pushd  popd
-pwd  query  raw read  rm  rraw
-run  sed  server  set  sh  sleep
-start  stop  tail  tick  time
-title  top  touch  trace  true
-tty  ttysize  uname  unalias
-unset  umount  uuid  view  vnt
-warn  wc  wget  who  whoami
-x11 xterm
 
 
 [ Web Project ]
