@@ -44,7 +44,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("") && !command.equals("!!")) { history.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
+        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("") && !command.startsWith("!!")) { history.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
 
         else if (c == HELP) { processCommand("help"); }
         else if (c == NANO) { new NanoEditor(""); }
