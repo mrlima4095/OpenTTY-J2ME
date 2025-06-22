@@ -1,7 +1,7 @@
 OpenTTY $VERSION [ $PATCH ]
 Copyright (C) 2025 - Mr. Lima
 
-about  add  alias
+about  add  alias  audio
 
 [ Web Project ]
 https://github.com/mrlima4095/OpenTTY-J2ME
