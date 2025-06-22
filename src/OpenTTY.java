@@ -281,7 +281,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("function")) {  }
+        else if (mainCommand.equals("function")) {
+            
+        }
 
         // API 014 - (OpenTTY)
         // |
