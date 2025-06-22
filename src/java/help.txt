@@ -9,6 +9,7 @@ Copyright (C) 2025 - Mr. Lima
 [ CHANGELOG ]
 
 - Added command 'audio'
+- Improved help message
 
 [ Web Project ]
 https://github.com/mrlima4095/OpenTTY-J2ME
