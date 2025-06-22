@@ -15,7 +15,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Player player = null;
-    private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(),
+    private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), 
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String logs = "", path = "/home/", build = "2025-1.15-02x07"; 
@@ -282,26 +282,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("function")) {
-    if (argument.equals("")) {
-        Enumeration keys = functions.keys();
-        while (keys.hasMoreElements()) {
-            String key = (String) keys.nextElement();
-            String value = (String) functions.get(key);
-            echoCommand("function " + key + " {\n" + value + "\n}");
+            if (argument.equals("")) {
+                Enumeration keys = functions.keys();
+                while (keys.hasMoreElements()) {
+                    String key = (String) keys.nextElement();
+                    String value = (String) functions.get(key);
+                    echoCommand("function " + key + " {\n" + value + "\n}");
+                }
+            } else {
+                int braceIndex = argument.indexOf('{');
+                int braceEnd = argument.lastIndexOf('}');
+                if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) {
+                    String name = getCommand(argument).trim();
+                    String body = argument.substring(braceIndex + 1, braceEnd).trim();
+                    functions.put(name, body);
+                } else {
+                    echoCommand("invalid syntax");
+                }
+            }
         }
-    } else {
-        int braceIndex = argument.indexOf('{');
-        int braceEnd = argument.lastIndexOf('}');
-        if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) {
-            String name = getCommand(argument).trim();
-            String body = argument.substring(braceIndex + 1, braceEnd).trim();
-            functions.put(name, body);
-        } else {
-            echoCommand("function: invalid syntax");
-        }
-    }
-}
-
 
         // API 014 - (OpenTTY)
         // |
