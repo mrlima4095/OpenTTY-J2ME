@@ -57,13 +57,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     // OpenTTY Command Processor
     private void processCommand(String command) { processCommand(command, true); }
-    private void processCommand(String command, boolean ignore) { 
-        command = command.startsWith("exec") ? command.trim() : env(command.trim(), true);
+    private void processCommand(String command, boolean ignore) { processCommand(command, ignore, null); }
+    private void processCommand(String command, boolean ignore, String args) { 
+        command = command.startsWith("exec") ? command.trim() : env(command.trim(), args.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 
-        if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand)); } } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { if (args.containsKey("shell.unknown")) { processCommand((String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument)); } else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); } } return; }
-        if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument); return; }
-        if (functions.containsKey(mainCommand) && ignore) { processCommand((String) functions.get(mainCommand)); return; }
+        if (shell.containsKey(mainCommand) && ignore) { 
+            Hashtable args = (Hashtable) shell.get(mainCommand); 
+            if (argument.equals("")) { 
+                processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true", true, argument); 
+            } 
+            else if (args.containsKey(getCommand(argument).toLowerCase())) { 
+                processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument), true, argument); 
+            } 
+            else { 
+                processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "builtin echo " + mainCommand + ": " + getCommand(argument) + ": not found", true, argument); 
+            } 
+            return; 
+        }
+        if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument, argument); return; }
+        if (functions.containsKey(mainCommand) && ignore) { runScript((String) functions.get(mainCommand)); return; }
         
         if (mainCommand.equals("")) { }
 
@@ -332,8 +345,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String read(String filename) { try { if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } } catch (IOException e) { return ""; } }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
-    private String env(String text, boolean local) {
-        String[] args = split(getArgument(text), ' ');
+    private String env(String text, String data) {
+        String[] args = split(data, ' ');
         Hashtable scope = new Hashtable();
         scope.put("*", getArgument(text));
         for (int i = 0; i < args.length; i++) { scope.put(String.valueOf(i + 1), args[i]); }
