@@ -72,4 +72,4 @@
 [2025-1.15-02x05]	1.15 Suite case | Added Command 'AUDIO'
 [2025-1.15-02x06]	New case operator 'display' (reverted)
 [2025-1.15-02x07]	Improved help message
-[2025-1.15-02x08]	Enviroment scopes
+[2025-1.15-02x08]	Enviroment scopes (reverted)
