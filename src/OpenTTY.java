@@ -60,7 +60,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void processCommand(String command, boolean ignore) { 
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
-        String[] args = split(argument, ' '); 
 
         if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand)); } } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { if (args.containsKey("shell.unknown")) { processCommand((String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument)); } else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); } } return; }
         if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument); return; }
@@ -290,7 +289,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String value = (String) functions.get(key);
                     echoCommand(key + " { " + value + " }");
                 }
-            } else {
+            } 
+            else {
                 int braceIndex = argument.indexOf('{');
                 int braceEnd = argument.lastIndexOf('}');
                 if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) {
@@ -332,7 +332,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String read(String filename) { try { if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } } catch (IOException e) { return ""; } }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
-    private String env(String text) { return env(text, attributes); }
+    private String env(String text, boolean local) {
+        String[] args = split(getArgument(text), ' ');
+        Hashtable scope = new Hashtable();
+        scope.put("*", argument);
+        for (int i = 0; i < args.length; i++) {
+            scope.put(String.valueOf(i + 1), args[i]);
+        }
+        for (int i = 1; i < args.length; i++) {
+            StringBuffer sb = new StringBuffer();
+            for (int j = i; j < args.length; j++) {
+                sb.append(args[j]);
+                if (j < args.length - 1) sb.append(" ");
+            }
+            scope.put(i + "-", sb.toString());
+        }
+
+        Enumeration e = scope.keys();
+        while (e.hasMoreElements()) {
+            String key = (String) e.nextElement();
+            String value = (String) scope.get(key);
+            text = replace(text, "$" + key, value);
+        }
+
+        return env(text);
+    }
 
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
