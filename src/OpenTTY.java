@@ -58,7 +58,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // OpenTTY Command Processor
     private void processCommand(String command) { processCommand(command, true); }
     private void processCommand(String command, boolean ignore) { 
-        command = command.startsWith("exec") ? command.trim() : env(command.trim());
+        command = command.startsWith("exec") ? command.trim() : env(command.trim(), true);
         String mainCommand = getCommand(command), argument = getArgument(command);
 
         if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { if (aliases.containsKey(mainCommand)) { processCommand((String) aliases.get(mainCommand)); } } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { if (args.containsKey("shell.unknown")) { processCommand((String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument)); } else { echoCommand(mainCommand + ": " + getCommand(argument) + ": not found"); } } return; }
