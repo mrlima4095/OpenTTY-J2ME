@@ -62,19 +62,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         command = command.startsWith("exec") ? command.trim() : env(command.trim(), args.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 
-        if (shell.containsKey(mainCommand) && ignore) { 
-            Hashtable args = (Hashtable) shell.get(mainCommand); 
-            if (argument.equals("")) { 
-                processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true", true, argument); 
-            } 
-            else if (args.containsKey(getCommand(argument).toLowerCase())) { 
-                processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument), true, argument); 
-            } 
-            else { 
-                processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "builtin echo " + mainCommand + ": " + getCommand(argument) + ": not found", true, argument); 
-            } 
-            return; 
-        }
+        if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true", true, argument); } else if (args.containsKey(getCommand(argument).toLowerCase())) { processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument), true, argument); } else { processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "builtin echo " + mainCommand + ": " + getCommand(argument) + ": not found", true, argument); } return; }
         if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument, true, argument); return; }
         if (functions.containsKey(mainCommand) && ignore) { runScript((String) functions.get(mainCommand)); return; }
         
@@ -130,8 +118,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long startTime = System.currentTimeMillis(); processCommand(argument, ignore); long endTime = System.currentTimeMillis(); echoCommand("at " + (endTime - startTime) + "ms"); } }
         // |
         // Chain executors
-        else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim(), ignore); } }
-        else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim(), ignore); } }
+        else if (mainCommand.equals("exec")) { String[] commands = split(argument, '&'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim(), ignore, argument); } }
+        else if (mainCommand.equals("execute")) { String[] commands = split(argument, ';'); for (int i = 0; i < commands.length; i++) { processCommand(commands[i].trim(), ignore, argument); } }
 
         // API 006 - (Process)
         // |
