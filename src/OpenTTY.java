@@ -336,9 +336,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String[] args = split(getArgument(text), ' ');
         Hashtable scope = new Hashtable();
         scope.put("*", getArgument(text));
-        for (int i = 0; i < args.length; i++) {
-            scope.put(String.valueOf(i + 1), args[i]);
-        }
+        for (int i = 0; i < args.length; i++) { scope.put(String.valueOf(i + 1), args[i]); }
         for (int i = 1; i < args.length; i++) {
             StringBuffer sb = new StringBuffer();
             for (int j = i; j < args.length; j++) {
