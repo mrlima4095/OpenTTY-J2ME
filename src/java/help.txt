@@ -6,10 +6,5 @@ Copyright (C) 2025 - Mr. Lima
 	OpenTTY is a Terminal Emulator for J2ME Phones.
 	Usage 'man [page]'. All commands have and defualt plugins have a page. 
 
-[ CHANGELOG ]
-
-- Added command 'audio'
-- Improved help message
-
 [ Web Project ]
 https://github.com/mrlima4095/OpenTTY-J2ME
