@@ -57,7 +57,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     // OpenTTY Command Processor
     private void processCommand(String command) { processCommand(command, true); }
-    private void processCommand(String command, boolean ignore, ) { 
+    private void processCommand(String command, boolean ignore) { 
         command = replace(command.startsWith("exec") ? command.trim() : env(command.trim()), "$args", getArgument(command.trim()));
         String mainCommand = getCommand(command), argument = getArgument(command);
 
