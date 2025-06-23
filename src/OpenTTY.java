@@ -75,7 +75,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             return; 
         }
-        if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument, argument); return; }
+        if (aliases.containsKey(mainCommand) && ignore) { processCommand((String) aliases.get(mainCommand) + " " + argument, true, argument); return; }
         if (functions.containsKey(mainCommand) && ignore) { runScript((String) functions.get(mainCommand)); return; }
         
         if (mainCommand.equals("")) { }
