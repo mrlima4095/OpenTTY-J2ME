@@ -284,7 +284,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("function")) {
             if (argument.equals("")) { } 
             else if (functions.containsKey(argument)) {
-                echoCommand(argument + " { " + replace((String) functions.get(argument).trim(), "\n", ";") + " }");
+                echoCommand(argument + " { " + replace((String) functions.get(argument), "\n", ";") + " }");
             }
             else {
                 int braceIndex = argument.indexOf('{');
