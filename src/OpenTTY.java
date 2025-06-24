@@ -296,16 +296,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // OpenTTY Packages
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { importScript(argument); }
-        else if (mainCommand.equals("run")) { processCommand(". " + argument, false); 
-        else if (mainCommand.equals("function")) { 
-            if (argument.equals("")) { } 
-            else { 
-                int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); 
-                if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { 
-                    String name = getCommand(argument).trim(); 
-                    String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); 
-                    functions.put(name, body); 
-                } else { echoCommand("invalid syntax"); } } }
+        else if (mainCommand.equals("run")) { processCommand(". " + argument, false); }
+        else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); } } }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals("!!")) { if (history.size() > 0) { stdin.setString((String) history.elementAt(history.size() - 1)); } }
