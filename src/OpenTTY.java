@@ -403,41 +403,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
             }
-            else if (type.equals("list")) {
-                TYPE = LIST;
-                Image IMG = null;
-
-                if (!lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; }
-                
-                if (lib.containsKey("list.title")) { list.setTitle(getenv("list.title")); }
-                if (lib.containsKey("list.icon")) { try { IMG = Image.createImage(getenv("list.icon")); } catch (IOException e) { MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded"); } }
-                
-                BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2);
-                list.addCommand(BACK); list.addCommand(USER);
-
-                String[] content = split(getenv("list.content"), ',');
-
-                for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); }
-
-                list.setCommandListener(this);
-                display.setCurrent(list);
-            }
-            else if (type.equals("quest")) {
-                TYPE = QUEST;
-
-                if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; }
-
-                if (lib.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); }
-                INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type")));
-
-                BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1);
-
-                screen.append(INPUT);
-                screen.addCommand(BACK); screen.addCommand(USER);
-                screen.setCommandListener(this);
-                display.setCurrent(screen);
-            } else { return; }
-
+            else if (type.equals("list")) { TYPE = LIST; Image IMG = null; if (!lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } if (lib.containsKey("list.title")) { list.setTitle(getenv("list.title")); } if (lib.containsKey("list.icon")) { try { IMG = Image.createImage(getenv("list.icon")); } catch (IOException e) { MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded"); } } BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2); list.addCommand(BACK); list.addCommand(USER); String[] content = split(getenv("list.content"), ','); for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); } list.setCommandListener(this); display.setCurrent(list); }
+            else if (type.equals("quest")) { TYPE = QUEST; if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } if (lib.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); } INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); screen.append(INPUT); screen.addCommand(BACK); screen.addCommand(USER); screen.setCommandListener(this); display.setCurrent(screen); } else { return; }
         }
 
         public void commandAction(Command c, Displayable d) {
