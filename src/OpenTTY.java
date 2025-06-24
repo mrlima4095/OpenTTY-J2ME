@@ -283,9 +283,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("function")) {
             if (argument.equals("")) { } 
-            else if (functions.containsKey(argument)) {
-                echoCommand(argument + " { " + replace((String) functions.get(argument), "\n", ";") + " }");
-            }
             else {
                 int braceIndex = argument.indexOf('{');
                 int braceEnd = argument.lastIndexOf('}');
@@ -293,10 +290,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String name = getCommand(argument).trim();
                     String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n");
                     functions.put(name, body);
-                } else { echoCommand("invalid syntax"); }
+                } 
+                else { echoCommand("invalid syntax"); }
             }
         }
-
 
         // API 014 - (OpenTTY)
         // |
