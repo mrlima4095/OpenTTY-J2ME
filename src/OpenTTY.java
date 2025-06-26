@@ -538,17 +538,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { argument = "sh"; } 
 
             String content = read("/home/man.html"); 
-            if (content.equals("") || argument.equals("--update")) { processCommand("execute install /home/nano; netstat; if ($OUTPUT == true) exec tick Downloading... & proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html & install /home/man.html & get /home/nano & echo [Manual] Resources downloaded! & tick; if ($OUTPUT == false) exec echo [Manual] MIDlet cannot access Internet! & echo [Manual] Verify your connection and try again.", false); return; } 
+            if (content.equals("") || argument.equals("--update")) { 
+                processCommand("execute install /home/nano; netstat; if ($OUTPUT == true) exec tick Downloading... & proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html & install /home/man.html & get /home/nano & echo [Manual] Resources downloaded! & tick; if ($OUTPUT == false) exec echo [Manual] MIDlet cannot access Internet! & echo [Manual] Verify your connection and try again.", false); 
+                return 0; 
+            } 
 
-            String tag = argument.toLowerCase(), startTag = "<" + tag + ">", endTag = "</" + tag + ">"; 
-            int start = content.indexOf(startTag), end = content.indexOf(endTag); 
-
-            if (start != -1 && end != -1 && end > start) { 
-                String section = content.substring(start + startTag.length(), end).trim(); 
+            content = extractTag(content, argument.toLowerCase(), "");
+            if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } 
+            else {
                 if (verbose) { echoCommand(section); }
                 else { viewer(form.getTitle(), section); } 
-            } 
-            else { echoCommand("man: " + argument + ": not found"); } 
+            }
         }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
@@ -827,7 +827,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Interfaces
     public class NanoEditor implements CommandListener { private TextBox screen = new TextBox("Nano", "", 31522, TextField.ANY); private Command BACK = new Command("Back", Command.BACK, 1), CLEAR = new Command("Clear", Command.OK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1); public NanoEditor(String args) { screen.setString((args == null || args.length() == 0) ? nanoContent : getcontent(args)); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.addCommand(VIEW); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { nanoContent = screen.getString(); processCommand("xterm"); } else if (c == CLEAR) { screen.setString(""); } else if (c == RUN) { nanoContent = screen.getString(); processCommand("xterm"); runScript(nanoContent); } else if (c == IMPORT) { nanoContent = screen.getString(); processCommand("xterm"); importScript("nano"); } else if (c == VIEW) { nanoContent = screen.getString(); viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
-    private String extractTitle(String htmlContent) { int titleStart = htmlContent.indexOf("<title>"); int titleEnd = htmlContent.indexOf("</title>"); if (titleStart != -1 && titleEnd != -1 && titleEnd > titleStart) { return htmlContent.substring(titleStart + 7, titleEnd).trim(); } return "HTML Viewer"; }
+    private String extractTitle(String htmlContent) { return extractTag(htmlContent, "title", "HTML Viewer"); }
+    private String extractTag(String htmlContent, String tag, String fallback) { String startTag = "<" + tag + ">", endTag = "</" + tag + ">"; int start = content.indexOf(startTag), end = content.indexOf(endTag); if (start != -1 && end != -1 && end > start) { String section = content.substring(start + startTag.length(), end).trim(); return tag; } else { return fallback; } }
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
     // |
     // Audio Manager
