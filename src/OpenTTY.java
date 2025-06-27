@@ -546,8 +546,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             content = extractTag(content, argument.toLowerCase(), "");
             if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } 
             else {
-                if (verbose) { echoCommand(section); }
-                else { viewer(form.getTitle(), section); } 
+                if (verbose) { echoCommand(content); }
+                else { viewer(form.getTitle(), content); } 
             }
         }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
