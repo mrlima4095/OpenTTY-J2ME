@@ -203,7 +203,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
-        else if (mainCommand.equals("netstat")) { try { HttpConnection CONN = (HttpConnection) Connector.open("http://ipinfo.io/ip"); CONN.setRequestMethod(HttpConnection.GET); if (conn.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } CONN.close(); } catch (Exception e) { echoCommand("false"); } }
+        else if (mainCommand.equals("netstat")) { try { HttpConnection CONN = (HttpConnection) Connector.open("http://ipinfo.io/ip"); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } CONN.close(); } catch (Exception e) { echoCommand("false"); } }
 
         // API 012 - (File)
         // |
