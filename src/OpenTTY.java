@@ -775,8 +775,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Process
     private int kill(String pid) { if (pid == null || pid.length() == 0) { return 2; } Enumeration KEYS = trace.keys(); while (KEYS.hasMoreElements()) { String KEY = (String) KEYS.nextElement(); if (pid.equals(trace.get(KEY))) { trace.remove(KEY); echoCommand("Process with PID " + pid + " terminated"); if (KEY.equals("sh")) { processCommand("exit"); } return 0; } } echoCommand("PID '" + pid + "' not found"); return 127; }
-    private int start(String app) { if (app == null || app.length() == 0 || trace.containsKey(app)) { return 2; } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); if (app.equals("sh")) { sessions.addElement("127.0.0.1"); } }
-    private int stop(String app) { if (app == null || app.length() == 0) { return 2; } trace.remove(app); if (app.equals("sh")) { processCommand("exit"); } } 
+    private int start(String app) { if (app == null || app.length() == 0 || trace.containsKey(app)) { return 2; } trace.put(app, String.valueOf(1000 + random.nextInt(9000))); if (app.equals("sh")) { sessions.addElement("127.0.0.1"); } return 0; }
+    private int stop(String app) { if (app == null || app.length() == 0) { return 2; } trace.remove(app); if (app.equals("sh")) { processCommand("exit"); } return 0; } 
 
     // API 008 - (Logic I/O) Text
     // |
