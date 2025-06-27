@@ -408,7 +408,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
         }
         else if (mainCommand.equals("diff")) { 
-            if (argument.equals("") || split(argument, ' ').length < 2) { return; } 
+            if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } 
             else { 
                 String[] files = split(argument, ' '); 
                 String[] lines1 = split(getcontent(files[0]), '\n'); 
