@@ -5,11 +5,14 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `audio [options] [file]`: Audio Manager
+- `return [code: int]`: Return with code
+- `eval [command]`: Print returned code of command
 
 [ _Updates_ ]
 
 - Improved help message
 - Replaced **PATCH** by **Version code-name**
+- 
 
 [ _Notes_ ]
 
