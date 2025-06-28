@@ -598,7 +598,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals("!!")) { if (history.size() > 0) { stdin.setString((String) history.elementAt(history.size() - 1)); } }
-        else if (mainCommand.equals(".")) { if (argument.equals("")) { runScript(nanoContent); } else { runScript(getcontent(argument)); } }
+        else if (mainCommand.equals(".")) { if (argument.equals("")) { return runScript(nanoContent); } else { return runScript(getcontent(argument)); } }
 
         else { echoCommand(mainCommand + ": not found"); return 127; }
 
@@ -845,6 +845,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
         else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); } 
         else { String code = getcontent(mainCommand); Hashtable objects = new Hashtable(); if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return 1; } String[] lines = split(code, ';'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); if (line.length() == 0) { continue; } try { if (line.indexOf('=') != -1) { String[] parts = split(line, '='); String objectName = parts[0].trim(); String className = parts[1].trim(); Class clazz = Class.forName(className); Object instance = clazz.newInstance(); objects.put(objectName, instance); } else if (line.indexOf('.') != -1) { String[] parts = split(line, '.'); String objectName = parts[0].trim(); if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } for (int j = 1; j < parts.length; j++) { Object object = (Object) objects.get(objectName); Class clazz = object.getClass(); echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); } } else if (line.startsWith("//")) { } else { throw new IOException("Syntax error"); } } catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return 2; } } } 
+        
         return 0;
     }
     // |
@@ -855,13 +856,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // OpenTTY Packages
     private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2025 - Mr. Lima")); return; } Hashtable lib = parseProperties(getcontent(script)); if (lib.containsKey("name")) { echoCommand((String) lib.get("name") + " " + (String) lib.get("version")); } if (lib.containsKey("description")) { echoCommand((String) lib.get("description")); } }
-    private void importScript(String script) {
-        if (script == null || script.length() == 0) { return; }
+    private int importScript(String script) {
+        if (script == null || script.length() == 0) { return 2; }
 
         Hashtable lib = parseProperties(getcontent(script));
         // |
         // Verify current API version
-        if (lib.containsKey("api.version")) { if (!env("$VERSION").startsWith((String) lib.get("api.version"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return; } }
+        if (lib.containsKey("api.version")) { if (!env("$VERSION").startsWith((String) lib.get("api.version"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return 3; } }
         // |
         // Start and handle APP process
         if (lib.containsKey("process.name")) { start((String) lib.get("process.name")); }
@@ -881,26 +882,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Build APP Shell
         if (lib.containsKey("shell.name") && lib.containsKey("shell.args")) { build(lib); }
-    }
-    private void build(Hashtable lib) { 
-        String name = (String) lib.get("shell.name"); 
-        String[] args = split((String) lib.get("shell.args"), ','); 
-        Hashtable shellTable = new Hashtable(); 
 
-        for (int i = 0; i < args.length; i++) { 
-            String argName = args[i].trim(); 
-            String argValue = (String) lib.get(argName); 
-            shellTable.put(argName, (argValue != null) ? argValue : ""); 
-        } 
-
-        if (lib.containsKey("shell.unknown")) { shellTable.put("shell.unknown", (String) lib.get("shell.unknown")); } 
-
-        shell.put(name, shellTable); 
-    }
-    private int runScript(String script) { 
-        String[] CMDS = split(script, '\n'); 
-        for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim()); if (STATUS != 0) { return STATUS; } } 
         return 0;
     }
+    private int build(Hashtable lib) { 
+        String CMD = (String) lib.get("shell.name"); 
+        String[] ARGS = split((String) lib.get("shell.args"), ','); 
+        Hashtable TABLE = new Hashtable(); 
+
+        for (int i = 0; i < ARGS.length; i++) { 
+            String NAME = ARGS[i].trim(); 
+            String VALUE = (String) lib.get(NAME); 
+            ARGS.put(NAME, (VALUE != null) ? VALUE : ""); 
+        } 
+
+        if (lib.containsKey("shell.unknown")) { ARGS.put("shell.unknown", (String) lib.get("shell.unknown")); } 
+
+        shell.put(CMD, ARGS); 
+        return 0;
+    }
+    private int runScript(String script) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim()); if (STATUS != 0) { return STATUS; } } return 0; }
 
 }
