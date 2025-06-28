@@ -12,7 +12,6 @@ Copyright (C) 2025 - Mr. Lima
 
 - Improved help message
 - Replaced **PATCH** by **Version code-name**
-- 
 
 [ _Notes_ ]
 
