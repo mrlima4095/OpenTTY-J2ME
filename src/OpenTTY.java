@@ -503,7 +503,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { } 
             else { 
                 Hashtable nodes = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); 
-                int status = 1; 
+                int STATUS = 1; 
 
                 if (nodes.containsKey(argument)) { 
                     try { 
@@ -512,19 +512,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } 
                         else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
                     } 
-                    catch (SecurityException e) { status = 2; } 
-                    catch (Exception e) { status = 3; } 
+                    catch (SecurityException e) { STATUS = 2; } 
+                    catch (Exception e) { STATUS = 3; } 
                 } 
 
                 else if (argument.equals("*")) { 
                     Enumeration keys = nodes.keys(); 
-                    while (keys.hasMoreElements()) { processCommand("chmod " + (String) keys.nextElement(), false); status = 4; } 
+                    while (keys.hasMoreElements()) { processCommand("chmod " + (String) keys.nextElement(), false); STATUS = 4; } 
                 } 
-                else { echoCommand("chmod: " + argument + ": not found"); status = 5; } 
+                else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
 
-                if (status == 1) { MIDletLogs("add info Permission '" + (String) nodes.get(argument) + "' granted"); } 
-                else if (status == 2) { MIDletLogs("add error Permission '" + (String) nodes.get(argument) + "' denied"); } 
-                else if (status == 3) { MIDletLogs("add warn Unsupported API '" + (String) nodes.get(argument) + "'"); } 
+                if (STATUS == 1) { MIDletLogs("add info Permission '" + (String) nodes.get(argument) + "' granted"); } 
+                else if (STATUS == 2) { MIDletLogs("add error Permission '" + (String) nodes.get(argument) + "' denied"); } 
+                else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) nodes.get(argument) + "'"); } 
+
+                return STATUS;
             } 
         }
         // |
@@ -586,15 +588,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("import")) { importScript(argument); }
         else if (mainCommand.equals("run")) { processCommand(". " + argument, false); }
         else if (mainCommand.equals("function")) { 
-            if (argument.equals("")) { } 
-            else { 
-                int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); 
-                if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { 
-                    String name = getCommand(argument).trim();
-                     String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); 
-
-                     functions.put(name, body); 
-                 } else { echoCommand("invalid syntax"); return 1;} } }
+            if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 1; } } }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
         else if (mainCommand.equals("!!")) { if (history.size() > 0) { stdin.setString((String) history.elementAt(history.size() - 1)); } }
