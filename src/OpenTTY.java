@@ -258,8 +258,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 StringBuffer sb = new StringBuffer(); 
                 String newline = path.equals("/home/") ? "\n" : "\t"; 
 
-                for (int i = 0; i < results.size(); i++) { 
-                    String item = (String) results.elementAt(i); 
+                for (int i = 0; i < BUFFER.size(); i++) { 
+                    String item = (String) BUFFER.elementAt(i); 
                     if (!item.equals("/")) { sb.append(item).append(newline); } 
                 } 
 
