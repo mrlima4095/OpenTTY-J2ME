@@ -94,7 +94,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 004 - (LCDUI Interface)
         // |
         // System UI
-        else if (mainCommand.equals("x11")) { xserver(argument); }
+        else if (mainCommand.equals("x11")) { return '2ssssxserver(argument); }
         else if (mainCommand.equals("xterm")) { display.setCurrent(form); }
         else if (mainCommand.equals("gauge")) { xserver("gauge " + argument); }
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); }
@@ -214,104 +214,47 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { 
             if (argument.equals("")) { path = "/home/"; } 
-            else if (argument.equals("..")) { 
-                if (path.equals("/")) { return 0; } 
- 
-                int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); 
-                path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); 
-            } 
+            else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } 
             else { 
-                String target = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
-                if (!target.endsWith("/")) { target += "/"; } 
+                String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
+                if (!TARGET.endsWith("/")) { TARGET += "/"; } 
 
-                if (paths.containsKey(target)) { path = target; } 
-                else if (target.startsWith("/mnt/")) { 
+                if (paths.containsKey(TARGET)) { path = TARGET; } 
+                else if (TARGET.startsWith("/mnt/")) { 
                     try { 
-                        String realPath = "file:///" + target.substring(5); 
-                        if (!realPath.endsWith("/")) realPath += "/"; 
+                        String REALPWD = "file:///" + TARGET.substring(5); 
+                        if (!REALPWD.endsWith("/")) REALPWD += "/"; 
 
-                        FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ); 
-                        if (fc.exists() && fc.isDirectory()) { path = target; } 
-                        else { echoCommand("cd: " + basename(target) + ": not " + (!fc.exists() ? "found" : "a directory")); } 
+                        FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); 
+                        if (fc.exists() && fc.isDirectory()) { path = TARGET; } 
+                        else { echoCommand("cd: " + basename(TARGET) + ": not " + (!fc.exists() ? "found" : "a directory")); return 127; } 
 
                         fc.close(); 
                     } 
-                    catch (IOException e) { echoCommand("cd: " + basename(target) + ": " + e.getMessage()); } 
+                    catch (IOException e) { echoCommand("cd: " + basename(TARGET) + ": " + e.getMessage()); return 1; } 
                 } 
-                else { echoCommand("cd: " + basename(target) + ": not accessible"); } 
+                else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } 
             } 
         }
-        else if (mainCommand.equals("pushd")) { 
-            if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } 
-            else { 
-                if (!argument.endsWith("/")) { argument += "/"; } 
-                if (!paths.containsKey(argument)) { echoCommand("pushd: " + argument + ": not found"); } 
-                else { 
-                    stack.addElement(path); 
-                    path = argument; echoCommand(readStack()); 
-                } 
-            } 
-        }
-        else if (mainCommand.equals("popd")) { 
-            if (stack.isEmpty()) { echoCommand("popd: empty stack"); } 
-            else { 
-                path = (String) stack.lastElement(); 
-                stack.removeElementAt(stack.size() - 1); 
-                echoCommand(readStack()); 
-            } 
-        }
+        else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
+        else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("dir")) { 
-            Vector results = new Vector(); 
-            if (path.equals("/mnt/")) { 
-                try { 
-                    Enumeration roots = FileSystemRegistry.listRoots(); 
-                    while (roots.hasMoreElements()) { 
-                        String root = (String) roots.nextElement(); 
-
-                        if (!results.contains(root)) { results.addElement(root); } 
-                    } 
-                } 
-                catch (Exception e) { } 
-            } 
-            else if (path.startsWith("/mnt/")) { 
-                try { 
-                    String realPath = "file:///" + path.substring(5); 
-                    if (!realPath.endsWith("/")) { realPath += "/"; } 
-                    FileConnection fc = (FileConnection) Connector.open(realPath, Connector.READ); 
-                    Enumeration content = fc.list(); 
-                    while (content.hasMoreElements()) { 
-                        String item = (String) content.nextElement(); 
-                        results.addElement(item); 
-                    } 
-                    fc.close(); 
-                } 
-                catch (Exception e) { } 
-            } 
-            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { 
-                try { 
-                    String[] recordStores = RecordStore.listRecordStores(); 
-
-                    if (recordStores != null) { 
-                        for (int i = 0; i < recordStores.length; i++) { 
-                            String name = recordStores[i]; 
-                            if ((argument.indexOf("-a") != -1 || !name.startsWith(".")) && !results.contains(name)) { results.addElement(name); } 
-                        } 
-                    } 
-                } 
-                catch (RecordStoreException e) { } 
-            } 
+            Vector BUFFER = new Vector(); 
+            if (path.equals("/mnt/")) { try { Enumeration ROOTS = FileSystemRegistry.listRoots(); while (ROOTS.hasMoreElements()) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } 
+            else if (path.startsWith("/mnt/")) { try { String REALPWD = "file:///" + path.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); Enumeration CONTENT = CONN.list(); while (CONTENT.hasMoreElements()) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } 
+            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } 
             else if (path.equals("/home/")) { new Explorer(); return 0; } 
 
-            String[] files = (String[]) paths.get(path); 
-            if (files != null) { 
-                for (int i = 0; i < files.length; i++) { 
-                    String f = files[i].trim(); 
+            String[] FILES = (String[]) paths.get(path); 
+            if (FILES != null) { 
+                for (int i = 0; i < FILES.length; i++) { 
+                    String f = FILES[i].trim(); 
                     if (f == null || f.equals("..") || f.equals("/")) { continue; } 
-                    if (!results.contains(f) && !results.contains(f + "/")) { results.addElement(f); } 
+                    if (!BUFFER.contains(f) && !BUFFER.contains(f + "/")) { BUFFER.addElement(f); } 
                 } 
             } 
 
-            if (!results.isEmpty()) { 
+            if (!BUFFER.isEmpty()) { 
                 StringBuffer sb = new StringBuffer(); 
                 String newline = path.equals("/home/") ? "\n" : "\t"; 
 
@@ -326,10 +269,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk"); }
-        else if (mainCommand.equals("lsblk")) { 
-            if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } 
-            else { echoCommand("lsblk: " + argument + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else { echoCommand("lsblk: " + argument + ": not found"); return 127; } }
         // |
         // RMS Files
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { deleteFile(argument); } }
@@ -350,16 +290,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("rraw")) { stdout.setText(nanoContent); }
         else if (mainCommand.equals("getty")) { nanoContent = stdout.getText(); }
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
-        else if (mainCommand.equals("du")) { 
-            if (argument.equals("")) { } 
-            else { processCommand("wc -c " + argument, false); } 
-        }
-        else if (mainCommand.equals("hash")) { 
-            if (argument.equals("")) { } 
-            else { echoCommand("" + getcontent(argument).hashCode()); } }
-        else if (mainCommand.equals("cat")) { 
-            if (argument.equals("")) { } 
-            else { echoCommand(getcontent(argument)); } }
+        else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { processCommand("wc -c " + argument, false); } }
+        else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
+        else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { echoCommand(getcontent(argument)); } }
         else if (mainCommand.equals("get")) { if (argument.equals("") || argument.equals("nano")) { nanoContent = loadRMS("nano"); } else { nanoContent = getcontent(argument); } }
         else if (mainCommand.equals("read")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); attributes.put(ARGS[0], getcontent(ARGS[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); echoCommand(getcontent(ARGS[1]).indexOf(ARGS[0]) != -1 ? "true" : "false"); } }
