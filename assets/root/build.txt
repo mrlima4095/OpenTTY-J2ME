@@ -73,3 +73,4 @@
 [2025-1.15-02x06]	New case operator 'display' (reverted)
 [2025-1.15-02x07]	Improved help message
 [2025-1.15-02x08]	Enviroment scopes (reverted)
+[2025-1.15-02x09]	Return codes
