@@ -716,12 +716,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (int i = 0; i < ARGS.length; i++) { 
             String NAME = ARGS[i].trim(); 
             String VALUE = (String) lib.get(NAME); 
-            ARGS.put(NAME, (VALUE != null) ? VALUE : ""); 
+            TABLE.put(NAME, (VALUE != null) ? VALUE : ""); 
         } 
 
-        if (lib.containsKey("shell.unknown")) { ARGS.put("shell.unknown", (String) lib.get("shell.unknown")); } 
+        if (lib.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) lib.get("shell.unknown")); } 
 
-        shell.put(CMD, ARGS); 
+        shell.put(CMD, TABLE); 
         return 0;
     }
     private int runScript(String script) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim()); if (STATUS != 0) { return STATUS; } } return 0; }
