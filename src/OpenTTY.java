@@ -94,7 +94,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 004 - (LCDUI Interface)
         // |
         // System UI
-        else if (mainCommand.equals("x11")) { return '2ssssxserver(argument); }
+        else if (mainCommand.equals("x11")) { return xserver(argument); }
         else if (mainCommand.equals("xterm")) { display.setCurrent(form); }
         else if (mainCommand.equals("gauge")) { xserver("gauge " + argument); }
         else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); }
