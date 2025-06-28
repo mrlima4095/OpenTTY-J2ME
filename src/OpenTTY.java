@@ -203,7 +203,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
-        else if (mainCommand.equals("netstat")) { try { HttpConnection CONN = (HttpConnection) Connector.open("http://ipinfo.io/ip"); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { echoCommand("true"); } else { echoCommand("false"); } CONN.close(); } catch (Exception e) { echoCommand("false"); } }
+        else if (mainCommand.equals("netstat")) { int STATUS = 0; try { HttpConnection CONN = (HttpConnection) Connector.open("http://ipinfo.io/ip"); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } else { STATUS = 1; } CONN.close(); } catch (Exception e) { STATUS = 1; } echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; }
 
         // API 012 - (File)
         // |
@@ -360,130 +360,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cat")) { 
             if (argument.equals("")) { } 
             else { echoCommand(getcontent(argument)); } }
-        else if (mainCommand.equals("get")) { 
-            if (argument.equals("") || argument.equals("nano")) { nanoContent = loadRMS("nano"); } 
-            else { nanoContent = getcontent(argument); } 
-        }
-        else if (mainCommand.equals("read")) { 
-            if (argument.equals("") || split(argument, ' ').length < 2) { } 
-            else { 
-                String[] args = split(argument, ' '); 
-                attributes.put(args[0], getcontent(args[1])); 
-            } 
-        }
-        else if (mainCommand.equals("grep")) { 
-            if (argument.equals("") || split(argument, ' ').length < 2) { } 
-            else { 
-                String[] args = split(argument, ' '); 
-                echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); 
-            } 
-        }
-        else if (mainCommand.equals("find")) { 
-            if (argument.equals("") || split(argument, ' ').length < 2) { } 
-            else { 
-                String[] args = split(argument, ' '); 
-                String file = getcontent(args[1]), value = (String) parseProperties(file).get(args[0]); 
-
-                echoCommand(value != null ? value : "null"); 
-            } 
-        }
-        else if (mainCommand.equals("head")) { 
-            if (argument.equals("")) { } 
-            else { 
-                String content = getcontent(argument); 
-                String[] lines = split(content, '\n'); 
-                int count = Math.min(10, lines.length); 
-
-                for (int i = 0; i < count; i++) { echoCommand(lines[i]); } 
-            } 
-        }
-        else if (mainCommand.equals("tail")) { 
-            if (argument.equals("")) { } 
-            else { 
-                String content = getcontent(argument); 
-                String[] lines = split(content, '\n'); 
-                int start = Math.max(0, lines.length - 10); 
-
-                for (int i = start; i < lines.length; i++) { echoCommand(lines[i]); } 
-            } 
-        }
-        else if (mainCommand.equals("diff")) { 
-            if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } 
-            else { 
-                String[] files = split(argument, ' '); 
-                String[] lines1 = split(getcontent(files[0]), '\n'); 
-                String[] lines2 = split(getcontent(files[1]), '\n'); 
-                int maxLines = Math.max(lines1.length, lines2.length); 
-
-                for (int i = 0; i < maxLines; i++) { 
-                    String line1 = i < lines1.length ? lines1[i] : ""; 
-                    String line2 = i < lines2.length ? lines2[i] : ""; 
-
-                    if (!line1.equals(line2)) { 
-                        echoCommand("--- Line " + (i + 1) + " ---"); 
-
-                        echoCommand("< " + line1); 
-                        echoCommand("> " + line2); 
-                    } 
-                    else if (i > lines1.length || i > lines2.length) { break; } 
-                } 
-            } 
-        }
-        else if (mainCommand.equals("wc")) { 
-            if (argument.equals("")) { } 
-            else { 
-                boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; 
-                if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } 
-                else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } 
-                else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } 
-                argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); 
-
-                String content = getcontent(argument); 
-                int lines = 0, words = 0, chars = content.length(); 
-
-                String[] lineArray = split(content, '\n'); 
-
-                lines = lineArray.length; 
-                for (int i = 0; i < lineArray.length; i++) { 
-                    String[] wordArray = split(lineArray[i], ' '); 
-
-                    for (int j = 0; j < wordArray.length; j++) { 
-                        if (!wordArray[j].trim().equals("")) { words++; } 
-                    } 
-                } 
-                String filename = basename(argument); 
-                if (SHOW_LINES) { echoCommand(lines + "\t" + filename); } 
-                else if (SHOW_WORDS) { echoCommand(words + "\t" + filename); } 
-                else if (SHOW_BYTES) { echoCommand(chars + "\t" + filename); } 
-                else { echoCommand(lines + "\t" + words + "\t" + chars + "\t" + filename); } 
-            } 
-        }
+        else if (mainCommand.equals("get")) { if (argument.equals("") || argument.equals("nano")) { nanoContent = loadRMS("nano"); } else { nanoContent = getcontent(argument); } }
+        else if (mainCommand.equals("read")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); attributes.put(ARGS[0], getcontent(ARGS[1])); } }
+        else if (mainCommand.equals("grep")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); echoCommand(getcontent(ARGS[1]).indexOf(ARGS[0]) != -1 ? "true" : "false"); } }
+        else if (mainCommand.equals("find")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); String CONTENT = getcontent(ARGS[1]), VALUE = (String) parseProperties(CONTENT).get(ARGS[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
+        else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(10, LINES.length); for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } } }
+        else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.max(0, LINES.length - 10); for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } } }
+        else if (mainCommand.equals("diff")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] FILES = split(argument, ' '); String[] LINES1 = split(getcontent(FILES[0]), '\n'); String[] LINES2 = split(getcontent(FILES[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : ""; String LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---"); echoCommand("< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINE2.length) { break; } } } }
+        else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); String CONTENT = getcontent(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } String FILENAME = basename(argument); if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } else { echoCommand(LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME); } } }
         // |
         // Text Parsers
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
         else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
-        else if (mainCommand.equals("vnt")) { 
-            if (argument.equals("")) { } 
-            else { 
-                String in = getcontent(getCommand(argument)); 
-                String out = getArgument(argument); 
-
-                if (out.equals("")) { nanoContent = text2note(in); } 
-                else { writeRMS(out, text2note(in)); } 
-            } 
-        }
-        else if (mainCommand.equals("ph2s")) { 
-            StringBuffer script = new StringBuffer(); 
-            for (int i = 0; i < history.size() - 1; i++) { 
-                script.append(history.elementAt(i)); 
-
-                if (i < history.size() - 1) { script.append("\n"); } 
-            } 
-            if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + script.toString(); } 
-            else { writeRMS(argument, "#!/java/bin/sh\n\n" + script.toString()); } 
-        }
+        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String IN = getcontent(getCommand(argument)), OUT = getArgument(argument); if (OUT.equals("")) { nanoContent = text2note(IN); } else { writeRMS(OUT, text2note(IN)); } } }
+        else if (mainCommand.equals("ph2s")) { StringBuffer SCRIPT = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { SCRIPT.append(history.elementAt(i)); if (i < history.size() - 1) { SCRIPT.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + SCRIPT.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + SCRIPT.toString()); } }
         // |
         // Interfaces
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
@@ -502,29 +394,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("chmod")) { 
             if (argument.equals("")) { } 
             else { 
-                Hashtable nodes = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); 
-                int STATUS = 1; 
+                Hashtable NODES = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); 
+                int STATUS = 0; 
 
-                if (nodes.containsKey(argument)) { 
+                if (NODES.containsKey(argument)) { 
                     try { 
                         if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
                         else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://$REPO"))).close(); } 
                         else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } 
                         else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
                     } 
-                    catch (SecurityException e) { STATUS = 2; } 
-                    catch (Exception e) { STATUS = 3; } 
+                    catch (SecurityException e) { STATUS = 13; } 
+                    catch (Exception e) { STATUS = 1; } 
                 } 
 
                 else if (argument.equals("*")) { 
-                    Enumeration keys = nodes.keys(); 
-                    while (keys.hasMoreElements()) { processCommand("chmod " + (String) keys.nextElement(), false); STATUS = 4; } 
+                    Enumeration KEYS = NODES.keys(); 
+                    while (KEYS.hasMoreElements()) { processCommand("chmod " + (String) KEYS.nextElement(), false); } 
                 } 
                 else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
 
-                if (STATUS == 1) { MIDletLogs("add info Permission '" + (String) nodes.get(argument) + "' granted"); } 
-                else if (STATUS == 2) { MIDletLogs("add error Permission '" + (String) nodes.get(argument) + "' denied"); } 
-                else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) nodes.get(argument) + "'"); } 
+                if (STATUS == 0) { MIDletLogs("add info Permission '" + (String) NODES.get(argument) + "' granted"); } 
+                else if (STATUS == 1) { MIDletLogs("add debug Permission '" + (String) NODES.get(argument) + "' granted with exceptions"); }
+                else if (STATUS == 13) { MIDletLogs("add error Permission '" + (String) NODES.get(argument) + "' denied"); } 
+                else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } 
 
                 return STATUS;
             } 
@@ -563,22 +456,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Low-level commands
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
-        else if (mainCommand.equals("@login")) { 
-            if (argument.equals("")) { username = loadRMS("OpenRMS"); } 
-            else { username = argument; } 
-        }
-        else if (mainCommand.equals("@alert")) { 
-            try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } 
-            catch (NumberFormatException e) { echoCommand(e.getMessage()); } 
-        }
-        else if (mainCommand.equals("@reload")) { 
-            shell = new Hashtable(); 
-            aliases = new Hashtable(); 
-            username = loadRMS("OpenRMS"); 
-
-            MIDletLogs("add debug API reloaded"); 
-            processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); 
-        }
+        else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS"); } else { username = argument; } }
+        else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } }
+        else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS"); MIDletLogs("add debug API reloaded"); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
         else if (mainCommand.startsWith("@")) { }
 
         // API 015 - (Scripts)
@@ -586,11 +466,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // OpenTTY Packages
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { importScript(argument); }
-        else if (mainCommand.equals("run")) { processCommand(". " + argument, false); }
-        else if (mainCommand.equals("function")) { 
-            if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 1; } } }
+        else if (mainCommand.equals("run")) { return processCommand(". " + argument, false); }
+        else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 1; } } }
 
-        else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE"));  }
+        else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE")); }
         else if (mainCommand.equals("!!")) { if (history.size() > 0) { stdin.setString((String) history.elementAt(history.size() - 1)); } }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { return runScript(nanoContent); } else { return runScript(getcontent(argument)); } }
 
