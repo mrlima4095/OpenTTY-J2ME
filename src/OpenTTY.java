@@ -310,7 +310,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String LINE1 = i < LINES1.length ? LINES1[i] : ""; 
                     String LINE2 = i < LINES2.length ? LINES2[i] : ""; 
                     if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---"); echoCommand("< " + LINE1 + "\n" + "> " + LINE2); } 
-                    if (i > LINES1.length || i > LINE2.length) { break; } 
+                    if (i > LINES1.length || i > LINES2.length) { break; } 
                     
                 } 
                 
