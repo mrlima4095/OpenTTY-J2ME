@@ -357,7 +357,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String content = read("/home/man.html"); 
             if (content.equals("") || argument.equals("--update")) { 
-                processCommand("execute install /home/nano; netstat; if ($OUTPUT == true) exec tick Downloading... & proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html & install /home/man.html & get /home/nano & echo [Manual] Resources downloaded! & tick; if ($OUTPUT == false) exec echo [Manual] MIDlet cannot access Internet! & echo [Manual] Verify your connection and try again.", false); 
                 return 0; 
             } 
 
