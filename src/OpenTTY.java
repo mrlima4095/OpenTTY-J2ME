@@ -380,7 +380,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // OpenTTY Packages
         else if (mainCommand.equals("about")) { about(argument); }
-        else if (mainCommand.equals("import")) { importScript(argument); }
+        else if (mainCommand.equals("import")) { return importScript(argument); }
         else if (mainCommand.equals("run")) { return processCommand(". " + argument, false); }
         else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 1; } } }
 
@@ -430,7 +430,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); xserver("font"); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd"); form.setCommandListener(this); }
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { xserver("init"); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
-        else if (mainCommand.equals("cmd")) { Command[] cmds = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < cmds.length; i++) { if (argument.equals("hide")) { form.removeCommand(cmds[i]); } else { form.addCommand(cmds[i]); } } }
+        else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
         // Screen MODs
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
@@ -658,7 +658,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lib.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) lib.get("process.port") + " " + (String) lib.get("process.host"))); }
         // |
         // Build dependencies
-        if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { importScript(include[i]); } }
+        if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start Application
         if (lib.containsKey("config")) { processCommand((String) lib.get("config")); }
