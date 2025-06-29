@@ -19,7 +19,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.15-02x09"; 
+    private String logs = "", path = "/home/", build = "2025-1.15-02x10"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -208,7 +208,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 012 - (File)
         // |
         // Directories Manager
-        else if (mainCommand.equals("ls")) { new Explorer(); }
+        else if (mainCommand.equals("dir")) { new Explorer(); }
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
@@ -237,11 +237,39 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
-        else if (mainCommand.equals("dir")) { 
+        else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
-            if (path.equals("/mnt/")) { try { Enumeration ROOTS = FileSystemRegistry.listRoots(); while (ROOTS.hasMoreElements()) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } 
-            else if (path.startsWith("/mnt/")) { try { String REALPWD = "file:///" + path.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); Enumeration CONTENT = CONN.list(); while (CONTENT.hasMoreElements()) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } 
-            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } 
+            if (path.equals("/mnt/")) { 
+                try { 
+                    Enumeration ROOTS = FileSystemRegistry.listRoots(); 
+                    while (ROOTS.hasMoreElements()) { 
+                        String ROOT = (String) ROOTS.nextElement(); 
+                        if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
+                    } 
+                } catch (Exception e) { } 
+            } 
+            else if (path.startsWith("/mnt/")) { 
+                try { 
+                    String REALPWD = "file:///" + path.substring(5); 
+                    if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
+
+                    FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
+                    Enumeration CONTENT = CONN.list(); 
+                    while (CONTENT.hasMoreElements()) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } 
+                    CONN.close(); 
+                } catch (Exception e) { } 
+            } 
+            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { 
+                try { 
+                    String[] FILES = RecordStore.listRecordStores(); 
+                    if (FILES != null) { 
+                        for (int i = 0; i < FILES.length; i++) { 
+                            String NAME = FILES[i]; 
+                            if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } 
+                        } 
+                    } 
+                } catch (RecordStoreException e) { } 
+            } 
             else if (path.equals("/home/")) { new Explorer(); return 0; } 
 
             String[] FILES = (String[]) paths.get(path); 
@@ -254,17 +282,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
 
             if (!BUFFER.isEmpty()) { 
-                StringBuffer sb = new StringBuffer(); 
-                String newline = path.equals("/home/") ? "\n" : "\t"; 
+                StringBuffer FORMATTED = new StringBuffer(); 
 
                 for (int i = 0; i < BUFFER.size(); i++) { 
-                    String item = (String) BUFFER.elementAt(i); 
-                    if (!item.equals("/")) { sb.append(item).append(newline); } 
+                    String ITEM = (String) BUFFER.elementAt(i); 
+                    if (!ITEM.equals("/")) { FORMATTED.append(ITEM).append(path.equals("/home/") ? "\n" : "\t"); } 
                 } 
 
-                echoCommand(sb.toString().trim()); 
+                echoCommand(FORMATTED.toString().trim()); 
             } 
-        } 
+        }
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk"); }
@@ -275,13 +302,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { writeRMS(argument, nanoContent); } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { writeRMS(argument, ""); } }
         else if (mainCommand.equals("mkdir")) { if (argument.equals("")) { } else { argument = argument.endsWith("/") ? argument : argument + "/"; argument = argument.startsWith("/") ? argument : path + argument; if (argument.startsWith("/mnt/")) { try { FileConnection fc = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!fc.exists()) { fc.mkdir(); fc.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } } catch (IOException e) { echoCommand(e.getMessage()); } } else if (argument.startsWith("/home/")) { echoCommand("mkdir: 405 Method not allowed"); } else if (argument.startsWith("/")) { echoCommand("read-only storage"); } } }
-        else if (mainCommand.equals("cp")) { 
-            if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
-            else { 
-                String origin = getCommand(argument), target = getArgument(argument); 
-                writeRMS(target.equals("") ? origin + "-copy" : target, getcontent(origin)); 
-            } 
-        }
+        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { String origin = getCommand(argument), target = getArgument(argument); writeRMS(target.equals("") ? origin + "-copy" : target, getcontent(origin)); } }
         // |
         // Text Manager
         else if (mainCommand.equals("sed")) { StringEditor(argument); }
@@ -350,6 +371,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
+        //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
         else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 2; } }
