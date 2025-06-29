@@ -307,15 +307,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int MAX_RANGE = Math.max(LINES1.length, LINES2.length); 
                 
                 for (int i = 0; i < MAX_RANGE; i++) { 
-                    String LINE1 = i < LINES1.length ? LINES1[i] : ""; 
-                    String LINE2 = i < LINES2.length ? LINES2[i] : ""; 
-                    if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---"); echoCommand("< " + LINE1 + "\n" + "> " + LINE2); } 
+                    String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; 
+                    if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } 
                     if (i > LINES1.length || i > LINES2.length) { break; } 
-                    
                 } 
-                
             } 
-            
         }
         else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); String CONTENT = getcontent(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } String FILENAME = basename(argument); if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } else { echoCommand(LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME); } } }
         // |
@@ -341,37 +337,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("java")) { return java(argument); }
         // |
         // Permissions
-        else if (mainCommand.equals("chmod")) { 
-            if (argument.equals("")) { } 
-            else { 
-                Hashtable NODES = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); 
-                int STATUS = 0; 
-
-                if (NODES.containsKey(argument)) { 
-                    try { 
-                        if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
-                        else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://$REPO"))).close(); } 
-                        else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } 
-                        else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
-                    } 
-                    catch (SecurityException e) { STATUS = 13; } 
-                    catch (Exception e) { STATUS = 1; } 
-                } 
-
-                else if (argument.equals("*")) { 
-                    Enumeration KEYS = NODES.keys(); 
-                    while (KEYS.hasMoreElements()) { processCommand("chmod " + (String) KEYS.nextElement(), false); } 
-                } 
-                else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
-
-                if (STATUS == 0) { MIDletLogs("add info Permission '" + (String) NODES.get(argument) + "' granted"); } 
-                else if (STATUS == 1) { MIDletLogs("add debug Permission '" + (String) NODES.get(argument) + "' granted with exceptions"); }
-                else if (STATUS == 13) { MIDletLogs("add error Permission '" + (String) NODES.get(argument) + "' denied"); } 
-                else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } 
-
-                return STATUS;
-            } 
-        }
+        else if (mainCommand.equals("chmod")) { if (argument.equals("")) { } else { Hashtable NODES = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); int STATUS = 0; if (NODES.containsKey(argument)) { try { if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://$REPO"))).close(); } else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } } catch (SecurityException e) { STATUS = 13; } catch (Exception e) { STATUS = 1; } } else if (argument.equals("*")) { Enumeration KEYS = NODES.keys(); while (KEYS.hasMoreElements()) { processCommand("chmod " + (String) KEYS.nextElement(), false); } } else { echoCommand("chmod: " + argument + ": not found"); return 127; } if (STATUS == 0) { MIDletLogs("add info Permission '" + (String) NODES.get(argument) + "' granted"); } else if (STATUS == 1) { MIDletLogs("add debug Permission '" + (String) NODES.get(argument) + "' granted with exceptions"); } else if (STATUS == 13) { MIDletLogs("add error Permission '" + (String) NODES.get(argument) + "' denied"); } else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } return STATUS; } }
         // |
         // General Utilities
         else if (mainCommand.equals("history")) { new History(); }
