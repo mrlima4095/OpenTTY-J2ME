@@ -12,6 +12,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - Improved help message
 - Replaced **PATCH** by **Version code-name**
+- Inverted usage of commands `dir` and `ls`
 
 [ _Notes_ ]
 
