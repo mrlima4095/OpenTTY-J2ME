@@ -203,7 +203,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
-        else if (mainCommand.equals("netstat")) { int STATUS = 0; try { HttpConnection CONN = (HttpConnection) Connector.open("http://ipinfo.io/ip"); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } else { STATUS = 1; } CONN.close(); } catch (Exception e) { STATUS = 1; } echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; }
+        else if (mainCommand.equals("netstat")) { int STATUS = 0; try { HttpConnection CONN = (HttpConnection) Connector.open("http://ipinfo.io/ip"); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } else { STATUS = 1; } CONN.close(); } catch (Exception e) { STATUS = 101; } echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; }
 
         // API 012 - (File)
         // |
@@ -357,8 +357,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String content = read("/home/man.html"); 
             if (content.equals("") || argument.equals("--update")) { 
-                processCommand("execute install /home/nano; netstat; if ($OUTPUT == true) exec tick Downloading... & proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html & install /home/man.html & get /home/nano & echo [Manual] Resources downloaded! & tick; if ($OUTPUT == false) exec echo [Manual] MIDlet cannot access Internet! & echo [Manual] Verify your connection and try again.", false); 
-                return 0; 
+                int STATUS = processCommand("netstat");
+                if (STATUS == 0) {
+                    STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false);
+                    STATUS = processCommand("man " + (verbose ? "-v" : "") + argument, false)
+                    return STATUS;
+                }
+                else { echoCommand("man: network error"); return 101; }                
             } 
 
             content = extractTag(content, argument.toLowerCase(), "");
