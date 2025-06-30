@@ -389,40 +389,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 002 - (Logs)
     // |
     // OpenTTY Logging Manager
-    private int MIDletLogs(String command) { 
-        command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command); 
+    private int MIDletLogs(String command) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command), argument = getArgument(command);
 
         if (mainCommand.equals("")) { } 
         else if (mainCommand.equals("clear")) { logs = ""; } 
         else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } 
         else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } 
-        else if (mainCommand.equals("add")) { 
-            if (argument.equals("")) { } 
+        else if (mainCommand.equals("add")) {
+            String LEVEL = getCommand(argument).toLowerCase();
+            String MESSAGE = getArgument(argument);
 
-            else if (getCommand(argument).toLowerCase().equals("info")) { 
-                if (!getArgument(command).equals("")) { 
-                    logs = logs + "[INFO] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; 
-                } 
-            } 
-            else if (getCommand(argument).toLowerCase().equals("warn")) { 
-                if (!getArgument(command).equals("")) { 
-                    logs = logs + "[WARN] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; 
-                } 
-            } 
-            else if (getCommand(argument).toLowerCase().equals("debug")) {
-                if (!getArgument(command).equals("")) { 
-                    logs = logs + "[DEBUG] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; 
-                }
-            } 
-            else if (getCommand(argument).toLowerCase().equals("error")) { 
-                if (!getArgument(command).equals("")) { 
-                    logs = logs + "[ERROR] " + split(new java.util.Date().toString(), ' ')[3] + " " + getArgument(argument) + "\n"; 
-                } 
-            } 
-            else { echoCommand("log: add: " + getCommand(argument).toLowerCase() + ": not found"); 127; } 
+            if (!MESSAGE.equals("")) {
+                if (LEVEL.equals("info") || LEVEL.equals("warn") || LEVEL.equals("debug") || LEVEL.equals("error")) { logs += "[" + LEVEL.toUpperCase() + "] " + split(new java.util.Date().toString(), ' ')[3] + " " + MESSAGE + "\n"; } 
+                else { echoCommand("log: add: " + LEVEL + ": not found"); return 127; }
+            }
         } 
-        else { echoCommand("log: " + mainCommand + ": not found"); return 127; } 
+        else { echoCommand("log: " + mainCommand + ": not found"); return 127; }
 
         return 0;
     }
