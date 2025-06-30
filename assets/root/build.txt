@@ -75,3 +75,4 @@
 [2025-1.15-02x08]	Enviroment scopes (reverted)
 [2025-1.15-02x09]	Return codes
 [2025-1.15-02x10]	Invert commands usage
+[2025-1.15-02x11]	Bruteforce stops if a command get wrong
