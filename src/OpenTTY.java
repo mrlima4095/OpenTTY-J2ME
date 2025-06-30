@@ -360,18 +360,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int STATUS = processCommand("netstat");
                 if (STATUS == 0) {
                     STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false);
-                    STATUS = processCommand("man " + (verbose ? "-v" : "") + argument, false)
-                    return STATUS;
+                    if (STATUS == 0) { content = read("/home/man.html"); }
+                    else { return 1; } 
                 }
                 else { echoCommand("man: network error"); return 101; }                
             } 
 
             content = extractTag(content, argument.toLowerCase(), "");
             if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } 
-            else {
-                if (verbose) { echoCommand(content); }
-                else { viewer(form.getTitle(), content); }
-            }
+            else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } 
         }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
