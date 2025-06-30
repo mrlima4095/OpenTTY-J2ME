@@ -239,47 +239,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
-            if (path.equals("/mnt/")) { 
-                try { 
-                    Enumeration ROOTS = FileSystemRegistry.listRoots(); 
-                    while (ROOTS.hasMoreElements()) { 
-                        String ROOT = (String) ROOTS.nextElement(); 
-                        if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
-                    } 
-                } catch (Exception e) { } 
-            } 
-            else if (path.startsWith("/mnt/")) { 
-                try { 
-                    String REALPWD = "file:///" + path.substring(5); 
-                    if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
-
-                    FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
-                    Enumeration CONTENT = CONN.list(); 
-                    while (CONTENT.hasMoreElements()) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } 
-                    CONN.close(); 
-                } catch (Exception e) { } 
-            } 
-            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { 
-                try { 
-                    String[] FILES = RecordStore.listRecordStores(); 
-                    if (FILES != null) { 
-                        for (int i = 0; i < FILES.length; i++) { 
-                            String NAME = FILES[i]; 
-                            if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } 
-                        } 
-                    } 
-                } catch (RecordStoreException e) { } 
-            } 
+            if (path.equals("/mnt/")) { try { Enumeration ROOTS = FileSystemRegistry.listRoots(); while (ROOTS.hasMoreElements()) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } 
+            else if (path.startsWith("/mnt/")) { try { String REALPWD = "file:///" + path.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); Enumeration CONTENT = CONN.list(); while (CONTENT.hasMoreElements()) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } 
+            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } 
             else if (path.equals("/home/")) { new Explorer(); return 0; } 
 
             String[] FILES = (String[]) paths.get(path); 
-            if (FILES != null) { 
-                for (int i = 0; i < FILES.length; i++) { 
-                    String f = FILES[i].trim(); 
-                    if (f == null || f.equals("..") || f.equals("/")) { continue; } 
-                    if (!BUFFER.contains(f) && !BUFFER.contains(f + "/")) { BUFFER.addElement(f); } 
-                } 
-            } 
+            if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String f = FILES[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!BUFFER.contains(f) && !BUFFER.contains(f + "/")) { BUFFER.addElement(f); } } } 
 
             if (!BUFFER.isEmpty()) { 
                 StringBuffer FORMATTED = new StringBuffer(); 
