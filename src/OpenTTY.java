@@ -306,9 +306,47 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // HTTP Interfaces
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
-        else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + e.getMessage()); } } }
-        else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? argument = "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); } catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + e.getMessage()); } } }
-        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) {runScript(RESPONSE); } } }
+        else if (mainCommand.equals("pong")) { 
+            if (argument.equals("")) { } 
+            else { 
+                long START = System.currentTimeMillis(); 
+
+                try { 
+                    SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); 
+                    echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); 
+                } 
+                catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + e.getMessage()); } 
+            } 
+        }
+        else if (mainCommand.equals("ping")) { 
+            if (argument.equals("")) { } 
+            else { 
+                long START = System.currentTimeMillis(); 
+
+                try { 
+                    HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? argument = "http://" + argument : argument); 
+                    CONN.setRequestMethod(HttpConnection.GET); 
+
+                    int responseCode = CONN.getResponseCode(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); 
+                } 
+                catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + e.getMessage()); } 
+            } 
+        }
+        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
+            if (argument.equals("")) { } 
+            else { 
+                String URL = getCommand(argument); 
+
+                if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } 
+
+                Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); 
+                String RESPONSE = request(URL, HEADERS); 
+
+                if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } 
+                else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } 
+                else if (mainCommand.equals("clone")) { return runScript(RESPONSE); } 
+            } 
+        }
         // |
         // Socket Interfaces
         else if (mainCommand.equals("query")) { return query(argument); }
