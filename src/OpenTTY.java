@@ -264,8 +264,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
-        else if (mainCommand.equals("clear")) { if (argument.equals("") || argument.equals("stdout")) { stdout.setText(""); } else if (argument.equals("stdin")) { stdin.setString(""); } else if (argument.equals("history")) { history = new Vector(); } else if (argument.equals("logs")) { logs = ""; } else { echoCommand("clear: " + argument + ": not found"); return 127; } }
-        else if (mainCommand.equals("seed")) { try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } }
+        else if (mainCommand.equals("clear")) { 
+            if (argument.equals("") || argument.equals("stdout")) { stdout.setText(""); } 
+            else if (argument.equals("stdin")) { stdin.setString(""); } 
+            else if (argument.equals("history")) { history = new Vector(); } 
+            else if (argument.equals("logs")) { logs = ""; } 
+            else { echoCommand("clear: " + argument + ": not found"); return 127; } 
+        }
+        else if (mainCommand.equals("seed")) { 
+            try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } 
+            catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } 
+        }
 
         // API 009 - (Threads)
         // |
@@ -281,7 +290,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); return 127; } } }
         // |
         // PushRegistry
-        else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } catch (ClassNotFoundException e) { echoCommand("prg: " + getArgument(argument) + ": not found"); return 127; } catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); return 3; } }
+        else if (mainCommand.equals("prg")) { 
+            if (argument.equals("")) { argument = "5"; } 
+
+            try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } 
+            catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } 
+            catch (ClassNotFoundException e) { echoCommand("prg: " + getArgument(argument) + ": not found"); return 127; } 
+            catch (Exception e) { echoCommand("AutoRunError: " + e.getMessage()); return 3; } }
 
         // API 011 - (Network)
         // |
