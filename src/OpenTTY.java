@@ -550,6 +550,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Text Manager
         else if (mainCommand.equals("raw")) { echoCommand(nanoContent); }
         else if (mainCommand.equals("rraw")) { stdout.setText(nanoContent); }
+        else if (mainCommand.equals("sed")) { return StringEditor(argument); }
         else if (mainCommand.equals("getty")) { nanoContent = stdout.getText(); }
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
         else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { processCommand("wc -c " + argument, false); } }
