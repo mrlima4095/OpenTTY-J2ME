@@ -501,7 +501,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Start Application
         if (PKG.containsKey("config")) { processCommand((String) PKG.get("config")); }
-        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD); if (STATUS != 0) { return STATUS; } } } }.start(); }
+        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD); if (STATUS != 0) { return; } } } }.start(); }
         // |
         // Generate items - Command & Files
         if (PKG.containsKey("command")) { 
@@ -529,7 +529,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TABLE.put(NAME, (VALUE != null) ? VALUE : ""); 
             } 
             if (PKG.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) PKG.get("shell.unknown")); } 
-            shell.put(command, TABLE); return 0; 
+            shell.put(command, TABLE);
         }
 
         return 0;
