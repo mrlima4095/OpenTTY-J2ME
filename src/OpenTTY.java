@@ -702,10 +702,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host"))); }
         // |
         // Build dependencies
-        if (lib.containsKey("include")) { String[] include = split((String) LIB.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
+        if (PKG.containsKey("include")) { String[] INCLUDE = split((String) PKG.get("include"), ','); for (int i = 0; i < INCLUDE.length; i++) { int STATUS = importScript(INCLUDE[i]); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start Application
-        if (lib.containsKey("config")) { processCommand((String) LIB.get("config")); }
+        if (PKG.containsKey("config")) { processCommand((String) LIB.get("config")); }
         if (lib.containsKey("mod") && lib.containsKey("process.name")) { final String name = (String) LIB.get("process.name"); final String mod = (String) LIB.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(name)) { processCommand(mod); } } }.start(); }
         // |
         // Generate items - Command & Files
