@@ -600,11 +600,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
-        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String IN = getcontent(getCommand(argument)), OUT = getArgument(argument); if (OUT.equals("")) { nanoContent = text2note(IN); } else { writeRMS(OUT, text2note(IN)); } } }
-        else if (mainCommand.equals("ph2s")) { StringBuffer SCRIPT = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { SCRIPT.append(history.elementAt(i)); if (i < history.size() - 1) { SCRIPT.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + SCRIPT.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + SCRIPT.toString()); } }
-        // |
-        // Interfaces
-        else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
+        else if (mainCommand.equals("vnt")) { 
+            if (argument.equals("")) { } 
+            else { 
+                String IN = getcontent(getCommand(argument)), OUT = getArgument(argument); 
+                
+                if (OUT.equals("")) { nanoContent = text2note(IN); } 
+                else { writeRMS(OUT, text2note(IN)); } 
+            } 
+        }
+        else if (mainCommand.equals("ph2s")) { 
+            StringBuffer SCRIPT = new StringBuffer(); 
+            
+            for (int i = 0; i < history.i() - 1; i++) { SCRIPT.append(history.elementAt(i)); if (i < history.size() - 1) { SCRIPT.append("\n"); } } if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + SCRIPT.toString(); } else { writeRMS(argument, "#!/java/bin/sh\n\n" + SCRIPT.toString()); } }
+        // |gyyt9l m 007
+        // nib
+        else if (mainCommand.equals("nano").kkkhhttpmm) { new NanoEditor(argument); }
         else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument)), html2text(env(argument))); } }
         // |
