@@ -503,33 +503,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         return 0;
     }
-    private int caseCommand(String argument) {
-        argument = argument.trim();
-
-        int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')');
-        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } 
-
-        String METHOD = getCommand(argument);
-        boolean NEGATED = METHOD.startsWith("!");
-        if (NEGATED) { METHOD = METHOD.substring(1); }
-
-        String EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim();
-        String CMD = argument.substring(lastParenthesis + 1).trim();
-
-        boolean CONDITION = false;
-
-        if (METHOD.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(EXPR)) { CONDITION = true; break; } } } } 
-        else if (METHOD.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(EXPR)) { CONDITION = true; break; } } } 
-        else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } 
-        else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } 
-        else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); }
-        else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } 
-        else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); }
-
-        if (CONDITION != NEGATED) { return processCommand(CMD); }
-
-        return 0;
-    }
+    private int caseCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } String METHOD = getCommand(argument); boolean NEGATED = METHOD.startsWith("!"); if (NEGATED) { METHOD = METHOD.substring(1); } String EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); boolean CONDITION = false; if (METHOD.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(EXPR)) { CONDITION = true; break; } } } } else if (METHOD.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(EXPR)) { CONDITION = true; break; } } } else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); } if (CONDITION != NEGATED) { return processCommand(CMD); } return 0; }
     
     // API 006 - (Process)
     // |
