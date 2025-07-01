@@ -591,7 +591,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     echoCommand(ip.toString()); 
                 } 
                 else { echoCommand("not found"); return 127; } 
-            } catch (IOException e) { echoCommand(e.getMessage()); } 
+            } catch (IOException e) { echoCommand(e.getMessage()); return 1; } 
         } 
 
         return 0;
