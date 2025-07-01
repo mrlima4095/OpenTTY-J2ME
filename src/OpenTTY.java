@@ -564,20 +564,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD); if (STATUS != 0) { return; } } } }.start(); }
         // |
         // Generate items - Command & Files
-        if (PKG.containsKey("command")) { 
-            String[] commands = split((String) PKG.get("command"), ','); 
-            for (int i = 0; i < commands.length; i++) { 
-                if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(command[i]))); } 
-                else { MIDletLogs("add error Failed to create command '" + command[i] + "' content not found"); } 
-            } 
-        }
-        if (PKG.containsKey("file")) { 
-            String[] files = split((String) PKG.get("file"), ','); 
-            for (int i = 0; i < files.length; i++) { 
-                if (PKG.containsKey(files[i])) { int STATUS = writeRMS("/home/" + files[i], env((String) PKG.get(files[i]))); } 
-                else { MIDletLogs("add error Failed to create file '" + files[i] + "' content not found"); } 
-            } 
-        }
+        if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(command[i]))); } else { MIDletLogs("add error Failed to create command '" + command[i] + "' content not found"); } } }
+        if (PKG.containsKey("file")) { String[] files = split((String) PKG.get("file"), ','); for (int i = 0; i < files.length; i++) { if (PKG.containsKey(files[i])) { int STATUS = writeRMS("/home/" + files[i], env((String) PKG.get(files[i]))); } else { MIDletLogs("add error Failed to create file '" + files[i] + "' content not found"); } } }
         // |
         // Build APP Shell
         if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { 
