@@ -60,7 +60,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 
-        if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { return processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true"); } else if (args.containsKey(getCommand(argument).toLowerCase())) { return processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } else { return processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "builtin echo " + mainCommand + ": " + getCommand(argument) + ": not found"); } }
+        if (shell.containsKey(mainCommand) && ignore) { 
+            Hashtable args = (Hashtable) shell.get(mainCommand); 
+            if (argument.equals("")) { return processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true"); } 
+            else if (args.containsKey(getCommand(argument).toLowerCase())) { return processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument)); } 
+            else { return processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "echo " + mainCommand + ": " + getCommand(argument) + ": not found", args.containsKey("shell.unknown") ? true : false); } }
         if (aliases.containsKey(mainCommand) && ignore) { return processCommand((String) aliases.get(mainCommand) + " " + argument); }
         if (functions.containsKey(mainCommand) && ignore) { return runScript((String) functions.get(mainCommand)); }
         
@@ -69,14 +73,59 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 001 - (Registry)
         // |
         // Aliases
-        else if (mainCommand.equals("alias")) { if (argument.equals("")) { Enumeration KEYS = aliases.keys(); while (KEYS.hasMoreElements()) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else { echoCommand("alias: " + argument + ": not found"); return 127; } } else { aliases.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } } }  
-        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else if (aliases.containsKey(argument)) { aliases.remove(argument); } else { echoCommand("unalias: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("alias")) { 
+            if (argument.equals("")) { 
+                Enumeration KEYS = aliases.keys(); 
+                while (KEYS.hasMoreElements()) { 
+                    String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); 
+
+                    if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } 
+                } 
+            } 
+            else { 
+                int INDEX = argument.indexOf('='); 
+
+                if (INDEX == -1) { 
+                    if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } 
+                    else { echoCommand("alias: " + argument + ": not found"); return 127; } 
+                } 
+                else { aliases.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
+            } 
+        }  
+        else if (mainCommand.equals("unalias")) { 
+            if (argument.equals("")) { } 
+            else if (aliases.containsKey(argument)) { aliases.remove(argument); } 
+            else { echoCommand("unalias: " + argument + ": not found"); return 127; } 
+        }
         // |
         // Environment Keys
-        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { attributes.put(argument, ""); } else { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } } } 
-        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (attributes.containsKey(argument)) { attributes.remove(argument); } else { } }
-        else if (mainCommand.equals("export")) { processCommand(argument.equals("") ? "env" : "set " + argument, false); }
-        else if (mainCommand.equals("env")) { if (argument.equals("")) { Enumeration KEYS = attributes.keys(); while (KEYS.hasMoreElements()) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } } } else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { echoCommand("env: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("set")) { 
+            if (argument.equals("")) { } 
+            else { 
+                int INDEX = argument.indexOf('='); 
+
+                if (INDEX == -1) { attributes.put(argument, ""); } e
+                lse { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
+            } 
+        } 
+        else if (mainCommand.equals("unset")) { 
+            if (argument.equals("")) { } 
+            else if (attributes.containsKey(argument)) { attributes.remove(argument); } 
+            else { } 
+        }
+        else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
+        else if (mainCommand.equals("env")) { 
+            if (argument.equals("")) { 
+                Enumeration KEYS = attributes.keys(); 
+                while (KEYS.hasMoreElements()) { 
+                    String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); 
+
+                    if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } 
+                } 
+            } 
+            else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } 
+            else { echoCommand("env: " + argument + ": not found"); return 127; } 
+        }
 
         // API 002 - (Logs)
         // |
@@ -110,10 +159,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Long executors
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false); }
-        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { int STATUS = processCommand(argument, ignore); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
-        else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument)); } }
-        else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } } }
-        else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } } 
+        else if (mainCommand.equals("bruteforce")) { 
+            start("bruteforce"); 
+
+            while (trace.containsKey("bruteforce")) { 
+                int STATUS = processCommand(argument, ignore); 
+                if (STATUS != 0) { stop("bruteforce"); return STATUS; } 
+            } 
+        }
+        else if (mainCommand.equals("cron")) { 
+            if (argument.equals("")) { } 
+            else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument)); } 
+        }
+        else if (mainCommand.equals("sleep")) { 
+            if (argument.equals("")) { } 
+            else { 
+                try { Thread.sleep(Integer.parseInt(argument) * 1000); } 
+                catch (InterruptedException e) { } 
+                catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } 
+            }
+        }
+        else if (mainCommand.equals("time")) { 
+            if (argument.equals("")) { } 
+            else { 
+                long START = System.currentTimeMillis(); 
+                int STATUS = processCommand(argument, ignore); 
+                echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); 
+
+                return STATUS; 
+            } 
+        } 
         // |
         // Chain executors
         else if (mainCommand.equals("exec")) { String[] CMDS = split(argument, '&'); for (int i = 0; i < CMDS.length; i++) { processCommand(CMDS[i].trim(), ignore); } }
@@ -122,23 +197,56 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 006 - (Process)
         // |
         // Memory
-        else if (mainCommand.equals("gc")) { System.gc(); } else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
-        else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer("monitor"); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } }
+        else if (mainCommand.equals("gc")) { System.gc(); } 
+        else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
+        else if (mainCommand.equals("top")) { 
+            if (argument.equals("")) { new HTopViewer("monitor"); } 
+            else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
+            else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
+            else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } 
+            else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } 
+        }
         // |
         // Process
-        else if (mainCommand.equals("start")) { start(argument); } else if (mainCommand.equals("kill")) { kill(argument); } else if (mainCommand.equals("stop")) { stop(argument); }
+        else if (mainCommand.equals("start")) { start(argument); } 
+        else if (mainCommand.equals("kill")) { kill(argument); } 
+        else if (mainCommand.equals("stop")) { stop(argument); }
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); Enumeration KEYS = trace.keys(); while (KEYS.hasMoreElements()) { String KEY = (String) KEYS.nextElement(), PID = (String) trace.get(KEY); echoCommand(PID + "\t" + KEY); } }
-        else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); return 127; } }
+        else if (mainCommand.equals("trace")) { 
+            if (argument.equals("")) { } 
+            else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } 
+            else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } 
+            else { echoCommand("trace: " + getCommand(argument) + ": not found"); return 127; } 
+        }
 
         // API 007 - (Bundle)
         // |
         // Properties
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
-        else if (mainCommand.equals("uname")) { String INFO = ""; if (argument.equals("") || argument.equals("-i")) { INFO = "$TYPE"; } else if (argument.equals("-a") || argument.equals("--all")) { INFO = "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE"; } else if (argument.equals("-r") || argument.equals("--release")) { INFO = "$VERSION"; } else if (argument.equals("-v") || argument.equals("--build")) { INFO = build; } else if (argument.equals("-s") ) { INFO = "J2ME"; } else if (argument.equals("-m")) { INFO = "$PROFILE"; } else if (argument.equals("-p")) { INFO = "$CONFIG"; } else if (argument.equals("-n")) { INFO = "$HOSTNAME"; } else { echoCommand("uname: " + argument + ": not found"); return 127; } echoCommand(env(INFO)); }
+        else if (mainCommand.equals("uname")) { 
+            String INFO = ""; 
+
+            if (argument.equals("") || argument.equals("-i")) { INFO = "$TYPE"; } 
+            else if (argument.equals("-a") || argument.equals("--all")) { INFO = "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE"; } 
+            else if (argument.equals("-r") || argument.equals("--release")) { INFO = "$VERSION"; } 
+            else if (argument.equals("-v") || argument.equals("--build")) { INFO = build; } 
+            else if (argument.equals("-s") ) { INFO = "J2ME"; } 
+            else if (argument.equals("-m")) { INFO = "$PROFILE"; } 
+            else if (argument.equals("-p")) { INFO = "$CONFIG"; } 
+            else if (argument.equals("-n")) { INFO = "$HOSTNAME"; } 
+            else { echoCommand("uname: " + argument + ": not found"); return 127; } 
+
+            echoCommand(env(INFO)); 
+        }
         // |
         // Device ID
-        else if (mainCommand.equals("hostname")) { if (argument.equals("")) { echoCommand(env("$HOSTNAME")); } else { processCommand("set HOSTNAME=" + getCommand(argument), false); } }
-        else if (mainCommand.equals("hostid")) { String data = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int hash = 7; for (int i = 0; i < data.length(); i++) { hash = hash * 31 + data.charAt(i); } echoCommand(Integer.toHexString(hash).toLowerCase()); }
+        else if (mainCommand.equals("hostname")) { processCommand(argument.equals("") ? "env HOSTNAME" : "set HOSTNAME=" + getCommand(argument), false); } }
+        else if (mainCommand.equals("hostid")) { 
+            String data = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); 
+            int hash = 7; for (int i = 0; i < data.length(); i++) { hash = hash * 31 + data.charAt(i); } 
+
+            echoCommand(Integer.toHexString(hash).toLowerCase()); 
+        }
 
         // API 008 - (Logic I/O) Text
         // |
