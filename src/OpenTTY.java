@@ -699,7 +699,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Start and handle APP process
         if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name")); }
         if (PKG.containsKey("process.type")) { String TYPE = (String) PKG.get("process.type"); if (TYPE.equals("server")) { } else if (TYPE.equals("bind")) { new Bind(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.db"))); } else { MIDletLogs("add warn '" + TYPE.toUpperCase() + "' is a invalid value for 'process.type'"); } }
-        if (LIB.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) LIB.get("process.port") + " " + (String) LIB.get("process.host"))); }
+        if (PKG.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host"))); }
         // |
         // Build dependencies
         if (lib.containsKey("include")) { String[] include = split((String) LIB.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
