@@ -645,7 +645,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
-    private void deleteFile(String filename) { if (filename == null || filename.length() == 0) { return; } else if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (conn.exists()) { conn.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); } conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { try { RecordStore.deleteRecordStore(filename.substring(6)); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); } else { deleteFile(path + filename); } }
+    private void deleteFile(String filename) { 
+        if (filename == null || filename.length() == 0) { return 2; } 
+        else if (filename.startsWith("/mnt/")) { 
+            try { 
+                FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
+                if (CONN.exists()) { CONN.delete(); } 
+                else { echoCommand("rm: " + basename(filename) + ": not found"); } 
+
+                CONN.close(); 
+            } 
+            catch (Exception e) { echoCommand(e.getMessage()); } 
+        } 
+        else if (filename.startsWith("/home/")) { 
+            try { RecordStore.deleteRecordStore(filename.substring(6)); } 
+            catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } 
+            catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } 
+        } 
+        else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
+        else { return deleteFile(path + filename); } 
+
+        return 0;
+    }
     private int writeRMS(String filename, String data) { 
         if (filename == null || filename.length() == 0) { return 2; } 
         if (filename.startsWith("/mnt/")) { 
