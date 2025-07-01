@@ -454,10 +454,42 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
                     } 
                 } 
-                catch (Exception e) { } } else if (path.startsWith("/mnt/")) { try { String REALPWD = "file:///" + path.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); Enumeration CONTENT = CONN.list(); while (CONTENT.hasMoreElements()) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } else if (path.equals("/home/")) { new Explorer(); return 0; } String[] FILES = (String[]) paths.get(path); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String f = FILES[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!BUFFER.contains(f) && !BUFFER.contains(f + "/")) { BUFFER.addElement(f); } } } if (!BUFFER.isEmpty()) { StringBuffer FORMATTED = new StringBuffer(); for (int i = 0; i < BUFFER.size(); i++) { String ITEM = (String) BUFFER.elementAt(i); if (!ITEM.equals("/")) { FORMATTED.append(ITEM).append(path.equals("/home/") ? "\n" : "\t"); } } echoCommand(FORMATTED.toString().trim()); } }
+                catch (Exception e) { } 
+            } 
+            else if (path.startsWith("/mnt/")) { 
+                try { 
+                    String REALPWD = "file:///" + path.substring(5); 
+                    if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
+                    
+                    FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
+                    Enumeration CONTENT = CONN.list(); 
+                    
+                    while (CONTENT.hasMoreElements()) { 
+                        String ITEM = (String) CONTENT.nextElement(); 
+                        BUFFER.addElement(ITEM); 
+                    } 
+                    
+                    CONN.close(); 
+                } 
+                catch (Exception e) { } 
+            } 
+            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { 
+                try { 
+                    String[] FILES = RecordStore.listRecordStores(); 
+                    if (FILES != null) { 
+                        for (int i = 0; i < FILES.length; i++) { 
+                            String NAME = FILES[i]; 
+                            
+                            if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } 
+                        } 
+                    } 
+                } 
+                catch (RecordStoreException e) { } 
+            } 
+            else if (path.equals("/home/")) { new Explorer(); return 0; } String[] FILES = (String[]) paths.get(path); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String f = FILES[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!BUFFER.contains(f) && !BUFFER.contains(f + "/")) { BUFFER.addElement(f); } } } if (!BUFFER.isEmpty()) { StringBuffer FORMATTED = new StringBuffer(); for (int i = 0; i < BUFFER.size(); i++) { String ITEM = (String) BUFFER.elementAt(i); if (!ITEM.equals("/")) { FORMATTED.append(ITEM).append(path.equals("/home/") ? "\n" : "\t"); } } echoCommand(FORMATTED.toString().trim()); } }
         // |
         // Device Files
-        else if (mainCommand.equals("fdisk")) { processCommand("lsblk"); }
+        else if (mainCommand.equals("fdisk")) { return processCommand("lsblk", false); }
         else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else { echoCommand("lsblk: " + argument + ": not found"); return 127; } }
         // |
         // RMS Files
