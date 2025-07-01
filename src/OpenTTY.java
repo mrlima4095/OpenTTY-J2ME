@@ -5,7 +5,6 @@ import javax.microedition.io.file.*;
 import javax.microedition.media.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
-import javax.bluetooh.*;
 import java.util.*;
 import java.io.*;
 
