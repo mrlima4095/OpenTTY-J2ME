@@ -664,7 +664,68 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
     // |
     // Audio Manager
-    private int audio(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("volume")) { if (player != null) { VolumeControl vc = (VolumeControl) player.getControl("VolumeControl"); if (argument.equals("")) { echoCommand("" + vc.getLevel()); } else { try { vc.setLevel(Integer.parseInt(argument)); } catch (Exception e) { echoCommand(e.getMessage()); } } } else { echoCommand("audio: not running."); } } else if (mainCommand.equals("play")) { if (argument.equals("")) { } else { if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return 1; } else { return audio("play " + path + argument); } try { FileConnection fc = (FileConnection) Connector.open("file:///" + argument, Connector.READ); if (!fc.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } InputStream is = fc.openInputStream(); player = Manager.createPlayer(is, getMimeType(argument)); player.prefetch(); player.start(); start("audio"); } catch (Exception e) { echoCommand(e.getMessage()); } } } else if (mainCommand.equals("pause")) { try { if (player != null) { player.stop(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } } else if (mainCommand.equals("resume")) { try { if (player != null) { player.start(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } } else if (mainCommand.equals("stop")) { try { if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } } catch (Exception e) { echoCommand(e.getMessage()); } } else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } return 0; } private String getMimeType(String filename) { filename = filename.toLowerCase(); if (filename.endsWith(".amr")) { return "audio/amr"; } else if (filename.endsWith(".wav")) { return "audio/x-wav"; } else { return "audio/mpeg"; } }
+    private int audio(String command) { 
+        command = env(command.trim()); 
+        String mainCommand = getCommand(command), argument = getArgument(command); 
+
+        if (mainCommand.equals("")) { } 
+        else if (mainCommand.equals("volume")) { 
+            if (player != null) { 
+                VolumeControl vc = (VolumeControl) player.getControl("VolumeControl"); 
+                if (argument.equals("")) { echoCommand("" + vc.getLevel()); } 
+                else { 
+                    try { vc.setLevel(Integer.parseInt(argument)); } 
+                    catch (Exception e) { echoCommand(e.getMessage()); return; } 
+                } 
+            } 
+            else { echoCommand("audio: not running."); return; } 
+        } 
+        else if (mainCommand.equals("play")) { 
+            if (argument.equals("")) { } 
+            else { 
+                if (argument.startsWith("/mnt/")) { argument = argument.substring(5); }
+                else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return 1; } 
+                else { return audio("play " + path + argument); } 
+                
+                try {
+                    FileConnection fc = (FileConnection) Connector.open("file:///" + argument, Connector.READ); 
+                    if (!fc.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } 
+
+                    InputStream is = fc.openInputStream(); 
+                    player = Manager.createPlayer(is, getMimeType(argument)); 
+                    player.prefetch(); player.start(); 
+
+                    start("audio"); 
+                } catch (Exception e) { echoCommand(e.getMessage()); return; } 
+            } 
+        } 
+        else if (mainCommand.equals("pause")) { 
+            try { 
+                if (player != null) { player.stop(); } 
+                else { echoCommand("audio: not running."); return; } 
+            } catch (Exception e) { echoCommand(e.getMessage()); return; } 
+        } 
+        else if (mainCommand.equals("resume")) { 
+            try { 
+                if (player != null) { player.start(); } 
+                else { echoCommand("audio: not running."); return; } 
+            } catch (Exception e) { echoCommand(e.getMessage()); return; } 
+        } 
+        else if (mainCommand.equals("stop")) { 
+            try { 
+                if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } 
+            } catch (Exception e) { echoCommand(e.getMessage()); return; } 
+        } 
+        else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } 
+
+        return 0; 
+    } 
+    private String getMimeType(String filename) { 
+        filename = filename.toLowerCase(); 
+        if (filename.endsWith(".amr")) { return "audio/amr"; } 
+        else if (filename.endsWith(".wav")) { return "audio/x-wav"; } 
+        else { return "audio/mpeg"; } 
+    }
 
     // API 013 - (MIDlet)
     // |
@@ -710,30 +771,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Generate items - Command & Files
         if (PKG.containsKey("command")) { 
-            String[] CMDS = split((String) PKG.get("command"), ','); 
-            for (int i = 0; i < CMDS.length; i++) { 
-                if (PKG.containsKey(CMDS[i])) { aliases.put(CMDS[i], env((String) PKG.get(command[i]))); } 
+            String[] commands = split((String) PKG.get("command"), ','); 
+            for (int i = 0; i < commands.length; i++) { 
+                if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(command[i]))); } 
                 else { MIDletLogs("add error Failed to create command '" + command[i] + "' content not found"); } 
             } 
         }
         if (PKG.containsKey("file")) { 
-            String[] FILES = split((String) PKG.get("file"), ','); 
-            for (int i = 0; i < FILES.length; i++) { 
-                if (PKG.containsKey(FILES[i])) { writeRMS("/home/" + FILES[i], env((String) PKG.get(FILES[i]))); } 
-                else { MIDletLogs("add error Failed to create file '" + FILES[i] + "' content not found"); } 
+            String[] files = split((String) PKG.get("file"), ','); 
+            for (int i = 0; i < files.length; i++) { 
+                if (PKG.containsKey(files[i])) { int STATUS = writeRMS("/home/" + files[i], env((String) PKG.get(files[i]))); } 
+                else { MIDletLogs("add error Failed to create file '" + files[i] + "' content not found"); } 
             } 
         }
         // |
         // Build APP Shell
         if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { 
-            String CMD = (String) PKG.get("shell.name"); 
-            String[] ARGS = split((String) lib.get("shell.args"), ','); 
-            Hashtable TABLE = new Hashtable(); for (int i = 0; i < ARGS.length; i++) { 
-                String NAME = ARGS[i].trim(), VALUE = (String) lib.get(NAME); 
+            String command = (String) PKG.get("shell.name"); 
+            String[] args = split((String) PKG.get("shell.args"), ','); 
+            Hashtable TABLE = new Hashtable(); 
+            for (int i = 0; i < args.length; i++) { 
+                String NAME = args[i].trim(), VALUE = (String) PKG.get(NAME); 
                 TABLE.put(NAME, (VALUE != null) ? VALUE : ""); 
             } 
-            if (lib.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) lib.get("shell.unknown")); } 
-            shell.put(CMD, TABLE); return 0; 
+            if (PKG.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) PKG.get("shell.unknown")); } 
+            shell.put(command, TABLE); return 0; 
         }
 
         return 0;
