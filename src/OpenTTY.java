@@ -654,42 +654,40 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int importScript(String script) {
         if (script == null || script.length() == 0) { return 2; }
 
-        Hashtable lib = parseProperties(getcontent(script));
+        Hashtable PKG = parseProperties(getcontent(script));
         // |
         // Verify current API version
-        if (lib.containsKey("api.version")) { if (!env("$VERSION").startsWith((String) lib.get("api.version"))) { processCommand(lib.containsKey("api.error") ? (String) lib.get("api.error") : "true"); return 3; } }
+        if (PKG.containsKey("api.version")) { if (!env("$VERSION").startsWith((String) PKG.get("api.version"))) { processCommand(PKG.containsKey("api.error") ? (String) PKG.get("api.error") : "true"); return 3; } }
         // |
         // Start and handle APP process
-        if (lib.containsKey("process.name")) { start((String) lib.get("process.name")); }
-        if (lib.containsKey("process.type")) { String type = (String) lib.get("process.type"); if (type.equals("server")) { } else if (type.equals("bind")) { new Bind(env((String) lib.get("process.port") + " " + (String) lib.get("process.db"))); } else { MIDletLogs("add warn '" + type.toUpperCase() + "' is a invalid value for 'process.type'"); } }
-        if (lib.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) lib.get("process.port") + " " + (String) lib.get("process.host"))); }
+        if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name")); }
+        if (PKG.containsKey("process.type")) { String TYPE = (String) PKG.get("process.type"); if (TYPE.equals("server")) { } else if (TYPE.equals("bind")) { new Bind(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.db"))); } else { MIDletLogs("add warn '" + TYPE.toUpperCase() + "' is a invalid value for 'process.type'"); } }
+        if (PKG.containsKey("process.host") && PKG.containsKey("process.port")) { new Server(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host"))); }
         // |
         // Build dependencies
-        if (lib.containsKey("include")) { String[] include = split((String) lib.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
+        if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start Application
-        if (lib.containsKey("config")) { processCommand((String) lib.get("config")); }
-        if (lib.containsKey("mod") && lib.containsKey("process.name")) { final String name = (String) lib.get("process.name"); final String mod = (String) lib.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(name)) { processCommand(mod); } } }.start(); }
+        if (PKG.containsKey("config")) { processCommand((String) PKG.get("config")); }
+        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD); if (STATUS != 0) { return; } } } }.start(); }
         // |
         // Generate items - Command & Files
-        if (lib.containsKey("command")) { String[] command = split((String) lib.get("command"), ','); for (int i = 0; i < command.length; i++) { if (lib.containsKey(command[i])) { aliases.put(command[i], env((String) lib.get(command[i]))); } else { MIDletLogs("add error Failed to create command '" + command[i] + "' content not found"); } } }
-        if (lib.containsKey("file")) { String[] file = split((String) lib.get("file"), ','); for (int i = 0; i < file.length; i++) { if (lib.containsKey(file[i])) { writeRMS("/home/" + file[i], env((String) lib.get(file[i]))); } else { MIDletLogs("add error Failed to create file '" + file[i] + "' content not found"); } } }
+        if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(command[i]))); } else { MIDletLogs("add error Failed to create command '" + command[i] + "' content not found"); } } }
+        if (PKG.containsKey("file")) { String[] files = split((String) PKG.get("file"), ','); for (int i = 0; i < files.length; i++) { if (PKG.containsKey(files[i])) { int STATUS = writeRMS("/home/" + files[i], env((String) PKG.get(files[i]))); } else { MIDletLogs("add error Failed to create file '" + files[i] + "' content not found"); } } }
         // |
         // Build APP Shell
-        if (lib.containsKey("shell.name") && lib.containsKey("shell.args")) { build(lib); }
+        if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { 
+            String command = (String) PKG.get("shell.name"); 
+            String[] args = split((String) PKG.get("shell.args"), ','); 
+            Hashtable TABLE = new Hashtable(); 
+            for (int i = 0; i < args.length; i++) { 
+                String NAME = args[i].trim(), VALUE = (String) PKG.get(NAME); 
+                TABLE.put(NAME, (VALUE != null) ? VALUE : ""); 
+            } 
+            if (PKG.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) PKG.get("shell.unknown")); } 
+            shell.put(command, TABLE);
+        }
 
-        return 0;
-    }
-    private int build(Hashtable lib) { 
-        String CMD = (String) lib.get("shell.name"); 
-        String[] ARGS = split((String) lib.get("shell.args"), ','); 
-        Hashtable TABLE = new Hashtable(); 
-
-        for (int i = 0; i < ARGS.length; i++) { String NAME = ARGS[i].trim(), VALUE = (String) lib.get(NAME); TABLE.put(NAME, (VALUE != null) ? VALUE : ""); } 
-
-        if (lib.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) lib.get("shell.unknown")); } 
-
-        shell.put(CMD, TABLE); 
         return 0;
     }
     private int runScript(String script) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim()); if (STATUS != 0) { return STATUS; } } return 0; }
