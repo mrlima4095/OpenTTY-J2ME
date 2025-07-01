@@ -581,7 +581,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 conn.receive(response); conn.close(); 
 
                 byte[] data = response.getData(); 
-                if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return; } 
+                if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } 
                 int offset = 12; while (data[offset] != 0) { offset++; } 
                 offset += 5; 
                 if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { 
@@ -590,7 +590,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     echoCommand(ip.toString()); 
                 } 
-                else { echoCommand("not found"); } 
+                else { echoCommand("not found"); return 127; } 
             } catch (IOException e) { echoCommand(e.getMessage()); } 
         } 
 
