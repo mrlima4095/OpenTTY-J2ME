@@ -646,7 +646,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // RMS Files
     private void deleteFile(String filename) { if (filename == null || filename.length() == 0) { return; } else if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (conn.exists()) { conn.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); } conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { try { RecordStore.deleteRecordStore(filename.substring(6)); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); } else { deleteFile(path + filename); } }
-    private void writeRMS(String filename, String data) { if (filename == null || filename.length() == 0) { return; } if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!conn.exists()) { conn.create(); } OutputStream os = conn.openOutputStream(); os.write(data.getBytes()); os.flush(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } }  catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); } else { writeRMS(path + filename, data); } }
+    private int writeRMS(String filename, String data) { 
+        if (filename == null || filename.length() == 0) { return 2; } 
+        if (filename.startsWith("/mnt/")) { 
+            try {
+                FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
+                if (!CONN.exists()) { CONN.create(); } 
+                OutputStream OUT = CONN.openOutputStream(); OUT.write(data.getBytes()); OUT.flush(); 
+            } 
+            catch (SecurityException e) { echoCommand(e.getMessage()); return 13; }
+            catch (Exception e) { echoCommand(e.getMessage()); return 1; } 
+        } 
+        else if (filename.startsWith("/home/")) { 
+            RecordStore recordStore = null; 
+            try { 
+                recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
+                byte[] byteData = data.getBytes(); 
+                if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } 
+                else { recordStore.addRecord(byteData, 0, byteData.length); } 
+            } 
+            catch (RecordStoreException e) { } 
+            finally { 
+                if (recordStore != null) { 
+                    try { recordStore.closeRecordStore(); } 
+                    catch (RecordStoreException e) { } 
+                } 
+            } 
+        } 
+        else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
+        else { return writeRMS(path + filename, data); } 
+
+        return 0;
+    }
     private String loadRMS(String filename) { return read("/home/" + filename); }
     // |
     // Text Manager
@@ -664,53 +695,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
     // |
     // Audio Manager
-    private int audio(String command) { 
-        command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command); 
-
-        if (mainCommand.equals("")) { } 
-        else if (mainCommand.equals("volume")) { 
-            if (player != null) { 
-                VolumeControl vc = (VolumeControl) player.getControl("VolumeControl"); 
-                if (argument.equals("")) { echoCommand("" + vc.getLevel()); } 
-                else { 
-                    try { vc.setLevel(Integer.parseInt(argument)); } 
-                    catch (Exception e) { echoCommand(e.getMessage()); return 2; } 
-                } 
-            } 
-            else { echoCommand("audio: not running."); return 69; } 
-        } 
-        else if (mainCommand.equals("play")) { 
-            if (argument.equals("")) { } 
-            else { 
-                if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } 
-                else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return 1; } 
-                else { return audio("play " + path + argument); } 
-                
-                try {
-                    FileConnection CONN = (FileConnection) Connector.open("file:///" + argument, Connector.READ); 
-                    if (!CONN.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } 
-
-                    InputStream IN = CONN.openInputStream(); CONN.close();
-                    player = Manager.createPlayer(IN, getMimeType(argument)); 
-                    player.prefetch(); player.start(); 
-
-                    start("audio"); 
-                } 
-                catch (Exception e) { echoCommand(e.getMessage()); return 1; } 
-            } 
-        } 
-        else if (mainCommand.equals("pause")) { try { if (player != null) { player.stop(); } else { echoCommand("audio: not running."); return 69 } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } 
-        else if (mainCommand.equals("resume")) { try { if (player != null) { player.start(); } else { echoCommand("audio: not running."); return 69; } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } 
-        else if (mainCommand.equals("stop")) { try { if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } else { echoCommand("audio: not running."); return 69; } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } 
-        else if (mainCommand.equals("status")) { echoCommand(player != null ? "true" : "false"); } 
-        else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } 
-
-        return 0; 
-    }
+    private int audio(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("volume")) { if (player != null) { VolumeControl vc = (VolumeControl) player.getControl("VolumeControl"); if (argument.equals("")) { echoCommand("" + vc.getLevel()); } else { try { vc.setLevel(Integer.parseInt(argument)); } catch (Exception e) { echoCommand(e.getMessage()); return 2; } } } else { echoCommand("audio: not running."); return 69; } } else if (mainCommand.equals("play")) { if (argument.equals("")) { } else { if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return 1; } else { return audio("play " + path + argument); } try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument, Connector.READ); if (!CONN.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } InputStream IN = CONN.openInputStream(); CONN.close(); player = Manager.createPlayer(IN, getMimeType(argument)); player.prefetch(); player.start(); start("audio"); } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } } else if (mainCommand.equals("pause")) { try { if (player != null) { player.stop(); } else { echoCommand("audio: not running."); return 69 } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (mainCommand.equals("resume")) { try { if (player != null) { player.start(); } else { echoCommand("audio: not running."); return 69; } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (mainCommand.equals("stop")) { try { if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } else { echoCommand("audio: not running."); return 69; } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (mainCommand.equals("status")) { echoCommand(player != null ? "true" : "false"); } else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } return 0; }
 
     private String getMimeType(String filename) { 
         filename = filename.toLowerCase(); 
+
         if (filename.endsWith(".amr")) { return "audio/amr"; } 
         else if (filename.endsWith(".wav")) { return "audio/x-wav"; } 
         else { return "audio/mpeg"; } 
