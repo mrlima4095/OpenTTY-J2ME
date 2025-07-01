@@ -212,52 +212,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
-        else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/home/"; } 
-            else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } 
-            else { 
-                String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
-                if (!TARGET.endsWith("/")) { TARGET += "/"; } 
-
-                if (paths.containsKey(TARGET)) { path = TARGET; } 
-                else if (TARGET.startsWith("/mnt/")) { 
-                    try { 
-                        String REALPWD = "file:///" + TARGET.substring(5); 
-                        if (!REALPWD.endsWith("/")) REALPWD += "/"; 
-
-                        FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); 
-                        if (fc.exists() && fc.isDirectory()) { path = TARGET; } 
-                        else { echoCommand("cd: " + basename(TARGET) + ": not " + (!fc.exists() ? "found" : "a directory")); return 127; } 
-
-                        fc.close(); 
-                    } 
-                    catch (IOException e) { echoCommand("cd: " + basename(TARGET) + ": " + e.getMessage()); return 1; } 
-                } 
-                else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } 
-            } 
-        }
+        else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/home/"; } else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } else { String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); if (!TARGET.endsWith("/")) { TARGET += "/"; } if (paths.containsKey(TARGET)) { path = TARGET; } else if (TARGET.startsWith("/mnt/")) { try { String REALPWD = "file:///" + TARGET.substring(5); if (!REALPWD.endsWith("/")) REALPWD += "/"; FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); if (fc.exists() && fc.isDirectory()) { path = TARGET; } else { echoCommand("cd: " + basename(TARGET) + ": not " + (!fc.exists() ? "found" : "a directory")); return 127; } fc.close(); } catch (IOException e) { echoCommand("cd: " + basename(TARGET) + ": " + e.getMessage()); return 1; } } else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } } }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
-        else if (mainCommand.equals("ls")) { 
-            Vector BUFFER = new Vector(); 
-            if (path.equals("/mnt/")) { try { Enumeration ROOTS = FileSystemRegistry.listRoots(); while (ROOTS.hasMoreElements()) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } 
-            else if (path.startsWith("/mnt/")) { try { String REALPWD = "file:///" + path.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); Enumeration CONTENT = CONN.list(); while (CONTENT.hasMoreElements()) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } 
-            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } 
-            else if (path.equals("/home/")) { new Explorer(); return 0; } 
-
-            String[] FILES = (String[]) paths.get(path); 
-            if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String f = FILES[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!BUFFER.contains(f) && !BUFFER.contains(f + "/")) { BUFFER.addElement(f); } } } 
-
-            if (!BUFFER.isEmpty()) { 
-                StringBuffer FORMATTED = new StringBuffer(); 
-
-                for (int i = 0; i < BUFFER.size(); i++) { 
-                    String ITEM = (String) BUFFER.elementAt(i); 
-                    if (!ITEM.equals("/")) { FORMATTED.append(ITEM).append(path.equals("/home/") ? "\n" : "\t"); } 
-                } 
-
-                echoCommand(FORMATTED.toString().trim()); 
-            } 
-        }
+        else if (mainCommand.equals("ls")) { Vector BUFFER = new Vector(); if (path.equals("/mnt/")) { try { Enumeration ROOTS = FileSystemRegistry.listRoots(); while (ROOTS.hasMoreElements()) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } else if (path.startsWith("/mnt/")) { try { String REALPWD = "file:///" + path.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); Enumeration CONTENT = CONN.list(); while (CONTENT.hasMoreElements()) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } else if (path.equals("/home/")) { new Explorer(); return 0; } String[] FILES = (String[]) paths.get(path); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String f = FILES[i].trim(); if (f == null || f.equals("..") || f.equals("/")) { continue; } if (!BUFFER.contains(f) && !BUFFER.contains(f + "/")) { BUFFER.addElement(f); } } } if (!BUFFER.isEmpty()) { StringBuffer FORMATTED = new StringBuffer(); for (int i = 0; i < BUFFER.size(); i++) { String ITEM = (String) BUFFER.elementAt(i); if (!ITEM.equals("/")) { FORMATTED.append(ITEM).append(path.equals("/home/") ? "\n" : "\t"); } } echoCommand(FORMATTED.toString().trim()); } }
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { processCommand("lsblk"); }
@@ -316,33 +274,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("debug")) { return runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/help.txt")); }
-        else if (mainCommand.equals("man")) { 
-            boolean verbose = argument.indexOf("-v") != -1; 
-            if (verbose) { argument = replace(argument, "-v", "").trim(); } 
-            if (argument.equals("")) { argument = "sh"; } 
-
-            String content = read("/home/man.html"); 
-            if (content.equals("") || argument.equals("--update")) { 
-                int STATUS = processCommand("netstat");
-                if (STATUS == 0) {
-                    STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false);
-                    if (STATUS == 0) { content = read("/home/man.html"); }
-                    else { return 1; } 
-                }
-                else { echoCommand("man: network error"); return 101; }                
-            } 
-
-            content = extractTag(content, argument.toLowerCase(), "");
-            if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } 
-            else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } 
-        }
+        else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; if (verbose) { argument = replace(argument, "-v", "").trim(); } if (argument.equals("")) { argument = "sh"; } String content = read("/home/man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat"); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
-        else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 2; } }
+        else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 128; } }
 
         // API 014 - (OpenTTY)
         // |
@@ -389,27 +328,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 002 - (Logs)
     // |
     // OpenTTY Logging Manager
-    private int MIDletLogs(String command) {
-        command = env(command.trim());
-        String mainCommand = getCommand(command), argument = getArgument(command);
-
-        if (mainCommand.equals("")) { } 
-        else if (mainCommand.equals("clear")) { logs = ""; } 
-        else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } 
-        else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } 
-        else if (mainCommand.equals("add")) {
-            String LEVEL = getCommand(argument).toLowerCase();
-            String MESSAGE = getArgument(argument);
-
-            if (!MESSAGE.equals("")) {
-                if (LEVEL.equals("info") || LEVEL.equals("warn") || LEVEL.equals("debug") || LEVEL.equals("error")) { logs += "[" + LEVEL.toUpperCase() + "] " + split(new java.util.Date().toString(), ' ')[3] + " " + MESSAGE + "\n"; } 
-                else { echoCommand("log: add: " + LEVEL + ": not found"); return 127; }
-            }
-        } 
-        else { echoCommand("log: " + mainCommand + ": not found"); return 127; }
-
-        return 0;
-    }
+    private int MIDletLogs(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { writeRMS(argument.equals("") ? "logs" : argument, logs); } else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } else if (mainCommand.equals("add")) { String LEVEL = getCommand(argument).toLowerCase(), MESSAGE = getArgument(argument); if (!MESSAGE.equals("")) { if (LEVEL.equals("info") || LEVEL.equals("warn") || LEVEL.equals("debug") || LEVEL.equals("error")) { logs += "[" + LEVEL.toUpperCase() + "] " + split(new java.util.Date().toString(), ' ')[3] + " " + MESSAGE + "\n"; } else { echoCommand("log: add: " + LEVEL + ": not found"); return 127; } } } else { echoCommand("log: " + mainCommand + ": not found"); return 127; } return 0; }
 
     // API 004 - (LCDUI Interface)
     // |
@@ -452,7 +371,67 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
     // |
     // Interfaces
-    public class Screen implements CommandListener { private Hashtable lib; private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3; private Form screen = new Form(form.getTitle()); private List list = new List(form.getTitle(), List.IMPLICIT); private Command BACK, USER; private TextField INPUT; public Screen(String type, String args) { if (type == null || type.length() == 0 || args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); if (type.equals("make")) { TYPE = SCREEN; if (lib.containsKey("screen.title")) { screen.setTitle(getenv("screen.title")); } BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); screen.addCommand(BACK); if (lib.containsKey("screen.button")) { screen.addCommand(USER); } if (lib.containsKey("screen.fields")) { String[] fields = split(getenv("screen.fields"), ','); for (int i = 0; i < fields.length; i++) { String field = fields[i].trim(); String type = getenv("screen." + field + ".type"); if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) { try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); } } else if (type.equals("text") && !getenv("screen." + field + ".value").equals("")) { StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".value")); content.setFont(newFont(getenv("screen." + field + ".style", "default"))); screen.append(content); } else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); } else if (type.equals("spacer")) { int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); screen.append(new Spacer(width, height)); } } } screen.setCommandListener(this); display.setCurrent(screen); } else if (type.equals("list")) { TYPE = LIST; Image IMG = null; if (!lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } if (lib.containsKey("list.title")) { list.setTitle(getenv("list.title")); } if (lib.containsKey("list.icon")) { try { IMG = Image.createImage(getenv("list.icon")); } catch (IOException e) { MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded"); } } BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2); list.addCommand(BACK); list.addCommand(USER); String[] content = split(getenv("list.content"), ','); for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); } list.setCommandListener(this); display.setCurrent(list); } else if (type.equals("quest")) { TYPE = QUEST; if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } if (lib.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); } INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); screen.append(INPUT); screen.addCommand(BACK); screen.addCommand(USER); screen.setCommandListener(this); display.setCurrent(screen); } else { return; } } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); if (TYPE == SCREEN) { processCommand(getvalue("screen.back", "true")); } else if (TYPE == LIST) { processCommand(getvalue("list.back", "true")); } else if (TYPE == QUEST) { processCommand(getvalue("quest.back", "true")); } } else if (c == USER) { if (TYPE == QUEST) { String value = INPUT.getString().trim(); if (!value.equals("")) { processCommand("set " + getenv("quest.key") + "=" + env(value)); processCommand("xterm"); processCommand(getvalue("quest.cmd", "true")); } } else if (TYPE == LIST) { int index = list.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); String key = env(list.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found")); } } else if (TYPE == SCREEN) { processCommand("xterm"); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found")); } } } private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; } private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } private String getenv(String key) { return env(getvalue(key, "")); } private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = TextField.ANY; if (mode.equals("number")) { base = TextField.NUMERIC; } else if (mode.equals("email")) { base = TextField.EMAILADDR; } else if (mode.equals("phone")) { base = TextField.PHONENUMBER; } else if (mode.equals("decimal")) { base = TextField.DECIMAL; } return password ? (base | TextField.PASSWORD) : base; } }
+    //public class Screen implements CommandListener { private Hashtable lib; private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3; private Form screen = new Form(form.getTitle()); private List list = new List(form.getTitle(), List.IMPLICIT); private Command BACK, USER; private TextField INPUT; public Screen(String type, String args) { if (type == null || type.length() == 0 || args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); if (type.equals("make")) { TYPE = SCREEN; if (lib.containsKey("screen.title")) { screen.setTitle(getenv("screen.title")); } BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); screen.addCommand(BACK); if (lib.containsKey("screen.button")) { screen.addCommand(USER); } if (lib.containsKey("screen.fields")) { String[] fields = split(getenv("screen.fields"), ','); for (int i = 0; i < fields.length; i++) { String field = fields[i].trim(); String type = getenv("screen." + field + ".type"); if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) { try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); } } else if (type.equals("text") && !getenv("screen." + field + ".value").equals("")) { StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".value")); content.setFont(newFont(getenv("screen." + field + ".style", "default"))); screen.append(content); } else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); } else if (type.equals("spacer")) { int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); screen.append(new Spacer(width, height)); } } } screen.setCommandListener(this); display.setCurrent(screen); } else if (type.equals("list")) { TYPE = LIST; Image IMG = null; if (!lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } if (lib.containsKey("list.title")) { list.setTitle(getenv("list.title")); } if (lib.containsKey("list.icon")) { try { IMG = Image.createImage(getenv("list.icon")); } catch (IOException e) { MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded"); } } BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2); list.addCommand(BACK); list.addCommand(USER); String[] content = split(getenv("list.content"), ','); for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); } list.setCommandListener(this); display.setCurrent(list); } else if (type.equals("quest")) { TYPE = QUEST; if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } if (lib.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); } INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); screen.append(INPUT); screen.addCommand(BACK); screen.addCommand(USER); screen.setCommandListener(this); display.setCurrent(screen); } else { return; } } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); if (TYPE == SCREEN) { processCommand(getvalue("screen.back", "true")); } else if (TYPE == LIST) { processCommand(getvalue("list.back", "true")); } else if (TYPE == QUEST) { processCommand(getvalue("quest.back", "true")); } } else if (c == USER) { if (TYPE == QUEST) { String value = INPUT.getString().trim(); if (!value.equals("")) { processCommand("set " + getenv("quest.key") + "=" + env(value)); processCommand("xterm"); processCommand(getvalue("quest.cmd", "true")); } } else if (TYPE == LIST) { int index = list.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); String key = env(list.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found")); } } else if (TYPE == SCREEN) { processCommand("xterm"); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found")); } } } private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; } private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } private String getenv(String key) { return env(getvalue(key, "")); } private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = TextField.ANY; if (mode.equals("number")) { base = TextField.NUMERIC; } else if (mode.equals("email")) { base = TextField.EMAILADDR; } else if (mode.equals("phone")) { base = TextField.PHONENUMBER; } else if (mode.equals("decimal")) { base = TextField.DECIMAL; } return password ? (base | TextField.PASSWORD) : base; } }
+    public class Screen implements CommandListener {
+        private Hashtable lib;
+        private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3;
+        private Form screen = new Form(form.getTitle());
+        private List list = new List(form.getTitle(), List.IMPLICIT);
+        private Command BACK, USER;
+        private TextField INPUT;
+
+        public Screen(String type, String args) {
+            if (type == null || type.length() == 0 || args == null || args.length() == 0) { return; }
+
+            lib = parseProperties(getcontent(args));
+
+            if (type.equals("make")) {
+                TYPE = SCREEN;
+
+                if (lib.containsKey("screen.title")) { screen.setTitle(getenv("screen.title")); }
+
+                BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); 
+                screen.addCommand(BACK); if (lib.containsKey("screen.button")) { screen.addCommand(USER); } 
+
+                if (lib.containsKey("screen.fields")) {
+                    String[] fields = split(getenv("screen.fields"), ',');
+                    for (int i = 0; i < fields.length; i++) {
+                        String field = fields[i].trim();
+                        String type = getenv("screen." + field + ".type");
+
+                        if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) { try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } catch (IOException e) { MIDletLogs("add warn Image '" + getenv("screen." + field + ".img") + "' could not be loaded"); } }
+                        else if (type.equals("text") && !getenv("screen." + field + ".value").equals("")) { StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".value")); content.setFont(newFont(getenv("screen." + field + ".style", "default"))); screen.append(content); }
+                        else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); }
+                        else if (type.equals("spacer")) { int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); screen.append(new Spacer(width, height)); }
+                    }
+                }
+                
+                screen.setCommandListener(this);
+                display.setCurrent(screen);
+            }
+            else if (type.equals("list")) { TYPE = LIST; Image IMG = null; if (!lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } if (lib.containsKey("list.title")) { list.setTitle(getenv("list.title")); } if (lib.containsKey("list.icon")) { try { IMG = Image.createImage(getenv("list.icon")); } catch (IOException e) { MIDletLogs("add warn Resource '" + getenv("list.icon") + "' cannot be loaded"); } } BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2); list.addCommand(BACK); list.addCommand(USER); String[] content = split(getenv("list.content"), ','); for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); } list.setCommandListener(this); display.setCurrent(list); }
+            else if (type.equals("quest")) { TYPE = QUEST; if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } if (lib.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); } INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); screen.append(INPUT); screen.addCommand(BACK); screen.addCommand(USER); screen.setCommandListener(this); display.setCurrent(screen); } else { return; }
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            if (c == BACK) {
+                processCommand("xterm");
+                if (TYPE == SCREEN) { processCommand(getvalue("screen.back", "true")); } 
+                else if (TYPE == LIST) { processCommand(getvalue("list.back", "true")); }
+                else if (TYPE == QUEST) { processCommand(getvalue("quest.back", "true")); }
+            } else if (c == USER) {
+                if (TYPE == QUEST) { String value = INPUT.getString().trim(); if (!value.equals("")) { processCommand("set " + getenv("quest.key") + "=" + env(value)); processCommand("xterm"); processCommand(getvalue("quest.cmd", "true")); } } 
+                else if (TYPE == LIST) { int index = list.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); String key = env(list.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found")); } } 
+                else if (TYPE == SCREEN) { processCommand("xterm"); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found")); }
+            }
+        }
+
+        private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; }
+        private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); }
+        private String getenv(String key) { return env(getvalue(key, "")); }
+
+        private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = TextField.ANY; if (mode.equals("number")) { base = TextField.NUMERIC; } else if (mode.equals("email")) { base = TextField.EMAILADDR; } else if (mode.equals("phone")) { base = TextField.PHONENUMBER; } else if (mode.equals("decimal")) { base = TextField.DECIMAL; } return password ? (base | TextField.PASSWORD) : base; }
+    }
     public class MyCanvas extends Canvas implements CommandListener { private Hashtable lib; private Graphics screen; private Command BACK, USER; private Image CURSOR = null; private Vector fields = new Vector(); private final int cursorSize = 5; public MyCanvas(String args) { if (args == null || args.length() == 0) { return; } lib = parseProperties(getcontent(args)); setTitle(getenv("canvas.title", form.getTitle())); BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1); USER = new Command(getenv("canvas.button"), Command.SCREEN, 2); addCommand(BACK); if (lib.containsKey("canvas.button")) { addCommand(USER); } if (lib.containsKey("canvas.mouse")) { try { String[] pos = split(getenv("canvas.mouse"), ','); cursorX = Integer.parseInt(pos[0]); cursorY = Integer.parseInt(pos[1]); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } } if (lib.containsKey("canvas.mouse.img")) { try { CURSOR = Image.createImage(getenv("canvas.mouse.img")); } catch (IOException e) { MIDletLogs("add warn Cursor " + getenv("canvas.mouse.img") + " could not be loaded"); } } if (lib.containsKey("canvas.fields")) { String[] names = split(getenv("canvas.fields"), ','); for (int i = 0; i < names.length; i++) { String id = names[i].trim(), type = getenv("canvas." + id + ".type", "text"); int x = Integer.parseInt(getenv("canvas." + id + ".x", "0")), y = Integer.parseInt(getenv("canvas." + id + ".y", "0")), w = Integer.parseInt(getenv("canvas." + id + ".w", "0")), h = Integer.parseInt(getenv("canvas." + id + ".h", "0")); Hashtable field = new Hashtable(); field.put("type", type); field.put("x", new Integer(x)); field.put("y", new Integer(y)); field.put("w", new Integer(w)); field.put("h", new Integer(h)); field.put("value", getenv("canvas." + id + ".value", "")); field.put("style", getenv("canvas." + id + ".style", "default")); field.put("cmd", getenv("canvas." + id + ".cmd", "")); fields.addElement(field); } } setCommandListener(this); } protected void paint(Graphics g) { if (screen == null) { screen = g; } g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); if (lib.containsKey("canvas.background")) { String backgroundType = getenv("canvas.background.type", "default"); if (backgroundType.equals("color") || backgroundType.equals("default")) { setpallete("background", g, 0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); } else if (backgroundType.equals("image")) { try { Image content = Image.createImage(getenv("canvas.background")); g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); } catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + e.getMessage()); } } } if (lib.containsKey("canvas.fields")) { for (int i = 0; i < fields.size(); i++) { Hashtable f = (Hashtable) fields.elementAt(i); String type = (String) f.get("type"), val = (String) f.get("value"); int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue(); if (type.equals("text")) { setpallete("text.color", g, 255, 255, 255); g.setFont(newFont((String) f.get("style"))); g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT); } else if (type.equals("image")) { try { Image IMG = Image.createImage(val); g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT); if (w == 0) { f.put("w", new Integer(IMG.getWidth())); } if (h == 0) { f.put("h", new Integer(IMG.getHeight())); } } catch (IOException e) { MIDletLogs("add error Malformed Image, " + e.getMessage()); } } else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } else if (type.equals("circle")) { setpallete("circle.color", g, 0, 255, 0); g.drawArc(x - w, y - w, w * 2, w * 2, 0, 360); } else if (type.equals("line")) { setpallete("line.color", g, 255, 255, 255); g.drawLine(x, y, w, h); } } } if (CURSOR != null) { g.drawImage(CURSOR, cursorX, cursorY, Graphics.TOP | Graphics.LEFT); } else { setpallete("mouse.color", g, 255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } } protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); }  else if (gameAction == FIRE) { for (int i = 0; i < fields.size(); i++) { Hashtable f = (Hashtable) fields.elementAt(i); int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue(); String type = (String) f.get("type"), cmd = (String) f.get("cmd"), val = (String) f.get("value"); if (cmd != null && !cmd.equals("")) { boolean hit = false; if (type.equals("circle")) { int dx = cursorX - x, dy = cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } else if (type.equals("text")) { Font font = newFont(getenv((String) f.get("style"), "default")); int textW = font.stringWidth(val), textH = font.getHeight(); hit = cursorX + cursorSize > x && cursorX < x + textW && cursorY + cursorSize > y && cursorY < y + textH; } else if (type.equals("line")) { continue; } else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; } if (hit) { processCommand(cmd); break; } } } } repaint(); } protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; keyPressed(-5); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); processCommand(getvalue("canvas.back", "true")); } else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); } } private void setpallete(String node, Graphics screen, int r, int g, int b) { try { String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } } private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; } private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } private String getenv(String key) { return env(getvalue(key, "")); } }
     // |
     // Item MOD Loader
@@ -464,35 +443,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 005 - (Operators)
     // |
     // Operators
-    private void ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return; } String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim(); String command = argument.substring(lastParenthesis + 1).trim(); String[] parts = split(expression, ' '); if (parts.length == 3) { boolean result = false; boolean negated = parts[1].startsWith("!") && !parts[1].equals("!="); if (negated) parts[1] = parts[1].substring(1); Double n1 = getNumber(parts[0]), n2 = getNumber(parts[2]); if (n1 != null && n2 != null) { if (parts[1].equals("==")) { result = n1.doubleValue() == n2.doubleValue(); } else if (parts[1].equals("!=")) { result = n1.doubleValue() != n2.doubleValue(); } else if (parts[1].equals(">")) { result = n1.doubleValue() > n2.doubleValue(); } else if (parts[1].equals("<")) { result = n1.doubleValue() < n2.doubleValue(); } else if (parts[1].equals(">=")) { result = n1.doubleValue() >= n2.doubleValue(); } else if (parts[1].equals("<=")) { result = n1.doubleValue() <= n2.doubleValue(); } } else { if (parts[1].equals("startswith")) { result = parts[0].startsWith(parts[2]); } else if (parts[1].equals("endswith")) { result = parts[0].endsWith(parts[2]); } else if (parts[1].equals("contains")) { result = parts[0].indexOf(parts[2]) != -1; } else if (parts[1].equals("==")) { result = parts[0].equals(parts[2]); } else if (parts[1].equals("!=")) { result = !parts[0].equals(parts[2]); } } if (result != negated) { processCommand(command); } } else if (parts.length == 2) { if (parts[0].equals(parts[1])) { processCommand(command); } } else if (parts.length == 1) { if (!parts[0].equals("")) { processCommand(command); } } }
-    private void forCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('); int lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return; } String key = getCommand(argument); String file = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()); String command = argument.substring(lastParenthesis + 1).trim(); if (key.startsWith("(")) { return; } if (key.startsWith("$")) { key = replace(key, "$", ""); } String[] lines = split(file, '\n'); for (int i = 0; i < lines.length; i++) { if (lines[i] != null || lines[i].length() != 0) { processCommand("set " + key + "=" + lines[i], false); processCommand(command); processCommand("unset " + key, false); } } }
-    private void caseCommand(String argument) {
-        argument = argument.trim();
-
-        int firstParenthesis = argument.indexOf('(');
-        int lastParenthesis = argument.indexOf(')');
-
-        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) return;
-
-        String method = getCommand(argument);
-        boolean negated = method.startsWith("!");
-        if (negated) method = method.substring(1);
-
-        String expression = argument.substring(firstParenthesis + 1, lastParenthesis).trim();
-        String command = argument.substring(lastParenthesis + 1).trim();
-
-        boolean condition = false;
-
-        if (method.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(expression)) { condition = true; break; } } } } 
-        else if (method.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(expression)) { condition = true; break; } } } 
-        else if (method.equals("thread")) { condition = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(expression); } 
-        else if (method.equals("screen")) { condition = desktops.containsKey(expression); } 
-        else if (method.equals("key")) { condition = attributes.containsKey(expression); }
-        else if (method.equals("alias")) { condition = aliases.containsKey(expression); } 
-        else if (method.equals("trace")) { condition = trace.containsKey(expression); }
-
-        if (condition != negated) { processCommand(command); }
-    }
+    private int ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return 2; } String EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); String[] PARTS = split(EXPR, ' '); if (PARTS.length == 3) { boolean CONDITION = false; boolean NEGATED = PARTS[1].startsWith("!") && !PARTS[1].equals("!="); if (NEGATED) { PARTS[1] = PARTS[1].substring(1); } Double N1 = getNumber(PARTS[0]), N2 = getNumber(PARTS[2]); if (N1 != null && N2 != null) { if (PARTS[1].equals("==")) { CONDITION = N1.doubleValue() == N2.doubleValue(); } else if (PARTS[1].equals("!=")) { CONDITION = N1.doubleValue() != N2.doubleValue(); } else if (PARTS[1].equals(">")) { CONDITION = N1.doubleValue() > N2.doubleValue(); } else if (PARTS[1].equals("<")) { CONDITION = N1.doubleValue() < N2.doubleValue(); } else if (PARTS[1].equals(">=")) { CONDITION = N1.doubleValue() >= N2.doubleValue(); } else if (PARTS[1].equals("<=")) { CONDITION = N1.doubleValue() <= N2.doubleValue(); } } else { if (PARTS[1].equals("startswith")) { CONDITION = PARTS[0].startsWith(PARTS[2]); } else if (PARTS[1].equals("endswith")) { CONDITION = PARTS[0].endsWith(PARTS[2]); } else if (PARTS[1].equals("contains")) { CONDITION = PARTS[0].indexOf(PARTS[2]) != -1; } else if (PARTS[1].equals("==")) { CONDITION = PARTS[0].equals(PARTS[2]); } else if (PARTS[1].equals("!=")) { CONDITION = !PARTS[0].equals(PARTS[2]); } } if (CONDITION != NEGATED) { return processCommand(CMD); } } else if (PARTS.length == 2) { if (PARTS[0].equals(PARTS[1])) { return processCommand(CMD); } } else if (PARTS.length == 1) { if (!PARTS[0].equals("")) { return processCommand(CMD); } } return 0; }
+    private int forCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } String KEY = getCommand(argument), FILE = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()), CMD = argument.substring(lastParenthesis + 1).trim(); if (KEY.startsWith("(")) { return 2; } if (KEY.startsWith("$")) { KEY = replace(KEY, "$", ""); } String[] LINES = split(FILE, '\n'); for (int i = 0; i < LINES.length; i++) { if (LINES[i] != null || LINES[i].length() != 0) { processCommand("set " + KEY + "=" + LINES[i], false); int STATUS = processCommand(CMD); processCommand("unset " + KEY, false); if (STATUS != 0) { return STATUS; } } } return 0; }
+    private int caseCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } String METHOD = getCommand(argument), EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); boolean CONDITION = false; boolean NEGATED = METHOD.startsWith("!"); if (NEGATED) { METHOD = METHOD.substring(1); } if (METHOD.equals("file")) { String[] recordStores = RecordStore.listRecordStores(); if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(EXPR)) { CONDITION = true; break; } } } } else if (METHOD.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(EXPR)) { CONDITION = true; break; } } } else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); } if (CONDITION != NEGATED) { return processCommand(CMD); } return 0; }
     
     // API 006 - (Process)
     // |
@@ -525,77 +478,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    private int query(String command) { 
-        command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command); 
-
-        if (mainCommand.equals("")) { echoCommand("query: missing [address]"); } 
-        else {
-            try { 
-                StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); 
-                InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); 
-
-                if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } 
-
-                ByteArrayOutputStream BAOS = new ByteArrayOutputStream(); 
-                byte[] BUFFER = new byte[1024]; 
-                int LENGTH; 
-
-                while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } 
-
-                String DATA = new String(BAOS.toByteArray(), "UTF-8"); 
-                if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
-                else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(DATA); } 
-                else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } 
-                else { writeRMS(env("$QUERY"), DATA); } 
-
-                IN.close(); OUT.close(); CONN.close(); 
-            } catch (Exception e) { echoCommand(e.getMessage()); return 1; } 
-        }
-
-        return 0;
-    }
-    private int GetAddress(String command) { 
-        command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command); 
-
-        if (mainCommand.equals("")) { return processCommand("ifconfig"); } 
-        else { 
-            try { 
-                DatagramConnection conn = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); 
-                ByteArrayOutputStream out = new ByteArrayOutputStream(); 
-
-                out.write(0x12); out.write(0x34); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); 
-
-                String[] parts = split(mainCommand, '.'); 
-
-                for (int i = 0; i < parts.length; i++) { out.write(parts[i].length()); out.write(parts[i].getBytes()); } 
-
-                out.write(0x00); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x01); 
-
-                byte[] query = out.toByteArray(); 
-                Datagram request = conn.newDatagram(query, query.length); 
-                conn.send(request);
-
-                Datagram response = conn.newDatagram(512); 
-                conn.receive(response); conn.close(); 
-
-                byte[] data = response.getData(); 
-                if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } 
-                int offset = 12; while (data[offset] != 0) { offset++; } 
-                offset += 5; 
-                if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { 
-                    StringBuffer ip = new StringBuffer(); 
-                    for (int i = offset + 12; i < offset + 16; i++) { ip.append(data[i] & 0xFF); if (i < offset + 15) ip.append("."); } 
-
-                    echoCommand(ip.toString()); 
-                } 
-                else { echoCommand("not found"); return 127; } 
-            } catch (IOException e) { echoCommand(e.getMessage()); return 1; } 
-        } 
-
-        return 0;
-    }
+    private int query(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { echoCommand("query: missing [address]"); } else { try { StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } ByteArrayOutputStream BAOS = new ByteArrayOutputStream(); byte[] BUFFER = new byte[1024]; int LENGTH; while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } String DATA = new String(BAOS.toByteArray(), "UTF-8"); if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(DATA); } else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } else { writeRMS(env("$QUERY"), DATA); } IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } return 0; }
+    private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(e.getMessage()); return 1; } } return 0; }
     public class PortScanner implements CommandListener, Runnable { private String host; private int start = 1; private List screen; private Command BACK = new Command("Back", Command.BACK, 1), CONNECT = new Command("Connect", Command.OK, 1); public PortScanner(String args) { if (args == null || args.length() == 0) { return; } if (!getArgument(args).equals("")) { try { start = Integer.parseInt(getArgument(args)); } catch (NumberFormatException e) { echoCommand("prscan: " + getArgument(args) + ": invalid start port"); return; } } host = getCommand(args); screen = new List(host + " Ports", List.IMPLICIT); screen.addCommand(BACK); screen.addCommand(CONNECT); screen.setCommandListener(this); new Thread(this, "Port-Scanner").start(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == CONNECT) { new RemoteConnection(host + ":" + screen.getString(screen.getSelectedIndex())); } } public void run() { screen.setTicker(new Ticker("Scanning...")); for (int port = start; port <= 65535; port++) { screen.setTicker(new Ticker("Scanning Port " + port + "...")); try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false); screen.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } screen.setTicker(null); } }
     public class RemoteConnection implements CommandListener, Runnable { private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream; private String host; private Form screen = new Form(form.getTitle()); private TextField inputField = new TextField("Command", "", 256, TextField.ANY); private Command BACK = new Command("Back", Command.SCREEN, 1), EXECUTE = new Command("Send", Command.OK, 1), CLEAR = new Command("Clear", Command.SCREEN, 1), VIEW = new Command("Show info", Command.SCREEN, 1); private StringItem console = new StringItem("", ""); public RemoteConnection(String args) { if (args == null || args.length() == 0) { return; } host = args; inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); screen.append(console); screen.append(inputField); screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW); screen.setCommandListener(this); try { socket = (SocketConnection) Connector.open("socket://" + args); inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); } catch (IOException e) { echoCommand(e.getMessage()); return; } start("remote"); new Thread(this, "Remote").start(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == EXECUTE) { String data = inputField.getString().trim(); inputField.setString(""); try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } catch (IOException e) { processCommand("warn " + e.getMessage()); } } else if (c == BACK) { try { outputStream.write("".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); } catch (IOException e) { } writeRMS("remote", console.getText()); stop("remote"); processCommand("xterm"); } else if (c == CLEAR) { console.setText(""); } else if (c == VIEW) { try { warnCommand("Information", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Address: " + socket.getLocalAddress() + "\n" + "Local Port: " + socket.getLocalPort()); } catch (IOException e) { } } } public void run() { while (trace.containsKey("remote")) { try { byte[] buffer = new byte[4096]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (IOException e) { processCommand("warn " + e.getMessage()); stop("remote"); } } } }
 
@@ -608,8 +492,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
-    private void deleteFile(String filename) { if (filename == null || filename.length() == 0) { return; } else if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (conn.exists()) { conn.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); } conn.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { try { RecordStore.deleteRecordStore(filename.substring(6)); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); } else { deleteFile(path + filename); } }
-    private void writeRMS(String filename, String data) { if (filename == null || filename.length() == 0) { return; } if (filename.startsWith("/mnt/")) { try { FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!conn.exists()) { conn.create(); } OutputStream os = conn.openOutputStream(); os.write(data.getBytes()); os.flush(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (recordStore.getNumRecords() > 0) { recordStore.setRecord(1, byteData, 0, byteData.length); } else { recordStore.addRecord(byteData, 0, byteData.length); } }  catch (RecordStoreException e) { } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); } else { writeRMS(path + filename, data); } }
+    private int deleteFile(String filename) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (CONN.exists()) { CONN.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); return 127; } CONN.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { try { RecordStore.deleteRecordStore(filename.substring(6)); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); return 127; } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); return 1; } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return deleteFile(path + filename); } return 0; }
+    private int writeRMS(String filename, String data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data.getBytes()); OUT.flush(); } catch (SecurityException e) { echoCommand(e.getMessage()); return 13; } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (filename.startsWith("/home/")) { RecordStore CONN = null; try { CONN = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (CONN.getNumRecords() > 0) { CONN.setRecord(1, byteData, 0, byteData.length); } else { CONN.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (CONN != null) { try { CONN.closeRecordStore(); } catch (RecordStoreException e) { } } } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
     private String loadRMS(String filename) { return read("/home/" + filename); }
     // |
     // Text Manager
@@ -627,7 +511,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
     // |
     // Audio Manager
-    private int audio(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("volume")) { if (player != null) { VolumeControl vc = (VolumeControl) player.getControl("VolumeControl"); if (argument.equals("")) { echoCommand("" + vc.getLevel()); } else { try { vc.setLevel(Integer.parseInt(argument)); } catch (Exception e) { echoCommand(e.getMessage()); } } } else { echoCommand("audio: not running."); } } else if (mainCommand.equals("play")) { if (argument.equals("")) { } else { if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return 1; } else { return audio("play " + path + argument); } try { FileConnection fc = (FileConnection) Connector.open("file:///" + argument, Connector.READ); if (!fc.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } InputStream is = fc.openInputStream(); player = Manager.createPlayer(is, getMimeType(argument)); player.prefetch(); player.start(); start("audio"); } catch (Exception e) { echoCommand(e.getMessage()); } } } else if (mainCommand.equals("pause")) { try { if (player != null) { player.stop(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } } else if (mainCommand.equals("resume")) { try { if (player != null) { player.start(); } else { echoCommand("audio: not running."); } } catch (Exception e) { echoCommand(e.getMessage()); } } else if (mainCommand.equals("stop")) { try { if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } } catch (Exception e) { echoCommand(e.getMessage()); } } else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } return 0; } private String getMimeType(String filename) { filename = filename.toLowerCase(); if (filename.endsWith(".amr")) { return "audio/amr"; } else if (filename.endsWith(".wav")) { return "audio/x-wav"; } else { return "audio/mpeg"; } }
+    private int audio(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("volume")) { if (player != null) { VolumeControl vc = (VolumeControl) player.getControl("VolumeControl"); if (argument.equals("")) { echoCommand("" + vc.getLevel()); } else { try { vc.setLevel(Integer.parseInt(argument)); } catch (Exception e) { echoCommand(e.getMessage()); return 2; } } } else { echoCommand("audio: not running."); return 69; } } else if (mainCommand.equals("play")) { if (argument.equals("")) { } else { if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return 1; } else { return audio("play " + path + argument); } try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument, Connector.READ); if (!CONN.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } InputStream IN = CONN.openInputStream(); CONN.close(); player = Manager.createPlayer(IN, getMimeType(argument)); player.prefetch(); player.start(); start("audio"); } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } } else if (mainCommand.equals("pause")) { try { if (player != null) { player.stop(); } else { echoCommand("audio: not running."); return 69; } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (mainCommand.equals("resume")) { try { if (player != null) { player.start(); } else { echoCommand("audio: not running."); return 69; } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (mainCommand.equals("stop")) { try { if (player != null) { player.stop(); player.close(); player = null; stop("audio"); } else { echoCommand("audio: not running."); return 69; } } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (mainCommand.equals("status")) { echoCommand(player != null ? "true" : "false"); } else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } return 0; } private String getMimeType(String filename) { filename = filename.toLowerCase(); if (filename.endsWith(".amr")) { return "audio/amr"; } else if (filename.endsWith(".wav")) { return "audio/x-wav"; } else { return "audio/mpeg"; } }
 
     // API 013 - (MIDlet)
     // |
@@ -650,7 +534,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 015 - (Scripts)
     // |
     // OpenTTY Packages
-    private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2025 - Mr. Lima")); return; } Hashtable lib = parseProperties(getcontent(script)); if (lib.containsKey("name")) { echoCommand((String) lib.get("name") + " " + (String) lib.get("version")); } if (lib.containsKey("description")) { echoCommand((String) lib.get("description")); } }
+    private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2025 - Mr. Lima")); return; } Hashtable PKG = parseProperties(getcontent(script)); if (PKG.containsKey("name")) { echoCommand((String) PKG.get("name") + " " + (String) PKG.get("version")); } if (PKG.containsKey("description")) { echoCommand((String) PKG.get("description")); } }
     private int importScript(String script) {
         if (script == null || script.length() == 0) { return 2; }
 
@@ -672,7 +556,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD); if (STATUS != 0) { return; } } } }.start(); }
         // |
         // Generate items - Command & Files
-        if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(command[i]))); } else { MIDletLogs("add error Failed to create command '" + command[i] + "' content not found"); } } }
+        if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(commands[i]))); } else { MIDletLogs("add error Failed to create command '" + commands[i] + "' content not found"); } } }
         if (PKG.containsKey("file")) { String[] files = split((String) PKG.get("file"), ','); for (int i = 0; i < files.length; i++) { if (PKG.containsKey(files[i])) { int STATUS = writeRMS("/home/" + files[i], env((String) PKG.get(files[i]))); } else { MIDletLogs("add error Failed to create file '" + files[i] + "' content not found"); } } }
         // |
         // Build APP Shell
