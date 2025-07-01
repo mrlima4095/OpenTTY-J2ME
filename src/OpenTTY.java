@@ -533,8 +533,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             try { 
                 StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); 
-                InputStream IN = CONN.openInputStream(); 
-                OutputStream OUT = CONN.openOutputStream(); 
+                InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); 
 
                 if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } 
 
@@ -545,10 +544,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } 
 
                 String DATA = new String(BAOS.toByteArray(), "UTF-8"); 
-                if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(data); MIDletLogs("add warn Query storage setting not found"); } 
+                if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
                 else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(DATA); } 
                 else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } 
-                else { writeRMS(env("$QUERY"), data); } 
+                else { writeRMS(env("$QUERY"), DATA); } 
 
                 IN.close(); OUT.close(); CONN.close(); 
             } catch (Exception e) { echoCommand(e.getMessage()); return 1; } 
