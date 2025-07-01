@@ -702,11 +702,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("process.host") && lib.containsKey("process.port")) { new Server(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host"))); }
         // |
         // Build dependencies
-        if (PKG.containsKey("include")) { String[] INCLUDE = split((String) PKG.get("include"), ','); for (int i = 0; i < INCLUDE.length; i++) { int STATUS = importScript(INCLUDE[i]); if (STATUS != 0) { return STATUS; } } }
+        if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start Application
         if (PKG.containsKey("config")) { processCommand((String) PKG.get("config")); }
-        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { processCommand(MOD); } } }.start(); }
+        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD); if (STATUS != 0) { return STATUS; } } } }.start(); }
         // |
         // Generate items - Command & Files
         if (PKG.containsKey("command")) { 
@@ -726,7 +726,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Build APP Shell
         if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { 
-            String CMD = (String) lib.get("shell.name"); 
+            String CMD = (String) PKG.get("shell.name"); 
             String[] ARGS = split((String) lib.get("shell.args"), ','); 
             Hashtable TABLE = new Hashtable(); for (int i = 0; i < ARGS.length; i++) { 
                 String NAME = ARGS[i].trim(), VALUE = (String) lib.get(NAME); 
