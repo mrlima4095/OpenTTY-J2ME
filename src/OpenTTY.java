@@ -570,7 +570,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 int MAX_RANGE = Math.max(LINES1.length, LINES2.length); 
                 
-                for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
+                for (int i = 0; i < MAX_RANGE; i++) { 
+                    String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; 
+                    
+                    if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } 
+                    if (i > LINES1.length || i > LINES2.length) { break; } 
+                } 
+            } 
+        }
         else if (mainCommand.equals("wc")) { 
             if (argument.equals("")) { } 
             else { 
