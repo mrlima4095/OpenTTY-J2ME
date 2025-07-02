@@ -186,41 +186,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // HTTP Interfaces
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
-        else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); 
-
-                try { 
-                    SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); 
-                    
-                    echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); } 
-                catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + e.getMessage()); return 101; } 
-            } 
-        }
-        else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); 
-
-                try { 
-                    HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? argument = "http://" + argument : argument); 
-                    CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); 
-                    
-                    echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms");
-                } 
-                catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + e.getMessage()); return 101; } 
-            } 
-        }
-        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
-            if (argument.equals("")) { } 
-            else { 
-                String URL = getCommand(argument); 
-
-                if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } 
-
-                Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); 
-                String RESPONSE = request(URL, HEADERS); 
-
-                if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } 
-                else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } 
-                else if (mainCommand.equals("clone")) { return runScript(RESPONSE); } 
-            } 
-        }
+        else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + e.getMessage()); return 101; } } }
+        else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? argument = "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + e.getMessage()); return 101; } } }
+        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) { return runScript(RESPONSE); } } }
         // |
         // Socket Interfaces
         else if (mainCommand.equals("query")) { return query(argument); }
@@ -229,44 +197,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
         // |
         else if (mainCommand.equals("wrl")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
-        else if (mainCommand.equals("who")) { 
-            StringBuffer SESSIONS = new StringBuffer(); 
-
-            for (int i = 0; i < sessions.size(); i++) { SESSIONS.append((String) sessions.elementAt(i)).append("\n"); } 
-
-            echoCommand(SESSIONS.toString().trim()); 
-        }
+        else if (mainCommand.equals("who")) { StringBuffer SESSIONS = new StringBuffer(); for (int i = 0; i < sessions.size(); i++) { SESSIONS.append((String) sessions.elementAt(i)).append("\n"); } echoCommand(SESSIONS.toString().trim()); }
         // |
         // IP Tools
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
         else if (mainCommand.equals("genip")) { echoCommand(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256)); }
-        else if (mainCommand.equals("ifconfig")) { 
-            if (argument.equals("")) { argument = "1.1.1.1:53"; } 
-
-            try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); echoCommand(CONN.getLocalAddress()); CONN.close(); } 
-            catch (IOException e) { echoCommand("null"); return 101; } 
-        }
+        else if (mainCommand.equals("ifconfig")) { if (argument.equals("")) { argument = "1.1.1.1:53"; } try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); echoCommand(CONN.getLocalAddress()); CONN.close(); } catch (IOException e) { echoCommand("null"); return 101; } }
         // |
         else if (mainCommand.equals("report")) { processCommand("open mailto:felipebr4095@gmail.com"); }
         else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
-        else if (mainCommand.equals("netstat")) { 
-            int STATUS = 0; 
-
-            try { 
-                HttpConnection CONN = (HttpConnection) Connector.open("http://ipinfo.io/ip"); 
-                CONN.setRequestMethod(HttpConnection.GET); 
-
-                if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } 
-                else { STATUS = 101; } 
-
-                CONN.close(); 
-            } 
-            catch (Exception e) { STATUS = 101; } 
-
-            echoCommand(STATUS == 0 ? "true" : "false"); 
-
-            return STATUS; 
-        }
+        else if (mainCommand.equals("netstat")) { int STATUS = 0; try { HttpConnection CONN = (HttpConnection) Connector.open("http://ipinfo.io/ip"); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } else { STATUS = 101; } CONN.close(); } catch (Exception e) { STATUS = 101; } echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; }
 
         // API 012 - (File)
         // |
