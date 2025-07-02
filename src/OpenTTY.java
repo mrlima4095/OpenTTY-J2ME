@@ -536,7 +536,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ph2s")) { 
             StringBuffer SCRIPT = new StringBuffer(); 
             
-            for (int i = 0; i < history.i() - 1; i++) { 
+            for (int i = 0; i < history.size() - 1; i++) { 
                 SCRIPT.append(history.elementAt(i)); 
                 
                 if (i < history.size() - 1) { SCRIPT.append("\n"); } 
