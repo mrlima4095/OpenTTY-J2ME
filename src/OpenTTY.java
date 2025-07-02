@@ -333,10 +333,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (!fc.exists()) { fc.mkdir(); fc.close(); } 
                         else { echoCommand("mkdir: " + basename(argument) + ": found"); } 
                     } 
-                    catch (IOException e) { echoCommand(e.getMessage()); } 
-                } 
-                else if (argument.startsWith("/home/")) { echoCommand("mkdir: 405 Method not allowed"); return 3; } 
-                else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } } }
+                    catch (SecurityException e) { echoCommand(e.getMessage()); return 13; } catch (IOException e) { echoCommand(e.getMessage()); return 1; } } else if (argument.startsWith("/home/")) { echoCommand("mkdir: 405 Method not allowed"); return 3; } else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } } }
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { String ORIGIN = getCommand(argument), TARGET = getArgument(argument); writeRMS(TARGET.equals("") ? ORIGIN + "-copy" : TARGET, getcontent(ORIGIN)); } }
         // |
         // Text Manager
