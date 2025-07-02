@@ -134,15 +134,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 006 - (Process)
         // |
         // Memory
-        else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
-        else if (mainCommand.equals("top")) { 
-            if (argument.equals("")) { new HTopViewer("monitor"); } 
-            else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
-            else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
-            else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } 
-            else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("gc")) { System.gc(); } else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
+        else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer("monitor"); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } }
         // |
         // Process
         else if (mainCommand.equals("start")) { start(argument); } 
