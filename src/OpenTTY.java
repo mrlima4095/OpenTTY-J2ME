@@ -377,15 +377,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
-        else if (mainCommand.equals("vnt")) { 
-            if (argument.equals("")) { } 
-            else { 
-                String IN = getcontent(getCommand(argument)), OUT = getArgument(argument); 
-                
-                if (OUT.equals("")) { nanoContent = text2note(IN); } 
-                else { writeRMS(OUT, text2note(IN)); } 
-            } 
-        }
+        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String IN = getcontent(getCommand(argument)), OUT = getArgument(argument); if (OUT.equals("")) { nanoContent = text2note(IN); } else { writeRMS(OUT, text2note(IN)); } } }
         else if (mainCommand.equals("ph2s")) { 
             StringBuffer SCRIPT = new StringBuffer(); 
             
