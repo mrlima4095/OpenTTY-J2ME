@@ -122,36 +122,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Long executors
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false); }
-        else if (mainCommand.equals("bruteforce")) { 
-            start("bruteforce"); 
-
-            while (trace.containsKey("bruteforce")) { 
-                int STATUS = processCommand(argument, ignore); 
-                if (STATUS != 0) { stop("bruteforce"); return STATUS; } 
-            } 
-        }
-        else if (mainCommand.equals("cron")) { 
-            if (argument.equals("")) { } 
-            else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument)); } 
-        }
-        else if (mainCommand.equals("sleep")) { 
-            if (argument.equals("")) { } 
-            else { 
-                try { Thread.sleep(Integer.parseInt(argument) * 1000); } 
-                catch (InterruptedException e) { } 
-                catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } 
-            }
-        }
-        else if (mainCommand.equals("time")) { 
-            if (argument.equals("")) { } 
-            else { 
-                long START = System.currentTimeMillis(); 
-                int STATUS = processCommand(argument, ignore); 
-                echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); 
-
-                return STATUS; 
-            } 
-        } 
+        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { int STATUS = processCommand(argument, ignore); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
+        else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument)); } }
+        else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } } }
+        else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } } 
         // |
         // Chain executors
         else if (mainCommand.equals("exec")) { String[] CMDS = split(argument, '&'); for (int i = 0; i < CMDS.length; i++) { processCommand(CMDS[i].trim(), ignore); } }
