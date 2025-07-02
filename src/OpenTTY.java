@@ -799,7 +799,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         catch (IOException e) { return ""; } 
     }
-    private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0; int end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
+    private String replace(String source, String target, String replacement) { 
+        StringBuffer result = new StringBuffer(); 
+        int start = 0, end; 
+        
+        while ((end = source.indexOf(target, start)) >= 0) { 
+            result.append(source.substring(start, end)); 
+            result.append(replacement); 
+            
+            start = end + target.length(); 
+        } 
+        
+        result.append(source.substring(start)); 
+        
+        return result.toString(); 
+    }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
     
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
