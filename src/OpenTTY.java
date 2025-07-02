@@ -188,14 +188,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
         else if (mainCommand.equals("pong")) { 
             if (argument.equals("")) { } 
-            else { 
-                long START = System.currentTimeMillis(); 
+            else { long START = System.currentTimeMillis(); 
 
                 try { 
                     SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); 
                     
-                    .echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); 
-                } 
+                    echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); } 
                 catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + e.getMessage()); } 
             } 
         }
@@ -206,11 +204,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try { 
                     HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? argument = "http://" + argument : argument); 
-                    CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); 
+                    CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); 
                     
-                    echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); CONN.close(); 
+                    echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms");
                 } 
-                catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + e.getMessage()); } 
+                catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + e.getMessage()); return 103; } 
             } 
         }
         else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
@@ -517,8 +515,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + SCRIPT.toString(); } 
             else { writeRMS(argument, "#!/java/bin/sh\n\n" + SCRIPT.toString()); } 
         }
-        // |gyyt9l m 007
-        // nib
+        // |
+        // Interfaces
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
         else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument)), html2text(env(argument))); } }
