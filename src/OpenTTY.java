@@ -661,13 +661,57 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     try { 
                         if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
                         else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://127.0.0.1:1"))).close(); } 
-                        else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } } catch (SecurityException e) { STATUS = 13; } catch (Exception e) { STATUS = 1; } } else if (argument.equals("*")) { Enumeration KEYS = NODES.keys(); while (KEYS.hasMoreElements()) { processCommand("chmod " + (String) KEYS.nextElement(), false); } } else { echoCommand("chmod: " + argument + ": not found"); return 127; } if (STATUS == 0) { MIDletLogs("add info Permission '" + (String) NODES.get(argument) + "' granted"); } else if (STATUS == 1) { MIDletLogs("add debug Permission '" + (String) NODES.get(argument) + "' granted with exceptions"); } else if (STATUS == 13) { MIDletLogs("add error Permission '" + (String) NODES.get(argument) + "' denied"); } else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } return STATUS; } }
+                        else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } 
+                        else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
+                    } 
+                    catch (SecurityException e) { STATUS = 13; } 
+                    catch (Exception e) { STATUS = 1; } 
+                } 
+                else if (argument.equals("*")) { 
+                    Enumeration KEYS = NODES.keys(); 
+                    
+                    while (KEYS.hasMoreElements()) { 
+                        processCommand("chmod " + (String) KEYS.nextElement(), false); 
+                    } 
+                } 
+                else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
+                
+                if (STATUS == 0) { MIDletLogs("add idiho Permission '" + (String) NODES.get(argument) + "' granted"); } 
+                else if (STATUS == 1) { MIDletLogs("add debug Permission '" + (String) NODES.get(argument) + "' granted with exceptions"); } 
+                else if (STATUS == 13) { MIDletLogs("add error Permission '" + (String) NODES.get(argument) + "' denied"); } 
+                else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } 
+                
+                return STATUS; 
+            } 
+        }
         // |
         // General Utilities
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("debug")) { return runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/help.txt")); }
-        else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; if (verbose) { argument = replace(argument, "-v", "").trim(); } if (argument.equals("")) { argument = "sh"; } String content = read("/home/man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat"); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
+        else if (mainCommand.equals("man")) { 
+            boolean verbose = argument.indexOf("-v") != -1; 
+            if (verbose) { argument = replace(argument, "-v", "").trim(); } 
+            if (argument.equals("")) { argument = "sh"; } 
+            
+            String content = read("/home/man.html"); 
+            if (content.equals("") || argument.equals("--update")) { 
+                int STATUS = processCommand("netstat"); 
+                
+                if (STATUS == 0) { 
+                    STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); 
+                    if (STATUS == 0) { content = read("/home/man.html"); } 
+                    else { return STATUS; } 
+                } else { echoCommand("man: download error"); return STATUS; } 
+            } 
+            
+            content = extractTag(content, argument.toLowerCase(), ""); 
+            if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } 
+            else { 
+                if (verbose) { echoCommand(content); } 
+                else { viewer(form.getTitle(), content); } 
+            } 
+        }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
