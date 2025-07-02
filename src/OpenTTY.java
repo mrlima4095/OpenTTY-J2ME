@@ -88,18 +88,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (attributes.containsKey(argument)) { attributes.remove(argument); } else { } }
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
-        else if (mainCommand.equals("env")) { 
-            if (argument.equals("")) { 
-                Enumeration KEYS = attributes.keys(); 
-                while (KEYS.hasMoreElements()) { 
-                    String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); 
-
-                    if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } 
-                } 
-            } 
-            else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } 
-            else { echoCommand("env: " + argument + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("env")) { if (argument.equals("")) { Enumeration KEYS = attributes.keys(); while (KEYS.hasMoreElements()) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } } } else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { echoCommand("env: " + argument + ": not found"); return 127; } }
 
         // API 002 - (Logs)
         // |
@@ -120,7 +109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("x11")) { return xserver(argument); }
         else if (mainCommand.equals("xterm")) { display.setCurrent(form); }
         else if (mainCommand.equals("gauge")) { return xserver("gauge " + argument); }
-        else if (mainCommand.equals("warn")) { warnCommand(form.getTitle(), argument); }
+        else if (mainCommand.equals("warn")) { return warnCommand(form.getTitle(), argument); }
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { return xserver("tick " + argument); } }
 
