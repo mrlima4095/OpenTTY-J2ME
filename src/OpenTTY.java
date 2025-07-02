@@ -151,8 +151,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Device ID
         else if (mainCommand.equals("hostname")) { processCommand(argument.equals("") ? "env HOSTNAME" : "set HOSTNAME=" + getCommand(argument), false); } }
         else if (mainCommand.equals("hostid")) { 
-            String DATA = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); 
-            int hash = 7; for (int i = 0; i < DATA.length(); i++) { hash = hash * 31 + DATA.charAt(i); } 
+            String data = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); 
+            int hash = 7; for (int i = 0; i < data.length(); i++) { hash = hash * 31 + data.charAt(i); } 
 
             echoCommand(Integer.toHexString(hash).toLowerCase()); 
         }
