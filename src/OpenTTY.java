@@ -342,13 +342,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (argument.startsWith("/")) { echoCommand("read-only storage"); } 
             } 
         }
-        else if (mainCommand.equals("cp")) { 
-            if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
-            else { 
-                String origin = getCommand(argument), target = getArgument(argument); 
-                writeRMS(target.equals("") ? origin + "-copy" : target, getcontent(origin)); 
-            } 
-        }
+        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { String ORIGIN = getCommand(argument), TARGET = getArgument(argument); writeRMS(TARGET.equals("") ? ORIGIN + "-copy" : TARGET, getcontent(ORIGIN)); } }
         // |
         // Text Manager
         else if (mainCommand.equals("raw")) { echoCommand(nanoContent); }
@@ -365,22 +359,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("find")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); String CONTENT = getcontent(ARGS[1]), VALUE = (String) parseProperties(CONTENT).get(ARGS[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
         else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(10, LINES.length); for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } } }
         else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.max(0, LINES.length - 10); for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } } }
-        else if (mainCommand.equals("diff")) { 
-            if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } 
-            else { 
-                String[] FILES = split(argument, ' '); 
-                String[] LINES1 = split(getcontent(FILES[0]), '\n'), LINES2 = split(getcontent(FILES[1]), '\n'); 
-                
-                int MAX_RANGE = Math.max(LINES1.length, LINES2.length); 
-                
-                for (int i = 0; i < MAX_RANGE; i++) { 
-                    String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; 
-                    
-                    if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } 
-                    if (i > LINES1.length || i > LINES2.length) { break; } 
-                } 
-            } 
-        }
+        else if (mainCommand.equals("diff")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] FILES = split(argument, ' '); String[] LINES1 = split(getcontent(FILES[0]), '\n'), LINES2 = split(getcontent(FILES[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
         else if (mainCommand.equals("wc")) { 
             if (argument.equals("")) { } 
             else { 
