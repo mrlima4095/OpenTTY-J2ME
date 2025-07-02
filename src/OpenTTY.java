@@ -73,30 +73,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 001 - (Registry)
         // |
         // Aliases
-        else if (mainCommand.equals("alias")) { 
-            if (argument.equals("")) { 
-                Enumeration KEYS = aliases.keys(); 
-                while (KEYS.hasMoreElements()) { 
-                    String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); 
-
-                    if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } 
-                } 
-            } 
-            else { 
-                int INDEX = argument.indexOf('='); 
-
-                if (INDEX == -1) { 
-                    if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } 
-                    else { echoCommand("alias: " + argument + ": not found"); return 127; } 
-                } 
-                else { aliases.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
-            } 
-        }  
-        else if (mainCommand.equals("unalias")) { 
-            if (argument.equals("")) { } 
-            else if (aliases.containsKey(argument)) { aliases.remove(argument); } 
-            else { echoCommand("unalias: " + argument + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("alias")) { if (argument.equals("")) { Enumeration KEYS = aliases.keys(); while (KEYS.hasMoreElements()) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } else { echoCommand("alias: " + argument + ": not found"); return 127; } } else { aliases.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } } }  
+        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else if (aliases.containsKey(argument)) { aliases.remove(argument); } else { echoCommand("unalias: " + argument + ": not found"); return 127; } }
         // |
         // Environment Keys
         else if (mainCommand.equals("set")) { 
@@ -104,15 +82,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 int INDEX = argument.indexOf('='); 
 
-                if (INDEX == -1) { attributes.put(argument, ""); } e
-                lse { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
+                if (INDEX == -1) { attributes.put(argument, ""); } 
+                else { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
             } 
         } 
-        else if (mainCommand.equals("unset")) { 
-            if (argument.equals("")) { } 
-            else if (attributes.containsKey(argument)) { attributes.remove(argument); } 
-            else { } 
-        }
+        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (attributes.containsKey(argument)) { attributes.remove(argument); } else { } }
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
         else if (mainCommand.equals("env")) { 
             if (argument.equals("")) { 
