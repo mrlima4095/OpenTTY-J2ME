@@ -244,19 +244,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } 
             } 
         }
-        else if (mainCommand.equals("pushd")) { 
-            if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } 
-            else { 
-                int STATUS = processCommand("cd " + argument, false); 
-                if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } 
-
-                return STATUS; 
-            } 
-        }
-        else if (mainCommand.equals("popd")) { 
-            if (stack.isEmpty()) { echoCommand("popd: empty stack"); } 
-            else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } 
-        }
+        else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
+        else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
 
