@@ -764,6 +764,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             shell.put(command, TABLE);
         }
 
+
         return 0;
     }
     private int runScript(String script) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim()); if (STATUS != 0) { return STATUS; } } return 0; }
