@@ -424,9 +424,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (argument.equals("*")) { 
                     Enumeration KEYS = NODES.keys(); 
                     
-                    while (KEYS.hasMoreElements()) { 
-                        processCommand("chmod " + (String) KEYS.nextElement(), false); 
-                    } 
+                    while (KEYS.hasMoreElements()) { processCommand("chmod " + (String) KEYS.nextElement(), false); } 
                 } 
                 else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
                 
