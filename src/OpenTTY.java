@@ -54,6 +54,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (c.getCommandType() == Command.EXIT) { processCommand("exit"); }
     }
 
+
     // OpenTTY Command Processor
     private int processCommand(String command) { return processCommand(command, true); }
     private int processCommand(String command, boolean ignore) { 
