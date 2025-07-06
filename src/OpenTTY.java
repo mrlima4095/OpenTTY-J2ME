@@ -588,7 +588,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // RMS Files
     private int deleteFile(String filename) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (CONN.exists()) { CONN.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); return 127; } CONN.close(); } catch (Exception e) { echoCommand(e.getMessage()); } } else if (filename.startsWith("/home/")) { try { RecordStore.deleteRecordStore(filename.substring(6)); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename.substring(6) + ": not found"); return 127; } catch (RecordStoreException e) { echoCommand("rm: " + e.getMessage()); return 1; } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return deleteFile(path + filename); } return 0; }
-    private int writeRMS(String filename, String data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data.getBytes()); OUT.flush(); } catch (SecurityException e) { echoCommand(e.getMessage()); return 13; } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (filename.startsWith("/home/")) { RecordStore CONN = null; try { CONN = RecordStore.openRecordStore(filename.substring(6), true); byte[] byteData = data.getBytes(); if (CONN.getNumRecords() > 0) { CONN.setRecord(1, byteData, 0, byteData.length); } else { CONN.addRecord(byteData, 0, byteData.length); } } catch (RecordStoreException e) { } finally { if (CONN != null) { try { CONN.closeRecordStore(); } catch (RecordStoreException e) { } } } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
+    private int writeRMS(String filename, byte[] data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); } catch (SecurityException e) { echoCommand(e.getMessage()); return 13; } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } else if (filename.startsWith("/home/")) { RecordStore CONN = null; try { CONN = RecordStore.openRecordStore(filename.substring(6), true); if (CONN.getNumRecords() > 0) { CONN.setRecord(1, data, 0, data.length); } else { CONN.addRecord(data, 0, data.length); } } catch (RecordStoreException e) { } finally { if (CONN != null) { try { CONN.closeRecordStore(); } catch (RecordStoreException e) { } } } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
+    private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
     private String loadRMS(String filename) { return read("/home/" + filename); }
     // |
     // Text Manager
@@ -616,7 +617,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command), argument = getArgument(command);
 
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
-        else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { try { Class.forName(argument); echoCommand("true"); } catch (ClassNotFoundException e) { echoCommand("false"); } } } 
+        else if (mainCommand.equals("-class")) { 
+            if (argument.equals("")) { } 
+            else { 
+                try { Class.forName(argument); echoCommand("true"); } 
+                catch (ClassNotFoundException e) { echoCommand("false"); } 
+            } 
+        } 
         else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); }
         else { 
             String code = getcontent(mainCommand); 
@@ -654,7 +661,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0;
     }
-    private boolean
+    private boolean checkClass(String s) {
+        try {
+            Class.forName(s);
+            return true;
+//      } catch (SecurityException e) {
+//          return true;
+        } catch (Exception e) {
+            return false;
+        } 
+    }
     // |
     // History
     public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
