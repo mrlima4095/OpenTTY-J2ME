@@ -618,11 +618,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
         else if (mainCommand.equals("-class")) { 
-            if (argument.equals("")) { } 
-            else { 
-                try { Class.forName(argument); echoCommand("true"); } 
-                catch (ClassNotFoundException e) { echoCommand("false"); } 
-            } 
+            if (argument.equals("")) { } else { boolean STATUS = javaClass(argument); echoCommand(STATUS == true ? "true" : "false"); return STATUS == true ? 0 : 3; } 
         } 
         else if (mainCommand.equals("--version")) { echoCommand("Java 1.2 (OpenTTY Edition)"); }
         else { 
@@ -661,16 +657,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0;
     }
-    private boolean checkClass(String s) {
-        try {
-            Class.forName(s);
-            return true;
-//      } catch (SecurityException e) {
-//          return true;
-        } catch (Exception e) {
-            return false;
-        } 
-    }
+    private boolean javaClass(String argument) { try { Class.forName(argument); return true; } catch (ClassNotFoundException e) { return false; } } 
     // |
     // History
     public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
