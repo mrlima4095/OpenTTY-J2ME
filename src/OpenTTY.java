@@ -340,37 +340,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(10, LINES.length); for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } } }
         else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.max(0, LINES.length - 10); for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } } }
         else if (mainCommand.equals("diff")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] FILES = split(argument, ' '); String[] LINES1 = split(getcontent(FILES[0]), '\n'), LINES2 = split(getcontent(FILES[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
-        else if (mainCommand.equals("wc")) { 
-            if (argument.equals("")) { } 
-            else { 
-                boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; 
-                
-                if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } 
-                else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } 
-                else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } 
-                argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); 
-                
-                String CONTENT = getcontent(argument); 
-                int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); 
-                String[] LINE_ARRAY = split(CONTENT, '\n'); 
-                
-                LINES = LINE_ARRAY.length; 
-                for (int i = 0; i < LINE_ARRAY.length; i++) { 
-                    String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); 
-                    
-                    for (int j = 0; j < WORD_ARRAY.length; j++) { 
-                        if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } 
-                    } 
-                } 
-                
-                String FILENAME = basename(argument); 
-                
-                if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } 
-                else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } 
-                else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } 
-                else { echoCommand(LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME); } 
-            } 
-        }
+        else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); String CONTENT = getcontent(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } String FILENAME = basename(argument); if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } else { echoCommand(LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME); } } }
         // |
         // Text Parsers
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
@@ -378,18 +348,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String IN = getcontent(getCommand(argument)), OUT = getArgument(argument); if (OUT.equals("")) { nanoContent = text2note(IN); } else { writeRMS(OUT, text2note(IN)); } } }
-        else if (mainCommand.equals("ph2s")) { 
-            StringBuffer SCRIPT = new StringBuffer(); 
-            
-            for (int i = 0; i < history.size() - 1; i++) { 
-                SCRIPT.append(history.elementAt(i)); 
-                
-                if (i < history.size() - 1) { SCRIPT.append("\n"); } 
-            } 
-            
-            if (argument.equals("") || argument.equals("nano")) { nanoContent = "#!/java/bin/sh\n\n" + SCRIPT.toString(); } 
-            else { writeRMS(argument, "#!/java/bin/sh\n\n" + SCRIPT.toString()); } 
-        }
+        else if (mainCommand.equals("ph2s")) { StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/java/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script); } }
         // |
         // Interfaces
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
@@ -503,69 +462,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     private String read(String filename) { 
         try { 
-            if (filename.startsWith("/mnt/")) { 
-                FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); 
-                InputStream is = fileConn.openInputStream(); 
-                
-                StringBuffer content = new StringBuffer(); 
-                int ch; 
-                while ((ch = is.read()) != -1) { content.append((char) ch); } 
-                is.close(); 
-                fileConn.close();
-                
-                return env(content.toString()); 
-            } 
-            else if (filename.startsWith("/home/")) { 
-                RecordStore recordStore = null; 
-                String content = ""; 
-                try { 
-                    recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
-                    
-                    if (recordStore.getNumRecords() >= 1) { 
-                        byte[] data = recordStore.getRecord(1); 
-                        
-                        if (data != null) { content = new String(data); } 
-                    } 
-                } 
-                catch (RecordStoreException e) { content = ""; } 
-                finally { 
-                    if (recordStore != null) { 
-                        try { recordStore.closeRecordStore(); } 
-                        catch (RecordStoreException e) { } 
-                    } 
-                } 
-                
-                return content; 
-            } 
-            else { 
-                StringBuffer content = new StringBuffer(); 
-                InputStream is = getClass().getResourceAsStream(filename); 
-                
-                if (is == null) { return ""; } 
-                InputStreamReader isr = new InputStreamReader(is, "UTF-8"); 
-                int ch; 
-                while ((ch = isr.read()) != -1) { content.append((char) ch); } 
-                isr.close(); 
-                
-                return env(content.toString()); } 
+            if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } 
+            else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } 
+            else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } 
         } 
         catch (IOException e) { return ""; } 
     }
-    private String replace(String source, String target, String replacement) { 
-        StringBuffer result = new StringBuffer(); 
-        int start = 0, end; 
-        
-        while ((end = source.indexOf(target, start)) >= 0) { 
-            result.append(source.substring(start, end)); 
-            result.append(replacement); 
-            
-            start = end + target.length(); 
-        } 
-        
-        result.append(source.substring(start)); 
-        
-        return result.toString(); 
-    }
+    private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
     
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
