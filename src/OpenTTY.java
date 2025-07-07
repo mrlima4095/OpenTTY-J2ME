@@ -669,7 +669,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             out.write(new byte[] { 0x00, (byte)cpCount }); // Constant pool count
 
             // ===== CONSTANT POOL =====
-            out.write(new byte[] { 0x07, 0x00, 0x02 }); // #1 = Class #2
+            /*out.write(new byte[] { 0x07, 0x00, 0x02 }); // #1 = Class #2
             out.write(0x01); // #2 = Utf8 className
             out.write((byte)(nameLen >> 8));
             out.write((byte)(nameLen & 0xFF));
@@ -739,8 +739,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             });
 
             // ===== CLASS ATTRIBUTES =====
-            out.write(new byte[] { 0x00, 0x00 }); // attributes_count = 0
-            
+            out.write(new byte[] { 0x00, 0x00 }); // attributes_count = 0*/
+
         } catch (Exception e) {
             echoCommand(e.getMessage());
             return null;
