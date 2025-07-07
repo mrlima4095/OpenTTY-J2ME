@@ -362,6 +362,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Java Runtime
         else if (mainCommand.equals("java")) { return java(argument); }
+        else if (mainCommand.equals("javac")) { return writeRMS(getCommand(argument), generateClassBytes("main", getcontent(getArgument(argument)))); }
         // |
         // Permissions
         else if (mainCommand.equals("chmod")) { 
@@ -427,7 +428,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("build")) { return writeRMS(getCommand(argument), generateClassBytes("main", getcontent(getArgument(argument)))); }
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
         else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 128; } }
 
@@ -645,127 +645,122 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else { 
             //String code = getcontent(mainCommand); Hashtable objects = new Hashtable(); if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return 1; } String[] lines = split(code, ';'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); if (line.length() == 0) { continue; } try { if (line.indexOf('=') != -1) { String[] parts = split(line, '='); String objectName = parts[0].trim(); String className = parts[1].trim(); Class clazz = Class.forName(className); Object instance = clazz.newInstance(); objects.put(objectName, instance); } else if (line.indexOf('.') != -1) { String[] parts = split(line, '.'); String objectName = parts[0].trim(); if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } for (int j = 1; j < parts.length; j++) { Object object = (Object) objects.get(objectName); Class clazz = object.getClass(); echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); } } else if (line.startsWith("//")) { } else { throw new IOException("Syntax error"); } } catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return 2; } } 
-            //try {
-            //    byte[] classBytes = getcontent(mainCommand).getBytes("ISO-8859-1");
-            //    ByteArrayInputStream bais = new ByteArrayInputStream(classBytes);
-            //    echoCommand("okk"); 
-            //} catch (Exception e) {
-            //    echoCommand("java: " + mainCommand + ": " + e.getMessage());
-            //    return 1;
-            //}*/
+            
         } 
         
         return 0;
     }
-    
+
     private byte[] generateClassBytes(String className, String code) {
-        byte[] nameBytes = className.getBytes();
-        int nameLen = nameBytes.length;
-        byte[] mainCode = code.getBytes(); // Texto cru convertido para bytes
-        int codeLen = mainCode.length;
-        int attrLen = 12 + codeLen;
-        int constantPoolSize = 13;
-        int cpCount = constantPoolSize;
+    byte[] nameBytes = className.getBytes();
+    int nameLen = nameBytes.length;
+    byte[] mainCode = code.getBytes(); // Texto cru convertido para bytes
+    int codeLen = mainCode.length;
+    int attrLen = 12 + codeLen;
+    int constantPoolSize = 13;
+    int cpCount = constantPoolSize;
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        try {
-            // Header
-            out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE });
-            out.write(new byte[] { 0x00, 0x00 });
-            out.write(new byte[] { 0x00, 0x2E }); // Java 1.2
+    try {
+        // Header
+        out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE });
+        out.write(new byte[] { 0x00, 0x00 });
+        out.write(new byte[] { 0x00, 0x2E }); // Java 1.2
 
-            out.write(new byte[] { 0x00, (byte)cpCount });
+        out.write(new byte[] { 0x00, (byte)cpCount });
 
-            // Constant Pool
-            out.write(new byte[] { 0x07, 0x00, 0x02 });
-            out.write(0x01);
-            out.write((byte)(nameLen >> 8));
-            out.write((byte)(nameLen & 0xFF));
-            out.write(nameBytes);
-            out.write(new byte[] { 0x07, 0x00, 0x04 });
-            out.write(new byte[] {
-                0x01, 0x00, 0x10,
-                'j','a','v','a','/','l','a','n','g','/',
-                'O','b','j','e','c','t'
-            });
-            out.write(new byte[] { 0x01, 0x00, 0x06, '<','i','n','i','t','>' });
-            out.write(new byte[] { 0x01, 0x00, 0x03, '(',')','V' });
-            out.write(new byte[] { 0x01, 0x00, 0x04, 'C','o','d','e' });
-            out.write(new byte[] { 0x0A, 0x00, 0x03, 0x00, 0x09 });
-            out.write(new byte[] { 0x0C, 0x00, 0x05, 0x00, 0x06 });
-            out.write(new byte[] { 0x01, 0x00, 0x04, 'm','a','i','n' });
-            out.write(new byte[] { 0x01, 0x00, 0x06, 'u','n','u','s','e','d' });
+        // Constant Pool
+        out.write(new byte[] { 0x07, 0x00, 0x02 }); // Class #2
+        out.write((byte)0x01); // Utf8
+        out.write((byte)(nameLen >> 8));
+        out.write((byte)(nameLen & 0xFF));
+        out.write(nameBytes); // #2 -> className
 
-            // Class Info
-            out.write(new byte[] { 0x00, 0x21 }); // public + super
-            out.write(new byte[] { 0x00, 0x01 }); // this class
-            out.write(new byte[] { 0x00, 0x03 }); // super class
+        out.write(new byte[] { 0x07, 0x00, 0x04 }); // Class #4
+        out.write(new byte[] {
+            0x01, 0x00, 0x10, // Utf8 length
+            (byte)'j',(byte)'a',(byte)'v',(byte)'a',(byte)'/',(byte)'l',(byte)'a',(byte)'n',(byte)'g',(byte)'/',
+            (byte)'O',(byte)'b',(byte)'j',(byte)'e',(byte)'c',(byte)'t'
+        });
+        out.write(new byte[] { 0x01, 0x00, 0x06, (byte)'<',(byte)'i',(byte)'n',(byte)'i',(byte)'t',(byte)'>' });
+        out.write(new byte[] { 0x01, 0x00, 0x03, (byte)'(',(byte)')',(byte)'V' });
+        out.write(new byte[] { 0x01, 0x00, 0x04, (byte)'C',(byte)'o',(byte)'d',(byte)'e' });
+        out.write(new byte[] { 0x0A, 0x00, 0x03, 0x00, 0x09 });
+        out.write(new byte[] { 0x0C, 0x00, 0x05, 0x00, 0x06 });
+        out.write(new byte[] { 0x01, 0x00, 0x04, (byte)'m',(byte)'a',(byte)'i',(byte)'n' });
+        out.write(new byte[] { 0x01, 0x00, 0x06, (byte)'u',(byte)'n',(byte)'u',(byte)'s',(byte)'e',(byte)'d' });
 
-            out.write(new byte[] { 0x00, 0x00 }); // interfaces
-            out.write(new byte[] { 0x00, 0x00 }); // fields
-            out.write(new byte[] { 0x00, 0x02 }); // methods
+        // Class Info
+        out.write(new byte[] { 0x00, 0x21 }); // public + super
+        out.write(new byte[] { 0x00, 0x01 }); // this class
+        out.write(new byte[] { 0x00, 0x03 }); // super class
 
-            // ---------- <init>() ----------
-            out.write(new byte[] {
-                0x00, 0x01,
-                0x00, 0x05,
-                0x00, 0x06,
-                0x00, 0x01,
-                0x00, 0x07,
-                0x00, 0x00, 0x00, 0x11,
-                0x00, 0x01,
-                0x00, 0x01,
-                0x00, 0x00, 0x00, 0x05,
-                    0x2A, (byte)0xB7, 0x00, 0x08, (byte)0xB1,
-                0x00, 0x00,
-                0x00, 0x00
-            });
+        out.write(new byte[] { 0x00, 0x00 }); // interfaces
+        out.write(new byte[] { 0x00, 0x00 }); // fields
+        out.write(new byte[] { 0x00, 0x02 }); // methods
 
-            // ---------- main() ----------
-            out.write(new byte[] {
-                0x00, 0x09,             // public static
-                0x00, 0x0A,             // name_index (main)
-                0x00, 0x06,             // descriptor_index ("()V")
-                0x00, 0x01,             // attributes_count
-                0x00, 0x07              // attribute_name_index ("Code")
-            });
+        // ---------- <init>() ----------
+        out.write(new byte[] {
+            0x00, 0x01,
+            0x00, 0x05,
+            0x00, 0x06,
+            0x00, 0x01,
+            0x00, 0x07,
+            0x00, 0x00, 0x00, 0x11,
+            0x00, 0x01,
+            0x00, 0x01,
+            0x00, 0x00, 0x00, 0x05,
+                0x2A, (byte)0xB7, 0x00, 0x08, (byte)0xB1,
+            0x00, 0x00,
+            0x00, 0x00
+        });
 
-            // Attribute length (u4)
-            out.write(new byte[] {
-                (byte)((attrLen >> 24) & 0xFF),
-                (byte)((attrLen >> 16) & 0xFF),
-                (byte)((attrLen >> 8) & 0xFF),
-                (byte)(attrLen & 0xFF)
-            });
+        // ---------- main() ----------
+        out.write(new byte[] {
+            0x00, 0x09,             // public static
+            0x00, 0x0A,             // name_index (main)
+            0x00, 0x06,             // descriptor_index ("()V")
+            0x00, 0x01,             // attributes_count
+            0x00, 0x07              // attribute_name_index ("Code")
+        });
 
-            // Code attribute header
-            out.write(new byte[] {
-                0x00, 0x02, // max_stack
-                0x00, 0x01, // max_locals
-                (byte)((codeLen >> 24) & 0xFF),
-                (byte)((codeLen >> 16) & 0xFF),
-                (byte)((codeLen >> 8) & 0xFF),
-                (byte)(codeLen & 0xFF)
-            });
+        // Attribute length (u4)
+        out.write(new byte[] {
+            (byte)((attrLen >> 24) & 0xFF),
+            (byte)((attrLen >> 16) & 0xFF),
+            (byte)((attrLen >> 8) & 0xFF),
+            (byte)(attrLen & 0xFF)
+        });
 
-            out.write(mainCode); // o conteúdo de "code", puro
+        // Code attribute header
+        out.write(new byte[] {
+            0x00, 0x02, // max_stack
+            0x00, 0x01, // max_locals
+            (byte)((codeLen >> 24) & 0xFF),
+            (byte)((codeLen >> 16) & 0xFF),
+            (byte)((codeLen >> 8) & 0xFF),
+            (byte)(codeLen & 0xFF)
+        });
 
-            out.write(new byte[] {
-                0x00, 0x00, // exception table length
-                0x00, 0x00  // attributes count
-            });
+        out.write(mainCode); // o conteúdo de "code", puro
 
-            // Class attributes
-            out.write(new byte[] { 0x00, 0x00 });
+        out.write(new byte[] {
+            0x00, 0x00, // exception table length
+            0x00, 0x00  // attributes count
+        });
 
-        } catch (Exception e) {
-            echoCommand("Error " + e.getMessage());
-            return null;
-        }
+        // Class attributes
+        out.write(new byte[] { 0x00, 0x00 });
 
-        return out.toByteArray();
+    } catch (Exception e) {
+        echoCommand("Error " + e.getMessage());
+        return null;
     }
+
+    return out.toByteArray();
+}
+
 
     
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
