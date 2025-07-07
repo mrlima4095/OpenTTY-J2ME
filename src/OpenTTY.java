@@ -658,7 +658,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     
-    /*private byte[] generateClassBytes(String className, String code) {
+    private byte[] generateClassBytes(String className, String code) {
     try {
         byte[] nameBytes = className.getBytes("UTF-8");
         int nameLen = nameBytes.length;
@@ -772,7 +772,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return null;
     }
 }
-*/
+
     
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     private boolean javaClass(String[] classes) { for (int i = 0; i < classes.length; i++) { if (javaClass(classes[i]) != 0) { return false; } } return true; }
