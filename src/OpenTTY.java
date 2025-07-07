@@ -730,7 +730,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Build APP Shell
         if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { 
-            String command = (String) PKG.get("shell.name"); 
             String[] args = split((String) PKG.get("shell.args"), ','); 
             Hashtable TABLE = new Hashtable(); 
             for (int i = 0; i < args.length; i++) { 
@@ -738,8 +737,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TABLE.put(NAME, (VALUE != null) ? VALUE : ""); 
             } 
             if (PKG.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) PKG.get("shell.unknown")); } 
-            shell.put(command, TABLE);
-        }
+            shell.put(((String) PKG.get("shell.name")).trim(), TABLE); }
 
         return 0;
     }
