@@ -653,7 +653,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private byte[] generateClass(String className, String code) {
         byte[] nameBytes = className.getBytes();
         int nameLen = nameBytes.length;
-        byte[] codeBytes = mnemonics(code);
+        byte[] codeBytes = mnemonicsToBytes(code);
         int codeLen = codeBytes.length;
         int codeAttrLen = 12 + codeLen;
         int constantPoolSize = 11;
