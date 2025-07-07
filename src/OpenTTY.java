@@ -651,7 +651,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
 
-    private byte[] generateClass(String className, String code) {
+    /*private byte[] generateClass(String className, String code) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -663,10 +663,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int cpCount = 10; // Tamanho fixo para essa estrutura
 
             // ===== HEADER =====
-           out.write((byte)0xCA);
-            out.write((byte)0xFE);
-            out.write((byte)0xBA);
-            out.write((byte)0xBE);
+            out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE }); // Magic
             out.write(new byte[] { 0x00, 0x00 }); // Minor version
             out.write(new byte[] { 0x00, 0x34 }); // Major version (Java 8)
             out.write(new byte[] { 0x00, (byte)cpCount }); // Constant pool count*/
@@ -749,6 +746,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return null;
         }
         
+    }*/
+    private byte[] generateClass(String className, String code) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        out.write(new byte[] {
+            (byte) 0xCA,
+            (byte) 0xFE,
+            (byte) 0xBA,
+            (byte) 0xBE
+        });
+
+        byte[] result = out.toByteArray();
+        return result
     }
 
 
