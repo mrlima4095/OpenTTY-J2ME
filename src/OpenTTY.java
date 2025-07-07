@@ -752,10 +752,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         out.write(new byte[] {
-            (byte) 0xCA,
-            (byte) 0xFE,
-            (byte) 0xBA,
-            (byte) 0xBE
+            (byte) 0xCA
+            //(byte) 0xFE,
+            //(byte) 0xBA,
+            //(byte) 0xBE
         });
 
         byte[] result = out.toByteArray();
