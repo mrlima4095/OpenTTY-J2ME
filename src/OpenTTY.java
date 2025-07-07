@@ -759,7 +759,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private byte[] mnemonics(String mnemonics) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        java.util.Map<String, Integer> opcodes = new java.util.HashMap<>();
+        Hashtable opcodes = new Hashtable();
         opcodes.put("nop", 0x00);
         opcodes.put("aconst_null", 0x01);
         opcodes.put("iconst_m1", 0x02);
