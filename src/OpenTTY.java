@@ -740,12 +740,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             // ===== CLASS ATTRIBUTES =====
             out.write(new byte[] { 0x00, 0x00 }); // attributes_count = 0
-
+            return out.toByteArray();
         } catch (Exception e) {
             echoCommand(e.getMessage());
             return null;
         }
-        return out.toByteArray();
+        
     }
 
 
