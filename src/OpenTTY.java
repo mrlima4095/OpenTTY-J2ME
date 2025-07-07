@@ -19,7 +19,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.15-02x13"; 
+    private String logs = "", path = "/home/", build = "2025-1.15-02x14"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -651,128 +651,112 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private byte[] generateClass(String className, String code) {
-    byte[] nameBytes = className.getBytes();
-    int nameLen = nameBytes.length;
-    byte[] codeBytes = code.getBytes();
-    int codeLen = codeBytes.length;
-    int codeAttrLen = 12 + codeLen;
-    int constantPoolSize = 11;
-    int cpCount = constantPoolSize;
+        byte[] nameBytes = className.getBytes();
+        int nameLen = nameBytes.length;
+        byte[] codeBytes = code.getBytes();
+        int codeLen = codeBytes.length;
+        int codeAttrLen = 12 + codeLen;
+        int constantPoolSize = 11;
+        int cpCount = constantPoolSize;
 
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-    try {
-        // Header
-        out.write(0xCA); out.write(0xFE); out.write(0xBA); out.write(0xBE);
-        out.write(0x00); out.write(0x00); // minor version
-        out.write(0x00); out.write(0x2E); // major version (46)
+        try {
+            // Header
+            out.write(0xCA); out.write(0xFE); out.write(0xBA); out.write(0xBE);
+            out.write(0x00); out.write(0x00); // minor version
+            out.write(0x00); out.write(0x2E); // major version (46)
 
-        out.write(0x00); out.write(cpCount);
+            out.write(0x00); out.write(cpCount);
 
-        // Constant Pool
-        out.write(0x07); out.write(0x00); out.write(0x02);
-        out.write(0x01);
-        out.write((nameLen >> 8) & 0xFF); out.write(nameLen & 0xFF);
-        for (int i = 0; i < nameLen; i++) {
-            out.write(nameBytes[i]);
-        }
+            // Constant Pool
+            out.write(0x07); out.write(0x00); out.write(0x02);
+            out.write(0x01);
+            out.write((nameLen >> 8) & 0xFF); out.write(nameLen & 0xFF);
+            for (int i = 0; i < nameLen; i++) { out.write(nameBytes[i]); }
 
-        out.write(0x07); out.write(0x00); out.write(0x04);
-        byte[] obj = "java/lang/Object".getBytes();
-        out.write(0x01); out.write(0x00); out.write(obj.length);
-        for (int i = 0; i < obj.length; i++) {
-            out.write(obj[i]);
-        }
+            out.write(0x07); out.write(0x00); out.write(0x04);
+            byte[] obj = "java/lang/Object".getBytes();
+            out.write(0x01); out.write(0x00); out.write(obj.length); 
+            for (int i = 0; i < obj.length; i++) { out.write(obj[i]); }
 
-        byte[] init = "<init>".getBytes();
-        out.write(0x01); out.write(0x00); out.write(init.length);
-        for (int i = 0; i < init.length; i++) {
-            out.write(init[i]);
-        }
+            byte[] init = "<init>".getBytes();
+            out.write(0x01); out.write(0x00); out.write(init.length);
+            for (int i = 0; i < init.length; i++) { out.write(init[i]); }
 
-        byte[] desc = "()V".getBytes();
-        out.write(0x01); out.write(0x00); out.write(desc.length);
-        for (int i = 0; i < desc.length; i++) {
-            out.write(desc[i]);
-        }
+            byte[] desc = "()V".getBytes();
+            out.write(0x01); out.write(0x00); out.write(desc.length);
+            for (int i = 0; i < desc.length; i++) { out.write(desc[i]); }
 
-        byte[] codeStr = "Code".getBytes();
-        out.write(0x01); out.write(0x00); out.write(codeStr.length);
-        for (int i = 0; i < codeStr.length; i++) {
-            out.write(codeStr[i]);
-        }
+            byte[] codeStr = "Code".getBytes();
+            out.write(0x01); out.write(0x00); out.write(codeStr.length);
+            for (int i = 0; i < codeStr.length; i++) { out.write(codeStr[i]); }
 
-        out.write(0x0A); out.write(0x00); out.write(0x03); out.write(0x00); out.write(0x09);
-        out.write(0x0C); out.write(0x00); out.write(0x05); out.write(0x00); out.write(0x06);
+            out.write(0x0A); out.write(0x00); out.write(0x03); out.write(0x00); out.write(0x09);
+            out.write(0x0C); out.write(0x00); out.write(0x05); out.write(0x00); out.write(0x06);
 
-        byte[] main = "main".getBytes();
-        out.write(0x01); out.write(0x00); out.write(main.length);
-        for (int i = 0; i < main.length; i++) {
-            out.write(main[i]);
-        }
+            byte[] main = "main".getBytes();
+            out.write(0x01); out.write(0x00); out.write(main.length);
+            for (int i = 0; i < main.length; i++) { out.write(main[i]); }
 
-        // Class info
-        out.write(0x00); out.write(0x21);
-        out.write(0x00); out.write(0x01);
-        out.write(0x00); out.write(0x03);
-        out.write(0x00); out.write(0x00);
-        out.write(0x00); out.write(0x00);
-        out.write(0x00); out.write(0x02);
+            // Class info
+            out.write(0x00); out.write(0x21);
+            out.write(0x00); out.write(0x01);
+            out.write(0x00); out.write(0x03);
+            out.write(0x00); out.write(0x00);
+            out.write(0x00); out.write(0x00);
+            out.write(0x00); out.write(0x02);
 
-        // <init>() method
-        out.write(0x00); out.write(0x01);
-        out.write(0x00); out.write(0x05);
-        out.write(0x00); out.write(0x06);
-        out.write(0x00); out.write(0x01);
-        out.write(0x00); out.write(0x07);
-        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x11);
-        out.write(0x00); out.write(0x01);
-        out.write(0x00); out.write(0x01);
-        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x05);
-        out.write(0x2A);
-        out.write(0xB7);
-        out.write(0x00); out.write(0x08);
-        out.write(0xB1);
-        out.write(0x00); out.write(0x00);
-        out.write(0x00); out.write(0x00);
+            // <init>() method
+            out.write(0x00); out.write(0x01);
+            out.write(0x00); out.write(0x05);
+            out.write(0x00); out.write(0x06);
+            out.write(0x00); out.write(0x01);
+            out.write(0x00); out.write(0x07);
+            out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x11);
+            out.write(0x00); out.write(0x01);
+            out.write(0x00); out.write(0x01);
+            out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x05);
+            out.write(0x2A);
+            out.write(0xB7);
+            out.write(0x00); out.write(0x08);
+            out.write(0xB1);
+            out.write(0x00); out.write(0x00);
+            out.write(0x00); out.write(0x00);
 
-        // main() method
-        out.write(0x00); out.write(0x09);
-        out.write(0x00); out.write(0x0A);
-        out.write(0x00); out.write(0x06);
-        out.write(0x00); out.write(0x01);
-        out.write(0x00); out.write(0x07);
+            // main() method
+            out.write(0x00); out.write(0x09);
+            out.write(0x00); out.write(0x0A);
+            out.write(0x00); out.write(0x06);
+            out.write(0x00); out.write(0x01);
+            out.write(0x00); out.write(0x07);
 
-        out.write((codeAttrLen >> 24) & 0xFF);
-        out.write((codeAttrLen >> 16) & 0xFF);
-        out.write((codeAttrLen >> 8) & 0xFF);
-        out.write(codeAttrLen & 0xFF);
+            out.write((codeAttrLen >> 24) & 0xFF);
+            out.write((codeAttrLen >> 16) & 0xFF);
+            out.write((codeAttrLen >> 8) & 0xFF);
+            out.write(codeAttrLen & 0xFF);
 
-        out.write(0x00); out.write(0x01);
-        out.write(0x00); out.write(0x01);
+            out.write(0x00); out.write(0x01);
+            out.write(0x00); out.write(0x01);
 
-        out.write((codeLen >> 24) & 0xFF);
-        out.write((codeLen >> 16) & 0xFF);
-        out.write((codeLen >> 8) & 0xFF);
-        out.write(codeLen & 0xFF);
+            out.write((codeLen >> 24) & 0xFF);
+            out.write((codeLen >> 16) & 0xFF);
+            out.write((codeLen >> 8) & 0xFF);
+            out.write(codeLen & 0xFF);
 
-        for (int i = 0; i < codeLen; i++) {
-            out.write(codeBytes[i]);
-        }
+            for (int i = 0; i < codeLen; i++) { out.write(codeBytes[i]); }
 
-        out.write(0x00); out.write(0x00);
-        out.write(0x00); out.write(0x00);
+            out.write(0x00); out.write(0x00);
+            out.write(0x00); out.write(0x00);
 
-        // Class attributes count
-        out.write(0x00); out.write(0x00);
+            // Class attributes count
+            out.write(0x00); out.write(0x00);
 
-    } catch (Exception e) {
-        echoCommand("Erro: " + e.getMessage());
-        return null;
+        } 
+        catch (Exception e) { echoCommand(e.getMessage()); return null; }
+
+        return out.toByteArray();
     }
-
-    return out.toByteArray();
-}
 
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
