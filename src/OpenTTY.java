@@ -647,7 +647,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             //String code = getcontent(mainCommand); Hashtable objects = new Hashtable(); if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return 1; } String[] lines = split(code, ';'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); if (line.length() == 0) { continue; } try { if (line.indexOf('=') != -1) { String[] parts = split(line, '='); String objectName = parts[0].trim(); String className = parts[1].trim(); Class clazz = Class.forName(className); Object instance = clazz.newInstance(); objects.put(objectName, instance); } else if (line.indexOf('.') != -1) { String[] parts = split(line, '.'); String objectName = parts[0].trim(); if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } for (int j = 1; j < parts.length; j++) { Object object = (Object) objects.get(objectName); Class clazz = object.getClass(); echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); } } else if (line.startsWith("//")) { } else { throw new IOException("Syntax error"); } } catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return 2; } } 
             try {
                 byte[] classBytes = getcontent(mainCommand).getBytes("ISO-8859-1");
-                ByteArrayInputStream bais = new ByteArrayInputStream(classBytes);
+                //ByteArrayInputStream bais = new ByteArrayInputStream(classBytes);
                 echoCommand("okk"); 
             } catch (Exception e) {
                 echoCommand("java: " + mainCommand + ": " + e.getMessage());
