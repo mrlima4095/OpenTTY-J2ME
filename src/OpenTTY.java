@@ -660,7 +660,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         try {
             // Header
-            out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE }); // Magic
+            out.write(new byte[] { 0xCA, 0xFE, 0xBA, 0xBE }); // Magic
             out.write(new byte[] { 0x00, 0x00 }); // minor version
             out.write(new byte[] { 0x00, 0x2E }); // major = 46
 
