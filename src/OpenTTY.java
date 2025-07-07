@@ -753,7 +753,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             out.write(0x00); out.write(0x00);
 
         } 
-        catch (Exception e) { echoCommand(e.getMessage()); return null; }
+        catch (Exception e) { echoCommand("Build failed: " + e.getMessage()); return null; }
 
         return out.toByteArray();
     }
