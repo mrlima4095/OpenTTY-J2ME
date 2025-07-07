@@ -618,35 +618,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
         else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { int STATUS = javaClass(argument); echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; } } 
-        else if (mainCommand.equals("--version")) {
-            String s;
-            StringBuffer BUFFER = new StringBuffer();
-
-            if ((s = System.getProperty("java.vm.name")) != null) {
-                BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor"));
-                if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); }
-                if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); }
-            } 
-            else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { 
-                BUFFER.append("J9 VM, IBM (").append(s).append(')');
-                if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); }
-            } 
-            else if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append(s); } 
-            else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } 
-            else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } 
-            else if (javaClass(new String[] { "com.sun.midp.io.InternalConnector", "com.sun.midp.io.ConnectionBaseAdapter", "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } 
-            else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.i18n.Helper", "com.sun.cldc.io.ConsoleOutputStream", "com.sun.cldc.i18n.uclc.DefaultCaseConverter" })) { BUFFER.append("KVM, Sun (CLDC)"); } 
-            else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol", "com.jblend.io.j2me.resource.Protocol", "com.jblend.security.midp20.SecurityManagerImpl", "com.jblend.security.midp20.UserConfirmDialogImpl", "jp.co.aplix.cldc.io.MIDPURLChecker", "jp.co.aplix.cldc.io.j2me.http.HttpConnectionImpl" })) { BUFFER.append("JBlend, Aplix"); } 
-            else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport", "com.jbed.midp.lcdui.GameCanvasPeer", "com.jbed.microedition.media.CoreManager", "com.jbed.runtime.Mem", "com.jbed.midp.lcdui.GameCanvas", "com.jbed.microedition.media.Core" })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } 
-            else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); }  
-            else { BUFFER.append("Unknown"); }
-
-            if ((s = System.getProperty("java.version")) != null) { BUFFER.append("\nJava ").append(s); if ((s = System.getProperty("java.vendor")) != null) BUFFER.append(", ").append(s); }
-
-            if ((s = System.getProperty("os.name")) != null) { BUFFER.append('\n').append(s); if ((s = System.getProperty("os.version")) != null) { BUFFER.append(' ').append(s); } if ((s = System.getProperty("os.arch")) != null) { BUFFER.append(' ').append(s); } }
-
-            echoCommand(BUFFER.append('\n').toString());
-        }
+        else if (mainCommand.equals("--version")) { String s; StringBuffer BUFFER = new StringBuffer(); if ((s = System.getProperty("java.vm.name")) != null) { BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } } else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { BUFFER.append("J9 VM, IBM (").append(s).append(')'); if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } } else if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append(s); } else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } else if (javaClass(new String[] { "com.sun.midp.io.InternalConnector", "com.sun.midp.io.ConnectionBaseAdapter", "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.i18n.Helper", "com.sun.cldc.io.ConsoleOutputStream", "com.sun.cldc.i18n.uclc.DefaultCaseConverter" })) { BUFFER.append("KVM, Sun (CLDC)"); } else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol", "com.jblend.io.j2me.resource.Protocol", "com.jblend.security.midp20.SecurityManagerImpl", "com.jblend.security.midp20.UserConfirmDialogImpl", "jp.co.aplix.cldc.io.MIDPURLChecker", "jp.co.aplix.cldc.io.j2me.http.HttpConnectionImpl" })) { BUFFER.append("JBlend, Aplix"); } else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport", "com.jbed.midp.lcdui.GameCanvasPeer", "com.jbed.microedition.media.CoreManager", "com.jbed.runtime.Mem", "com.jbed.midp.lcdui.GameCanvas", "com.jbed.microedition.media.Core" })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); } else { BUFFER.append("Unknown"); } if ((s = System.getProperty("os.name")) != null) { BUFFER.append('\n').append(s); if ((s = System.getProperty("os.version")) != null) { BUFFER.append(' ').append(s); } if ((s = System.getProperty("os.arch")) != null) { BUFFER.append(' ').append(s); } } echoCommand(BUFFER.append('\n').toString()); }
         else { 
             String code = getcontent(mainCommand); 
             Hashtable objects = new Hashtable(); 
