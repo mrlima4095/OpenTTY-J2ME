@@ -650,7 +650,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0;
     }
-    private byte[] generateClassBytes(String className, String code) {
+private byte[] generateClassBytes(String className, String code) {
     byte[] nameBytes = className.getBytes();
     int nameLen = nameBytes.length;
     byte[] mainCode = code.getBytes();
@@ -673,7 +673,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         out.write(new byte[] { 0x07, 0x00, 0x02 });
 
         // #2: Utf8 className
-        out.write(0x01);
+        out.write(new byte[] { 0x01 }); // TAG_UTF8
         out.write((byte)(nameLen >> 8));
         out.write((byte)(nameLen & 0xFF));
         out.write(nameBytes);
@@ -683,28 +683,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         // #4: Utf8 "java/lang/Object"
         byte[] obj = "java/lang/Object".getBytes();
-        out.write(0x01);
+        out.write(new byte[] { 0x01 });
         out.write((byte)(obj.length >> 8));
         out.write((byte)(obj.length & 0xFF));
         out.write(obj);
 
         // #5: Utf8 "<init>"
         byte[] init = "<init>".getBytes();
-        out.write(0x01);
+        out.write(new byte[] { 0x01 });
         out.write((byte)(init.length >> 8));
         out.write((byte)(init.length & 0xFF));
         out.write(init);
 
         // #6: Utf8 "()V"
         byte[] voidDesc = "()V".getBytes();
-        out.write(0x01);
+        out.write(new byte[] { 0x01 });
         out.write((byte)(voidDesc.length >> 8));
         out.write((byte)(voidDesc.length & 0xFF));
         out.write(voidDesc);
 
         // #7: Utf8 "Code"
         byte[] codeStr = "Code".getBytes();
-        out.write(0x01);
+        out.write(new byte[] { 0x01 });
         out.write((byte)(codeStr.length >> 8));
         out.write((byte)(codeStr.length & 0xFF));
         out.write(codeStr);
@@ -717,14 +717,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         // #10: Utf8 "main"
         byte[] mainName = "main".getBytes();
-        out.write(0x01);
+        out.write(new byte[] { 0x01 });
         out.write((byte)(mainName.length >> 8));
         out.write((byte)(mainName.length & 0xFF));
         out.write(mainName);
 
-        // #11: Utf8 "unused" (apenas preenchimento)
+        // #11: Utf8 "unused" (filler)
         byte[] unused = "unused".getBytes();
-        out.write(0x01);
+        out.write(new byte[] { 0x01 });
         out.write((byte)(unused.length >> 8));
         out.write((byte)(unused.length & 0xFF));
         out.write(unused);
@@ -783,7 +783,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             (byte)(codeLen & 0xFF)
         });
 
-        out.write(mainCode); // seu bytecode personalizado
+        out.write(mainCode); // custom bytecode
 
         out.write(new byte[] {
             0x00, 0x00, // exception_table_length
@@ -794,12 +794,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         out.write(new byte[] { 0x00, 0x00 });
 
     } catch (Exception e) {
-        echoCommand("Erro: " + e.getMessage());
+        echoCommand("Error: " + e.getMessage());
         return null;
     }
 
     return out.toByteArray();
 }
+
 
 
 
