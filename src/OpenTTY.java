@@ -427,7 +427,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("build")) { return writeRMS(getCommand(argument), generateClassBytes("main", getcontent(getArgument(argument)))); }
+        //else if (mainCommand.equals("build")) { return writeRMS(getCommand(argument), generateClassBytes("main", getcontent(getArgument(argument)))); }
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
         else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 128; } }
 
@@ -658,7 +658,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     
-    private byte[] generateClassBytes(String className, String code) {
+    //private byte[] generateClassBytes(String className, String code) {
     try {
         byte[] nameBytes = className.getBytes("UTF-8");
         int nameLen = nameBytes.length;
