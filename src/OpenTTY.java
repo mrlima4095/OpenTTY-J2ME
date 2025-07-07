@@ -667,7 +667,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             out.write(new byte[] { 0x00, 0x00 }); // Minor version
             out.write(new byte[] { 0x00, 0x34 }); // Major version (Java 8)
             out.write(new byte[] { 0x00, (byte)cpCount }); // Constant pool count
-            
+
             // ===== CONSTANT POOL =====
             out.write(new byte[] { 0x07, 0x00, 0x02 }); // #1 = Class #2
             out.write(0x01); // #2 = Utf8 className
@@ -758,7 +758,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         });
 
         byte[] result = out.toByteArray();
-        return result
+        return result;
     }
 
 
