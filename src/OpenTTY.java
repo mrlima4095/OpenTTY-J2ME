@@ -427,7 +427,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("build")) { writeRMS(getCommand(argument), generateClassBytes(getArgument(argument))); }
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
         else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 128; } }
 
@@ -618,7 +618,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
         else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { int STATUS = javaClass(argument); echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; } } 
-        else if (mainCommand.equals("--version")) { String s; StringBuffer BUFFER = new StringBuffer(); if ((s = System.getProperty("java.vm.name")) != null) { BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } } else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { BUFFER.append("J9 VM, IBM (").append(s).append(')'); if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } } else if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append(s); } else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } else if (javaClass(new String[] { "com.sun.midp.io.InternalConnector", "com.sun.midp.io.ConnectionBaseAdapter", "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.i18n.Helper", "com.sun.cldc.io.ConsoleOutputStream", "com.sun.cldc.i18n.uclc.DefaultCaseConverter" })) { BUFFER.append("KVM, Sun (CLDC)"); } else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol", "com.jblend.io.j2me.resource.Protocol", "com.jblend.security.midp20.SecurityManagerImpl", "com.jblend.security.midp20.UserConfirmDialogImpl", "jp.co.aplix.cldc.io.MIDPURLChecker", "jp.co.aplix.cldc.io.j2me.http.HttpConnectionImpl" })) { BUFFER.append("JBlend, Aplix"); } else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport", "com.jbed.midp.lcdui.GameCanvasPeer", "com.jbed.microedition.media.CoreManager", "com.jbed.runtime.Mem", "com.jbed.midp.lcdui.GameCanvas", "com.jbed.microedition.media.Core" })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); } else { BUFFER.append("Unknown"); } if ((s = System.getProperty("os.name")) != null) { BUFFER.append('\n').append(s); if ((s = System.getProperty("os.version")) != null) { BUFFER.append(' ').append(s); } if ((s = System.getProperty("os.arch")) != null) { BUFFER.append(' ').append(s); } } echoCommand(BUFFER.append('\n').toString()); }
+        else if (mainCommand.equals("--version")) { 
+            String s; 
+            StringBuffer BUFFER = new StringBuffer(); 
+
+            if ((s = System.getProperty("java.vm.name")) != null) { 
+                BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); 
+                if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } 
+                if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } 
+            } 
+            else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { 
+                BUFFER.append("J9 VM, IBM (").append(s).append(')'); 
+                if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } 
+            } 
+            else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } 
+            else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } 
+            else if (javaClass(new String[] { "com.sun.midp.io.InternalConnector", "com.sun.midp.io.ConnectionBaseAdapter", "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } 
+            else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.i18n.Helper", "com.sun.cldc.io.ConsoleOutputStream", "com.sun.cldc.i18n.uclc.DefaultCaseConverter" })) { BUFFER.append("KVM, Sun (CLDC)"); } 
+            else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol", "com.jblend.io.j2me.resource.Protocol", "com.jblend.security.midp20.SecurityManagerImpl", "com.jblend.security.midp20.UserConfirmDialogImpl", "jp.co.aplix.cldc.io.MIDPURLChecker", "jp.co.aplix.cldc.io.j2me.http.HttpConnectionImpl" })) { BUFFER.append("JBlend, Aplix"); } 
+            else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport", "com.jbed.midp.lcdui.GameCanvasPeer", "com.jbed.microedition.media.CoreManager", "com.jbed.runtime.Mem", "com.jbed.midp.lcdui.GameCanvas", "com.jbed.microedition.media.Core" })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } 
+            else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); } 
+            else { BUFFER.append("Unknown"); } 
+
+            
+            echoCommand(BUFFER.append('\n').toString()); 
+        }
         else { 
             String code = getcontent(mainCommand); 
             Hashtable objects = new Hashtable(); 
@@ -655,6 +679,110 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0;
     }
+    private byte[] generateClassBytes(String className) {
+        byte[] nameBytes = className.getBytes();
+        int nameLen = nameBytes.length;
+        int constantPoolSize = 11; // ajusta se precisar mais
+        int cpCount = constantPoolSize;
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            // Header
+            out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE }); // Magic
+            out.write(new byte[] { 0x00, 0x00 }); // minor version
+            out.write(new byte[] { 0x00, 0x2E }); // major = 46
+
+            // Constant pool count
+            out.write(new byte[] { 0x00, (byte)cpCount });
+
+            // #1 Class -> #2
+            out.write(new byte[] { 0x07, 0x00, 0x02 });
+            // #2 Utf8 -> className
+            out.write(0x01);
+            out.write((byte)(nameLen >> 8));
+            out.write((byte)(nameLen & 0xFF));
+            out.write(nameBytes);
+
+            // #3 Class -> #4 (java/lang/Object)
+            out.write(new byte[] { 0x07, 0x00, 0x04 });
+            out.write(new byte[] {
+                0x01, 0x00, 0x10, // length = 16
+                'j','a','v','a','/','l','a','n','g','/',
+                'O','b','j','e','c','t'
+            });
+
+            // #5 Utf8 "<init>"
+            out.write(new byte[] { 0x01, 0x00, 0x06, '<','i','n','i','t','>' });
+            // #6 Utf8 "()V"
+            out.write(new byte[] { 0x01, 0x00, 0x03, '(',')','V' });
+            // #7 Utf8 "Code"
+            out.write(new byte[] { 0x01, 0x00, 0x04, 'C','o','d','e' });
+            // #8 Methodref java/lang/Object.<init>
+            out.write(new byte[] { 0x0A, 0x00, 0x03, 0x00, 0x09 });
+            // #9 NameAndType #5:#6
+            out.write(new byte[] { 0x0C, 0x00, 0x05, 0x00, 0x06 });
+            // #10 Utf8 "main"
+            out.write(new byte[] { 0x01, 0x00, 0x04, 'm','a','i','n' });
+
+            // Access flags: public + super
+            out.write(new byte[] { 0x00, 0x21 });
+            // This class: #1
+            out.write(new byte[] { 0x00, 0x01 });
+            // Super class: #3
+            out.write(new byte[] { 0x00, 0x03 });
+
+            // Interfaces count
+            out.write(new byte[] { 0x00, 0x00 });
+            // Fields count
+            out.write(new byte[] { 0x00, 0x00 });
+            // Methods count
+            out.write(new byte[] { 0x00, 0x02 });
+
+            // ---------- Method <init> ----------
+            out.write(new byte[] {
+                0x00, 0x01, // public
+                0x00, 0x05, // name #5 "<init>"
+                0x00, 0x06, // desc #6 "()V"
+                0x00, 0x01, // attrs
+                0x00, 0x07, // attr: Code
+                0x00, 0x00, 0x00, 0x11, // length
+                0x00, 0x01, // max stack
+                0x00, 0x01, // max locals
+                0x00, 0x00, 0x00, 0x05, // code len
+                    0x2A, (byte)0xB7, 0x00, 0x08, (byte)0xB1, // aload_0, invokespecial #8, return
+                0x00, 0x00, // exceptions
+                0x00, 0x00  // code attrs
+            });
+
+            // ---------- Method main() ----------
+            out.write(new byte[] {
+                0x00, 0x09, // public static
+                0x00, 0x0A, // name #10
+                0x00, 0x06, // desc #6 ()V
+                0x00, 0x01, // attrs
+                0x00, 0x07, // Code
+                0x00, 0x00, 0x00, 0x0D, // length
+                0x00, 0x01, // max stack
+                0x00, 0x01, // max locals
+                0x00, 0x00, 0x00, 0x01,
+                    (byte)0xB1, // return
+                0x00, 0x00,
+                0x00, 0x00
+            });
+
+            // Class attributes count
+            out.write(new byte[] { 0x00, 0x00 });
+
+        } catch (Exception e) {
+            echoCommand("Error " + e.getMessage());
+            return null;
+        }
+
+        return out.toByteArray();
+    }
+
+
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     private boolean javaClass(String[] classes) { for (int i = 0; i < classes.length; i++) { if (javaClass(classes[i]) != 0) { return false; } } return true; }
     // |
