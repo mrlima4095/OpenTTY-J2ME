@@ -685,10 +685,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         out.write(nameBytes);
         out.write(0x07); out.write(0x00); out.write(0x04); // #3 Class -> #4
         out.write(new byte[] {
-            0x01, 0x00, 0x10,
-            'j','a','v','a','/','l','a','n','g','/',
-            'O','b','j','e','c','t'
-        }); // #4 Utf8: java/lang/Object
+    0x01, 0x00, 0x10,
+    (byte)'j',(byte)'a',(byte)'v',(byte)'a',(byte)'/',
+    (byte)'l',(byte)'a',(byte)'n',(byte)'g',(byte)'/',
+    (byte)'O',(byte)'b',(byte)'j',(byte)'e',(byte)'c',(byte)'t'
+});
+// #4 Utf8: java/lang/Object
         out.write(new byte[] {
             0x01, 0x00, 0x06, '<','i','n','i','t','>' // #5
         });
