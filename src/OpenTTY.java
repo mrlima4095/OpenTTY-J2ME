@@ -362,7 +362,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Java Runtime
         else if (mainCommand.equals("java")) { return java(argument); }
-        else if (mainCommand.equals("javac")) { return writeRMS(getCommand(argument), generateClass(getArgument(argument), getcontent(getArgument(argument)))); }
+        else if (mainCommand.equals("javac")) { return writeRMS(getCommand(argument), generateClass(basename(getArgument(argument)), getcontent(getArgument(argument)))); }
         // |
         // Permissions
         else if (mainCommand.equals("chmod")) { 
