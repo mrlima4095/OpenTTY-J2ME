@@ -663,7 +663,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int cpCount = 10; // Tamanho fixo para essa estrutura
 
             // ===== HEADER =====
-            /*out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE }); // Magic
+            //out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE }); // Magic
             out.write(new byte[] { 0x00, 0x00 }); // Minor version
             out.write(new byte[] { 0x00, 0x34 }); // Major version (Java 8)
             out.write(new byte[] { 0x00, (byte)cpCount }); // Constant pool count*/
