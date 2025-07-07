@@ -651,154 +651,156 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private byte[] generateClassBytes(String className, String code) {
-        byte[] nameBytes = className.getBytes();
-        int nameLen = nameBytes.length;
-        byte[] mainCode = code.getBytes();
-        int codeLen = mainCode.length;
-        int attrLen = 12 + codeLen;
-        int cpCount = 13;
+    byte[] nameBytes = className.getBytes();
+    int nameLen = nameBytes.length;
+    byte[] mainCode = code.getBytes();
+    int codeLen = mainCode.length;
+    int attrLen = 12 + codeLen;
+    int cpCount = 13;
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        try {
-            // Header
-            out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE }); // magic
-            out.write(new byte[] { 0x00, 0x00 }); // minor_version
-            out.write(new byte[] { 0x00, 0x2E }); // major_version (Java 1.2)
-            out.write(new byte[] { 0x00, (byte)cpCount }); // constant_pool_count
+    try {
+        // Header
+        out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE }); // magic
+        out.write(new byte[] { 0x00, 0x00 }); // minor_version
+        out.write(new byte[] { 0x00, 0x2E }); // major_version (Java 1.2)
+        out.write(new byte[] { 0x00, (byte)cpCount }); // constant_pool_count
 
-            // ---- Constant Pool ----
+        // ----- Constant Pool -----
 
-            // #1: Class (this)
-            out.write(new byte[] { 0x07, 0x00, 0x02 });
+        // #1: Class this = #2
+        out.write(new byte[] { 0x07, 0x00, 0x02 });
 
-            // #2: Utf8 (className)
-            out.write(0x01); // tag
-            out.write((byte)(nameLen >> 8));
-            out.write((byte)(nameLen & 0xFF));
-            out.write(nameBytes);
+        // #2: Utf8 className
+        out.write(0x01);
+        out.write((byte)(nameLen >> 8));
+        out.write((byte)(nameLen & 0xFF));
+        out.write(nameBytes);
 
-            // #3: Class (super)
-            out.write(new byte[] { 0x07, 0x00, 0x04 });
+        // #3: Class super = #4
+        out.write(new byte[] { 0x07, 0x00, 0x04 });
 
-            // #4: Utf8 "java/lang/Object"
-            String objClass = "java/lang/Object";
-            byte[] objBytes = objClass.getBytes();
-            out.write(0x01);
-            out.write((byte)(objBytes.length >> 8));
-            out.write((byte)(objBytes.length & 0xFF));
-            out.write(objBytes);
+        // #4: Utf8 "java/lang/Object"
+        byte[] obj = "java/lang/Object".getBytes();
+        out.write(0x01);
+        out.write((byte)(obj.length >> 8));
+        out.write((byte)(obj.length & 0xFF));
+        out.write(obj);
 
-            // #5: Utf8 "<init>"
-            byte[] initBytes = "<init>".getBytes();
-            out.write(0x01);
-            out.write((byte)(initBytes.length >> 8));
-            out.write((byte)(initBytes.length & 0xFF));
-            out.write(initBytes);
+        // #5: Utf8 "<init>"
+        byte[] init = "<init>".getBytes();
+        out.write(0x01);
+        out.write((byte)(init.length >> 8));
+        out.write((byte)(init.length & 0xFF));
+        out.write(init);
 
-            // #6: Utf8 "()V"
-            byte[] voidDesc = "()V".getBytes();
-            out.write(0x01);
-            out.write((byte)(voidDesc.length >> 8));
-            out.write((byte)(voidDesc.length & 0xFF));
-            out.write(voidDesc);
+        // #6: Utf8 "()V"
+        byte[] voidDesc = "()V".getBytes();
+        out.write(0x01);
+        out.write((byte)(voidDesc.length >> 8));
+        out.write((byte)(voidDesc.length & 0xFF));
+        out.write(voidDesc);
 
-            // #7: Utf8 "Code"
-            byte[] codeStr = "Code".getBytes();
-            out.write(0x01);
-            out.write((byte)(codeStr.length >> 8));
-            out.write((byte)(codeStr.length & 0xFF));
-            out.write(codeStr);
+        // #7: Utf8 "Code"
+        byte[] codeStr = "Code".getBytes();
+        out.write(0x01);
+        out.write((byte)(codeStr.length >> 8));
+        out.write((byte)(codeStr.length & 0xFF));
+        out.write(codeStr);
 
-            // #8: Methodref (Object.<init>)
-            out.write(new byte[] { 0x0A, 0x00, 0x03, 0x00, 0x09 });
+        // #8: Methodref class #3, nameandtype #9
+        out.write(new byte[] { 0x0A, 0x00, 0x03, 0x00, 0x09 });
 
-            // #9: NameAndType (#5, #6)
-            out.write(new byte[] { 0x0C, 0x00, 0x05, 0x00, 0x06 });
+        // #9: NameAndType #5, #6
+        out.write(new byte[] { 0x0C, 0x00, 0x05, 0x00, 0x06 });
 
-            // #10: Utf8 "main"
-            byte[] mainName = "main".getBytes();
-            out.write(0x01);
-            out.write((byte)(mainName.length >> 8));
-            out.write((byte)(mainName.length & 0xFF));
-            out.write(mainName);
+        // #10: Utf8 "main"
+        byte[] mainName = "main".getBytes();
+        out.write(0x01);
+        out.write((byte)(mainName.length >> 8));
+        out.write((byte)(mainName.length & 0xFF));
+        out.write(mainName);
 
-            // #11: Utf8 "unused"
-            byte[] unused = "unused".getBytes();
-            out.write(0x01);
-            out.write((byte)(unused.length >> 8));
-            out.write((byte)(unused.length & 0xFF));
-            out.write(unused);
+        // #11: Utf8 "unused" (apenas preenchimento)
+        byte[] unused = "unused".getBytes();
+        out.write(0x01);
+        out.write((byte)(unused.length >> 8));
+        out.write((byte)(unused.length & 0xFF));
+        out.write(unused);
 
-            // ---- Class Info ----
-            out.write(new byte[] { 0x00, 0x21 }); // access_flags (public + super)
-            out.write(new byte[] { 0x00, 0x01 }); // this_class
-            out.write(new byte[] { 0x00, 0x03 }); // super_class
-            out.write(new byte[] { 0x00, 0x00 }); // interfaces_count
-            out.write(new byte[] { 0x00, 0x00 }); // fields_count
-            out.write(new byte[] { 0x00, 0x02 }); // methods_count
+        // ----- Class Info -----
+        out.write(new byte[] { 0x00, 0x21 }); // access_flags: public + super
+        out.write(new byte[] { 0x00, 0x01 }); // this_class: #1
+        out.write(new byte[] { 0x00, 0x03 }); // super_class: #3
+        out.write(new byte[] { 0x00, 0x00 }); // interfaces_count
+        out.write(new byte[] { 0x00, 0x00 }); // fields_count
+        out.write(new byte[] { 0x00, 0x02 }); // methods_count
 
-            // ---- <init>() ----
-            out.write(new byte[] {
-                0x00, 0x01,             // access_flags (public)
-                0x00, 0x05,             // name_index (<init>)
-                0x00, 0x06,             // descriptor_index
-                0x00, 0x01,             // attributes_count
-                0x00, 0x07              // attribute_name_index ("Code")
-            });
-            out.write(new byte[] {
-                0x00, 0x00, 0x00, 0x11, // attribute_length = 17
-                0x00, 0x01,             // max_stack
-                0x00, 0x01,             // max_locals
-                0x00, 0x00, 0x00, 0x05, // code_length = 5
-                0x2A, (byte)0xB7, 0x00, 0x08, (byte)0xB1, // bytecode
-                0x00, 0x00,             // exception_table_length
-                0x00, 0x00              // attributes_count
-            });
+        // ----- Method <init>() -----
+        out.write(new byte[] {
+            0x00, 0x01,             // access_flags: public
+            0x00, 0x05,             // name_index: #5 -> <init>
+            0x00, 0x06,             // descriptor_index: #6 -> ()V
+            0x00, 0x01,             // attributes_count
+            0x00, 0x07              // attribute_name_index: #7 -> "Code"
+        });
 
-            // ---- main() ----
-            out.write(new byte[] {
-                0x00, 0x09,             // access_flags (public static)
-                0x00, 0x0A,             // name_index ("main")
-                0x00, 0x06,             // descriptor_index ("()V")
-                0x00, 0x01,             // attributes_count
-                0x00, 0x07              // attribute_name_index ("Code")
-            });
+        out.write(new byte[] {
+            0x00, 0x00, 0x00, 0x11, // attribute_length = 17
+            0x00, 0x01,             // max_stack
+            0x00, 0x01,             // max_locals
+            0x00, 0x00, 0x00, 0x05, // code_length = 5
+            0x2A, (byte)0xB7, 0x00, 0x08, (byte)0xB1, // bytecode
+            0x00, 0x00,             // exception_table_length
+            0x00, 0x00              // attributes_count
+        });
 
-            // attribute_length (4 bytes)
-            out.write(new byte[] {
-                (byte)((attrLen >> 24) & 0xFF),
-                (byte)((attrLen >> 16) & 0xFF),
-                (byte)((attrLen >> 8) & 0xFF),
-                (byte)(attrLen & 0xFF)
-            });
+        // ----- Method main() -----
+        out.write(new byte[] {
+            0x00, 0x09,             // access_flags: public static
+            0x00, 0x0A,             // name_index: #10 -> "main"
+            0x00, 0x06,             // descriptor_index: #6 -> ()V
+            0x00, 0x01,             // attributes_count
+            0x00, 0x07              // attribute_name_index: #7 -> "Code"
+        });
 
-            out.write(new byte[] {
-                0x00, 0x02, // max_stack
-                0x00, 0x01, // max_locals
-                (byte)((codeLen >> 24) & 0xFF),
-                (byte)((codeLen >> 16) & 0xFF),
-                (byte)((codeLen >> 8) & 0xFF),
-                (byte)(codeLen & 0xFF)
-            });
+        // attribute_length = 12 + codeLen
+        out.write(new byte[] {
+            (byte)((attrLen >> 24) & 0xFF),
+            (byte)((attrLen >> 16) & 0xFF),
+            (byte)((attrLen >> 8) & 0xFF),
+            (byte)(attrLen & 0xFF)
+        });
 
-            out.write(mainCode); // seu "bytecode"
+        // Code attribute for main()
+        out.write(new byte[] {
+            0x00, 0x02, // max_stack
+            0x00, 0x01, // max_locals
+            (byte)((codeLen >> 24) & 0xFF),
+            (byte)((codeLen >> 16) & 0xFF),
+            (byte)((codeLen >> 8) & 0xFF),
+            (byte)(codeLen & 0xFF)
+        });
 
-            out.write(new byte[] {
-                0x00, 0x00, // exception_table_length
-                0x00, 0x00  // attributes_count
-            });
+        out.write(mainCode); // seu bytecode personalizado
 
-            // ---- Class Attributes (0) ----
-            out.write(new byte[] { 0x00, 0x00 });
+        out.write(new byte[] {
+            0x00, 0x00, // exception_table_length
+            0x00, 0x00  // attributes_count
+        });
 
-        } catch (Exception e) {
-            echoCommand("Erro: " + e.getMessage());
-            return null;
-        }
+        // ----- Class attributes_count = 0 -----
+        out.write(new byte[] { 0x00, 0x00 });
 
-        return out.toByteArray();
+    } catch (Exception e) {
+        echoCommand("Erro: " + e.getMessage());
+        return null;
     }
+
+    return out.toByteArray();
+}
+
 
 
 
