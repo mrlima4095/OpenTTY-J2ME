@@ -651,12 +651,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
 
-    private byte[] generateClassBytes(String className, String code) {
+    private byte[] generateClassBytes(String className) {
     byte[] nameBytes = className.getBytes();
     int nameLen = nameBytes.length;
-    byte[] mainCode = code.getBytes(); // Texto cru convertido para bytes
-    int codeLen = mainCode.length;
-    int attrLen = 12 + codeLen;
+    //byte[] mainCode = code.getBytes(); // Texto cru convertido para bytes
+    //int codeLen = mainCode.length;
+    int attrLen = 12; //+ codeLen;
     int constantPoolSize = 13;
     int cpCount = constantPoolSize;
 
@@ -743,7 +743,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             (byte)(codeLen & 0xFF)
         });
 
-        out.write(mainCode); // o conteúdo de "code", puro
+        //out.write(mainCode); // o conteúdo de "code", puro
 
         out.write(new byte[] {
             0x00, 0x00, // exception table length
