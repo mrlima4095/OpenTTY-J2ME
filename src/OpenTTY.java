@@ -648,8 +648,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try {
                 byte[] classBytes = getcontent(mainCommand).getBytes("ISO-8859-1");
                 ByteArrayInputStream bais = new ByteArrayInputStream(classBytes);
-                ClassFile classFile = new ClassFile(bais); // seu parser de .class
-                classFile.invokeMain(); 
+                echoCommand("okk"); 
             } catch (Exception e) {
                 echoCommand("java: " + className + ": " + e.getMessage());
                 return 1;
