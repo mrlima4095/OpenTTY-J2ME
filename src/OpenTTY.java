@@ -650,7 +650,108 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0;
     }
+    private byte[] generateClassBytes(String className) {
+        byte[] nameBytes = className.getBytes();
+        int nameLen = nameBytes.length;
+        int constantPoolSize = 11; // ajusta se precisar mais
+        int cpCount = constantPoolSize;
 
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            // Header
+            out.write(new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE }); // Magic
+            out.write(new byte[] { 0x00, 0x00 }); // minor version
+            out.write(new byte[] { 0x00, 0x2E }); // major = 46
+
+            // Constant pool count
+            out.write(new byte[] { 0x00, (byte)cpCount });
+
+            // #1 Class -> #2
+            out.write(new byte[] { 0x07, 0x00, 0x02 });
+            // #2 Utf8 -> className
+            out.write(0x01);
+            out.write((byte)(nameLen >> 8));
+            out.write((byte)(nameLen & 0xFF));
+            out.write(nameBytes);
+
+            // #3 Class -> #4 (java/lang/Object)
+            out.write(new byte[] { 0x07, 0x00, 0x04 });
+            out.write(new byte[] {
+                0x01, 0x00, 0x10, // length = 16
+                'j','a','v','a','/','l','a','n','g','/',
+                'O','b','j','e','c','t'
+            });
+
+            // #5 Utf8 "<init>"
+            out.write(new byte[] { 0x01, 0x00, 0x06, '<','i','n','i','t','>' });
+            // #6 Utf8 "()V"
+            out.write(new byte[] { 0x01, 0x00, 0x03, '(',')','V' });
+            // #7 Utf8 "Code"
+            out.write(new byte[] { 0x01, 0x00, 0x04, 'C','o','d','e' });
+            // #8 Methodref java/lang/Object.<init>
+            out.write(new byte[] { 0x0A, 0x00, 0x03, 0x00, 0x09 });
+            // #9 NameAndType #5:#6
+            out.write(new byte[] { 0x0C, 0x00, 0x05, 0x00, 0x06 });
+            // #10 Utf8 "main"
+            out.write(new byte[] { 0x01, 0x00, 0x04, 'm','a','i','n' });
+
+            // Access flags: public + super
+            out.write(new byte[] { 0x00, 0x21 });
+            // This class: #1
+            out.write(new byte[] { 0x00, 0x01 });
+            // Super class: #3
+            out.write(new byte[] { 0x00, 0x03 });
+
+            // Interfaces count
+            out.write(new byte[] { 0x00, 0x00 });
+            // Fields count
+            out.write(new byte[] { 0x00, 0x00 });
+            // Methods count
+            out.write(new byte[] { 0x00, 0x02 });
+
+            // ---------- Method <init> ----------
+            out.write(new byte[] {
+                0x00, 0x01, // public
+                0x00, 0x05, // name #5 "<init>"
+                0x00, 0x06, // desc #6 "()V"
+                0x00, 0x01, // attrs
+                0x00, 0x07, // attr: Code
+                0x00, 0x00, 0x00, 0x11, // length
+                0x00, 0x01, // max stack
+                0x00, 0x01, // max locals
+                0x00, 0x00, 0x00, 0x05, // code len
+                    0x2A, (byte)0xB7, 0x00, 0x08, (byte)0xB1, // aload_0, invokespecial #8, return
+                0x00, 0x00, // exceptions
+                0x00, 0x00  // code attrs
+            });
+
+            // ---------- Method main() ----------
+            out.write(new byte[] {
+                0x00, 0x09, // public static
+                0x00, 0x0A, // name #10
+                0x00, 0x06, // desc #6 ()V
+                0x00, 0x01, // attrs
+                0x00, 0x07, // Code
+                0x00, 0x00, 0x00, 0x0D, // length
+                0x00, 0x01, // max stack
+                0x00, 0x01, // max locals
+                0x00, 0x00, 0x00, 0x01,
+                    (byte)0xB1, // return
+                0x00, 0x00,
+                0x00, 0x00
+            });
+
+            // Class attributes count
+            out.write(new byte[] { 0x00, 0x00 });
+
+        } catch (Exception e) {
+            echoCommand("Error " + e.getMessage());
+            return null;
+        }
+
+        return out.toByteArray();
+    }
     /*private byte[] generateClass(String className, String code) {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -747,21 +848,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         
     }*/
-    private byte[] generateClass(String className, String code) {
-        try {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        out.write(new byte[] {
-            //(byte) 0xCA
-            //(byte) 0xFE
-            //(byte) 0xBA
-            (byte) 0xBE
-        });
-
-        byte[] result = out.toByteArray();
-        return result; }
-        catch (IOException e) { }
-    }
 
 
 
