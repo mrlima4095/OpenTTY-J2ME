@@ -662,112 +662,96 @@ public class OpenTTY extends MIDlet implements CommandListener {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
 
     try {
-        // Header
-        out.write(new byte[] {
-            (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
-            0x00, 0x00, 0x00, 0x2E
-        });
+        // --------- Header (magic + version) ---------
+        out.write(0xCA); out.write(0xFE); out.write(0xBA); out.write(0xBE);
+        out.write(0x00); out.write(0x00); // minor version
+        out.write(0x00); out.write(0x2E); // major version (Java 1.2 = 46)
 
-        out.write(new byte[] { 0x00, (byte)cpCount });
+        out.write(0x00); out.write(cpCount); // constant_pool_count
 
-        // Constant Pool
-        out.write(new byte[] { 0x07, 0x00, 0x02 });
-        out.write(0x01);
-        out.write((byte)(nameLen >> 8));
-        out.write((byte)(nameLen & 0xFF));
-        out.write(nameBytes);
+        // --------- Constant Pool ---------
+        out.write(0x07); out.write(0x00); out.write(0x02); // #1 Class -> #2
+        out.write(0x01); // #2 Utf8
+        out.write((nameLen >> 8) & 0xFF); out.write(nameLen & 0xFF);
+        for (byte b : nameBytes) out.write(b);
 
-        out.write(new byte[] { 0x07, 0x00, 0x04 });
-        byte[] jlo = "java/lang/Object".getBytes();
-        out.write(0x01);
-        out.write((byte)(jlo.length >> 8));
-        out.write((byte)(jlo.length & 0xFF));
-        out.write(jlo);
+        out.write(0x07); out.write(0x00); out.write(0x04); // #3 Class -> #4
+        byte[] obj = "java/lang/Object".getBytes();
+        out.write(0x01); out.write(0x00); out.write(obj.length);
+        for (byte b : obj) out.write(b);
 
         byte[] init = "<init>".getBytes();
-        out.write(0x01);
-        out.write((byte)(init.length >> 8));
-        out.write((byte)(init.length & 0xFF));
-        out.write(init);
+        out.write(0x01); out.write(0x00); out.write(init.length);
+        for (byte b : init) out.write(b);
 
         byte[] desc = "()V".getBytes();
-        out.write(0x01);
-        out.write((byte)(desc.length >> 8));
-        out.write((byte)(desc.length & 0xFF));
-        out.write(desc);
+        out.write(0x01); out.write(0x00); out.write(desc.length);
+        for (byte b : desc) out.write(b);
 
         byte[] codeStr = "Code".getBytes();
-        out.write(0x01);
-        out.write((byte)(codeStr.length >> 8));
-        out.write((byte)(codeStr.length & 0xFF));
-        out.write(codeStr);
+        out.write(0x01); out.write(0x00); out.write(codeStr.length);
+        for (byte b : codeStr) out.write(b);
 
-        out.write(new byte[] { 0x0A, 0x00, 0x03, 0x00, 0x09 });
-        out.write(new byte[] { 0x0C, 0x00, 0x05, 0x00, 0x06 });
+        out.write(0x0A); out.write(0x00); out.write(0x03); out.write(0x00); out.write(0x09); // #8 Methodref
+        out.write(0x0C); out.write(0x00); out.write(0x05); out.write(0x00); out.write(0x06); // #9 NameAndType
 
-        byte[] mainStr = "main".getBytes();
-        out.write(0x01);
-        out.write((byte)(mainStr.length >> 8));
-        out.write((byte)(mainStr.length & 0xFF));
-        out.write(mainStr);
+        byte[] main = "main".getBytes();
+        out.write(0x01); out.write(0x00); out.write(main.length);
+        for (byte b : main) out.write(b);
 
-        // Access flags, this/super
-        out.write(new byte[] {
-            0x00, 0x21,
-            0x00, 0x01,
-            0x00, 0x03,
-            0x00, 0x00,
-            0x00, 0x00,
-            0x00, 0x02
-        });
+        // --------- Class Info ---------
+        out.write(0x00); out.write(0x21); // public + super
+        out.write(0x00); out.write(0x01); // this = #1
+        out.write(0x00); out.write(0x03); // super = #3
+        out.write(0x00); out.write(0x00); // interfaces_count
+        out.write(0x00); out.write(0x00); // fields_count
+        out.write(0x00); out.write(0x02); // methods_count
 
-        // ---------- <init>() ----------
-        out.write(new byte[] {
-            0x00, 0x01, 0x00, 0x05, 0x00, 0x06,
-            0x00, 0x01, 0x00, 0x07,
-            0x00, 0x00, 0x00, 0x11,
-            0x00, 0x01, 0x00, 0x01,
-            0x00, 0x00, 0x00, 0x05,
-            0x2A, (byte)0xB7, 0x00, 0x08, (byte)0xB1,
-            0x00, 0x00, 0x00, 0x00
-        });
+        // --------- <init>() Method ---------
+        out.write(0x00); out.write(0x01); // access flags
+        out.write(0x00); out.write(0x05); // name_index #5
+        out.write(0x00); out.write(0x06); // descriptor_index #6
+        out.write(0x00); out.write(0x01); // attributes_count
+        out.write(0x00); out.write(0x07); // attribute_name_index ("Code")
+        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x11); // attribute_length = 17
+        out.write(0x00); out.write(0x01); // max_stack
+        out.write(0x00); out.write(0x01); // max_locals
+        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x05); // code_length = 5
+        out.write(0x2A); // aload_0
+        out.write(0xB7); // invokespecial
+        out.write(0x00); out.write(0x08); // methodref #8
+        out.write(0xB1); // return
+        out.write(0x00); out.write(0x00); // exception_table_length
+        out.write(0x00); out.write(0x00); // attributes_count
 
-        // ---------- main() ----------
-        out.write(new byte[] {
-            0x00, 0x09,             // public static
-            0x00, 0x0A,             // name_index (main)
-            0x00, 0x06,             // descriptor_index ("()V")
-            0x00, 0x01,             // attributes_count
-            0x00, 0x07              // attribute_name_index ("Code")
-        });
+        // --------- main() Method ---------
+        out.write(0x00); out.write(0x09); // public static
+        out.write(0x00); out.write(0x0A); // name_index ("main")
+        out.write(0x00); out.write(0x06); // descriptor_index "()V"
+        out.write(0x00); out.write(0x01); // attributes_count
+        out.write(0x00); out.write(0x07); // attribute_name_index ("Code")
 
         // attribute_length = 12 + codeLen
-        out.write(new byte[] {
-            (byte)(codeAttrLen >> 24),
-            (byte)(codeAttrLen >> 16),
-            (byte)(codeAttrLen >> 8),
-            (byte)(codeAttrLen)
-        });
+        out.write((codeAttrLen >> 24) & 0xFF);
+        out.write((codeAttrLen >> 16) & 0xFF);
+        out.write((codeAttrLen >> 8) & 0xFF);
+        out.write(codeAttrLen & 0xFF);
 
-        // Code header
-        out.write(new byte[] {
-            0x00, 0x01,             // max_stack
-            0x00, 0x01,             // max_locals
-            (byte)(codeLen >> 24),
-            (byte)(codeLen >> 16),
-            (byte)(codeLen >> 8),
-            (byte)(codeLen)
-        });
+        out.write(0x00); out.write(0x01); // max_stack
+        out.write(0x00); out.write(0x01); // max_locals
 
-        out.write(codeBytes); // injeção de bytecode
+        out.write((codeLen >> 24) & 0xFF);
+        out.write((codeLen >> 16) & 0xFF);
+        out.write((codeLen >> 8) & 0xFF);
+        out.write(codeLen & 0xFF);
 
-        out.write(new byte[] {
-            0x00, 0x00,             // exception_table_length
-            0x00, 0x00              // attributes_count
-        });
+        for (byte b : codeBytes) out.write(b); // injeta code.getBytes()
 
-        // class attributes count
-        out.write(new byte[] { 0x00, 0x00 });
+        out.write(0x00); out.write(0x00); // exception_table_length
+        out.write(0x00); out.write(0x00); // attributes_count
+
+        // --------- Class attributes count ---------
+        out.write(0x00); out.write(0x00);
 
     } catch (Exception e) {
         echoCommand("Erro: " + e.getMessage());
@@ -776,6 +760,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     return out.toByteArray();
 }
+
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     private boolean javaClass(String[] classes) { for (int i = 0; i < classes.length; i++) { if (javaClass(classes[i]) != 0) { return false; } } return true; }
