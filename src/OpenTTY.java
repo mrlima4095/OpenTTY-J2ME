@@ -651,17 +651,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private byte[] generateClass(String className, String code) {
-        byte[] nameBytes = className.getBytes();
-        int nameLen = nameBytes.length;
-        byte[] codeBytes = mnemonicsToBytes(code);
-        int codeLen = codeBytes.length;
-        int codeAttrLen = 12 + codeLen;
-        int constantPoolSize = 11;
-        int cpCount = constantPoolSize;
-
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         try {
+            byte[] nameBytes = className.getBytes();
+            int nameLen = nameBytes.length;
+            byte[] codeBytes = mnemonicsToBytes(code);
+            int codeLen = codeBytes.length;
+            int codeAttrLen = 12 + codeLen;
+            int constantPoolSize = 11;
+            int cpCount = constantPoolSize;
+
             // Header
             out.write(0xCA); out.write(0xFE); out.write(0xBA); out.write(0xBE);
             out.write(0x00); out.write(0x00); // minor version
