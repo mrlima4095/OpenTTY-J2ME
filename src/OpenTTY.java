@@ -757,66 +757,60 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return out.toByteArray();
     }
-    private byte[] mnemonics(String mnemonics) throws Exception {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Hashtable opcodes = new Hashtable();
-        opcodes.put("nop", 0x00);
-        opcodes.put("aconst_null", 0x01);
-        opcodes.put("iconst_m1", 0x02);
-        opcodes.put("iconst_0", 0x03);
-        opcodes.put("iconst_1", 0x04);
-        opcodes.put("iconst_2", 0x05);
-        opcodes.put("iconst_3", 0x06);
-        opcodes.put("iconst_4", 0x07);
-        opcodes.put("iconst_5", 0x08);
-        opcodes.put("bipush", 0x10);
-        opcodes.put("sipush", 0x11);
-        opcodes.put("iload_0", 0x1A);
-        opcodes.put("iload_1", 0x1B);
-        opcodes.put("aload_0", 0x2A);
-        opcodes.put("aload_1", 0x2B);
-        opcodes.put("istore_0", 0x3B);
-        opcodes.put("istore_1", 0x3C);
-        opcodes.put("astore_0", 0x4B);
-        opcodes.put("astore_1", 0x4C);
-        opcodes.put("pop", 0x57);
-        opcodes.put("dup", 0x59);
-        opcodes.put("iadd", 0x60);
-        opcodes.put("isub", 0x64);
-        opcodes.put("imul", 0x68);
-        opcodes.put("idiv", 0x6C);
-        opcodes.put("ireturn", 0xAC);
-        opcodes.put("return", 0xB1);
-        opcodes.put("getstatic", 0xB2);
-        opcodes.put("invokevirtual", 0xB6);
-        opcodes.put("invokespecial", 0xB7);
-        opcodes.put("invokestatic", 0xB8);
+    private byte[] mnemonicsToBytes(String mnemonics) throws Exception {
+    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
 
-        String[] lines = mnemonics.split("\\r?\\n");
-        for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty()) continue;
-            String[] parts = line.split("\\s+");
-            String instr = parts[0];
-            Integer opcode = opcodes.get(instr);
-            if (opcode == null) throw new Exception("Opcode desconhecido: " + instr);
-            out.write(opcode);
-            if (parts.length > 1) {
-                for (int i = 1; i < parts.length; i++) {
-                    int val = Integer.parseInt(parts[i]);
-                    if (instr.equals("sipush")) {
-                        // sipush tem argumento 2 bytes
-                        out.write((val >> 8) & 0xFF);
-                        out.write(val & 0xFF);
-                    } else {
-                        // argumentos 1 byte (ex: bipush, invokespecial)
-                        out.write(val & 0xFF);
-                    }
-                }
-            }
+    // Map simples com mnemonics J2ME básicos
+    java.util.Hashtable opcodes = new java.util.Hashtable();
+    opcodes.put("nop", new Integer(0x00));
+    opcodes.put("aconst_null", new Integer(0x01));
+    opcodes.put("iconst_0", new Integer(0x03));
+    opcodes.put("iconst_1", new Integer(0x04));
+    opcodes.put("iconst_2", new Integer(0x05));
+    opcodes.put("iload_0", new Integer(0x1A));
+    opcodes.put("aload_0", new Integer(0x2A));
+    opcodes.put("istore_0", new Integer(0x3B));
+    opcodes.put("astore_0", new Integer(0x4B));
+    opcodes.put("pop", new Integer(0x57));
+    opcodes.put("iadd", new Integer(0x60));
+    opcodes.put("return", new Integer(0xB1));
+    opcodes.put("invokespecial", new Integer(0xB7));
+    // ...adicione outras conforme precisar
+
+    // Quebrar linhas simples, sem regex
+    int start = 0;
+    int length = mnemonics.length();
+    while (start < length) {
+        int end = mnemonics.indexOf('\n', start);
+        if (end == -1) end = length;
+        String line = mnemonics.substring(start, end).trim();
+        start = end + 1;
+
+        if (line.length() == 0) continue;
+
+        // Quebrar por espaço simples
+        int spaceIndex = line.indexOf(' ');
+        String instr = line;
+        String arg = null;
+        if (spaceIndex != -1) {
+            instr = line.substring(0, spaceIndex);
+            arg = line.substring(spaceIndex + 1).trim();
         }
-        return out.toByteArray();
+
+        Integer opcodeInt = (Integer) opcodes.get(instr);
+        if (opcodeInt == null) throw new Exception("Opcode desconhecido: " + instr);
+        out.write(opcodeInt.intValue());
+
+        if (arg != null) {
+            int val = Integer.parseInt(arg);
+            // Aqui só argumento 1 byte (ex: invokespecial)
+            out.write(val & 0xFF);
+        }
     }
+
+    return out.toByteArray();
+}
+
 
 
 
