@@ -802,10 +802,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         out.write(opcodeInt.intValue());
 
         if (arg != null) {
-            int val = Integer.parseInt(arg);
-            // Aqui só argumento 1 byte (ex: invokespecial)
-            out.write(val & 0xFF);
+            String[] args = arg.split(" ");
+            for (int i = 0; i < args.length; i++) {
+                int val = Integer.parseInt(args[i]);
+                out.write(val & 0xFF);
+            }
         }
+
+        out.write(val & 0xFF);
+        
     }
 
     return out.toByteArray();
