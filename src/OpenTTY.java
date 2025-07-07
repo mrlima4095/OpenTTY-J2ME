@@ -748,6 +748,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
     }*/
     private byte[] generateClass(String className, String code) {
+        try {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         out.write(new byte[] {
@@ -758,7 +759,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         });
 
         byte[] result = out.toByteArray();
-        return result;
+        return result; }
+        catch (IOException e) { }
     }
 
 
