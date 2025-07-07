@@ -650,7 +650,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 ByteArrayInputStream bais = new ByteArrayInputStream(classBytes);
                 echoCommand("okk"); 
             } catch (Exception e) {
-                echoCommand("java: " + className + ": " + e.getMessage());
+                echoCommand("java: " + mainCommand + ": " + e.getMessage());
                 return 1;
             }
         } 
