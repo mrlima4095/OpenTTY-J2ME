@@ -470,96 +470,93 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
 
-        private byte[] generateClass(String className, String mnemonics) {
-        try {
-            ByteArrayOutputStream classOut = new ByteArrayOutputStream();
-            DataOutputStream data = new DataOutputStream(classOut);
+    private byte[] generateClass(String className, String mnemonics) {
+    try {
+        ByteArrayOutputStream classOut = new ByteArrayOutputStream();
+        DataOutputStream data = new DataOutputStream(classOut);
 
-            // === HEADER ===
-            data.writeInt(0xCAFEBABE); data.writeShort(0); data.writeShort(46);
+        // === HEADER ===
+        data.writeInt(0xCAFEBABE); data.writeShort(0); data.writeShort(46);
 
-            // === CONSTANT POOL ===
-            data.writeShort(10); // constant_pool_count
+        // === CONSTANT POOL ===
+        data.writeShort(10); // constant_pool_count
 
-            data.writeByte(1); data.writeUTF(className);
-            data.writeByte(7); data.writeShort(1);
+        data.writeByte(1); data.writeUTF(className);
+        data.writeByte(7); data.writeShort(1);
 
-            data.writeByte(1); data.writeUTF("java/lang/Object");
-            data.writeByte(7); data.writeShort(3);
-            data.writeByte(1); data.writeUTF("<init>");
-            data.writeByte(1); data.writeUTF("()V");
+        data.writeByte(1); data.writeUTF("java/lang/Object");
+        data.writeByte(7); data.writeShort(3);
+        data.writeByte(1); data.writeUTF("<init>");
+        data.writeByte(1); data.writeUTF("()V");
 
-            data.writeByte(12); data.writeShort(5); data.writeShort(6);
-            data.writeByte(10); data.writeShort(4); data.writeShort(7);
+        data.writeByte(12); data.writeShort(5); data.writeShort(6);
+        data.writeByte(10); data.writeShort(4); data.writeShort(7);
 
-            data.writeByte(1); data.writeUTF("Code");
+        data.writeByte(1); data.writeUTF("Code");
 
-            // === CLASS HEADER ===
-            data.writeShort(0x0021); data.writeShort(2); data.writeShort(4);
-            data.writeShort(0);
-            data.writeShort(0);
-            data.writeShort(1);
+        // === CLASS HEADER ===
+        data.writeShort(0x0021); data.writeShort(2); data.writeShort(4); data.writeShort(0); data.writeShort(0); data.writeShort(1);
 
-            // === METHOD <init> ===
-            data.writeShort(0x0001); data.writeShort(5); data.writeShort(6); data.writeShort(1);
+        // === METHOD <init> ===
+        data.writeShort(0x0001); data.writeShort(5); data.writeShort(6); data.writeShort(1);
 
-            // --- Code attribute ---
-            ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
-            DataOutputStream code = new DataOutputStream(codeOut);
+        // --- Code attribute ---
+        ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
+        DataOutputStream code = new DataOutputStream(codeOut);
 
-            String[] lines = split(mnemonics, '\n');
-            for (int i = 0; i < lines.length; i++) {
-                String line = lines[i].trim();
-                if (line.equals("")) continue;
+        String[] lines = split(mnemonics, '\n');
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            if (line.equals("")) continue;
 
-                String[] parts = split(line, ' ');
-                String instr = parts[0];
+            String[] parts = split(line, ' ');
+            String instr = parts[0];
 
-                if (instr.equals("aload_0")) { code.writeByte(0x2A); } 
-                else if (instr.equals("aload_1")) { code.writeByte(0x2B); } 
-                else if (instr.equals("astore_1")) { code.writeByte(0x4C); } 
-                else if (instr.equals("iconst_0")) { code.writeByte(0x03); } 
-                else if (instr.equals("iconst_1")) { code.writeByte(0x04); } 
-                else if (instr.equals("bipush")) {
-                    if (parts.length < 2) throw new RuntimeException("bipush missing 1 args");
-                    int val = Integer.parseInt(parts[1]);
-                    code.writeByte(0x10);
-                    code.writeByte(val);
-                } 
-                else if (instr.equals("getstatic")) {
-                    if (parts.length < 2) throw new RuntimeException("getstatic missing 1 args");
-                    int index = Integer.parseInt(parts[1]);
-                    code.writeByte(0xB2);
-                    code.writeShort(index);
-                } 
-                else if (instr.equals("invokespecial") || instr.equals("invokevirtual")) {
-                    if (parts.length < 4) throw new RuntimeException(instr + " missing args: class method descriptor");
-                    String clazz = parts[1], method = parts[2], desc = parts[3];
+            if (instr.equals("aload_0")) { code.writeByte(0x2A); } 
+            else if (instr.equals("aload_1")) { code.writeByte(0x2B); } 
+            else if (instr.equals("astore_1")) { code.writeByte(0x4C); } 
+            else if (instr.equals("iconst_0")) { code.writeByte(0x03); } 
+            else if (instr.equals("iconst_1")) { code.writeByte(0x04); } 
+            else if (instr.equals("bipush")) {
+                if (parts.length < 2) throw new RuntimeException("bipush missing 1 args");
+                int val = Integer.parseInt(parts[1]);
+                code.writeByte(0x10);
+                code.writeByte(val);
+            } 
+            else if (instr.equals("getstatic")) {
+                if (parts.length < 2) throw new RuntimeException(instr + " missing 1 args");
+                int index = Integer.parseInt(parts[1]);
+                code.writeByte(0xB2);
+                code.writeShort(index);
+            } 
+            else if (instr.equals("invokespecial") || instr.equals("invokevirtual")) {
+                if (parts.length < 4) throw new RuntimeException(instr + " missing args: class method descriptor");
+                String clazz = parts[1], method = parts[2], desc = parts[3];
 
-                    code.writeByte(instr.equals("invokespecial") ? 0xB7 : 0xB6);
-                    code.writeShort(8);
-                }
-                else if (instr.equals("return")) { code.writeByte(0xB1); } 
-                else if (instr.equals("ireturn")) { code.writeByte(0xAC); } 
-                else {
-                    throw new RuntimeException("Unknown opcode: " + line);
-                }
+                code.writeByte(instr.equals("invokespecial") ? 0xB7 : 0xB6);
+                code.writeShort(8);
             }
+            else if (instr.equals("return")) { code.writeByte(0xB1); } 
+            else if (instr.equals("ireturn")) { code.writeByte(0xAC); } 
+            else {
+                throw new RuntimeException("Unknown opcode: " + line);
+            }
+        }
 
-            byte[] bytecode = codeOut.toByteArray();
-            int codeLength = bytecode.length;
+        byte[] bytecode = codeOut.toByteArray();
+        int codeLength = bytecode.length;
 
-            data.writeShort(9); data.writeInt(12 + codeLength); data.writeShort(1); 
-            data.writeShort(1); data.writeInt(codeLength); data.write(bytecode);
-            data.writeShort(0); data.writeShort(0);
+        data.writeShort(9); data.writeInt(12 + codeLength); data.writeShort(1); 
+        data.writeShort(1); data.writeInt(codeLength); data.write(bytecode);
+        data.writeShort(0); data.writeShort(0);
 
-            // === class attributes_count ===
-            data.writeShort(0); // sem attributes
+        // === class attributes_count ===
+        data.writeShort(0); // sem attributes
 
-            return classOut.toByteArray();
+        return classOut.toByteArray();
 
-        } catch (Exception e) { echoCommand(e.getMessage()); return null; }
-    } 
+    } catch (Exception e) { echoCommand(e.getMessage()); return null; }
+} 
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
