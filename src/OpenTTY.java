@@ -566,7 +566,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             DataOutputStream code = new DataOutputStream(codeOut);
 
             // Parse mnemonics
-            String[] lines = mnemonics.split("\n");
+            String[] lines = split(mnemonics, '\n');
             for (int i = 0; i < lines.length; i++) {
                 String line = lines[i].trim();
                 if (line.equals("aload_0")) {
