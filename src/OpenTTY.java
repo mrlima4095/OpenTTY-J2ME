@@ -599,7 +599,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return classOut.toByteArray();
 
         } catch (Exception e) {
-            echoCommand(e.getMessage())
+            echoCommand(e.getMessage());
             return null;
         }
     }
