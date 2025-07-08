@@ -284,7 +284,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int STATUS = processCommand("netstat"); 
                 
                 if (STATUS == 0) { 
-                    STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); 
+                    STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); 
                     if (STATUS == 0) { content = read("/home/man.html"); } 
                     else { return STATUS; } 
                 } else { echoCommand("man: download error"); return STATUS; } 
