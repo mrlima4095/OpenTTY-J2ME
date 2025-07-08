@@ -524,37 +524,34 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String line = lines[i].trim();
                 if (line.equals("")) continue;
 
-                if (line.equals("aload_0")) {
-                    code.writeByte(0x2A);
-                } else if (line.equals("aload_1")) {
-                    code.writeByte(0x2B);
-                } else if (line.equals("astore_1")) {
-                    code.writeByte(0x4C);
-                } else if (line.equals("iconst_0")) {
-                    code.writeByte(0x03);
-                } else if (line.equals("iconst_1")) {
-                    code.writeByte(0x04);
-                } else if (line.startsWith("bipush ")) {
+                if (line.equals("aload_0")) { code.writeByte(0x2A); } 
+                else if (line.equals("aload_1")) { code.writeByte(0x2B); } 
+                else if (line.equals("astore_1")) { code.writeByte(0x4C); } 
+                else if (line.equals("iconst_0")) { code.writeByte(0x03); } 
+                else if (line.equals("iconst_1")) { code.writeByte(0x04); } 
+                else if (line.startsWith("bipush ")) {
                     String[] parts = split(line, ' ');
                     int val = Integer.parseInt(parts[1]);
                     code.writeByte(0x10);
                     code.writeByte(val);
-                } else if (line.equals("return")) {
-                    code.writeByte(0xB1);
-                } else if (line.equals("ireturn")) {
-                    code.writeByte(0xAC);
-                } else if (line.startsWith("invokespecial")) {
+                } 
+                else if (line.equals("return")) { code.writeByte(0xB1); } 
+                else if (line.equals("ireturn")) { code.writeByte(0xAC); } 
+                else if (line.startsWith("invokespecial")) {
                     code.writeByte(0xB7);
                     code.writeShort(8); // hardcoded Methodref: java/lang/Object.<init>()V
-                } else if (line.startsWith("invokevirtual")) {
+                } 
+                else if (line.startsWith("invokevirtual")) {
                     code.writeByte(0xB6);
                     code.writeShort(8); // ainda usa o #8, você pode adaptar futuramente
-                } else if (line.startsWith("getstatic")) {
+                } 
+                else if (line.startsWith("getstatic")) {
                     String[] parts = split(line, ' ');
                     int index = Integer.parseInt(parts[1]);
                     code.writeByte(0xB2);
                     code.writeShort(index);
-                } else { throw new RuntimeException("Unknown opcode: " + line); }
+                } 
+                else { throw new RuntimeException("Unknown opcode: " + line); }
             }
 
             byte[] bytecode = codeOut.toByteArray();
