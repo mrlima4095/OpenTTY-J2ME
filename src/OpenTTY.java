@@ -469,7 +469,165 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0;
     }
-    
+    private byte[] generateClass(String className, String mnemonics) {
+        try {
+            ByteArrayOutputStream classOut = new ByteArrayOutputStream();
+            DataOutputStream data = new DataOutputStream(classOut);
+
+            // === Parse mnemonics + preparar constant pool dinamicamente ===
+            String[] lines = split(mnemonics, '\n');
+            Vector utf = new Vector(); // UTF8 pool
+            Vector cp = new Vector();  // entries: byte[]
+
+            // Entradas fixas:
+            utf.addElement(className);          // #1
+            utf.addElement("java/lang/Object"); // #2
+            cp.addElement(new byte[] {7, 0, 1}); // #3 Class: className
+            cp.addElement(new byte[] {7, 0, 2}); // #4 Class: java/lang/Object
+
+            // Mapas para strings -> index
+            Hashtable utfIndex = new Hashtable();
+            utfIndex.put(className, new Integer(1));
+            utfIndex.put("java/lang/Object", new Integer(2));
+
+            int cpIndex = 5;
+
+            // Preparar bytecode
+            ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
+            DataOutputStream code = new DataOutputStream(codeOut);
+
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i].trim();
+                if (line.equals("")) continue;
+
+                String[] parts = split(lines, ' ');
+                String op = parts[0];
+
+                if (op.equals("aload_0")) {
+                    code.writeByte(0x2A);
+                } else if (op.equals("return")) {
+                    code.writeByte(0xB1);
+                } else if (op.equals("bipush")) {
+                    int val = Integer.parseInt(parts[1]);
+                    code.writeByte(0x10);
+                    code.writeByte(val);
+                } else if (op.equals("invokespecial") || op.equals("invokevirtual") || op.equals("getstatic")) {
+                    String sig = parts[1]; // ex: java/lang/Object.<init>()V
+                    int dot = sig.indexOf('.');
+                    int par = sig.indexOf('(', dot);
+                    int colon = sig.indexOf(' ', dot); // usado para getstatic campo tipo
+
+                    String classNameRef, name, type;
+                    if (op.equals("getstatic")) {
+                        // getstatic java/lang/System.out Ljava/io/PrintStream;
+                        int space = sig.indexOf(' ');
+                        classNameRef = sig.substring(0, dot);
+                        name = sig.substring(dot + 1, space);
+                        type = sig.substring(space + 1).trim();
+                    } else {
+                        // método
+                        classNameRef = sig.substring(0, dot);
+                        name = sig.substring(dot + 1, par);
+                        type = sig.substring(par);
+                    }
+
+                    // UTF8
+                    Integer classUtfIdx = (Integer) utfIndex.get(classNameRef);
+                    if (classUtfIdx == null) {
+                        utf.addElement(classNameRef);
+                        classUtfIdx = new Integer(utf.size());
+                        utfIndex.put(classNameRef, classUtfIdx);
+                    }
+
+                    Integer nameUtfIdx = (Integer) utfIndex.get(name);
+                    if (nameUtfIdx == null) {
+                        utf.addElement(name);
+                        nameUtfIdx = new Integer(utf.size());
+                        utfIndex.put(name, nameUtfIdx);
+                    }
+
+                    Integer typeUtfIdx = (Integer) utfIndex.get(type);
+                    if (typeUtfIdx == null) {
+                        utf.addElement(type);
+                        typeUtfIdx = new Integer(utf.size());
+                        utfIndex.put(type, typeUtfIdx);
+                    }
+
+                    // Constant pool: Class
+                    cp.addElement(new byte[] {7, (byte) 0, (byte) classUtfIdx.intValue()});
+                    int classIdx = cpIndex++;
+
+                    // NameAndType
+                    cp.addElement(new byte[] {12, (byte) 0, (byte) nameUtfIdx.intValue(), (byte) 0, (byte) typeUtfIdx.intValue()});
+                    int ntIdx = cpIndex++;
+
+                    // Methodref ou Fieldref
+                    byte tag = (byte) (op.equals("getstatic") ? 9 : (op.equals("invokespecial") ? 10 : 11));
+                    cp.addElement(new byte[] {tag, (byte) 0, (byte) classIdx, (byte) 0, (byte) ntIdx});
+                    int refIdx = cpIndex++;
+
+                    code.writeByte(op.equals("invokespecial") ? 0xB7 : (op.equals("invokevirtual") ? 0xB6 : 0xB2));
+                    code.writeShort(refIdx);
+                } else {
+                    throw new RuntimeException("Unknown opcode: " + line);
+                }
+            }
+
+            byte[] bytecode = codeOut.toByteArray();
+
+            // === Início do classfile ===
+            data.writeInt(0xCAFEBABE);
+            data.writeShort(0); // minor
+            data.writeShort(46); // major (Java 1.2)
+
+            int totalCpCount = 1 + utf.size() + cp.size(); // índice 0 é reservado
+            data.writeShort(totalCpCount);
+
+            // UTF8 entries
+            for (int i = 0; i < utf.size(); i++) {
+                data.writeByte(1);
+                data.writeUTF((String) utf.elementAt(i));
+            }
+
+            // Other CP entries
+            for (int i = 0; i < cp.size(); i++) {
+                byte[] entry = (byte[]) cp.elementAt(i);
+                data.write(entry);
+            }
+
+            // === Class info ===
+            data.writeShort(0x0021); // access_flags
+            data.writeShort(3); // this_class (#3)
+            data.writeShort(4); // super_class (#4)
+            data.writeShort(0); // interfaces
+            data.writeShort(0); // fields
+            data.writeShort(1); // methods
+
+            // Method <init>
+            data.writeShort(0x0001); // public
+            data.writeShort(utfIndex.get("<init>").intValue()); // name_index
+            data.writeShort(utfIndex.get("()V").intValue());    // descriptor_index
+            data.writeShort(1); // attributes_count
+
+            data.writeShort(utfIndex.get("Code").intValue()); // attribute_name_index
+            data.writeInt(12 + bytecode.length); // attribute_length
+            data.writeShort(1); // max_stack
+            data.writeShort(1); // max_locals
+            data.writeInt(bytecode.length); // code_length
+            data.write(bytecode); // code
+            data.writeShort(0); // exception_table
+            data.writeShort(0); // code attributes
+
+            data.writeShort(0); // class attributes
+
+            return classOut.toByteArray();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
