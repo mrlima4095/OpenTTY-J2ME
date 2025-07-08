@@ -7,7 +7,6 @@ Copyright (C) 2025 - Mr. Lima
 - `audio [options] [file]`: Audio Manager
 - `return [code: int]`: Return with code
 - `eval [command]`: Print returned code of command
-- `javac [file] [source]`: Java Compiler (base)
 
 [ _Updates_ ]
 
