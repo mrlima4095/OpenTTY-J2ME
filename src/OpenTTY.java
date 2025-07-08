@@ -500,7 +500,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String line = lines[i].trim();
                 if (line.equals("")) continue;
 
-                String[] parts = split(lines, ' ');
+                String[] parts = split(line, ' ');
                 String op = parts[0];
 
                 if (op.equals("aload_0")) {
