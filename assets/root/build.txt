@@ -78,4 +78,4 @@
 [2025-1.15-02x11]	Bruteforce stops if a command get wrong
 [2025-1.15-02x12]	Improved MIDlet Logs
 [2025-1.15-02x13]	Java VM name
-[2025-1.15-02x14]	Java Generator (base)
+[2025-1.15-02x14]	Java Generator (reverted)
