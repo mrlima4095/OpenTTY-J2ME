@@ -554,9 +554,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int index = Integer.parseInt(parts[1]);
                     code.writeByte(0xB2);
                     code.writeShort(index);
-                } else {
-                    throw new RuntimeException("Unknown opcode: " + line);
-                }
+                } else { throw new RuntimeException("Unknown opcode: " + line); }
             }
 
             byte[] bytecode = codeOut.toByteArray();
