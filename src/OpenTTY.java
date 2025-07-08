@@ -470,7 +470,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
 
-private byte[] generateClass(String className, String mnemonics) {
+    private byte[] generateClass(String className, String mnemonics) {
     try {
         ByteArrayOutputStream classOut = new ByteArrayOutputStream();
         DataOutputStream data = new DataOutputStream(classOut);
@@ -498,7 +498,10 @@ private byte[] generateClass(String className, String mnemonics) {
         data.writeShort(0x0021); data.writeShort(2); data.writeShort(4); data.writeShort(0); data.writeShort(0); data.writeShort(1);
 
         // === METHOD <init> ===
-        data.writeShort(0x0001); data.writeShort(5); data.writeShort(6); data.writeShort(1);
+        data.writeShort(0x0001); // access_flags (public)
+        data.writeShort(5);      // name_index (<init>)
+        data.writeShort(6);      // descriptor_index (()V)
+        data.writeShort(1);      // attributes_count
 
         // --- Code attribute ---
         ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
@@ -543,26 +546,31 @@ private byte[] generateClass(String className, String mnemonics) {
             }
         }
 
+                
         byte[] bytecode = codeOut.toByteArray();
         int codeLength = bytecode.length;
 
-        data.writeShort(9);                        // attribute_name_index ("Code")
-        data.writeInt(12 + codeLength);            // attribute_length
-        data.writeShort(2);                        // max_stack (ajustado)
-        data.writeShort(1);                        // max_locals
-        data.writeInt(codeLength);                 // code_length
-        data.write(bytecode);                      // bytecode
-        data.writeShort(0);                        // exception_table_length
-        data.writeShort(0);                        // code_attributes_count
+        // agora monta o Code attribute completo
+        ByteArrayOutputStream attrOut = new ByteArrayOutputStream();
+        DataOutputStream attr = new DataOutputStream(attrOut);
 
-        // === class attributes_count ===
-        data.writeShort(0); // sem attributes
+        attr.writeShort(9); // attribute_name_index ("Code")
+        attr.writeInt(12 + codeLength); // attribute_length
+        attr.writeShort(2); // max_stack
+        attr.writeShort(1); // max_locals
+        attr.writeInt(codeLength); // code_length
+        attr.write(bytecode); // bytecode
+        attr.writeShort(0); // exception_table_length
+        attr.writeShort(0); // code_attributes_count
+
+        // escreve o atributo do método
+        data.write(attrOut.toByteArray());
+
 
         return classOut.toByteArray();
 
     } catch (Exception e) { echoCommand(e.getMessage()); return null; }
-}
-
+} 
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
