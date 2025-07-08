@@ -351,7 +351,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
         else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 128; } }
-        
+
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE")); }
         else if (mainCommand.equals("!!")) { if (history.size() > 0) { stdin.setString((String) history.elementAt(history.size() - 1)); } }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { return runScript(nanoContent); } else { return runScript(getcontent(argument)); } }
@@ -364,14 +364,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return getpattern(input.substring(spaceIndex + 1).trim()); } }
 
-    private String read(String filename) { 
-        try { 
-            if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } 
-            else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } 
-            else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } 
-        } 
-        catch (IOException e) { return ""; } 
-    }
+    private String read(String filename) { try { if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } } catch (IOException e) { return ""; } }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
     
@@ -522,7 +515,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
         else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { int STATUS = javaClass(argument); echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; } } 
-        else if (mainCommand.equals("--version")) { String s; StringBuffer BUFFER = new StringBuffer(); if ((s = System.getProperty("java.vm.name")) != null) { BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } } else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { BUFFER.append("J9 VM, IBM (").append(s).append(')'); if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } else if (javaClass(new String[] { "com.sun.midp.io.InternalConnector", "com.sun.midp.io.ConnectionBaseAdapter", "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.i18n.Helper", "com.sun.cldc.io.ConsoleOutputStream", "com.sun.cldc.i18n.uclc.DefaultCaseConverter" })) { BUFFER.append("KVM, Sun (CLDC)"); } else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol", "com.jblend.io.j2me.resource.Protocol", "com.jblend.security.midp20.SecurityManagerImpl", "com.jblend.security.midp20.UserConfirmDialogImpl", "jp.co.aplix.cldc.io.MIDPURLChecker", "jp.co.aplix.cldc.io.j2me.http.HttpConnectionImpl" })) { BUFFER.append("JBlend, Aplix"); } else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport", "com.jbed.midp.lcdui.GameCanvasPeer", "com.jbed.microedition.media.CoreManager", "com.jbed.runtime.Mem", "com.jbed.midp.lcdui.GameCanvas", "com.jbed.microedition.media.Core" })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); } else { BUFFER.append("Unknown"); } echoCommand(BUFFER.append('\n').toString()); }
+        else if (mainCommand.equals("--version")) { 
+            String s; 
+            StringBuffer BUFFER = new StringBuffer(); 
+            if ((s = System.getProperty("java.vm.name")) != null) { BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } } 
+            else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { BUFFER.append("J9 VM, IBM (").append(s).append(')'); if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } }
+            else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } 
+            
+            else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } 
+            else if (javaClass(new String[] { "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } 
+            else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.io.ConsoleOutputStream" })) { BUFFER.append("KVM, Sun (CLDC)"); } 
+            else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol", "jp.co.aplix.cldc.io.MIDPURLChecker", "jp.co.aplix.cldc.io.j2me.http.HttpConnectionImpl" })) { BUFFER.append("JBlend, Aplix"); } 
+            else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport"  })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } 
+            else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); } 
+            else { BUFFER.append("Unknown"); } 
+
+            echoCommand(BUFFER.append('\n').toString()); 
+        }
         else { 
             
         } 
