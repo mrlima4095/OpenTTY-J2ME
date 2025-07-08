@@ -527,7 +527,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     code.writeByte(val);
                 } 
                 else if (instr.equals("getstatic")) {
-                    if (parts.length < 2) throw new RuntimeException("getstatic need 1 args");
+                    if (parts.length < 2) throw new RuntimeException("getstatic missing 1 args");
                     int index = Integer.parseInt(parts[1]);
                     code.writeByte(0xB2);
                     code.writeShort(index);
