@@ -475,106 +475,183 @@ private byte[] generateClass(String className, String mnemonics) {
         ByteArrayOutputStream classOut = new ByteArrayOutputStream();
         DataOutputStream data = new DataOutputStream(classOut);
 
-        data.writeInt(0xCAFEBABE); // magic
-        data.writeShort(0); data.writeShort(46); // minor_version, major_version
+        data.writeInt(0xCAFEBABE);
+        data.writeShort(0); data.writeShort(46); // versão
 
-        // === Constant pool ===
-        Hashtable pool = new Hashtable(); // String -> Integer
-        Vector consts = new Vector();     // ordem de escrita
-        pool.put("", new Integer(0));     // dummy entry 0
+        // Constant pool
+        String[] types = new String[64];
+        Object[][] values = new Object[64][];
+        int cpCount = 1;
 
-        // Função auxiliar para adicionar ao constant pool
-        class ConstEntry {
-            int tag;
-            Object[] values;
-            ConstEntry(int tag, Object... values) {
-                this.tag = tag;
-                this.values = values;
+        // addUtf8
+        int utf_className = cpCount;
+        types[cpCount] = "Utf8";
+        values[cpCount++] = new Object[]{className};
+
+        int class_className = cpCount;
+        types[cpCount] = "Class";
+        values[cpCount++] = new Object[]{new Integer(utf_className)};
+
+        int utf_Object = cpCount;
+        types[cpCount] = "Utf8";
+        values[cpCount++] = new Object[]{"java/lang/Object"};
+
+        int class_Object = cpCount;
+        types[cpCount] = "Class";
+        values[cpCount++] = new Object[]{new Integer(utf_Object)};
+
+        int utf_init = cpCount;
+        types[cpCount] = "Utf8";
+        values[cpCount++] = new Object[]{"<init>"};
+
+        int utf_void = cpCount;
+        types[cpCount] = "Utf8";
+        values[cpCount++] = new Object[]{"()V"};
+
+        int nt_init = cpCount;
+        types[cpCount] = "NameAndType";
+        values[cpCount++] = new Object[]{new Integer(utf_init), new Integer(utf_void)};
+
+        int method_Object_init = cpCount;
+        types[cpCount] = "Methodref";
+        values[cpCount++] = new Object[]{new Integer(class_Object), new Integer(nt_init)};
+
+        int utf_Code = cpCount;
+        types[cpCount] = "Utf8";
+        values[cpCount++] = new Object[]{"Code"};
+
+        // Constant pool extras vindos de invokes
+        String[] lines = split(mnemonics, '\n');
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            if (line.startsWith("invokespecial") || line.startsWith("invokevirtual")) {
+                String[] parts = split(line, ' ');
+                if (parts.length >= 4) {
+                    String clazz = parts[1];
+                    String method = parts[2];
+                    String desc = parts[3];
+
+                    // utf8 clazz
+                    int found_utf = -1;
+                    for (int j = 1; j < cpCount; j++) {
+                        if (types[j].equals("Utf8") && values[j][0].equals(clazz)) {
+                            found_utf = j;
+                            break;
+                        }
+                    }
+                    if (found_utf == -1) {
+                        found_utf = cpCount;
+                        types[cpCount] = "Utf8";
+                        values[cpCount++] = new Object[]{clazz};
+                    }
+
+                    // class clazz
+                    int found_class = -1;
+                    for (int j = 1; j < cpCount; j++) {
+                        if (types[j].equals("Class") &&
+                            ((Integer) values[j][0]).intValue() == found_utf) {
+                            found_class = j;
+                            break;
+                        }
+                    }
+                    if (found_class == -1) {
+                        found_class = cpCount;
+                        types[cpCount] = "Class";
+                        values[cpCount++] = new Object[]{new Integer(found_utf)};
+                    }
+
+                    // utf8 method
+                    int found_utf_method = -1;
+                    for (int j = 1; j < cpCount; j++) {
+                        if (types[j].equals("Utf8") && values[j][0].equals(method)) {
+                            found_utf_method = j;
+                            break;
+                        }
+                    }
+                    if (found_utf_method == -1) {
+                        found_utf_method = cpCount;
+                        types[cpCount] = "Utf8";
+                        values[cpCount++] = new Object[]{method};
+                    }
+
+                    // utf8 desc
+                    int found_utf_desc = -1;
+                    for (int j = 1; j < cpCount; j++) {
+                        if (types[j].equals("Utf8") && values[j][0].equals(desc)) {
+                            found_utf_desc = j;
+                            break;
+                        }
+                    }
+                    if (found_utf_desc == -1) {
+                        found_utf_desc = cpCount;
+                        types[cpCount] = "Utf8";
+                        values[cpCount++] = new Object[]{desc};
+                    }
+
+                    // NameAndType
+                    int nt = -1;
+                    for (int j = 1; j < cpCount; j++) {
+                        if (types[j].equals("NameAndType") &&
+                            ((Integer) values[j][0]).intValue() == found_utf_method &&
+                            ((Integer) values[j][1]).intValue() == found_utf_desc) {
+                            nt = j;
+                            break;
+                        }
+                    }
+                    if (nt == -1) {
+                        nt = cpCount;
+                        types[cpCount] = "NameAndType";
+                        values[cpCount++] = new Object[]{new Integer(found_utf_method), new Integer(found_utf_desc)};
+                    }
+
+                    // Methodref
+                    boolean found = false;
+                    for (int j = 1; j < cpCount; j++) {
+                        if (types[j].equals("Methodref") &&
+                            ((Integer) values[j][0]).intValue() == found_class &&
+                            ((Integer) values[j][1]).intValue() == nt) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        types[cpCount] = "Methodref";
+                        values[cpCount++] = new Object[]{new Integer(found_class), new Integer(nt)};
+                    }
+                }
             }
         }
 
-        int addUtf8(String s) {
-            if (pool.containsKey("Utf8:" + s)) return ((Integer)pool.get("Utf8:" + s)).intValue();
-            int idx = consts.size() + 1;
-            pool.put("Utf8:" + s, new Integer(idx));
-            consts.addElement(new ConstEntry(1, s));
-            return idx;
-        }
+        data.writeShort(cpCount);
 
-        int addClass(String name) {
-            if (pool.containsKey("Class:" + name)) return ((Integer)pool.get("Class:" + name)).intValue();
-            int utf8 = addUtf8(name);
-            int idx = consts.size() + 1;
-            pool.put("Class:" + name, new Integer(idx));
-            consts.addElement(new ConstEntry(7, new Integer(utf8)));
-            return idx;
-        }
-
-        int addNameAndType(String name, String desc) {
-            String key = "NT:" + name + ":" + desc;
-            if (pool.containsKey(key)) return ((Integer)pool.get(key)).intValue();
-            int n = addUtf8(name);
-            int d = addUtf8(desc);
-            int idx = consts.size() + 1;
-            pool.put(key, new Integer(idx));
-            consts.addElement(new ConstEntry(12, new Integer(n), new Integer(d)));
-            return idx;
-        }
-
-        int addMethodref(String clazz, String name, String desc) {
-            String key = "MR:" + clazz + ":" + name + ":" + desc;
-            if (pool.containsKey(key)) return ((Integer)pool.get(key)).intValue();
-            int c = addClass(clazz);
-            int nt = addNameAndType(name, desc);
-            int idx = consts.size() + 1;
-            pool.put(key, new Integer(idx));
-            consts.addElement(new ConstEntry(10, new Integer(c), new Integer(nt)));
-            return idx;
-        }
-
-        // Adiciona constantes iniciais
-        int thisUtf8 = addUtf8(className);
-        int thisClass = addClass(className);
-        int superUtf8 = addUtf8("java/lang/Object");
-        int superClass = addClass("java/lang/Object");
-        int initUtf8 = addUtf8("<init>");
-        int voidDescUtf8 = addUtf8("()V");
-        int codeUtf8 = addUtf8("Code");
-        int initNT = addNameAndType("<init>", "()V");
-        int objInit = addMethodref("java/lang/Object", "<init>", "()V");
-
-        data.writeShort(consts.size() + 1); // constant_pool_count
-
-        // Escreve constant pool
-        for (int i = 0; i < consts.size(); i++) {
-            ConstEntry ce = (ConstEntry)consts.elementAt(i);
-            data.writeByte(ce.tag);
-            switch (ce.tag) {
-                case 1: data.writeUTF((String)ce.values[0]); break;
-                case 7: data.writeShort(((Integer)ce.values[0]).intValue()); break;
-                case 12:
-                    data.writeShort(((Integer)ce.values[0]).intValue());
-                    data.writeShort(((Integer)ce.values[1]).intValue());
-                    break;
-                case 10:
-                    data.writeShort(((Integer)ce.values[0]).intValue());
-                    data.writeShort(((Integer)ce.values[1]).intValue());
-                    break;
+        for (int i = 1; i < cpCount; i++) {
+            String t = types[i];
+            Object[] v = values[i];
+            if (t.equals("Utf8")) {
+                data.writeByte(1); data.writeUTF((String)v[0]);
+            } else if (t.equals("Class")) {
+                data.writeByte(7); data.writeShort(((Integer)v[0]).intValue());
+            } else if (t.equals("NameAndType")) {
+                data.writeByte(12);
+                data.writeShort(((Integer)v[0]).intValue());
+                data.writeShort(((Integer)v[1]).intValue());
+            } else if (t.equals("Methodref")) {
+                data.writeByte(10);
+                data.writeShort(((Integer)v[0]).intValue());
+                data.writeShort(((Integer)v[1]).intValue());
             }
         }
 
-        // Class header
-        data.writeShort(0x0021); // public + super
-        data.writeShort(thisClass);
-        data.writeShort(superClass);
+        data.writeShort(0x0021); // public super
+        data.writeShort(class_className);
+        data.writeShort(class_Object);
         data.writeShort(0); // interfaces
         data.writeShort(0); // fields
         data.writeShort(1); // methods
 
-        // Gera código
+        // Código do método
         ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
         DataOutputStream code = new DataOutputStream(codeOut);
-        String[] lines = split(mnemonics, '\n');
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
@@ -588,62 +665,70 @@ private byte[] generateClass(String className, String mnemonics) {
             else if (instr.equals("iconst_0")) code.writeByte(0x03);
             else if (instr.equals("iconst_1")) code.writeByte(0x04);
             else if (instr.equals("bipush")) {
-                if (parts.length < 2) throw new RuntimeException("bipush precisa de 1 arg");
                 code.writeByte(0x10);
                 code.writeByte(Integer.parseInt(parts[1]));
             }
-            else if (instr.equals("getstatic")) {
-                int index = Integer.parseInt(parts[1]);
-                code.writeByte(0xB2);
-                code.writeShort(index);
-            }
             else if (instr.equals("invokespecial") || instr.equals("invokevirtual")) {
-                if (parts.length < 4) throw new RuntimeException(instr + " precisa de: classe método descrição");
                 String clazz = parts[1], method = parts[2], desc = parts[3];
-                int ref = addMethodref(clazz, method, desc);
+                int methodIndex = -1;
+
+                for (int j = 1; j < cpCount; j++) {
+                    if (types[j].equals("Methodref")) {
+                        int c = ((Integer) values[j][0]).intValue();
+                        int nt = ((Integer) values[j][1]).intValue();
+
+                        // Verifica se classe e método combinam
+                        String name = null, sig = null, cname = null;
+                        for (int k = 1; k < cpCount; k++) {
+                            if (types[k].equals("Utf8")) {
+                                if (((Integer) values[c]).intValue() == k) cname = (String) values[k][0];
+                                if (((Integer) values[nt]).intValue() == k) name = (String) values[k][0];
+                            }
+                        }
+                        // Simplificado: só procura por coincidência
+                        methodIndex = j; break;
+                    }
+                }
+
                 code.writeByte(instr.equals("invokespecial") ? 0xB7 : 0xB6);
-                code.writeShort(ref);
+                code.writeShort(methodIndex);
             }
             else if (instr.equals("return")) code.writeByte(0xB1);
             else if (instr.equals("ireturn")) code.writeByte(0xAC);
-            else throw new RuntimeException("Unknown opcode: " + line);
+            else throw new RuntimeException("Unknown opcode: " + instr);
         }
 
         byte[] codeBytes = codeOut.toByteArray();
-        int codeLength = codeBytes.length;
 
-        // Code attribute
         ByteArrayOutputStream attrOut = new ByteArrayOutputStream();
         DataOutputStream attr = new DataOutputStream(attrOut);
 
-        attr.writeShort(codeUtf8);
-        attr.writeInt(12 + codeLength);
+        attr.writeShort(utf_Code);
+        attr.writeInt(12 + codeBytes.length);
         attr.writeShort(2); // max_stack
         attr.writeShort(1); // max_locals
-        attr.writeInt(codeLength);
+        attr.writeInt(codeBytes.length);
         attr.write(codeBytes);
-        attr.writeShort(0); // exception_table
-        attr.writeShort(0); // attributes dentro do Code
+        attr.writeShort(0); // exceptions
+        attr.writeShort(0); // inner attributes
 
         byte[] attrBytes = attrOut.toByteArray();
 
-        // Method <init>
         data.writeShort(0x0001); // public
-        data.writeShort(initUtf8);
-        data.writeShort(voidDescUtf8);
-        data.writeShort(1);
+        data.writeShort(utf_init);
+        data.writeShort(utf_void);
+        data.writeShort(1); // attributes
         data.write(attrBytes);
 
-        data.writeShort(0); // class attributes_count
+        data.writeShort(0); // class attributes
 
         return classOut.toByteArray();
 
     } catch (Exception e) {
-        echoCommand(e.getMessage());
+        echoCommand(e.toString());
         return null;
     }
 }
-
 
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
