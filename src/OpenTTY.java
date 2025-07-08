@@ -570,14 +570,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     code.writeByte(0xB1);
                 } else if (line.equals("ireturn")) {
                     code.writeByte(0xAC);
-                } else if (line.startsWith("invokespecial ")) {
+                } else if (line.startsWith("invokespecial")) {
                     code.writeByte(0xB7);
                     code.writeShort(8); // hardcoded Methodref: java/lang/Object.<init>()V
-                } else if (line.startsWith("invokevirtual ")) {
+                } else if (line.startsWith("invokevirtual")) {
                     code.writeByte(0xB6);
                     code.writeShort(8); // ainda usa o #8, você pode adaptar futuramente
-                } else if (line.startsWith("getstatic ")) {
-                    String[] parts = line.split(" ");
+                } else if (line.startsWith("getstatic")) {
+                    String[] parts = split(line, ' ');
                     int index = Integer.parseInt(parts[1]);
                     code.writeByte(0xB2);
                     code.writeShort(index);
