@@ -477,8 +477,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } 
             } 
             else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } 
-            else if (javaClass("com.sun.cldchi.jvm.JVM")) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } 
-            else if (javaClass("com.sun.midp.Main")) { BUFFER.append("KVM, Sun (MIDP)"); } 
+            else if (javaClass("com.sun.cldchi.jvm.JVM") == 0) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } 
+            else if (javaClass("com.sun.midp.Main") == 0) { BUFFER.append("KVM, Sun (MIDP)"); } 
             else if (javaClass("com.sun.cldc.io.ConsoleOutputStream")) { BUFFER.append("KVM, Sun (CLDC)"); } 
             else if (javaClass("com.jblend.util.SortedVector") == 0) { BUFFER.append("JBlend, Aplix"); } 
             else if (javaClass("com.jbed.io.CharConvUTF8") == 0) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } 
