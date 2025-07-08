@@ -644,7 +644,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             echoCommand(BUFFER.append('\n').toString()); 
         }
         else { 
-            //String code = getcontent(mainCommand); Hashtable objects = new Hashtable(); if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return 1; } String[] lines = split(code, ';'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); if (line.length() == 0) { continue; } try { if (line.indexOf('=') != -1) { String[] parts = split(line, '='); String objectName = parts[0].trim(); String className = parts[1].trim(); Class clazz = Class.forName(className); Object instance = clazz.newInstance(); objects.put(objectName, instance); } else if (line.indexOf('.') != -1) { String[] parts = split(line, '.'); String objectName = parts[0].trim(); if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } for (int j = 1; j < parts.length; j++) { Object object = (Object) objects.get(objectName); Class clazz = object.getClass(); echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); } } else if (line.startsWith("//")) { } else { throw new IOException("Syntax error"); } } catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return 2; } } 
             
         } 
         
@@ -664,90 +663,37 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             // Header
             out.write(0xCA); out.write(0xFE); out.write(0xBA); out.write(0xBE);
-            out.write(0x00); out.write(0x00); // minor version
-            out.write(0x00); out.write(0x2E); // major version (46)
+            out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x2E);
 
             out.write(0x00); out.write(cpCount);
 
-            // Constant Pool
-            out.write(0x07); out.write(0x00); out.write(0x02);
-            out.write(0x01);
-            out.write((nameLen >> 8) & 0xFF); out.write(nameLen & 0xFF);
-            for (int i = 0; i < nameLen; i++) { out.write(nameBytes[i]); }
+            out.write(0x07); out.write(0x00); out.write(0x02); out.write(0x01); out.write((nameLen >> 8) & 0xFF); out.write(nameLen & 0xFF); for (int i = 0; i < nameLen; i++) { out.write(nameBytes[i]); }
 
-            out.write(0x07); out.write(0x00); out.write(0x04);
-            byte[] obj = "java/lang/Object".getBytes();
-            out.write(0x01); out.write(0x00); out.write(obj.length); 
-            for (int i = 0; i < obj.length; i++) { out.write(obj[i]); }
-
-            byte[] init = "<init>".getBytes();
-            out.write(0x01); out.write(0x00); out.write(init.length);
-            for (int i = 0; i < init.length; i++) { out.write(init[i]); }
-
-            byte[] desc = "()V".getBytes();
-            out.write(0x01); out.write(0x00); out.write(desc.length);
-            for (int i = 0; i < desc.length; i++) { out.write(desc[i]); }
-
-            byte[] codeStr = "Code".getBytes();
-            out.write(0x01); out.write(0x00); out.write(codeStr.length);
-            for (int i = 0; i < codeStr.length; i++) { out.write(codeStr[i]); }
-
+            out.write(0x07); out.write(0x00); out.write(0x04); byte[] obj = "java/lang/Object".getBytes(); out.write(0x01); out.write(0x00); out.write(obj.length);  for (int i = 0; i < obj.length; i++) { out.write(obj[i]); }
+            byte[] init = "<init>".getBytes(); out.write(0x01); out.write(0x00); out.write(init.length); for (int i = 0; i < init.length; i++) { out.write(init[i]); } 
+            byte[] desc = "()V".getBytes(); out.write(0x01); out.write(0x00); out.write(desc.length); for (int i = 0; i < desc.length; i++) { out.write(desc[i]); } 
+            byte[] codeStr = "Code".getBytes(); out.write(0x01); out.write(0x00); out.write(codeStr.length); for (int i = 0; i < codeStr.length; i++) { out.write(codeStr[i]); } 
             out.write(0x0A); out.write(0x00); out.write(0x03); out.write(0x00); out.write(0x09);
             out.write(0x0C); out.write(0x00); out.write(0x05); out.write(0x00); out.write(0x06);
 
-            byte[] main = "main".getBytes();
-            out.write(0x01); out.write(0x00); out.write(main.length);
-            for (int i = 0; i < main.length; i++) { out.write(main[i]); }
+            byte[] main = "main".getBytes(); out.write(0x01); out.write(0x00); out.write(main.length); for (int i = 0; i < main.length; i++) { out.write(main[i]); }
 
             // Class info
-            out.write(0x00); out.write(0x21);
-            out.write(0x00); out.write(0x01);
-            out.write(0x00); out.write(0x03);
-            out.write(0x00); out.write(0x00);
-            out.write(0x00); out.write(0x00);
-            out.write(0x00); out.write(0x02);
+            out.write(0x00); out.write(0x21); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x03); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x02);
 
             // <init>() method
-            out.write(0x00); out.write(0x01);
-            out.write(0x00); out.write(0x05);
-            out.write(0x00); out.write(0x06);
-            out.write(0x00); out.write(0x01);
-            out.write(0x00); out.write(0x07);
-            out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x11);
-            out.write(0x00); out.write(0x01);
-            out.write(0x00); out.write(0x01);
-            out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x05);
-            out.write(0x2A);
-            out.write(0xB7);
-            out.write(0x00); out.write(0x08);
-            out.write(0xB1);
-            out.write(0x00); out.write(0x00);
-            out.write(0x00); out.write(0x00);
+            out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x05); out.write(0x00); out.write(0x06); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x07); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x11); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x05); out.write(0x2A); out.write(0xB7); out.write(0x00); out.write(0x08); out.write(0xB1); out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00);
 
             // main() method
-            out.write(0x00); out.write(0x09);
-            out.write(0x00); out.write(0x0A);
-            out.write(0x00); out.write(0x06);
-            out.write(0x00); out.write(0x01);
-            out.write(0x00); out.write(0x07);
+            out.write(0x00); out.write(0x09); out.write(0x00); out.write(0x0A); out.write(0x00); out.write(0x06); out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x07); 
+            out.write((codeAttrLen >> 24) & 0xFF); out.write((codeAttrLen >> 16) & 0xFF); out.write((codeAttrLen >> 8) & 0xFF); out.write(codeAttrLen & 0xFF);
 
-            out.write((codeAttrLen >> 24) & 0xFF);
-            out.write((codeAttrLen >> 16) & 0xFF);
-            out.write((codeAttrLen >> 8) & 0xFF);
-            out.write(codeAttrLen & 0xFF);
+            out.write(0x00); out.write(0x01); out.write(0x00); out.write(0x01);
 
-            out.write(0x00); out.write(0x01);
-            out.write(0x00); out.write(0x01);
-
-            out.write((codeLen >> 24) & 0xFF);
-            out.write((codeLen >> 16) & 0xFF);
-            out.write((codeLen >> 8) & 0xFF);
-            out.write(codeLen & 0xFF);
-
+            out.write((codeLen >> 24) & 0xFF); out.write((codeLen >> 16) & 0xFF); out.write((codeLen >> 8) & 0xFF); out.write(codeLen & 0xFF); 
             for (int i = 0; i < codeLen; i++) { out.write(codeBytes[i]); }
 
-            out.write(0x00); out.write(0x00);
-            out.write(0x00); out.write(0x00);
+            out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x00);
 
             // Class attributes count
             out.write(0x00); out.write(0x00);
@@ -758,64 +704,60 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return out.toByteArray();
     }
     private byte[] mnemonicsToBytes(String mnemonics) throws Exception {
-    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-    // Map simples com mnemonics J2ME básicos
-    java.util.Hashtable opcodes = new java.util.Hashtable();
-    opcodes.put("nop", new Integer(0x00));
-    opcodes.put("aconst_null", new Integer(0x01));
-    opcodes.put("iconst_0", new Integer(0x03));
-    opcodes.put("iconst_1", new Integer(0x04));
-    opcodes.put("iconst_2", new Integer(0x05));
-    opcodes.put("iload_0", new Integer(0x1A));
-    opcodes.put("aload_0", new Integer(0x2A));
-    opcodes.put("istore_0", new Integer(0x3B));
-    opcodes.put("astore_0", new Integer(0x4B));
-    opcodes.put("pop", new Integer(0x57));
-    opcodes.put("iadd", new Integer(0x60));
-    opcodes.put("return", new Integer(0xB1));
-    opcodes.put("invokespecial", new Integer(0xB7));
-    // ...adicione outras conforme precisar
+        Hashtable opcodes = new Hashtable();
+        opcodes.put("nop", new Integer(0x00));
+        opcodes.put("aconst_null", new Integer(0x01));
+        opcodes.put("iconst_0", new Integer(0x03));
+        opcodes.put("iconst_1", new Integer(0x04));
+        opcodes.put("iconst_2", new Integer(0x05));
+        opcodes.put("iload_0", new Integer(0x1A));
+        opcodes.put("aload_0", new Integer(0x2A));
+        opcodes.put("istore_0", new Integer(0x3B));
+        opcodes.put("astore_0", new Integer(0x4B));
+        opcodes.put("pop", new Integer(0x57));
+        opcodes.put("iadd", new Integer(0x60));
+        opcodes.put("return", new Integer(0xB1));
+        opcodes.put("invokespecial", new Integer(0xB7));
+        // ...adicione outras conforme precisar
 
-    // Quebrar linhas simples, sem regex
-    int start = 0;
-    int length = mnemonics.length();
-    while (start < length) {
-        int end = mnemonics.indexOf('\n', start);
-        if (end == -1) end = length;
-        String line = mnemonics.substring(start, end).trim();
-        start = end + 1;
+        // Quebrar linhas simples, sem regex
+        int start = 0;
+        int length = mnemonics.length();
+        while (start < length) {
+            int end = mnemonics.indexOf('\n', start);
+            if (end == -1) end = length;
+            String line = mnemonics.substring(start, end).trim();
+            start = end + 1;
 
-        if (line.length() == 0) continue;
+            if (line.length() == 0) continue;
 
-        // Quebrar por espaço simples
-        int spaceIndex = line.indexOf(' ');
-        String instr = line;
-        String arg = null;
-        if (spaceIndex != -1) {
-            instr = line.substring(0, spaceIndex);
-            arg = line.substring(spaceIndex + 1).trim();
-        }
-
-        Integer opcodeInt = (Integer) opcodes.get(instr);
-        if (opcodeInt == null) throw new Exception("Opcode desconhecido: " + instr);
-        out.write(opcodeInt.intValue());
-
-        if (arg != null) {
-            String[] args = split(arg, ' ');
-            for (int i = 0; i < args.length; i++) {
-                int val = Integer.parseInt(args[i]);
-                out.write(val & 0xFF);
+            // Quebrar por espaço simples
+            int spaceIndex = line.indexOf(' ');
+            String instr = line;
+            String arg = null;
+            if (spaceIndex != -1) {
+                instr = line.substring(0, spaceIndex);
+                arg = line.substring(spaceIndex + 1).trim();
             }
+
+            Integer opcodeInt = (Integer) opcodes.get(instr);
+            if (opcodeInt == null) throw new Exception("Opcode desconhecido: " + instr);
+            out.write(opcodeInt.intValue());
+
+            if (arg != null) {
+                String[] args = split(arg, ' ');
+                for (int i = 0; i < args.length; i++) {
+                    int val = Integer.parseInt(args[i]);
+                    out.write(val & 0xFF);
+                }
+            }
+
         }
 
+        return out.toByteArray();
     }
-
-    return out.toByteArray();
-}
-
-
-
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     private boolean javaClass(String[] classes) { for (int i = 0; i < classes.length; i++) { if (javaClass(classes[i]) != 0) { return false; } } return true; }
