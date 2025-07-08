@@ -664,7 +664,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     try {
         byte[] nameBytes = className.getBytes();
         int nameLen = nameBytes.length;
-        byte[] codeBytes = mnemonicsToBytes(code);
+        byte[] codeBytes = mnemonicsToBytes(extractMnemonics(code));
         int codeLen = codeBytes.length;
         int codeAttrLen = 12 + codeLen;
 
@@ -867,6 +867,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return result;
     }
+    private String extractMnemonics(String code) {
+        int idx = code.indexOf("main");
+        if (idx == -1) return "";
+
+        int braceStart = code.indexOf('{', idx);
+        if (braceStart == -1) return "";
+
+        int braceCount = 1;
+        int i = braceStart + 1;
+
+        while (i < code.length() && braceCount > 0) {
+            char c = code.charAt(i);
+            if (c == '{') braceCount++;
+            else if (c == '}') braceCount--;
+            i++;
+        }
+
+        if (braceCount != 0) return "";
+
+        return code.substring(braceStart + 1, i - 1).trim();
+    }
+
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     private boolean javaClass(String[] classes) { for (int i = 0; i < classes.length; i++) { if (javaClass(classes[i]) != 0) { return false; } } return true; }
