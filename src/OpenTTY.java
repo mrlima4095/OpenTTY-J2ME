@@ -478,7 +478,7 @@ private byte[] generateClass(String className, String mnemonics) {
         // === HEADER ===
         data.writeInt(0xCAFEBABE);
         data.writeShort(0);
-        data.writeShort(46); // Java 1.2
+        data.writeShort(50); // Java 1.2
 
         // === CONSTANT POOL ===
         data.writeShort(10); // constant_pool_count (9 + 1)
