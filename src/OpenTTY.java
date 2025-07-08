@@ -475,101 +475,166 @@ private byte[] generateClass(String className, String mnemonics) {
         ByteArrayOutputStream classOut = new ByteArrayOutputStream();
         DataOutputStream data = new DataOutputStream(classOut);
 
-        // === HEADER ===
-        data.writeInt(0xCAFEBABE);
-        data.writeShort(0); data.writeShort(46);
+        data.writeInt(0xCAFEBABE); // magic
+        data.writeShort(0); data.writeShort(46); // minor_version, major_version
 
-        // === CONSTANT POOL ===
-        data.writeShort(10); // constant_pool_count (9 + 1)
+        // === Constant pool ===
+        Hashtable pool = new Hashtable(); // String -> Integer
+        Vector consts = new Vector();     // ordem de escrita
+        pool.put("", new Integer(0));     // dummy entry 0
 
-        data.writeByte(1); data.writeUTF(className);               // #1
-        data.writeByte(7); data.writeShort(1);                     // #2 Class className
-        data.writeByte(1); data.writeUTF("java/lang/Object");      // #3
-        data.writeByte(7); data.writeShort(3);                     // #4 Class Object
-        data.writeByte(1); data.writeUTF("<init>");                // #5
-        data.writeByte(1); data.writeUTF("()V");                   // #6
-        data.writeByte(12); data.writeShort(5); data.writeShort(6); // #7 NameAndType
-        data.writeByte(10); data.writeShort(4); data.writeShort(7); // #8 Methodref Object.<init>()
-        data.writeByte(1); data.writeUTF("Code");                  // #9
+        // Função auxiliar para adicionar ao constant pool
+        class ConstEntry {
+            int tag;
+            Object[] values;
+            ConstEntry(int tag, Object... values) {
+                this.tag = tag;
+                this.values = values;
+            }
+        }
 
-        // === CLASS HEADER ===
-        data.writeShort(0x0021); // access_flags (public + super)
-        data.writeShort(2);      // this_class
-        data.writeShort(4);      // super_class
-        data.writeShort(0);      // interfaces_count
-        data.writeShort(0);      // fields_count
-        data.writeShort(1);      // methods_count
+        int addUtf8(String s) {
+            if (pool.containsKey("Utf8:" + s)) return ((Integer)pool.get("Utf8:" + s)).intValue();
+            int idx = consts.size() + 1;
+            pool.put("Utf8:" + s, new Integer(idx));
+            consts.addElement(new ConstEntry(1, s));
+            return idx;
+        }
 
-        // === Generate bytecode ===
+        int addClass(String name) {
+            if (pool.containsKey("Class:" + name)) return ((Integer)pool.get("Class:" + name)).intValue();
+            int utf8 = addUtf8(name);
+            int idx = consts.size() + 1;
+            pool.put("Class:" + name, new Integer(idx));
+            consts.addElement(new ConstEntry(7, new Integer(utf8)));
+            return idx;
+        }
+
+        int addNameAndType(String name, String desc) {
+            String key = "NT:" + name + ":" + desc;
+            if (pool.containsKey(key)) return ((Integer)pool.get(key)).intValue();
+            int n = addUtf8(name);
+            int d = addUtf8(desc);
+            int idx = consts.size() + 1;
+            pool.put(key, new Integer(idx));
+            consts.addElement(new ConstEntry(12, new Integer(n), new Integer(d)));
+            return idx;
+        }
+
+        int addMethodref(String clazz, String name, String desc) {
+            String key = "MR:" + clazz + ":" + name + ":" + desc;
+            if (pool.containsKey(key)) return ((Integer)pool.get(key)).intValue();
+            int c = addClass(clazz);
+            int nt = addNameAndType(name, desc);
+            int idx = consts.size() + 1;
+            pool.put(key, new Integer(idx));
+            consts.addElement(new ConstEntry(10, new Integer(c), new Integer(nt)));
+            return idx;
+        }
+
+        // Adiciona constantes iniciais
+        int thisUtf8 = addUtf8(className);
+        int thisClass = addClass(className);
+        int superUtf8 = addUtf8("java/lang/Object");
+        int superClass = addClass("java/lang/Object");
+        int initUtf8 = addUtf8("<init>");
+        int voidDescUtf8 = addUtf8("()V");
+        int codeUtf8 = addUtf8("Code");
+        int initNT = addNameAndType("<init>", "()V");
+        int objInit = addMethodref("java/lang/Object", "<init>", "()V");
+
+        data.writeShort(consts.size() + 1); // constant_pool_count
+
+        // Escreve constant pool
+        for (int i = 0; i < consts.size(); i++) {
+            ConstEntry ce = (ConstEntry)consts.elementAt(i);
+            data.writeByte(ce.tag);
+            switch (ce.tag) {
+                case 1: data.writeUTF((String)ce.values[0]); break;
+                case 7: data.writeShort(((Integer)ce.values[0]).intValue()); break;
+                case 12:
+                    data.writeShort(((Integer)ce.values[0]).intValue());
+                    data.writeShort(((Integer)ce.values[1]).intValue());
+                    break;
+                case 10:
+                    data.writeShort(((Integer)ce.values[0]).intValue());
+                    data.writeShort(((Integer)ce.values[1]).intValue());
+                    break;
+            }
+        }
+
+        // Class header
+        data.writeShort(0x0021); // public + super
+        data.writeShort(thisClass);
+        data.writeShort(superClass);
+        data.writeShort(0); // interfaces
+        data.writeShort(0); // fields
+        data.writeShort(1); // methods
+
+        // Gera código
         ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
         DataOutputStream code = new DataOutputStream(codeOut);
-
         String[] lines = split(mnemonics, '\n');
+
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
             if (line.equals("")) continue;
-
             String[] parts = split(line, ' ');
             String instr = parts[0];
 
-            if (instr.equals("aload_0")) { code.writeByte(0x2A); } 
-            else if (instr.equals("aload_1")) { code.writeByte(0x2B); } 
-            else if (instr.equals("astore_1")) { code.writeByte(0x4C); } 
-            else if (instr.equals("iconst_0")) { code.writeByte(0x03); } 
-            else if (instr.equals("iconst_1")) { code.writeByte(0x04); } 
+            if (instr.equals("aload_0")) code.writeByte(0x2A);
+            else if (instr.equals("aload_1")) code.writeByte(0x2B);
+            else if (instr.equals("astore_1")) code.writeByte(0x4C);
+            else if (instr.equals("iconst_0")) code.writeByte(0x03);
+            else if (instr.equals("iconst_1")) code.writeByte(0x04);
             else if (instr.equals("bipush")) {
-                if (parts.length < 2) throw new RuntimeException("bipush missing 1 args");
-                int val = Integer.parseInt(parts[1]);
+                if (parts.length < 2) throw new RuntimeException("bipush precisa de 1 arg");
                 code.writeByte(0x10);
-                code.writeByte(val);
-            } 
+                code.writeByte(Integer.parseInt(parts[1]));
+            }
             else if (instr.equals("getstatic")) {
-                if (parts.length < 2) throw new RuntimeException(instr + " missing 1 args");
                 int index = Integer.parseInt(parts[1]);
                 code.writeByte(0xB2);
                 code.writeShort(index);
-            } 
+            }
             else if (instr.equals("invokespecial") || instr.equals("invokevirtual")) {
-                if (parts.length < 4) throw new RuntimeException(instr + " missing args: class method descriptor");
+                if (parts.length < 4) throw new RuntimeException(instr + " precisa de: classe método descrição");
                 String clazz = parts[1], method = parts[2], desc = parts[3];
-
+                int ref = addMethodref(clazz, method, desc);
                 code.writeByte(instr.equals("invokespecial") ? 0xB7 : 0xB6);
-                code.writeShort(8); // hardcoded: Object.<init>
+                code.writeShort(ref);
             }
-            else if (instr.equals("return")) { code.writeByte(0xB1); } 
-            else if (instr.equals("ireturn")) { code.writeByte(0xAC); } 
-            else {
-                throw new RuntimeException("Unknown opcode: " + line);
-            }
+            else if (instr.equals("return")) code.writeByte(0xB1);
+            else if (instr.equals("ireturn")) code.writeByte(0xAC);
+            else throw new RuntimeException("Unknown opcode: " + line);
         }
 
         byte[] codeBytes = codeOut.toByteArray();
         int codeLength = codeBytes.length;
 
-        // === Build "Code" attribute ===
+        // Code attribute
         ByteArrayOutputStream attrOut = new ByteArrayOutputStream();
         DataOutputStream attr = new DataOutputStream(attrOut);
 
-        attr.writeShort(9);                        // attribute_name_index ("Code")
-        attr.writeInt(12 + codeLength);            // attribute_length
-        attr.writeShort(2);                        // max_stack
-        attr.writeShort(1);                        // max_locals
-        attr.writeInt(codeLength);                 // code_length
-        attr.write(codeBytes);                     // bytecode
-        attr.writeShort(0);                        // exception_table_length
-        attr.writeShort(0);                        // attributes_count (dentro de Code)
+        attr.writeShort(codeUtf8);
+        attr.writeInt(12 + codeLength);
+        attr.writeShort(2); // max_stack
+        attr.writeShort(1); // max_locals
+        attr.writeInt(codeLength);
+        attr.write(codeBytes);
+        attr.writeShort(0); // exception_table
+        attr.writeShort(0); // attributes dentro do Code
 
         byte[] attrBytes = attrOut.toByteArray();
 
-        // === METHOD <init> ===
+        // Method <init>
         data.writeShort(0x0001); // public
-        data.writeShort(5);      // name_index = "<init>"
-        data.writeShort(6);      // descriptor_index = "()V"
-        data.writeShort(1);      // attributes_count = 1 (Code)
-        data.write(attrBytes);   // Code attribute inteiro
+        data.writeShort(initUtf8);
+        data.writeShort(voidDescUtf8);
+        data.writeShort(1);
+        data.write(attrBytes);
 
-        // === class attributes_count ===
-        data.writeShort(0); // sem atributos
+        data.writeShort(0); // class attributes_count
 
         return classOut.toByteArray();
 
