@@ -470,54 +470,44 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
 
-    private byte[] generateClass(String className, String mnemonics) {
+        private byte[] generateClass(String className, String mnemonics) {
         try {
             ByteArrayOutputStream classOut = new ByteArrayOutputStream();
             DataOutputStream data = new DataOutputStream(classOut);
 
-            // --- Utilitários ---
-            Hashtable constPool = new Hashtable();
-            Vector constPoolList = new Vector(); // armazenar ordem
-            constPoolPut("Utf8:" + className);            // #1
-            constPoolPut("Class:#1");                      // #2
-            constPoolPut("Utf8:java/lang/Object");         // #3
-            constPoolPut("Class:#3");                      // #4
-            constPoolPut("Utf8:<init>");                   // #5
-            constPoolPut("Utf8:()V");                      // #6
-            constPoolPut("NameAndType:#5:#6");             // #7
-            constPoolPut("Methodref:#4:#7");               // #8
-            constPoolPut("Utf8:Code");                     // #9
+            // === HEADER ===
+            data.writeInt(0xCAFEBABE); data.writeShort(0); data.writeShort(46);
 
-            // --- HEADER ---
-            data.writeInt(0xCAFEBABE);
-            data.writeShort(0); data.writeShort(46);
+            // === CONSTANT POOL ===
+            data.writeShort(10); // constant_pool_count
 
-            // --- CONSTANT POOL ---
-            data.writeShort(constPoolList.size() + 1);
-            for (int i = 0; i < constPoolList.size(); i++) {
-                String entry = (String) constPoolList.elementAt(i);
-                writeConstPoolEntry(data, entry);
-            }
+            data.writeByte(1); data.writeUTF(className);
+            data.writeByte(7); data.writeShort(1);
 
-            // --- CLASS HEADER ---
-            data.writeShort(0x0021); // public, super
-            data.writeShort(indexOf("Class:#1")); // this_class
-            data.writeShort(indexOf("Class:#3")); // super_class
+            data.writeByte(1); data.writeUTF("java/lang/Object");
+            data.writeByte(7); data.writeShort(3);
+            data.writeByte(1); data.writeUTF("<init>");
+            data.writeByte(1); data.writeUTF("()V");
 
-            data.writeShort(0); // interfaces_count
-            data.writeShort(0); // fields_count
-            data.writeShort(1); // methods_count
+            data.writeByte(12); data.writeShort(5); data.writeShort(6);
+            data.writeByte(10); data.writeShort(4); data.writeShort(7);
 
-            // --- <init> METHOD ---
-            data.writeShort(0x0001); // public
-            data.writeShort(indexOf("Utf8:<init>")); // name_index
-            data.writeShort(indexOf("Utf8:()V"));    // descriptor_index
-            data.writeShort(1); // attributes_count
+            data.writeByte(1); data.writeUTF("Code");
 
+            // === CLASS HEADER ===
+            data.writeShort(0x0021); data.writeShort(2); data.writeShort(4);
+            data.writeShort(0);
+            data.writeShort(0);
+            data.writeShort(1);
+
+            // === METHOD <init> ===
+            data.writeShort(0x0001); data.writeShort(5); data.writeShort(6); data.writeShort(1);
+
+            // --- Code attribute ---
             ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
             DataOutputStream code = new DataOutputStream(codeOut);
 
-            String[] lines = splitLines(mnemonics);
+            String[] lines = split(mnemonics, '\n');
             for (int i = 0; i < lines.length; i++) {
                 String line = lines[i].trim();
                 if (line.equals("")) continue;
@@ -525,94 +515,51 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String[] parts = split(line, ' ');
                 String instr = parts[0];
 
-                if (instr.equals("aload_0")) { code.writeByte(0x2A); }
-                else if (instr.equals("aload_1")) { code.writeByte(0x2B); }
-                else if (instr.equals("astore_1")) { code.writeByte(0x4C); }
-                else if (instr.equals("iconst_0")) { code.writeByte(0x03); }
-                else if (instr.equals("iconst_1")) { code.writeByte(0x04); }
+                if (instr.equals("aload_0")) { code.writeByte(0x2A); } 
+                else if (instr.equals("aload_1")) { code.writeByte(0x2B); } 
+                else if (instr.equals("astore_1")) { code.writeByte(0x4C); } 
+                else if (instr.equals("iconst_0")) { code.writeByte(0x03); } 
+                else if (instr.equals("iconst_1")) { code.writeByte(0x04); } 
                 else if (instr.equals("bipush")) {
+                    if (parts.length < 2) throw new RuntimeException("bipush missing 1 args");
+                    int val = Integer.parseInt(parts[1]);
                     code.writeByte(0x10);
-                    code.writeByte(Integer.parseInt(parts[1]));
-                }
-                else if (instr.equals("return")) { code.writeByte(0xB1); }
-                else if (instr.equals("ireturn")) { code.writeByte(0xAC); }
-                else if (instr.equals("invokespecial") || instr.equals("invokevirtual")) {
-                    String cname = parts[1].replace('.', '/');
-                    String mname = parts[2];
-                    String desc  = parts[3];
-                    int utfClass = constPoolPut("Utf8:" + cname);
-                    int classIdx = constPoolPut("Class:#" + utfClass);
-                    int utfName = constPoolPut("Utf8:" + mname);
-                    int utfDesc = constPoolPut("Utf8:" + desc);
-                    int nt = constPoolPut("NameAndType:#" + utfName + ":#" + utfDesc);
-                    int methodRef = constPoolPut(
-                        (instr.equals("invokespecial") ? "Methodref:#" : "InterfaceMethodref:#") + classIdx + ":#" + nt
-                    );
-                    code.writeByte(instr.equals("invokespecial") ? 0xB7 : 0xB6);
-                    code.writeShort(methodRef);
-                }
+                    code.writeByte(val);
+                } 
                 else if (instr.equals("getstatic")) {
+                    if (parts.length < 2) throw new RuntimeException("getstatic need 1 args");
                     int index = Integer.parseInt(parts[1]);
                     code.writeByte(0xB2);
                     code.writeShort(index);
+                } 
+                else if (instr.equals("invokespecial") || instr.equals("invokevirtual")) {
+                    if (parts.length < 4) throw new RuntimeException(instr + " missing args: class method descriptor");
+                    String clazz = parts[1], method = parts[2], desc = parts[3];
+
+                    code.writeByte(instr.equals("invokespecial") ? 0xB7 : 0xB6);
+                    code.writeShort(8);
                 }
-                else throw new RuntimeException("Unknown mnemonic: " + instr);
+                else if (instr.equals("return")) { code.writeByte(0xB1); } 
+                else if (instr.equals("ireturn")) { code.writeByte(0xAC); } 
+                else {
+                    throw new RuntimeException("Unknown opcode: " + line);
+                }
             }
 
             byte[] bytecode = codeOut.toByteArray();
-            data.writeShort(indexOf("Utf8:Code"));
-            data.writeInt(12 + bytecode.length);
-            data.writeShort(1); // max_stack
-            data.writeShort(1); // max_locals
-            data.writeInt(bytecode.length);
-            data.write(bytecode);
-            data.writeShort(0); // exception_table_length
-            data.writeShort(0); // attributes_count
+            int codeLength = bytecode.length;
 
-            data.writeShort(0); // class attributes_count
+            data.writeShort(9); data.writeInt(12 + codeLength); data.writeShort(1); 
+            data.writeShort(1); data.writeInt(codeLength); data.write(bytecode);
+            data.writeShort(0); data.writeShort(0);
+
+            // === class attributes_count ===
+            data.writeShort(0); // sem attributes
 
             return classOut.toByteArray();
 
-            // === INTERNAL ===
         } catch (Exception e) { echoCommand(e.getMessage()); return null; }
-
-        // Helpers
-        Hashtable constPool = new Hashtable();
-        Vector constPoolList = new Vector();
-
-        int constPoolPut(String key) {
-            if (constPool.containsKey(key)) return ((Integer) constPool.get(key)).intValue();
-            constPoolList.addElement(key);
-            int index = constPoolList.size();
-            constPool.put(key, new Integer(index));
-            return index;
-        }
-
-        int indexOf(String key) { return ((Integer) constPool.get(key)).intValue(); }
-
-        void writeConstPoolEntry(DataOutputStream out, String entry) throws Exception {
-            if (entry.startsWith("Utf8:")) {
-                out.writeByte(1); out.writeUTF(entry.substring(5));
-            } else if (entry.startsWith("Class:#")) {
-                out.writeByte(7); out.writeShort(indexOf("Utf8:" + entry.substring(7)));
-            } else if (entry.startsWith("NameAndType:#")) {
-                int a = entry.indexOf(":#", 13);
-                int nameIdx = Integer.parseInt(entry.substring(13, a));
-                int typeIdx = Integer.parseInt(entry.substring(a + 2));
-                out.writeByte(12); out.writeShort(nameIdx); out.writeShort(typeIdx);
-            } else if (entry.startsWith("Methodref:#") || entry.startsWith("InterfaceMethodref:#")) {
-                boolean isInterface = entry.startsWith("InterfaceMethodref:#");
-                int a = entry.indexOf(":#", isInterface ? 21 : 12);
-                int classIdx = Integer.parseInt(entry.substring(isInterface ? 21 : 12, a));
-                int nameTypeIdx = Integer.parseInt(entry.substring(a + 2));
-                out.writeByte(isInterface ? 11 : 10);
-                out.writeShort(classIdx); out.writeShort(nameTypeIdx);
-            } else {
-                throw new RuntimeException("Unsupported constant: " + entry);
-            }
-        }
-    }
-
+    } 
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
