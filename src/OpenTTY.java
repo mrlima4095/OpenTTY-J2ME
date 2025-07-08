@@ -104,7 +104,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 005 - (Operators)
         // |
         // Operators
-        else if (mainCommand.equals("for")) { return forCommand(argument); }
+        else if (mainCommand.equals("for")) { return forCommand(argument); } 
         else if (mainCommand.equals("if")) { return ifCommand(argument); } else if (mainCommand.equals("case")) { return caseCommand(argument); }
         // |
         // Long executors
@@ -464,50 +464,147 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
         else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { int STATUS = javaClass(argument); echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; } } 
-        else if (mainCommand.equals("--version")) { String s; StringBuffer BUFFER = new StringBuffer(); if ((s = System.getProperty("java.vm.name")) != null) { BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } } else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { BUFFER.append("J9 VM, IBM (").append(s).append(')'); if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } } else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } else if (javaClass(new String[] { "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.io.ConsoleOutputStream" })) { BUFFER.append("KVM, Sun (CLDC)"); } else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol" })) { BUFFER.append("JBlend, Aplix"); } else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport"  })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); } else { BUFFER.append("Unknown"); } echoCommand(BUFFER.append('\n').toString()); }
-        else { 
-            String code = getcontent(mainCommand); 
-            Hashtable objects = new Hashtable(); 
-            if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return; } 
-
-            String[] lines = split(code, ';'); 
-            for (int i = 0; i < lines.length; i++) { 
-                String line = lines[i].trim(); 
-
-                if (line.length() == 0) { continue; } 
-                try { 
-                    if (line.indexOf('=') != -1) { 
-                        String[] parts = split(line, '='); 
-                        String objectName = parts[0].trim(); 
-                        String className = parts[1].trim(); 
-                        Class clazz = Class.forName(className); 
-                        Object instance = clazz.newInstance(); 
-
-                        objects.put(objectName, instance); 
-                    } 
-                    else if (line.indexOf('.') != -1) { 
-                        String[] parts = split(line, '.'); 
-                        String objectName = parts[0].trim(); 
-                        if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } 
-
-                        for (int j = 1; j < parts.length; j++) { 
-                            Object object = (Object) objects.get(objectName); 
-                            Class clazz = object.getClass(); 
-                            echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); 
-                        } 
-                    } 
-                    else if (line.startsWith("//")) { } 
-                    else { throw new IOException("Syntax error"); } 
-                } 
-                catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return 1; } 
+        else if (mainCommand.equals("--version")) { 
+            String s; 
+            StringBuffer BUFFER = new StringBuffer(); 
+            if ((s = System.getProperty("java.vm.name")) != null) { 
+                BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); 
+                if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } 
+                if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } 
             } 
+            else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { 
+                BUFFER.append("J9 VM, IBM (").append(s).append(')'); 
+                if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } 
+            } 
+            else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } 
+            else if (javaClass("com.sun.cldchi.jvm.JVM") { BUFFER.append("CLDC Hotspot Implementation, Sun"); } 
+            else if (javaClass("com.sun.midp.Main")) { BUFFER.append("KVM, Sun (MIDP)"); } 
+            else if (javaClass("com.sun.cldc.io.ConsoleOutputStream")) { BUFFER.append("KVM, Sun (CLDC)"); } 
+            else if (javaClass("com.jblend.util.SortedVector") == 0) { BUFFER.append("JBlend, Aplix"); } 
+            else if (javaClass("com.jbed.io.CharConvUTF8") == 0) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } 
+            else if (javaClass("MahoTrans.IJavaObject") == 0) { BUFFER.append("MahoTrans"); } 
+            else { BUFFER.append("Unknown"); } 
+            echoCommand(BUFFER.append('\n').toString()); 
         }
+        else { String code = getcontent(mainCommand); Hashtable objects = new Hashtable(); if (code == null || code.length() == 0) { echoCommand("java: " + mainCommand + ": blank class"); return; } String[] lines = split(code, ';'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); if (line.length() == 0) { continue; } try { if (line.indexOf('=') != -1) { String[] parts = split(line, '='); String objectName = parts[0].trim(); String className = parts[1].trim(); Class clazz = Class.forName(className); Object instance = clazz.newInstance(); objects.put(objectName, instance); } else if (line.indexOf('.') != -1) { String[] parts = split(line, '.'); String objectName = parts[0].trim(); if (!objects.containsKey(objectName)) { throw new IOException("Object not found"); } for (int j = 1; j < parts.length; j++) { Object object = (Object) objects.get(objectName); Class clazz = object.getClass(); echoCommand("Invoke method '" + parts[j] + "' on object '" + objectName + "' of class '" + clazz.getName() + "'."); } } else if (line.startsWith("//")) { } else { throw new IOException("Syntax error"); } } catch (Exception e) { echoCommand(e.getClass().getName() + ": '" + line + "' (" + e.getMessage() + ")"); return 1; } } }
         
         return 0;
     }
+    =private byte[] generateClass(String className, String mnemonics) {
+        try {
+            ByteArrayOutputStream classOut = new ByteArrayOutputStream();
+            DataOutputStream data = new DataOutputStream(classOut);
+
+            // === HEADER ===
+            data.writeInt(0xCAFEBABE); // magic
+            data.writeShort(0);        // minor_version
+            data.writeShort(46);       // major_version (Java 1.2)
+
+            // === CONSTANT POOL ===
+            data.writeShort(10); // constant_pool_count
+
+            // #1 Utf8: class name
+            data.writeByte(1);
+            data.writeUTF(className);
+
+            // #2 Class: #1
+            data.writeByte(7);
+            data.writeShort(1);
+
+            // #3 Utf8: java/lang/Object
+            data.writeByte(1);
+            data.writeUTF("java/lang/Object");
+
+            // #4 Class: #3
+            data.writeByte(7);
+            data.writeShort(3);
+
+            // #5 Utf8: <init>
+            data.writeByte(1);
+            data.writeUTF("<init>");
+
+            // #6 Utf8: ()V
+            data.writeByte(1);
+            data.writeUTF("()V");
+
+            // #7 NameAndType: #5:#6
+            data.writeByte(12);
+            data.writeShort(5);
+            data.writeShort(6);
+
+            // #8 Methodref: #4.#7 (java/lang/Object.<init>()V)
+            data.writeByte(10);
+            data.writeShort(4);
+            data.writeShort(7);
+
+            // #9 Utf8: Code
+            data.writeByte(1);
+            data.writeUTF("Code");
+
+            // === CLASS HEADER ===
+            data.writeShort(0x0021); // access_flags (public, super)
+            data.writeShort(2);      // this_class (#2)
+            data.writeShort(4);      // super_class (#4)
+
+            // interfaces_count
+            data.writeShort(0);
+
+            // fields_count
+            data.writeShort(0);
+
+            // methods_count
+            data.writeShort(1);
+
+            // === METHOD <init> ===
+            data.writeShort(0x0001); // access_flags (public)
+            data.writeShort(5);      // name_index (<init>)
+            data.writeShort(6);      // descriptor_index (()V)
+            data.writeShort(1);      // attributes_count
+
+            // --- Code attribute ---
+            ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
+            DataOutputStream code = new DataOutputStream(codeOut);
+
+            // Parse mnemonics
+            String[] lines = mnemonics.split("\n");
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i].trim();
+                if (line.equals("aload_0")) {
+                    code.writeByte(0x2A);
+                } else if (line.equals("return")) {
+                    code.writeByte(0xB1);
+                } else if (line.startsWith("invokespecial ")) {
+                    code.writeByte(0xB7);
+                    code.writeShort(8); // Methodref java/lang/Object.<init>()V
+                } else if (!line.equals("")) {
+                    throw new RuntimeException("Opcode desconhecido: " + line);
+                }
+            }
+
+            byte[] bytecode = codeOut.toByteArray();
+            int codeLength = bytecode.length;
+
+            data.writeShort(9);               // attribute_name_index (#9 -> "Code")
+            data.writeInt(12 + codeLength);   // attribute_length
+            data.writeShort(1);               // max_stack
+            data.writeShort(1);               // max_locals
+            data.writeInt(codeLength);        // code_length
+            data.write(bytecode);             // code
+            data.writeShort(0);               // exception_table_length
+            data.writeShort(0);               // attributes_count (dentro de Code)
+
+            // === class attributes_count ===
+            data.writeShort(0); // sem atributos
+
+            return classOut.toByteArray();
+
+        } catch (Exception e) {
+            echoCommand(e.getMessage())
+            return null;
+        }
+    }
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
-    private boolean javaClass(String[] classes) { for (int i = 0; i < classes.length; i++) { if (javaClass(classes[i]) != 0) { return false; } } return true; }
     // |
     // History
     public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
