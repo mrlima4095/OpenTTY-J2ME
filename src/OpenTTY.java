@@ -562,7 +562,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else if (line.equals("iconst_1")) {
                     code.writeByte(0x04);
                 } else if (line.startsWith("bipush ")) {
-                    String[] parts = line.split(" ");
+                    String[] parts = split(line, ' ');
                     int val = Integer.parseInt(parts[1]);
                     code.writeByte(0x10);
                     code.writeByte(val);
@@ -584,7 +584,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else {
                     throw new RuntimeException("Opcode desconhecido: " + line);
                 }
-}
+            }
 
             byte[] bytecode = codeOut.toByteArray();
             int codeLength = bytecode.length;
