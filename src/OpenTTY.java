@@ -802,7 +802,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         out.write(opcodeInt.intValue());
 
         if (arg != null) {
-            String[] args = arg.split(" ");
+            String[] args = split(arg, ' ');
             for (int i = 0; i < args.length; i++) {
                 int val = Integer.parseInt(args[i]);
                 out.write(val & 0xFF);
