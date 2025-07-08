@@ -362,7 +362,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Java Runtime
         else if (mainCommand.equals("java")) { return java(argument); }
-        else if (mainCommand.equals("javac")) { return writeRMS(getCommand(argument), generateClass(basename(getArgument(argument)), getcontent(getArgument(argument)))); }
+        else if (mainCommand.equals("javac")) { return writeRMS(getCommand(argument), generateClass(getcontent(getArgument(argument)))); }
         // |
         // Permissions
         else if (mainCommand.equals("chmod")) { 
@@ -766,6 +766,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         return out.toByteArray();
+    }
+    private String[] extractImports(String code) {
+        Vector imports = new Vector();
+        int start = 0;
+        int len = code.length();
+        
+        while (start < len) {
+            int end = code.indexOf('\n', start);
+            if (end == -1) end = len;
+            String line = code.substring(start, end).trim();
+            start = end + 1;
+
+            if (line.startsWith("import ")) {
+                int semi = line.indexOf(';');
+                if (semi != -1) {
+                    String imp = line.substring(7, semi).trim(); // remove "import " e o ;
+                    imports.addElement(replace(imp, ".", "/"));
+                }
+            }
+        }
+
+        String[] result = new String[imports.size()];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = (String) imports.elementAt(i);
+        }
+
+        return result;
     }
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
