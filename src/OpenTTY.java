@@ -515,23 +515,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (mainCommand.equals("")) { viewer("Java ME", env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE")); }
         else if (mainCommand.equals("-class")) { if (argument.equals("")) { } else { int STATUS = javaClass(argument); echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; } } 
-        else if (mainCommand.equals("--version")) { 
-            String s; 
-            StringBuffer BUFFER = new StringBuffer(); 
-            if ((s = System.getProperty("java.vm.name")) != null) { BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } } 
-            else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { BUFFER.append("J9 VM, IBM (").append(s).append(')'); if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } }
-            else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } 
-            
-            else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } 
-            else if (javaClass(new String[] { "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } 
-            else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.io.ConsoleOutputStream" })) { BUFFER.append("KVM, Sun (CLDC)"); } 
-            else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol", "jp.co.aplix.cldc.io.MIDPURLChecker", "jp.co.aplix.cldc.io.j2me.http.HttpConnectionImpl" })) { BUFFER.append("JBlend, Aplix"); } 
-            else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport"  })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } 
-            else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); } 
-            else { BUFFER.append("Unknown"); } 
-
-            echoCommand(BUFFER.append('\n').toString()); 
-        }
+        else if (mainCommand.equals("--version")) { String s; StringBuffer BUFFER = new StringBuffer(); if ((s = System.getProperty("java.vm.name")) != null) { BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } } else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { BUFFER.append("J9 VM, IBM (").append(s).append(')'); if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } } else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } else if (javaClass(new String[] { "com.sun.cldchi.io.ConsoleOutputStream", "com.sun.cldchi.jvm.JVM" })) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } else if (javaClass(new String[] { "com.sun.midp.Main" })) { BUFFER.append("KVM, Sun (MIDP)"); } else if (javaClass(new String[] { "com.sun.cldc.util.j2me.CalendarImpl", "com.sun.cldc.io.ConsoleOutputStream" })) { BUFFER.append("KVM, Sun (CLDC)"); } else if (javaClass(new String[] { "com.jblend.util.SortedVector", "com.jblend.tck.socket2http.Protocol" })) { BUFFER.append("JBlend, Aplix"); } else if (javaClass(new String[] { "com.jbed.io.CharConvUTF8", "com.jbed.runtime.MemSupport"  })) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } else if (javaClass(new String[] { "MahoTrans.IJavaObject" })) { BUFFER.append("MahoTrans"); } else { BUFFER.append("Unknown"); } echoCommand(BUFFER.append('\n').toString()); }
         else { 
             
         } 
