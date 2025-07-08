@@ -469,165 +469,145 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0;
     }
+
     private byte[] generateClass(String className, String mnemonics) {
         try {
             ByteArrayOutputStream classOut = new ByteArrayOutputStream();
             DataOutputStream data = new DataOutputStream(classOut);
 
-            // === Parse mnemonics + preparar constant pool dinamicamente ===
-            String[] lines = split(mnemonics, '\n');
-            Vector utf = new Vector(); // UTF8 pool
-            Vector cp = new Vector();  // entries: byte[]
+            // === HEADER ===
+            data.writeInt(0xCAFEBABE); // magic
+            data.writeShort(0);        // minor_version
+            data.writeShort(46);       // major_version (Java 1.2)
 
-            // Entradas fixas:
-            utf.addElement(className);          // #1
-            utf.addElement("java/lang/Object"); // #2
-            cp.addElement(new byte[] {7, 0, 1}); // #3 Class: className
-            cp.addElement(new byte[] {7, 0, 2}); // #4 Class: java/lang/Object
+            // === CONSTANT POOL ===
+            data.writeShort(10); // constant_pool_count
 
-            // Mapas para strings -> index
-            Hashtable utfIndex = new Hashtable();
-            utfIndex.put(className, new Integer(1));
-            utfIndex.put("java/lang/Object", new Integer(2));
+            // #1 Utf8: class name
+            data.writeByte(1);
+            data.writeUTF(className);
 
-            int cpIndex = 5;
+            // #2 Class: #1
+            data.writeByte(7);
+            data.writeShort(1);
 
-            // Preparar bytecode
+            // #3 Utf8: java/lang/Object
+            data.writeByte(1);
+            data.writeUTF("java/lang/Object");
+
+            // #4 Class: #3
+            data.writeByte(7);
+            data.writeShort(3);
+
+            // #5 Utf8: <init>
+            data.writeByte(1);
+            data.writeUTF("<init>");
+
+            // #6 Utf8: ()V
+            data.writeByte(1);
+            data.writeUTF("()V");
+
+            // #7 NameAndType: #5:#6
+            data.writeByte(12);
+            data.writeShort(5);
+            data.writeShort(6);
+
+            // #8 Methodref: #4.#7 (java/lang/Object.<init>()V)
+            data.writeByte(10);
+            data.writeShort(4);
+            data.writeShort(7);
+
+            // #9 Utf8: Code
+            data.writeByte(1);
+            data.writeUTF("Code");
+
+            // === CLASS HEADER ===
+            data.writeShort(0x0021); // access_flags (public, super)
+            data.writeShort(2);      // this_class (#2)
+            data.writeShort(4);      // super_class (#4)
+
+            // interfaces_count
+            data.writeShort(0);
+
+            // fields_count
+            data.writeShort(0);
+
+            // methods_count
+            data.writeShort(1);
+
+            // === METHOD <init> ===
+            data.writeShort(0x0001); // access_flags (public)
+            data.writeShort(5);      // name_index (<init>)
+            data.writeShort(6);      // descriptor_index (()V)
+            data.writeShort(1);      // attributes_count
+
+            // --- Code attribute ---
             ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
             DataOutputStream code = new DataOutputStream(codeOut);
 
+            // Parse mnemonics
+            String[] lines = split(mnemonics, '\n');
             for (int i = 0; i < lines.length; i++) {
                 String line = lines[i].trim();
                 if (line.equals("")) continue;
 
-                String[] parts = split(line, ' ');
-                String op = parts[0];
-
-                if (op.equals("aload_0")) {
+                if (line.equals("aload_0")) {
                     code.writeByte(0x2A);
-                } else if (op.equals("return")) {
-                    code.writeByte(0xB1);
-                } else if (op.equals("bipush")) {
+                } else if (line.equals("aload_1")) {
+                    code.writeByte(0x2B);
+                } else if (line.equals("astore_1")) {
+                    code.writeByte(0x4C);
+                } else if (line.equals("iconst_0")) {
+                    code.writeByte(0x03);
+                } else if (line.equals("iconst_1")) {
+                    code.writeByte(0x04);
+                } else if (line.startsWith("bipush ")) {
+                    String[] parts = line.split(" ");
                     int val = Integer.parseInt(parts[1]);
                     code.writeByte(0x10);
                     code.writeByte(val);
-                } else if (op.equals("invokespecial") || op.equals("invokevirtual") || op.equals("getstatic")) {
-                    String sig = parts[1]; // ex: java/lang/Object.<init>()V
-                    int dot = sig.indexOf('.');
-                    int par = sig.indexOf('(', dot);
-                    int colon = sig.indexOf(' ', dot); // usado para getstatic campo tipo
-
-                    String classNameRef, name, type;
-                    if (op.equals("getstatic")) {
-                        // getstatic java/lang/System.out Ljava/io/PrintStream;
-                        int space = sig.indexOf(' ');
-                        classNameRef = sig.substring(0, dot);
-                        name = sig.substring(dot + 1, space);
-                        type = sig.substring(space + 1).trim();
-                    } else {
-                        // método
-                        classNameRef = sig.substring(0, dot);
-                        name = sig.substring(dot + 1, par);
-                        type = sig.substring(par);
-                    }
-
-                    // UTF8
-                    Integer classUtfIdx = (Integer) utfIndex.get(classNameRef);
-                    if (classUtfIdx == null) {
-                        utf.addElement(classNameRef);
-                        classUtfIdx = new Integer(utf.size());
-                        utfIndex.put(classNameRef, classUtfIdx);
-                    }
-
-                    Integer nameUtfIdx = (Integer) utfIndex.get(name);
-                    if (nameUtfIdx == null) {
-                        utf.addElement(name);
-                        nameUtfIdx = new Integer(utf.size());
-                        utfIndex.put(name, nameUtfIdx);
-                    }
-
-                    Integer typeUtfIdx = (Integer) utfIndex.get(type);
-                    if (typeUtfIdx == null) {
-                        utf.addElement(type);
-                        typeUtfIdx = new Integer(utf.size());
-                        utfIndex.put(type, typeUtfIdx);
-                    }
-
-                    // Constant pool: Class
-                    cp.addElement(new byte[] {7, (byte) 0, (byte) classUtfIdx.intValue()});
-                    int classIdx = cpIndex++;
-
-                    // NameAndType
-                    cp.addElement(new byte[] {12, (byte) 0, (byte) nameUtfIdx.intValue(), (byte) 0, (byte) typeUtfIdx.intValue()});
-                    int ntIdx = cpIndex++;
-
-                    // Methodref ou Fieldref
-                    byte tag = (byte) (op.equals("getstatic") ? 9 : (op.equals("invokespecial") ? 10 : 11));
-                    cp.addElement(new byte[] {tag, (byte) 0, (byte) classIdx, (byte) 0, (byte) ntIdx});
-                    int refIdx = cpIndex++;
-
-                    code.writeByte(op.equals("invokespecial") ? 0xB7 : (op.equals("invokevirtual") ? 0xB6 : 0xB2));
-                    code.writeShort(refIdx);
+                } else if (line.equals("return")) {
+                    code.writeByte(0xB1);
+                } else if (line.equals("ireturn")) {
+                    code.writeByte(0xAC);
+                } else if (line.startsWith("invokespecial ")) {
+                    code.writeByte(0xB7);
+                    code.writeShort(8); // hardcoded Methodref: java/lang/Object.<init>()V
+                } else if (line.startsWith("invokevirtual ")) {
+                    code.writeByte(0xB6);
+                    code.writeShort(8); // ainda usa o #8, você pode adaptar futuramente
+                } else if (line.startsWith("getstatic ")) {
+                    String[] parts = line.split(" ");
+                    int index = Integer.parseInt(parts[1]);
+                    code.writeByte(0xB2);
+                    code.writeShort(index);
                 } else {
-                    throw new RuntimeException("Unknown opcode: " + line);
+                    throw new RuntimeException("Opcode desconhecido: " + line);
                 }
-            }
+}
 
             byte[] bytecode = codeOut.toByteArray();
+            int codeLength = bytecode.length;
 
-            // === Início do classfile ===
-            data.writeInt(0xCAFEBABE);
-            data.writeShort(0); // minor
-            data.writeShort(46); // major (Java 1.2)
+            data.writeShort(9);               // attribute_name_index (#9 -> "Code")
+            data.writeInt(12 + codeLength);   // attribute_length
+            data.writeShort(1);               // max_stack
+            data.writeShort(1);               // max_locals
+            data.writeInt(codeLength);        // code_length
+            data.write(bytecode);             // code
+            data.writeShort(0);               // exception_table_length
+            data.writeShort(0);               // attributes_count (dentro de Code)
 
-            int totalCpCount = 1 + utf.size() + cp.size(); // índice 0 é reservado
-            data.writeShort(totalCpCount);
-
-            // UTF8 entries
-            for (int i = 0; i < utf.size(); i++) {
-                data.writeByte(1);
-                data.writeUTF((String) utf.elementAt(i));
-            }
-
-            // Other CP entries
-            for (int i = 0; i < cp.size(); i++) {
-                byte[] entry = (byte[]) cp.elementAt(i);
-                data.write(entry);
-            }
-
-            // === Class info ===
-            data.writeShort(0x0021); // access_flags
-            data.writeShort(3); // this_class (#3)
-            data.writeShort(4); // super_class (#4)
-            data.writeShort(0); // interfaces
-            data.writeShort(0); // fields
-            data.writeShort(1); // methods
-
-            // Method <init>
-            data.writeShort(0x0001); // public
-            data.writeShort(utfIndex.get("<init>").intValue()); // name_index
-            data.writeShort(utfIndex.get("()V").intValue());    // descriptor_index
-            data.writeShort(1); // attributes_count
-
-            data.writeShort(utfIndex.get("Code").intValue()); // attribute_name_index
-            data.writeInt(12 + bytecode.length); // attribute_length
-            data.writeShort(1); // max_stack
-            data.writeShort(1); // max_locals
-            data.writeInt(bytecode.length); // code_length
-            data.write(bytecode); // code
-            data.writeShort(0); // exception_table
-            data.writeShort(0); // code attributes
-
-            data.writeShort(0); // class attributes
+            // === class attributes_count ===
+            data.writeShort(0); // sem atributos
 
             return classOut.toByteArray();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            echoCommand(e.getMessage());
             return null;
         }
     }
-
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
