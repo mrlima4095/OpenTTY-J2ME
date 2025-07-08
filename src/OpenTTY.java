@@ -866,12 +866,28 @@ private String[] extractImports(String code) {
     return result;
 }
 
-private String extractMnemonics(String code) {
-    int bodyStart = code.indexOf('{');
-    int bodyEnd = code.lastIndexOf('}');
-    if (bodyStart == -1 || bodyEnd == -1 || bodyEnd <= bodyStart) return "";
-    return code.substring(bodyStart + 1, bodyEnd).trim();
-}
+    private String extractMnemonics(String code) {
+        int idx = code.indexOf("main");
+        if (idx == -1) return "";
+
+        int braceStart = code.indexOf('{', idx);
+        if (braceStart == -1) return "";
+
+        int braceCount = 1;
+        int i = braceStart + 1;
+
+        while (i < code.length() && braceCount > 0) {
+            char c = code.charAt(i);
+            if (c == '{') braceCount++;
+            else if (c == '}') braceCount--;
+            i++;
+        }
+
+        if (braceCount != 0) return "";
+
+        return code.substring(braceStart + 1, i - 1).trim();
+    }
+
 
 
 
