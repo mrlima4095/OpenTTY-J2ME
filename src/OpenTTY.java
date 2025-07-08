@@ -470,7 +470,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
 
-    private byte[] generateClass(String className, String mnemonics) {
+private byte[] generateClass(String className, String mnemonics) {
     try {
         ByteArrayOutputStream classOut = new ByteArrayOutputStream();
         DataOutputStream data = new DataOutputStream(classOut);
@@ -546,9 +546,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         byte[] bytecode = codeOut.toByteArray();
         int codeLength = bytecode.length;
 
-        data.writeShort(9); data.writeInt(12 + codeLength); data.writeShort(1); 
-        data.writeShort(1); data.writeInt(codeLength); data.write(bytecode);
-        data.writeShort(0); data.writeShort(0);
+        data.writeShort(9);                        // attribute_name_index ("Code")
+        data.writeInt(12 + codeLength);            // attribute_length
+        data.writeShort(2);                        // max_stack (ajustado)
+        data.writeShort(1);                        // max_locals
+        data.writeInt(codeLength);                 // code_length
+        data.write(bytecode);                      // bytecode
+        data.writeShort(0);                        // exception_table_length
+        data.writeShort(0);                        // code_attributes_count
 
         // === class attributes_count ===
         data.writeShort(0); // sem attributes
@@ -556,7 +561,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return classOut.toByteArray();
 
     } catch (Exception e) { echoCommand(e.getMessage()); return null; }
-} 
+}
+
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
