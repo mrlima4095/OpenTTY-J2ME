@@ -809,8 +809,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        out.write(val & 0xFF);
-        
     }
 
     return out.toByteArray();
