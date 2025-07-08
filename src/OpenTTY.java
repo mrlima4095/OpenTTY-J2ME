@@ -476,50 +476,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
             DataOutputStream data = new DataOutputStream(classOut);
 
             // === HEADER ===
-            data.writeInt(0xCAFEBABE); // magic
-            data.writeShort(0);        // minor_version
-            data.writeShort(46);       // major_version (Java 1.2)
+            data.writeInt(0xCAFEBABE); data.writeShort(0); data.writeShort(46);
 
             // === CONSTANT POOL ===
             data.writeShort(10); // constant_pool_count
 
-            // #1 Utf8: class name
-            data.writeByte(1);
-            data.writeUTF(className);
+            data.writeByte(1); data.writeUTF(className);
+            data.writeByte(7); data.writeShort(1);
 
-            // #2 Class: #1
-            data.writeByte(7);
-            data.writeShort(1);
+            data.writeByte(1); data.writeUTF("java/lang/Object");
+            data.writeByte(7); data.writeShort(3);
+            data.writeByte(1); data.writeUTF("<init>");
+            data.writeByte(1); data.writeUTF("()V");
 
-            // #3 Utf8: java/lang/Object
-            data.writeByte(1);
-            data.writeUTF("java/lang/Object");
+            data.writeByte(12); data.writeShort(5); data.writeShort(6);
+            data.writeByte(10); data.writeShort(4); data.writeShort(7);
 
-            // #4 Class: #3
-            data.writeByte(7);
-            data.writeShort(3);
-
-            // #5 Utf8: <init>
-            data.writeByte(1);
-            data.writeUTF("<init>");
-
-            // #6 Utf8: ()V
-            data.writeByte(1);
-            data.writeUTF("()V");
-
-            // #7 NameAndType: #5:#6
-            data.writeByte(12);
-            data.writeShort(5);
-            data.writeShort(6);
-
-            // #8 Methodref: #4.#7 (java/lang/Object.<init>()V)
-            data.writeByte(10);
-            data.writeShort(4);
-            data.writeShort(7);
-
-            // #9 Utf8: Code
-            data.writeByte(1);
-            data.writeUTF("Code");
+            data.writeByte(1); data.writeUTF("Code");
 
             // === CLASS HEADER ===
             data.writeShort(0x0021); // access_flags (public, super)
@@ -589,24 +562,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             byte[] bytecode = codeOut.toByteArray();
             int codeLength = bytecode.length;
 
-            data.writeShort(9);               // attribute_name_index (#9 -> "Code")
-            data.writeInt(12 + codeLength);   // attribute_length
-            data.writeShort(1);               // max_stack
-            data.writeShort(1);               // max_locals
-            data.writeInt(codeLength);        // code_length
-            data.write(bytecode);             // code
-            data.writeShort(0);               // exception_table_length
-            data.writeShort(0);               // attributes_count (dentro de Code)
+            data.writeShort(9); data.writeInt(12 + codeLength); data.writeShort(1); 
+            data.writeShort(1); data.writeInt(codeLength); data.write(bytecode);
+            data.writeShort(0); data.writeShort(0);
 
             // === class attributes_count ===
             data.writeShort(0); // sem atributos
 
             return classOut.toByteArray();
 
-        } catch (Exception e) {
-            echoCommand(e.getMessage());
-            return null;
-        }
+        } catch (Exception e) { echoCommand(e.getMessage()); return null; }
     }
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
