@@ -476,9 +476,11 @@ private byte[] generateClass(String className, String mnemonics) {
         DataOutputStream data = new DataOutputStream(classOut);
 
         // === HEADER ===
-        data.writeInt(0xCAFEBABE);
-        data.writeShort(0);
-        data.writeShort(50); // Java 1.2
+        //data.writeInt(0xCAFEBABE);
+        //data.writeShort(0);
+        //data.writeShort(46); // Java 1.2
+        data.writeByte(0xCA); data.writeByte(0xFE); data.writeByte(0xBA); data.writeByte(0xBE);
+        data.writeByte(0x00); data.writeByte(0x00); data.writeByte(0x00); data.writeByte(0x2E);
 
         // === CONSTANT POOL ===
         data.writeShort(10); // constant_pool_count (9 + 1)
