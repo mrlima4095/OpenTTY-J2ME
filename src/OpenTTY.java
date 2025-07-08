@@ -324,17 +324,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             content = extractTag(content, argument.toLowerCase(), ""); 
             if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } 
-            else { 
-                if (verbose) { echoCommand(content); } 
-                else { viewer(form.getTitle(), content); } 
-            } 
+            else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } 
         }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
-        else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 128; } }
+        //else if (mainCommand.equals("")) {  }
 
         // API 014 - (OpenTTY)
         // |
@@ -353,6 +349,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("run")) { return processCommand(". " + argument, false); }
         else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 2; } } }
 
+        else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
+        else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (NumberFormatException e) { return 128; } }
+        
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE")); }
         else if (mainCommand.equals("!!")) { if (history.size() > 0) { stdin.setString((String) history.elementAt(history.size() - 1)); } }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { return runScript(nanoContent); } else { return runScript(getcontent(argument)); } }
