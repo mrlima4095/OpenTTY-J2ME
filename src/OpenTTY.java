@@ -476,38 +476,32 @@ private byte[] generateClass(String className, String mnemonics) {
         DataOutputStream data = new DataOutputStream(classOut);
 
         // === HEADER ===
-        data.writeInt(0xCAFEBABE); // magic
-        data.writeShort(0);        // minor version
-        data.writeShort(46);       // major version (Java 1.2 = 46)
+        data.writeInt(0xCAFEBABE);
+        data.writeShort(0);
+        data.writeShort(46); // Java 1.2
 
         // === CONSTANT POOL ===
-        data.writeShort(10); // constant_pool_count (9 entries + 1)
+        data.writeShort(10); // constant_pool_count (9 + 1)
 
-        data.writeByte(1); data.writeUTF(className);            // #1
-        data.writeByte(7); data.writeShort(1);                 // #2 = Class className
-        data.writeByte(1); data.writeUTF("java/lang/Object");   // #3
-        data.writeByte(7); data.writeShort(3);                 // #4 = Class java/lang/Object
-        data.writeByte(1); data.writeUTF("<init>");             // #5
-        data.writeByte(1); data.writeUTF("()V");                // #6
-        data.writeByte(12); data.writeShort(5); data.writeShort(6); // #7 = NameAndType
-        data.writeByte(10); data.writeShort(4); data.writeShort(7); // #8 = Methodref
-        data.writeByte(1); data.writeUTF("Code");               // #9
+        data.writeByte(1); data.writeUTF(className);               // #1
+        data.writeByte(7); data.writeShort(1);                     // #2 Class className
+        data.writeByte(1); data.writeUTF("java/lang/Object");      // #3
+        data.writeByte(7); data.writeShort(3);                     // #4 Class Object
+        data.writeByte(1); data.writeUTF("<init>");                // #5
+        data.writeByte(1); data.writeUTF("()V");                   // #6
+        data.writeByte(12); data.writeShort(5); data.writeShort(6); // #7 NameAndType
+        data.writeByte(10); data.writeShort(4); data.writeShort(7); // #8 Methodref Object.<init>()
+        data.writeByte(1); data.writeUTF("Code");                  // #9
 
         // === CLASS HEADER ===
-        data.writeShort(0x0021); // access_flags (public, super)
-        data.writeShort(2);      // this_class (#2)
-        data.writeShort(4);      // super_class (#4)
+        data.writeShort(0x0021); // access_flags (public + super)
+        data.writeShort(2);      // this_class
+        data.writeShort(4);      // super_class
         data.writeShort(0);      // interfaces_count
         data.writeShort(0);      // fields_count
         data.writeShort(1);      // methods_count
 
-        // === METHOD <init> ===
-        data.writeShort(0x0001); // access_flags (public)
-        data.writeShort(5);      // name_index (#5 = <init>)
-        data.writeShort(6);      // descriptor_index (#6 = ()V)
-        data.writeShort(1);      // attributes_count
-
-        // Monta o bytecode
+        // === Generate bytecode ===
         ByteArrayOutputStream codeOut = new ByteArrayOutputStream();
         DataOutputStream code = new DataOutputStream(codeOut);
 
@@ -541,7 +535,7 @@ private byte[] generateClass(String className, String mnemonics) {
                 String clazz = parts[1], method = parts[2], desc = parts[3];
 
                 code.writeByte(instr.equals("invokespecial") ? 0xB7 : 0xB6);
-                code.writeShort(8); // fixo para java/lang/Object.<init>()V
+                code.writeShort(8); // hardcoded: Object.<init>
             }
             else if (instr.equals("return")) { code.writeByte(0xB1); } 
             else if (instr.equals("ireturn")) { code.writeByte(0xAC); } 
@@ -550,21 +544,33 @@ private byte[] generateClass(String className, String mnemonics) {
             }
         }
 
-        byte[] bytecode = codeOut.toByteArray();
-        int codeLength = bytecode.length;
+        byte[] codeBytes = codeOut.toByteArray();
+        int codeLength = codeBytes.length;
 
-        // === Atributo "Code" ===
-        data.writeShort(9);                        // attribute_name_index (#9 = Code)
-        data.writeInt(12 + codeLength);            // attribute_length
-        data.writeShort(2);                        // max_stack
-        data.writeShort(1);                        // max_locals
-        data.writeInt(codeLength);                 // code_length
-        data.write(bytecode);                      // code
-        data.writeShort(0);                        // exception_table_length
-        data.writeShort(0);                        // code_attributes_count
+        // === Build "Code" attribute ===
+        ByteArrayOutputStream attrOut = new ByteArrayOutputStream();
+        DataOutputStream attr = new DataOutputStream(attrOut);
 
-        // === Class attributes_count ===
-        data.writeShort(0); // sem attributes
+        attr.writeShort(9);                        // attribute_name_index ("Code")
+        attr.writeInt(12 + codeLength);            // attribute_length
+        attr.writeShort(2);                        // max_stack
+        attr.writeShort(1);                        // max_locals
+        attr.writeInt(codeLength);                 // code_length
+        attr.write(codeBytes);                     // bytecode
+        attr.writeShort(0);                        // exception_table_length
+        attr.writeShort(0);                        // attributes_count (dentro de Code)
+
+        byte[] attrBytes = attrOut.toByteArray();
+
+        // === METHOD <init> ===
+        data.writeShort(0x0001); // public
+        data.writeShort(5);      // name_index = "<init>"
+        data.writeShort(6);      // descriptor_index = "()V"
+        data.writeShort(1);      // attributes_count = 1 (Code)
+        data.write(attrBytes);   // Code attribute inteiro
+
+        // === class attributes_count ===
+        data.writeShort(0); // sem atributos
 
         return classOut.toByteArray();
 
@@ -573,6 +579,7 @@ private byte[] generateClass(String className, String mnemonics) {
         return null;
     }
 }
+
 
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
