@@ -650,38 +650,32 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private byte[] generateClass(String code) {
-    int idx = code.indexOf("class ");
-    if (idx == -1) return null;
-    idx += 6;
-    int end = code.indexOf(' ', idx);
-    if (end == -1) end = code.indexOf('{', idx);
-
-    String className = code.substring(idx, end).trim();
+    String className = extractClassName(code);
     String[] imports = extractImports(code);
+    String mnemonics = extractMnemonics(code);
 
     ByteArrayOutputStream out = new ByteArrayOutputStream();
 
     try {
         byte[] nameBytes = className.getBytes();
         int nameLen = nameBytes.length;
-        byte[] codeBytes = mnemonicsToBytes(extractMnemonics(code));
+        byte[] codeBytes = mnemonicsToBytes(mnemonics);
         int codeLen = codeBytes.length;
         int codeAttrLen = 12 + codeLen;
 
-        // 11 é o mínimo fixo do seu constant pool; somamos +1 pra cada import.
-        int cpCount = 11 + (imports.length * 2); // cada import ocupa 2 slots (Class + UTF8)
+        int constantPoolSize = 11 + imports.length * 2;
+        int cpCount = constantPoolSize;
 
         // Header
         out.write(0xCA); out.write(0xFE); out.write(0xBA); out.write(0xBE);
-        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x2E); // versão 46
+        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x2E); // Java 1.6
 
         out.write(0x00); out.write(cpCount);
 
-        // Constant Pool
-
-        // #1 Class this
+        // Constant Pool Entries
+        // #1 Class (this)
         out.write(0x07); out.write(0x00); out.write(0x02);
-        // #2 UTF8 class name
+        // #2 UTF8 (class name)
         out.write(0x01); out.write((nameLen >> 8) & 0xFF); out.write(nameLen & 0xFF);
         for (int i = 0; i < nameLen; i++) out.write(nameBytes[i]);
 
@@ -707,10 +701,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         out.write(0x01); out.write(0x00); out.write(codeStr.length);
         for (int i = 0; i < codeStr.length; i++) out.write(codeStr[i]);
 
-        // #8 Methodref super.<init>
+        // #8 Methodref Object.<init>()
         out.write(0x0A); out.write(0x00); out.write(0x03); out.write(0x00); out.write(0x09);
-
-        // #9 NameAndType
+        // #9 NameAndType <init>()V
         out.write(0x0C); out.write(0x00); out.write(0x05); out.write(0x00); out.write(0x06);
 
         // #10 UTF8 main
@@ -718,65 +711,69 @@ public class OpenTTY extends MIDlet implements CommandListener {
         out.write(0x01); out.write(0x00); out.write(main.length);
         for (int i = 0; i < main.length; i++) out.write(main[i]);
 
-        // Adiciona os imports (Class + UTF8)
+        // Add UTF8s for each import (constant pool only — not referenced yet)
         for (int i = 0; i < imports.length; i++) {
-            int utfIndex = 11 + i * 2;
-            out.write(0x07); // Class
-            out.write(0x00); out.write(utfIndex + 1); // aponta pro próximo slot UTF8
-            byte[] name = imports[i].getBytes();
-            out.write(0x01); out.write((name.length >> 8) & 0xFF); out.write(name.length & 0xFF);
-            for (int j = 0; j < name.length; j++) out.write(name[j]);
+            byte[] b = imports[i].getBytes();
+            out.write(0x01); out.write((b.length >> 8) & 0xFF); out.write(b.length & 0xFF);
+            for (int j = 0; j < b.length; j++) out.write(b[j]);
         }
 
-        // Class info
-        out.write(0x00); out.write(0x21); // public, super
-        out.write(0x00); out.write(0x01); // this class
-        out.write(0x00); out.write(0x03); // super class
-        out.write(0x00); out.write(0x00); // interfaces
-        out.write(0x00); out.write(0x00); // fields
-        out.write(0x00); out.write(0x02); // methods
+        // Access, This, Super
+        out.write(0x00); out.write(0x21); // public super
+        out.write(0x00); out.write(0x01); // this
+        out.write(0x00); out.write(0x03); // super = java/lang/Object
+
+        // interfaces, fields
+        out.write(0x00); out.write(0x00);
+        out.write(0x00); out.write(0x00);
+
+        // methods_count = 2
+        out.write(0x00); out.write(0x02);
 
         // <init>
         out.write(0x00); out.write(0x01); // access_flags
         out.write(0x00); out.write(0x05); // name_index
         out.write(0x00); out.write(0x06); // descriptor_index
         out.write(0x00); out.write(0x01); // attributes_count
-        out.write(0x00); out.write(0x07); // attribute_name_index ("Code")
-
-        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x11); // attr_length = 17
+        out.write(0x00); out.write(0x07); // Code attr index
+        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x11); // attr length
         out.write(0x00); out.write(0x01); // max_stack
         out.write(0x00); out.write(0x01); // max_locals
-        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x05); // code_length
+        out.write(0x00); out.write(0x00); out.write(0x00); out.write(0x05); // code length
         out.write(0x2A); // aload_0
-        out.write(0xB7); out.write(0x00); out.write(0x08); // invokespecial
+        out.write(0xB7); // invokespecial
+        out.write(0x00); out.write(0x08); // #8 Methodref
         out.write(0xB1); // return
         out.write(0x00); out.write(0x00); // exception_table_length
         out.write(0x00); out.write(0x00); // attributes_count
 
         // main()
-        out.write(0x00); out.write(0x09); // access_flags
-        out.write(0x00); out.write(0x0A); // name_index
-        out.write(0x00); out.write(0x06); // descriptor_index
+        out.write(0x00); out.write(0x09); // access_flags: public static
+        out.write(0x00); out.write(0x0A); // name_index: main
+        out.write(0x00); out.write(0x06); // descriptor_index: ()V
         out.write(0x00); out.write(0x01); // attributes_count
-        out.write(0x00); out.write(0x07); // attribute_name_index
+        out.write(0x00); out.write(0x07); // Code attr index
 
         out.write((codeAttrLen >> 24) & 0xFF);
         out.write((codeAttrLen >> 16) & 0xFF);
         out.write((codeAttrLen >> 8) & 0xFF);
         out.write(codeAttrLen & 0xFF);
 
-        out.write(0x00); out.write(0x01); // max_stack
+        out.write(0x00); out.write(0x02); // max_stack (ajustado)
         out.write(0x00); out.write(0x01); // max_locals
 
-        out.write((codeLen >> 24) & 0xFF); out.write((codeLen >> 16) & 0xFF);
-        out.write((codeLen >> 8) & 0xFF); out.write(codeLen & 0xFF);
-
+        out.write((codeLen >> 24) & 0xFF);
+        out.write((codeLen >> 16) & 0xFF);
+        out.write((codeLen >> 8) & 0xFF);
+        out.write(codeLen & 0xFF);
         for (int i = 0; i < codeLen; i++) out.write(codeBytes[i]);
 
         out.write(0x00); out.write(0x00); // exception_table_length
         out.write(0x00); out.write(0x00); // attributes_count
 
-        out.write(0x00); out.write(0x00); // Class attributes count
+        // Class Attributes
+        out.write(0x00); out.write(0x00);
+
     } catch (Exception e) {
         echoCommand("Build failed: " + e.getMessage());
         return null;
@@ -784,110 +781,43 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     return out.toByteArray();
 }
+private String extractClassName(String code) {
+    int idx = code.indexOf("class ");
+    if (idx == -1) return "Unnamed";
+    idx += 6;
+    int end = code.indexOf(' ', idx);
+    if (end == -1) end = code.indexOf('{', idx);
+    return code.substring(idx, end).trim();
+}
 
-    private byte[] mnemonicsToBytes(String mnemonics) throws Exception {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        Hashtable opcodes = new Hashtable();
-        opcodes.put("nop", new Integer(0x00));
-        opcodes.put("aconst_null", new Integer(0x01));
-        opcodes.put("iconst_0", new Integer(0x03));
-        opcodes.put("iconst_1", new Integer(0x04));
-        opcodes.put("iconst_2", new Integer(0x05));
-        opcodes.put("iload_0", new Integer(0x1A));
-        opcodes.put("aload_0", new Integer(0x2A));
-        opcodes.put("istore_0", new Integer(0x3B));
-        opcodes.put("astore_0", new Integer(0x4B));
-        opcodes.put("pop", new Integer(0x57));
-        opcodes.put("iadd", new Integer(0x60));
-        opcodes.put("return", new Integer(0xB1));
-        opcodes.put("invokespecial", new Integer(0xB7));
-        // ...adicione outras conforme precisar
-
-        // Quebrar linhas simples, sem regex
-        int start = 0;
-        int length = mnemonics.length();
-        while (start < length) {
-            int end = mnemonics.indexOf('\n', start);
-            if (end == -1) end = length;
-            String line = mnemonics.substring(start, end).trim();
-            start = end + 1;
-
-            if (line.length() == 0) continue;
-
-            // Quebrar por espaço simples
-            int spaceIndex = line.indexOf(' ');
-            String instr = line;
-            String arg = null;
-            if (spaceIndex != -1) {
-                instr = line.substring(0, spaceIndex);
-                arg = line.substring(spaceIndex + 1).trim();
-            }
-
-            Integer opcodeInt = (Integer) opcodes.get(instr);
-            if (opcodeInt == null) throw new Exception("Opcode desconhecido: " + instr);
-            out.write(opcodeInt.intValue());
-
-            if (arg != null) {
-                String[] args = split(arg, ' ');
-                for (int i = 0; i < args.length; i++) {
-                    int val = Integer.parseInt(args[i]);
-                    out.write(val & 0xFF);
-                }
-            }
-
-        }
-
-        return out.toByteArray();
-    }
-    private String[] extractImports(String code) {
-        Vector imports = new Vector();
-        int start = 0;
-        int len = code.length();
-        
-        while (start < len) {
-            int end = code.indexOf('\n', start);
-            if (end == -1) end = len;
-            String line = code.substring(start, end).trim();
-            start = end + 1;
-
-            if (line.startsWith("import ")) {
-                int semi = line.indexOf(';');
-                if (semi != -1) {
-                    String imp = line.substring(7, semi).trim(); // remove "import " e o ;
-                    imports.addElement(replace(imp, ".", "/"));
-                }
+private String[] extractImports(String code) {
+    Vector imports = new Vector();
+    int start = 0;
+    while (start < code.length()) {
+        int end = code.indexOf('\n', start);
+        if (end == -1) end = code.length();
+        String line = code.substring(start, end).trim();
+        if (line.startsWith("import ")) {
+            int semi = line.indexOf(';');
+            if (semi != -1) {
+                String imp = line.substring(7, semi).trim();
+                imports.addElement(replace(imp, ".", "/"));
             }
         }
-
-        String[] result = new String[imports.size()];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = (String) imports.elementAt(i);
-        }
-
-        return result;
+        start = end + 1;
     }
-    private String extractMnemonics(String code) {
-        int idx = code.indexOf("main");
-        if (idx == -1) return "";
+    String[] result = new String[imports.size()];
+    for (int i = 0; i < result.length; i++) result[i] = (String) imports.elementAt(i);
+    return result;
+}
 
-        int braceStart = code.indexOf('{', idx);
-        if (braceStart == -1) return "";
+private String extractMnemonics(String code) {
+    int bodyStart = code.indexOf('{');
+    int bodyEnd = code.lastIndexOf('}');
+    if (bodyStart == -1 || bodyEnd == -1 || bodyEnd <= bodyStart) return "";
+    return code.substring(bodyStart + 1, bodyEnd).trim();
+}
 
-        int braceCount = 1;
-        int i = braceStart + 1;
-
-        while (i < code.length() && braceCount > 0) {
-            char c = code.charAt(i);
-            if (c == '{') braceCount++;
-            else if (c == '}') braceCount--;
-            i++;
-        }
-
-        if (braceCount != 0) return "";
-
-        return code.substring(braceStart + 1, i - 1).trim();
-    }
 
 
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
