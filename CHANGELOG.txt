@@ -19,3 +19,4 @@ Copyright (C) 2025 - Mr. Lima
 [ _Notes_ ]
 
 - A new LTS release is coming, 1.16 will bring a big update package.
+- 1 Year of 1.0 release
