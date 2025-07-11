@@ -502,18 +502,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else fail = getNumber(requiredParts[1]) > getNumber(currentParts[1]);
                 }
                 else if (mode.equals("maximum")) {
-                    if (currentParts.length < 1 || requiredParts.length < 1) { fail = true; }
+                    if (currentParts.length < 1 || requiredParts.length < 1) {  }
                     else fail = getNumber(requiredParts[0]) > getNumber(currentParts[0]);
                 }
             } 
             else if (mode.equals("exact-full")) { fail = !version.equals(apiVersion); } 
             else { return 1; }
 
-            if (fail) {
-                String error = (String) PKG.get("api.error");
-                processCommand(error != null ? error : "true");
-                return 3;
-            }
+            if (fail) { String error = (String) PKG.get("api.error"); processCommand(error != null ? error : "true"); return 3; }
         }
         // |
         // Build dependencies
