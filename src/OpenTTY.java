@@ -424,7 +424,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 
-        if (mainCommand.equals("")) { viewer("Wireless Messaging", "J2ME WMA Client (OpenTTY)\n\n * ID: " + System.getProperty("wireless.messaging.sms.smsc")); } 
+        if (mainCommand.equals("") || mainCommand.equals("id")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); }
         else if (mainCommand.equals("send")) {
             String[] args = split(argument, ' ');
             if (args.length < 2) { echoCommand("wrl: missing..."); return 2; }
@@ -446,14 +446,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("listen")) {
             String port = argument;
             try {
-                final MessageConnection conn = (MessageConnection) Connector.open("sms://:" + port);
+                MessageConnection conn = (MessageConnection) Connector.open("sms://:" + port);
                 echoCommand("[+] listening at port " + port);
                 try {
                     while (true) {
                         Message msg = conn.receive();
                         if (msg instanceof TextMessage) {
                             String payload = ((TextMessage) msg).getPayloadText();
-                            echoCommand("wrl:  " + payload);
+                            echoCommand("wrl: " + payload);
                         } else {
                             echoCommand("wrl: binary payload received.");
                         }
@@ -461,11 +461,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (Exception e) { echoCommand(e.toString()); return 1; }
             } catch (Exception e) { echoCommand(e.toString()); return 1; }
         } 
-        else if (mainCommand.equals("debug")) {
-            TextMessage fakeMsg = (TextMessage) new com.sun.midp.io.j2me.sms.TextMessageImpl("sms://+551199999999", null);
-            fakeMsg.setPayloadText("Mensagem de teste simulada");
-            echoCommand("Mensagem recebida: " + fakeMsg.getPayloadText());
-        }
         else { echoCommand("wrl: " + mainCommand + ": not found"); return 1; }
 
         return 0;
