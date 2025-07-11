@@ -495,16 +495,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (mode.equals("exact-prefix")) { fail = !version.startsWith(apiVersion); } 
             else if (mode.equals("minimum") || mode.equals("maximum")) {
-                String[] currentParts = split(version, '.');
-                String[] requiredParts = split(apiVersion, '.');
-                if (mode.equals("minimum")) { 
-                    if (currentParts.length < 2 || requiredParts.length < 2) { fail = true; }
-                    else { fail = getNumber(requiredParts[1]) > getNumber(currentParts[1]); }
-                }
-                else if (mode.equals("maximum")) {
-                    if (currentParts.length < 1 || requiredParts.length < 1) { fail = true; }
-                    else { fail = getNumber(requiredParts[0]) > getNumber(currentParts[0]); }
-                }
+                String[] currentParts = split(version, '.'), requiredParts = split(apiVersion, '.');
+                if (mode.equals("minimum")) { if (currentParts.length < 2 || requiredParts.length < 2) { fail = true; } else { fail = getNumber(requiredParts[1]) > getNumber(currentParts[1]); } }
+                else if (mode.equals("maximum")) { if (currentParts.length < 1 || requiredParts.length < 1) { fail = true; } else { fail = getNumber(requiredParts[0]) > getNumber(currentParts[0]); } }
             } 
             else if (mode.equals("exact-full")) { fail = !version.equals(apiVersion); } 
             else { return 1; }
