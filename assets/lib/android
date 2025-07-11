@@ -4,8 +4,8 @@ name=Android
 version=1.0
 description=API for Android
 
-api.version=1.14
-api.error=execute log add error Android API requires OpenTTY 1.14; echo [ Android ] Required 1.14 OpenTTY API;
+api.version=1.15
+api.error=execute log add error Android API requires OpenTTY 1.15; echo [ Android ] Required 1.15 OpenTTY API;
 
 process.name=android
 process.port=10542
