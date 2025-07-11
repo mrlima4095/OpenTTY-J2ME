@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.15-02x14"; 
+    private String logs = "", path = "/home/", build = "2025-1.15-02x15"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -485,15 +485,44 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable PKG = parseProperties(getcontent(script));
         // |
         // Verify current API version
-        if (PKG.containsKey("api.version")) { if (!env("$VERSION").startsWith((String) PKG.get("api.version"))) { processCommand(PKG.containsKey("api.error") ? (String) PKG.get("api.error") : "true"); return 3; } }
+        if (PKG.containsKey("api.version")) {
+            String version = env("$VERSION");
+            String apiVersion = (String) PKG.get("api.version");
+            String mode = (String) PKG.get("api.check");
+            if (mode == null || mode.equals("")) mode = "exact-prefix";
+
+            boolean fail = false;
+
+            if (mode.equals("exact-prefix")) { fail = !version.startsWith(apiVersion); } 
+            else if (mode.equals("minimum")) {
+                String[] currentParts = split(version, '.');
+                String[] requiredParts = split(apiVersion, '.');
+                if (currentParts.length < 2 || requiredParts.length < 2) fail = true;
+                else fail = getNumber(requiredParts[1]) > getNumber(currentParts[1]);
+            } 
+            else if (mode.equals("maximum")) {
+                String[] currentParts = split(version, '.');
+                String[] requiredParts = split(apiVersion, '.');
+                if (currentParts.length < 1 || requiredParts.length < 1) fail = true;
+                else fail = getNumber(requiredParts[0]) > getNumber(currentParts[0]);
+            } 
+            else if (mode.equals("exact-full")) { fail = !version.equals(apiVersion); } 
+            else { return 1; }
+
+            if (fail) {
+                String error = (String) PKG.get("api.error");
+                processCommand(error != null ? error : "true");
+                return 3;
+            }
+        }
+        // |
+        // Build dependencies
+        if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start and handle APP process
         if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name")); }
         if (PKG.containsKey("process.type")) { String TYPE = (String) PKG.get("process.type"); if (TYPE.equals("server")) { } else if (TYPE.equals("bind")) { new Bind(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.db"))); } else { MIDletLogs("add warn '" + TYPE.toUpperCase() + "' is a invalid value for 'process.type'"); } }
         if (PKG.containsKey("process.host") && PKG.containsKey("process.port")) { new Server(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host"))); }
-        // |
-        // Build dependencies
-        if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start Application
         if (PKG.containsKey("config")) { processCommand((String) PKG.get("config")); }
