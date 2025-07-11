@@ -279,7 +279,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
         //else if (mainCommand.equals("")) {  }
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("birthday")) {  }
 
         // API 014 - (OpenTTY)
         // |
