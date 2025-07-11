@@ -439,7 +439,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 conn.send(message);
                 conn.close();
                 echoCommand("wrl: message sent to '" + address + "'");
-            } catch (IOException e) {
+            } catch (Exception e) {
                 echoCommand(e.toString());
                 return 1;
             }
@@ -458,8 +458,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             echoCommand("wrl: binary payload received.");
                         }
                     }
-                } catch (IOException e) { echoCommand(e.toString()); return 1; }
-            } catch (IOException e) { echoCommand(e.toString()); return 1; }
+                } catch (Exception e) { echoCommand(e.toString()); return 1; }
+            } catch (Exception e) { echoCommand(e.toString()); return 1; }
         } 
         else { echoCommand("wrl: " + mainCommand + ": not found"); return 1; }
 
