@@ -445,22 +445,32 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         else if (mainCommand.equals("listen")) {
             String port = argument;
+            MessageConnection conn = null;
             try {
-                MessageConnection conn = (MessageConnection) Connector.open("sms://:" + port);
-                echoCommand("[+] listening at port " + port);
+                conn = (MessageConnection) Connector.open("sms://:" + port);
+                echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port);
+                start("wireless");
                 try {
-                    while (true) {
+                    while (trace.containsKey("wireless")) {
                         Message msg = conn.receive();
+                        String sender = "unknown";
                         if (msg instanceof TextMessage) {
-                            String payload = ((TextMessage) msg).getPayloadText();
-                            echoCommand("wrl: " + payload);
+                            TextMessage tmsg = (TextMessage) msg;
+                            try { sender = tmsg.getAddress(); } catch (Exception ex) { }
+                            String payload = tmsg.getPayloadText();
+                            echoCommand("[+] " + sender + " -> " + payload);
                         } else {
-                            echoCommand("wrl: binary payload received.");
+                            echoCommand("[+] " + sender + " -> binary payload.");
                         }
                     }
-                } catch (Exception e) { echoCommand(e.toString()); return 1; }
-            } catch (Exception e) { echoCommand(e.toString()); return 1; }
-        } 
+                } catch (Exception e) { echoCommand("[-] " + e.toString()); stop("wireless"); }
+            } catch (Exception e) { echoCommand("[-] " + e.toString()); MIDletLogs("add info Server crashed '" + port + "'"); } 
+            finally {
+                if (conn != null) { try { conn.close(); } catch (IOException e) { } }
+                echoCommand("[-] Server stopped");
+                MIDletLogs("add info Server was stopped");
+            }
+        }
         else { echoCommand("wrl: " + mainCommand + ": not found"); return 1; }
 
         return 0;
