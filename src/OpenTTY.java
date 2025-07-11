@@ -424,9 +424,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 
-        if (System.getProperty("microedition.messaging.version") == null) { echoCommand("wrl: not supported"); return 3; }
         if (mainCommand.equals("")) {
-            viewer("Wireless Messaging", "J2ME WMA Client (OpenTTY)\n\nExemplos:\n- send sms://+5511999999999 \"Oi\"\n- listen sms://:1234");
+            viewer("Wireless Messaging", "J2ME WMA Client (OpenTTY)\n\n * ID: " + System.getProperty("wireless.messaging.sms.smsc"));
         } else if (mainCommand.equals("send")) {
             String[] args = split(argument, ' ');
             if (args.length < 2) { echoCommand("wrl: missing..."); return 2; }
