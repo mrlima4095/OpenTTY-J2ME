@@ -72,10 +72,11 @@
 [2025-1.15-02x05]	1.15 Suite case | Added Command 'AUDIO'
 [2025-1.15-02x06]	New case operator 'display' (reverted)
 [2025-1.15-02x07]	Improved help message
-[2025-1.15-02x08]	Enviroment scopes (reverted)
+[2025-1.15-02x08]	Environment scopes (reverted)
 [2025-1.15-02x09]	Return codes
 [2025-1.15-02x10]	Invert commands usage
 [2025-1.15-02x11]	Bruteforce stops if a command get wrong
 [2025-1.15-02x12]	Improved MIDlet Logs
 [2025-1.15-02x13]	Java VM name 
 [2025-1.15-02x14]	Java Generator
+[2025-1.15-02x15]	New Package API Matching tools
