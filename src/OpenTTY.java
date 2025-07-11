@@ -419,6 +419,52 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Socket Interfaces
     private int query(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { echoCommand("query: missing [address]"); } else { try { StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } ByteArrayOutputStream BAOS = new ByteArrayOutputStream(); byte[] BUFFER = new byte[1024]; int LENGTH; while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } String DATA = new String(BAOS.toByteArray(), "UTF-8"); if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(DATA); } else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } else { writeRMS(env("$QUERY"), DATA); } IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(e.getMessage()); return 1; } } return 0; }
+    private int wireless(String command) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command), argument = getArgument(command);
+
+        if (System.getProperty("microedition.messaging.version") == null) { echoCommand("wrl: not supported"); return 3; }
+        if (mainCommand.equals("")) {
+            viewer("Wireless Messaging", "J2ME WMA Client (OpenTTY)\n\nExemplos:\n- send sms://+5511999999999 \"Oi\"\n- listen sms://:1234");
+        } else if (mainCommand.equals("send")) {
+            String[] args = split(argument, ' ');
+            if (args.length < 2) { echoCommand("wrl: missing..."); return 2; }
+
+            String address = args[0];
+            String msg = argument.substring(argument.indexOf(' ') + 1).trim();
+            try {
+                MessageConnection conn = (MessageConnection) Connector.open(address);
+                TextMessage message = (TextMessage) conn.newMessage(MessageConnection.TEXT_MESSAGE);
+                message.setPayloadText(msg);
+                conn.send(message);
+                conn.close();
+                echoCommand("wrl: message sent to '" + address + "'");
+            } catch (Exception e) {
+                echoCommand(e.toString());
+                return 1;
+            }
+        } else if (mainCommand.equals("listen")) {
+            String port = argument;
+            try {
+                final MessageConnection conn = (MessageConnection) Connector.open("sms://:" + port);
+                echoCommand("[+] listening at port " + port);
+                try {
+                    while (true) {
+                        Message msg = conn.receive();
+                        if (msg instanceof TextMessage) {
+                            String payload = ((TextMessage) msg).getPayloadText();
+                            echoCommand("wrl:  " + payload);
+                        } else {
+                            echoCommand("wrl: binary payload received.");
+                        }
+                    }
+                } catch (Exception e) { echoCommand(e.toString()); return 1; }
+            } catch (Exception e) { echoCommand(e.toString()); return 1; }
+        } 
+        else { echoCommand("wrl: " + mainCommand + ": not found"); return 1; }
+
+        return 0;
+    }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(e.getMessage()); return 1; } } return 0; }
     public class PortScanner implements CommandListener, Runnable { private String host; private int start = 1; private List screen; private Command BACK = new Command("Back", Command.BACK, 1), CONNECT = new Command("Connect", Command.OK, 1); public PortScanner(String args) { if (args == null || args.length() == 0) { return; } if (!getArgument(args).equals("")) { try { start = Integer.parseInt(getArgument(args)); } catch (NumberFormatException e) { echoCommand("prscan: " + getArgument(args) + ": invalid start port"); return; } } host = getCommand(args); screen = new List(host + " Ports", List.IMPLICIT); screen.addCommand(BACK); screen.addCommand(CONNECT); screen.setCommandListener(this); new Thread(this, "Port-Scanner").start(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == CONNECT) { new RemoteConnection(host + ":" + screen.getString(screen.getSelectedIndex())); } } public void run() { screen.setTicker(new Ticker("Scanning...")); for (int port = start; port <= 65535; port++) { screen.setTicker(new Ticker("Scanning Port " + port + "...")); try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false); screen.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } screen.setTicker(null); } }
     public class RemoteConnection implements CommandListener, Runnable { private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream; private String host; private Form screen = new Form(form.getTitle()); private TextField inputField = new TextField("Command", "", 256, TextField.ANY); private Command BACK = new Command("Back", Command.SCREEN, 1), EXECUTE = new Command("Send", Command.OK, 1), CLEAR = new Command("Clear", Command.SCREEN, 1), VIEW = new Command("Show info", Command.SCREEN, 1); private StringItem console = new StringItem("", ""); public RemoteConnection(String args) { if (args == null || args.length() == 0) { return; } host = args; inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); screen.append(console); screen.append(inputField); screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW); screen.setCommandListener(this); try { socket = (SocketConnection) Connector.open("socket://" + args); inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); } catch (IOException e) { echoCommand(e.getMessage()); return; } start("remote"); new Thread(this, "Remote").start(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == EXECUTE) { String data = inputField.getString().trim(); inputField.setString(""); try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } catch (IOException e) { processCommand("warn " + e.getMessage()); } } else if (c == BACK) { try { outputStream.write("".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); } catch (IOException e) { } writeRMS("remote", console.getText()); stop("remote"); processCommand("xterm"); } else if (c == CLEAR) { console.setText(""); } else if (c == VIEW) { try { warnCommand("Information", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Address: " + socket.getLocalAddress() + "\n" + "Local Port: " + socket.getLocalPort()); } catch (IOException e) { } } } public void run() { while (trace.containsKey("remote")) { try { byte[] buffer = new byte[4096]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (IOException e) { processCommand("warn " + e.getMessage()); stop("remote"); } } } }
