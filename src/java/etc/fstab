@@ -15,6 +15,7 @@
 /java/etc/icons/icon.png
 /java/etc/icons/up.png
 /java/etc/fstab
+/java/etc/help.txt
 /java/etc/index.html
 /java/etc/initd.sh
 /java/lib/
@@ -22,6 +23,5 @@
 /java/lib/settings
 /java/lib/yang
 /java/sounds/
-/java/help.txt
 /scripts/
 /scripts/debug.sh
