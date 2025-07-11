@@ -2,6 +2,7 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
+import javax.wireless.messaging.*;
 import javax.microedition.media.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
