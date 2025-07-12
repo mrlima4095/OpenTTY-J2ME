@@ -80,3 +80,4 @@
 [2025-1.15-02x13]	Java VM name 
 [2025-1.15-02x14]	Java Generator
 [2025-1.15-02x15]	New Package API Matching tools
+[2025-1.15-02x16]	Release 1.15
