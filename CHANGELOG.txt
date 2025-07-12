@@ -14,7 +14,7 @@ Copyright (C) 2025 - Mr. Lima
 - Replaced **PATCH** by **Version code-name**
 - Inverted usage of commands `dir` and `ls`
 - Chain runners stopping when command return a bad exit code
-- **MOD**s stop if it running fail
+- Package **MOD**'s stop if it running fail
 - New Package API matching tools - support for key `api.match`
 
 [ _Notes_ ]
