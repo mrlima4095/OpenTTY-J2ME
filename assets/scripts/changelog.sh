@@ -3,7 +3,7 @@
 
 tick Downloading...
 install nano
-proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/raw/refs/tags/$VERSION/CHANGELOG.txt
+proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/refs/tags/$VERSION/CHANGELOG.txt
 add <title>CHANGELOG - $VERSION</title>
 tick
 html 
