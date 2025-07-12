@@ -21,6 +21,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - A new LTS release is coming, 1.16 will bring a big update package.
 - 1 Year of 1.0 release
+- I will make OpenTTY full documentation for Packages creation
 
 [ _API Matching tools_ ]
 
