@@ -6,7 +6,7 @@ echo OpenTTY Debug Script
 echo -------------------------
 echo
 
-log add debug Debug script had been executed 
+log add debug Debug script had been executed
 
 echo [ MIDlet ]
 pkg MIDlet-1
