@@ -71,7 +71,7 @@ Usage: bruteforce [COMMAND]
 <buff>
 Usage: buff [TEXT]
 * Set content of standard input (stdin) as TEXT.
-</buff>on
+</buff>
 <builtin>
 Usage: builtin [COMMAND]
 * Run COMMAND bypassing aliases.
@@ -335,6 +335,8 @@ Usage: http [URL]
 
 	Display a Editor to change Headers.
 	It given options to run 'curl' and 'wget' with the customized Headers.
+
+	In newer releases, this command have been disbled. To make an request with custom headers usage (ex. `curl [DOMAIN] [HEADER FILE]', it works with 'curl', 'wget', 'proxy' and 'clone' commands).
 </http>
 <html>
 Usage: html
