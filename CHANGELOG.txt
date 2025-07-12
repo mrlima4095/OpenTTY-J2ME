@@ -32,4 +32,4 @@ Copyright (C) 2025 - Mr. Lima
 
 [ Specials ]
 
-- This release contains a special secret command of OpenTTY 1 year birthday.
+- This release contains a special secret command of OpenTTY 1 year **birthday**.
