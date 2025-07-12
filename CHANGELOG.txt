@@ -1,35 +1,15 @@
-OpenTTY Java Edition 1.15
+OpenTTY Java Edition 1.16
 Copyright (C) 2025 - Mr. Lima
 
 
 [ _Commands_ ]
 
-- `audio [options] [file]`: Audio Manager
-- `return [code: int]`: Return with code
-- `eval [command]`: Print returned code of command
+- ``: 
 
 [ _Updates_ ]
 
-- Improved help message
-- Replaced **PATCH** by **Version code-name**
-- Inverted usage of commands `dir` and `ls`
-- Chain runners stopping when command return a bad exit code
-- Package **MOD**'s stop if it running fail
-- New Package API matching tools - support for key `api.match`
+- 
 
 [ _Notes_ ]
 
-- A new LTS release is coming, 1.16 will bring a big update package.
-- 1 Year of 1.0 release
-- I will make OpenTTY full documentation for Packages creation
-
-[ _API Matching tools_ ]
-
-- `exact-prefix`: Look for prefix, (ex. this API is _1.15_ it'll accept _1.15.x_ too) **Default**.
-- `exact-full`: Look for exact API, (ex. this API is _1.15_ it'll reject _1.15.x_ and _1.16_ and others).
-- `minimum`: Look for middle API number, (ex. this API is _1.15 it'll accept all after _1.15.x_, like _1.16_ and newer).
-- `maximum`: Look for main API number, (ex. this API is _1.x_ it'll accept all newer until _2.0_).
-
-[ Specials ]
-
-- This release contains a special secret command of OpenTTY 1 year **birthday**.
+- 
