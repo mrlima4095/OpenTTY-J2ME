@@ -28,3 +28,7 @@ Copyright (C) 2025 - Mr. Lima
 - `exact-full`: Look for exact API, (ex. this API is _1.15_ it'll reject _1.15.x_ and _1.16_ and others).
 - `minimum`: Look for middle API number, (ex. this API is _1.15 it'll accept all after _1.15.x_, like _1.16_ and newer).
 - `maximum`: Look for main API number, (ex. this API is _1.x_ it'll accept all newer until _2.0_).
+
+[ Specials ]
+
+- This release contains a special secret command of OpenTTY 1 year birthday.
