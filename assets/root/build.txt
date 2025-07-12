@@ -83,3 +83,4 @@
 [2025-1.15-02x16]	Release 1.15
 [2025-1.16-02x17]	1.16 Suite case
 [2025-1.16-02x18]	Fixed a bug in 'NC' that doesn't closes the connection
+[2025-1.16-02x19]	Added Command 'WHICH'
