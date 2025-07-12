@@ -469,7 +469,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 catch (IOException e) { processCommand("warn " + e.getMessage()); } 
             } 
             else if (c == BACK) { 
-                try { outputStream.write("\n".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); } 
+                try { outputStream.write("\n".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); socket.close(); } 
                 catch (IOException e) { } 
 
                 writeRMS("remote", console.getText()); 
