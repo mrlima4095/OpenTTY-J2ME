@@ -4,7 +4,9 @@ name=HTop Menu
 version=1.0
 description=Task Manager
 
-api.version=1.14.4
+api.version=1.15
+api.error=execute log add error Manager requires OpenTTY 1.15; echo [ Manager ] Required 1.15 OpenTTY API;
+api.match=minimum
 
 command=htop
 htop=execute x11 list topmngr;
