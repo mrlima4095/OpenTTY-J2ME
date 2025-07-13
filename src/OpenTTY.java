@@ -35,7 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
 
-            if (username.equals("") || loadRMS(".passwd").equals("")) { new Login(); }
+            if (username.equals("") || loadRMS(".passwd").equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
         } 
     }
@@ -330,31 +330,45 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     
-    public class Login implements CommandListener { 
-        private Form screen = new Form("Login"); 
-        private TextField USER = new TextField("Username", "", 256, TextField.ANY); 
-        private TextField PASSWD = new TextField("Password", "", 256, TextField.PASSWORD); 
+    public class Credentials implements CommandListener { 
+        private String command = "";
+        private Form screen = new Form(form.getTitle()); 
+        private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.PASSWORD); 
         private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); 
-        public Login() { 
-            screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
-            if (username.equals("")) { screen.append(USER); } screen.append(PASSWD); screen.addCommand(LOGIN); screen.addCommand(EXIT); 
+        
+        public Login(String args) { 
+            if (args == null || args.length() == 0 || args.equals("login")) {
+                screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
+                if (username.equals("")) { screen.append(USER); } screen.append(PASSWD);  
+            } else {
+                command = args;
+                screen.setLabel("[sudo] Password for " + username);
+                
+            }
             
+            screen.append(PASSWD); screen.addCommand(LOGIN); screen.addCommand(EXIT);
             screen.setCommandListener(this); 
             display.setCurrent(screen); 
         } 
+        
         public void commandAction(Command c, Displayable d) { 
             if (c == LOGIN) { 
-                username = USER.getString().trim(); 
-                String password = PASSWD.getString().trim();
-
-                if (username.equals("") || password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!") }
-                else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(); } 
-                else { 
-                    writeRMS("/home/OpenRMS", username);
-                    writeRMS("/home/.passwd", "" + password.hashCode());
-                    display.setCurrent(form); 
-                    runScript(loadRMS("initd")); 
-                } 
+                if (command.equals("")) {
+                    username = USER.getString().trim(); 
+                    String password = PASSWD.getString().trim();
+    
+                    if (username.equals("") || password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
+                    else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(); } 
+                    else { 
+                        writeRMS("/home/OpenRMS", username);
+                        writeRMS("/home/.passwd", "" + password.hashCode());
+                        display.setCurrent(form); 
+                        runScript(loadRMS("initd")); 
+                    }
+                } else {
+                    if (password.equals("")) { }
+                    else { caseCommand("passwd (" + PASSWD.getString().trim(); + ") " + command); }
+                }
             } 
             else if (c == EXIT) { processCommand("exit"); } 
         } 
