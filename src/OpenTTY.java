@@ -488,7 +488,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int length = inputStream.read(buffer); 
                     if (length != -1) { echoCommand(new String(buffer, 0, length), console); } 
                 } 
-                catch (IOException e) { processCommand("warn " + e.getMessage()); stop("remote"); } 
+                catch (Exception e) { processCommand("warn " + e.getMessage()); stop("remote"); } 
             } 
         } 
     }
