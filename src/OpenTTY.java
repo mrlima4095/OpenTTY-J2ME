@@ -339,7 +339,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (username.equals("")) { screen.append(USER); } screen.append(PASSWD);  
             } else {
                 command = args;
-                screen.setLabel("[sudo] Password for " + username);
+                PASSWD.setLabel("[sudo] Password for " + username);
 
             }
 
