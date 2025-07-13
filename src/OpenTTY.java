@@ -56,8 +56,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
     // OpenTTY Command Processor
-    private int processCommand(String command) { return processCommand(command, true); }
-    private int processCommand(String command, boolean ignore) { 
+    private int processCommand(String command) { return processCommand(command, true, false); }
+    private int processCommand(String command, boolean ignore) { return processCommand(command, true, false); }
+    private int processCommand(String command, boolean ignore, boolean root) { 
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 
@@ -280,7 +281,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         //else if (mainCommand.equals("")) {  }
         //else if (mainCommand.equals("")) {  }
-        else if (mainCommand.equals("passwd")) {  }
+        else if (mainCommand.equals("passwd")) { processCommand("execute import /java/lib/jauth2; sudo passwd;", true); }
         else if (mainCommand.equals("which")) {
             if (argument.equals("")) { }
             else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); }
