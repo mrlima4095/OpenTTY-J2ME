@@ -4,7 +4,7 @@ name=JAuth2
 version=1.2
 description=Advanced Perms
 
-api.version=1.14
+api.version=1.16
 api.error=execute log add error JAuth2 requires OpenTTY API 1.14 or newer; log add warn Don't try use ViaVersion to force JAuth2 load!; echo [ JAuth2 ] Loading failed!; echo [ JAuth2 ] See logs to more info.;
 api.match=minimum
 
