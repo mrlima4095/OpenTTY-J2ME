@@ -6,6 +6,7 @@ description=Auto Syntax
 
 api.version=1.14
 api.error=execute log add error Tab requires OpenTTY API 1.14; echo [ Tab ] Loading failed!; echo [ Tab ] See logs to more info.;
+api.match=minimum
 
 include=forge
 
