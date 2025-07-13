@@ -466,10 +466,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 inputField.setString(""); 
 
                 try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } 
-                catch (IOException e) { processCommand("warn " + e.getMessage()); } 
+                catch (Exception e) { processCommand("warn " + e.getMessage()); } 
             } 
             else if (c == BACK) { 
-                try { outputStream.write("\n".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); socket.close(); } 
+                try { outputStream.write("".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); socket.close(); } 
                 catch (IOException e) { } 
 
                 writeRMS("remote", console.getText()); 
