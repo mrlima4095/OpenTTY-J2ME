@@ -349,7 +349,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (username.equals("") || password.equals("")) { } 
                 else { 
                     writeRMS("/home/OpenRMS", username);
-                    writeRMS("/home/.passwd", password.hashCode());
+                    writeRMS("/home/.passwd", "" + password.hashCode());
                     display.setCurrent(form); 
                     runScript(loadRMS("initd")); 
                 } 
