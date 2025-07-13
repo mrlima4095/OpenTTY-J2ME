@@ -1,11 +1,11 @@
 [ Config ]
 
 name=JAuth2
-version=1.2
+version=1.3
 description=Advanced Perms
 
-api.version=1.14
-api.error=execute log add error JAuth2 requires OpenTTY API 1.14 or newer; log add warn Don't try use ViaVersion to force JAuth2 load!; echo [ JAuth2 ] Loading failed!; echo [ JAuth2 ] See logs to more info.;
+api.version=1.16
+api.error=execute log add error JAuth2 requires OpenTTY API 1.16 or newer; log add warn Don't try use ViaVersion to force JAuth2 load!; echo [ JAuth2 ] Loading failed!; echo [ JAuth2 ] See logs to more info.;
 api.match=minimum
 
 config=execute if ($USERNAME == root) bg exec x11 stop & x11 title JAuth2 & x11 xfinit stdout & clear & echo [ JAuth2 ] User name may not be String 'root' & echo [ JAuth2 ] Logging out... & sleep 5 & builtin logout & builtin exit;
@@ -28,7 +28,8 @@ su=execute @login root;
 [ DISPLAY ]
 
 quest.title=$TITLE - Locked
-quest.label=Username
+quest.label=Password
+quest.type=password
 quest.key=INPUT
 quest.cmd=execute if ($INPUT != $USERNAME) exec @alert & lock; if ($INPUT == $USERNAME) xterm; unset INPUT;
 quest.back=execute exit;
