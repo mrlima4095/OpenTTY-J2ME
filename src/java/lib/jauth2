@@ -1,0 +1,16 @@
+[ Config ]
+
+name=JAuth2
+version=1.3
+description=Advanced Perms
+
+
+
+
+[ DISPLAY ]
+
+quest.title=$TITLE
+quest.label=[sudo] Password for $.USERNAME
+quest.type=password
+quest.key=PASSWD
+quest.cmd=case passwd ($.PASSWD) 
