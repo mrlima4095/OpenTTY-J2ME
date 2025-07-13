@@ -9,8 +9,8 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - Fixed a bug in `nc` that **Back** button doesn't closes the connection
--
--
+- MIDlet login ask for a password
+- 
 -
 -
 -
