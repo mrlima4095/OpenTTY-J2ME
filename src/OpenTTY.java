@@ -336,7 +336,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); 
         public Login() { 
             screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
-            screen.append(USER); screen.append(PASSWD) screen.addCommand(LOGIN); screen.addCommand(EXIT); 
+            screen.append(USER); screen.append(PASSWD); screen.addCommand(LOGIN); screen.addCommand(EXIT); 
             if ((username = System.getProperty("user.name")) != null && !username.equals("root")) { USER.setString(username); }
             screen.setCommandListener(this); 
             display.setCurrent(screen); 
