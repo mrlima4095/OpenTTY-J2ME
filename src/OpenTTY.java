@@ -333,7 +333,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.PASSWORD); 
         private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); 
         
-        public Login(String args) { 
+        public Credentials(String args) { 
             if (args == null || args.length() == 0 || args.equals("login")) {
                 screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
                 if (username.equals("")) { screen.append(USER); } screen.append(PASSWD);  
