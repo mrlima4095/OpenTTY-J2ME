@@ -35,7 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
 
-            if (username.equals("") || loadRMS(".passwd").equals("")) { new Credentials(""); }
+            if (username.equals("") || loadRMS(".passwd").equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
         } 
     }
