@@ -35,7 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
 
-            if (username.equals("")) { new Login(); }
+            if (username.equals("") || loadRMS(".passwd").equals("")) { new Login(); }
             else { runScript(read("/home/initd")); }
         } 
     }
@@ -337,7 +337,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public Login() { 
             screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
             screen.append(USER); screen.append(PASSWD); screen.addCommand(LOGIN); screen.addCommand(EXIT); 
-            if ((username = System.getProperty("user.name")) != null && !username.equals("root")) { USER.setString(username); }
+            if (!username.equals("")) { USER.setString(username); }
             screen.setCommandListener(this); 
             display.setCurrent(screen); 
         } 
@@ -346,7 +346,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 username = USER.getString().trim(); 
                 String password = PASSWD.getString().trim();
 
-                if (username.equals("") || password.equals("")) { } 
+                if (username.equals("")) { warnCommand(screen.getTitle(), "Missing username!") }
+                else if (password.equals("")) { } 
                 else { 
                     writeRMS("/home/OpenRMS", username);
                     writeRMS("/home/.passwd", "" + password.hashCode());
