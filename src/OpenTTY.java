@@ -355,7 +355,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String password = PASSWD.getString().trim();
 
                     if (username.equals("") || password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
-                    else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(); } 
+                    else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
                     else { 
                         writeRMS("/home/OpenRMS", username);
                         writeRMS("/home/.passwd", "" + password.hashCode());
