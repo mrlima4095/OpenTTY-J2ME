@@ -340,20 +340,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else {
                 command = args;
                 screen.setLabel("[sudo] Password for " + username);
-                
+
             }
-            
+
             screen.append(PASSWD); screen.addCommand(LOGIN); screen.addCommand(EXIT);
             screen.setCommandListener(this); 
             display.setCurrent(screen); 
         } 
-        
+
         public void commandAction(Command c, Displayable d) { 
             if (c == LOGIN) { 
                 if (command.equals("")) {
                     username = USER.getString().trim(); 
                     String password = PASSWD.getString().trim();
-    
+
                     if (username.equals("") || password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
                     else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(); } 
                     else { 
