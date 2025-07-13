@@ -363,7 +363,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 } else {
                     if (PASSWD.getString().trim().equals("")) { }
-                    else { caseCommand("passwd (" + PASSWD.getString().trim() + ") " + command); }
+                    else { ); }
                 }
             } 
             else if (c == EXIT) { processCommand("exit"); } 
