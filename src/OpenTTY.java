@@ -554,10 +554,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Verify current API version
         if (PKG.containsKey("api.version")) {
-            String version = env("$VERSION");
-            String apiVersion = (String) PKG.get("api.version");
+            String version = env("$VERSION"), apiVersion = (String) PKG.get("api.version");
             String mode = (String) PKG.get("api.match");
-            if (mode == null || mode.equals("")) mode = "exact-prefix";
+            if (mode == null || mode.length() == 0) mode = "exact-prefix";
 
             boolean fail = false;
 
