@@ -339,7 +339,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TYPE = SIGNUP;
 
                 screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
-                if (username.equals("")) { screen.append(USER); } screen.append(PASSWD);
+                if (username.equals("")) { screen.append(USER); } if (loadRMS(".passwd").equals("")) { screen.append(PASSWD); }
             } else {
                 TYPE = REQUEST;
                 command = args;
