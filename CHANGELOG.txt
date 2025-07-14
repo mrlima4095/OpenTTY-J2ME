@@ -9,7 +9,7 @@ LTS Edition
 - `which [command]`: Find source of **command** 
 - `passwd [password]`: Change password
 - `sudo [command]`: Run command with superuser permissions
-- `su [user]`: Switch user
+- `su [user]`: Switch user (root/ you)
 
 [ _Updates_ ]
 
