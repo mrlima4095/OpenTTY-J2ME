@@ -288,7 +288,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Low-level commands
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
-        else if (mainCommand.equals("@login")) { if (argument.equals("")) { username = loadRMS("OpenRMS"); } else { username = argument; } }
+        else if (mainCommand.equals("@login")) { if (root == true) { username = argument.equals("") ? loadRMS("OpenRMS") : argument; } else { return 13; } }
         else if (mainCommand.equals("@alert")) { try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } }
         else if (mainCommand.equals("@reload")) { shell = new Hashtable(); aliases = new Hashtable(); username = loadRMS("OpenRMS"); MIDletLogs("add debug API reloaded"); processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); }
         else if (mainCommand.startsWith("@")) { }
@@ -355,10 +355,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void commandAction(Command c, Displayable d) { 
             if (c == LOGIN) { 
+                String password = PASSWD.getString().trim();
+
                 if (TYPE == SIGNUP) {
                     username = USER.getString().trim(); 
-                    String password = PASSWD.getString().trim();
-
+                    
                     if (username.equals("") || password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
                     else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
                     else { 
@@ -368,12 +369,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         runScript(loadRMS("initd")); 
                     }
                 } else if (TYPE == REQUEST) {
-                    String password = PASSWD.getString().trim();
                     if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
                     else {
                         if (("" + password.hashCode()).equals(loadRMS(".passwd"))) {
                             processCommand(command, true, true);
-                        }
+                        } else { warnCommand(form.getTitle(), "Wrong password!"); }
                     }
                 }
                     
