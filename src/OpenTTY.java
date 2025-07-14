@@ -91,7 +91,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Session
         else if (mainCommand.equals("su")) { 
-            if (argument.equals("")) { 
+            if (argument.equals("") || argument.equals("root")) { 
                 if (root) { username = "root"; } 
                 else { echoCommand("Permission denied!"); return 13; } 
             } else {
