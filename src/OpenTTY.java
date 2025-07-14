@@ -372,7 +372,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String password = PASSWD.getString().trim();
 
                 if (TYPE == SIGNUP) {
-                    username = USER.getString().trim(); 
+                    if (asking_user) { username = USER.getString().trim(); }
                     
                     if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
                     else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
@@ -392,7 +392,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } else { warnCommand(form.getTitle(), "Wrong password!"); }
                     }
                 }
-                    
+                stdin.setLabel(username + " " + path + " $");
             } 
             else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } 
         } 
