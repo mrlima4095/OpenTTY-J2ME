@@ -110,8 +110,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 005 - (Operators)
         // |
         // Operators
-        else if (mainCommand.equals("for")) { return forCommand(argument); } 
-        else if (mainCommand.equals("if")) { return ifCommand(argument); } else if (mainCommand.equals("case")) { return caseCommand(argument); }
+        else if (mainCommand.equals("for")) { return forCommand(argument, ignore, root); } 
+        else if (mainCommand.equals("if")) { return ifCommand(argument, ignore, root); } else if (mainCommand.equals("case")) { return caseCommand(argument, ignore, root); }
         // |
         // Long executors
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, root); }
@@ -389,9 +389,67 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 005 - (Operators)
     // |
     // Operators
-    private int ifCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return 2; } String EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); String[] PARTS = split(EXPR, ' '); if (PARTS.length == 3) { boolean CONDITION = false; boolean NEGATED = PARTS[1].startsWith("!") && !PARTS[1].equals("!="); if (NEGATED) { PARTS[1] = PARTS[1].substring(1); } Double N1 = getNumber(PARTS[0]), N2 = getNumber(PARTS[2]); if (N1 != null && N2 != null) { if (PARTS[1].equals("==")) { CONDITION = N1.doubleValue() == N2.doubleValue(); } else if (PARTS[1].equals("!=")) { CONDITION = N1.doubleValue() != N2.doubleValue(); } else if (PARTS[1].equals(">")) { CONDITION = N1.doubleValue() > N2.doubleValue(); } else if (PARTS[1].equals("<")) { CONDITION = N1.doubleValue() < N2.doubleValue(); } else if (PARTS[1].equals(">=")) { CONDITION = N1.doubleValue() >= N2.doubleValue(); } else if (PARTS[1].equals("<=")) { CONDITION = N1.doubleValue() <= N2.doubleValue(); } } else { if (PARTS[1].equals("startswith")) { CONDITION = PARTS[0].startsWith(PARTS[2]); } else if (PARTS[1].equals("endswith")) { CONDITION = PARTS[0].endsWith(PARTS[2]); } else if (PARTS[1].equals("contains")) { CONDITION = PARTS[0].indexOf(PARTS[2]) != -1; } else if (PARTS[1].equals("==")) { CONDITION = PARTS[0].equals(PARTS[2]); } else if (PARTS[1].equals("!=")) { CONDITION = !PARTS[0].equals(PARTS[2]); } } if (CONDITION != NEGATED) { return processCommand(CMD); } } else if (PARTS.length == 2) { if (PARTS[0].equals(PARTS[1])) { return processCommand(CMD); } } else if (PARTS.length == 1) { if (!PARTS[0].equals("")) { return processCommand(CMD); } } return 0; }
-    private int forCommand(String argument) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } String KEY = getCommand(argument), FILE = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()), CMD = argument.substring(lastParenthesis + 1).trim(); if (KEY.startsWith("(")) { return 2; } if (KEY.startsWith("$")) { KEY = replace(KEY, "$", ""); } String[] LINES = split(FILE, '\n'); for (int i = 0; i < LINES.length; i++) { if (LINES[i] != null || LINES[i].length() != 0) { processCommand("set " + KEY + "=" + LINES[i], false); int STATUS = processCommand(CMD); processCommand("unset " + KEY, false); if (STATUS != 0) { return STATUS; } } } return 0; }
-    private int caseCommand(String argument) { 
+    private int ifCommand(String argument, boolean ignore, boolean root) { 
+        argument = argument.trim(); 
+        int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); 
+        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return 2; } 
+
+        String EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); 
+        String[] PARTS = split(EXPR, ' '); 
+
+        if (PARTS.length == 3) { 
+            boolean CONDITION = false; 
+            boolean NEGATED = PARTS[1].startsWith("!") && !PARTS[1].equals("!="); 
+            if (NEGATED) { PARTS[1] = PARTS[1].substring(1); } 
+            Double N1 = getNumber(PARTS[0]), N2 = getNumber(PARTS[2]); 
+
+            if (N1 != null && N2 != null) { 
+                if (PARTS[1].equals("==")) { CONDITION = N1.doubleValue() == N2.doubleValue(); } 
+                else if (PARTS[1].equals("!=")) { CONDITION = N1.doubleValue() != N2.doubleValue(); } 
+                else if (PARTS[1].equals(">")) { CONDITION = N1.doubleValue() > N2.doubleValue(); } 
+                else if (PARTS[1].equals("<")) { CONDITION = N1.doubleValue() < N2.doubleValue(); } 
+                else if (PARTS[1].equals(">=")) { CONDITION = N1.doubleValue() >= N2.doubleValue(); } 
+                else if (PARTS[1].equals("<=")) { CONDITION = N1.doubleValue() <= N2.doubleValue(); } 
+            } else { 
+                if (PARTS[1].equals("startswith")) { CONDITION = PARTS[0].startsWith(PARTS[2]); } 
+                else if (PARTS[1].equals("endswith")) { CONDITION = PARTS[0].endsWith(PARTS[2]); } 
+                else if (PARTS[1].equals("contains")) { CONDITION = PARTS[0].indexOf(PARTS[2]) != -1; } 
+                else if (PARTS[1].equals("==")) { CONDITION = PARTS[0].equals(PARTS[2]); } 
+                else if (PARTS[1].equals("!=")) { CONDITION = !PARTS[0].equals(PARTS[2]); } 
+            } 
+
+            if (CONDITION != NEGATED) { return processCommand(CMD, ignore, root); } 
+        } else if (PARTS.length == 2) { 
+            if (PARTS[0].equals(PARTS[1])) { return processCommand(CMD, ignore, root); } 
+        } else if (PARTS.length == 1) { 
+            if (!PARTS[0].equals("")) { return processCommand(CMD, ignore, root); } 
+        } 
+
+        return 0; 
+    }
+    private int forCommand(String argument, boolean ignore, boolean root) { 
+        argument = argument.trim(); 
+        int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); 
+        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } 
+
+        String KEY = getCommand(argument), FILE = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()), CMD = argument.substring(lastParenthesis + 1).trim(); 
+
+        if (KEY.startsWith("(")) { return 2; } if (KEY.startsWith("$")) { KEY = replace(KEY, "$", ""); } 
+
+        String[] LINES = split(FILE, '\n'); 
+        for (int i = 0; i < LINES.length; i++) { 
+            if (LINES[i] != null || LINES[i].length() != 0) { 
+                processCommand("set " + KEY + "=" + LINES[i], false, root); 
+                int STATUS = processCommand(CMD, ignore, root); 
+                processCommand("unset " + KEY, false, root); 
+
+                if (STATUS != 0) { return STATUS; } 
+            } 
+        } 
+
+        return 0; 
+    }
+    private int caseCommand(String argument, boolean ignore, boolean root) { 
         argument = argument.trim(); 
         int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); 
         if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } 
@@ -404,8 +462,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } 
         else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); } 
         else if (METHOD.equals("passwd")) { CONDITION = loadRMS(".passwd").equals("" + EXPR.hashCode()); }
+        else if (METHOD.equals("root")) { CONDITION = username.equals("root"); }
 
-        if (CONDITION != NEGATED) { return processCommand(CMD); } 
+        if (CONDITION != NEGATED) { return processCommand(CMD, ignore, root); } 
 
         return 0; 
     }
