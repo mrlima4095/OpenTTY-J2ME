@@ -336,22 +336,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         public Credentials(String args) { 
             if (args == null || args.length() == 0 || args.equals("login")) {
-                TYPE = SIGNUP
+                TYPE = SIGNUP;
+
                 screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
-                if (username.equals("")) { screen.append(USER); } screen.append(PASSWD);  
+                if (username.equals("")) { screen.append(USER); } screen.append(PASSWD);
             } else {
+                TYPE = REQUEST;
                 command = args;
-                PASSWD.setLabel("[sudo] password for  " + username);
+                PASSWD.setLabel("[sudo] password for " + username); screen.append(PASSWD); 
+                LOGIN = new Command("Send", Command.OK, 1);
+                EXIT = new Command("Back", Command.SCREEN, 2)
             }
 
-            screen.append(PASSWD); screen.addCommand(LOGIN); screen.addCommand(EXIT);
+            screen.addCommand(LOGIN); screen.addCommand(EXIT);
             screen.setCommandListener(this); 
             display.setCurrent(screen); 
         } 
 
         public void commandAction(Command c, Displayable d) { 
             if (c == LOGIN) { 
-                if (command.equals("")) {
+                if (TYPE == SIGNUP) {
                     username = USER.getString().trim(); 
                     String password = PASSWD.getString().trim();
 
@@ -363,14 +367,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         display.setCurrent(form); 
                         runScript(loadRMS("initd")); 
                     }
-                } else {
-                    if (PASSWD.getString().trim().equals("")) { }
+                } else if (TYPE == REQUEST) {
+                    String password = PASSWD.getString().trim();
+                    if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
                     else {
-                        if (loadRMS(".passwd").equals("" + EXPR.hashCode()))
+                        if (("" + password.hashCode()).equals(loadRMS(".passwd"))) {
+                            processCommand(command, true, true);
+                        }
                     }
                 }
+                    
             } 
-            else if (c == EXIT) { processCommand("exit"); } 
+            else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } 
         } 
     }
 
