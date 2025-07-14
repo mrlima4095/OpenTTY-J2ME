@@ -298,8 +298,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // OpenTTY Packages
         else if (mainCommand.equals("about")) { about(argument); }
-        else if (mainCommand.equals("import")) { return importScript(argument); }
-        else if (mainCommand.equals("run")) { return processCommand(". " + argument, false); }
+        else if (mainCommand.equals("import")) { return importScript(argument, root); }
+        else if (mainCommand.equals("run")) { return processCommand(". " + argument, false, root); }
         else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 2; } } }
 
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument)); } }
@@ -307,7 +307,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS")); }
         else if (mainCommand.equals("!!")) { if (history.size() > 0) { stdin.setString((String) history.elementAt(history.size() - 1)); } }
-        else if (mainCommand.equals(".")) { if (argument.equals("")) { return runScript(nanoContent); } else { return runScript(getcontent(argument)); } }
+        else if (mainCommand.equals(".")) { if (argument.equals("")) { return runScript(nanoContent, root); } else { return runScript(getcontent(argument), root); } }
 
         else { echoCommand(mainCommand + ": not found"); return 127; }
 
@@ -462,7 +462,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } 
         else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); } 
         else if (METHOD.equals("passwd")) { CONDITION = loadRMS(".passwd").equals("" + EXPR.hashCode()); }
-        else if (METHOD.equals("root")) { CONDITION = root; }
+        else if (METHOD.equals("user")) { CONDITION = username.equals(EXPR); }
 
         if (CONDITION != NEGATED) { return processCommand(CMD, ignore, root); } 
 
@@ -560,7 +560,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // OpenTTY Packages
     private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2025 - Mr. Lima")); return; } Hashtable PKG = parseProperties(getcontent(script)); if (PKG.containsKey("name")) { echoCommand((String) PKG.get("name") + " " + (String) PKG.get("version")); } if (PKG.containsKey("description")) { echoCommand((String) PKG.get("description")); } }
-    private int importScript(String script) {
+    private int importScript(String script, boolean root) {
         if (script == null || script.length() == 0) { return 2; }
 
         Hashtable PKG = parseProperties(getcontent(script));
@@ -582,7 +582,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (mode.equals("exact-full")) { fail = !version.equals(apiVersion); } 
             else { return 1; }
 
-            if (fail) { String error = (String) PKG.get("api.error"); processCommand(error != null ? error : "true"); return 3; }
+            if (fail) { String error = (String) PKG.get("api.error"); processCommand(error != null ? error : "true", true, root); return 3; }
         }
         // |
         // Build dependencies
@@ -594,8 +594,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("process.host") && PKG.containsKey("process.port")) { new Server(env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host"))); }
         // |
         // Start Application
-        if (PKG.containsKey("config")) { processCommand((String) PKG.get("config")); }
-        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD); if (STATUS != 0) { return; } } } }.start(); }
+        if (PKG.containsKey("config")) { int STATUS = processCommand((String) PKG.get("config"), true, root); if (STATUS != 0) { return STATUS; } }
+        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD, true, root); if (STATUS != 0) { return STATUS; } } } }.start(); }
         // |
         // Generate items - Command & Files
         if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(commands[i]))); } else { MIDletLogs("add error Failed to create command '" + commands[i] + "' content not found"); } } }
