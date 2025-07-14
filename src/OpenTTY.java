@@ -363,7 +363,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
                     else { 
                         writeRMS("/home/OpenRMS", username);
-                        writeRMS("/home/.passwd", "" + password.hashCode());
+                        //writeRMS("/home/.passwd", "" + password.hashCode());
                         display.setCurrent(form); 
                         runScript(loadRMS("initd")); 
                     }
