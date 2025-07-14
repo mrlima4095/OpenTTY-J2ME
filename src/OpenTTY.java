@@ -356,7 +356,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
                 if (username.equals("")) { asking_user= true; screen.append(USER); } if (asking_passwd) { screen.append(PASSWD); }
             } else {
-                TYPE = REQUEST; asking_passwd = true;
+                TYPE = REQUEST; if (asking_passwd) { new Credentials(null); return; } asking_passwd = true;
                 command = args;
                 PASSWD.setLabel("[sudo] password for " + username); screen.append(PASSWD); 
                 LOGIN = new Command("Send", Command.OK, 1); EXIT = new Command("Back", Command.SCREEN, 2);
