@@ -371,7 +371,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
                     else {
                         if (("" + password.hashCode()).equals(loadRMS(".passwd"))) {
-                            processCommand(command, true, true);
+                            processCommand(command, true, true); processCommand("xterm");
                         } else { warnCommand(form.getTitle(), "Wrong password!"); }
                     }
                 }
