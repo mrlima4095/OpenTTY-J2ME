@@ -345,7 +345,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 command = args;
                 PASSWD.setLabel("[sudo] password for " + username); screen.append(PASSWD); 
                 LOGIN = new Command("Send", Command.OK, 1);
-                EXIT = new Command("Back", Command.SCREEN, 2)
+                EXIT = new Command("Back", Command.SCREEN, 2);
             }
 
             screen.addCommand(LOGIN); screen.addCommand(EXIT);
