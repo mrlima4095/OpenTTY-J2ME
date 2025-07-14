@@ -87,3 +87,4 @@
 [2025-1.16-02x20]	Password Engine
 [2025-1.16-02x21]	New trace back translator
 [2025-1.16-02x22]	New case operator 'user'
+[2025-1.16-02x23]	Writing at files 'OpenRMS' and '.passwd' requires super user privileges | Those files cannot be deleted
