@@ -23,4 +23,4 @@ LTS Edition
 
 [ _Notes_ ]
 
-- 
+- If you are logged as **root** command `logout` will return you to normal user.
