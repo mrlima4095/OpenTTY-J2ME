@@ -126,7 +126,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, root); }
         else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, root); } }
-        else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (InterruptedException e) { } catch (NumberFormatException e) { echoCommand(e.getMessage()); return 2; } } }
+        else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { echoCommand(e.getMessage()); return 2; } } }
         else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore, root); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } } 
         // |
         // Chain executors
