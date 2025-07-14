@@ -329,6 +329,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     public class Credentials implements CommandListener { 
         private int TYPE = 0, SIGNUP = 1, REQUEST = 2;
+        private boolean asking_passwd = loadRMS(".passwd").equals("");
         private String command = "";
         private Form screen = new Form(form.getTitle()); 
         private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); 
@@ -339,7 +340,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TYPE = SIGNUP;
 
                 screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
-                if (username.equals("")) { screen.append(USER); } if (loadRMS(".passwd").equals("")) { screen.append(PASSWD); }
+                if (username.equals("")) { screen.append(USER); } if (asking_passwd) { screen.append(PASSWD); }
             } else {
                 TYPE = REQUEST;
                 command = args;
@@ -359,11 +360,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (TYPE == SIGNUP) {
                     username = USER.getString().trim(); 
                     
-                    if (username.equals("") || password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
+                    if (username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
                     else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
                     else { 
                         writeRMS("/home/OpenRMS", username);
-                        //writeRMS("/home/.passwd", "" + password.hashCode());
+                        if (asking_passwd) { writeRMS("/home/.passwd", "" + password.hashCode()); }
                         display.setCurrent(form); 
                         runScript(loadRMS("initd")); 
                     }
