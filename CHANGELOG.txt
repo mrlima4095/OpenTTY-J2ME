@@ -5,6 +5,8 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `which [command]`: Find source of **command** 
+- `passwd [password]`: Change password
+- `sudo [command]`: Run command with superuser permissions
 
 [ _Updates_ ]
 
