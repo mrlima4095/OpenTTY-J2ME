@@ -85,3 +85,4 @@
 [2025-1.16-02x18]	Fixed a bug in 'NC' that doesn't closes the connection
 [2025-1.16-02x19]	Added Command 'WHICH'
 [2025-1.16-02x20]	Password Engine
+[2025-1.16-02x21]	New trace back translator
