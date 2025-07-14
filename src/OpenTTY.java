@@ -328,18 +328,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     
     public class Credentials implements CommandListener { 
+        private int TYPE = 0, SIGNUP = 1, REQUEST = 2;
         private String command = "";
         private Form screen = new Form(form.getTitle()); 
-        private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.PASSWORD); 
+        private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); 
         private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); 
         
         public Credentials(String args) { 
             if (args == null || args.length() == 0 || args.equals("login")) {
+                TYPE = SIGNUP
                 screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\nCreate an user to access OpenTTY!")); 
                 if (username.equals("")) { screen.append(USER); } screen.append(PASSWD);  
             } else {
                 command = args;
-                PASSWD.setLabel("[sudo] Password for " + username);
+                PASSWD.setLabel("[sudo] password for  " + username);
             }
 
             screen.append(PASSWD); screen.addCommand(LOGIN); screen.addCommand(EXIT);
