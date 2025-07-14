@@ -7,6 +7,7 @@ Copyright (C) 2025 - Mr. Lima
 - `which [command]`: Find source of **command** 
 - `passwd [password]`: Change password
 - `sudo [command]`: Run command with superuser permissions
+- `su [user]`
 
 [ _Updates_ ]
 
