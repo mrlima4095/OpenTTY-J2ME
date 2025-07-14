@@ -17,7 +17,7 @@ LTS Edition
 - MIDlet login ask for a password
 - Command `logout` when you are root return to your user
 - Improved exceptions messages
-- 
+- New case condition **user** to compare user name
 -
 -
 
