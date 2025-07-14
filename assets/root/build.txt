@@ -86,4 +86,4 @@
 [2025-1.16-02x19]	Added Command 'WHICH'
 [2025-1.16-02x20]	Password Engine
 [2025-1.16-02x21]	New trace back translator
-[2025-1.16-02x22]	New case operators 'user'
+[2025-1.16-02x22]	New case operator 'user'
