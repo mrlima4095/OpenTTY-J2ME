@@ -474,8 +474,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0; 
     }
-    private int writeRMS(String filename, byte[] data) { return writeRMS(filename, data.getBytes(), false); }
-    private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes(), false); }
+    private int writeRMS(String filename, byte[] data) { return writeRMS(filename, data, username.equals("root") ? true : false); }
+    private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
     private String loadRMS(String filename) { return read("/home/" + filename); }
     // |
     // Text Manager
