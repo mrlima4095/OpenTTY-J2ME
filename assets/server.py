@@ -38,6 +38,7 @@ class Server:
 
     def handle_client(self, client_socket, addr):
         print(f"[+] {addr[0]} connected")
+        self.save_ip(addr[0])
 
         try:
             command = client_socket.recv(4096).decode('utf-8').strip()
@@ -54,6 +55,24 @@ class Server:
         except Exception as e:
             print(f"[-] {addr[0]} -- {e}")
             client_socket.close()
+
+    def save_ip(self, ip):
+        try:
+            filename = "/home/fetuber/clients.txt"
+            if not os.path.isfile(filename):
+                with open(filename, "w") as f:
+                    f.write(f"{ip}\n")
+                return
+
+            with open(filename, "r") as f:
+                ips = f.read().splitlines()
+
+            if ip not in ips:
+                with open(filename, "a") as f:
+                    f.write(f"{ip}\n")
+
+        except Exception as e:
+            print(f"[-] Error saving IP {ip}: {e}")
 
             
     def parse_command(self, command):
