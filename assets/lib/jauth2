@@ -19,7 +19,7 @@ quest.title=$TITLE - Locked
 quest.label=[lock] password for $USERNAME
 quest.type=password
 quest.key=INPUT
-quest.cmd=execute case passwd ($INPUT) exec cp initd-backup initd & rm initd-backup & xterm & return 20; @alert; x11 quest jauth2; warn Access denied!;
+quest.cmd=execute case passwd ($INPUT) exec cp initd-backup initd & rm initd-backup & xterm & case !key (LOCK_CURRENT)  return 20; @alert; x11 quest jauth2; warn Access denied!;
 quest.back=execute exit;
 quest.back.label=Exit
 
