@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x23"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x24"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -33,7 +33,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.2");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
-            runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " $");
+            runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
 
             if (username.equals("") || loadRMS(".passwd").equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
@@ -44,7 +44,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("") && !command.startsWith("!!")) { history.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " $"); } 
+        if (c == EXECUTE) { String command = stdin.getString().trim(); if (!command.equals("") && !command.startsWith("!!")) { history.addElement(command.trim()); } stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); } 
 
         else if (c == HELP) { processCommand("help"); }
         else if (c == NANO) { new NanoEditor(""); }
@@ -98,9 +98,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (username.equals("root")) { username = loadRMS("OpenRMS"); } 
                 else { username = "root"; } 
                 processCommand("sh", false);
-            } else { echoCommand("Permission denied!"); return 13; } }
-        else if (mainCommand.equals("passwd")) { if (root) { writeRMS("/home/.passwd", ""); new Credentials(null); } else { echoCommand("passwd: permission denied!"); return 13; } }
-        else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (root) { writeRMS("/home/OpenRMS", ""); processCommand("exit", ignore, root); } else { echoCommand("logout: permission denied!"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
+            } else { echoCommand("su: permission denied"); return 13; } }
+        else if (mainCommand.equals("passwd")) { if (root) { writeRMS("/home/.passwd", ""); new Credentials(null); } else { echoCommand("passwd: permission denied"); return 13; } }
+        else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (root) { writeRMS("/home/OpenRMS", ""); processCommand("exit", ignore, root); } else { echoCommand("logout: permission denied"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
         
         // API 004 - (LCDUI Interface)
         // |
@@ -352,7 +352,40 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else { 
                 TYPE = REQUEST; 
-                if (asking_passwd) { new Credentials(null); return; } asking_passwd = true; command = args; PASSWD.setLabel("[sudo] password for " + username); screen.append(PASSWD); LOGIN = new Command("Send", Command.OK, 1); EXIT = new Command("Back", Command.SCREEN, 2); } screen.addCommand(LOGIN); screen.addCommand(EXIT); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == LOGIN) { String password = PASSWD.getString().trim(); if (TYPE == SIGNUP) { if (asking_user) { username = USER.getString().trim(); } if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } else { if (asking_user) { writeRMS("/home/OpenRMS", username.getBytes(), true); } if (asking_passwd) { writeRMS("/home/.passwd", ("" + password.hashCode()).getBytes(), true); } display.setCurrent(form); runScript(loadRMS("initd")); } } else if (TYPE == REQUEST) { if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else { if (("" + password.hashCode()).equals(loadRMS(".passwd"))) { processCommand(command, true, true); processCommand("xterm"); } else { warnCommand(form.getTitle(), "Wrong password!"); } } } stdin.setLabel(username + " " + path + " $"); } else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
+                if (asking_passwd) { new Credentials(null); return; } 
+
+                asking_passwd = true; command = args; 
+                PASSWD.setLabel("[sudo] password for " + username); 
+                screen.append(PASSWD); 
+                LOGIN = new Command("Send", Command.OK, 1); EXIT = new Command("Back", Command.SCREEN, 2); 
+            } 
+
+            screen.addCommand(LOGIN); screen.addCommand(EXIT); 
+            screen.setCommandListener(this); display.setCurrent(screen); 
+        } 
+        public void commandAction(Command c, Displayable d) { 
+            if (c == LOGIN) { 
+                String password = PASSWD.getString().trim(); 
+                if (TYPE == SIGNUP) { 
+                    if (asking_user) { username = USER.getString().trim(); } 
+
+                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
+                    else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
+                    else { if (asking_user) { writeRMS("/home/OpenRMS", username.getBytes(), true); } 
+                    if (asking_passwd) { writeRMS("/home/.passwd", ("" + password.hashCode()).getBytes(), true); } 
+                    display.setCurrent(form); runScript(loadRMS("initd")); } 
+                } 
+                else if (TYPE == REQUEST) { 
+                    if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
+                    else { 
+                        if (("" + password.hashCode()).equals(loadRMS(".passwd"))) { processCommand(command, true, true); processCommand("xterm"); } 
+                        else { warnCommand(form.getTitle(), "Wrong password!"); } 
+                    } 
+                } 
+
+                stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
+            } 
+            else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
 
     // API 002 - (Logs)
     // |
