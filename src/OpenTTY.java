@@ -95,12 +95,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (root) { return processCommand(argument, ignore, root); } else { new Credentials(argument); } }
         else if (mainCommand.equals("su")) { 
             if (root) { 
-                if (username.equals("root")) { username = loadRMS("OpenRMS"); } 
-                else { username = "root"; } 
+                username = username.equals("root") ? loadRMS("OpenRMS") : "root";
                 processCommand("sh", false);
             } else { echoCommand("su: permission denied"); return 13; } }
-        else if (mainCommand.equals("passwd")) { if (root) { writeRMS("/home/.passwd", "", true); new Credentials(null); } else { echoCommand("passwd: permission denied"); return 13; } }
-        else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (root) { writeRMS("/home/OpenRMS", ""); processCommand("exit", ignore, root); } else { echoCommand("logout: permission denied"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
+        else if (mainCommand.equals("passwd")) { if (root) { writeRMS("/home/.passwd", new byte[0], true); new Credentials(null); } else { echoCommand("passwd: permission denied"); return 13; } }
+        else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (root) { writeRMS("/home/OpenRMS", new byte[0], true); processCommand("exit", false, root); } else { echoCommand("logout: permission denied"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
         
         // API 004 - (LCDUI Interface)
         // |
@@ -285,8 +284,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("debug")) { return runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
         else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; argument = replace(argument, "-v", "").trim(); if (argument.equals("")) { argument = "sh"; } String content = read("/home/man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat"); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
+        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (username.equals("root")) { processCommand("logout", false, false); } else { writeRMS("/home/nano", nanoContent); notifyDestroyed(); } }
         else if (mainCommand.equals("true") || mainCommand.equals("false") || mainCommand.startsWith("#")) { }
-        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
 
         //else if (mainCommand.equals("")) {  }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
