@@ -20,7 +20,7 @@ LTS Edition
 - New case condition **user** to compare user name
 - Command `return` invalid code payload changed to **2**
 - Command `server` reading port from command-line, if not args are given usages the default port from environment key
--
+- Runners `exec` and `execute` stop running if command exit code is different of 0 (error)
 
 [ _Notes_ ]
 
