@@ -88,3 +88,4 @@
 [2025-1.16-02x21]	New trace back translator
 [2025-1.16-02x22]	New case operator 'user'
 [2025-1.16-02x23]	Writing at files 'OpenRMS' and '.passwd' requires super user privileges | Those files cannot be deleted
+[2025-1.16-02x24]	When logged as super user the stdin item '$' changes to '#'
