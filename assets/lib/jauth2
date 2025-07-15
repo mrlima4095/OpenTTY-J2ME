@@ -10,7 +10,7 @@ api.match=minimum
 
 command=lock
 
-lock=execute x11 quest jauth2; cp initd initd-backup; install nano; get initd; add; add x11 quest jauth2; install initd; get nano;
+lock=execute x11 quest jauth2; set LOCK_CURRENT=true; cp initd initd-backup; install nano; get initd; touch; add x11 quest jauth2; install initd; get nano;
 
 
 [ DISPLAY ]
