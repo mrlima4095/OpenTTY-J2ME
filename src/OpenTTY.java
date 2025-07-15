@@ -400,7 +400,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } 
         else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); } 
         else if (METHOD.equals("passwd")) { CONDITION = loadRMS(".passwd").equals("" + EXPR.hashCode()); }
-        else if (METHOD.equals("user")) { CONDITION = username.equals(EXPR); }
+        else if (METHOD.equals("user")) { CONDITION = username.equals(EXPR); root = true; }
 
         if (CONDITION != NEGATED) { return processCommand(CMD, ignore, root); } 
 
