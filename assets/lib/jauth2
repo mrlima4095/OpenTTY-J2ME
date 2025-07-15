@@ -10,16 +10,16 @@ api.match=minimum
 
 command=lock
 
-look=execute x11 quest jauth2
+lock=execute x11 quest jauth2; cp initd initd-backup; install nano; get initd; add; add x11 quest jauth2; install initd;
 
 
 [ DISPLAY ]
 
 quest.title=$TITLE - Locked
-quest.label=Password
+quest.label=[lock] password for $USERNAME
 quest.type=password
 quest.key=INPUT
-quest.cmd=execute if ($INPUT != $USERNAME) exec @alert & lock; if ($INPUT == $USERNAME) xterm; unset INPUT;
+quest.cmd=execute case passwd ($INPUT) exec cp initd-backup initd & rm initd-backup & xterm & return 100; @alert; x11 quest jauth2;
 quest.back=execute exit;
 quest.back.label=Exit
 
