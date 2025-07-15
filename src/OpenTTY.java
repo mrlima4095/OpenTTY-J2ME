@@ -121,8 +121,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore, root); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } } 
         // |
         // Chain executors
-        else if (mainCommand.equals("exec")) { String[] CMDS = split(argument, '&'); for (int i = 0; i < CMDS.length; i++) { processCommand(CMDS[i].trim(), ignore, root); } }
-        else if (mainCommand.equals("execute")) { String[] CMDS = split(argument, ';'); for (int i = 0; i < CMDS.length; i++) { processCommand(CMDS[i].trim(), ignore, root); } }
+        else if (mainCommand.startsWith("exec")) { 
+            String[] CMDS = split(argument, mainCommand.equals("exec") ? '&' : ';'); 
+            for (int i = 0; i < CMDS.length; i++) { 
+                int STATUS = processCommand(CMDS[i].trim(), ignore, root);
+                if (STATUS != 0) { return STATUS; } 
+            } 
+        }
 
         // API 006 - (Process)
         // |
