@@ -545,7 +545,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // |
         // Build dependencies
-        if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i]); if (STATUS != 0) { return STATUS; } } }
+        if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i], root); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start and handle APP process
         if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name")); }
@@ -554,7 +554,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Start Application
         if (PKG.containsKey("config")) { int STATUS = processCommand((String) PKG.get("config"), true, root); if (STATUS != 0) { return STATUS; } }
-        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"), MOD = (String) PKG.get("mod"); final boolean root = root; new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD, true, root); if (STATUS != 0) { return; } } } }.start(); }
+        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"); final String MOD = (String) PKG.get("mod"); final boolean root = root; new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD, true, root); if (STATUS != 0) { return; } } } }.start(); }
         // |
         // Generate items - Command & Files
         if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(commands[i]))); } else { MIDletLogs("add error Failed to create command '" + commands[i] + "' content not found"); } } }
