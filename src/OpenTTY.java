@@ -603,7 +603,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (command.equals(getLocalAddress())) { }
         else { history.addElement(command.trim()); }
     }
-    private String getLastHistory() { return history.size() > 0 ? (String) history.elementAt(history.size() - 1)) : ""; }
+    private String getLastHistory() { return history.size() > 0 ? (String) history.elementAt(history.size() - 1) : ""; }
 
     // API 015 - (Scripts)
     // |
