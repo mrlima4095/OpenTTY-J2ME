@@ -4,6 +4,6 @@ From: Mr Lima (Lead Developer)
 
 ------------------------------
 
-1.14.3 in this week
+I am developing 1.16 LTS release
 
-Jun 10, 2025
+Jul 16, 2025
