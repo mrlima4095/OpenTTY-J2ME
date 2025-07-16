@@ -97,11 +97,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("passwd")) { if (argument.equals("")) { }
             else {
                 if (root) { 
-                writeRMS("/home/.passwd", ("" + argument.hashCode()).getBytes(), true); 
-                new Credentials("true");
-            } else { echoCommand("passwd: permission denied"); return 13; } 
-            
-            }
+                writeRMS("/home/.passwd", ("" + argument.hashCode()).getBytes(), true); } else { echoCommand("passwd: permission denied"); return 13; } }
             
         }
         else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (root) { writeRMS("/home/OpenRMS", new byte[0], true); processCommand("exit", false, root); } else { echoCommand("logout: permission denied"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
