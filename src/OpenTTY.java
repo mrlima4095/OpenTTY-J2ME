@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x25"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x26"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -168,7 +168,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // MIDlet Tracker
         else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
         else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
-        else if (mainCommand.equals("bg")) { final String bgCommand = argument; new Thread("Background") { public void run() { processCommand(bgCommand); } }.start(); }
+        else if (mainCommand.equals("bg")) { final String CMD = argument, IGNORE = ignore, ROOT = root; new Thread("Background") { public void run() { processCommand(CMD, IGNORE, ROOT); } }.start(); }
 
         // API 010 - (Requests)
         // |
