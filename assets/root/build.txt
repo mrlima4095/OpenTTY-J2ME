@@ -90,3 +90,4 @@
 [2025-1.16-02x23]	Writing at files 'OpenRMS' and '.passwd' requires super user privileges | Those files cannot be deleted
 [2025-1.16-02x24]	When logged as super user the stdin item '$' changes to '#'
 [2025-1.16-02x25]	Command 'SERVER' accepting argument PORT from command
+[2025-1.16-02x26]	Command 'BG' reading super settings (scope and permissions)
