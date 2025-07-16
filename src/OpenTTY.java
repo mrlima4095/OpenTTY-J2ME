@@ -600,7 +600,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (command.equals("")) { }
         else if (command.equals("!!")) { }
         else if (command.startsWith("#")) { }
-        else if (command.equals(getLocalAddress())) { }
+        else if (command.equals(getLastHistory())) { }
         else { history.addElement(command.trim()); }
     }
     private String getLastHistory() { return history.size() > 0 ? (String) history.elementAt(history.size() - 1) : ""; }
