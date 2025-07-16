@@ -33,3 +33,4 @@ LTS Edition
 - All jobs started with super user permissions and it sub-process get the permissions.
 - Remote shells interfaces cannot be loaded with super user permissions by default.
 - X11 Screens couldn't be called with `sudo`.
+- 
