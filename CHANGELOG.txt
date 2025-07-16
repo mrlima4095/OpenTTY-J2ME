@@ -24,6 +24,7 @@ LTS Edition
 - **JAuth2** updated to **1.3**
 - **JAuth2** lock now using password and during cross sessions
 - Command `false` returns code **255**
+- Fixed a bug in **Forge** enhanced application generation
 
 [ _Notes_ ]
 
