@@ -40,7 +40,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
     }
 
-    public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "pauseApp()" : "true"); }
+    public void pauseApp() {  }
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
 
     public void commandAction(Command c, Displayable d) {
