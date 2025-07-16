@@ -25,6 +25,7 @@ LTS Edition
 - **JAuth2** lock now using password and during cross sessions
 - Command `false` returns code **255**
 - Fixed a bug in **Forge** enhanced application generation
+- When MIDlet is paused it triggers function `pauseApp()` if it is found
 
 [ _Notes_ ]
 
