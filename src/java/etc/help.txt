@@ -1,22 +1,53 @@
-OpenTTY $VERSION [ $PATCH ]
+OpenTTY $VERSION - $PATCH  
 Copyright (C) 2025 - Mr. Lima
 
-[ Commands ] 
+[ Commands Overview ]
 
-about  add  alias  audio  basename  bg  bind  bruteforce  buff  builtin  call  case  cat  cd  chmod  clear  clone  cp  curl  date  debug  diff  dir  du  echo  env  eval  exec  execute  exit  expr  export  false  find  for  gaddr  gc  get  getopt  getty  gobuster  grep  hash  head  help  history  hostname  hostid  htop  html  if  ifconfig  import  install  java  kill  locale  login  log  logcat  logout  ls  lsblk  man  mkdir  mmspt  mount  nano  nc  netstat  open  ping  pkg  pinc  ph2s  pjnc  pong  prg  prscan  proxy  ps  pushd  pwd  query  raw  read  report  return  rm  rraw  run  sed  server  set  sh  sleep  start  stop  tail  tick  time  title  touch  trace  true  tty  ttysize  uname  unalias  unset  uuid  view  warn  wc  wget  who  whoami  wrl  x11
+Network API:
+  bind  curl  fw  gaddr  gobuster
+  ifconfig  nc  netstat  prscan
+  ping  pong  query  server  wget
+
+File API:
+  about  add  audio  basename  cat  cd
+  chmod  clone  cp  dir  du  find  get
+  getopt  getty  grep  hash  head  html
+  install  json  ls  lsblk  mkdir  mount  
+  nano  open  ph2s pinc  pjnc  pwd  raw
+  read  rm  rraw  sed  tail  touch  wc
+
+Session API:
+  login  logout  who  whoami
+  sudo  su  passwd
+
+Process API:
+  bg  exec  execute  kill  ps  
+  sleep  start  stop  htop  top
+
+MIDlet Builtins:
+  alias  builtin  buff  call  case  
+  clear  date  debug  echo  env  eval
+  export  false  help  history  hostname
+  hostid  locale  log  logcat  man  pkg
+  report  return  set  sh  title  true
+  tty  uname  unalias  unset  uuid  warn  
+
+Others API: 
+  audio  java  prg  wrl  x11
+
 
 [ Manual ]
 
-	To read more usage command 'man [page]'. You can replace PAGE by a command or a default package.
+  To read more usage command 'man [page]'. You can replace PAGE by a command or a default package.
 
 [ Package Manager ] 
 
-	Run 'import /java/lib/yang' to load PackJ.
-	Usage: yang
+  Run 'import /java/lib/yang' to load PackJ.  
+  Usage: yang
 
-	The downloaded packages will be installed at home folder. 
+  The downloaded packages will be installed at home folder. 
 
 [ Web Project ]
 
+Mirror: http://opentty.xyz/  
 Github: https://github.com/mrlima4095/OpenTTY-J2ME
-Mirror: http://opentty.xyz
