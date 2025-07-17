@@ -14,6 +14,7 @@ import java.io.*;
 public class OpenTTY extends MIDlet implements CommandListener {
     private int cursorX = 10, cursorY = 10;
     private Player player = null;
+    private RecordStore RMS = null;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), 
@@ -337,7 +338,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     public class Credentials implements CommandListener { 
         private int TYPE = 0, SIGNUP = 1, REQUEST = 2; 
-        private boolean asking_user = username.equals(""), asking_passwd = passwd(false, null).equals(""); 
+        private boolean asking_user = username.equals(""), asking_passwd = loadRMS(".passwd").equals(""); 
         private String command = ""; 
         private Form screen = new Form(form.getTitle()); 
         private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); 
@@ -388,8 +389,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     private String passwd(boolean write, String value) {
+        
         return "3321809";
-    }
+    } 
 
 
     // API 002 - (Logs)
@@ -520,7 +522,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // RMS Files
     private int deleteFile(String filename) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (CONN.exists()) { CONN.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); return 127; } CONN.close(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { try { filename = filename.substring(6); if (filename.equals("OpenRMS")) { echoCommand("rm: " + filename + ": permission denied"); return 13; } RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); return 127; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return deleteFile(path + filename); } return 0; }
-    
+        private int writeRMS(String filename, byte[] data, int index) {
+        if (filename == null || filename.length() == 0 || index < 1) { return 2; }
+
+        RecordStore CONN = null;
+
+        try {
+            CONN = RecordStore.openRecordStore(filename, true);
+
+            while (CONN.getNumRecords() < index) {
+                CONN.addRecord("".getBytes(), 0, 0); 
+            }
+
+            CONN.setRecord(index, data, 0, data.length);
+
+        } catch (RecordStoreException e) {
+            return 1;
+        } finally {
+            if (CONN != null) {
+                try { CONN.closeRecordStore(); } catch (RecordStoreException e) { }
+            }
+        }
+
+        return 0;
+    }
+
     private int writeRMS(String filename, byte[] data) { 
         if (filename == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/mnt/")) { 
@@ -531,35 +557,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
             catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
         } 
-        else if (filename.startsWith("/home/")) { 
-            filename = filename.substring(6);
-            RecordStore CONN = null;
-
-            try {
-                CONN = RecordStore.openRecordStore(filename, true);
-
-                while (CONN.getNumRecords() < 1) {
-                    CONN.addRecord("".getBytes(), 0, 0); 
-                }
-
-                CONN.setRecord(1, data, 0, data.length);
-
-            } catch (RecordStoreException e) {
-                return 1;
-            } finally {
-                if (CONN != null) {
-                    try { CONN.closeRecordStore(); } catch (RecordStoreException e) { }
-                }
-            }
-            
-            //return writeRMS(filename.substring(6), data, 1); 
-        } 
+        else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
         else { return writeRMS(path + filename, data); } 
 
         return 0; 
-    }
-    private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
+    }private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
     private String loadRMS(String filename) { return read("/home/" + filename); }
     // |
     // Text Manager
