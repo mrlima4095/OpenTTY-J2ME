@@ -386,6 +386,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
     private String passwd(boolean write, String value) {
+        RecordStore CONN = null;
         try {
             CONN = RecordStore.openRecordStore("OpenRMS", true);
 
