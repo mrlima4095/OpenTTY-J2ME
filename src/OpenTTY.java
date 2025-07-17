@@ -393,7 +393,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             RecordStore recordStore = null; 
             try { 
-                recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
+                recordStore = RecordStore.openRecordStore("OpenRMS", true); 
                 if (recordStore.getNumRecords() >= 2) { byte[] data = recordStore.getRecord(2); if (data != null) { content = new String(data); } } 
             } 
             catch (RecordStoreException e) { return ""; } 
