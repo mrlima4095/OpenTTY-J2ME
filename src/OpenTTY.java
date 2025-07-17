@@ -377,7 +377,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (TYPE == REQUEST) { 
                     if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
                     else { 
-                        if (String.valueOf(password.hashCode()).equals(passwd(false, null))) { processCommand(command, true, true); processCommand("xterm"); } 
+                        if (String.valueOf(password.hashCode()).equals(passwd(false, ""))) { processCommand(command, true, true); processCommand("xterm"); } 
                         else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } 
                     } 
                 } 
@@ -492,7 +492,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(EXPR)) { CONDITION = true; break; } } } 
         else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } 
         else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); } 
-        else if (METHOD.equals("passwd")) { CONDITION = String.valueOf(EXPR.hashCode()).equals(passwd(false, null)); } 
+        else if (METHOD.equals("passwd")) { CONDITION = String.valueOf(EXPR.hashCode()).equals(passwd(false, "")); } 
         else if (METHOD.equals("user")) { CONDITION = username.equals(EXPR); if (EXPR.equals("root") && root == true) { CONDITION = true; } root = true; }
         
         if (CONDITION != NEGATED) { return processCommand(CMD, ignore, root); } 
