@@ -395,7 +395,7 @@ private String passwd(boolean write, String value) {
             CONN = RecordStore.openRecordStore("OpenRMS", true);
             byte[] data = ("" + value.hashCode()).getBytes();
 
-            while (CONN.getNumRecords() < 2) {
+            if (CONN.getNumRecords() < 2) {
                 CONN.addRecord("".getBytes(), 0, 0);
             }
 
@@ -413,7 +413,7 @@ private String passwd(boolean write, String value) {
         String content = "";
         try {
             recordStore = RecordStore.openRecordStore("OpenRMS", true);
-            
+
             while (recordStore.getNumRecords() < 2) {
                 recordStore.addRecord("".getBytes(), 0, 0);
             }
