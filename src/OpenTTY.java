@@ -386,32 +386,35 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
 private String passwd(boolean write, String value) {
+    try {
+        // Testa se a plataforma tem suporte a RMS
+        String rmsClass = "javax.microedition.rms.RecordStore";
+        Class storeClass = Class.forName(rmsClass);
+        if (storeClass == null) return null;
+    } catch (Throwable t) {
+        // Plataforma não suporta RMS
+        return null;
+    }
+
     RecordStore store = null;
     try {
-        store = RecordStore.openRecordStore("senha", true);
+        store = RecordStore.openRecordStore("OpenRMS", true);
 
-        // Se for para escrever (salvar senha)
         if (write) {
             byte[] data = ("" + value.hashCode()).getBytes();
-
-            // Garante que o registro 2 exista
             while (store.getNumRecords() < 2) {
                 store.addRecord("".getBytes(), 0, 0);
             }
-
             store.setRecord(2, data, 0, data.length);
             return "OK";
+        } else {
+            while (store.getNumRecords() < 2) {
+                store.addRecord("".getBytes(), 0, 0);
+            }
+            byte[] data = store.getRecord(2);
+            return new String(data);
         }
-
-        // Se for para ler a senha
-        while (store.getNumRecords() < 2) {
-            store.addRecord("".getBytes(), 0, 0); // garante existência
-        }
-
-        byte[] data = store.getRecord(2);
-        return new String(data);
-
-    } catch (Exception e) {
+    } catch (Throwable t) {
         return null;
     } finally {
         if (store != null) {
