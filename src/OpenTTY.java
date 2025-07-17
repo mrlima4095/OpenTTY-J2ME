@@ -418,7 +418,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 }*/private String passwd(boolean write, String value) {
 
-    return "0"
+    return "0";
 }
 
 
