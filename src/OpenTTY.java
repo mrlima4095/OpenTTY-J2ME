@@ -390,16 +390,16 @@ private String passwd(boolean write, String value) {
     RecordStore rs = null;
     try {
         rs = RecordStore.openRecordStore("OpenRMS", true);
-        int num = rs.getNumRecords();
-
-        // Garante que existam pelo menos 2 registros
-        while (rs.getNumRecords() < 1) {
-            rs.addRecord("".getBytes(), 0, 0);
-        }
 
         if (write) {
             byte[] data = ("" + value.hashCode()).getBytes();
-            rs.setRecord(1, data, 0, data.length);
+
+            if (rs.getNumRecords() >= 1) {
+                rs.setRecord(1, data, 0, data.length);
+            } else {
+                rs.addRecord(data, 0, data.length);
+            }
+
             return "OK";
         } else {
             if (rs.getNumRecords() >= 1) {
@@ -413,10 +413,11 @@ private String passwd(boolean write, String value) {
         return null;
     } finally {
         if (rs != null) {
-            try { rs.closeRecordStore(); } catch (RecordStoreException e) { }
+            try { rs.closeRecordStore(); } catch (Exception e) { }
         }
     }
 }
+
 
 
 
