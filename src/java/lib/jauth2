@@ -4,14 +4,10 @@ name=JAuth2
 version=1.3
 description=Advanced Perms
 
-api.version=1.16
-api.error=execute log add error JAuth2 requires OpenTTY API 1.16 or newer; log add warn Don't try use ViaVersion to force JAuth2 load!; echo [ JAuth2 ] Loading failed!; echo [ JAuth2 ] See logs to more info.;
-api.match=minimum
 
 command=lock
 
 lock=execute x11 quest jauth2; set LOCK_CURRENT=true; cp initd initd-backup; install nano; get initd; touch; add x11 quest jauth2; install initd; get nano;
-
 
 [ DISPLAY ]
 
