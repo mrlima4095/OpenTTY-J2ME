@@ -373,15 +373,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
                     else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
-                    else { if (asking_user) { writeRMS("/home/OpenRMS", username); } 
-                    if (asking_passwd) { passwd(true, password); } 
-                    display.setCurrent(form); runScript(loadRMS("initd")); } 
+                    else { if (asking_user) { writeRMS("/home/OpenRMS", username); } if (asking_passwd) { passwd(true, password); } display.setCurrent(form); runScript(loadRMS("initd")); } 
                 } 
                 else if (TYPE == REQUEST) { 
                     if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
                     else { 
                         if (String.valueOf(password.hashCode()).equals(passwd(false, null)) { processCommand(command, true, true); processCommand("xterm"); } 
-                        else { warnCommand(form.getTitle(), "Wrong password!"); } 
+                        else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } 
                     } 
                 } 
 
