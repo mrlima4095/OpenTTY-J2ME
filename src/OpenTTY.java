@@ -388,43 +388,50 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); }
         }
     }
-    private String passwd(boolean write, String value) {
-        if (write) { 
-            RecordStore CONN = null; 
-            try { 
-                CONN = RecordStore.openRecordStore("OpenRMS", true); 
-                if (CONN.getNumRecords() > 0) { CONN.setRecord(1, data, 0, data.length); } 
-                else { CONN.addRecord(data, 0, data.length); } 
-            } 
-            catch (RecordStoreException e) { } 
-            finally { 
-                if (CONN != null) { 
-                    try { CONN.closeRecordStore(); } 
-                    catch (RecordStoreException e) { } 
-                } 
-            } 
-        } 
-        else { 
-            RecordStore recordStore = null; 
-            String content = ""; 
-            try { 
-                recordStore = RecordStore.openRecordStore("OpenRMS", true); 
-                if (recordStore.getNumRecords() >= 1) { 
-                    byte[] data = recordStore.getRecord(1); 
-                    if (data != null) { content = new String(data); } 
-                } 
-            } 
-            catch (RecordStoreException e) { content = ""; } 
-            finally { 
-                if (recordStore != null) { 
-                    try { recordStore.closeRecordStore(); } 
-                    catch (RecordStoreException e) { } 
-                } 
-            } 
+private String passwd(boolean write, String value) {
+    if (write) {
+        RecordStore CONN = null;
+        try {
+            CONN = RecordStore.openRecordStore("OpenRMS", true);
+            byte[] data = ("" + value.hashCode()).getBytes();
 
-            return content; 
-        } 
-    } 
+            while (CONN.getNumRecords() < 2) {
+                CONN.addRecord("".getBytes(), 0, 0);
+            }
+
+            CONN.setRecord(2, data, 0, data.length);
+        } catch (RecordStoreException e) {
+            return null;
+        } finally {
+            if (CONN != null) {
+                try { CONN.closeRecordStore(); } catch (RecordStoreException e) {}
+            }
+        }
+        return "OK";
+    } else {
+        RecordStore recordStore = null;
+        String content = "";
+        try {
+            recordStore = RecordStore.openRecordStore("OpenRMS", true);
+            
+            while (recordStore.getNumRecords() < 2) {
+                recordStore.addRecord("".getBytes(), 0, 0);
+            }
+
+            byte[] data = recordStore.getRecord(2);
+            if (data != null) {
+                content = new String(data);
+            }
+        } catch (RecordStoreException e) {
+            content = "";
+        } finally {
+            if (recordStore != null) {
+                try { recordStore.closeRecordStore(); } catch (RecordStoreException e) {}
+            }
+        }
+        return content;
+    }
+}
 
 
     // API 002 - (Logs)
