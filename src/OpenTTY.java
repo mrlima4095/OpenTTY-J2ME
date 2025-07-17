@@ -397,8 +397,6 @@ private String passwd(boolean write, String value) {
             while (RMS.getNumRecords() < 2) {
                 RMS.addRecord("".getBytes(), 0, 0);
             }
-
-            RMS.setRecord(2, data, 0, data.length);
         } catch (RecordStoreException e) {
             return null;
         } finally {
