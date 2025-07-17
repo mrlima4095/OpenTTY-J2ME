@@ -384,44 +384,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
             } 
-            else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
 private String passwd(boolean write, String value) {
+    RecordStore rs = null;
     try {
-        // Testa se a plataforma tem suporte a RMS
-        String rmsClass = "javax.microedition.rms.RecordStore";
-        Class storeClass = Class.forName(rmsClass);
-        if (storeClass == null) return null;
-    } catch (Throwable t) {
-        // Plataforma não suporta RMS
-        return null;
-    }
+        rs = RecordStore.openRecordStore("OpenRMS", true);
+        int num = rs.getNumRecords();
 
-    RecordStore store = null;
-    try {
-        store = RecordStore.openRecordStore("OpenRMS", true);
+        // Garante que existam pelo menos 2 registros
+        while (rs.getNumRecords() < 2) {
+            rs.addRecord("".getBytes(), 0, 0);
+        }
 
         if (write) {
             byte[] data = ("" + value.hashCode()).getBytes();
-            while (store.getNumRecords() < 2) {
-                store.addRecord("".getBytes(), 0, 0);
-            }
-            store.setRecord(2, data, 0, data.length);
+            rs.setRecord(2, data, 0, data.length);
             return "OK";
         } else {
-            while (store.getNumRecords() < 2) {
-                store.addRecord("".getBytes(), 0, 0);
+            if (rs.getNumRecords() >= 2) {
+                byte[] data = rs.getRecord(2);
+                return new String(data);
+            } else {
+                return "";
             }
-            byte[] data = store.getRecord(2);
-            return new String(data);
         }
-    } catch (Throwable t) {
+    } catch (Exception e) {
         return null;
     } finally {
-        if (store != null) {
-            try { store.closeRecordStore(); } catch (RecordStoreException e) {}
+        if (rs != null) {
+            try { rs.closeRecordStore(); } catch (RecordStoreException e) { }
         }
     }
 }
+
 
 
 
