@@ -35,7 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
 
-            if (username.equals("") || loadRMS(".passwd").equals("")) { new Credentials(null); }
+            if (username.equals("") || passwd(false, null).equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
         } 
     }
@@ -377,7 +377,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (TYPE == REQUEST) { 
                     if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
                     else { 
-                        if (String.valueOf(password.hashCode()).equals(passwd(false, ""))) { processCommand(command, true, true); processCommand("xterm"); } 
+                        if (String.valueOf(password.hashCode()).equals(passwd(false, null))) { processCommand(command, true, true); processCommand("xterm"); } 
                         else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } 
                     } 
                 } 
@@ -385,41 +385,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
             } 
             else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
-    /*private String passwd(boolean write, String value) {
-    RecordStore CONN = null;
-    try {
-        CONN = RecordStore.openRecordStore("OpenRMS", true);
 
-        if (write) {
-            byte[] data = ("" + value.hashCode()).getBytes();
-            if (CONN.getNumRecords() >= 2) {
-                CONN.setRecord(2, data, 0, data.length);
-            } else {
-                while (CONN.getNumRecords() < 2) {
-                    CONN.addRecord("".getBytes(), 0, 0); // preenche até o registro 2
-                }
-                CONN.setRecord(2, data, 0, data.length);
-            }
-            return "OK";
-        } else {
-            if (CONN.getNumRecords() >= 2) {
-                byte[] data = CONN.getRecord(2);
-                return new String(data);
-            } else {
-                return "";
-            }
-        }
-    } catch (Exception e) {
-        return null;
-    } finally {
-        if (CONN != null) {
-            try { CONN.closeRecordStore(); } catch (RecordStoreException e) { }
-        }
-    }
-}*/private String passwd(boolean write, String value) {
-
-    return "0";
-}
 
 
     // API 002 - (Logs)
@@ -495,7 +461,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(EXPR)) { CONDITION = true; break; } } } 
         else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } 
         else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); } 
-        else if (METHOD.equals("passwd")) { CONDITION = String.valueOf(EXPR.hashCode()).equals(passwd(false, "")); } 
+        else if (METHOD.equals("passwd")) { CONDITION = String.valueOf(EXPR.hashCode()).equals(passwd(false, null)); } 
         else if (METHOD.equals("user")) { CONDITION = username.equals(EXPR); if (EXPR.equals("root") && root == true) { CONDITION = true; } root = true; }
         
         if (CONDITION != NEGATED) { return processCommand(CMD, ignore, root); } 
