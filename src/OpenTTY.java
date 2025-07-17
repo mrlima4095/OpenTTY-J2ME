@@ -385,7 +385,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
             } 
             else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
-    private String passwd(boolean write, String value) {
+    /*private String passwd(boolean write, String value) {
     RecordStore CONN = null;
     try {
         CONN = RecordStore.openRecordStore("OpenRMS", true);
@@ -416,6 +416,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try { CONN.closeRecordStore(); } catch (RecordStoreException e) { }
         }
     }
+}*/private String passwd(boolean write, String value) {
+
+    return "0"
 }
 
 
