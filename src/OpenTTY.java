@@ -545,11 +545,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         try {
             CONN = RecordStore.openRecordStore(filename, true);
 
-            while (CONN.getNumRecords() < index) {
+            while (CONN.getNumRecords() < 1) {
                 CONN.addRecord("".getBytes(), 0, 0); 
             }
 
-            CONN.setRecord(index, data, 0, data.length);
+            CONN.setRecord(1, data, 0, data.length);
 
         } catch (RecordStoreException e) {
             return 1;
