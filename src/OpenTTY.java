@@ -523,7 +523,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int writeRMS(String filename, byte[] data, int index) {
         if (filename == null || filename.length() == 0 || index < 1) { return 2; }
 
-        RecordStore CONN = null;
+        
+
+        return 0;
+    }
+
+    private int writeRMS(String filename, byte[] data) { 
+        if (filename == null || filename.length() == 0) { return 2; } 
+        else if (filename.startsWith("/mnt/")) { 
+            try { 
+                FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
+                if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); 
+            } 
+            catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
+            catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
+        } 
+        else if (filename.startsWith("/home/")) { 
+            filename = filename.substring(6);
+            RecordStore CONN = null;
 
         try {
             CONN = RecordStore.openRecordStore(filename, true);
@@ -541,21 +558,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 try { CONN.closeRecordStore(); } catch (RecordStoreException e) { }
             }
         }
-
-        return 0;
-    }
-
-    private int writeRMS(String filename, byte[] data) { 
-        if (filename == null || filename.length() == 0) { return 2; } 
-        else if (filename.startsWith("/mnt/")) { 
-            try { 
-                FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
-                if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); 
-            } 
-            catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
-            catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
+            return writeRMS(filename.substring(6), data, 1); 
         } 
-        else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
         else { return writeRMS(path + filename, data); } 
 
