@@ -14,7 +14,6 @@ import java.io.*;
 public class OpenTTY extends MIDlet implements CommandListener {
     private int cursorX = 10, cursorY = 10;
     private Player player = null;
-    private RecordStore RMS = null;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), 
@@ -391,9 +390,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String passwd(boolean write, String value) { if (write) { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); return "OK"; }
         else {
             try { 
-                RecordStore CONN = RecordStore.openRecordStore("OpenRMS", true); 
-                if (CONN.getNumRecords() >= 2) { byte[] data = CONN.getRecord(2); if (data != null) { return new String(data); } } 
-                CONN.closeRecordStore(); } catch (RecordStoreException e) { return ""; } } return ""; } 
+                RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); 
+                if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } 
+                RMS.closeRecordStore(); } catch (RecordStoreException e) { return ""; } } return ""; } 
 
     // API 002 - (Logs)
     // |
