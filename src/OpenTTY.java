@@ -552,7 +552,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
             
-            return writeRMS(filename.substring(6), data, 1); 
+            //return writeRMS(filename.substring(6), data, 1); 
         } 
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
         else { return writeRMS(path + filename, data); } 
