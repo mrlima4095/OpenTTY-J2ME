@@ -390,46 +390,42 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 private String passwd(boolean write, String value) {
     if (write) {
-        RecordStore CONN = null;
         try {
-            CONN = RecordStore.openRecordStore("OpenRMS", true);
+            RMS = RecordStore.openRecordStore("OpenRMS", true);
             byte[] data = ("" + value.hashCode()).getBytes();
 
-            if (CONN.getNumRecords() < 2) {
-                CONN.addRecord("".getBytes(), 0, 0);
+            while (RMS.getNumRecords() < 2) {
+                RMS.addRecord("".getBytes(), 0, 0);
             }
 
-            CONN.setRecord(2, data, 0, data.length);
+            RMS.setRecord(2, data, 0, data.length);
         } catch (RecordStoreException e) {
             return null;
         } finally {
-            if (CONN != null) {
-                try { CONN.closeRecordStore(); } catch (RecordStoreException e) {}
+            if (RMS != null) {
+                try { RMS.closeRecordStore(); } catch (RecordStoreException e) { }
             }
         }
         return "OK";
     } else {
-        RecordStore recordStore = null;
-        String content = "";
         try {
-            recordStore = RecordStore.openRecordStore("OpenRMS", true);
+            RMS = RecordStore.openRecordStore("OpenRMS", true);
 
-            while (recordStore.getNumRecords() < 2) {
-                recordStore.addRecord("".getBytes(), 0, 0);
+            while (RMS.getNumRecords() < 2) {
+                RMS.addRecord("".getBytes(), 0, 0);
             }
 
-            byte[] data = recordStore.getRecord(2);
+            byte[] data = RMS.getRecord(2);
             if (data != null) {
-                content = new String(data);
+                return new String(data);
             }
         } catch (RecordStoreException e) {
-            content = "";
+            return null;
         } finally {
-            if (recordStore != null) {
-                try { recordStore.closeRecordStore(); } catch (RecordStoreException e) {}
+            if (RMS != null) {
+                try { RMS.closeRecordStore(); } catch (RecordStoreException e) { }
             }
         }
-        return content;
     }
 }
 
