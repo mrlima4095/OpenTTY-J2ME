@@ -388,31 +388,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (write) {
                 byte[] data = value.getBytes();
-                if (CONN.getNumRecords() >= 2) {
-                    CONN.setRecord(2, data, 0, data.length);
-                } else {
-                    while (CONN.getNumRecords() < 1)
-                        CONN.addRecord(new byte[1], 0, 1); // placeholder
-                    while (CONN.getNumRecords() < 2)
-                        CONN.addRecord(data, 0, data.length);
-                }
-                return "OK"; // status de gravação
+                if (CONN.getNumRecords() >= 2) { CONN.setRecord(2, data, 0, data.length); } 
+                else { CONN.addRecord(data, 0, data.length);  }
+                return "OK";
             } else {
                 if (CONN.getNumRecords() >= 2) {
                     byte[] data = CONN.getRecord(2);
                     return new String(data);
                 }
             }
-        } catch (RecordStoreException e) {
-            return null;
-        } finally {
-            if (CONN != null) {
-                try { CONN.closeRecordStore(); } catch (RecordStoreException e) { }
-            }
-        }
+        } 
+        catch (RecordStoreException e) { return null; } 
+        finally { if (CONN != null) { try { CONN.closeRecordStore(); } catch (RecordStoreException e) { } } }
+        
         return null;
     }
-    s
+
+
     // API 002 - (Logs)
     // |
     // OpenTTY Logging Manager
