@@ -15,12 +15,11 @@ File API:
   hash  head  html  install  json
   ls  lsblk  mkdir  mount  nano
   open  ph2s pinc  pjnc  pwd  raw
-  read  rm  rraw  sed  tail
-  touch  wc
+  read  rm  rraw  sed  tail  touch  wc
 
 Session API:
-  login  logout  who  whoami
-  sudo  su  passwd
+  login  logout  passwd  sudo  su
+  who  whoami
 
 Process API:
   bg  exec  execute  kill  ps  
