@@ -386,28 +386,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
     private String passwd(boolean write, String value) {
-        RecordStore CONN = null;
-        try {
-            CONN = RecordStore.openRecordStore("OpenRMS", true);
+    RecordStore CONN = null;
+    try {
+        CONN = RecordStore.openRecordStore("OpenRMS", true);
 
-            if (write) {
-                byte[] data = String.valueOf(value.hashCode()).getBytes();
-                if (CONN.getNumRecords() >= 2) { CONN.setRecord(2, data, 0, data.length); } 
-                else { CONN.addRecord(data, 0, data.length);  }
-                return "OK";
-            } 
-            else { 
-                if (CONN.getNumRecords() >= 2) {
-                    byte[] data = CONN.getRecord(2);
-                    return new String(data);
+        if (write) {
+            byte[] data = ("" + value.hashCode()).getBytes();
+            if (CONN.getNumRecords() >= 2) {
+                CONN.setRecord(2, data, 0, data.length);
+            } else {
+                while (CONN.getNumRecords() < 2) {
+                    CONN.addRecord("".getBytes(), 0, 0); // preenche até o registro 2
                 }
+                CONN.setRecord(2, data, 0, data.length);
             }
-        } 
-        catch (RecordStoreException e) { return ""; } 
-        finally { if (CONN != null) { try { CONN.closeRecordStore(); } catch (RecordStoreException e) { } } }
-
-        return "";
+            return "OK";
+        } else {
+            if (CONN.getNumRecords() >= 2) {
+                byte[] data = CONN.getRecord(2);
+                return new String(data);
+            } else {
+                return "";
+            }
+        }
+    } catch (Exception e) {
+        return null;
+    } finally {
+        if (CONN != null) {
+            try { CONN.closeRecordStore(); } catch (RecordStoreException e) { }
+        }
     }
+}
+
 
     // API 002 - (Logs)
     // |
