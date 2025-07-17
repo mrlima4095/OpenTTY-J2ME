@@ -7,7 +7,7 @@ description=Advanced Perms
 
 command=lock
 
-lock=execute x11 quest jauth2; set LOCK_CURRENT=true; cp initd initd-backup; install nano; get initd; touch; add x11 quest jauth2; install initd; get nano;
+lock=execute x11 quest /java/lib/jauth2; set LOCK_CURRENT=true; cp /home/initd /home/initd-backup; install /home/nano; get /home/initd; touch; add x11 quest /java/lib/jauth2; install /home/initd; get /home/nano;
 
 [ DISPLAY ]
 
@@ -15,6 +15,6 @@ quest.title=$TITLE - Locked
 quest.label=[lock] password for $USERNAME
 quest.type=password
 quest.key=INPUT
-quest.cmd=execute case passwd ($INPUT) exec cp initd-backup initd & rm initd-backup & xterm & case !key (LOCK_CURRENT) . initd & return 20; @alert; x11 quest jauth2; warn Access denied!;
+quest.cmd=execute case passwd ($INPUT) exec cp /home/initd-backup /home/initd & rm /home/initd-backup & xterm & case !key (LOCK_CURRENT) . initd & return 20; @alert; x11 quest /java/lib/jauth2; warn Access denied!;
 quest.back=execute exit;
 quest.back.label=Exit
