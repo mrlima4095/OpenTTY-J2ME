@@ -384,7 +384,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
             }
-            else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false) }
+            else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); }
         }
     }
 private String passwd(boolean write, String value) {
