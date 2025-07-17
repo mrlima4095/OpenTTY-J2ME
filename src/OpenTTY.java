@@ -410,7 +410,7 @@ private String passwd(boolean write, String value) {
                 return "";
             }
         }
-         rs.closeRecordStore
+         rs.closeRecordStore();
     } catch (Exception e) {
         return "";
     } 
