@@ -10,7 +10,7 @@ api.match=minimum
 
 process.name=jbuntu
 
-include=/java/lib/netkit,/java/lib/settings,/java/lib/yang
+include=/java/lib/netkit,/java/lib/settings,/java/lib/yang,/java/lib/jauth2
 
 config=execute set JVERSION=1.3.2; bg exec x11 gauge Loading JBuntu $JVERSION & sleep 2 & xterm & x11 set jb.back; cd; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; hash jauth2; if ($OUTPUT != 0) import jauth2; if ($OUTPUT == 0) rm jauth2; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
 command=xterm,jbuntu
