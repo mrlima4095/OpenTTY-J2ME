@@ -14,7 +14,6 @@ import java.io.*;
 public class OpenTTY extends MIDlet implements CommandListener {
     private int cursorX = 10, cursorY = 10;
     private Player player = null;
-    private RecordStore RMS = null;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), 
@@ -389,6 +388,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
 private String passwd(boolean write, String value) {
+    RecordStore RMS = null;
     if (write) {
         try {
             RMS = RecordStore.openRecordStore("OpenRMS", true);
