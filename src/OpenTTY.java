@@ -413,9 +413,7 @@ private String passwd(boolean write, String value) {
          rs.closeRecordStore
     } catch (Exception e) {
         return "";
-    } finally {
-        
-    }
+    } 
     return "";
 }
 
