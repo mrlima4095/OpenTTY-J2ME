@@ -386,42 +386,40 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
 private String passwd(boolean write, String value) {
-    RecordStore CONN = null;
+    RecordStore store = null;
     try {
-        CONN = RecordStore.openRecordStore("OpenRMS", true);
+        store = RecordStore.openRecordStore("OpenRMS", true);
 
+        // Se for para escrever (salvar senha)
         if (write) {
             byte[] data = ("" + value.hashCode()).getBytes();
-            if (CONN.getNumRecords() >= 2) {
-                CONN.setRecord(2, data, 0, data.length);
-            } else {
-                // Garante que existam ao menos 2 registros
-                while (CONN.getNumRecords() < 2) {
-                    CONN.addRecord("".getBytes(), 0, 0);
-                }
-                CONN.setRecord(2, data, 0, data.length);
-            }
-            return "OK";
-        } else {
-            // Garante que o registro 2 exista antes de ler
-            if (CONN.getNumRecords() < 2) {
-                while (CONN.getNumRecords() < 2) {
-                    CONN.addRecord("".getBytes(), 0, 0);
-                }
-                return ""; // conteúdo vazio, pois acabamos de criar
+
+            // Garante que o registro 2 exista
+            while (store.getNumRecords() < 2) {
+                store.addRecord("".getBytes(), 0, 0);
             }
 
-            byte[] data = CONN.getRecord(2);
-            return new String(data);
+            store.setRecord(2, data, 0, data.length);
+            return "OK";
         }
+
+        // Se for para ler a senha
+        while (store.getNumRecords() < 2) {
+            store.addRecord("".getBytes(), 0, 0); // garante existência
+        }
+
+        byte[] data = store.getRecord(2);
+        return new String(data);
+
     } catch (Exception e) {
         return null;
     } finally {
-        if (CONN != null) {
-            try { CONN.closeRecordStore(); } catch (RecordStoreException e) { }
+        if (store != null) {
+            try { store.closeRecordStore(); } catch (RecordStoreException e) {}
         }
     }
 }
+
 
 
 
@@ -553,7 +551,7 @@ private String passwd(boolean write, String value) {
     // |
     // RMS Files
     private int deleteFile(String filename) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (CONN.exists()) { CONN.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); return 127; } CONN.close(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { try { filename = filename.substring(6); if (filename.equals("OpenRMS")) { echoCommand("rm: " + filename + ": permission denied"); return 13; } RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); return 127; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return deleteFile(path + filename); } return 0; }
-    private int writeRMS(String filename, byte[] data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { filename = filename.substring(6); if (filename.equals("OpenRMS")) { return 13; } RecordStore CONN = null; try { CONN = RecordStore.openRecordStore(filename, true); if (CONN.getNumRecords() > 0) { CONN.setRecord(1, data, 0, data.length); } else { CONN.addRecord(data, 0, data.length); } } catch (RecordStoreException e) { } finally { if (CONN != null) { try { CONN.closeRecordStore(); } catch (RecordStoreException e) { } } } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
+    private int writeRMS(String filename, byte[] data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { filename = filename.substring(6); RecordStore CONN = null; try { CONN = RecordStore.openRecordStore(filename, true); if (CONN.getNumRecords() > 0) { CONN.setRecord(1, data, 0, data.length); } else { CONN.addRecord(data, 0, data.length); } } catch (RecordStoreException e) { } finally { if (CONN != null) { try { CONN.closeRecordStore(); } catch (RecordStoreException e) { } } } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
     private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
     private String loadRMS(String filename) { return read("/home/" + filename); }
     // |
