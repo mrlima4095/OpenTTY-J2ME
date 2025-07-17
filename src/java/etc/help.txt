@@ -9,12 +9,14 @@ Network API:
   ping  pong  query  server  wget
 
 File API:
-  about  add  audio  basename  cat  cd
-  chmod  clone  cp  dir  du  find  get
-  getopt  getty  grep  hash  head  html
-  install  json  ls  lsblk  mkdir  mount  
-  nano  open  ph2s pinc  pjnc  pwd  raw
-  read  rm  rraw  sed  tail  touch  wc
+  about  add  audio  basename  cat
+  cd  chmod  clone  cp  dir  du
+  find  get getopt  getty  grep
+  hash  head  html  install  json
+  ls  lsblk  mkdir  mount  nano
+  open  ph2s pinc  pjnc  pwd  raw
+  read  rm  rraw  sed  tail
+  touch  wc
 
 Session API:
   login  logout  who  whoami
@@ -26,11 +28,12 @@ Process API:
 
 MIDlet Builtins:
   alias  builtin  buff  call  case  
-  clear  date  debug  echo  env  eval
-  export  false  help  history  hostname
-  hostid  locale  log  logcat  man  pkg
-  report  return  set  sh  title  true
-  tty  uname  unalias  unset  uuid  warn  
+  clear  date  debug  echo  env
+  eval  export  false  help  history
+  hostname  hostid  locale  log
+  logcat  man  pkg  report  return
+  set  sh  title  true  tty  uname
+  unalias  unset  uuid  warn  
 
 Others API: 
   audio  java  prg  wrl  x11
