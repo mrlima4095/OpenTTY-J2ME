@@ -96,7 +96,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("su")) { if (root) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; processCommand("sh", false); } else { echoCommand("su: permission denied"); return 13; } }
         else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } 
             else { 
-                if (root) { Credentials(true, argument); } 
+                if (root) { passwd(true, argument); } 
                 else { echoCommand("passwd: permission denied"); return 13; } 
             } 
         }
@@ -372,12 +372,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
                     else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
-                    else { if (asking_user) { writeRMS("/home/OpenRMS", username); } if (asking_passwd) { Credentials(true, password); } display.setCurrent(form); runScript(loadRMS("initd")); } 
+                    else { if (asking_user) { writeRMS("/home/OpenRMS", username); } if (asking_passwd) { passwd(true, password); } display.setCurrent(form); runScript(loadRMS("initd")); } 
                 } 
                 else if (TYPE == REQUEST) { 
                     if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
                     else { 
-                        if (("" + password.hashCode()).equals(Credentials(false, null))) { processCommand(command, true, true); processCommand("xterm"); } 
+                        if (("" + password.hashCode()).equals(passwd(false, null))) { processCommand(command, true, true); processCommand("xterm"); } 
                         else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } 
                     } 
                 } 
@@ -385,7 +385,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
             } 
             else if (c == EXIT) { processCommand(TYPE == SIGNUP ? "exit" : "xterm"); } } }
-    private String Credentials(boolean write, String value) {
+    private String passwd(boolean write, String value) {
         RecordStore CONN = null;
         try {
             CONN = RecordStore.openRecordStore("OpenRMS", true);
@@ -482,7 +482,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(EXPR)) { CONDITION = true; break; } } } 
         else if (METHOD.equals("thread")) { CONDITION = replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet").equals(EXPR); } 
         else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); } 
-        else if (METHOD.equals("passwd")) { CONDITION = ("" + EXPR.hashCode()).equals(Credentials(false, null)); } 
+        else if (METHOD.equals("passwd")) { CONDITION = ("" + EXPR.hashCode()).equals(passwd(false, null)); } 
         else if (METHOD.equals("user")) { CONDITION = username.equals(EXPR); if (EXPR.equals("root") && root == true) { CONDITION = true; } root = true; }
         
         if (CONDITION != NEGATED) { return processCommand(CMD, ignore, root); } 
