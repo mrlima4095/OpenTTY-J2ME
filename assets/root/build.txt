@@ -92,3 +92,4 @@
 [2025-1.16-02x25]	Command 'SERVER' accepting argument PORT from command
 [2025-1.16-02x26]	Command 'BG' reading super settings (scope and permissions)
 [2025-1.16-02x27]	Transferring password hash to OpenRMS page 2
+[2025-1.16-02x28]	Debugging new password hashing
