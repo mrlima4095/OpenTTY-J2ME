@@ -536,6 +536,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 catch (RecordStoreException e) { } 
             } 
         }
+
+        return 0;
     }
     private int writeRMS(String filename, byte[] data) { 
         if (filename == null || filename.length() == 0) { return 2; } 
