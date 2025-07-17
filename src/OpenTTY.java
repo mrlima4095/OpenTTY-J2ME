@@ -398,7 +398,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             catch (RecordStoreException e) { return ""; } 
         }
-        return "3321809";
+        return "";
     } 
 
 
