@@ -403,6 +403,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 catch (RecordStoreException e) { } 
             } 
         } 
+        return "";
     } 
 
 
