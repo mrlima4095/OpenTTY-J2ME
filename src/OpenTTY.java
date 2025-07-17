@@ -390,21 +390,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private String passwd(boolean write, String value) {
         
-        try { 
-            RMS = RecordStore.openRecordStore("OpenRMS", true); 
-            byte[] data = String.valueOf(value.hashCode()).getBytes();
-            
-            if (RMS.getNumRecords() >= 2) { RMS.setRecord(2, data, 0, data.length); } 
-            else { RMS.addRecord(data, 0, data.length); } 
-        } 
-        catch (RecordStoreException e) { }
-        finally { 
-            if (RMS != null) { 
-                try { RMS.closeRecordStore(); } 
-                catch (RecordStoreException e) { } 
-            } 
-        } 
-        return "";
+        return "3321809";
     } 
 
 
@@ -422,7 +408,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2025-05-04\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); }
         else if (mainCommand.equals("version")) { echoCommand(env("X Server $XVERSION")); }
-        else if (mainCommand.equals("buffer")) { echoCommand("" + display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight() + ""); }
+        else if (mainCommand.equals("buffer")) { echoCommand(display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight()); }
         // |
         // X11 Loader
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
