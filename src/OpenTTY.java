@@ -338,7 +338,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     public class Credentials implements CommandListener { 
         private int TYPE = 0, SIGNUP = 1, REQUEST = 2; 
-        private boolean asking_user = username.equals(""), asking_passwd = loadRMS(".passwd").equals(""); 
+        private boolean asking_user = username.equals(""), asking_passwd = passwd(false, null).equals(""); 
         private String command = ""; 
         private Form screen = new Form(form.getTitle()); 
         private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); 
@@ -389,8 +389,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     private String passwd(boolean write, String value) {
-        
-        return "3321809";
+        if (write) { 
+            RecordStore CONN = null; 
+            try { 
+                CONN = RecordStore.openRecordStore("OpenRMS", true); 
+                if (CONN.getNumRecords() > 0) { CONN.setRecord(1, data, 0, data.length); } 
+                else { CONN.addRecord(data, 0, data.length); } 
+            } 
+            catch (RecordStoreException e) { } 
+            finally { 
+                if (CONN != null) { 
+                    try { CONN.closeRecordStore(); } 
+                    catch (RecordStoreException e) { } 
+                } 
+            } 
+        } 
+        else { 
+            RecordStore recordStore = null; 
+            String content = ""; 
+            try { 
+                recordStore = RecordStore.openRecordStore("OpenRMS", true); 
+                if (recordStore.getNumRecords() >= 1) { 
+                    byte[] data = recordStore.getRecord(1); 
+                    if (data != null) { content = new String(data); } 
+                } 
+            } 
+            catch (RecordStoreException e) { content = ""; } 
+            finally { 
+                if (recordStore != null) { 
+                    try { recordStore.closeRecordStore(); } 
+                    catch (RecordStoreException e) { } 
+                } 
+            } 
+
+            return content; 
+        } 
     } 
 
 
