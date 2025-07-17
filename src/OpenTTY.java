@@ -427,6 +427,7 @@ private String passwd(boolean write, String value) {
             }
         }
     }
+    return "";
 }
 
 
