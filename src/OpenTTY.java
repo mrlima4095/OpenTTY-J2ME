@@ -387,12 +387,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); }
         }
     }
-    private String passwd(boolean write, String value) { if (write) { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); return "OK"; }
+    private String passwd(boolean write, String value) {
+        if (write) { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); }
         else {
             try { 
                 RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); 
                 if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } 
-                RMS.closeRecordStore(); } catch (RecordStoreException e) { return ""; } } return ""; } 
+                RMS.closeRecordStore();
+            } 
+            catch (RecordStoreException e) { return ""; } 
+        }
+        return "";
+    } 
 
     // API 002 - (Logs)
     // |
