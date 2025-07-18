@@ -753,7 +753,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (tipo.equals("assign")) {
             String name = (String) cmd.get("name");
             String val = (String) cmd.get("value");
-            variables.put(name, new Integer(exprCommand(val)));
+            try { variables.put(name, Integer.parseInt(exprCommand(val))); }
+        catch (Exception e) { return 2; }
         }
 
         if (tipo.equals("printf")) {
