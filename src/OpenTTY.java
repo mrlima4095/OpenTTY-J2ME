@@ -652,9 +652,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
     
             // system("...")
-            if (line.startsWith("system(") && line.endsWith(")")) {
+            if (line.startsWith("exec(") && line.endsWith(")")) {
                 Hashtable cmd = new Hashtable();
-                cmd.put("cmd", "system");
+                cmd.put("cmd", "exev");
                 cmd.put("args", line.substring(7, line.length() - 1).trim());
                 instructions.addElement(cmd);
                 continue;
@@ -746,7 +746,7 @@ private int executeC(Hashtable program) {
             echoCommand("" + val);
         }
 
-        else if (tipo.equals("system")) {
+        else if (tipo.equals("exec")) {
             String comando = (String) cmd.get("args");
             processCommand(comando);
         }
