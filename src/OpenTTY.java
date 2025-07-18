@@ -555,9 +555,167 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
-    private int c(String code) {
-        
+    private Hashtable C(String code) {
+        Hashtable program = new Hashtable();
+        Hashtable main = new Hashtable();
+        Vector declarations = new Vector();
+        Vector instructions = new Vector();
+    
+        // Normalização básica
+        code = replace(code, "\t", " ");
+        code = replace(code, "\n", " ");
+        code = replace(code, "\r", " ");
+        while (code.indexOf("  ") != -1) code = replace(code, "  ", " ");
+    
+        // -------------------------
+        // Processamento de includes
+        // -------------------------
+        String[] linhas = split(code, ';');
+        for (int i = 0; i < linhas.length; i++) {
+            String linha = linhas[i].trim();
+            if (linha.startsWith("#include \"") && linha.endsWith("\"")) {
+                String caminho = linha.substring(10, linha.length() - 1);
+                String conteudo = getcontent(caminho);
+                if (!conteudo.equals("")) {
+                    Hashtable incluido = C(conteudo);
+                    String nome = caminho.indexOf('.') != -1 ? caminho.substring(0, caminho.indexOf('.')) : caminho;
+                    program.put(nome, incluido);
+                }
+            }
+        }
+    
+        // -------------------------
+        // Localiza e processa o main
+        // -------------------------
+        int mainStart = code.indexOf("int main()");
+        int openBrace = code.indexOf('{', mainStart);
+        int closeBrace = code.lastIndexOf('}');
+    
+        if (mainStart == -1 || openBrace == -1 || closeBrace == -1 || openBrace > closeBrace) {
+            program.put("error", "Função main() inválida ou ausente");
+            return program;
+        }
+    
+        String body = code.substring(openBrace + 1, closeBrace).trim();
+        String[] parts = split(body, ';');
+    
+        for (int i = 0; i < parts.length; i++) {
+            String line = parts[i].trim();
+            if (line.equals("")) continue;
+    
+            // Declaração de variável
+            if (startsWithAny(line, new String[]{"int ", "char ", "float ", "double "})) {
+                Hashtable decl = new Hashtable();
+                int space = line.indexOf(' ');
+                String type = line.substring(0, space).trim();
+                String rest = line.substring(space + 1).trim();
+    
+                if (rest.indexOf('=') != -1) {
+                    int eq = rest.indexOf('=');
+                    decl.put("type", type);
+                    decl.put("name", rest.substring(0, eq).trim());
+                    decl.put("value", rest.substring(eq + 1).trim());
+                } else {
+                    decl.put("type", type);
+                    decl.put("name", rest);
+                }
+    
+                declarations.addElement(decl);
+                continue;
+            }
+    
+            // printf(...)
+            if (line.startsWith("printf(") && line.endsWith(")")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "printf");
+                cmd.put("args", line.substring(7, line.length() - 1).trim());
+                instructions.addElement(cmd);
+                continue;
+            }
+    
+            // scanf(...)
+            if (line.startsWith("scanf(") && line.endsWith(")")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "scanf");
+                cmd.put("args", line.substring(6, line.length() - 1).trim());
+                instructions.addElement(cmd);
+                continue;
+            }
+    
+            // return x
+            if (line.startsWith("return ")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "return");
+                cmd.put("value", line.substring(7).trim());
+                instructions.addElement(cmd);
+                continue;
+            }
+    
+            // system("...")
+            if (line.startsWith("system(") && line.endsWith(")")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "system");
+                cmd.put("args", line.substring(7, line.length() - 1).trim());
+                instructions.addElement(cmd);
+                continue;
+            }
+    
+            // if (...)
+            if (line.startsWith("if(") || line.startsWith("if (")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "if");
+                cmd.put("cond", extractBetween(line, '(', ')'));
+                instructions.addElement(cmd);
+                continue;
+            }
+    
+            // while (...)
+            if (line.startsWith("while(") || line.startsWith("while (")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "while");
+                cmd.put("cond", extractBetween(line, '(', ')'));
+                instructions.addElement(cmd);
+                continue;
+            }
+    
+            // for (...)
+            if (line.startsWith("for(") || line.startsWith("for (")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "for");
+                cmd.put("loop", extractBetween(line, '(', ')'));
+                instructions.addElement(cmd);
+                continue;
+            }
+    
+            // Ignorar instruções desconhecidas por enquanto
+        }
+    
+        // Agrupamento da main
+        main.put("declarations", declarations);
+        main.put("instructions", instructions);
+        program.put("main", main);
+    
+        // Estrutura futura
+        program.put("functions", new Hashtable());
+        program.put("globals", new Vector());
+    
+        return program;
     }
+    private boolean startsWithAny(String text, String[] options) {
+    for (int i = 0; i < options.length; i++) {
+        if (text.startsWith(options[i])) return true;
+    }
+    return false;
+}
+
+private String extractBetween(String text, char open, char close) {
+    int start = text.indexOf(open);
+    int end = text.lastIndexOf(close);
+    if (start == -1 || end == -1 || end <= start) return "";
+    return text.substring(start + 1, end).trim();
+}
+
+
     // |
     // History
     public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
