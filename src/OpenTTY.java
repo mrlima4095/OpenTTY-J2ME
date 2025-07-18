@@ -283,7 +283,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
-        //else if (mainCommand.equals("")) {  }
+        else if (mainCommand.equals("build")) { executeC(C(getcontent(argument))); }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
         
         // API 014 - (OpenTTY)
@@ -713,6 +713,74 @@ private String extractBetween(String text, char open, char close) {
     int end = text.lastIndexOf(close);
     if (start == -1 || end == -1 || end <= start) return "";
     return text.substring(start + 1, end).trim();
+}
+private int executeC(Hashtable program) {
+    if (!program.containsKey("main")) {
+        echoCommand("Erro: programa sem main()");
+        return -1;
+    }
+
+    Hashtable main = (Hashtable) program.get("main");
+    Vector declarations = (Vector) main.get("declarations");
+    Vector instructions = (Vector) main.get("instructions");
+
+    Hashtable variables = new Hashtable();
+
+    // Processa declarações
+    for (int i = 0; i < declarations.size(); i++) {
+        Hashtable decl = (Hashtable) declarations.elementAt(i);
+        String name = (String) decl.get("name");
+        String value = decl.containsKey("value") ? (String) decl.get("value") : "0";
+        int val = parseExpression(value, variables);
+        variables.put(name, new Integer(val));
+    }
+
+    // Executa instruções
+    for (int i = 0; i < instructions.size(); i++) {
+        Hashtable cmd = (Hashtable) instructions.elementAt(i);
+        String tipo = (String) cmd.get("cmd");
+
+        if (tipo.equals("printf")) {
+            String raw = (String) cmd.get("args");
+            int val = parseExpression(raw, variables);
+            echoCommand("" + val);
+        }
+
+        else if (tipo.equals("system")) {
+            String comando = (String) cmd.get("args");
+            processCommand(comando);
+        }
+
+        else if (tipo.equals("return")) {
+            String raw = (String) cmd.get("value");
+            return parseExpression(raw, variables);
+        }
+    }
+
+    return 0;
+}
+private int parseExpression(String expr, Hashtable vars) {
+    expr = expr.trim();
+
+    // Expressão tipo "a + 2"
+    int op = expr.indexOf('+');
+    if (op != -1) {
+        String left = expr.substring(0, op).trim();
+        String right = expr.substring(op + 1).trim();
+        return parseExpression(left, vars) + parseExpression(right, vars);
+    }
+
+    // Expressão tipo "a"
+    if (vars.containsKey(expr)) {
+        return ((Integer) vars.get(expr)).intValue();
+    }
+
+    // Número direto
+    try {
+        return Integer.parseInt(expr);
+    } catch (Exception e) {
+        return 0;
+    }
 }
 
 
