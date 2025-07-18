@@ -742,7 +742,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable d = (Hashtable) decls.elementAt(i);
         String name = (String) d.get("name");
         String val = d.containsKey("value") ? (String) d.get("value") : "0";
-        variables.put(name, new Integer(exprCommand(val)));
+        try { variables.put(name, Integer.parseInt(exprCommand(val))); }
+        catch (Exception e) { return 2; }
     }
 
     for (int i = 0; i < instrs.size(); i++) {
