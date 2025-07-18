@@ -807,6 +807,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
     return 0;
 }
 
+private boolean startsWithAny(String text, String[] options) {
+    for (int i = 0; i < options.length; i++) {
+        if (text.startsWith(options[i])) return true;
+    }
+    return false;
+}
+private String extractBetween(String text, char open, char close) {
+    int start = text.indexOf(open);
+    int end = text.lastIndexOf(close);
+    if (start == -1 || end == -1 || end <= start) return "";
+    return text.substring(start + 1, end).trim();
+}
+
 
     // |
     // History
