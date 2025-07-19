@@ -557,7 +557,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
     // C Programming
-    private int C2ME(String code) {
+    private int C2ME(String code, boolean root) {
     Hashtable program = build(code);
     if (program.containsKey("error")) {
         echoCommand("Error: " + program.get("error"));
@@ -627,7 +627,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else if (type.equals("char")){
                 nv.put("value", val);
             } else {
-                program.put("error": "unknown type " + type);
+                
             }
             variables.put(name, nv);
         }
@@ -652,7 +652,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
 
         if (tipo.equals("exec")) {
-            processCommand((String) cmd.get("args"));
+            processCommand((String) cmd.get("args"), false, root);
         }
 
         if (tipo.equals("call")) {
