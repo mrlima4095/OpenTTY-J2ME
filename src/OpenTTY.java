@@ -576,10 +576,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             var.put("type", type);
             if (type.equals("int") || type.equals("float") || type.equals("double")) {
                 String expr = exprCommand(val);
-
                 if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
-                else { var.put("value", expr); }
-            } else if (type.equals("char")){
+                var.put("value", expr);
+            } else if (type.equals("char")) {
                 var.put("value", val);
             } else {
                 echoCommand("build: unknown type '" + type + "'");
@@ -602,16 +601,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
             var.put("type", type);
             if (type.equals("int") || type.equals("float") || type.equals("double")) {
                 String expr = exprCommand(val);
-
                 if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
-                else { var.put("value", expr); }
-            } else if (type.equals("char")){
+                var.put("value", expr);
+            } else if (type.equals("char")) {
                 var.put("value", val);
             } else {
                 echoCommand("build: unknown type '" + type + "'");
                 return 2;
             }
-
             variables.put(name, var);
         }
 
@@ -623,18 +620,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String name = (String) cmd.get("name");
                 String val = (String) cmd.get("value");
                 Hashtable v = (Hashtable) variables.get(name);
+                if (v == null) {
+                    echoCommand("undeclared variable: " + name);
+                    return 2;
+                }
                 String type = (String) v.get("type");
 
                 Hashtable nv = new Hashtable();
                 nv.put("type", type);
                 if (type.equals("int") || type.equals("float") || type.equals("double")) {
-                    val = substituteVars(val, variables);
-                    nv.put("value", exprCommand(val));
+                    val = substituteVars(val, "", variables);
                     String expr = exprCommand(val);
-
                     if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
-                    else { nv.put("value", expr); }
-                } else if (type.equals("char")){
+                    nv.put("value", expr);
+                } else if (type.equals("char")) {
                     nv.put("value", val);
                 } else {
                     echoCommand("build: unknown type '" + type + "'");
@@ -642,37 +641,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 variables.put(name, nv);
             }
+
             else if (tipo.equals("printf") || tipo.equals("exec")) {
-                String raw = (String) cmd.get("args");
-                String fmt = raw;
-
-                for (Enumeration e = variables.keys(); e.hasMoreElements(); ) {
-                    String k = (String) e.nextElement();
-                    Hashtable v = (Hashtable) variables.get(k);
-                    String val = String.valueOf(v.get("value"));
-                    fmt = replace(fmt, "%" + k, val);
-                }
-
+                String fmt = (String) cmd.get("args");
+                fmt = substituteVars(fmt, "%", variables);
                 fmt = replace(fmt, "\\n", "\n");
-                if (fmt.startsWith("\"") && fmt.endsWith("\"")) {
-                    fmt = fmt.substring(1, fmt.length() - 1);
-                }
-                
-                if (tipo.equals("printf")) { echoCommand(fmt); }
-            
-                else if (tipo.equals("exec")) { processCommand((String) cmd.get("args"), false, root); }
+                if (fmt.startsWith("\"") && fmt.endsWith("\"")) fmt = fmt.substring(1, fmt.length() - 1);
+                if (tipo.equals("printf")) echoCommand(fmt);
+                else processCommand((String) cmd.get("args"), false, root);
             }
-            else if (tipo.equals("return")) {
-                String raw = (String) cmd.get("args");
-                String fmt = raw;
 
-                try { return Integer.parseInt(fmt); }
+            else if (tipo.equals("return")) {
+                String fmt = (String) cmd.get("args");
+                try { return Integer.parseInt(substituteVars(fmt, "", variables)); }
                 catch (Exception e) { return 2; }
             }
-            else if (tipo.equals("call")) {
+
+            else if (tipo.equals("call") || tipo.equals("call_inline")) {
                 String fname = (String) cmd.get("func");
-                String dest = (String) cmd.get("name");
                 String args = (String) cmd.get("args");
+                String dest = tipo.equals("call") ? (String) cmd.get("name") : null;
 
                 if (!functions.containsKey(fname)) {
                     echoCommand("function '" + fname + "' not found");
@@ -682,51 +670,74 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Hashtable f = (Hashtable) functions.get(fname);
                 Vector fdecl = (Vector) f.get("declarations");
                 Vector finst = (Vector) f.get("instructions");
+                String rettype = (String) f.get("type");
 
                 Hashtable fvars = new Hashtable();
                 String[] argv = split(args, ',');
                 for (int j = 0; j < fdecl.size(); j++) {
                     Hashtable p = (Hashtable) fdecl.elementAt(j);
-                    String n = (String) p.get("name");
-                    String t = (String) p.get("type");
+                    String pname = (String) p.get("name");
+                    String ptype = (String) p.get("type");
 
-                    Hashtable argvv = new Hashtable();
-                    argvv.put("type", t);
-                    if (j < argv.length) {
-                        String raw = argv[j].trim();
-                        if (t.equals("int") || t.equals("float")) {
-                            raw = substituteVars(raw, variables);
-                            argvv.put("value", exprCommand(raw));
-                        } else {
-                            argvv.put("value", raw);
-                        }
-                    } else {
-                        argvv.put("value", "0");
+                    if (j >= argv.length) {
+                        echoCommand(fname + "(): missing " + ptype + " '" + pname + "'");
+                        return 2;
                     }
-                    fvars.put(n, argvv);
+
+                    String val = argv[j].trim();
+                    val = substituteVars(val, "", variables);
+
+                    Hashtable fvar = new Hashtable();
+                    fvar.put("type", ptype);
+                    if (ptype.equals("int") || ptype.equals("float") || ptype.equals("double")) {
+                        fvar.put("value", exprCommand(val));
+                    } else {
+                        fvar.put("value", val);
+                    }
+
+                    fvars.put(pname, fvar);
                 }
 
-                String ret = "0";
+                String ret = getDefaultReturn(rettype);
                 for (int j = 0; j < finst.size(); j++) {
                     Hashtable fcmd = (Hashtable) finst.elementAt(j);
-                    if (((String) fcmd.get("cmd")).equals("return")) {
-                        ret = exprCommand(substituteVars((String) fcmd.get("value"), fvars));
+                    String ftype = (String) fcmd.get("cmd");
+
+                    if (ftype.equals("return")) {
+                        ret = substituteVars((String) fcmd.get("value"), "", fvars);
+                        if (!rettype.equals("char")) ret = exprCommand(ret);
                         break;
+                    } else if (ftype.equals("printf")) {
+                        String fmt = (String) fcmd.get("args");
+                        fmt = substituteVars(fmt, "%", fvars);
+                        fmt = replace(fmt, "\\n", "\n");
+                        if (fmt.startsWith("\"") && fmt.endsWith("\"")) fmt = fmt.substring(1, fmt.length() - 1);
+                        echoCommand(fmt);
                     }
                 }
 
-                String rettype = (String) f.get("type");
-
-                Hashtable destVar = new Hashtable();
-                destVar.put("type", rettype);
-                destVar.put("value", ret);
-                variables.put(dest, destVar);
-
+                if (dest != null) {
+                    Hashtable destVar = new Hashtable();
+                    if (variables.containsKey(dest)) {
+                        destVar = (Hashtable) variables.get(dest);
+                        destVar.put("value", ret);
+                    } else {
+                        destVar.put("type", rettype);
+                        destVar.put("value", ret);
+                    }
+                    variables.put(dest, destVar);
+                }
             }
         }
 
         return 0;
     }
+
+    private String getDefaultReturn(String type) {
+        if (type.equals("char")) return "' '";
+        return "0";
+    }
+
     private Hashtable build(String code) {
         Hashtable program = new Hashtable();
         Hashtable functions = new Hashtable();
@@ -792,7 +803,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String line = parts[j].trim();
                 if (line.equals("")) continue;
 
-                if (startsWithAny(line, new String[]{"int ", "char ", "float ", "double "})) {
+                if (startsWithAny(line, new String[]{ "int ", "char ", "float ", "double " })) {
                     Hashtable decl = new Hashtable();
                     int sp = line.indexOf(' ');
                     String declType = line.substring(0, sp).trim();
@@ -808,15 +819,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                     decls.addElement(decl);
                     continue;
-                } else if (line.startsWith("printf(")) {
+                } else if (line.startsWith("printf(") || line.startsWith("exec(")) {
                     Hashtable cmd = new Hashtable();
-                    cmd.put("cmd", "printf");
-                    cmd.put("args", extractBetween(line, '(', ')'));
-                    instrs.addElement(cmd);
-                    continue;
-                } else if (line.startsWith("exec(")) {
-                    Hashtable cmd = new Hashtable();
-                    cmd.put("cmd", "exec");
+                    cmd.put("cmd", line.startsWith("printf(") ? "printf" : "exec");
                     cmd.put("args", extractBetween(line, '(', ')'));
                     instrs.addElement(cmd);
                     continue;
@@ -923,7 +928,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String k = (String) e.nextElement();
             Hashtable v = (Hashtable) vars.get(k);
             String val = String.valueOf(v.get("value"));
-            expr = replace(expr, k, val);
+            expr = replace(expr, prefix + k, val);
         }
         return expr;
     }
@@ -932,35 +937,35 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) return true; } return false; }
     private int findFunctionStart(String code) {
-    String[] types = { "int", "char", "float", "double" };
+        String[] types = { "int", "char", "float", "double" };
 
-    for (int i = 0; i < code.length(); i++) {
-        for (int t = 0; t < types.length; t++) {
-            String type = types[t];
-            if (code.startsWith(type + " ", i)) {
-                int nameStart = i + type.length() + 1;
-                int p1 = code.indexOf('(', nameStart);
-                if (p1 == -1) continue;
-                int p2 = code.indexOf(')', p1);
-                if (p2 == -1) continue;
-                int brace = code.indexOf('{', p2);
-                if (brace == -1) continue;
+        for (int i = 0; i < code.length(); i++) {
+            for (int t = 0; t < types.length; t++) {
+                String type = types[t];
+                if (code.startsWith(type + " ", i)) {
+                    int nameStart = i + type.length() + 1;
+                    int p1 = code.indexOf('(', nameStart);
+                    if (p1 == -1) continue;
+                    int p2 = code.indexOf(')', p1);
+                    if (p2 == -1) continue;
+                    int brace = code.indexOf('{', p2);
+                    if (brace == -1) continue;
 
-                // Verifica se não é declaração de variável: deve ter nome(), não nome;
-                String maybeName = code.substring(nameStart, p1).trim();
-                if (maybeName.indexOf(' ') != -1) continue; // nome inválido
+                    // Verifica se não é declaração de variável: deve ter nome(), não nome;
+                    String maybeName = code.substring(nameStart, p1).trim();
+                    if (maybeName.indexOf(' ') != -1) continue; // nome inválido
 
-                // Certifica-se que não é uma linha só (ex: "int x = 0;")
-                String beforeBrace = code.substring(p2 + 1, brace).trim();
-                if (beforeBrace.length() > 0) continue;
+                    // Certifica-se que não é uma linha só (ex: "int x = 0;")
+                    String beforeBrace = code.substring(p2 + 1, brace).trim();
+                    if (beforeBrace.length() > 0) continue;
 
-                return i;
+                    return i;
+                }
             }
         }
-    }
 
-    return -1; // não encontrado
-}
+        return -1; // não encontrado
+    }
 
     // |
     // History
