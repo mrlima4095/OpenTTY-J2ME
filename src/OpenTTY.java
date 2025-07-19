@@ -620,12 +620,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             Hashtable nv = new Hashtable();
             nv.put("type", type);
-            if (type.equals("int") || type.equals("float")) {
+            if (type.equals("int") || type.equals("float") || type.equals("double")) {
                 // Substituir variáveis por seus valores antes do exprCommand
                 val = substituteVars(val, variables);
                 nv.put("value", exprCommand(val));
-            } else {
+            } else if (type.equals("char")){
                 nv.put("value", val);
+            } else {
+                program.put("error": "unknown type " + type);
             }
             variables.put(name, nv);
         }
@@ -857,7 +859,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     d.put("type", "int");
                     d.put("name", a.substring(4).trim());
                     argsDecls.addElement(d);
-                }
+                } 
             }
         }
 
