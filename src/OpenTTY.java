@@ -957,7 +957,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // History
     public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
-    private void add2History(String command) { if (command.equals("") || command.equals("!!") || command.startsWith("#") || command.equals(getLastHistory())) { } else { history.addElement(command.trim()); } }
+    private void add2History(String command) { if (command.equals("") || command.equals(getLastHistory()) || command.startsWith("!!") || command.startsWith("#")) { } else { history.addElement(command.trim()); } }
     private String getLastHistory() { return history.size() > 0 ? (String) history.elementAt(history.size() - 1) : ""; }
 
     // API 015 - (Scripts)
