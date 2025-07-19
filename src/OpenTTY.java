@@ -893,6 +893,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
     return program;
 }
 
+    private String substituteVars(String expr, Hashtable vars) {
+    for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
+        String k = (String) e.nextElement();
+        Hashtable v = (Hashtable) vars.get(k);
+        String val = String.valueOf(v.get("value"));
+        expr = replace(expr, k, val);
+    }
+    return expr;
+}
 
     private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
     private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
