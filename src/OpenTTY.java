@@ -559,7 +559,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // C Programming
     private int C2ME(String code, boolean root) {
         Hashtable program = build(code);
-        if (program.containsKey("error")) { echoCommand(program.get("error")); return 1; }
+        if (program.containsKey("error")) { echoCommand((String) program.get("error")); return 1; }
 
         Hashtable functions = (Hashtable) program.get("functions");
         Vector globals = (Vector) program.get("globals");
