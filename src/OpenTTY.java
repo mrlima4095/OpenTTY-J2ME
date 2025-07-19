@@ -659,7 +659,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 
                 if (tipo.equals("printf")) { echoCommand(fmt); }
-                else if (tipe.equals("return")) {
+                else if (tipo.equals("return")) {
                     try { return Integer.parseInt(fmt); }
                     catch (Exception e) { return 2; }
                 }
