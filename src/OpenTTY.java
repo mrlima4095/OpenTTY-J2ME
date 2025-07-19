@@ -834,7 +834,10 @@ private Hashtable build(String code) {
             }
         }
 
-        decls.addAll(argsDecls);
+        for (int i = 0; i < argsDecls.size(); i++) {
+    decls.addElement(argsDecls.elementAt(i));
+}
+
 
         Hashtable func = new Hashtable();
         func.put("declarations", decls);
