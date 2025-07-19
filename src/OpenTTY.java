@@ -576,7 +576,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable g = (Hashtable) globals.elementAt(i);
             String name = (String) g.get("name");
             String val = g.containsKey("value") ? (String) g.get("value") : "0";
-            variables.put(name, new Integer(exprCommand(val)));
+            variables.put(name, exprCommand(val));
         }
 
         Hashtable main = (Hashtable) functions.get("main");
@@ -587,7 +587,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable d = (Hashtable) decls.elementAt(i);
             String name = (String) d.get("name");
             String val = d.containsKey("value") ? (String) d.get("value") : "0";
-            variables.put(name, new Integer(exprCommand(val)));
+            variables.put(name, exprCommand(val));
         }
 
         for (int i = 0; i < instrs.size(); i++) {
@@ -597,7 +597,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (tipo.equals("assign")) {
                 String name = (String) cmd.get("name");
                 String val = (String) cmd.get("value");
-                variables.put(name, new Integer(exprCommand(val)));
+                variables.put(name, exprCommand(val));
             }
 
             if (tipo.equals("printf")) {
@@ -609,7 +609,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     fmt = replace(fmt, "%" + k, v);
                 }
                 fmt = replace(fmt, "\\n", "\n");
-                if (fmt.startsWith("\"") && fmt.endsWith("\"")) fmt = fmt.substring(1, fmt.length() - 1);
+                if (fmt.startsWith("\"") && fmt.endsWith("\"")) { fmt = fmt.substring(1, fmt.length() - 1); }
                 echoCommand(fmt);
             }
 
@@ -637,7 +637,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Hashtable p = (Hashtable) fdecl.elementAt(j);
                     String n = (String) p.get("name");
                     if (j < argv.length) {
-                        fvars.put(n, new Integer(exprCommand(argv[j].trim())));
+                        fvars.put(n, exprCommand(argv[j].trim()));
                     }
                 }
 
@@ -650,7 +650,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 }
 
-                variables.put(dest, new Integer(ret));
+                variables.put(dest, ret);
             }
 
             if (tipo.equals("return")) {
