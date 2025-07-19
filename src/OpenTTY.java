@@ -633,7 +633,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String expr = exprCommand(val);
 
                     if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
-                    else { var.put("value", expr); }
+                    else { nv.put("value", expr); }
                 } else if (type.equals("char")){
                     nv.put("value", val);
                 } else {
