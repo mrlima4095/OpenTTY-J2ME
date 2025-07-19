@@ -667,14 +667,12 @@ private Hashtable build(String code) {
     Vector globals = new Vector();
     Hashtable includes = new Hashtable();
 
-    // Remove comentários
     code = removeComments(code);
     code = replace(code, "\t", " ");
     code = replace(code, "\n", " ");
     code = replace(code, "\r", " ");
     while (code.indexOf("  ") != -1) code = replace(code, "  ", " ");
 
-    // Trata includes
     String[] lines = split(code, ';');
     for (int i = 0; i < lines.length; i++) {
         String line = lines[i].trim();
@@ -699,14 +697,12 @@ private Hashtable build(String code) {
         }
     }
 
-    // Busca funções e variáveis globais
     int idx = 0;
     while ((idx = code.indexOf("int ", idx)) != -1) {
         int nameStart = idx + 4;
         int nameEnd = code.indexOf('(', nameStart);
 
         if (nameEnd == -1 || nameEnd > code.indexOf(';', idx)) {
-            // variável global
             int end = code.indexOf(';', idx);
             if (end == -1) break;
             String gdecl = code.substring(idx, end).trim();
@@ -720,7 +716,6 @@ private Hashtable build(String code) {
             continue;
         }
 
-        // É função
         String fname = code.substring(nameStart, nameEnd).trim();
         int argsEnd = code.indexOf(')', nameEnd);
         int bodyStart = code.indexOf('{', argsEnd);
@@ -818,7 +813,6 @@ private Hashtable build(String code) {
             return program;
         }
 
-        // argumentos da função
         Vector argsDecls = new Vector();
         String argsLine = code.substring(nameEnd + 1, argsEnd).trim();
         if (!argsLine.equals("")) {
@@ -834,9 +828,7 @@ private Hashtable build(String code) {
             }
         }
 
-        for (int i = 0; i < argsDecls.size(); i++) {
-    decls.addElement(argsDecls.elementAt(i));
-}
+        for (int i = 0; i < argsDecls.size(); i++) { decls.addElement(argsDecls.elementAt(i)); }
 
 
         Hashtable func = new Hashtable();
@@ -850,21 +842,10 @@ private Hashtable build(String code) {
     program.put("functions", functions);
     program.put("globals", globals);
     program.put("includes", includes);
-    return program;
-}
 
 
-    private String extractBetween(String text, char open, char close) {
-        int start = text.indexOf(open);
-        int end = text.lastIndexOf(close);
-        if (start == -1 || end == -1 || end <= start) return "";
-        String result = text.substring(start + 1, end).trim();
-        if (result.startsWith("\"") && result.endsWith("\"")) {
-            result = result.substring(1, result.length() - 1);
-        }
-        return result;
-    }
-    private String getBlock(String code) {
+    static String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
+    static String getBlock(String code) {
     int depth = 0;
     for (int i = 0; i < code.length(); i++) {
         char c = code.charAt(i);
@@ -874,7 +855,7 @@ private Hashtable build(String code) {
     }
     return null;
 }
-private String removeComments(String code) {
+static String removeComments(String code) {
     // Remove // comentários
     while (true) {
         int idx = code.indexOf("//");
@@ -899,13 +880,14 @@ private String removeComments(String code) {
     return code;
 }
 
-    private boolean startsWithAny(String text, String[] options) {
+    static boolean startsWithAny(String text, String[] options) {
         for (int i = 0; i < options.length; i++) {
             if (text.startsWith(options[i])) return true;
         }
         return false;
     }
-
+    return program;
+}
 
     // |
     // History
