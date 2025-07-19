@@ -29,7 +29,7 @@ LTS Edition
 - Fixed a bug in **Forge** enhanced application generation
 - When MIDlet is paused it triggers function `pauseApp()` if it is found
 - Fixed history duplicated appending bug
--
+- **!!** can read args and set it as prefix for last command
 -
 
 [ _Notes_ ]
