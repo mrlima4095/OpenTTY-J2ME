@@ -94,3 +94,4 @@
 [2025-1.16-02x27]	Transferring password hash to OpenRMS page 2
 [2025-1.16-02x28]	Debugging new password hashing
 [2025-1.16-02x29]	C2ME
+[2025-1.16-02x30]	!! can read args and set it as prefix for last command
