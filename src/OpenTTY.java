@@ -559,7 +559,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // C Programming
     private int C2ME(String code, boolean root) {
         Hashtable program = build(code);
-        if (program.containsKey("error")) { echoCommand("Error: " + program.get("error")); return 1; }
+        if (program.containsKey("error")) { echoCommand(program.get("error")); return 1; }
 
         Hashtable functions = (Hashtable) program.get("functions");
         Vector globals = (Vector) program.get("globals");
@@ -788,9 +788,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             for (int j = 0; j < parts.length; j++) {
                 String line = parts[j].trim();
-                if (line.equals("")) continue;
 
-                if (startsWithAny(line, new String[]{ "int ", "char ", "float ", "double " })) {
+                if (line.equals("")) { }
+                else if (startsWithAny(line, new String[]{ "int ", "char ", "float ", "double " })) {
                     Hashtable decl = new Hashtable();
                     int sp = line.indexOf(' ');
                     String declType = line.substring(0, sp).trim();
