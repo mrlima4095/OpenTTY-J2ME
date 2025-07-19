@@ -690,7 +690,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     fvars.put(pname, fvar);
                 }
 
-                String ret = rettype.equals("char") : "' '" : "0";
+                String ret = rettype.equals("char") ? "' '" : "0";
                 for (int j = 0; j < finst.size(); j++) {
                     Hashtable fcmd = (Hashtable) finst.elementAt(j);
                     String ftype = (String) fcmd.get("cmd");
