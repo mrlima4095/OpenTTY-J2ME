@@ -642,7 +642,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 variables.put(name, nv);
             }
-            else if (tipo.equals("printf") || tipo.equals("return") || tipo.equals("exec")) {
+            else if (tipo.equals("printf") || tipo.equals("exec")) {
                 String raw = (String) cmd.get("args");
                 String fmt = raw;
 
@@ -659,11 +659,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 
                 if (tipo.equals("printf")) { echoCommand(fmt); }
-                else if (tipo.equals("return")) {
-                    try { return Integer.parseInt(fmt); }
-                    catch (Exception e) { return 2; }
-                }
+            
                 else if (tipo.equals("exec")) { processCommand((String) cmd.get("args"), false, root); }
+            }
+            else if (tipo.equals("return")) {
+                String raw = (String) cmd.get("args");
+                String fmt = raw;
+
+                try { return Integer.parseInt(fmt); }
+                catch (Exception e) { return 2; }
             }
             else if (tipo.equals("call")) {
                 String fname = (String) cmd.get("func");
@@ -914,7 +918,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
 
-    private String substituteVars(String expr, Hashtable vars) {
+    private String substituteVars(String expr, String prefix, Hashtable vars) {
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String k = (String) e.nextElement();
             Hashtable v = (Hashtable) vars.get(k);
