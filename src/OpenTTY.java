@@ -702,10 +702,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
 
-            Hashtable destVar = new Hashtable();
-            destVar.put("type", "int"); // assume retorno é int
-            destVar.put("value", ret);
-            variables.put(dest, destVar);
+            String rettype = (String) f.get("type");
+
+Hashtable destVar = new Hashtable();
+destVar.put("type", rettype);
+destVar.put("value", ret);
+variables.put(dest, destVar);
+
         }
 
         if (tipo.equals("return")) {
