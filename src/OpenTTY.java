@@ -842,10 +842,10 @@ private Hashtable build(String code) {
     program.put("functions", functions);
     program.put("globals", globals);
     program.put("includes", includes);
-
-
-    static String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
-    static String getBlock(String code) {
+    return program;
+}
+    private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
+    private String getBlock(String code) {
     int depth = 0;
     for (int i = 0; i < code.length(); i++) {
         char c = code.charAt(i);
@@ -855,7 +855,7 @@ private Hashtable build(String code) {
     }
     return null;
 }
-static String removeComments(String code) {
+private String removeComments(String code) {
     // Remove // comentários
     while (true) {
         int idx = code.indexOf("//");
@@ -880,14 +880,12 @@ static String removeComments(String code) {
     return code;
 }
 
-    static boolean startsWithAny(String text, String[] options) {
+    private boolean startsWithAny(String text, String[] options) {
         for (int i = 0; i < options.length; i++) {
             if (text.startsWith(options[i])) return true;
         }
         return false;
     }
-    return program;
-}
 
     // |
     // History
