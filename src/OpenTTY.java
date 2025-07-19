@@ -627,7 +627,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else if (type.equals("char")){
                 nv.put("value", val);
             } else {
-                
+                echoCommand("build: unknown type '" + type + "'");
+                return 2;
             }
             variables.put(name, nv);
         }
@@ -662,7 +663,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (!functions.containsKey(fname)) {
                 echoCommand("function '" + fname + "' not found");
-                return 1;
+                return 127;
             }
 
             Hashtable f = (Hashtable) functions.get(fname);
