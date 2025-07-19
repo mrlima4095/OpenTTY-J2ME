@@ -10,6 +10,7 @@ LTS Edition
 - `passwd [password]`: Change password
 - `sudo [command]`: Run command with superuser permissions
 - `su [user]`: Switch user (root/ you)
+- `build [file]`: Build and run a C2ME source-code
 
 [ _Updates_ ]
 
