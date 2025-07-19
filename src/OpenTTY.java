@@ -661,162 +661,195 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
 
+private Hashtable build(String code) {
+    Hashtable program = new Hashtable();
+    Hashtable functions = new Hashtable();
+    Vector globals = new Vector();
+    Hashtable includes = new Hashtable();
 
-    private Hashtable build(String code) {
-        Hashtable program = new Hashtable();
-        Hashtable functions = new Hashtable();
-        Vector globals = new Vector();
-        Hashtable includes = new Hashtable();
+    // Remove comentários
+    code = removeComments(code);
+    code = replace(code, "\t", " ");
+    code = replace(code, "\n", " ");
+    code = replace(code, "\r", " ");
+    while (code.indexOf("  ") != -1) code = replace(code, "  ", " ");
 
-        code = replace(code, "\t", " ");
-        code = replace(code, "\n", " ");
-        code = replace(code, "\r", " ");
-        while (code.indexOf("  ") != -1) code = replace(code, "  ", " ");
-
-        String[] lines = split(code, ';');
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-            if (line.startsWith("#include \"") && line.endsWith("\"")) {
-                String path = line.substring(10, line.length() - 1);
-                String content = getcontent(path);
-                if (!content.equals("")) {
-                    Hashtable included = build(content);
-                    if (included.containsKey("error")) {
-                        program.put("error", "erro no include: " + path);
-                        return program;
-                    }
-                    includes.put(path, included);
-                    Hashtable incFuncs = (Hashtable) included.get("functions");
-                    for (Enumeration e = incFuncs.keys(); e.hasMoreElements(); ) {
-                        String k = (String) e.nextElement();
-                        functions.put(k, incFuncs.get(k));
-                    }
-                    Vector incGlobals = (Vector) included.get("globals");
-                    for (int g = 0; g < incGlobals.size(); g++) globals.addElement(incGlobals.elementAt(g));
+    // Trata includes
+    String[] lines = split(code, ';');
+    for (int i = 0; i < lines.length; i++) {
+        String line = lines[i].trim();
+        if (line.startsWith("#include \"") && line.endsWith("\"")) {
+            String path = line.substring(10, line.length() - 1);
+            String content = getcontent(path);
+            if (!content.equals("")) {
+                Hashtable included = build(content);
+                if (included.containsKey("error")) {
+                    program.put("error", "erro no include: " + path);
+                    return program;
                 }
+                includes.put(path, included);
+                Hashtable incFuncs = (Hashtable) included.get("functions");
+                for (Enumeration e = incFuncs.keys(); e.hasMoreElements(); ) {
+                    String k = (String) e.nextElement();
+                    functions.put(k, incFuncs.get(k));
+                }
+                Vector incGlobals = (Vector) included.get("globals");
+                for (int g = 0; g < incGlobals.size(); g++) globals.addElement(incGlobals.elementAt(g));
             }
         }
+    }
 
-        int idx = 0;
-        while ((idx = code.indexOf("int ", idx)) != -1) {
-            int nameStart = idx + 4;
-            int nameEnd = code.indexOf('(', nameStart);
-            if (nameEnd == -1) {
-                String gdecl = code.substring(idx, code.indexOf(';', idx)).trim();
-                idx = code.indexOf(';', idx) + 1;
-                Hashtable g = new Hashtable();
-                String[] parts = split(gdecl.substring(4), '=');
-                g.put("type", "int");
-                g.put("name", parts[0].trim());
-                if (parts.length > 1) g.put("value", parts[1].trim());
-                globals.addElement(g);
+    // Busca funções e variáveis globais
+    int idx = 0;
+    while ((idx = code.indexOf("int ", idx)) != -1) {
+        int nameStart = idx + 4;
+        int nameEnd = code.indexOf('(', nameStart);
+
+        if (nameEnd == -1 || nameEnd > code.indexOf(';', idx)) {
+            // variável global
+            int end = code.indexOf(';', idx);
+            if (end == -1) break;
+            String gdecl = code.substring(idx, end).trim();
+            idx = end + 1;
+            Hashtable g = new Hashtable();
+            String[] parts = split(gdecl.substring(4), '=');
+            g.put("type", "int");
+            g.put("name", parts[0].trim());
+            if (parts.length > 1) g.put("value", parts[1].trim());
+            globals.addElement(g);
+            continue;
+        }
+
+        // É função
+        String fname = code.substring(nameStart, nameEnd).trim();
+        int argsEnd = code.indexOf(')', nameEnd);
+        int bodyStart = code.indexOf('{', argsEnd);
+        if (argsEnd == -1 || bodyStart == -1) {
+            program.put("error", "erro na função: " + fname);
+            return program;
+        }
+
+        String bodyFull = getBlock(code.substring(bodyStart));
+        if (bodyFull == null) {
+            program.put("error", "EOF");
+            return program;
+        }
+
+        String body = bodyFull.substring(1, bodyFull.length() - 1).trim(); // remove { e }
+
+        Vector decls = new Vector();
+        Vector instrs = new Vector();
+        String[] parts = split(body, ';');
+
+        for (int j = 0; j < parts.length; j++) {
+            String line = parts[j].trim();
+            if (line.equals("")) continue;
+
+            if (startsWithAny(line, new String[]{"int ", "char ", "float ", "double "})) {
+                Hashtable decl = new Hashtable();
+                int sp = line.indexOf(' ');
+                String type = line.substring(0, sp).trim();
+                String rest = line.substring(sp + 1).trim();
+                if (rest.indexOf('=') != -1) {
+                    int eq = rest.indexOf('=');
+                    decl.put("type", type);
+                    decl.put("name", rest.substring(0, eq).trim());
+                    decl.put("value", rest.substring(eq + 1).trim());
+                } else {
+                    decl.put("type", type);
+                    decl.put("name", rest);
+                }
+                decls.addElement(decl);
                 continue;
             }
-            String fname = code.substring(nameStart, nameEnd).trim();
 
-            int argsEnd = code.indexOf(')', nameEnd);
-            int bodyStart = code.indexOf('{', argsEnd);
-            int bodyEnd = code.indexOf('}', bodyStart);
-            if (bodyStart == -1 || bodyEnd == -1) {
-                program.put("error", "erro na função: " + fname);
-                return program;
+            if (line.startsWith("printf(")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "printf");
+                cmd.put("args", extractBetween(line, '(', ')'));
+                instrs.addElement(cmd);
+                continue;
             }
 
-            String body = code.substring(bodyStart + 1, bodyEnd).trim();
-            Vector decls = new Vector();
-            Vector instrs = new Vector();
-            String[] parts = split(body, ';');
-
-            for (int j = 0; j < parts.length; j++) {
-                String line = parts[j].trim();
-                if (line.equals("")) continue;
-
-                if (startsWithAny(line, new String[]{"int ", "char ", "float ", "double "})) {
-                    Hashtable decl = new Hashtable();
-                    int sp = line.indexOf(' ');
-                    String type = line.substring(0, sp).trim();
-                    String rest = line.substring(sp + 1).trim();
-                    if (rest.indexOf('=') != -1) {
-                        int eq = rest.indexOf('=');
-                        decl.put("type", type);
-                        decl.put("name", rest.substring(0, eq).trim());
-                        decl.put("value", rest.substring(eq + 1).trim());
-                    } else {
-                        decl.put("type", type);
-                        decl.put("name", rest);
-                    }
-                    decls.addElement(decl);
-                    continue;
-                }
-
-                if (line.startsWith("printf(")) {
-                    Hashtable cmd = new Hashtable();
-                    cmd.put("cmd", "printf");
-                    cmd.put("args", extractBetween(line, '(', ')'));
-                    instrs.addElement(cmd);
-                    continue;
-                }
-
-                if (line.startsWith("exec(")) {
-                    Hashtable cmd = new Hashtable();
-                    cmd.put("cmd", "exec");
-                    cmd.put("args", extractBetween(line, '(', ')'));
-                    instrs.addElement(cmd);
-                    continue;
-                }
-
-                if (line.startsWith("return ")) {
-                    Hashtable cmd = new Hashtable();
-                    cmd.put("cmd", "return");
-                    cmd.put("value", line.substring(7).trim());
-                    instrs.addElement(cmd);
-                    continue;
-                }
-
-                if (line.indexOf('=') != -1 && line.indexOf('(') == -1) {
-                    Hashtable cmd = new Hashtable();
-                    int eq = line.indexOf('=');
-                    cmd.put("cmd", "assign");
-                    cmd.put("name", line.substring(0, eq).trim());
-                    cmd.put("value", line.substring(eq + 1).trim());
-                    instrs.addElement(cmd);
-                    continue;
-                }
-
-                if (line.indexOf('=') != -1 && line.indexOf('(') != -1 && line.indexOf(')') != -1) {
-                    Hashtable cmd = new Hashtable();
-                    int eq = line.indexOf('=');
-                    String name = line.substring(0, eq).trim();
-                    String call = line.substring(eq + 1).trim();
-                    int p1 = call.indexOf('(');
-                    String fname2 = call.substring(0, p1);
-                    String args = extractBetween(call, '(', ')');
-
-                    cmd.put("cmd", "call");
-                    cmd.put("name", name);
-                    cmd.put("func", fname2);
-                    cmd.put("args", args);
-                    instrs.addElement(cmd);
-                    continue;
-                }
-
-                program.put("error", "invalid: " + line);
-                return program;
+            if (line.startsWith("exec(")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "exec");
+                cmd.put("args", extractBetween(line, '(', ')'));
+                instrs.addElement(cmd);
+                continue;
             }
 
-            Hashtable func = new Hashtable();
-            func.put("declarations", decls);
-            func.put("instructions", instrs);
-            functions.put(fname, func);
+            if (line.startsWith("return ")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("cmd", "return");
+                cmd.put("value", line.substring(7).trim());
+                instrs.addElement(cmd);
+                continue;
+            }
 
-            idx = bodyEnd + 1;
+            if (line.indexOf('=') != -1 && line.indexOf('(') == -1) {
+                Hashtable cmd = new Hashtable();
+                int eq = line.indexOf('=');
+                cmd.put("cmd", "assign");
+                cmd.put("name", line.substring(0, eq).trim());
+                cmd.put("value", line.substring(eq + 1).trim());
+                instrs.addElement(cmd);
+                continue;
+            }
+
+            if (line.indexOf('=') != -1 && line.indexOf('(') != -1 && line.indexOf(')') != -1) {
+                Hashtable cmd = new Hashtable();
+                int eq = line.indexOf('=');
+                String name = line.substring(0, eq).trim();
+                String call = line.substring(eq + 1).trim();
+                int p1 = call.indexOf('(');
+                String fname2 = call.substring(0, p1);
+                String args = extractBetween(call, '(', ')');
+
+                cmd.put("cmd", "call");
+                cmd.put("name", name);
+                cmd.put("func", fname2);
+                cmd.put("args", args);
+                instrs.addElement(cmd);
+                continue;
+            }
+
+            program.put("error", "invalid: " + line);
+            return program;
         }
 
-        program.put("functions", functions);
-        program.put("globals", globals);
-        program.put("includes", includes);
-        return program;
+        // argumentos da função
+        Vector argsDecls = new Vector();
+        String argsLine = code.substring(nameEnd + 1, argsEnd).trim();
+        if (!argsLine.equals("")) {
+            String[] argsSplit = split(argsLine, ',');
+            for (int i = 0; i < argsSplit.length; i++) {
+                String a = argsSplit[i].trim();
+                if (a.startsWith("int ")) {
+                    Hashtable d = new Hashtable();
+                    d.put("type", "int");
+                    d.put("name", a.substring(4).trim());
+                    argsDecls.addElement(d);
+                }
+            }
+        }
+
+        decls.addAll(argsDecls);
+
+        Hashtable func = new Hashtable();
+        func.put("declarations", decls);
+        func.put("instructions", instrs);
+        functions.put(fname, func);
+
+        idx = bodyStart + bodyFull.length();
     }
+
+    program.put("functions", functions);
+    program.put("globals", globals);
+    program.put("includes", includes);
+    return program;
+}
+
 
     private String extractBetween(String text, char open, char close) {
         int start = text.indexOf(open);
@@ -828,6 +861,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         return result;
     }
+    private String getBlock(String code) {
+    int depth = 0;
+    for (int i = 0; i < code.length(); i++) {
+        char c = code.charAt(i);
+        if (c == '{') depth++;
+        else if (c == '}') depth--;
+        if (depth == 0) return code.substring(0, i + 1);
+    }
+    return null;
+}
 
     private boolean startsWithAny(String text, String[] options) {
         for (int i = 0; i < options.length; i++) {
