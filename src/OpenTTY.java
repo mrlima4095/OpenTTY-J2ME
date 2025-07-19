@@ -558,165 +558,171 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // C Programming
     private int C2ME(String code, boolean root) {
-    Hashtable program = build(code);
-    if (program.containsKey("error")) {
-        echoCommand("Error: " + program.get("error"));
-        return 1;
-    }
+        Hashtable program = build(code);
+        if (program.containsKey("error")) { echoCommand("Error: " + program.get("error")); return 1; }
 
-    Hashtable functions = (Hashtable) program.get("functions");
-    Vector globals = (Vector) program.get("globals");
-    if (!functions.containsKey("main")) {
-        echoCommand("main() missing");
-        return 1;
-    }
+        Hashtable functions = (Hashtable) program.get("functions");
+        Vector globals = (Vector) program.get("globals");
+        if (!functions.containsKey("main")) { echoCommand("main() missing"); return 1; }
 
-    Hashtable variables = new Hashtable();
-    for (int i = 0; i < globals.size(); i++) {
-        Hashtable g = (Hashtable) globals.elementAt(i);
-        String name = (String) g.get("name");
-        String type = (String) g.get("type");
-        String val = g.containsKey("value") ? (String) g.get("value") : (type.equals("char") ? "' '" : "0");
+        Hashtable variables = new Hashtable();
+        for (int i = 0; i < globals.size(); i++) {
+            Hashtable g = (Hashtable) globals.elementAt(i);
+            String name = (String) g.get("name");
+            String type = (String) g.get("type");
+            String val = g.containsKey("value") ? (String) g.get("value") : (type.equals("char") ? "' '" : "0");
 
-        Hashtable var = new Hashtable();
-        var.put("type", type);
-        if (type.equals("int") || type.equals("float")) {
-            var.put("value", exprCommand(val));
-        } else {
-            var.put("value", val);
-        }
-        variables.put(name, var);
-    }
-
-    Hashtable main = (Hashtable) functions.get("main");
-    Vector decls = (Vector) main.get("declarations");
-    Vector instrs = (Vector) main.get("instructions");
-
-    for (int i = 0; i < decls.size(); i++) {
-        Hashtable d = (Hashtable) decls.elementAt(i);
-        String name = (String) d.get("name");
-        String type = (String) d.get("type");
-        String val = d.containsKey("value") ? (String) d.get("value") : (type.equals("char") ? "' '" : "0");
-
-        Hashtable var = new Hashtable();
-        var.put("type", type);
-        if (type.equals("int") || type.equals("float")) {
-            var.put("value", exprCommand(val));
-        } else {
-            var.put("value", val);
-        }
-        variables.put(name, var);
-    }
-
-    for (int i = 0; i < instrs.size(); i++) {
-        Hashtable cmd = (Hashtable) instrs.elementAt(i);
-        String tipo = (String) cmd.get("cmd");
-
-        if (tipo.equals("assign")) {
-            String name = (String) cmd.get("name");
-            String val = (String) cmd.get("value");
-            Hashtable v = (Hashtable) variables.get(name);
-            String type = (String) v.get("type");
-
-            Hashtable nv = new Hashtable();
-            nv.put("type", type);
+            Hashtable var = new Hashtable();
+            var.put("type", type);
             if (type.equals("int") || type.equals("float") || type.equals("double")) {
-                val = substituteVars(val, variables);
-                nv.put("value", exprCommand(val));
+                String expr = exprCommand(val);
+
+                if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
+                else { var.put("value", expr); }
             } else if (type.equals("char")){
-                nv.put("value", val);
+                var.put("value", val);
             } else {
                 echoCommand("build: unknown type '" + type + "'");
                 return 2;
             }
-            variables.put(name, nv);
+            variables.put(name, var);
         }
 
-        if (tipo.equals("printf") || tipo.equals("exec")) {
-            String raw = (String) cmd.get("args");
-            String fmt = raw;
+        Hashtable main = (Hashtable) functions.get("main");
+        Vector decls = (Vector) main.get("declarations");
+        Vector instrs = (Vector) main.get("instructions");
 
-            for (Enumeration e = variables.keys(); e.hasMoreElements(); ) {
-                String k = (String) e.nextElement();
-                Hashtable v = (Hashtable) variables.get(k);
-                String val = String.valueOf(v.get("value"));
-                fmt = replace(fmt, "%" + k, val);
+        for (int i = 0; i < decls.size(); i++) {
+            Hashtable d = (Hashtable) decls.elementAt(i);
+            String name = (String) d.get("name");
+            String type = (String) d.get("type");
+            String val = d.containsKey("value") ? (String) d.get("value") : (type.equals("char") ? "' '" : "0");
+
+            Hashtable var = new Hashtable();
+            var.put("type", type);
+            if (type.equals("int") || type.equals("float") || type.equals("double")) {
+                String expr = exprCommand(val);
+
+                if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
+                else { var.put("value", expr); }
+            } else if (type.equals("char")){
+                var.put("value", val);
+            } else {
+                echoCommand("build: unknown type '" + type + "'");
+                return 2;
             }
 
-            fmt = replace(fmt, "\\n", "\n");
-            if (fmt.startsWith("\"") && fmt.endsWith("\"")) {
-                fmt = fmt.substring(1, fmt.length() - 1);
-            }
-            
-            if (tipo.equals("printf")) { echoCommand(fmt); }
-            else { processCommand((String) cmd.get("args"), false, root); }
+            variables.put(name, var);
         }
 
+        for (int i = 0; i < instrs.size(); i++) {
+            Hashtable cmd = (Hashtable) instrs.elementAt(i);
+            String tipo = (String) cmd.get("cmd");
 
-        if (tipo.equals("call")) {
-            String fname = (String) cmd.get("func");
-            String dest = (String) cmd.get("name");
-            String args = (String) cmd.get("args");
+            if (tipo.equals("assign")) {
+                String name = (String) cmd.get("name");
+                String val = (String) cmd.get("value");
+                Hashtable v = (Hashtable) variables.get(name);
+                String type = (String) v.get("type");
 
-            if (!functions.containsKey(fname)) {
-                echoCommand("function '" + fname + "' not found");
-                return 127;
-            }
+                Hashtable nv = new Hashtable();
+                nv.put("type", type);
+                if (type.equals("int") || type.equals("float") || type.equals("double")) {
+                    val = substituteVars(val, variables);
+                    nv.put("value", exprCommand(val));
+                    String expr = exprCommand(val);
 
-            Hashtable f = (Hashtable) functions.get(fname);
-            Vector fdecl = (Vector) f.get("declarations");
-            Vector finst = (Vector) f.get("instructions");
-
-            Hashtable fvars = new Hashtable();
-            String[] argv = split(args, ',');
-            for (int j = 0; j < fdecl.size(); j++) {
-                Hashtable p = (Hashtable) fdecl.elementAt(j);
-                String n = (String) p.get("name");
-                String t = (String) p.get("type");
-
-                Hashtable argvv = new Hashtable();
-                argvv.put("type", t);
-                if (j < argv.length) {
-                    String raw = argv[j].trim();
-                    if (t.equals("int") || t.equals("float")) {
-                        raw = substituteVars(raw, variables);
-                        argvv.put("value", exprCommand(raw));
-                    } else {
-                        argvv.put("value", raw);
-                    }
+                    if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
+                    else { var.put("value", expr); }
+                } else if (type.equals("char")){
+                    nv.put("value", val);
                 } else {
-                    argvv.put("value", "0");
+                    echoCommand("build: unknown type '" + type + "'");
+                    return 2;
                 }
-                fvars.put(n, argvv);
+                variables.put(name, nv);
             }
+            else if (tipo.equals("printf") || tipo.equals("return") || tipo.equals("exec")) {
+                String raw = (String) cmd.get("args");
+                String fmt = raw;
 
-            String ret = "0";
-            for (int j = 0; j < finst.size(); j++) {
-                Hashtable fcmd = (Hashtable) finst.elementAt(j);
-                if (((String) fcmd.get("cmd")).equals("return")) {
-                    ret = exprCommand(substituteVars((String) fcmd.get("value"), fvars));
-                    break;
+                for (Enumeration e = variables.keys(); e.hasMoreElements(); ) {
+                    String k = (String) e.nextElement();
+                    Hashtable v = (Hashtable) variables.get(k);
+                    String val = String.valueOf(v.get("value"));
+                    fmt = replace(fmt, "%" + k, val);
                 }
+
+                fmt = replace(fmt, "\\n", "\n");
+                if (fmt.startsWith("\"") && fmt.endsWith("\"")) {
+                    fmt = fmt.substring(1, fmt.length() - 1);
+                }
+                
+                if (tipo.equals("printf")) { echoCommand(fmt); }
+                else if (tipe.equals("return")) {
+                    try { return Integer.parseInt(fmt); }
+                    catch (Exception e) { return 2; }
+                }
+                else if (tipo.equals("exec")) { processCommand((String) cmd.get("args"), false, root); }
             }
+            else if (tipo.equals("call")) {
+                String fname = (String) cmd.get("func");
+                String dest = (String) cmd.get("name");
+                String args = (String) cmd.get("args");
 
-            String rettype = (String) f.get("type");
+                if (!functions.containsKey(fname)) {
+                    echoCommand("function '" + fname + "' not found");
+                    return 127;
+                }
 
-            Hashtable destVar = new Hashtable();
-            destVar.put("type", rettype);
-            destVar.put("value", ret);
-            variables.put(dest, destVar);
+                Hashtable f = (Hashtable) functions.get(fname);
+                Vector fdecl = (Vector) f.get("declarations");
+                Vector finst = (Vector) f.get("instructions");
 
+                Hashtable fvars = new Hashtable();
+                String[] argv = split(args, ',');
+                for (int j = 0; j < fdecl.size(); j++) {
+                    Hashtable p = (Hashtable) fdecl.elementAt(j);
+                    String n = (String) p.get("name");
+                    String t = (String) p.get("type");
+
+                    Hashtable argvv = new Hashtable();
+                    argvv.put("type", t);
+                    if (j < argv.length) {
+                        String raw = argv[j].trim();
+                        if (t.equals("int") || t.equals("float")) {
+                            raw = substituteVars(raw, variables);
+                            argvv.put("value", exprCommand(raw));
+                        } else {
+                            argvv.put("value", raw);
+                        }
+                    } else {
+                        argvv.put("value", "0");
+                    }
+                    fvars.put(n, argvv);
+                }
+
+                String ret = "0";
+                for (int j = 0; j < finst.size(); j++) {
+                    Hashtable fcmd = (Hashtable) finst.elementAt(j);
+                    if (((String) fcmd.get("cmd")).equals("return")) {
+                        ret = exprCommand(substituteVars((String) fcmd.get("value"), fvars));
+                        break;
+                    }
+                }
+
+                String rettype = (String) f.get("type");
+
+                Hashtable destVar = new Hashtable();
+                destVar.put("type", rettype);
+                destVar.put("value", ret);
+                variables.put(dest, destVar);
+
+            }
         }
 
-        if (tipo.equals("return")) {
-            try { return Integer.parseInt((String) cmd.get("value")); }
-            catch (Exception e) { return 2; }
-        }
+        return 0;
     }
-
-    return 0;
-}
-
     private Hashtable build(String code) {
         Hashtable program = new Hashtable();
         Hashtable functions = new Hashtable();
