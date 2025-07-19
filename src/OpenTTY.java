@@ -867,6 +867,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (int i = 0; i < argsDecls.size(); i++) decls.addElement(argsDecls.elementAt(i));
 
         Hashtable func = new Hashtable();
+        func.put("type", "int"); 
         func.put("declarations", decls);
         func.put("instructions", instrs);
         functions.put(fname, func);
