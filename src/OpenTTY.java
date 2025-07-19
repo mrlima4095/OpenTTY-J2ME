@@ -568,22 +568,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable variables = new Hashtable();
         for (int i = 0; i < globals.size(); i++) {
             Hashtable g = (Hashtable) globals.elementAt(i);
-            String name = (String) g.get("name");
-            String type = (String) g.get("type");
+            String name = (String) g.get("name"), type = (String) g.get("type");
             String val = g.containsKey("value") ? (String) g.get("value") : (type.equals("char") ? "' '" : "0");
 
             Hashtable var = new Hashtable();
             var.put("type", type);
             if (type.equals("int") || type.equals("float") || type.equals("double")) {
                 String expr = exprCommand(val);
-                if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
+
+                if (expr.startsWith("expr: ")) { echoCommand("java " + type + " '" + name + "'."); return 2; }
                 var.put("value", expr);
-            } else if (type.equals("char")) {
-                var.put("value", val);
-            } else {
-                echoCommand("build: unknown type '" + type + "'");
-                return 2;
-            }
+            } 
+            else if (type.equals("char")) { var.put("value", val); } 
+            else { echoCommand("error: unknown type '" + type + "' for variable '" + name + "'"); return 2; }
+
             variables.put(name, var);
         }
 
