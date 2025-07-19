@@ -871,6 +871,30 @@ private Hashtable build(String code) {
     }
     return null;
 }
+private String removeComments(String code) {
+    // Remove // comentários
+    while (true) {
+        int idx = code.indexOf("//");
+        if (idx == -1) break;
+        int endl = code.indexOf("\n", idx);
+        if (endl == -1) endl = code.length();
+        code = code.substring(0, idx) + code.substring(endl);
+    }
+
+    // Remove /* comentários de bloco */
+    while (true) {
+        int start = code.indexOf("/*");
+        if (start == -1) break;
+        int end = code.indexOf("*/", start + 2);
+        if (end == -1) {
+            code = code.substring(0, start);
+            break;
+        }
+        code = code.substring(0, start) + code.substring(end + 2);
+    }
+
+    return code;
+}
 
     private boolean startsWithAny(String text, String[] options) {
         for (int i = 0; i < options.length; i++) {
