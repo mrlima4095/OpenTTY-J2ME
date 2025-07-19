@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x29"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x30"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -306,7 +306,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("return")) { try { return Integer.valueOf(argument); } catch (Exception e) { echoCommand(getCatch(e)); return 2; } }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS")); }
-        else if (mainCommand.equals("!!")) { stdin.setString(getLastHistory()); }
+        else if (mainCommand.equals("!!")) { stdin.setString(argument + getLastHistory()); }
         else if (mainCommand.equals(".")) { if (argument.equals("")) { return runScript(nanoContent, root); } else { return runScript(getcontent(argument), root); } }
 
         else { echoCommand(mainCommand + ": not found"); return 127; }
@@ -574,10 +574,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable var = new Hashtable();
             var.put("type", type);
             if (type.equals("int") || type.equals("float") || type.equals("double")) {
-                String expr = exprCommand(val);
+                String expr = exprCommand((val));
 
-                if (expr.startsWith("expr: ")) { echoCommand("java " + type + " '" + name + "'."); return 2; }
-                var.put("value", expr);
+                if (expr.startsWith("expr: ")) { echoCommand("error: invalid '" + type + "' expression for '" + name + "'"); return 2; }
+                else { var.put("value", expr); }
             } 
             else if (type.equals("char")) { var.put("value", val); } 
             else { echoCommand("error: unknown type '" + type + "' for variable '" + name + "'"); return 2; }
@@ -591,22 +591,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         for (int i = 0; i < decls.size(); i++) {
             Hashtable d = (Hashtable) decls.elementAt(i);
-            String name = (String) d.get("name");
-            String type = (String) d.get("type");
+            String name = (String) d.get("name"), type = (String) d.get("type");
             String val = d.containsKey("value") ? (String) d.get("value") : (type.equals("char") ? "' '" : "0");
 
             Hashtable var = new Hashtable();
             var.put("type", type);
             if (type.equals("int") || type.equals("float") || type.equals("double")) {
                 String expr = exprCommand(val);
-                if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
-                var.put("value", expr);
-            } else if (type.equals("char")) {
-                var.put("value", val);
-            } else {
-                echoCommand("build: unknown type '" + type + "'");
-                return 2;
-            }
+
+                if (expr.startsWith("expr: ")) { echoCommand("error: invalid '" + type + "' expression for '" + name + "'"); return 2; }
+                else { var.put("value", expr); }
+            } 
+            else if (type.equals("char")) { var.put("value", val); }
+            else { echoCommand("error: unknown type '" + type + "' for variable '" + name + "'"); return 2; }
+
             variables.put(name, var);
         }
 
@@ -618,10 +616,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String name = (String) cmd.get("name");
                 String val = (String) cmd.get("value");
                 Hashtable v = (Hashtable) variables.get(name);
-                if (v == null) {
-                    echoCommand("undeclared variable: " + name);
-                    return 2;
-                }
+
+                if (v == null) { echoCommand("error: undeclared variable: " + name); return 2; }
+
                 String type = (String) v.get("type");
 
                 Hashtable nv = new Hashtable();
@@ -631,12 +628,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String expr = exprCommand(val);
                     if (expr.startsWith("expr: ")) { echoCommand("build: invalid value for " + type + " '" + name + "'."); return 2; }
                     nv.put("value", expr);
-                } else if (type.equals("char")) {
-                    nv.put("value", val);
-                } else {
-                    echoCommand("build: unknown type '" + type + "'");
-                    return 2;
-                }
+                } 
+                else if (type.equals("char")) { nv.put("value", val); } 
+                else { echoCommand("error: unknown type '" + type + "' for variable '" + name + "'"); return 2; }
                 variables.put(name, nv);
             }
 
