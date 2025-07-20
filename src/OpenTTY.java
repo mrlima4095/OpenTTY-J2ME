@@ -625,19 +625,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (line.equals("")) { }
             else if (line.startsWith("printf(") || line.startsWith("exec(")) {
                 String msg = extractBetween(line, '(', ')');
-                Hashtable cmd = new Hashtable();
                 cmd.put("type", line.startsWith("printf(") ? "printf" : "exec");
                 cmd.put("value", msg);
-                source.addElement(cmd);
             }
             else if (line.startsWith("return ")) {
                 cmd.put("type", "return");
                 cmd.put("value", line.substring(7).trim());
-                source.addElement(cmd);
             }
             else if (line.startsWith("if") || line.startsWith("else")) {
-                Hashtable cmd = new Hashtable();
-                String type = line.startsWith("if(") ? "if" : "else";
+                String type = line.startsWith("if") ? "if" : "else";
 
                 int braceIndex = block.indexOf("{", i >= 0 ? block.indexOf(line) + line.length() : 0);
                 String remaining = block.substring(braceIndex);
@@ -650,20 +646,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("type", type);
                 if (type.equals("if")) cmd.put("expr", extractParens(line, 0));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
-                source.addElement(cmd);
 
                 i++; 
                 while (i < lines.length && lines[i].indexOf(subblock) != -1) { i++; }
             }
-
+            else if (line.equals)
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim();
                 String arg = extractBetween(line, '(', ')');
-                Hashtable cmd = new Hashtable();
                 cmd.put("type", "call");
                 cmd.put("function", name);
                 cmd.put("args", arg);
-                source.addElement(cmd);
             }
             else if (startsWithAny(line, new String[]{"int ", "char "})) {
                 String varType = line.startsWith("int ") ? "int" : "char";
@@ -689,12 +682,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         return null;
                     }
 
-                    Hashtable cmd = new Hashtable();
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
                     cmd.put("instance", varType);
                     cmd.put("value", varValue);
-                    source.addElement(cmd);
                 }
             }
             else if (line.indexOf('=') != -1) {
@@ -703,17 +694,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String varName = parts[0].trim();
                     String value = parts[1].trim();
 
-                    Hashtable cmd = new Hashtable();
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
                     cmd.put("instance", "");
                     cmd.put("value", value);
-                    source.addElement(cmd);
                 } 
                 else { echoCommand("build: invalid value for '" + parts[0].trim() + "'"); return null; }
             }
 
             else { echoCommand("build: invalid syntax: '" + line + "'"); return null; }
+
+            source.addElement(cmd);
         }
 
         return source;
