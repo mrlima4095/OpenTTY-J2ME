@@ -635,7 +635,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("value", line.substring(7).trim());
                 source.addElement(cmd);
             }
-            else if (line.startsWith("if(") || line.startsWith("else")) {
+            else if (line.startsWith("if") || line.startsWith("else")) {
                 Hashtable cmd = new Hashtable();
                 String type = line.startsWith("if(") ? "if" : "else";
 
