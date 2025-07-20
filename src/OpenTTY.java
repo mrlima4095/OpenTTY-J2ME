@@ -601,7 +601,7 @@ private Hashtable build(String source) {
                 String param = paramList[i].trim();
                 String[] parts = split(param, ' ');
                 if (parts.length != 2) {
-                    echoCommand(Erro de sintaxe no parâmetro: " + param);
+                    echoCommand("Erro de sintaxe no parâmetro: " + param);
                     return null;
                 }
                 Hashtable arg = new Hashtable();
