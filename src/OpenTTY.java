@@ -283,7 +283,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
-        else if (mainCommand.equals("build")) { return viewer(basename(argument), renderJSON(build(getcontent(argument)), 0)); }
+        else if (mainCommand.equals("build")) { C2ME c = new C2ME();  viewer(basename(argument), c.renderJSON(c.build(getcontent(argument)), 0)); }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
         
         // API 014 - (OpenTTY)
@@ -531,182 +531,277 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
     // C Programming
-    private Hashtable build(String source) {
-        Hashtable program = new Hashtable();
-        source = removeComments(source).trim();
-        if (source.equals("")) { return null; }
+    public class C2ME {
+        private Hashtable build(String source) {
+            Hashtable program = new Hashtable();
+            source = removeComments(source).trim();
+            if (source.equals("")) { return null; }
 
-        Hashtable functions = new Hashtable();
-        program.put("functions", functions);
+            Hashtable functions = new Hashtable();
+            program.put("functions", functions);
 
-        while (source.startsWith("#include")) {
-            int endl = source.indexOf("\n");
-            if (endl == -1) { echoCommand("build: invalid include syntax"); return null; }
+            while (source.startsWith("#include")) {
+                int endl = source.indexOf("\n");
+                if (endl == -1) { echoCommand("build: invalid include syntax"); return null; }
 
-            String line = source.substring(0, endl).trim();
-            source = source.substring(endl).trim();
+                String line = source.substring(0, endl).trim();
+                source = source.substring(endl).trim();
 
-            if (line.startsWith("#include \"") && line.endsWith("\"")) {
-                String file = extractBetween(line, '"', '"');
-                Hashtable imported = build(getcontent(file));
-                if (imported == null) { echoCommand("build: failed to include: " + file); return null; }
+                if (line.startsWith("#include \"") && line.endsWith("\"")) {
+                    String file = extractBetween(line, '"', '"');
+                    Hashtable imported = build(getcontent(file));
+                    if (imported == null) { echoCommand("build: failed to include: " + file); return null; }
 
-                Hashtable importedFunctions = (Hashtable) imported.get("functions");
-                for (Enumeration e = importedFunctions.keys(); e.hasMoreElements();) {
-                    String k = (String) e.nextElement();
-                    if (functions.containsKey(k)) { } else { functions.put(k, importedFunctions.get(k)); }
-                }
-            } else {
-                echoCommand("build: invalid include format: " + line);
-                return null;
-            }
-        }
-
-        // Divide em múltiplas funções (main, dobro, etc)
-        while (true) {
-            int start = findFunctionStart(source);
-            if (start == -1) break;
-
-            // Tipo + nome + parâmetros
-            int p1 = source.indexOf("(", start);
-            int p2 = source.indexOf(")", p1);
-            int b1 = source.indexOf("{", p2);
-            String type = source.substring(start, start + source.substring(start).indexOf(" ")).trim();
-            String name = source.substring(start + type.length(), p1).trim();
-            String params = extractBetween(source.substring(p1, p2 + 1), '(', ')');
-            String block = getBlock(source.substring(b1));
-
-            // Verifica se o bloco está completo
-            if (block == null) { echoCommand("build: incomplete function '" + name + "'"); return null; }
-
-            // Remove a função da source
-            source = source.substring(b1 + block.length()).trim();
-
-            // Cria função
-            Hashtable fn = new Hashtable();
-            fn.put("type", type);
-
-            // Lê os parâmetros
-            Vector reads = new Vector();
-            if (!params.equals("")) {
-                String[] paramList = split(params, ',');
-                for (int i = 0; i < paramList.length; i++) {
-                    String param = paramList[i].trim();
-                    String[] parts = split(param, ' ');
-                    if (parts.length != 2) { echoCommand("build: invalid parameter: " + param); return null; }
-
-                    Hashtable arg = new Hashtable();
-                    arg.put("type", parts[0]);
-                    arg.put("name", parts[1]);
-                    reads.addElement(arg);
-                }
-            }
-            if (!reads.isEmpty()) fn.put("read", reads);
-
-            block = block.substring(1, block.length() - 1).trim();
-            fn.put("variables", new Hashtable());
-            fn.put("source", parseBlock(block, fn));
-
-            if (name.equals("main")) { program.put("main", fn); } 
-            else { functions.put(name, fn); }
-        }
-
-        return program;
-    }
-    private Vector parseBlock(String block, Hashtable context) {
-        Vector source = new Vector();
-        String[] lines = split(block, ';');
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-            if (line.equals("")) { continue; }
-
-            else if (line.startsWith("printf(") || line.startsWith("exec(")) {
-                String msg = extractBetween(line, '(', ')');
-                Hashtable cmd = new Hashtable();
-                cmd.put("type", line.startsWith("printf(") ? "printf" : "exec");
-                cmd.put("value", msg);
-                source.addElement(cmd);
-            }
-            else if (line.startsWith("return ")) {
-                Hashtable cmd = new Hashtable();
-                cmd.put("type", "return");
-                cmd.put("value", line.substring(7).trim());
-                source.addElement(cmd);
-            }
-            else if (isIsolatedFunctionCall(line)) {
-                String name = line.substring(0, line.indexOf('(')).trim();
-                String arg = extractBetween(line, '(', ')');
-                Hashtable cmd = new Hashtable();
-                cmd.put("type", "call");
-                cmd.put("function", name);
-                cmd.put("args", arg);
-                source.addElement(cmd);
-            }
-            else if (startsWithAny(line, new String[]{"int ", "char "})) {
-                String varType = line.startsWith("int ") ? "int" : "char";
-                String decls = line.substring(varType.length()).trim(); // tudo após "int"/"char"
-
-                String[] vars = split(decls, ',');
-                for (int j = 0; j < vars.length; j++) {
-                    String part = vars[j].trim();
-
-                    String varName, varValue;
-                    int eq = part.indexOf('=');
-
-                    if (eq != -1) {
-                        varName = part.substring(0, eq).trim();
-                        varValue = part.substring(eq + 1).trim();
-                    } else {
-                        varName = part;
-                        varValue = varType.equals("char") ? "' '" : "0";
+                    Hashtable importedFunctions = (Hashtable) imported.get("functions");
+                    for (Enumeration e = importedFunctions.keys(); e.hasMoreElements();) {
+                        String k = (String) e.nextElement();
+                        if (functions.containsKey(k)) { } else { functions.put(k, importedFunctions.get(k)); }
                     }
+                } else {
+                    echoCommand("build: invalid include format: " + line);
+                    return null;
+                }
+            }
 
-                    if (varName.equals("")) {
-                        echoCommand("build: invalid variable declaration: '" + part + "'");
+            // Divide em múltiplas funções (main, dobro, etc)
+            while (true) {
+                int start = findFunctionStart(source);
+                if (start == -1) break;
+
+                // Tipo + nome + parâmetros
+                int p1 = source.indexOf("(", start);
+                int p2 = source.indexOf(")", p1);
+                int b1 = source.indexOf("{", p2);
+                String type = source.substring(start, start + source.substring(start).indexOf(" ")).trim();
+                String name = source.substring(start + type.length(), p1).trim();
+                String params = extractBetween(source.substring(p1, p2 + 1), '(', ')');
+                String block = getBlock(source.substring(b1));
+
+                // Verifica se o bloco está completo
+                if (block == null) { echoCommand("build: incomplete function '" + name + "'"); return null; }
+
+                // Remove a função da source
+                source = source.substring(b1 + block.length()).trim();
+
+                // Cria função
+                Hashtable fn = new Hashtable();
+                fn.put("type", type);
+
+                // Lê os parâmetros
+                Vector reads = new Vector();
+                if (!params.equals("")) {
+                    String[] paramList = split(params, ',');
+                    for (int i = 0; i < paramList.length; i++) {
+                        String param = paramList[i].trim();
+                        String[] parts = split(param, ' ');
+                        if (parts.length != 2) { echoCommand("build: invalid parameter: " + param); return null; }
+
+                        Hashtable arg = new Hashtable();
+                        arg.put("type", parts[0]);
+                        arg.put("name", parts[1]);
+                        reads.addElement(arg);
+                    }
+                }
+                if (!reads.isEmpty()) fn.put("read", reads);
+
+                block = block.substring(1, block.length() - 1).trim();
+                fn.put("variables", new Hashtable());
+                fn.put("source", parseBlock(block, fn));
+
+                if (name.equals("main")) { program.put("main", fn); } 
+                else { functions.put(name, fn); }
+            }
+
+            return program;
+        }
+        
+        private Vector parseBlock(String block, Hashtable context) {
+            Vector source = new Vector();
+            String[] lines = splitBlocks(block, ';');
+
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i].trim();
+                Hashtable cmd = new Hashtable();
+
+                if (line.equals("")) { }
+                else if (line.startsWith("printf(") || line.startsWith("exec(")) {
+                    String msg = extractBetween(line, '(', ')');
+                    Hashtable cmd = new Hashtable();
+                    cmd.put("type", line.startsWith("printf(") ? "printf" : "exec");
+                    cmd.put("value", msg);
+                    source.addElement(cmd);
+                }
+                else if (line.startsWith("return ")) {
+                    cmd.put("type", "return");
+                    cmd.put("value", line.substring(7).trim());
+                    source.addElement(cmd);
+                }
+                else if (line.startsWith("if(") || line.startsWith("else")) {
+                    Hashtable cmd = new Hashtable();
+                    String type = line.startsWith("if(") ? "if" : "else";
+
+                    int braceIndex = block.indexOf("{", i >= 0 ? block.indexOf(line) + line.length() : 0);
+                    String remaining = block.substring(braceIndex);
+                    String subblock = getBlock(remaining);
+                    if (subblock == null) {
+                        echoCommand("build: missing block for " + type);
                         return null;
                     }
 
-                    Hashtable cmd = new Hashtable();
-                    cmd.put("type", "assign");
-                    cmd.put("name", varName);
-                    cmd.put("instance", varType);
-                    cmd.put("value", varValue);
+                    cmd.put("type", type);
+                    if (type.equals("if")) cmd.put("expr", extractBetween(line, '(', ')'));
+                    cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
                     source.addElement(cmd);
+
+                    i++; 
+                    while (i < lines.length && !lines[i].contains(subblock)) { i++; }
+                }
+                
+                else if (isIsolatedFunctionCall(line)) {
+                    String name = line.substring(0, line.indexOf('(')).trim();
+                    String arg = extractBetween(line, '(', ')');
+                    Hashtable cmd = new Hashtable();
+                    cmd.put("type", "call");
+                    cmd.put("function", name);
+                    cmd.put("args", arg);
+                    source.addElement(cmd);
+                }
+                else if (startsWithAny(line, new String[]{"int ", "char "})) {
+                    String varType = line.startsWith("int ") ? "int" : "char";
+                    String decls = line.substring(varType.length()).trim();
+
+                    String[] vars = split(decls, ',');
+                    for (int j = 0; j < vars.length; j++) {
+                        String part = vars[j].trim();
+
+                        String varName, varValue;
+                        int eq = part.indexOf('=');
+
+                        if (eq != -1) {
+                            varName = part.substring(0, eq).trim();
+                            varValue = part.substring(eq + 1).trim();
+                        } else {
+                            varName = part;
+                            varValue = varType.equals("char") ? "' '" : "0";
+                        }
+
+                        if (varName.equals("")) {
+                            echoCommand("build: invalid variable declaration: '" + part + "'");
+                            return null;
+                        }
+
+                        Hashtable cmd = new Hashtable();
+                        cmd.put("type", "assign");
+                        cmd.put("name", varName);
+                        cmd.put("instance", varType);
+                        cmd.put("value", varValue);
+                        source.addElement(cmd);
+                    }
+                }
+                else if (line.indexOf('=') != -1) {
+                    String[] parts = split(line, '=');
+                    if (parts.length == 2) {
+                        String varName = parts[0].trim();
+                        String value = parts[1].trim();
+
+                        Hashtable cmd = new Hashtable();
+                        cmd.put("type", "assign");
+                        cmd.put("name", varName);
+                        cmd.put("instance", "");
+                        cmd.put("value", value);
+                        source.addElement(cmd);
+                    } 
+                    else { echoCommand("build: invalid value for '" + parts[0].trim() + "'"); return null; }
+                }
+
+                else { echoCommand("build: invalid syntax: '" + line + "'"); return null; }
+            }
+
+            return source;
+        }
+        private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
+        private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
+        private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
+        private String[] splitBlock(String code, char separator) {
+            Vector parts = new Vector();
+            int depthPar = 0, depthBrace = 0;
+            int start = 0;
+
+            for (int i = 0; i < code.length(); i++) {
+                char c = code.charAt(i);
+                if (c == '(') depthPar++;
+                else if (c == ')') depthPar--;
+                else if (c == '{') depthBrace++;
+                else if (c == '}') depthBrace--;
+                else if (c == separator && depthPar == 0 && depthBrace == 0) {
+                    parts.addElement(code.substring(start, i).trim());
+                    start = i + 1;
                 }
             }
-            else if (line.indexOf('=') != -1) {
-                String[] parts = split(line, '=');
-                if (parts.length == 2) {
-                    String varName = parts[0].trim();
-                    String value = parts[1].trim();
 
-                    Hashtable cmd = new Hashtable();
-                    cmd.put("type", "assign");
-                    cmd.put("name", varName);
-                    cmd.put("instance", "");
-                    cmd.put("value", value);
-                    source.addElement(cmd);
-                } else {
-                    echoCommand("build: invalid value for '" + parts[0].trim() + "'");
+            // adiciona o restante
+            if (start < code.length()) {
+                parts.addElement(code.substring(start).trim());
+            }
+
+            String[] result = new String[parts.size()];
+            parts.copyInto(result);
+            return result;
+        }
+        private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) return true; } return false; }
+        private int findFunctionStart(String code) { String[] types = { "int", "char" }; for (int i = 0; i < code.length(); i++) { for (int t = 0; t < types.length; t++) { String type = types[t]; if (code.startsWith(type + " ", i)) { int nameStart = i + type.length() + 1; int p1 = code.indexOf('(', nameStart); if (p1 == -1) { continue; } int p2 = code.indexOf(')', p1); if (p2 == -1) { continue; } int brace = code.indexOf('{', p2); if (brace == -1) { continue; } String maybeName = code.substring(nameStart, p1).trim(); if (maybeName.indexOf(' ') != -1) { continue; } String beforeBrace = code.substring(p2 + 1, brace).trim(); if (beforeBrace.length() > 0) { continue; } return i; } } } return -1; }
+        private boolean isIsolatedFunctionCall(String line) { line = line.trim(); int p1 = line.indexOf('('), p2 = line.lastIndexOf(')'); if (p1 == -1 || p2 == -1 || p2 <= p1) { return false; } if (line.indexOf('=') != -1) { return false; } String before = line.substring(0, p1).trim(); if (before.indexOf(' ') != -1) { return false; } if (startsWithAny(line, new String[]{"int ", "char "})) { return false; } return true; }
+        private String renderJSON(Object obj, int indent) {
+            StringBuffer json = new StringBuffer();
+            String pad = "";
+            for (int i = 0; i < indent; i++) pad += "  ";
+
+            if (obj instanceof Hashtable) {
+                Hashtable map = (Hashtable) obj;
+                json.append("{\n");
+                Enumeration keys = map.keys();
+                while (keys.hasMoreElements()) {
+                    String key = (String) keys.nextElement();
+                    Object val = map.get(key);
+                    json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1));
+                    if (keys.hasMoreElements()) json.append(",");
+                    json.append("\n");
                 }
+                json.append(pad + "}");
+            }
+
+            else if (obj instanceof Vector) {
+                Vector list = (Vector) obj;
+                json.append("[\n");
+                for (int i = 0; i < list.size(); i++) {
+                    json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1));
+                    if (i < list.size() - 1) json.append(",");
+                    json.append("\n");
+                }
+                json.append(pad + "]");
+            }
+
+            else if (obj instanceof String) {
+                json.append("\"" + escapeString((String) obj) + "\"");
             }
 
             else {
-                echoCommand("build: invalid syntax: '" + line + "'");
+                json.append(String.valueOf(obj));
             }
-        }
 
-        return source;
+            return json.toString();
+        }
+        private String escapeString(String s) {
+            s = replace(s, "\\", "\\\\");
+            s = replace(s, "\"", "\\\"");
+            s = replace(s, "\n", "\\n");
+            s = replace(s, "\r", "\\r");
+            s = replace(s, "\t", "\\t");
+            return s;
+        }
     }
 
-    private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
-    private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
-    private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
-    private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) return true; } return false; }
-    private int findFunctionStart(String code) { String[] types = { "int", "char" }; for (int i = 0; i < code.length(); i++) { for (int t = 0; t < types.length; t++) { String type = types[t]; if (code.startsWith(type + " ", i)) { int nameStart = i + type.length() + 1; int p1 = code.indexOf('(', nameStart); if (p1 == -1) { continue; } int p2 = code.indexOf(')', p1); if (p2 == -1) { continue; } int brace = code.indexOf('{', p2); if (brace == -1) { continue; } String maybeName = code.substring(nameStart, p1).trim(); if (maybeName.indexOf(' ') != -1) { continue; } String beforeBrace = code.substring(p2 + 1, brace).trim(); if (beforeBrace.length() > 0) { continue; } return i; } } } return -1; }
-    private boolean isIsolatedFunctionCall(String line) { line = line.trim(); int p1 = line.indexOf('('), p2 = line.lastIndexOf(')'); if (p1 == -1 || p2 == -1 || p2 <= p1) { return false; } if (line.indexOf('=') != -1) { return false; } String before = line.substring(0, p1).trim(); if (before.indexOf(' ') != -1) { return false; } if (startsWithAny(line, new String[]{"int ", "char "})) { return false; } return true; }
-
+    
     // |
     // History
     public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
@@ -766,53 +861,5 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
-private String renderJSON(Object obj, int indent) {
-    StringBuffer json = new StringBuffer();
-    String pad = "";
-    for (int i = 0; i < indent; i++) pad += "  ";
-
-    if (obj instanceof Hashtable) {
-        Hashtable map = (Hashtable) obj;
-        json.append("{\n");
-        Enumeration keys = map.keys();
-        while (keys.hasMoreElements()) {
-            String key = (String) keys.nextElement();
-            Object val = map.get(key);
-            json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1));
-            if (keys.hasMoreElements()) json.append(",");
-            json.append("\n");
-        }
-        json.append(pad + "}");
-    }
-
-    else if (obj instanceof Vector) {
-        Vector list = (Vector) obj;
-        json.append("[\n");
-        for (int i = 0; i < list.size(); i++) {
-            json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1));
-            if (i < list.size() - 1) json.append(",");
-            json.append("\n");
-        }
-        json.append(pad + "]");
-    }
-
-    else if (obj instanceof String) {
-        json.append("\"" + escapeString((String) obj) + "\"");
-    }
-
-    else {
-        json.append(String.valueOf(obj));
-    }
-
-    return json.toString();
-}
-private String escapeString(String s) {
-    s = replace(s, "\\", "\\\\");
-    s = replace(s, "\"", "\\\"");
-    s = replace(s, "\n", "\\n");
-    s = replace(s, "\r", "\\r");
-    s = replace(s, "\t", "\\t");
-    return s;
-}
 
 }
