@@ -508,7 +508,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Interfaces
     public class NanoEditor implements CommandListener { 
         private TextBox screen = new TextBox("Nano", "", 31522, TextField.ANY); 
-        private Command BACK = new Command("Back", Command.BACK, 1), 
+        private Command BACK = new Command("Back", Command.BACK, 1),
+                        LINE = new Command("Add line", Command.OK, 1), 
                         CLEAR = new Command("Clear", Command.OK, 1), 
                         RUN = new Command("Run Script", Command.OK, 1), 
                         IMPORT = new Command("Import File", Command.OK, 1), 
@@ -517,14 +518,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public NanoEditor(String args) { 
             screen.setString((args == null || args.length() == 0) ? nanoContent : getcontent(args)); 
             
-            screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.addCommand(VIEW); 
+            screen.addCommand(BACK); if (attributes.containsKey("J2EMU")) { screen.addCommand(LINE); } screen.addCommand(CLEAR); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.addCommand(VIEW); 
             screen.setCommandListener(this); 
             display.setCurrent(screen); 
         } 
         public void commandAction(Command c, Displayable d) { 
             nanoContent = screen.getString();
             
-            if (c == BACK) { processCommand("xterm"); }  
+            if (c == BACK) { processCommand("xterm"); } 
+            else if (c == LINE) { screen.setString(nanoContent + "\n"); }
             else if (c == CLEAR) { screen.setString(""); } 
             else if (c == RUN) { processCommand("xterm"); runScript(nanoContent); } 
             else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } 
@@ -635,28 +637,17 @@ private Vector parseBlock(String block, Hashtable context) {
         String line = lines[i].trim();
         if (line.equals("")) continue;
 
-        // printf(...)
-        if (line.startsWith("printf(")) {
+        // printf(...) and exec(...)
+        if (line.startsWith("printf(") || line.startsWith("exec(")) {
             String msg = extractBetween(line, '(', ')');
             Hashtable cmd = new Hashtable();
-            cmd.put("type", "printf");
+            cmd.put("type", line.startsWith("printf(") ? "printf" : "exec");
             cmd.put("value", msg);
             source.addElement(cmd);
         }
 
-        // exec(...)
-        else if (line.startsWith("exec(")) {
-            String val = extractBetween(line, '(', ')');
-            Hashtable cmd = new Hashtable();
-            cmd.put("type", "exec");
-            cmd.put("value", val);
-            source.addElement(cmd);
-        }
-
         // return ...
-        else if (line.startsWith("return ")) {
-            context.put("return", line.substring(7).trim());
-        }
+        else if (line.startsWith("return ")) { context.put("return", line.substring(7).trim()); }
 
         // chamada de função (sem guardar em variável)
         else if (line.indexOf('(') != -1 && line.endsWith(")")) {
@@ -670,7 +661,7 @@ private Vector parseBlock(String block, Hashtable context) {
         }
 
         // declaração com atribuição (ex: int x = 5;)
-        else if (startsWithAny(line, new String[]{"int ", "char ", "float "})) {
+        else if (startsWithAny(line, new String[]{"int ", "char "})) {
             int eq = line.indexOf('=');
             if (eq == -1) {
                 warnCommand("build()", "Erro: declaração sem valor: '" + line + "'");
@@ -720,15 +711,6 @@ private Vector parseBlock(String block, Hashtable context) {
     return source;
 }
 
-    private String substituteVars(String expr, String prefix, Hashtable vars) {
-        for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
-            String k = (String) e.nextElement();
-            Hashtable v = (Hashtable) vars.get(k);
-            String val = String.valueOf(v.get("value"));
-            expr = replace(expr, prefix + k, val);
-        }
-        return expr;
-    }
     private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
     private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
     private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
