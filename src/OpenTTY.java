@@ -567,6 +567,39 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable functions = new Hashtable();
         program.put("functions", functions);
 
+        while (source.startsWith("#include")) {
+            int endl = source.indexOf("\n");
+            if (endl == -1) { echoCommand("build: invalid include syntax"); return null; }
+
+            String line = source.substring(0, endl).trim();
+            source = source.substring(endl).trim();
+
+            if (line.startsWith("#include \"") && line.endsWith("\"")) {
+                String file = extractBetween(line, '"', '"');
+                String content = getcontent(file);
+                if (content == null || content.equals("")) {
+                    echoCommand("build: file not found: " + file);
+                    return null;
+                }
+
+                Hashtable imported = build(content);
+                if (imported == null) { echoCommand("build: failed to include: " + file); return null; }
+
+                Hashtable importedFunctions = (Hashtable) imported.get("functions");
+                for (Enumeration e = importedFunctions.keys(); e.hasMoreElements();) {
+                    String k = (String) e.nextElement();
+                    if (!functions.containsKey(k)) {
+                        functions.put(k, importedFunctions.get(k));
+                    } else {
+                        echoCommand("build: function '" + k + "' already exists, skipping from " + file);
+                    }
+                }
+            } else {
+                echoCommand("build: invalid include format: " + line);
+                return null;
+            }
+        }
+
         // Divide em múltiplas funções (main, dobro, etc)
         while (true) {
             int start = findFunctionStart(source);
@@ -639,7 +672,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("value", line.substring(7).trim());
                 source.addElement(cmd);
             }
-            // chamada de função (sem guardar em variável)
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim();
                 String arg = extractBetween(line, '(', ')');
@@ -649,8 +681,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("args", arg);
                 source.addElement(cmd);
             }
-
-            // declaração com atribuição (ex: int x = 5;)
             else if (startsWithAny(line, new String[]{"int ", "char "})) {
                 int eq = line.indexOf('=');
                 String[] parts = split(line.substring(0, eq).trim(), ' ');
@@ -665,9 +695,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("value", varValue);
                 source.addElement(cmd);
             }
-
-
-            // reatribuição (ex: x = 7;)
             else if (line.indexOf('=') != -1) {
                 String[] parts = split(line, '=');
                 if (parts.length == 2) {
