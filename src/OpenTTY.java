@@ -656,7 +656,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (elseIndex != -1) {
                     int elseBrace = block.indexOf("{", elseIndex);
                     if (elseBrace != -1) {
-                        String elseCmd = getBlock(block.substring(elseBrace));
+                        String elseSub = getBlock(block.substring(elseBrace));
                         if (elseSub != null) {
                             Hashtable elseCmd = new Hashtable();
                             elseCmd.put("type", "else");
