@@ -562,7 +562,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        // Divide em múltiplas funções (main, dobro, etc)
         while (true) {
             int start = findFunctionStart(source);
             if (start == -1) break;
@@ -710,9 +709,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (line.indexOf('=') != -1) {
                 String[] parts = split(line, '=');
                 if (parts.length == 2) {
-                    String varName = parts[0].trim();
-                    String value = parts[1].trim();
-
+                    String varName = parts[0].trim(), value = parts[1].trim();
+                    if (varName.indexOf(' ') ! = -1) { echoCommand("build: invalid type '" + getCommand(varName) + "'"); return null; }
+                    
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
                     cmd.put("instance", "");
