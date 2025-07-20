@@ -652,10 +652,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             // declaração com atribuição (ex: int x = 5;)
             else if (startsWithAny(line, new String[]{"int ", "char "})) {
+                int eq = line.indexOf('=');
                 String[] parts = split(line.substring(0, eq).trim(), ' ');
                 if (parts.length != 2) { echoCommand("build: invalid syntax: '" + line + "'"); return null; }
 
-                int eq = line.indexOf('=');
                 String varType = parts[0].trim(), varName = parts[1].trim(), varValue = eq == -1 ? (varType.equals("char") ? "' '" : "0") : line.substring(eq + 1).trim();
 
                 Hashtable cmd = new Hashtable();
