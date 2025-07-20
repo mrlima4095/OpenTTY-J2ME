@@ -761,7 +761,7 @@ private Vector parseBlock(String block, Hashtable context) {
 
         return -1; // não encontrado
     }
-private String getReturnStatement(String block) {
+private String getReturnStatement(String block, String type) {
     String[] lines = split(block, ';');
     for (int i = lines.length - 1; i >= 0; i--) {
         String line = lines[i].trim();
@@ -769,7 +769,7 @@ private String getReturnStatement(String block) {
             return line.substring(7).trim();
         }
     }
-    return "";
+    return type.equals("char") ? "' '" : "0";
 }
 
     // |
