@@ -582,7 +582,7 @@ private Hashtable build(String source) {
 
         // Verifica se o bloco está completo
         if (block == null) {
-            warnCommand("build()", "Erro de sintaxe: bloco da função '" + name + "' incompleto");
+            echoCommand("Erro de sintaxe: bloco da função '" + name + "' incompleto");
             return null;
         }
 
@@ -601,7 +601,7 @@ private Hashtable build(String source) {
                 String param = paramList[i].trim();
                 String[] parts = split(param, ' ');
                 if (parts.length != 2) {
-                    warnCommand("build()", "Erro de sintaxe no parâmetro: " + param);
+                    echoCommand(Erro de sintaxe no parâmetro: " + param);
                     return null;
                 }
                 Hashtable arg = new Hashtable();
@@ -711,7 +711,7 @@ private Vector parseBlock(String block, Hashtable context) {
         }
 
         else {
-            warnCommand("build()", "Linha inválida ou desconhecida: '" + line + "'");
+            echoCommand("Linha inválida ou desconhecida: '" + line + "'");
         }
     }
 
