@@ -548,23 +548,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (line.startsWith("#include \"") && line.endsWith("\"")) {
                 String file = extractBetween(line, '"', '"');
-                String content = getcontent(file);
-                if (content == null || content.equals("")) {
-                    echoCommand("build: file not found: " + file);
-                    return null;
-                }
-
-                Hashtable imported = build(content);
+                Hashtable imported = build(getcontent(file));
                 if (imported == null) { echoCommand("build: failed to include: " + file); return null; }
 
                 Hashtable importedFunctions = (Hashtable) imported.get("functions");
                 for (Enumeration e = importedFunctions.keys(); e.hasMoreElements();) {
                     String k = (String) e.nextElement();
-                    if (!functions.containsKey(k)) {
-                        functions.put(k, importedFunctions.get(k));
-                    } else {
-                        echoCommand("build: function '" + k + "' already exists, skipping from " + file);
-                    }
+                    if (functions.containsKey(k)) { } else { functions.put(k, importedFunctions.get(k)); }
                 }
             } else {
                 echoCommand("build: invalid include format: " + line);
