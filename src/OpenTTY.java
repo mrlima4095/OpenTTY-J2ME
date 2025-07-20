@@ -648,7 +648,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 cmd.put("type", type);
-                cmd.put("expr", extractBetween(line, '(', ')'));
+                if (type.equals("if")) cmd.put("expr", extractBetween(line, '(', ')'));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
                 source.addElement(cmd);
 
