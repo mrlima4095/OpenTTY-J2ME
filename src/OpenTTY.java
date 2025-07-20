@@ -630,7 +630,6 @@ private Hashtable build(String source) {
 private Vector parseBlock(String block, Hashtable context) {
     Vector source = new Vector();
     String[] lines = split(block, ';');
-    Hashtable vars = (Hashtable) context.get("variables");
 
     for (int i = 0; i < lines.length; i++) {
         String line = lines[i].trim();
@@ -670,43 +669,46 @@ private Vector parseBlock(String block, Hashtable context) {
             source.addElement(cmd);
         }
 
-        // declaração ou atribuição
-        else if (startsWithAny(line, new String[]{"int ", "char "})) {
-            String[] parts = split(line, ' ');
-            if (parts.length >= 3 && parts[2].equals("=")) {
-                String varType = parts[0];
-                String varName = parts[1];
-                String varValue = line.substring(line.indexOf('=') + 1).trim();
-
-                Hashtable var = new Hashtable();
-                var.put("type", varType);
-                var.put("value", varValue);
-                vars.put(varName, var);
-
-                Hashtable cmd = new Hashtable();
-                cmd.put("type", "assign");
-                cmd.put("name", varName);
-                cmd.put("instance", varType);
-                cmd.put("value", varValue);
-                source.addElement(cmd);
+        // declaração com atribuição (ex: int x = 5;)
+        else if (startsWithAny(line, new String[]{"int ", "char ", "float "})) {
+            int eq = line.indexOf('=');
+            if (eq == -1) {
+                warnCommand("build()", "Erro: declaração sem valor: '" + line + "'");
+                continue;
             }
+            String[] parts = split(line.substring(0, eq).trim(), ' ');
+            if (parts.length != 2) {
+                warnCommand("build()", "Erro de sintaxe na declaração: '" + line + "'");
+                continue;
+            }
+
+            String varType = parts[0].trim();
+            String varName = parts[1].trim();
+            String varValue = line.substring(eq + 1).trim();
+
+            Hashtable cmd = new Hashtable();
+            cmd.put("type", "assign");
+            cmd.put("name", varName);
+            cmd.put("instance", varType);
+            cmd.put("value", varValue);
+            source.addElement(cmd);
         }
 
-        // reatribuição
+        // reatribuição (ex: x = 7;)
         else if (line.indexOf('=') != -1) {
             String[] parts = split(line, '=');
             if (parts.length == 2) {
                 String varName = parts[0].trim();
                 String value = parts[1].trim();
-                Hashtable var = (Hashtable) vars.get(varName);
-                if (var != null) var.put("value", value);
 
                 Hashtable cmd = new Hashtable();
                 cmd.put("type", "assign");
                 cmd.put("name", varName);
-                cmd.put("instance", var.get("type"));
+                cmd.put("instance", ""); // tipo não é necessário na reatribuição
                 cmd.put("value", value);
                 source.addElement(cmd);
+            } else {
+                warnCommand("build()", "Erro na atribuição: '" + line + "'");
             }
         }
 
