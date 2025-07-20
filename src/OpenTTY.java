@@ -663,7 +663,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
-                source.addElement(cmd);
             }
             else if (line.startsWith("else")) { echoCommand("build: invalid token 'else'"); return null; }
             else if (isIsolatedFunctionCall(line)) {
