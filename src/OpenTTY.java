@@ -557,6 +557,76 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
     // C Programming
+private Hashtable build(String source) {
+    Hashtable program = new Hashtable();
+    source = removeComments(source).trim();
+    if (source.equals("")) return null;
+
+    // Armazena funções
+    Hashtable functions = new Hashtable();
+    program.put("functions", functions);
+
+    // Divide em múltiplas funções (main, dobro, etc)
+    while (true) {
+        int start = findFunctionStart(source);
+        if (start == -1) break;
+
+        // Tipo + nome + parâmetros
+        int p1 = source.indexOf("(", start);
+        int p2 = source.indexOf(")", p1);
+        int b1 = source.indexOf("{", p2);
+        String type = source.substring(start, start + source.substring(start).indexOf(" ")).trim();
+        String name = source.substring(start + type.length(), p1).trim();
+        String params = extractBetween(source.substring(p1, p2 + 1), '(', ')');
+        String block = getBlock(source.substring(b1));
+
+        // Verifica se o bloco está completo
+        if (block == null) {
+            warnCommand("build()", "Erro de sintaxe: bloco da função '" + name + "' incompleto");
+            return null;
+        }
+
+        // Remove a função da source
+        source = source.substring(b1 + block.length()).trim();
+
+        // Cria função
+        Hashtable fn = new Hashtable();
+        fn.put("type", type);
+
+        // Lê os parâmetros
+        Vector reads = new Vector();
+        if (!params.equals("")) {
+            String[] paramList = split(params, ',');
+            for (int i = 0; i < paramList.length; i++) {
+                String param = paramList[i].trim();
+                String[] parts = split(param, ' ');
+                if (parts.length != 2) {
+                    warnCommand("build()", "Erro de sintaxe no parâmetro: " + param);
+                    return null;
+                }
+                Hashtable arg = new Hashtable();
+                arg.put("type", parts[0]);
+                arg.put("name", parts[1]);
+                reads.addElement(arg);
+            }
+        }
+        if (!reads.isEmpty()) fn.put("read", reads);
+
+        // Processa comandos da função
+        block = block.substring(1, block.length() - 1).trim(); // remove {}
+        fn.put("variables", new Hashtable());
+        fn.put("source", parseBlock(block, fn));
+        fn.put("return", getReturnStatement(block));
+
+        if (name.equals("main")) {
+            program.put("main", fn);
+        } else {
+            functions.put(name, fn);
+        }
+    }
+
+    return program;
+}
 
 
     // |
