@@ -646,27 +646,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 String remaining = block.substring(braceIndex);
                 String subblock = getBlock(remaining);
-                if (subblock == null) {
-                    echoCommand("build: missing block for '" + type + "'");
-                    return null;
-                }
+                if (subblock == null) { echoCommand("build: missing block for '" + type + "'"); return null; }
 
                 Hashtable cmd = new Hashtable();
                 cmd.put("type", type);
-                if (type.equals("if")) {
-                    cmd.put("expr", extractParens(line, 0));
+                cmd.put("expr", extractParens(line, 0));
 
-                    int elseIndex = block.indexOf("else", braceIndex + subblock.length());
-                    if (elseIndex != -1) {
-                        int elseBrace = block.indexOf("{", elseIndex);
-                        if (elseBrace != -1) {
-                            String elseSub = getBlock(block.substring(elseBrace));
-                            if (elseSub != null) {
-                                Hashtable elseCmd = new Hashtable();
-                                elseCmd.put("type", "else");
-                                elseCmd.put("source", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context));
-                                cmd.put("else", elseCmd);
-                            }
+                int elseIndex = block.indexOf("else", braceIndex + subblock.length());
+                if (elseIndex != -1) {
+                    int elseBrace = block.indexOf("{", elseIndex);
+                    if (elseBrace != -1) {
+                        String elseSub = getBlock(block.substring(elseBrace));
+                        if (elseSub != null) {
+                            Hashtable elseCmd = new Hashtable();
+                            elseCmd.put("type", "else");
+                            elseCmd.put("source", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context));
+                            cmd.put("else", elseCmd);
                         }
                     }
                 }
