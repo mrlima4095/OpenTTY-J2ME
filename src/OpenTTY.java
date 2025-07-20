@@ -650,7 +650,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (type.equals("if")) cmd.put("expr", extractParens(line, 0));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
             }
-            else if (line.equals)
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim();
                 String arg = extractBetween(line, '(', ')');
