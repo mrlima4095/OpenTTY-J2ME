@@ -627,6 +627,97 @@ private Hashtable build(String source) {
 
     return program;
 }
+private Vector parseBlock(String block, Hashtable context) {
+    Vector source = new Vector();
+    String[] lines = split(block, ';');
+    Hashtable vars = (Hashtable) context.get("variables");
+
+    for (int i = 0; i < lines.length; i++) {
+        String line = lines[i].trim();
+        if (line.equals("")) continue;
+
+        // printf(...)
+        if (line.startsWith("printf(")) {
+            String msg = extractBetween(line, '(', ')');
+            Hashtable cmd = new Hashtable();
+            cmd.put("type", "printf");
+            cmd.put("value", msg);
+            source.addElement(cmd);
+        }
+
+        // exec(...)
+        else if (line.startsWith("exec(")) {
+            String val = extractBetween(line, '(', ')');
+            Hashtable cmd = new Hashtable();
+            cmd.put("type", "exec");
+            cmd.put("value", val);
+            source.addElement(cmd);
+        }
+
+        // return ...
+        else if (line.startsWith("return ")) {
+            context.put("return", line.substring(7).trim());
+        }
+
+        // chamada de função (sem guardar em variável)
+        else if (line.indexOf('(') != -1 && line.endsWith(")")) {
+            String name = line.substring(0, line.indexOf('(')).trim();
+            String arg = extractBetween(line, '(', ')');
+            Hashtable cmd = new Hashtable();
+            cmd.put("type", "call");
+            cmd.put("function", name);
+            cmd.put("args", arg);
+            source.addElement(cmd);
+        }
+
+        // declaração ou atribuição
+        else if (startsWithAny(line, new String[]{"int ", "char ", "float "})) {
+            String[] parts = split(line, ' ');
+            if (parts.length >= 3 && parts[2].equals("=")) {
+                String varType = parts[0];
+                String varName = parts[1];
+                String varValue = line.substring(line.indexOf('=') + 1).trim();
+
+                Hashtable var = new Hashtable();
+                var.put("type", varType);
+                var.put("value", varValue);
+                vars.put(varName, var);
+
+                Hashtable cmd = new Hashtable();
+                cmd.put("type", "assign");
+                cmd.put("name", varName);
+                cmd.put("instance", varType);
+                cmd.put("value", varValue);
+                source.addElement(cmd);
+            }
+        }
+
+        // reatribuição
+        else if (line.indexOf('=') != -1) {
+            String[] parts = split(line, '=');
+            if (parts.length == 2) {
+                String varName = parts[0].trim();
+                String value = parts[1].trim();
+                Hashtable var = (Hashtable) vars.get(varName);
+                if (var != null) var.put("value", value);
+
+                Hashtable cmd = new Hashtable();
+                cmd.put("type", "assign");
+                cmd.put("name", varName);
+                cmd.put("instance", var.get("type"));
+                cmd.put("value", value);
+                source.addElement(cmd);
+            }
+        }
+
+        else {
+            warnCommand("build()", "Linha inválida ou desconhecida: '" + line + "'");
+        }
+    }
+
+    return source;
+}
+
     private String substituteVars(String expr, String prefix, Hashtable vars) {
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String k = (String) e.nextElement();
