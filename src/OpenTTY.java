@@ -761,6 +761,16 @@ private Vector parseBlock(String block, Hashtable context) {
 
         return -1; // não encontrado
     }
+private String getReturnStatement(String block) {
+    String[] lines = split(block, ';');
+    for (int i = lines.length - 1; i >= 0; i--) {
+        String line = lines[i].trim();
+        if (line.startsWith("return ")) {
+            return line.substring(7).trim();
+        }
+    }
+    return null;
+}
 
     // |
     // History
