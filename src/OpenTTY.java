@@ -634,23 +634,46 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("value", line.substring(7).trim());
             }
             else if (line.startsWith("if") || line.startsWith("else")) {
-                String type = line.startsWith("if") ? "if" : "else";
+    String type = line.startsWith("if") ? "if" : "else";
 
-                int lineIndexInBlock = block.indexOf(line);
-                if (lineIndexInBlock == -1) { echoCommand("build: unable to find '" + line + "' in block"); return null; }
+    int lineIndexInBlock = block.indexOf(line);
+    if (lineIndexInBlock == -1) {
+        echoCommand("build: unable to find '" + line + "' in block");
+        return null;
+    }
 
-                int braceIndex = block.indexOf("{", lineIndexInBlock + line.length());
-                if (braceIndex == -1) { echoCommand("build: missing '{' after '" + type + "'"); return null; }
+    // Procurar manualmente o primeiro '{' após o 'line'
+    int braceIndex = -1;
+    for (int j = lineIndexInBlock; j < block.length(); j++) {
+        if (block.charAt(j) == '{') {
+            braceIndex = j;
+            break;
+        }
+    }
 
-                String remaining = block.substring(braceIndex);
-                String subblock = getBlock(remaining);
-                if (subblock == null) { echoCommand("build: missing block for '" + type + "'"); return null; }
+    if (braceIndex == -1) {
+        echoCommand("build: missing '{' after '" + type + "'");
+        return null;
+    }
 
-                Hashtable cmd = new Hashtable();
-                cmd.put("type", type);
-                if (type.equals("if")) cmd.put("expr", extractParens(line, 0));
-                cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
-            }
+    // Agora sim: pega o bloco certinho com getBlock
+    String remaining = block.substring(braceIndex);
+    String subblock = getBlock(remaining);
+    if (subblock == null) {
+        echoCommand("build: missing block for '" + type + "'");
+        return null;
+    }
+
+    Hashtable cmd = new Hashtable();
+    cmd.put("type", type);
+    if (type.equals("if")) cmd.put("expr", extractParens(line, 0));
+    cmd.put("source", parseBlock(
+        subblock.substring(1, subblock.length() - 1).trim(), context));
+
+    source.addElement(cmd); // importante não esquecer!
+    
+    // aqui você pode continuar o loop, ex: i++;
+}
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim();
                 String arg = extractBetween(line, '(', ')');
