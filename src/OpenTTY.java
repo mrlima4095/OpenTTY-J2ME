@@ -648,7 +648,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 cmd.put("type", type);
-                if (type.equals("if")) cmd.put("expr", extractBetween(line, '(', ')'));
+                if (type.equals("if")) cmd.put("expr", extractParens(line, 0));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
                 source.addElement(cmd);
 
@@ -659,7 +659,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Hashtable cmd = new Hashtable();
                 cmd.put("type", "for");
 
-                String forContent = extractBetween(line, '(', ')'); // Ex: int i = 0; i < 10; i = i + 1
+                String forContent = extractParens(line, 0); // Ex: int i = 0; i < 10; i = i + 1
                 String[] parts = split(forContent, ';');
                 if (parts.length != 3) { echoCommand("build: invalid for syntax"); return null; }
 
@@ -810,6 +810,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return source;
     }
     private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
+    private String extractParens(String code, int from) {
+        int start = code.indexOf('(', from);
+        if (start == -1) return "";
+
+        int depth = 0;
+        for (int i = start; i < code.length(); i++) {
+            char c = code.charAt(i);
+            if (c == '(') depth++;
+            else if (c == ')') depth--;
+
+            if (depth == 0) {
+                return code.substring(start + 1, i).trim();
+            }
+        }
+        return "";
+    }
     private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
     private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
     private String[] splitBlock(String code, char separator) {
