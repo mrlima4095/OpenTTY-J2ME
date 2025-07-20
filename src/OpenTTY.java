@@ -635,20 +635,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (line.startsWith("if") || line.startsWith("else")) {
                 String type = line.startsWith("if") ? "if" : "else";
 
-                int braceIndex = block.indexOf("{", i >= 0 ? block.indexOf(line) + line.length() : 0);
+                int lineIndexInBlock = block.indexOf(line);
+                if (lineIndexInBlock == -1) { echoCommand("build: unable to find '" + line + "' in block"); return null; }
+
+                int braceIndex = block.indexOf("{", lineIndexInBlock + line.length());
+                if (braceIndex == -1) { echoCommand("build: missing '{' after '" + type + "'"); return null; }
+
                 String remaining = block.substring(braceIndex);
                 String subblock = getBlock(remaining);
-                if (subblock == null) {
-                    echoCommand("build: missing block for '" + type + "'");
-                    return null;
-                }
+                if (subblock == null) { echoCommand("build: missing block for '" + type + "'"); return null; }
 
+                Hashtable cmd = new Hashtable();
                 cmd.put("type", type);
                 if (type.equals("if")) cmd.put("expr", extractParens(line, 0));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
-
-                i++; 
-                while (i < lines.length && lines[i].indexOf(subblock) != -1) { i++; }
             }
             else if (line.equals)
             else if (isIsolatedFunctionCall(line)) {
