@@ -620,7 +620,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
             Hashtable cmd = new Hashtable();
-            echoCommand(line);
+            echoCommand(i + ". " + line);
 
             if (line.equals("")) { }
             else if (line.startsWith("printf") || line.startsWith("exec")) {
@@ -657,10 +657,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (elseBrace != -1) {
                         String elseSub = getBlock(block.substring(elseBrace));
                         if (elseSub != null) {
-                            Hashtable elseCmd = new Hashtable();
-                            elseCmd.put("type", "else");
-                            elseCmd.put("source", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context));
-                            cmd.put("else", elseCmd);
+                            cmd.put("else", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context));
                         }
                     }
                 }
