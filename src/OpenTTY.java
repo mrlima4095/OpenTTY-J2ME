@@ -654,7 +654,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     source.addElement(cmd);
 
                     i++; 
-                    while (i < lines.length && !lines[i].contains(subblock)) { i++; }
+                    while (i < lines.length && !lines[i].indexOf(subblock) != -1) { i++; }
                 }
                 
                 else if (isIsolatedFunctionCall(line)) {
