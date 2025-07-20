@@ -643,12 +643,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String remaining = block.substring(braceIndex);
                 String subblock = getBlock(remaining);
                 if (subblock == null) {
-                    echoCommand("build: missing block for " + type);
+                    echoCommand("build: missing block for '" + type + "'");
                     return null;
                 }
 
                 cmd.put("type", type);
-                if (type.equals("if")) cmd.put("expr", extractBetween(line, '(', ')'));
+                cmd.put("expr", extractBetween(line, '(', ')'));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
                 source.addElement(cmd);
 
