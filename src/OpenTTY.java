@@ -655,7 +655,98 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 i++; 
                 while (i < lines.length && lines[i].indexOf(subblock) != -1) { i++; }
             }
-            
+            else if (line.startsWith("for(")) {
+                Hashtable cmd = new Hashtable();
+                cmd.put("type", "for");
+
+                String forContent = extractBetween(line, '(', ')'); // Ex: int i = 0; i < 10; i = i + 1
+                String[] parts = split(forContent, ';');
+                if (parts.length != 3) { echoCommand("build: invalid for syntax"); return null; }
+
+                Vector expr = new Vector();
+
+                // 1. Inicialização (ex: int i = 0;)
+                String init = parts[0].trim();
+                if (!init.equals("")) {
+                    if (startsWithAny(init, new String[]{"int ", "char "})) {
+                        String varType = init.startsWith("int ") ? "int" : "char";
+                        init = init.substring(varType.length()).trim();
+                        String[] vars = split(init, ',');
+                        for (int j = 0; j < vars.length; j++) {
+                            String part = vars[j].trim();
+                            int eq = part.indexOf('=');
+                            if (eq == -1) {
+                                echoCommand("build: missing '=' in for init");
+                                return null;
+                            }
+                            String varName = part.substring(0, eq).trim();
+                            String value = part.substring(eq + 1).trim();
+
+                            Hashtable a = new Hashtable();
+                            a.put("type", "assign");
+                            a.put("name", varName);
+                            a.put("instance", varType);
+                            a.put("value", value);
+                            expr.addElement(a);
+                        }
+                    } else {
+                        // mesmo sem tipo (ex: i = 0)
+                        Hashtable a = new Hashtable();
+                        a.put("type", "assign");
+                        int eq = init.indexOf('=');
+                        if (eq == -1) {
+                            echoCommand("build: missing '=' in for init");
+                            return null;
+                        }
+                        a.put("name", init.substring(0, eq).trim());
+                        a.put("value", init.substring(eq + 1).trim());
+                        a.put("instance", "");
+                        expr.addElement(a);
+                    }
+                }
+
+                // 2. Condição
+                String condition = parts[1].trim();
+                if (!condition.equals("")) {
+                    Hashtable c = new Hashtable();
+                    c.put("type", "condition");
+                    c.put("value", condition);
+                    expr.addElement(c);
+                }
+
+                // 3. Incremento
+                String inc = parts[2].trim();
+                if (!inc.equals("")) {
+                    Hashtable a = new Hashtable();
+                    int eq = inc.indexOf('=');
+                    if (eq == -1) {
+                        echoCommand("build: invalid increment syntax");
+                        return null;
+                    }
+                    a.put("type", "assign");
+                    a.put("name", inc.substring(0, eq).trim());
+                    a.put("value", inc.substring(eq + 1).trim());
+                    a.put("instance", "");
+                    expr.addElement(a);
+                }
+
+                cmd.put("expr", expr);
+
+                // Bloco { ... }
+                int braceIndex = block.indexOf("{", block.indexOf(line) + line.length());
+                String remaining = block.substring(braceIndex);
+                String subblock = getBlock(remaining);
+                if (subblock == null) {
+                    echoCommand("build: missing block for for-loop");
+                    return null;
+                }
+
+                cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
+                source.addElement(cmd);
+
+                i++;
+                while (i < lines.length && lines[i].indexOf(subblock) != -1) { i++; }
+            }
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim();
                 String arg = extractBetween(line, '(', ')');
