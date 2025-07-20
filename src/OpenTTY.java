@@ -644,18 +644,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 source.addElement(cmd);
             }
             else if (startsWithAny(line, new String[]{"int ", "char "})) {
-                int eq = line.indexOf('=');
-                String[] parts = split(line.substring(0, eq).trim(), ' ');
-                if (parts.length != 2) { echoCommand("build: invalid syntax: '" + line + "'"); return null; }
+                String varType = line.startsWith("int ") ? "int" : "char";
+                String decls = line.substring(varType.length()).trim(); // tudo após "int"/"char"
 
-                String varType = parts[0].trim(), varName = parts[1].trim(), varValue = eq == -1 ? (varType.equals("char") ? "' '" : "0") : line.substring(eq + 1).trim();
+                String[] vars = split(decls, ',');
+                for (int j = 0; j < vars.length; j++) {
+                    String part = vars[j].trim();
 
-                Hashtable cmd = new Hashtable();
-                cmd.put("type", "assign");
-                cmd.put("name", varName);
-                cmd.put("instance", varType);
-                cmd.put("value", varValue);
-                source.addElement(cmd);
+                    String varName, varValue;
+                    int eq = part.indexOf('=');
+
+                    if (eq != -1) {
+                        varName = part.substring(0, eq).trim();
+                        varValue = part.substring(eq + 1).trim();
+                    } else {
+                        varName = part;
+                        varValue = varType.equals("char") ? "' '" : "0";
+                    }
+
+                    if (varName.equals("")) {
+                        echoCommand("build: invalid variable declaration: '" + part + "'");
+                        return null;
+                    }
+
+                    Hashtable cmd = new Hashtable();
+                    cmd.put("type", "assign");
+                    cmd.put("name", varName);
+                    cmd.put("instance", varType);
+                    cmd.put("value", varValue);
+                    source.addElement(cmd);
+                }
             }
             else if (line.indexOf('=') != -1) {
                 String[] parts = split(line, '=');
