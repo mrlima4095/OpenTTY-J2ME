@@ -283,7 +283,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
-        else if (mainCommand.equals("build")) { Hashtable app = build(getcontent(argument)); echoCommand(app.containsKey("main") ? "true" : "false"); }
+        else if (mainCommand.equals("build")) { return viewer(basename(argument), renderJSON(build(getcontent(argument)), 0)); }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
         
         // API 014 - (OpenTTY)
@@ -582,7 +582,7 @@ private Hashtable build(String source) {
 
         // Verifica se o bloco está completo
         if (block == null) {
-            echoCommand("Erro de sintaxe: bloco da função '" + name + "' incompleto");
+            warnCommand("build()", "Erro de sintaxe: bloco da função '" + name + "' incompleto");
             return null;
         }
 
@@ -601,7 +601,7 @@ private Hashtable build(String source) {
                 String param = paramList[i].trim();
                 String[] parts = split(param, ' ');
                 if (parts.length != 2) {
-                    echoCommand("Erro de sintaxe no parâmetro: " + param);
+                    warnCommand("build()", "Erro de sintaxe no parâmetro: " + param);
                     return null;
                 }
                 Hashtable arg = new Hashtable();
@@ -616,7 +616,7 @@ private Hashtable build(String source) {
         block = block.substring(1, block.length() - 1).trim(); // remove {}
         fn.put("variables", new Hashtable());
         fn.put("source", parseBlock(block, fn));
-        fn.put("return", getReturnStatement(block));
+        fn.put("return", getReturnStatement(block, type));
 
         if (name.equals("main")) {
             program.put("main", fn);
@@ -671,7 +671,7 @@ private Vector parseBlock(String block, Hashtable context) {
         }
 
         // declaração ou atribuição
-        else if (startsWithAny(line, new String[]{"int ", "char ", "float "})) {
+        else if (startsWithAny(line, new String[]{"int ", "char "})) {
             String[] parts = split(line, ' ');
             if (parts.length >= 3 && parts[2].equals("=")) {
                 String varType = parts[0];
@@ -711,7 +711,7 @@ private Vector parseBlock(String block, Hashtable context) {
         }
 
         else {
-            echoCommand("Linha inválida ou desconhecida: '" + line + "'");
+            warnCommand("build()", "Linha inválida ou desconhecida: '" + line + "'");
         }
     }
 
@@ -769,7 +769,7 @@ private String getReturnStatement(String block) {
             return line.substring(7).trim();
         }
     }
-    return null;
+    return "";
 }
 
     // |
@@ -831,5 +831,53 @@ private String getReturnStatement(String block) {
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
+private String renderJSON(Object obj, int indent) {
+    StringBuffer json = new StringBuffer();
+    String pad = "";
+    for (int i = 0; i < indent; i++) pad += "  ";
+
+    if (obj instanceof Hashtable) {
+        Hashtable map = (Hashtable) obj;
+        json.append("{\n");
+        Enumeration keys = map.keys();
+        while (keys.hasMoreElements()) {
+            String key = (String) keys.nextElement();
+            Object val = map.get(key);
+            json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1));
+            if (keys.hasMoreElements()) json.append(",");
+            json.append("\n");
+        }
+        json.append(pad + "}");
+    }
+
+    else if (obj instanceof Vector) {
+        Vector list = (Vector) obj;
+        json.append("[\n");
+        for (int i = 0; i < list.size(); i++) {
+            json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1));
+            if (i < list.size() - 1) json.append(",");
+            json.append("\n");
+        }
+        json.append(pad + "]");
+    }
+
+    else if (obj instanceof String) {
+        json.append("\"" + escapeString((String) obj) + "\"");
+    }
+
+    else {
+        json.append(String.valueOf(obj));
+    }
+
+    return json.toString();
+}
+private String escapeString(String s) {
+    s = replace(s, "\\", "\\\\");
+    s = replace(s, "\"", "\\\"");
+    s = replace(s, "\n", "\\n");
+    s = replace(s, "\r", "\\r");
+    s = replace(s, "\t", "\\t");
+    return s;
+}
 
 }
