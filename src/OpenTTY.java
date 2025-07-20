@@ -707,7 +707,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String[] parts = split(line, '=');
                 if (parts.length == 2) {
                     String varName = parts[0].trim(), value = parts[1].trim();
-                    if (varName.indexOf(' ') ! = -1) { echoCommand("build: invalid type '" + getCommand(varName) + "'"); return null; }
+                    if (varName.indexOf(' ') ! 
+                    = -1) { echoCommand("build: invalid type '" + getCommand(varName) + "'"); return null; }
                     
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
