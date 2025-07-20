@@ -624,9 +624,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             echoCommand(line);
 
             if (line.equals("")) { }
-            else if (line.startsWith("printf(") || line.startsWith("exec(")) {
+            else if (line.startsWith("printf") || line.startsWith("exec")) {
                 String msg = extractBetween(line, '(', ')');
-                cmd.put("type", line.startsWith("printf(") ? "printf" : "exec");
+                cmd.put("type", line.startsWith("printf") ? "printf" : "exec");
                 cmd.put("value", msg);
             }
             else if (line.startsWith("return ")) {
