@@ -627,7 +627,49 @@ private Hashtable build(String source) {
 
     return program;
 }
+    private String substituteVars(String expr, String prefix, Hashtable vars) {
+        for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
+            String k = (String) e.nextElement();
+            Hashtable v = (Hashtable) vars.get(k);
+            String val = String.valueOf(v.get("value"));
+            expr = replace(expr, prefix + k, val);
+        }
+        return expr;
+    }
+    private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
+    private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
+    private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
+    private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) return true; } return false; }
+    private int findFunctionStart(String code) {
+        String[] types = { "int", "char" };
 
+        for (int i = 0; i < code.length(); i++) {
+            for (int t = 0; t < types.length; t++) {
+                String type = types[t];
+                if (code.startsWith(type + " ", i)) {
+                    int nameStart = i + type.length() + 1;
+                    int p1 = code.indexOf('(', nameStart);
+                    if (p1 == -1) continue;
+                    int p2 = code.indexOf(')', p1);
+                    if (p2 == -1) continue;
+                    int brace = code.indexOf('{', p2);
+                    if (brace == -1) continue;
+
+                    // Verifica se não é declaração de variável: deve ter nome(), não nome;
+                    String maybeName = code.substring(nameStart, p1).trim();
+                    if (maybeName.indexOf(' ') != -1) continue; // nome inválido
+
+                    // Certifica-se que não é uma linha só (ex: "int x = 0;")
+                    String beforeBrace = code.substring(p2 + 1, brace).trim();
+                    if (beforeBrace.length() > 0) continue;
+
+                    return i;
+                }
+            }
+        }
+
+        return -1; // não encontrado
+    }
 
     // |
     // History
