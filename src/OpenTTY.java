@@ -617,7 +617,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         private Vector parseBlock(String block, Hashtable context) {
             Vector source = new Vector();
-            String[] lines = splitBlocks(block, ';');
+            String[] lines = splitBlock(block, ';');
 
             for (int i = 0; i < lines.length; i++) {
                 String line = lines[i].trim();
