@@ -704,7 +704,7 @@ private Vector parseBlock(String block, Hashtable context) {
                 Hashtable cmd = new Hashtable();
                 cmd.put("type", "assign");
                 cmd.put("name", varName);
-                cmd.put("instance", ""); // tipo não é necessário na reatribuição
+                cmd.put("instance", "");
                 cmd.put("value", value);
                 source.addElement(cmd);
             } else {
