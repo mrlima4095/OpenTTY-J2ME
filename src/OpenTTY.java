@@ -637,7 +637,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
         String[] argList = argsBlock.equals("") ? new String[0] : split(argsBlock, ',');
 
-        if (reads != null && reads.size() != argList.length) { throw new RuntimeException("missing args for " + fname); }
+        if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("invalid number of arguments for " + fname); }
 
         for (int j = 0; reads != null && j < reads.size(); j++) {
             Hashtable a = (Hashtable) reads.elementAt(j);
