@@ -607,15 +607,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("call")) {
                 String name = (String) cmd.get("function");
                 String args = (String) cmd.get("args");
+                if (args == null) args = "";
 
                 Hashtable fn = getFunction(name, program);
                 if (fn == null) { throw new RuntimeException("C2ME: function '" + name + "' not found"); }
+
                 Hashtable newVars = new Hashtable();
                 Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
 
                 String[] argList = args.equals("") ? new String[0] : split(args, ',');
 
-                if (reads != null && reads.size() != argList.length) { throw new RuntimeException("C2ME: missing args for " + name); }
+                if (reads != null && reads.size() != argList.length) {
+                    throw new RuntimeException("C2ME: missing args for " + name);
+                }
                 for (int j = 0; reads != null && j < reads.size(); j++) {
                     Hashtable a = (Hashtable) reads.elementAt(j);
                     String val = substValues(argList[j].trim(), vars);
@@ -629,6 +633,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 newContext.put("source", fn.get("source"));
 
                 String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
+
+                String args = (String) cmd.get("args");
+
             }
         }
 
