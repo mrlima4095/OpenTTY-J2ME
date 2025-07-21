@@ -619,7 +619,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Hashtable fn = getFunction(name, program);
                 if (fn == null) {
                     echoCommand("run: unknown function: " + name);
-                    return 1;
+                    return "1";
                 }
 
                 Hashtable newVars = new Hashtable();
