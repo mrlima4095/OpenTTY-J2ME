@@ -596,9 +596,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (argType.equals("int")) {
                 value = exprCommand(value);
-                if (value.startsWith("expr: ")) {
-                    throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
-                }
+                if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'"); }
             }
 
             Hashtable local = new Hashtable();
@@ -750,7 +748,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         while (true) {
             int start = findFunctionStart(source);
-            if (start == -1) break;
+            if (start == -1) { break; }
 
             int p1 = source.indexOf("(", start);
             int p2 = source.indexOf(")", p1);
