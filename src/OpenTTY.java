@@ -650,7 +650,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return result.startsWith("expr: ") ? expr : result
     }
     private boolean eval(String expr) {
-        String[] ops = {">=", "<=", "==", "!=", ">", "<"};
+        String[] ops = new String[] {">=", "<=", "==", "!=", ">", "<"};
 
         for (int i = 0; i < ops.length; i++) {
             String op = ops[i];
