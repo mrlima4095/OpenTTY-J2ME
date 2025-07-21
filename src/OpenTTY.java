@@ -971,17 +971,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String[] splitBlock(String code, char separator) {
         Vector parts = new Vector();
         int depthPar = 0, depthBrace = 0;
+        boolean inString = false;
         int start = 0;
 
         for (int i = 0; i < code.length(); i++) {
             char c = code.charAt(i);
-            if (c == '(') depthPar++;
-            else if (c == ')') depthPar--;
-            else if (c == '{') depthBrace++;
-            else if (c == '}') depthBrace--;
-            else if (c == separator && depthPar == 0 && depthBrace == 0) {
-                parts.addElement(code.substring(start, i).trim());
-                start = i + 1;
+
+            if (c == '"') {
+                if (i == 0 || code.charAt(i - 1) != '\\') {
+                    inString = !inString;
+                }
+            } else if (!inString) {
+                if (c == '(') depthPar++;
+                else if (c == ')') depthPar--;
+                else if (c == '{') depthBrace++;
+                else if (c == '}') depthBrace--;
+                else if (c == separator && depthPar == 0 && depthBrace == 0) {
+                    parts.addElement(code.substring(start, i).trim());
+                    start = i + 1;
+                }
             }
         }
 
