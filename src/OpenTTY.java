@@ -671,24 +671,55 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
     private String substValues(String expr, Hashtable vars) throws RuntimeException {
-        if (expr == null) return "";
+        if (expr == null) { return ""; }
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
-            
+
             expr = replace(expr, expr.startsWith("\"") && expr.endsWith("\"") ? "%" + name : name, value);
         }
 
         if (expr.startsWith("\"") && expr.endsWith("\"")) { return expr.substring(1, expr.length() - 1); }
 
-        if (expr.indexOf('(') != -1 && expr.endsWith(")")) {
-            String result = call(expr, vars, program, false);
-            return result;
+        while (true) {
+            int open = expr.indexOf('(');
+            if (open == -1) { break; }
+
+            int i = open - 1;
+            while (i >= 0) {
+                char c = expr.charAt(i);
+                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')) { break; }
+                i--;
+            }
+
+            while (i >= 0 && expr.charAt(i) == ' ') i--;
+
+            String name = expr.substring(i + 1, open).trim();
+            int close = findMatchingParen(expr, open);
+            if (close == -1) { throw new RuntimeException("invalid expression — missing ')'"); } 
+
+            String full = expr.substring(i + 1, close + 1), value = call(full, vars, program, false);
+
+            expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
         }
 
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
+
+    private int findMatchingParen(String expr, int open) {
+        int depth = 0;
+        for (int i = open; i < expr.length(); i++) {
+            char c = expr.charAt(i);
+            if (c == '(') depth++;
+            else if (c == ')') {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
+    }
+
     private boolean eval(String expr, Hashtable vars) {
         String[] ops = {">=", "<=", "==", "!=", ">", "<"};
 
