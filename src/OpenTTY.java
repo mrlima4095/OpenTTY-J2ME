@@ -589,7 +589,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                 } else { return value; }
             }
- 
             else if (type.equals("if")) {
                 String ret = null;
                 if (eval((String) cmd.get("expr"), vars)) { ret = run((Vector) cmd.get("source"), context, root, program, 1); } 
@@ -598,7 +597,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (ret == null) { continue; }
                 else { return ret; }
             }
-
             else if (type.equals("while")) {
                 String expr = substValues((String) cmd.get("expr"), vars);
                 while (eval(expr)) {
@@ -610,15 +608,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { return ret; }
                 }
             }
-
             else if (type.equals("continue") || type.equals("break")) {
                 if (mode == 2) {
                     if (type.equals("break")) { return null; }
                     else { return "+[continue]"; }
                 }
-                else { throw new RuntimeException("C2ME: not in a loop"); }
+                else { throw new RuntimeException("not in a loop"); }
             }
-
             else if (type.equals("call")) {
                 String name = (String) cmd.get("function"), args = (String) cmd.get("args");
                 if (args == null) args = "";
@@ -635,15 +631,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 for (int j = 0; reads != null && j < reads.size(); j++) {
                     Hashtable a = (Hashtable) reads.elementAt(j);
-                    String argName = (String) a.get("name"), argType = (String) a.get("type");
-
-                    String rawValue = substValues(argList[j].trim(), vars);
+                    String argName = (String) a.get("name"), argType = (String) a.get("type"), value = substValues(argList[j].trim(), vars);
 
                     if (argType.equals("int")) {
-                        String eval = exprCommand(rawValue);
-                        if (eval.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'"); } 
-                        else { newVars.put(argName, eval); }
-                    } else { newVars.put(argName, rawValue); }
+                        value = exprCommand(value);
+                        if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'"); }
+                    }
+
+                    Hashtable local = new Hashtable();
+                    local.put("value", value);
+                    local.put("instance", argType);
+                    newVars.put(argName, local);
                 }
 
                 Hashtable newContext = new Hashtable();
@@ -653,6 +651,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
             }
+
         }
 
         return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 2 ? "+[continue]" : null;
