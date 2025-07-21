@@ -603,12 +603,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String expr = substValues((String) cmd.get("expr"), vars);
                 while (eval(expr)) {
                     String ret = run((Vector) cmd.get("source"), context, root, program, 2);
+                    expr = substValues((String) cmd.get("expr"), vars);
 
                     if (ret == null) { break; }
                     else if (ret.equals("+[continue]")) { continue; }
                     else { return ret; }
-
-                    expr = substValues((String) cmd.get("expr"), vars);
                 }
             }
 
