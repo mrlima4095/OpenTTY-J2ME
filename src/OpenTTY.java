@@ -830,8 +830,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (braceIndex == -1) { echoCommand("build: missing '{' after 'while'"); return null; }
 
-                String remaining = block.substring(braceIndex);
-                String subblock = getBlock(remaining);
+                String remaining = block.substring(braceIndex), subblock = getBlock(remaining);
                 if (subblock == null) { echoCommand("build: missing block for 'while'"); return null; }
 
                 cmd.put("type", "while");
