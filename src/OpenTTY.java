@@ -649,8 +649,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return ((String) context.get("type")).equals("char") ? "' '" : "0";
     }
-
-    private String substValues(String expr, Hashtable vars) {
+private String substValues(String expr, Hashtable vars) {
     if (expr == null) return "";
 
     // Substituições baseadas em tipo de valor
@@ -659,27 +658,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String value = (String) vars.get(name);
 
         if (value.startsWith("\"") && value.endsWith("\"")) {
-            // Substitui dentro de strings usando %variavel
-            expr = replace(expr, "%" + name, value.substring(1, value.length() - 1));
+            // Remove aspas para substituição de %variavel
+            String clean = value.substring(1, value.length() - 1);
+            expr = replace(expr, "%" + name, clean);
         } else {
-            // Substitui em expressões puras
             expr = replace(expr, name, value);
         }
     }
 
-    // Tenta resolver como expressão numérica
+    // Se ainda for string (entre aspas), retorna ela limpa
     if (expr.startsWith("\"") && expr.endsWith("\"")) {
-        // se for string, retorna como está (sem as aspas)
         return expr.substring(1, expr.length() - 1);
     }
 
+    // Tenta resolver como expressão numérica
     String result = exprCommand(expr);
     if (result.startsWith("expr: ")) {
-        return expr; // expressão inválida, retorna original
+        return expr; // expressão inválida
     } else {
-        return result; // expressão resolvida
+        return result;
     }
 }
+
+    
 
     private Hashtable getFunction(String name, Hashtable program) {
         Hashtable functions = (Hashtable) program.get("functions");
