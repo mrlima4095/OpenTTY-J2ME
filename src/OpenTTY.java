@@ -544,7 +544,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         Vector source = (Vector) main.get("source");
-        String result = run(source, main, root, program);
+        String result = run(source, main, root, program, true);
         if (result == null) { return 1; }
         else {
             try { return Integer.valueOf(result); }
@@ -552,9 +552,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         return 0;
-    }
-
+    } 
     private String run(Vector source, Hashtable context, boolean root, Hashtable program) {
+        return run(source, context, root, program, false);
+    }
+    private String run(Vector source, Hashtable context, boolean root, Hashtable program, boolean func) {
         Hashtable vars = (Hashtable) context.get("variables");
 
         for (int i = 0; i < source.size(); i++) {
@@ -642,7 +644,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 newContext.put("type", fn.get("type"));
                 newContext.put("source", fn.get("source"));
 
-                String ret = run((Vector) fn.get("source"), newContext, root, program);
+                String ret = run((Vector) fn.get("source"), newContext, root, program, true);
                 //vars.put(name, String.valueOf(ret)); // opcional armazenar retorno
             }
         }
