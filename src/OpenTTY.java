@@ -559,9 +559,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (type.equals("printf")) { echoCommand(substValues(, vars)); }
             else if (type.equals("exec")) { processCommand(substValues((String) cmd.get("value"), vars), true, root); }
             else if (type.equals("assign")) {
-                String name = (String) cmd.get("name");
-                String value = substValues((String) cmd.get("value"), vars);
-                vars.put(name, value);
+                String name = (String) cmd.get("name"), value = substValues((String) cmd.get("value"), vars), instance = (String) cmd.get("instance");
+                Hashtable local = new Hashtable();
+
+                if (instance == null) {
+                    if (vars.containsKey(name)) { instance = (String) ((Hashtable) vars.get(name)).get("instance"); }
+                    else { throw new RuntimeException("unknown declare of '" + name + "'"); }
+                } 
+
+                if (instance.equals("int")) {
+                    value = exprCommand(value);
+                    
+                    if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); } 
+                } 
+
+                local.put("value", value); local.put("instance", instance);
+                vars.put(name, local);
             }
 
             else if (type.equals("return")) {
@@ -620,17 +633,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 for (int j = 0; reads != null && j < reads.size(); j++) {
                     Hashtable a = (Hashtable) reads.elementAt(j);
-                    String argName = (String) a.get("name");
-                    String argType = (String) a.get("type");
+                    String argName = (String) a.get("name"), argType = (String) a.get("type");
 
                     String rawValue = substValues(argList[j].trim(), vars);
 
-                    if (argType.equals("char")) { newVars.put(argName, rawValue); }
-                    else {
+                    if (argType.equals("int")) {
                         String eval = exprCommand(rawValue);
                         if (eval.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'"); } 
                         else { newVars.put(argName, eval); }
-                    }
+                    } else { newVars.put(argName, rawValue); }
                 }
 
                 Hashtable newContext = new Hashtable();
@@ -648,7 +659,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (expr == null) return "";
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
-            String name = (String) e.nextElement(), value = (String) vars.get(name);
+            String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
             
             expr = replace(expr, expr.startsWith("\"") && expr.endsWith("\"") ? "%" + name : name, value);
         }
@@ -842,9 +853,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (line.equals("continue")) { cmd.put("type", "continue"); }
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim(), arg = extractBetween(line, '(', ')');
-                cmd.put("type", "call");
-                cmd.put("function", name);
-                cmd.put("args", arg);
+                cmd.put("type", "call"); cmd.put("function", name); cmd.put("args", arg);
             }
             else if (startsWithAny(line, new String[]{"int ", "char "})) {
                 String varType = line.startsWith("int ") ? "int" : "char";
@@ -881,7 +890,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
-                    cmd.put("instance",  null);
+                    cmd.put("instance", null);
                     cmd.put("value", value);
                 } 
                 else { echoCommand("build: invalid value for '" + parts[0].trim() + "'"); return null; }
