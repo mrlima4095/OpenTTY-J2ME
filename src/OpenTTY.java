@@ -593,7 +593,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (ret == null) { break; }
                     else if (!ret.equals("+[continue]")) { continue; }
                     else { return ret; }
-
                 }
             }
 
