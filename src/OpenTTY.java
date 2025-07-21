@@ -544,19 +544,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         Vector source = (Vector) main.get("source");
-        String result = run(source, main, root, program, true);
-        if (result == null) { return 1; }
-        else {
-            try { return Integer.valueOf(result); }
-            catch (Exception e) { echoCommand(getCatch(e)); }
+        try {
+            String result = run(source, main, root, program, 0);
+            if (result == null) { return 1; }
+            return Integer.valueOf(result);
         }
-
+        catch (Exception e) { echoCommand(getCatch(e)); }
+        
         return 0;
     } 
-    private String run(Vector source, Hashtable context, boolean root, Hashtable program) {
-        return run(source, context, root, program, false);
-    }
-    private String run(Vector source, Hashtable context, boolean root, Hashtable program, boolean func) {
+    private String run(Vector source, Hashtable context, boolean root, Hashtable program, int mode) throw RuntimeException {
         Hashtable vars = (Hashtable) context.get("variables");
 
         for (int i = 0; i < source.size(); i++) {
@@ -600,16 +597,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String expr = (String) cmd.get("expr");
                 while (!exprCommand(substValues(expr, vars)).equals("0")) {
                     String ret = run((Vector) cmd.get("source"), context, root, program);
-                    
+                    if (ret == null || !ret.equals(""))
 
                 }
             }
 
-            else if (type.equals("continue")) {
-                return "+continue";
-            }
-            else if (type.equals("break")) {
-                return "+break";
+            else if (type.equals("continue") || type.equals("break")) {
+                if (mode != 2) { throw new RuntimeException("C2ME: not in a loop"); }
+                
+                else if (type.equals("break")) { return null; }
+                else { return "+continue"; }
             }
 
             else if (type.equals("call")) {
@@ -631,7 +628,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     echoCommand("run: missing args for " + name);
                     return "1";
                 }
-
                 for (int j = 0; reads != null && j < reads.size(); j++) {
                     Hashtable a = (Hashtable) reads.elementAt(j);
                     String val = substValues(argList[j].trim(), vars);
@@ -649,7 +645,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        return ((String) context.get("type")).equals("char") ? "' '" : "0";
+        return mode == 0 ? threturn((String) context.get("type")) : null;
+    }
+    private String threturn(String type) {
+        return type.equals("char") ? "' '" : "0";
     }
 private String substValues(String expr, Hashtable vars) {
     if (expr == null) return "";
