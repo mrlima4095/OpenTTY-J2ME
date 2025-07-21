@@ -681,14 +681,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         // Se for uma variável inteira ou expressão simples
         if (vars.containsKey(expr)) return (String) vars.get(expr);
-
+        if (expr.startsWith("\"") && expr.endsWith("\"")) { expr = expr.substring(1, expr.length() - 1); }
+    
         String result = exprCommand(expr);
         if (result.startsWith("expr: ")) { return expr; }
         else {
             return result;
         }
 
-        //if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); }
+        //
     }
     private Hashtable getFunction(String name, Hashtable program) {
         Hashtable functions = (Hashtable) program.get("functions");
