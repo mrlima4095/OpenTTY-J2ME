@@ -1,3 +1,12 @@
+/* 
+	OpenTTY C2ME APi
+	
+	
+
+*/
+
+char getuser() { return "$USERNAME"; }
+
 
 
 
