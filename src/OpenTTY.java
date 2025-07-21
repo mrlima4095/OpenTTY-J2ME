@@ -599,7 +599,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (type.equals("while")) {
                 String expr = substValues((String) cmd.get("expr"), vars);
-                while (eval(expr)) {
+                while (eval(expr, vars)) {
                     String ret = run((Vector) cmd.get("source"), context, root, program, 2);
                     expr = substValues((String) cmd.get("expr"), vars);
 
