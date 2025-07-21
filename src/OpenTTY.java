@@ -591,8 +591,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (type.equals("if")) {
                 String ret = null;
-                if (eval((String) cmd.get("expr"), vars, program, root)) { ret = run((Vector) cmd.get("source"), context, root, program, 1); } 
-                else if (cmd.containsKey("else")) { ret = run((Vector) cmd.get("else"), context, root, program, 1); }
+                if (eval((String) cmd.get("expr"), vars, program, root)) { ret = run((Vector) cmd.get("source"), context, root, program, mode); } 
+                else if (cmd.containsKey("else")) { ret = run((Vector) cmd.get("else"), context, root, program, mode); }
 
                 if (ret == null) { continue; }
                 else { return ret; }
@@ -600,7 +600,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("while")) {
                 String expr = substValues((String) cmd.get("expr"), vars, program, root);
                 while (eval(expr, vars, program, root)) {
-                    String ret = run((Vector) cmd.get("source"), context, root, program, 2);
+                    String ret = run((Vector) cmd.get("source"), context, root, program, 1);
                     expr = substValues((String) cmd.get("expr"), vars, program, root);
 
                     if (ret == null) { break; }
@@ -609,21 +609,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
             else if (type.equals("continue") || type.equals("break")) {
-                if (mode == 2) {
+                if (mode == 1) {
                     if (type.equals("break")) { return null; }
                     else { return "+[continue]"; }
                 }
                 else { throw new RuntimeException("not in a loop"); }
             }
             else if (type.equals("call")) {
-                String name = (String) cmd.get("function"), args = cmd.containsKey("args") ? (String) cmd.get("args") : "";
-
-                call(name + "(" + substValues(args, vars, program, root) + ")", vars, program, root);
+                call((String) cmd.get("function") + "(" + substValues((cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root);
             }
 
         }
 
-        return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 2 ? "+[continue]" : null;
+        return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null;
     }
     private String call(String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         int parIndex = code.indexOf('(');
