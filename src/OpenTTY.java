@@ -641,7 +641,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 newContext.put("type", fn.get("type"));
                 newContext.put("source", fn.get("source"));
 
-                String ret = run((Vector) fn.get("source"), newContext, root, program, true, 3);
+                String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
                 //vars.put(name, String.valueOf(ret)); // opcional armazenar retorno
             }
         }
