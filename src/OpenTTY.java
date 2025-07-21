@@ -359,29 +359,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.addCommand(LOGIN); screen.addCommand(EXIT); 
             screen.setCommandListener(this); display.setCurrent(screen); 
         } 
-        public void commandAction(Command c, Displayable d) { 
-            if (c == LOGIN) { 
-                String password = PASSWD.getString().trim(); 
-                if (TYPE == SIGNUP) { 
-                    if (asking_user) { username = USER.getString().trim(); } 
-
-                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
-                    else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } 
-                    else { if (asking_user) { writeRMS("/home/OpenRMS", username); } if (asking_passwd) { passwd(true, password); } display.setCurrent(form); runScript(loadRMS("initd")); } 
-                } 
-                else if (TYPE == REQUEST) { 
-                    if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
-                    else { 
-                        if (String.valueOf(password.hashCode()).equals(passwd(false, null))) { processCommand(command, true, true); processCommand("xterm"); } 
-                        else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } 
-                    } 
-                } 
-
-                stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
-            }
-            else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); }
-        }
-    }
+        public void commandAction(Command c, Displayable d) { if (c == LOGIN) { String password = PASSWD.getString().trim(); if (TYPE == SIGNUP) { if (asking_user) { username = USER.getString().trim(); } if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } else { if (asking_user) { writeRMS("/home/OpenRMS", username); } if (asking_passwd) { passwd(true, password); } display.setCurrent(form); runScript(loadRMS("initd")); } } else if (TYPE == REQUEST) { if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else { if (String.valueOf(password.hashCode()).equals(passwd(false, null))) { processCommand(command, true, true); processCommand("xterm"); } else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } } } stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); } else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); } } }
     private String passwd(boolean write, String value) { if (write && value != null) { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); } else { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { return ""; } } return ""; } 
 
     // API 002 - (Logs)
