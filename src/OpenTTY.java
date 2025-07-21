@@ -655,9 +655,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
             }
             else if (line.startsWith("while")) {
+                int lineIndexInBlock = block.indexOf(line);
+                if (lineIndexInBlock == -1) { echoCommand("build: unable to find '" + line + "' in block"); return null; }
 
+                int braceIndex = -1; 
+                for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
+
+                if (braceIndex == -1) { echoCommand("build: missing '{' after '" + type + "'"); return null; }
+
+                String remaining = block.substring(braceIndex);
+                String subblock = getBlock(remaining);
+                if (subblock == null) { echoCommand("build: missing block for '" + type + "'"); return null; }
+
+                cmd.put("type", type);
+                cmd.put("expr", extractParens(line, 0));
+
+                int elseIndex = block.indexOf("else", braceIndex + subblock.length());
+                if (elseIndex != -1) {
+                    int elseBrace = block.indexOf("{", elseIndex);
+                    if (elseBrace != -1) {
+                        String elseSub = getBlock(block.substring(elseBrace));
+                        if (elseSub != null) {
+                            cmd.put("else", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context));
+                        }
+                    }
+                }
+
+                cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
             }
             else if (line.startsWith("else")) { echoCommand("build: invalid token 'else'"); return null; }
+            else if (line.equals("continue")) { cmd.put("type", "continue"); }
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim();
                 String arg = extractBetween(line, '(', ')');
@@ -676,13 +703,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String varName, varValue;
                     int eq = part.indexOf('=');
 
-                    if (eq != -1) {
-                        varName = part.substring(0, eq).trim();
-                        varValue = part.substring(eq + 1).trim();
-                    } else {
-                        varName = part;
-                        varValue = varType.equals("char") ? "' '" : "0";
-                    }
+                    if (eq != -1) { varName = part.substring(0, eq).trim(); varValue = part.substring(eq + 1).trim(); } 
+                    else { varName = part; varValue = varType.equals("char") ? "' '" : "0"; }
 
                     if (varName.equals("")) {
                         echoCommand("build: invalid variable declaration: '" + part + "'");
