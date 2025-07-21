@@ -810,9 +810,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int elseBrace = block.indexOf("{", elseIndex);
                     if (elseBrace != -1) {
                         String elseSub = getBlock(block.substring(elseBrace));
-                        if (elseSub != null) {
-                            cmd.put("else", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context));
-                        }
+                        if (elseSub != null) { cmd.put("else", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context)); }
                     }
                 }
 
