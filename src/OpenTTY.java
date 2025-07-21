@@ -610,18 +610,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (args == null) args = "";
 
                 Hashtable fn = getFunction(name, program);
-                if (fn == null) {
-                    throw new RuntimeException("C2ME: function '" + name + "' not found");
-                }
+                if (fn == null) { throw new RuntimeException("function '" + name + "' not found"); }
 
                 Hashtable newVars = new Hashtable();
                 Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
 
                 String[] argList = args.equals("") ? new String[0] : split(args, ',');
 
-                if (reads != null && reads.size() != argList.length) {
-                    throw new RuntimeException("C2ME: missing args for " + name);
-                }
+                if (reads != null && reads.size() != argList.length) { throw new RuntimeException("missing args for " + name); }
 
                 for (int j = 0; reads != null && j < reads.size(); j++) {
                     Hashtable a = (Hashtable) reads.elementAt(j);
@@ -633,10 +629,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (argType.equals("char")) { newVars.put(argName, rawValue); }
                     else {
                         String eval = exprCommand(rawValue);
-                        if (eval.startsWith("expr: ")) {
-                            throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
-                        } 
-                        else { newVars.put(argName, eval);  }
+                        if (eval.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'"); } 
+                        else { newVars.put(argName, eval); }
                     }
                 }
 
