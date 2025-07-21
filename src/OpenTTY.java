@@ -591,8 +591,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
  
             else if (type.equals("if")) {
-                String expr = substValues((String) cmd.get("expr"), vars), ret = null;
-                if (eval(expr)) { ret = run((Vector) cmd.get("source"), context, root, program, 1); } 
+                String ret = null;
+                if (eval((String) cmd.get("expr"), vars)) { ret = run((Vector) cmd.get("source"), context, root, program, 1); } 
                 else if (cmd.containsKey("else")) { ret = run((Vector) cmd.get("else"), context, root, program, 1); }
 
                 if (ret == null) { continue; }
@@ -671,7 +671,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
-    private boolean eval(String expr) {
+    private boolean eval(String expr, Hashtable vars) {
         String[] ops = {">=", "<=", "==", "!=", ">", "<"};
 
         for (int i = 0; i < ops.length; i++) {
@@ -679,8 +679,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int idx = expr.indexOf(op);
 
             if (idx != -1) {
-                String left = expr.substring(0, idx).trim();
-                String right = expr.substring(idx + op.length()).trim();
+                String left = substValues(expr.substring(0, idx).trim(), vars);
+                String right = substValues(expr.substring(idx + op.length()).trim(), vars);
 
                 Double a = getNumber(left);
                 Double b = getNumber(right);
