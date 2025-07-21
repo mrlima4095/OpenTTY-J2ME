@@ -5,7 +5,6 @@
 
 */
 
-int root() { char user = exec("whoami"); if (user == "root") { return 0; } else { return 1; } }
 char getuser() { return "$USERNAME"; }
 
 
