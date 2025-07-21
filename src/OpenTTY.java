@@ -546,10 +546,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Vector source = (Vector) main.get("source");
         try {
             String result = run(source, main, root, program, 0);
-            if (result == null) { return 1; }
+            
             return Integer.valueOf(result);
         }
-        catch (Exception e) { echoCommand(getCatch(e)); }
+        catch (Exception e) { echoCommand(getCatch(e)); return 1; }
         
         return 0;
     } 
@@ -575,8 +575,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String expr = exprCommand(value);
                     
                     if (expr.startsWith("expr: ")) {
-                        echoCommand("C2ME: invalid return value");
-                        return null;
+                        throw new RuntimeException("C2ME: invalid return value");
                     } else { return expr; }
                     
                 } else { return value; }
