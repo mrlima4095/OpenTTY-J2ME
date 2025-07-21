@@ -647,10 +647,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (expr.startsWith("\"") && expr.endsWith("\"")) { return expr.substring(1, expr.length() - 1); }
 
         String result = exprCommand(expr);
-        return result.startsWith("expr: ") ? expr : result
+        return result.startsWith("expr: ") ? expr : result;
     }
     private boolean eval(String expr) {
-        String[] ops = new String[] {">=", "<=", "==", "!=", ">", "<"};
+        String[] ops = {">=", "<=", "==", "!=", ">", "<"};
 
         for (int i = 0; i < ops.length; i++) {
             String op = ops[i];
