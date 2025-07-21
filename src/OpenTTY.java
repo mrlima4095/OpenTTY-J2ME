@@ -633,7 +633,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String argsBlock = code.substring(parIndex + 1, code.length() - 1);
 
         Hashtable fn = getFunction(fname, program);
-        if (fn == null) { throw new RuntimeException("function '" + name + "' not found"); }
+        if (fn == null) { throw new RuntimeException("function '" + fname + "' not found"); }
 
         Hashtable newVars = new Hashtable();
         Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
@@ -669,8 +669,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
         return ret;
     }
-
-    private String substValues(String expr, Hashtable vars) throws RuntimeException {
+    private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null) { return ""; }
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
