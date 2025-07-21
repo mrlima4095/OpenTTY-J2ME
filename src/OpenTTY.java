@@ -542,8 +542,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             echoCommand("C2ME: main() need to be int function");
             return 2;
         }
-        //Hashtable vars = new Hashtable();
-        //main.put("variables", vars);
 
         Vector source = (Vector) main.get("source");
         String result = run(source, main, root, program);
