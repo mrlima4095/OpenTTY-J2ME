@@ -556,7 +556,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable cmd = (Hashtable) source.elementAt(i);
             String type = (String) cmd.get("type");
 
-            if (type.equals("printf")) { echoCommand(substValues((String) cmd.get("value"), vars)); }
+            if (type.equals("printf")) { echoCommand(substValues(, vars)); }
             else if (type.equals("exec")) { processCommand(substValues((String) cmd.get("value"), vars), true, root); }
             else if (type.equals("assign")) {
                 String name = (String) cmd.get("name");
@@ -591,7 +591,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String ret = run((Vector) cmd.get("source"), context, root, program, 2);
 
                     if (ret == null) { break; }
-                    else if (!ret.equals("+[continue]")) { continue; }
+                    else if (ret.equals("+[continue]")) { continue; }
                     else { return ret; }
                 }
             }
@@ -605,8 +605,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             else if (type.equals("call")) {
-                String name = (String) cmd.get("function");
-                String args = (String) cmd.get("args");
+                String name = (String) cmd.get("function"), args = (String) cmd.get("args");
                 if (args == null) args = "";
 
                 Hashtable fn = getFunction(name, program);
@@ -695,13 +694,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (expr.equals("0") || expr.equals("' '") || expr.equals("")) return false;
         return true;
     }
-    private Hashtable getFunction(String name, Hashtable program) {
-        Hashtable functions = (Hashtable) program.get("functions");
-        if (functions.containsKey(name)) {
-            return (Hashtable) functions.get(name);
-        }
-        return null;
-    }
+    private Hashtable getFunction(String name, Hashtable program) { Hashtable functions = (Hashtable) program.get("functions"); return functions.containsKey(name) ? (Hashtable) functions.get(name) : null; }
 
     private Hashtable build(String source) {
         Hashtable program = new Hashtable();
