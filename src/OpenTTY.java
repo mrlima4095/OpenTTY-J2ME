@@ -675,7 +675,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
 
-            expr = replace(expr, expr.startsWith("\"") && expr.endsWith("\"") ? "%" + name : name, value);
+            if (expr.startsWith("\"") && expr.endsWith("\"")) { expr = replace(expr, "%" + name, value); } 
+            else { expr = replaceVarOnly(expr, name, value); }
         }
 
         if (expr.startsWith("\"") && expr.endsWith("\"")) { return expr.substring(1, expr.length() - 1); }
@@ -722,12 +723,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return out.toString();
     }
 
-    private boolean isVarChar(char c) {
-        return (c >= 'a' && c <= 'z') ||
-               (c >= 'A' && c <= 'Z') ||
-               (c >= '0' && c <= '9') ||
-               c == '_';
-    }
+    private boolean isVarChar(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; }
     private int findMatchingParen(String expr, int open) {
         int depth = 0;
         for (int i = open; i < expr.length(); i++) {
@@ -735,7 +731,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == '(') depth++;
             else if (c == ')') {
                 depth--;
-                if (depth == 0) return i;
+                if (depth == 0) { return i; }
             }
         }
         return -1;
