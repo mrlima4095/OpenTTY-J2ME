@@ -653,32 +653,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
     private String substValues(String expr, Hashtable vars) {
-        if (expr == null) return "";
+    if (expr == null) return "";
 
-        // Substitui %variavel dentro de strings
-        int pct = expr.indexOf('%');
-        while (pct != -1) {
-            int end = pct + 1;
-            while (end < expr.length() && Character.isLetterOrDigit(expr.charAt(end))) end++;
-            String var = expr.substring(pct + 1, end);
-            String val = (String) vars.get(var);
-            if (val == null) val = "";
-            expr = expr.substring(0, pct) + val + expr.substring(end);
-            pct = expr.indexOf('%');
+    // Substituições baseadas em tipo de valor
+    for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
+        String name = (String) e.nextElement();
+        String value = (String) vars.get(name);
+
+        if (value.startsWith("\"") && value.endsWith("\"")) {
+            // Substitui dentro de strings usando %variavel
+            expr = replace(expr, "%" + name, value.substring(1, value.length() - 1));
+        } else {
+            // Substitui em expressões puras
+            expr = replace(expr, name, value);
         }
-
-        // Se for uma variável inteira ou expressão simples
-        if (vars.containsKey(expr)) return (String) vars.get(expr);
-        if (expr.startsWith("\"") && expr.endsWith("\"")) { expr = expr.substring(1, expr.length() - 1); }
-    
-        String result = exprCommand(expr);
-        if (result.startsWith("expr: ")) { return expr; }
-        else {
-            return result;
-        }
-
-        //
     }
+
+    // Tenta resolver como expressão numérica
+    if (expr.startsWith("\"") && expr.endsWith("\"")) {
+        // se for string, retorna como está (sem as aspas)
+        return expr.substring(1, expr.length() - 1);
+    }
+
+    String result = exprCommand(expr);
+    if (result.startsWith("expr: ")) {
+        return expr; // expressão inválida, retorna original
+    } else {
+        return result; // expressão resolvida
+    }
+}
+
     private Hashtable getFunction(String name, Hashtable program) {
         Hashtable functions = (Hashtable) program.get("functions");
         if (functions.containsKey(name)) {
