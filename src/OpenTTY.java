@@ -283,7 +283,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
-        else if (mainCommand.equals("build")) { viewer(basename(argument), renderJSON(build(getcontent(argument)), 0)); }
+        else if (mainCommand.equals("c")) { viewer(basename(argument), renderJSON(build(getcontent(argument)), 0)); }
+        else if (mainCommand.equals("build")) { if (argument.equals("")) { return 2; } else { return C2ME(argument, root); } }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
         
         // API 014 - (OpenTTY)
@@ -555,13 +556,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String type = (String) cmd.get("type");
 
             if (type.equals("printf")) {
-                String msg = substValues((String) cmd.get("value"), vars);
-                echoCommand(msg);
+                echoCommand(substValues((String) cmd.get("value"), vars));
             }
-
             else if (type.equals("exec")) {
-                String arg = substValues((String) cmd.get("value"), vars);
-                processCommand(arg, true, root);
+                processCommand(substValues((String) cmd.get("value"), vars), true, root);
             }
 
             else if (type.equals("assign")) {
@@ -657,11 +655,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Se for uma variável inteira ou expressão simples
         if (vars.containsKey(expr)) return (String) vars.get(expr);
 
-        try {
-            return exprCommand(expr);
-        } catch (Exception e) {
-            return expr;
+        String result = exprCommand(expr);
+        if (result.startsWith("expr: ")) { return expr; }
+        else {
+            return result;
         }
+
         //if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); }
     }
     private Hashtable getFunction(String name, Hashtable program) {
