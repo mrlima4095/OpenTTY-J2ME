@@ -599,14 +599,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("while")) {
                 String expr = (String) cmd.get("expr");
                 while (exprCommand(substValues(expr, vars)) != 0) {
-                    int ret = run((Vector) cmd.get("source"), context, root);
-                    if (ret == -888) continue;
-                    if (ret != -999) return ret;
+                    String ret = run((Vector) cmd.get("source"), context, root);
+                    if (!ret.equals("+continue") || !ret.equals("' '") || !type.equals("0")) break;
+                    else { 
+                type = (String) context.get("type"), value = substValues((String) cmd.get("value"), vars);
+                if (type.equals("int")) {
+                    String expr = exprCommand(value);
+                    
+                    if (expr.startsWith("expr: ")) {
+                        echoCommand("C2ME: invalid return value");
+                        return null;
+                    } else { return expr; }
+                    
+                } else { return value; }
+            }
+
                 }
             }
 
             else if (type.equals("continue")) {
-                return -888; // usado internamente para loop continuar
+                return "+continue";
+            }
+            else if (type.equals("break")) {
+                return "+break"
             }
 
             else if (type.equals("call")) {
@@ -641,12 +656,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 newContext.put("type", fn.get("type"));
                 newContext.put("source", fn.get("source"));
 
-                int ret = run((Vector) fn.get("source"), newContext, root);
-                vars.put(name, String.valueOf(ret)); // opcional armazenar retorno
+                String ret = run((Vector) fn.get("source"), newContext, root);
+                //vars.put(name, String.valueOf(ret)); // opcional armazenar retorno
             }
         }
 
-        return -999; // nenhum return chamado
+        return ((String) context.get("type")).equals("char") ? "' '" : "0";
     }
 
     private String substValues(String expr, Hashtable vars) {
@@ -828,6 +843,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
             }
             else if (line.startsWith("else")) { echoCommand("build: invalid token 'else'"); return null; }
+            else if (line.equals("break")) { cmd.put("type", "break"); }
             else if (line.equals("continue")) { cmd.put("type", "continue"); }
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim();
