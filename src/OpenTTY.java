@@ -487,7 +487,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         Hashtable main = (Hashtable) program.get("main");
         if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
-        if (((String) main.get("type")).equals("int")){
+        if (((String) main.get("type")).equals("int")) {
             Vector source = (Vector) main.get("source");
             try {
                 String result = run(source, main, root, program, 0);
