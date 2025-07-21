@@ -599,7 +599,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             else if (type.equals("continue") || type.equals("break")) {
                 if (mode == 2) {
-                    else if (type.equals("break")) { return null; }
+                    if (type.equals("break")) { return null; }
                     else { return "+[continue]"; }
                 }
                 else { throw new RuntimeException("C2ME: not in a loop"); }
