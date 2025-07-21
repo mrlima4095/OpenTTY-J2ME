@@ -686,19 +686,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Double b = getNumber(right);
 
                 if (a != null && b != null) {
-                    if (op.equals(">")) return a > b;
-                    if (op.equals("<")) return a < b;
-                    if (op.equals(">=")) return a >= b;
-                    if (op.equals("<=")) return a <= b;
-                    if (op.equals("==")) return a.doubleValue() == b.doubleValue();
-                    if (op.equals("!=")) return a.doubleValue() != b.doubleValue();
-                } else {
-                    if (op.equals("==")) return left.equals(right);
-                    if (op.equals("!=")) return !left.equals(right);
-                    if (op.equals(">")) return left.compareTo(right) > 0;
-                    if (op.equals("<")) return left.compareTo(right) < 0;
-                    if (op.equals(">=")) return left.compareTo(right) >= 0;
-                    if (op.equals("<=")) return left.compareTo(right) <= 0;
+                    if (op.equals(">")) { return a > b; }
+                    if (op.equals("<")) { return a < b; } 
+                    if (op.equals(">=")) { return a >= b; }
+                    if (op.equals("<=")) { return a <= b; }
+                    if (op.equals("==")) { return a.doubleValue() == b.doubleValue(); }
+                    if (op.equals("!=")) { return a.doubleValue() != b.doubleValue(); }
+                } 
+                else {
+                    if (op.equals("==")) { return left.equals(right); }
+                    if (op.equals("!=")) { return !left.equals(right); }
                 }
             }
         }
