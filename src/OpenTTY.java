@@ -543,12 +543,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //main.put("variables", vars);
 
         Vector source = (Vector) main.get("source");
-        int result = run(source, main, root, program);
+        String result = run(source, main, root, program);
 
-        return result == -999 ? 0 : result;
+        return result == "0" ? 0 : Integer.valueOf(result);
     }
 
-    private int run(Vector source, Hashtable context, boolean root, Hashtable program) {
+    private String run(Vector source, Hashtable context, boolean root, Hashtable program) {
         Hashtable vars = (Hashtable) context.get("variables");
 
         for (int i = 0; i < source.size(); i++) {
@@ -580,7 +580,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else {
                     return value;
                 }
-                            }
+            }
 
             else if (type.equals("if")) {
                 String expr = substValues((String) cmd.get("expr"), vars);
