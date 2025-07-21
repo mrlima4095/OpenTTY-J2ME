@@ -705,7 +705,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
+    private String replaceVarOnly(String expr, String name, String value) {
+        StringBuffer out = new StringBuffer();
+        int i = 0;
+        while (i < expr.length()) {
+            if ((i == 0 || !isVarChar(expr.charAt(i - 1))) &&
+                expr.startsWith(name, i) &&
+                (i + name.length() == expr.length() || !isVarChar(expr.charAt(i + name.length())))) {
+                out.append(value);
+                i += name.length();
+            } else {
+                out.append(expr.charAt(i));
+                i++;
+            }
+        }
+        return out.toString();
+    }
 
+    private boolean isVarChar(char c) {
+        return (c >= 'a' && c <= 'z') ||
+               (c >= 'A' && c <= 'Z') ||
+               (c >= '0' && c <= '9') ||
+               c == '_';
+    }
     private int findMatchingParen(String expr, int open) {
         int depth = 0;
         for (int i = open; i < expr.length(); i++) {
