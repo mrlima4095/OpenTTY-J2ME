@@ -553,7 +553,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0;
     } 
-    private String run(Vector source, Hashtable context, boolean root, Hashtable program, int mode) throw RuntimeException {
+    private String run(Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException {
         Hashtable vars = (Hashtable) context.get("variables");
 
         for (int i = 0; i < source.size(); i++) {
