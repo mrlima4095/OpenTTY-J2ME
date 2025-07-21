@@ -566,7 +566,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int start = findFunctionStart(source);
             if (start == -1) break;
 
-            // Tipo + nome + parâmetros
             int p1 = source.indexOf("(", start);
             int p2 = source.indexOf(")", p1);
             int b1 = source.indexOf("{", p2);
@@ -575,17 +574,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String params = extractBetween(source.substring(p1, p2 + 1), '(', ')');
             String block = getBlock(source.substring(b1));
 
-            // Verifica se o bloco está completo
             if (block == null) { echoCommand("build: incomplete function '" + name + "'"); return null; }
 
-            // Remove a função da source
             source = source.substring(b1 + block.length()).trim();
 
-            // Cria função
             Hashtable fn = new Hashtable();
             fn.put("type", type);
 
-            // Lê os parâmetros
             Vector reads = new Vector();
             if (!params.equals("")) {
                 String[] paramList = split(params, ',');
@@ -620,7 +615,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
             Hashtable cmd = new Hashtable();
-            echoCommand(i + ". " + line);
 
             if (line.equals("")) { }
             else if (line.startsWith("printf") || line.startsWith("exec")) {
@@ -700,7 +694,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     cmd.put("name", varName);
                     cmd.put("instance", varType);
                     cmd.put("value", varValue);
-                }
+
+                    source.addElement(cmd);
+                } continue;
             }
             else if (line.indexOf('=') != -1) {
                 String[] parts = split(line, '=');
@@ -710,7 +706,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
-                    cmd.put("instance", "");
+                    cmd.put("instance", null);
                     cmd.put("value", value);
                 } 
                 else { echoCommand("build: invalid value for '" + parts[0].trim() + "'"); return null; }
@@ -740,7 +736,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         return "";
     }
-    private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); } return result; }
+    private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); /*if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); }*/ return result; }
     private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
     private String[] splitBlock(String code, char separator) {
         Vector parts = new Vector();
