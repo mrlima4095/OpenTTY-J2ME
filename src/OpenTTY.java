@@ -602,7 +602,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String ret = run((Vector) cmd.get("source"), context, root);
                     if (!ret.equals("+continue") || !ret.equals("' '") || !type.equals("0")) break;
                     else { 
-                type = (String) context.get("type"), value = substValues((String) cmd.get("value"), vars);
+                String type = (String) context.get("type"), value = substValues((String) cmd.get("value"), vars);
                 if (type.equals("int")) {
                     String expr = exprCommand(value);
                     
