@@ -613,7 +613,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Hashtable newVars = new Hashtable();
                 Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
 
-                String[] argList = split(args, ',');
+                String[] argList = args.equals("") ? new String[0] : split(args, ',');
 
                 if (reads != null && reads.size() != argList.length) { throw new RuntimeException("C2ME: missing args for " + name); }
                 for (int j = 0; reads != null && j < reads.size(); j++) {
