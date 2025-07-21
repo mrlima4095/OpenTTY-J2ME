@@ -629,7 +629,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (reads != null && reads.size() != argList.length) {
                     echoCommand("run: missing args for " + name);
-                    return 1;
+                    return "1";
                 }
 
                 for (int j = 0; reads != null && j < reads.size(); j++) {
