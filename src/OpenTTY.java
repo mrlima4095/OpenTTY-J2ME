@@ -618,7 +618,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("call")) {
                 call((String) cmd.get("function") + "(" + substValues((cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root);
             }
-
         }
 
         return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null;
@@ -637,7 +636,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
         String[] argList = argsBlock.equals("") ? new String[0] : split(argsBlock, ',');
 
-        if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("invalid number of arguments for " + fname); }
+        if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); }
 
         for (int j = 0; reads != null && j < reads.size(); j++) {
             Hashtable a = (Hashtable) reads.elementAt(j);
