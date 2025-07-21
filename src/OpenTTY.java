@@ -531,6 +531,149 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
     // C Programming
+    private int C2ME(String code, boolean root) {
+        Hashtable program = build(code);
+        if (program == null) return 1;
+
+        Hashtable main = (Hashtable) program.get("main");
+        if (main == null) {
+            echoCommand("C2ME: missing main()");
+            return 1;
+        }
+
+        Hashtable vars = new Hashtable();
+        main.put("variables", vars);
+
+        Vector source = (Vector) main.get("source");
+        int result = run(source, main, root);
+
+        return result == -999 ? 0 : result;
+    }
+
+    private int run(Vector source, Hashtable context, boolean root, Hashtable program) {
+        Hashtable vars = (Hashtable) context.get("variables");
+
+        for (int i = 0; i < source.size(); i++) {
+            Hashtable cmd = (Hashtable) source.elementAt(i);
+            String type = (String) cmd.get("type");
+
+            if (type.equals("printf")) {
+                String msg = substValues((String) cmd.get("value"), vars);
+                echoCommand(msg);
+            }
+
+            else if (type.equals("exec")) {
+                String arg = substValues((String) cmd.get("value"), vars);
+                processCommand(arg, true, root);
+            }
+
+            else if (type.equals("assign")) {
+                String name = (String) cmd.get("name");
+                String value = substValues((String) cmd.get("value"), vars);
+                vars.put(name, value);
+            }
+
+            else if (type.equals("return")) {
+                String value = substValues((String) cmd.get("value"), vars);
+                try { return Integer.parseInt(value); } catch (Exception e) { return 0; }
+            }
+
+            else if (type.equals("if")) {
+                String expr = substValues((String) cmd.get("expr"), vars);
+                if (exprCommand(expr) != 0) {
+                    int ret = run((Vector) cmd.get("source"), context, root);
+                    if (ret != -999) return ret;
+                } else if (cmd.containsKey("else")) {
+                    int ret = run((Vector) cmd.get("else"), context, root);
+                    if (ret != -999) return ret;
+                }
+            }
+
+            else if (type.equals("while")) {
+                String expr = (String) cmd.get("expr");
+                while (exprCommand(substValues(expr, vars)) != 0) {
+                    int ret = run((Vector) cmd.get("source"), context, root);
+                    if (ret == -888) continue;
+                    if (ret != -999) return ret;
+                }
+            }
+
+            else if (type.equals("continue")) {
+                return -888; // usado internamente para loop continuar
+            }
+
+            else if (type.equals("call")) {
+                String name = (String) cmd.get("function");
+                String args = (String) cmd.get("args");
+
+                Hashtable fn = getFunction(name); // criamos depois
+                if (fn == null) {
+                    echoCommand("run: unknown function: " + name);
+                    return 1;
+                }
+
+                Hashtable newVars = new Hashtable();
+                Vector reads = (Vector) fn.get("read");
+
+                String[] argList = split(args, ',');
+
+                if (reads != null && reads.size() != argList.length) {
+                    echoCommand("run: missing args for " + name);
+                    return 1;
+                }
+
+                for (int j = 0; reads != null && j < reads.size(); j++) {
+                    Hashtable a = (Hashtable) reads.elementAt(j);
+                    String val = substValues(argList[j].trim(), vars);
+                    newVars.put((String) a.get("name"), val);
+                }
+
+                Hashtable newContext = new Hashtable();
+                newContext.put("variables", newVars);
+                newContext.put("read", reads);
+                newContext.put("type", fn.get("type"));
+                newContext.put("source", fn.get("source"));
+
+                int ret = run((Vector) fn.get("source"), newContext, root);
+                vars.put(name, String.valueOf(ret)); // opcional armazenar retorno
+            }
+        }
+
+        return -999; // nenhum return chamado
+    }
+
+    private String substValues(String expr, Hashtable vars) {
+        if (expr == null) return "";
+
+        // Substitui %variavel dentro de strings
+        int pct = expr.indexOf('%');
+        while (pct != -1) {
+            int end = pct + 1;
+            while (end < expr.length() && Character.isLetterOrDigit(expr.charAt(end))) end++;
+            String var = expr.substring(pct + 1, end);
+            String val = (String) vars.get(var);
+            if (val == null) val = "";
+            expr = expr.substring(0, pct) + val + expr.substring(end);
+            pct = expr.indexOf('%');
+        }
+
+        // Se for uma variável inteira ou expressão simples
+        if (vars.containsKey(expr)) return (String) vars.get(expr);
+
+        try {
+            return String.valueOf(exprCommand(expr));
+        } catch (Exception e) {
+            return expr;
+        }
+    }
+    private Hashtable getFunction(String name, Hashtable program) {
+        Hashtable functions = (Hashtable) program.get("functions");
+        if (functions.containsKey(name)) {
+            return (Hashtable) functions.get(name);
+        }
+        return null;
+    }
+
     private Hashtable build(String source) {
         Hashtable program = new Hashtable();
         source = removeComments(source).trim();
