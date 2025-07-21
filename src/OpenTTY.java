@@ -616,10 +616,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return ret;
     }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
-        if (expr == null) { return ""; }
+        if (expr == null || expr.length() == 0) { return ""; }
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
+
+            if (value.equals("' '")) { value = ""; }
 
             if (expr.startsWith("\"") && expr.endsWith("\"")) { expr = replace(expr, "%" + name, value); } 
             else { expr = replaceVarOnly(expr, name, value); }
@@ -743,10 +745,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String k = (String) e.nextElement();
                     if (functions.containsKey(k)) { } else { functions.put(k, importedFunctions.get(k)); }
                 }
-            } else {
-                echoCommand("build: invalid include format: " + line);
-                return null;
-            }
+            } else { echoCommand("build: invalid include format: " + line); return null; }
         }
 
         while (true) {
@@ -866,8 +865,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String name = line.substring(0, line.indexOf('(')).trim(), arg = extractBetween(line, '(', ')');
                 cmd.put("type", "call"); cmd.put("function", name); cmd.put("args", arg);
             }
-            else if (startsWithAny(line, new String[]{"int ", "char "})) {
-                String varType = line.startsWith("int ") ? "int" : "char";
+            else if (startsWithAny(line, new String[]{"int ", "char ", "float ", "double "})) {
+                String varType = line.startsWith("char ") ? "char" : "int";
                 String decls = line.substring(varType.length()).trim();
 
                 String[] vars = split(decls, ',');
@@ -893,6 +892,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     source.addElement(cmd);
                 } continue;
             }
+            else if (line.startsWith("void ")) { echoCommand("build: variable invalid type 'void'"); return null; }
             else if (line.indexOf('=') != -1) {
                 String[] parts = split(line, '=');
                 if (parts.length == 2) {
