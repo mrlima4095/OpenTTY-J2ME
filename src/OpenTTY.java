@@ -538,20 +538,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         Hashtable main = (Hashtable) program.get("main");
         if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
-        if (!((String) main.get("type")).equals("int")) {
-            echoCommand("C2ME: main() need to be int function");
-            return 2;
-        }
-
-        Vector source = (Vector) main.get("source");
-        try {
-            String result = run(source, main, root, program, 0);
-            
-            return Integer.valueOf(result);
-        }
-        catch (Exception e) { echoCommand(getCatch(e)); return 1; }
-        
-        
+        if (((String) main.get("type")).equals("int")){
+            Vector source = (Vector) main.get("source");
+            try {
+                String result = run(source, main, root, program, 0);
+                
+                return Integer.valueOf(result);
+            }
+            catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); return 1; }
+        } 
+        else { echoCommand("C2ME: main() need to be int function"); return 2; }
     } 
     private String run(Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException {
         Hashtable vars = (Hashtable) context.get("variables");
@@ -562,7 +558,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (type.equals("printf")) { echoCommand(substValues((String) cmd.get("value"), vars)); }
             else if (type.equals("exec")) { processCommand(substValues((String) cmd.get("value"), vars), true, root); }
-
             else if (type.equals("assign")) {
                 String name = (String) cmd.get("name");
                 String value = substValues((String) cmd.get("value"), vars);
@@ -571,43 +566,43 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             else if (type.equals("return")) {
                 type = (String) context.get("type"); String value = substValues((String) cmd.get("value"), vars);
+
                 if (type.equals("int")) {
                     String expr = exprCommand(value);
                     
-                    if (expr.startsWith("expr: ")) {
-                        throw new RuntimeException("C2ME: invalid return value");
-                    } else { return expr; }
+                    if (expr.startsWith("expr: ")) { throw new RuntimeException("invalid return value"); } 
+                    else { return expr; }
                     
                 } else { return value; }
             }
  
             else if (type.equals("if")) {
-                String expr = substValues((String) cmd.get("expr"), vars);
-                if (!exprCommand(expr).equals("0")) {
-                    String ret = run((Vector) cmd.get("source"), context, root, program, 1);
-                    
-                } else if (cmd.containsKey("else")) {
-                    String ret = run((Vector) cmd.get("else"), context, root, program, 1);
-                    
-                }
+                String expr = substValues((String) cmd.get("expr"), vars), ret = null;
+                if (eval(expr)) { ret = run((Vector) cmd.get("source"), context, root, program, 1); } 
+                else if (cmd.containsKey("else")) { ret = run((Vector) cmd.get("else"), context, root, program, 1); }
+
+                if (ret == null) { continue; }
+                else { return ret; }
             }
 
             else if (type.equals("while")) {
                 String expr = (String) cmd.get("expr");
                 while (!exprCommand(substValues(expr, vars)).equals("0")) {
                     String ret = run((Vector) cmd.get("source"), context, root, program, 2);
+
                     if (ret == null) { break; }
-                    else if (!ret.equals("+continue")) { continue; }
+                    else if (!ret.equals("+[continue]")) { continue; }
                     else { return ret; }
 
                 }
             }
 
             else if (type.equals("continue") || type.equals("break")) {
-                if (mode != 2) { throw new RuntimeException("C2ME: not in a loop"); }
-                
-                else if (type.equals("break")) { return null; }
-                else { return "+continue"; }
+                if (mode == 2) {
+                    else if (type.equals("break")) { return null; }
+                    else { return "+[continue]"; }
+                }
+                else { throw new RuntimeException("C2ME: not in a loop"); }
             }
 
             else if (type.equals("call")) {
@@ -615,20 +610,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String args = (String) cmd.get("args");
 
                 Hashtable fn = getFunction(name, program);
-                if (fn == null) {
-                    echoCommand("run: unknown function: " + name);
-                    return "1";
-                }
-
+                if (fn == null) { throw new RuntimeException("C2ME: function '" + name + "' not found"); }
                 Hashtable newVars = new Hashtable();
                 Vector reads = (Vector) fn.get("read");
 
                 String[] argList = split(args, ',');
 
-                if (reads != null && reads.size() != argList.length) {
-                    echoCommand("run: missing args for " + name);
-                    return "1";
-                }
+                if (reads != null && reads.size() != argList.length) { throw new RuntimeException("C2ME: missing args for " + name); }
                 for (int j = 0; reads != null && j < reads.size(); j++) {
                     Hashtable a = (Hashtable) reads.elementAt(j);
                     String val = substValues(argList[j].trim(), vars);
@@ -642,48 +630,61 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 newContext.put("source", fn.get("source"));
 
                 String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
-                //vars.put(name, String.valueOf(ret)); // opcional armazenar retorno
             }
         }
 
-        return mode == 0 ? threturn((String) context.get("type")) : null;
+        return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 2 ? "+[continue]" : null;
     }
-    private String threturn(String type) {
-        return type.equals("char") ? "' '" : "0";
-    }
-private String substValues(String expr, Hashtable vars) {
-    if (expr == null) return "";
+    private String substValues(String expr, Hashtable vars) {
+        if (expr == null) return "";
 
-    // Substituições baseadas em tipo de valor
-    for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
-        String name = (String) e.nextElement();
-        String value = (String) vars.get(name);
-
-        if (value.startsWith("\"") && value.endsWith("\"")) {
-            // Remove aspas para substituição de %variavel
-            String clean = value.substring(1, value.length() - 1);
-            expr = replace(expr, "%" + name, clean);
-        } else {
-            expr = replace(expr, name, value);
+        for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
+            String name = (String) e.nextElement(), value = (String) vars.get(name);
+            
+            expr = replace(expr, value.startsWith("\"") && value.endsWith("\"") ? "%" + name : name, value);
         }
+
+        if (expr.startsWith("\"") && expr.endsWith("\"")) { return expr.substring(1, expr.length() - 1); }
+
+        String result = exprCommand(expr);
+        return result.startsWith("expr: ") ? expr : result
     }
+    private boolean eval(String expr) {
+        String[] ops = {">=", "<=", "==", "!=", ">", "<"};
 
-    // Se ainda for string (entre aspas), retorna ela limpa
-    if (expr.startsWith("\"") && expr.endsWith("\"")) {
-        return expr.substring(1, expr.length() - 1);
+        for (int i = 0; i < ops.length; i++) {
+            String op = ops[i];
+            int idx = expr.indexOf(op);
+
+            if (idx != -1) {
+                String left = expr.substring(0, idx).trim();
+                String right = expr.substring(idx + op.length()).trim();
+
+                Double a = getNumber(left);
+                Double b = getNumber(right);
+
+                if (a != null && b != null) {
+                    if (op.equals(">")) return a > b;
+                    if (op.equals("<")) return a < b;
+                    if (op.equals(">=")) return a >= b;
+                    if (op.equals("<=")) return a <= b;
+                    if (op.equals("==")) return a.doubleValue() == b.doubleValue();
+                    if (op.equals("!=")) return a.doubleValue() != b.doubleValue();
+                } else {
+                    if (op.equals("==")) return left.equals(right);
+                    if (op.equals("!=")) return !left.equals(right);
+                    if (op.equals(">")) return left.compareTo(right) > 0;
+                    if (op.equals("<")) return left.compareTo(right) < 0;
+                    if (op.equals(">=")) return left.compareTo(right) >= 0;
+                    if (op.equals("<=")) return left.compareTo(right) <= 0;
+                }
+            }
+        }
+
+        expr = expr.trim();
+        if (expr.equals("0") || expr.equals("' '") || expr.equals("")) return false;
+        return true;
     }
-
-    // Tenta resolver como expressão numérica
-    String result = exprCommand(expr);
-    if (result.startsWith("expr: ")) {
-        return expr; // expressão inválida
-    } else {
-        return result;
-    }
-}
-
-    
-
     private Hashtable getFunction(String name, Hashtable program) {
         Hashtable functions = (Hashtable) program.get("functions");
         if (functions.containsKey(name)) {
