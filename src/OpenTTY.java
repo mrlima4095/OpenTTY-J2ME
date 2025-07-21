@@ -536,16 +536,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (program == null) return 1;
 
         Hashtable main = (Hashtable) program.get("main");
-        if (main == null) {
-            echoCommand("C2ME: missing main()");
-            return 1;
-        }
+        if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
 
-        Hashtable vars = new Hashtable();
-        main.put("variables", vars);
+        //Hashtable vars = new Hashtable();
+        //main.put("variables", vars);
 
         Vector source = (Vector) main.get("source");
-        int result = run(source, main, root);
+        int result = run(source, main, root, program);
 
         return result == -999 ? 0 : result;
     }
@@ -606,7 +603,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String name = (String) cmd.get("function");
                 String args = (String) cmd.get("args");
 
-                Hashtable fn = getFunction(name); // criamos depois
+                Hashtable fn = getFunction(name, program);
                 if (fn == null) {
                     echoCommand("run: unknown function: " + name);
                     return 1;
@@ -661,10 +658,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (vars.containsKey(expr)) return (String) vars.get(expr);
 
         try {
-            return String.valueOf(exprCommand(expr));
+            return exprCommand(expr);
         } catch (Exception e) {
             return expr;
         }
+        //if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); }
     }
     private Hashtable getFunction(String name, Hashtable program) {
         Hashtable functions = (Hashtable) program.get("functions");
