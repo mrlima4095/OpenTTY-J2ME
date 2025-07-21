@@ -575,6 +575,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                     if (expr.startsWith("expr: ")) {
                         echoCommand("C2ME: invalid return value");
+                        return 2;
                     } else { return expr; }
                     
                 } else {
