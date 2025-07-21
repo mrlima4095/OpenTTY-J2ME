@@ -556,7 +556,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable cmd = (Hashtable) source.elementAt(i);
             String type = (String) cmd.get("type");
 
-            if (type.equals("printf")) { echoCommand(substValues(, vars)); }
+            if (type.equals("printf")) { echoCommand(substValues((String) cmd.get("value"), vars)); }
             else if (type.equals("exec")) { processCommand(substValues((String) cmd.get("value"), vars), true, root); }
             else if (type.equals("assign")) {
                 String name = (String) cmd.get("name"), value = substValues((String) cmd.get("value"), vars), instance = (String) cmd.get("instance");
