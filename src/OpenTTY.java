@@ -610,7 +610,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (args == null) args = "";
 
                 Hashtable fn = getFunction(name, program);
-                if (fn == null) { throw new RuntimeException("C2ME: function '" + name + "' not found"); }
+                if (fn == null) {
+                    throw new RuntimeException("C2ME: function '" + name + "' not found");
+                }
 
                 Hashtable newVars = new Hashtable();
                 Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
@@ -620,22 +622,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (reads != null && reads.size() != argList.length) {
                     throw new RuntimeException("C2ME: missing args for " + name);
                 }
+
                 for (int j = 0; reads != null && j < reads.size(); j++) {
                     Hashtable a = (Hashtable) reads.elementAt(j);
-                    String val = substValues(argList[j].trim(), vars);
-                    newVars.put((String) a.get("name"), val);
+                    String argName = (String) a.get("name");
+                    String argType = (String) a.get("type");
+
+                    String rawValue = substValues(argList[j].trim(), vars);
+
+                    if (argType.equals("char")) { newVars.put(argName, rawValue); }
+                    else {
+                        String eval = exprCommand(rawValue);
+                        if (eval.startsWith("expr: ")) {
+                            throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
+                        } 
+                        else { newVars.put(argName, eval);  }
+                    }
                 }
 
                 Hashtable newContext = new Hashtable();
                 newContext.put("variables", newVars);
-                newContext.put("read", reads);
                 newContext.put("type", fn.get("type"));
                 newContext.put("source", fn.get("source"));
 
                 String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
-
-                String args = (String) cmd.get("args");
-
             }
         }
 
@@ -647,7 +657,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) vars.get(name);
             
-            expr = replace(expr, value.startsWith("\"") && value.endsWith("\"") ? "%" + name : name, value);
+            expr = replace(expr, expr.startsWith("\"") && expr.endsWith("\"") ? "%" + name : name, value);
         }
 
         if (expr.startsWith("\"") && expr.endsWith("\"")) { return expr.substring(1, expr.length() - 1); }
@@ -847,8 +857,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (line.equals("break")) { cmd.put("type", "break"); }
             else if (line.equals("continue")) { cmd.put("type", "continue"); }
             else if (isIsolatedFunctionCall(line)) {
-                String name = line.substring(0, line.indexOf('(')).trim();
-                String arg = extractBetween(line, '(', ')');
+                String name = line.substring(0, line.indexOf('(')).trim(), arg = extractBetween(line, '(', ')');
                 cmd.put("type", "call");
                 cmd.put("function", name);
                 cmd.put("args", arg);
@@ -903,7 +912,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
     private String extractParens(String code, int from) { int start = code.indexOf('(', from); if (start == -1) { return ""; } int depth = 0; for (int i = start; i < code.length(); i++) { char c = code.charAt(i); if (c == '(') { depth++; } else if (c == ')') { depth--; } if (depth == 0) { return code.substring(start + 1, i).trim(); } } return ""; }
-    private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); /*if (result.startsWith("\"") && result.endsWith("\"")) { result = result.substring(1, result.length() - 1); }*/ return result; }
+    private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); return result; }
     private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
     private String[] splitBlock(String code, char separator) {
         Vector parts = new Vector();
