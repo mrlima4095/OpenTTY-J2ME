@@ -607,7 +607,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return program;
     }
-    
     private Vector parseBlock(String block, Hashtable context) {
         Vector source = new Vector();
         String[] lines = splitBlock(block, ';');
@@ -658,29 +657,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int lineIndexInBlock = block.indexOf(line);
                 if (lineIndexInBlock == -1) { echoCommand("build: unable to find '" + line + "' in block"); return null; }
 
-                int braceIndex = -1; 
-                for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
-
-                if (braceIndex == -1) { echoCommand("build: missing '{' after '" + type + "'"); return null; }
-
-                String remaining = block.substring(braceIndex);
-                String subblock = getBlock(remaining);
-                if (subblock == null) { echoCommand("build: missing block for '" + type + "'"); return null; }
-
-                cmd.put("type", type);
-                cmd.put("expr", extractParens(line, 0));
-
-                int elseIndex = block.indexOf("else", braceIndex + subblock.length());
-                if (elseIndex != -1) {
-                    int elseBrace = block.indexOf("{", elseIndex);
-                    if (elseBrace != -1) {
-                        String elseSub = getBlock(block.substring(elseBrace));
-                        if (elseSub != null) {
-                            cmd.put("else", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context));
-                        }
+                int braceIndex = -1;
+                for (int j = lineIndexInBlock; j < block.length(); j++) {
+                    if (block.charAt(j) == '{') {
+                        braceIndex = j;
+                        break;
                     }
                 }
 
+                if (braceIndex == -1) { echoCommand("build: missing '{' after 'while'"); return null; }
+
+                String remaining = block.substring(braceIndex);
+                String subblock = getBlock(remaining);
+                if (subblock == null) { echoCommand("build: missing block for 'while'"); return null; }
+
+                cmd.put("type", "while");
+                cmd.put("expr", extractParens(line, 0));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
             }
             else if (line.startsWith("else")) { echoCommand("build: invalid token 'else'"); return null; }
@@ -727,7 +719,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
-                    cmd.put("instance", null);
+                    cmd.put("instance",  null);
                     cmd.put("value", value);
                 } 
                 else { echoCommand("build: invalid value for '" + parts[0].trim() + "'"); return null; }
@@ -761,7 +753,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        // adiciona o restante
         if (start < code.length()) {
             parts.addElement(code.substring(start).trim());
         }
