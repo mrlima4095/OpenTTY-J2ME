@@ -538,14 +538,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         Hashtable main = (Hashtable) program.get("main");
         if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
-
+        if (!((String) main.get("type")).equals("int")) {
+            echoCommand("C2ME: main() need to be int function");
+            return 2;
+        }
         //Hashtable vars = new Hashtable();
         //main.put("variables", vars);
 
         Vector source = (Vector) main.get("source");
         String result = run(source, main, root, program);
+        if (result == null) { return 1; }
+        else {
+            try { return Integer.valueOf(result); }
+            catch (Exception e) { echoCommand(getCatch(e)); }
+        }
 
-        return result == "0" ? 0 : Integer.valueOf(result);
+        return 0;
     }
 
     private String run(Vector source, Hashtable context, boolean root, Hashtable program) {
@@ -555,12 +563,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable cmd = (Hashtable) source.elementAt(i);
             String type = (String) cmd.get("type");
 
-            if (type.equals("printf")) {
-                echoCommand(substValues((String) cmd.get("value"), vars));
-            }
-            else if (type.equals("exec")) {
-                processCommand(substValues((String) cmd.get("value"), vars), true, root);
-            }
+            if (type.equals("printf")) { echoCommand(substValues((String) cmd.get("value"), vars)); }
+            else if (type.equals("exec")) { processCommand(substValues((String) cmd.get("value"), vars), true, root); }
 
             else if (type.equals("assign")) {
                 String name = (String) cmd.get("name");
@@ -569,18 +573,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             else if (type.equals("return")) {
-                String type = (String) context.get("type"), value = substValues((String) cmd.get("value"), vars);
+                type = (String) context.get("type"), value = substValues((String) cmd.get("value"), vars);
                 if (type.equals("int")) {
                     String expr = exprCommand(value);
                     
                     if (expr.startsWith("expr: ")) {
                         echoCommand("C2ME: invalid return value");
-                        return 2;
+                        return null;
                     } else { return expr; }
                     
-                } else {
-                    return value;
-                }
+                } else { return value; }
             }
 
             else if (type.equals("if")) {
