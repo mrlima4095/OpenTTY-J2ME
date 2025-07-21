@@ -580,7 +580,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                 } else { return value; }
             }
-
+ 
             else if (type.equals("if")) {
                 String expr = substValues((String) cmd.get("expr"), vars);
                 if (!exprCommand(expr).equals("0")) {
