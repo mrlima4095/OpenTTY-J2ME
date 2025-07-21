@@ -588,11 +588,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("if")) {
                 String expr = substValues((String) cmd.get("expr"), vars);
                 if (exprCommand(expr) != 0) {
-                    int ret = run((Vector) cmd.get("source"), context, root);
-                    if (ret != -999) return ret;
+                    String ret = run((Vector) cmd.get("source"), context, root);
+                    
                 } else if (cmd.containsKey("else")) {
-                    int ret = run((Vector) cmd.get("else"), context, root);
-                    if (ret != -999) return ret;
+                    String ret = run((Vector) cmd.get("else"), context, root);
+                    
                 }
             }
 
