@@ -667,6 +667,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (expr.startsWith("\"") && expr.endsWith("\"")) { return expr.substring(1, expr.length() - 1); }
 
+        if (expr.indexOf('(') != -1 && expr.endsWith(")")) {
+            String result = call(expr, vars, program, false);
+            return result;
+        }
+
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
