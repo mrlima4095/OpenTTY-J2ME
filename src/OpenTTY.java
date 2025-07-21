@@ -616,47 +616,61 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { throw new RuntimeException("not in a loop"); }
             }
             else if (type.equals("call")) {
-                String name = (String) cmd.get("function"), args = (String) cmd.get("args");
-                if (args == null) args = "";
+                String name = (String) cmd.get("function"), args = cmd.containsKey("args") ? (String) cmd.get("args") : "";
 
-                Hashtable fn = getFunction(name, program);
-                if (fn == null) { throw new RuntimeException("function '" + name + "' not found"); }
-
-                Hashtable newVars = new Hashtable();
-                Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
-
-                String[] argList = args.equals("") ? new String[0] : split(args, ',');
-
-                if (reads != null && reads.size() != argList.length) { throw new RuntimeException("missing args for " + name); }
-
-                for (int j = 0; reads != null && j < reads.size(); j++) {
-                    Hashtable a = (Hashtable) reads.elementAt(j);
-                    String argName = (String) a.get("name"), argType = (String) a.get("type"), value = substValues(argList[j].trim(), vars);
-
-                    if (argType.equals("int")) {
-                        value = exprCommand(value);
-                        if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'"); }
-                    }
-
-                    Hashtable local = new Hashtable();
-                    local.put("value", value);
-                    local.put("instance", argType);
-                    newVars.put(argName, local);
-                }
-
-                Hashtable newContext = new Hashtable();
-                newContext.put("variables", newVars);
-                newContext.put("type", fn.get("type"));
-                newContext.put("source", fn.get("source"));
-
-                String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
+                call(name + "(" + args + ")", vars, program, root);
             }
 
         }
 
         return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 2 ? "+[continue]" : null;
     }
-    private String substValues(String expr, Hashtable vars) {
+    private String call(String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
+        int parIndex = code.indexOf('(');
+        if (parIndex == -1 || !code.endsWith(")")) { return code; }
+
+        String fname = code.substring(0, parIndex).trim();
+        String argsBlock = code.substring(parIndex + 1, code.length() - 1);
+
+        Hashtable fn = getFunction(fname, program);
+        if (fn == null) { throw new RuntimeException("function '" + name + "' not found"); }
+
+        Hashtable newVars = new Hashtable();
+        Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
+        String[] argList = argsBlock.equals("") ? new String[0] : split(argsBlock, ',');
+
+        if (reads != null && reads.size() != argList.length) { throw new RuntimeException("missing args for " + fname); }
+
+        for (int j = 0; reads != null && j < reads.size(); j++) {
+            Hashtable a = (Hashtable) reads.elementAt(j);
+            String argName = (String) a.get("name"), argType = (String) a.get("type");
+
+            String raw = argList[j].trim();
+            String value = substValues(raw, vars);
+
+            if (argType.equals("int")) {
+                value = exprCommand(value);
+                if (value.startsWith("expr: ")) {
+                    throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
+                }
+            }
+
+            Hashtable local = new Hashtable();
+            local.put("value", value);
+            local.put("instance", argType);
+            newVars.put(argName, local);
+        }
+
+        Hashtable newContext = new Hashtable();
+        newContext.put("variables", newVars);
+        newContext.put("type", fn.get("type"));
+        newContext.put("source", fn.get("source"));
+
+        String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
+        return ret;
+    }
+
+    private String substValues(String expr, Hashtable vars) throws RuntimeException {
         if (expr == null) return "";
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
@@ -934,6 +948,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         parts.copyInto(result);
         return result;
     }
+    private boolean isFuncChar(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; }
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) return true; } return false; }
     private int findFunctionStart(String code) { String[] types = { "int", "char" }; for (int i = 0; i < code.length(); i++) { for (int t = 0; t < types.length; t++) { String type = types[t]; if (code.startsWith(type + " ", i)) { int nameStart = i + type.length() + 1; int p1 = code.indexOf('(', nameStart); if (p1 == -1) { continue; } int p2 = code.indexOf(')', p1); if (p2 == -1) { continue; } int brace = code.indexOf('{', p2); if (brace == -1) { continue; } String maybeName = code.substring(nameStart, p1).trim(); if (maybeName.indexOf(' ') != -1) { continue; } String beforeBrace = code.substring(p2 + 1, brace).trim(); if (beforeBrace.length() > 0) { continue; } return i; } } } return -1; }
     private boolean isIsolatedFunctionCall(String line) { line = line.trim(); int p1 = line.indexOf('('), p2 = line.lastIndexOf(')'); if (p1 == -1 || p2 == -1 || p2 <= p1) { return false; } if (line.indexOf('=') != -1) { return false; } String before = line.substring(0, p1).trim(); if (before.indexOf(' ') != -1) { return false; } if (startsWithAny(line, new String[]{"int ", "char "})) { return false; } return true; }
