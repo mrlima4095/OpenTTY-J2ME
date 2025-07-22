@@ -668,7 +668,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int i = open - 1;
             while (i >= 0) {
                 char c = expr.charAt(i);
-                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')) break;
+                if (!isFuncChar(c)) break;
                 i--;
             }
 
