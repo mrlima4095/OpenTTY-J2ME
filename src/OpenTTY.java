@@ -283,7 +283,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
-        else if (mainCommand.equals("c")) { viewer(basename(argument), renderJSON(build(getcontent(argument)), 0)); }
+        else if (mainCommand.equals("c")) { echoCommand(renderJSON(build(getcontent(argument)), 0)); }
         else if (mainCommand.equals("build")) { if (argument.equals("")) { return 2; } else { return C2ME(argument, root); } }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
         
@@ -583,7 +583,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         Hashtable newVars = new Hashtable();
         Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
-        String[] argList = argsBlock.equals("") ? new String[0] : split(argsBlock, ',');
+        String[] argList = argsBlock.equals("") ? new String[0] : splitBlock(argsBlock, ',');
 
         if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); }
 
@@ -596,7 +596,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (value == null || value.length() == 0 || value.equals(" ")) {
                 value = argType.equals("char")? "' '" : "0";
-            } else if (argType.equals("int")) {
+            } 
+            if (argType.equals("int")) {
                 value = exprCommand(value);
                 if (value.startsWith("expr: ")) {
                     throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
