@@ -569,7 +569,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null;
+        return mode == 0 ? (((String) context.get("type")).equals("char") ? "\"\"" : "0") : mode == 1 ? "+[continue]" : null;
     }
     private String call(String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         int parIndex = code.indexOf('(');
