@@ -523,7 +523,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); } 
                 } 
 
-                local.put("value", value == null || value.length() == 0 ? "" : value); local.put("instance", instance);
+                local.put("value", value == null || value.length() == 0 ? "' '" : value); local.put("instance", instance);
                 vars.put(name, local);
             }
 
@@ -569,7 +569,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        return mode == 0 ? (((String) context.get("type")).equals("char") ? "\" \"" : "0") : mode == 1 ? "+[continue]" : null;
+        return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null;
     }
     private String call(String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         int parIndex = code.indexOf('(');
@@ -616,60 +616,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
 
-        // Caso seja string literal pura (ex: "Olá")
-        if (expr.startsWith("\"") && expr.endsWith("\"") && expr.indexOf("\",") == -1) {
-            return expr.substring(1, expr.length() - 1);
+        for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
+            String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
+
+            value = value == null || value.length() == 0 ? "" : value.equals("' '") ? " " : value
+
+            if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { expr = replace(expr, "%" + name, value); } 
+            else { expr = replaceVarOnly(expr, name, value); }
         }
 
-        // Formato estilo C: "%d %s", var1, var2...
-        if (expr.startsWith("\"") && expr.indexOf("\",") != -1) {
-            int sepIndex = expr.indexOf("\",");
-            String format = expr.substring(1, sepIndex); // remove a aspa inicial
-            String argsPart = expr.substring(sepIndex + 2).trim(); // parte dos argumentos
+        if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return expr.substring(1, expr.length() - 1); }
 
-            String[] args = splitBlock(argsPart, ',');
-            for (int k = 0; k < args.length; k++) {
-                String arg = args[k].trim();
-                if (arg == null || arg.equals("") || arg.equals("\" \"")) arg = "";
-                args[k] = substValues(arg, vars, program, root);
-            }
-
-            StringBuffer sb = new StringBuffer();
-            int idx = 0;
-            for (int i = 0; i < format.length(); i++) {
-                char c = format.charAt(i);
-                if (c == '%' && i + 1 < format.length()) {
-                    char t = format.charAt(i + 1);
-                    if (t == 'd' || t == 's' || t == 'f' || t == 'c') {
-                        if (idx >= args.length) {
-                            throw new RuntimeException("substValues: missing argument for '%" + t + "' in format: \"" + format + "\"");
-                        }
-                        sb.append(args[idx]);
-                        idx++;
-                        i++; // pula o especificador
-                        continue;
-                    }
-                }
-                sb.append(c);
-            }
-
-            if (idx < args.length) {
-                throw new RuntimeException("substValues: too many arguments (" + args.length + ") for format: \"" + format + "\"");
-            }
-
-            return sb.toString();
-        }
-
-
-        // Substitui chamadas de função antes das variáveis
         while (true) {
             int open = expr.indexOf('(');
-            if (open == -1) break;
+            if (open == -1) { break; }
 
             int i = open - 1;
             while (i >= 0) {
                 char c = expr.charAt(i);
-                if (!isFuncChar(c)) break;
+                if (!isFuncChar(c)) { break; }
                 i--;
             }
 
@@ -677,20 +642,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String name = expr.substring(i + 1, open).trim();
             int close = findMatchingParen(expr, open);
-            if (close == -1) throw new RuntimeException("invalid expression — missing ')' in: " + expr);
+            if (close == -1) { throw new RuntimeException("invalid expression — missing ')'"); } 
 
-            String full = expr.substring(i + 1, close + 1);
-            String value = call(full, vars, program, root);
+            String full = expr.substring(i + 1, close + 1), value = call(full, vars, program, false);
 
             expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
-        }
-
-        for (Enumeration e = vars.keys(); e.hasMoreElements();) {
-            String name = (String) e.nextElement();
-            String value = (String) ((Hashtable) vars.get(name)).get("value");
-            if (value == null || value.equals("\" \"")) value = " ";
-
-            expr = replaceVarOnly(expr, name, value);
         }
 
         String result = exprCommand(expr);
@@ -707,26 +663,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 (i + name.length() == expr.length() || !isFuncChar(expr.charAt(i + name.length())))) {
                 out.append(value);
                 i += name.length();
-            } else {
-                out.append(expr.charAt(i));
-                i++;
-            }
+            } 
+            else { out.append(expr.charAt(i)); i++; }
         }
         return out.toString();
     }
-
-    private int findMatchingParen(String expr, int open) {
-        int depth = 0;
-        for (int i = open; i < expr.length(); i++) {
-            char c = expr.charAt(i);
-            if (c == '(') depth++;
-            else if (c == ')') {
-                depth--;
-                if (depth == 0) { return i; }
-            }
-        }
-        return -1;
-    }
+    private int findMatchingParen(String expr, int open) { int depth = 0; for (int i = open; i < expr.length(); i++) { char c = expr.charAt(i); if (c == '(') depth++; else if (c == ')') { depth--; if (depth == 0) { return i; } } } return -1; }
 
     private boolean eval(String expr, Hashtable vars, Hashtable program, boolean root) {
         String[] ops = {">=", "<=", "==", "!=", ">", "<"};
