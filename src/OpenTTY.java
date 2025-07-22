@@ -517,11 +517,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { throw new RuntimeException("unknown declare of '" + name + "'"); }
                 } 
 
-                if (instance.equals("int")) {
+                if (instance.equals("char")) { } 
+                else {
                     value = exprCommand(value);
                     
                     if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); } 
                 } 
+                
+                if (instance.equals("char")) {
+                    if (value.startsWith("'") && value.endsWith("'") && value.length() == 3) { value = value.substring(1, 2); } 
+                    else if (value.length() == 1) { } 
+                    else { throw new RuntimeException("invalid char value: " + value); } 
+                } else {
+                    value = exprCommand(value);
+                    if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); }
+                }
 
                 local.put("value", value); local.put("instance", instance);
                 vars.put(name, local);
@@ -618,8 +628,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
-
-            //if (value.equals("' '")) { value = ""; }
 
             if (expr.startsWith("\"") && expr.endsWith("\"")) { expr = replace(expr, "%" + name, value); } 
             else { expr = replaceVarOnly(expr, name, value); }
@@ -805,7 +813,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("type", line.startsWith("printf") ? "printf" : "exec");
                 cmd.put("value", msg);
             }
-            else if (line.startsWith("return ")) { cmd.put("type", "return"); cmd.put("value", line.substring(7).trim()); }
+            else if (line.startsWith("return")) { 
+                String value = line.substring(7).trim();
+                if (value.equals("")) {
+                    echoCommand("build: ")
+                }
+                
+                cmd.put("type", "return"); 
+                cmd.put("value", line.substring(7).trim()); 
+                
+            }
             else if (line.startsWith("if")) {
                 String type = line.startsWith("if") ? "if" : "else";
 
