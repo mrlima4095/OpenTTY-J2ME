@@ -696,8 +696,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         // Resolve como expressão aritmética (se possível)
-            String result = exprCommand(expr);
-        if (result.startsWith("expr: ")) { throw new RuntimeException("invalid numeric expression") }
+        String result = exprCommand(expr);
+        if (result.startsWith("expr: ")) { throw new RuntimeException("invalid numeric expression"); }
         else { return result; }
         //return  ? expr : result;
     }
