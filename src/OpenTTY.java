@@ -541,7 +541,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 type = (String) context.get("type"); String value = substValues((String) cmd.get("value"), vars, program, root);
 
                 if (type.equals("char")) { return value; }
-                else if (type.equals("void")) { if (expr == null || expr.length() == 0) { return "0"; } else { throw new RuntimeException("must not return a value;"); } }
+                else if (type.equals("void")) { if (value == null || value.length() == 0) { return "0"; } else { throw new RuntimeException("must not return a value;"); } }
                 else {
                     String expr = exprCommand(value);
                     
