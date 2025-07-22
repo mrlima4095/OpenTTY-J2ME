@@ -882,7 +882,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String name = line.substring(0, line.indexOf('(')).trim(), arg = extractBetween(line, '(', ')');
                 cmd.put("type", "call"); cmd.put("function", name); cmd.put("args", arg);
             }
-            else if (startsWithAny(line, new String[]{"int ", "char ", "float ", "double "})) {
+            else if (startsWithAny(line, new String[]{"int", "char", "float", "double"})) {
                 String varType = line.startsWith("char ") ? "char" : "int";
                 String decls = line.substring(varType.length()).trim();
 
