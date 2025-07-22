@@ -761,7 +761,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         expr = expr.trim();
-        if (expr.equals("0") || expr.equals("' '") || expr.equals("")) return false;
+        if (expr.equals("0") || expr.equals("\"\"") || expr.equals("")) return false;
         return true;
     }
     private Hashtable getFunction(String name, Hashtable program) { Hashtable functions = (Hashtable) program.get("functions"); return functions.containsKey(name) ? (Hashtable) functions.get(name) : null; }
