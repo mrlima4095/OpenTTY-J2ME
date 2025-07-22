@@ -623,42 +623,42 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         // Formato estilo C: "%d %s", var1, var2...
         if (expr.startsWith("\"") && expr.indexOf("\",") != -1) {
-    int sepIndex = expr.indexOf("\",");
-    String format = expr.substring(1, sepIndex); // remove a aspa inicial
-    String argsPart = expr.substring(sepIndex + 2).trim(); // parte dos argumentos
+            int sepIndex = expr.indexOf("\",");
+            String format = expr.substring(1, sepIndex); // remove a aspa inicial
+            String argsPart = expr.substring(sepIndex + 2).trim(); // parte dos argumentos
 
-    String[] args = splitBlock(argsPart, ',');
-    for (int k = 0; k < args.length; k++) {
-        String arg = args[k].trim();
-        if (arg == null || arg.equals("") || arg.equals("\" \"")) arg = "";
-        args[k] = substValues(arg, vars, program, root);
-    }
-
-    StringBuffer sb = new StringBuffer();
-    int idx = 0;
-    for (int i = 0; i < format.length(); i++) {
-        char c = format.charAt(i);
-        if (c == '%' && i + 1 < format.length()) {
-            char t = format.charAt(i + 1);
-            if (t == 'd' || t == 's' || t == 'f' || t == 'c') {
-                if (idx >= args.length) {
-                    throw new RuntimeException("substValues: missing argument for '%" + t + "' in format: \"" + format + "\"");
-                }
-                sb.append(args[idx]);
-                idx++;
-                i++; // pula o especificador
-                continue;
+            String[] args = splitBlock(argsPart, ',');
+            for (int k = 0; k < args.length; k++) {
+                String arg = args[k].trim();
+                if (arg == null || arg.equals("") || arg.equals("\" \"")) arg = "";
+                args[k] = substValues(arg, vars, program, root);
             }
+
+            StringBuffer sb = new StringBuffer();
+            int idx = 0;
+            for (int i = 0; i < format.length(); i++) {
+                char c = format.charAt(i);
+                if (c == '%' && i + 1 < format.length()) {
+                    char t = format.charAt(i + 1);
+                    if (t == 'd' || t == 's' || t == 'f' || t == 'c') {
+                        if (idx >= args.length) {
+                            throw new RuntimeException("substValues: missing argument for '%" + t + "' in format: \"" + format + "\"");
+                        }
+                        sb.append(args[idx]);
+                        idx++;
+                        i++; // pula o especificador
+                        continue;
+                    }
+                }
+                sb.append(c);
+            }
+
+            if (idx < args.length) {
+                throw new RuntimeException("substValues: too many arguments (" + args.length + ") for format: \"" + format + "\"");
+            }
+
+            return sb.toString();
         }
-        sb.append(c);
-    }
-
-    if (idx < args.length) {
-        throw new RuntimeException("substValues: too many arguments (" + args.length + ") for format: \"" + format + "\"");
-    }
-
-    return sb.toString();
-}
 
 
         // Substitui chamadas de função antes das variáveis
@@ -908,7 +908,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String name = line.substring(0, line.indexOf('(')).trim(), arg = extractBetween(line, '(', ')');
                 cmd.put("type", "call"); cmd.put("function", name); cmd.put("args", arg);
             }
-            else if (startsWithAny(line, new String[]{"int ", "char ", "float ", "double "})) {
+            else if (startsWithAny(line, new String[]{"int ", "char "})) {
                 String varType = line.startsWith("char ") ? "char" : "int";
                 String decls = line.substring(varType.length()).trim();
 
@@ -920,7 +920,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int eq = part.indexOf('=');
 
                     if (eq != -1) { varName = part.substring(0, eq).trim(); varValue = part.substring(eq + 1).trim(); } 
-                    else { varName = part; varValue = varType.equals("char") ? "" : "0"; }
+                    else { varName = part; varValue = varType.equals("char") ? "' '" : "0"; }
 
                     if (varName.equals("")) {
                         echoCommand("build: invalid variable declaration: '" + part + "'");
