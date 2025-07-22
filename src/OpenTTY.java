@@ -632,7 +632,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             for (int k = 0; k < args.length; k++) {
                 String arg = args[k].trim();
-                if (arg.equals("")) arg = "\"\"";
+                if (arg.equals("") || arg.equals("' '") || arg == null) arg = "\"\"";
                 String val = substValues(arg, vars, program, root);
                 values.addElement(val);
             }
