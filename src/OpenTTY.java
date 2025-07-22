@@ -614,83 +614,89 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return ret;
     }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
-        if (expr == null || expr.length() == 0) { return ""; }
+        if (expr == null || expr.length() == 0) return "";
 
-        // Se for string literal pura sem vírgula (ex: "Olá") retorna o conteúdo sem mexer em variáveis
-        if (expr.startsWith("\"") && expr.endsWith("\"") && expr.indexOf("\",") == -1) {
-            return expr.substring(1, expr.length() - 1);
-        }
-
-        // Se for string format estilo C: "%d %s", var1, var2, ...
-        if (expr.startsWith("\"") && expr.indexOf("\",") != -1) {
-            int sepIndex = expr.indexOf("\",");
-            String format = expr.substring(1, sepIndex); // remove aspas iniciais
-            String argsPart = expr.substring(sepIndex + 2).trim(); // pega depois da vírgula
-
-            String[] args = splitBlock(argsPart, ',');
-
-            Vector values = new Vector();
-            for (int k = 0; k < args.length; k++) {
-                String arg = args[k].trim();
-                if (arg.equals("")) arg = "\"\""; // evita vazio
-
-                // Chama recursivamente para processar chamadas de função, variáveis, etc
-                String val = substValues(arg, vars, program, root);
-                values.addElement(val);
+            // Caso seja string literal pura (ex: "Olá")
+            if (expr.startsWith("\"") && expr.endsWith("\"") && expr.indexOf("\",") == -1) {
+                return expr.substring(1, expr.length() - 1);
             }
 
-            StringBuffer sb = new StringBuffer();
-            int idx = 0;
-            for (int i = 0; i < format.length(); i++) {
-                char c = format.charAt(i);
-                if (c == '%' && i + 1 < format.length()) {
-                    char t = format.charAt(i + 1);
-                    if ((t == 'd' || t == 's' || t == 'f' || t == 'c')) {
-                        if (idx >= values.size()) {
-                            throw new RuntimeException("substValues: missing argument for '%" + t + "'");
-                        }
-                        sb.append((String) values.elementAt(idx));
-                        idx++;
-                        i++;
-                        continue;
-                    }
+            // Formato estilo C: "%d %s", var1, var2...
+            if (expr.startsWith("\"") && expr.indexOf("\",") != -1) {
+                int sepIndex = expr.indexOf("\",");
+                String format = expr.substring(1, sepIndex); // sem aspas iniciais
+                String argsPart = expr.substring(sepIndex + 2).trim(); // depois da vírgula
+
+                String[] args = splitBlock(argsPart, ',');
+                Vector values = new Vector();
+
+                for (int k = 0; k < args.length; k++) {
+                    String arg = args[k].trim();
+                    if (arg.equals("")) arg = "\"\"";
+                    String val = substValues(arg, vars, program, root);
+                    values.addElement(val);
                 }
-                sb.append(c);
+
+                StringBuffer sb = new StringBuffer();
+                int idx = 0;
+                for (int i = 0; i < format.length(); i++) {
+                    char c = format.charAt(i);
+                    if (c == '%' && i + 1 < format.length()) {
+                        char t = format.charAt(i + 1);
+                        if ((t == 'd' || t == 's' || t == 'f' || t == 'c')) {
+                            if (idx >= values.size()) {
+                                throw new RuntimeException("substValues: missing argument for '%" + t + "' in format: \"" + format + "\"");
+                            }
+                            sb.append((String) values.elementAt(idx));
+                            idx++;
+                            i++; // pula o tipo
+                            continue;
+                        }
+                    }
+                    sb.append(c);
+                }
+
+                if (idx < values.size()) {
+                    throw new RuntimeException("substValues: too many arguments (" + values.size() + ") for format string: \"" + format + "\"");
+                }
+
+                return sb.toString();
             }
-            return sb.toString();
-        }
 
-        while (true) {
-            int open = expr.indexOf('(');
-            if (open == -1) break;
+            // Substitui chamadas de função antes das variáveis
+            while (true) {
+                int open = expr.indexOf('(');
+                if (open == -1) break;
 
-            int i = open - 1;
-            while (i >= 0) {
-                char c = expr.charAt(i);
-                if (!isFuncChar(c)) break;
-                i--;
+                int i = open - 1;
+                while (i >= 0) {
+                    char c = expr.charAt(i);
+                    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')) break;
+                    i--;
+                }
+
+                while (i >= 0 && expr.charAt(i) == ' ') i--;
+
+                String name = expr.substring(i + 1, open).trim();
+                int close = findMatchingParen(expr, open);
+                if (close == -1) throw new RuntimeException("substValues: invalid expression — missing ')' in: " + expr);
+
+                String full = expr.substring(i + 1, close + 1);
+                String value = call(full, vars, program, root);
+
+                expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
             }
 
-            while (i >= 0 && expr.charAt(i) == ' ') i--;
+            // Substitui variáveis normais (evita mexer em strings puras)
+            for (Enumeration e = vars.keys(); e.hasMoreElements();) {
+                String name = (String) e.nextElement();
+                String value = (String) ((Hashtable) vars.get(name)).get("value");
+                if (value.equals("' '")) value = "";
+                expr = replaceVarOnly(expr, name, value);
+            }
 
-            String name = expr.substring(i + 1, open).trim();
-            int close = findMatchingParen(expr, open);
-            if (close == -1) throw new RuntimeException("invalid expression — missing ')'");
-
-            String full = expr.substring(i + 1, close + 1);
-            String value = call(full, vars, program, root);
-
-            expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
-        }
-
-        for (Enumeration e = vars.keys(); e.hasMoreElements();) {
-            String name = (String) e.nextElement();
-            String value = (String) ((Hashtable) vars.get(name)).get("value");
-            if (value.equals("' '")) value = "";
-            expr = replaceVarOnly(expr, name, value);
-        }
-
-        String result = exprCommand(expr);
+            // Resolve como expressão aritmética (se possível)
+                String result = exprCommand(expr);
         if (result.startsWith("expr: ")) { throw new RuntimeException("invalid numeric expression") }
         else { return result }
         //return  ? expr : result;
