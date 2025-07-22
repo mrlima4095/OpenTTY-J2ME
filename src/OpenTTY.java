@@ -623,45 +623,43 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         // Formato estilo C: "%d %s", var1, var2...
         if (expr.startsWith("\"") && expr.indexOf("\",") != -1) {
-            int sepIndex = expr.indexOf("\",");
-            String format = expr.substring(1, sepIndex); // sem aspas iniciais
-            String argsPart = expr.substring(sepIndex + 2).trim(); // depois da vírgula
+    int sepIndex = expr.indexOf("\",");
+    String format = expr.substring(1, sepIndex); // remove a aspa inicial
+    String argsPart = expr.substring(sepIndex + 2).trim(); // parte dos argumentos
 
-            String[] args = splitBlock(argsPart, ',');
-            Vector values = new Vector();
+    String[] args = splitBlock(argsPart, ',');
+    for (int k = 0; k < args.length; k++) {
+        String arg = args[k].trim();
+        if (arg == null || arg.equals("") || arg.equals("\" \"")) arg = "";
+        args[k] = substValues(arg, vars, program, root);
+    }
 
-            for (int k = 0; k < args.length; k++) {
-                String arg = args[k].trim();
-                if (arg.equals("") || arg.equals("\" \"") || arg == null) arg = "";
-                String val = substValues(arg, vars, program, root);
-                values.addElement(val);
-            }
-
-            StringBuffer sb = new StringBuffer();
-            int idx = 0;
-            for (int i = 0; i < format.length(); i++) {
-                char c = format.charAt(i);
-                if (c == '%' && i + 1 < format.length()) {
-                    char t = format.charAt(i + 1);
-                    if ((t == 'd' || t == 's' || t == 'f' || t == 'c')) {
-                        if (idx >= values.size()) {
-                            throw new RuntimeException("substValues: missing argument for '%" + t + "' in format: \"" + format + "\"");
-                        }
-                        sb.append((String) values.elementAt(idx));
-                        idx++;
-                        i++; // pula o tipo
-                        continue;
-                    }
+    StringBuffer sb = new StringBuffer();
+    int idx = 0;
+    for (int i = 0; i < format.length(); i++) {
+        char c = format.charAt(i);
+        if (c == '%' && i + 1 < format.length()) {
+            char t = format.charAt(i + 1);
+            if (t == 'd' || t == 's' || t == 'f' || t == 'c') {
+                if (idx >= args.length) {
+                    throw new RuntimeException("substValues: missing argument for '%" + t + "' in format: \"" + format + "\"");
                 }
-                sb.append(c);
+                sb.append(args[idx]);
+                idx++;
+                i++; // pula o especificador
+                continue;
             }
-
-            if (idx < values.size()) {
-                throw new RuntimeException("too many arguments (" + values.size() + ") for format string: \"" + format + "\"");
-            }
-
-            return sb.toString();
         }
+        sb.append(c);
+    }
+
+    if (idx < args.length) {
+        throw new RuntimeException("substValues: too many arguments (" + args.length + ") for format: \"" + format + "\"");
+    }
+
+    return sb.toString();
+}
+
 
         // Substitui chamadas de função antes das variáveis
         while (true) {
