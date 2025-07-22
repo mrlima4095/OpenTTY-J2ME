@@ -671,7 +671,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int i = open - 1;
             while (i >= 0) {
                 char c = expr.charAt(i);
-                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')) break;
+                if (!isFuncChar(c)) break;
                 i--;
             }
 
@@ -705,9 +705,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         StringBuffer out = new StringBuffer();
         int i = 0;
         while (i < expr.length()) {
-            if ((i == 0 || !isVarChar(expr.charAt(i - 1))) &&
+            if ((i == 0 || !isFuncChar(expr.charAt(i - 1))) &&
                 expr.startsWith(name, i) &&
-                (i + name.length() == expr.length() || !isVarChar(expr.charAt(i + name.length())))) {
+                (i + name.length() == expr.length() || !isFuncChar(expr.charAt(i + name.length())))) {
                 out.append(value);
                 i += name.length();
             } else {
@@ -718,7 +718,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return out.toString();
     }
 
-    private boolean isVarChar(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; }
     private int findMatchingParen(String expr, int open) {
         int depth = 0;
         for (int i = open; i < expr.length(); i++) {
