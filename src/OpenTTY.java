@@ -523,7 +523,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); } 
                 } 
 
-                local.put("value", value == null || value.length() == 0 ? "\"\"" : value); local.put("instance", instance);
+                local.put("value", value == null || value.length() == 0 ? "" : value); local.put("instance", instance);
                 vars.put(name, local);
             }
 
