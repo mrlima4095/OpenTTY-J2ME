@@ -569,7 +569,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        return mode == 0 ? (((String) context.get("type")).equals("char") ? "\"\"" : "0") : mode == 1 ? "+[continue]" : null;
+        return mode == 0 ? (((String) context.get("type")).equals("char") ? "\" \"" : "0") : mode == 1 ? "+[continue]" : null;
     }
     private String call(String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         int parIndex = code.indexOf('(');
@@ -632,7 +632,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             for (int k = 0; k < args.length; k++) {
                 String arg = args[k].trim();
-                if (arg.equals("") || arg.equals("' '") || arg == null) arg = "\"\"";
+                if (arg.equals("") || arg.equals("\" \"") || arg == null) arg = "\" \"";
                 String val = substValues(arg, vars, program, root);
                 values.addElement(val);
             }
@@ -687,15 +687,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
             expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
         }
 
-        // Substitui variáveis normais (evita mexer em strings puras)
         for (Enumeration e = vars.keys(); e.hasMoreElements();) {
             String name = (String) e.nextElement();
             String value = (String) ((Hashtable) vars.get(name)).get("value");
-            if (value == null || value.equals("' '")) value = "";
+            if (value == null || value.equals("\" \"")) value = " ";
+
             expr = replaceVarOnly(expr, name, value);
         }
 
-        // Resolve como expressão aritmética (se possível)
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
@@ -761,7 +760,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         expr = expr.trim();
-        if (expr.equals("0") || expr.equals("\"\"") || expr.equals("")) return false;
+        if (expr.equals("0") || expr.equals("\" \"") || expr.equals("")) return false;
         return true;
     }
     private Hashtable getFunction(String name, Hashtable program) { Hashtable functions = (Hashtable) program.get("functions"); return functions.containsKey(name) ? (Hashtable) functions.get(name) : null; }
@@ -923,7 +922,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int eq = part.indexOf('=');
 
                     if (eq != -1) { varName = part.substring(0, eq).trim(); varValue = part.substring(eq + 1).trim(); } 
-                    else { varName = part; varValue = varType.equals("char") ? "" : "0"; }
+                    else { varName = part; varValue = varType.equals("char") ? "\" \"" : "0"; }
 
                     if (varName.equals("")) {
                         echoCommand("build: invalid variable declaration: '" + part + "'");
