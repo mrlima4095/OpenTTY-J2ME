@@ -517,20 +517,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { throw new RuntimeException("unknown declare of '" + name + "'"); }
                 } 
 
-                if (instance.equals("char")) { } 
-                else {
+                if (instance.equals("int")) {
                     value = exprCommand(value);
                     
                     if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); } 
                 } 
-                
-                if (instance.equals("char")) {
-                    if (value.startsWith("' '")) { value = value.substring(3); } 
-                     
-                } else {
-                    value = exprCommand(value);
-                    if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); }
-                }
 
                 local.put("value", value); local.put("instance", instance);
                 vars.put(name, local);
@@ -539,15 +530,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("return")) {
                 type = (String) context.get("type"); String value = substValues((String) cmd.get("value"), vars, program, root);
 
-                if (type.equals("char")) { return value; }
-                else if (type.equals("void")) { if (value == null || value.length() == 0) { return "0"; } else { throw new RuntimeException("must not return a value;"); } }
-                else {
+                if (type.equals("int")) {
                     String expr = exprCommand(value);
                     
                     if (expr.startsWith("expr: ")) { throw new RuntimeException("invalid return value"); } 
                     else { return expr; }
                     
-                }
+                } else { return value; }
             }
             else if (type.equals("if")) {
                 String ret = null;
@@ -627,27 +616,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
 
-        for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
-            String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
+        // ⚠️ Se for string literal exata como: "x", "Olá", etc → retorna sem mexer em variáveis
+        if (expr.startsWith("\"") && expr.endsWith("\"") && expr.indexOf("\",") == -1) { return expr.substring(1, expr.length() - 1); }
 
-            //if (value.equals("' '")) {
-            //    value = " ";
-            //}
-
-            if (expr.startsWith("\"") && expr.endsWith("\"")) { expr = replace(expr, "%" + name, value); } 
-            else { expr = replaceVarOnly(expr, name, value); }
-        }
-
-        if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return expr.substring(1, expr.length() - 1); }
-
+        // Substituir chamadas de função primeiro
         while (true) {
             int open = expr.indexOf('(');
-            if (open == -1) { break; }
+            if (open == -1) break;
 
             int i = open - 1;
             while (i >= 0) {
                 char c = expr.charAt(i);
-                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')) { break; }
+                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')) break;
                 i--;
             }
 
@@ -655,16 +635,63 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String name = expr.substring(i + 1, open).trim();
             int close = findMatchingParen(expr, open);
-            if (close == -1) { throw new RuntimeException("invalid expression — missing ')'"); } 
+            if (close == -1) throw new RuntimeException("invalid expression — missing ')'");
 
-            String full = expr.substring(i + 1, close + 1), value = call(full, vars, program, false);
+            String full = expr.substring(i + 1, close + 1);
+            String value = call(full, vars, program, root);
 
             expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
         }
 
+        // Se tiver formato: "texto %s", x, y, ...
+        if (expr.startsWith("\"") && expr.indexOf("\",") != -1) {
+            int sepIndex = expr.indexOf("\",");
+            String format = expr.substring(1, sepIndex); // remove aspas iniciais
+            String argsPart = expr.substring(sepIndex + 2).trim();
+
+            String[] args = splitBlock(argsPart, ',');
+
+            Vector values = new Vector();
+            for (int k = 0; k < args.length; k++) {
+                String arg = args[k];
+                arg = replaceVars(arg, vars);
+                arg = substValues(arg, vars, program, root);
+                values.addElement(arg);
+            }
+
+            // substitui os %d, %s, etc.
+            int idx = 0;
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < format.length(); i++) {
+                char c = format.charAt(i);
+                if (c == '%' && i + 1 < format.length()) {
+                    char t = format.charAt(i + 1);
+                    if ((t == 'd' || t == 's' || t == 'f' || t == 'c') && idx < values.size()) {
+                        sb.append((String) values.elementAt(idx));
+                        idx++;
+                        i++;
+                        continue;
+                    }
+                }
+                sb.append(c);
+            }
+
+            return sb.toString();
+        }
+
+        // ⚠️ Agora sim substituímos variáveis (evitamos mexer em strings puras)
+        for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
+            String name = (String) e.nextElement();
+            String value = (String) ((Hashtable) vars.get(name)).get("value");
+            if (value.equals("' '")) value = "";
+            expr = replaceVarOnly(expr, name, value);
+        }
+
+        // tentativa de resolver expressão final
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
+
     private String replaceVarOnly(String expr, String name, String value) {
         StringBuffer out = new StringBuffer();
         int i = 0;
@@ -818,13 +845,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("type", line.startsWith("printf") ? "printf" : "exec");
                 cmd.put("value", msg);
             }
-            else if (line.startsWith("return")) { 
-                String value = line.substring(6).trim();
-                
-                cmd.put("type", "return"); 
-                cmd.put("value", value == null || value.length() == 0 ? "" : value); 
-                
-            }
+            else if (line.startsWith("return ")) { cmd.put("type", "return"); cmd.put("value", line.substring(7).trim()); }
             else if (line.startsWith("if")) {
                 String type = line.startsWith("if") ? "if" : "else";
 
@@ -882,7 +903,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String name = line.substring(0, line.indexOf('(')).trim(), arg = extractBetween(line, '(', ')');
                 cmd.put("type", "call"); cmd.put("function", name); cmd.put("args", arg);
             }
-            else if (startsWithAny(line, new String[]{"int", "char", "float", "double"})) {
+            else if (startsWithAny(line, new String[]{"int ", "char ", "float ", "double "})) {
                 String varType = line.startsWith("char ") ? "char" : "int";
                 String decls = line.substring(varType.length()).trim();
 
@@ -969,7 +990,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private boolean isFuncChar(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; }
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) return true; } return false; }
-    private int findFunctionStart(String code) { String[] types = {"int", "char", "void", "float", "double"}; for (int i = 0; i < code.length(); i++) { for (int t = 0; t < types.length; t++) { String type = types[t]; if (code.startsWith(type + " ", i)) { int nameStart = i + type.length() + 1; int p1 = code.indexOf('(', nameStart); if (p1 == -1) { continue; } int p2 = code.indexOf(')', p1); if (p2 == -1) { continue; } int brace = code.indexOf('{', p2); if (brace == -1) { continue; } String maybeName = code.substring(nameStart, p1).trim(); if (maybeName.indexOf(' ') != -1) { continue; } String beforeBrace = code.substring(p2 + 1, brace).trim(); if (beforeBrace.length() > 0) { continue; } return i; } } } return -1; }
+    private int findFunctionStart(String code) { String[] types = { "int", "char" }; for (int i = 0; i < code.length(); i++) { for (int t = 0; t < types.length; t++) { String type = types[t]; if (code.startsWith(type + " ", i)) { int nameStart = i + type.length() + 1; int p1 = code.indexOf('(', nameStart); if (p1 == -1) { continue; } int p2 = code.indexOf(')', p1); if (p2 == -1) { continue; } int brace = code.indexOf('{', p2); if (brace == -1) { continue; } String maybeName = code.substring(nameStart, p1).trim(); if (maybeName.indexOf(' ') != -1) { continue; } String beforeBrace = code.substring(p2 + 1, brace).trim(); if (beforeBrace.length() > 0) { continue; } return i; } } } return -1; }
     private boolean isIsolatedFunctionCall(String line) { line = line.trim(); int p1 = line.indexOf('('), p2 = line.lastIndexOf(')'); if (p1 == -1 || p2 == -1 || p2 <= p1) { return false; } if (line.indexOf('=') != -1) { return false; } String before = line.substring(0, p1).trim(); if (before.indexOf(' ') != -1) { return false; } if (startsWithAny(line, new String[]{"int ", "char "})) { return false; } return true; }
     private String renderJSON(Object obj, int indent) {
         StringBuffer json = new StringBuffer();
