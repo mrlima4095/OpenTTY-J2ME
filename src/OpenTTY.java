@@ -697,7 +697,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         // Resolve como expressão aritmética (se possível)
         String result = exprCommand(expr);
-        return result.startsWith("expr: ") ? expr : result
+        return result.startsWith("expr: ") ? expr : result;
     }
 
 
