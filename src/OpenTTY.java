@@ -525,9 +525,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 
                 if (instance.equals("char")) {
-                    if (value.startsWith("'") && value.endsWith("'") && value.length() == 3) { value = value.substring(1, 2); } 
-                    else if (value.length() == 1) { } 
-                    else { throw new RuntimeException("invalid char value: " + value); } 
+                    if (value.startsWith("' '")) { value = value.substring(3); } 
+                     
                 } else {
                     value = exprCommand(value);
                     if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); }
@@ -631,7 +630,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
 
-            
+            if (value value.equals("' '")) {
+                value = " ";
+            }
+
             if (expr.startsWith("\"") && expr.endsWith("\"")) { expr = replace(expr, "%" + name, value); } 
             else { expr = replaceVarOnly(expr, name, value); }
         }
