@@ -660,7 +660,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return sb.toString();
         }
 
-        // Substitui chamadas de função antes de variáveis
         while (true) {
             int open = expr.indexOf('(');
             if (open == -1) break;
@@ -684,7 +683,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
         }
 
-        // Agora substitui variáveis normais (evita mexer em strings puras)
         for (Enumeration e = vars.keys(); e.hasMoreElements();) {
             String name = (String) e.nextElement();
             String value = (String) ((Hashtable) vars.get(name)).get("value");
@@ -692,9 +690,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             expr = replaceVarOnly(expr, name, value);
         }
 
-        // Tenta resolver expressão aritmética
         String result = exprCommand(expr);
-        return result.startsWith("expr: ") ? expr : result;
+        if (result.startsWith("expr: ")) { throw new RuntimeException("invalid numeric expression") }
+        else { return result }
+        //return  ? expr : result;
     }
 
 
