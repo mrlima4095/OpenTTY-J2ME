@@ -657,7 +657,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             if (idx < values.size()) {
-                throw new RuntimeException("substValues: too many arguments (" + values.size() + ") for format string: \"" + format + "\"");
+                throw new RuntimeException("too many arguments (" + values.size() + ") for format string: \"" + format + "\"");
             }
 
             return sb.toString();
@@ -679,7 +679,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String name = expr.substring(i + 1, open).trim();
             int close = findMatchingParen(expr, open);
-            if (close == -1) throw new RuntimeException("substValues: invalid expression — missing ')' in: " + expr);
+            if (close == -1) throw new RuntimeException("invalid expression — missing ')' in: " + expr);
 
             String full = expr.substring(i + 1, close + 1);
             String value = call(full, vars, program, root);
