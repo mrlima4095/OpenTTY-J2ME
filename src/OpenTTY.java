@@ -819,9 +819,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("value", msg);
             }
             else if (line.startsWith("return")) { 
+                String value = line.substring(6).trim();
                 
                 cmd.put("type", "return"); 
-                cmd.put("value", line.substring(6).trim()); 
+                cmd.put("value", value == null || value.length() == 0 ? "" : value); 
                 
             }
             else if (line.startsWith("if")) {
