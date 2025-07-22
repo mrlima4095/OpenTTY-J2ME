@@ -691,7 +691,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = vars.keys(); e.hasMoreElements();) {
             String name = (String) e.nextElement();
             String value = (String) ((Hashtable) vars.get(name)).get("value");
-            if (value.equals("' '")) value = "";
+            if (value == null || value.equals("' '")) value = "";
             expr = replaceVarOnly(expr, name, value);
         }
 
