@@ -614,7 +614,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return ret;
     }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
-        if (expr == null || expr.length() == 0) return "";
+        if (expr == null || expr.length() == 0) { return ""; }
 
         // Caso seja string literal pura (ex: "Olá")
         if (expr.startsWith("\"") && expr.endsWith("\"") && expr.indexOf("\",") == -1) {
@@ -632,7 +632,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             for (int k = 0; k < args.length; k++) {
                 String arg = args[k].trim();
-                if (arg.equals("") || arg.equals("\" \"") || arg == null) arg = "\" \"";
+                if (arg.equals("") || arg.equals("\" \"") || arg == null) arg = "";
                 String val = substValues(arg, vars, program, root);
                 values.addElement(val);
             }
@@ -760,7 +760,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         expr = expr.trim();
-        if (expr.equals("0") || expr.equals("\" \"") || expr.equals("")) return false;
+        if (expr.equals("0") || expr.equals("")) return false;
         return true;
     }
     private Hashtable getFunction(String name, Hashtable program) { Hashtable functions = (Hashtable) program.get("functions"); return functions.containsKey(name) ? (Hashtable) functions.get(name) : null; }
@@ -922,7 +922,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int eq = part.indexOf('=');
 
                     if (eq != -1) { varName = part.substring(0, eq).trim(); varValue = part.substring(eq + 1).trim(); } 
-                    else { varName = part; varValue = varType.equals("char") ? "\" \"" : "0"; }
+                    else { varName = part; varValue = varType.equals("char") ? "" : "0"; }
 
                     if (varName.equals("")) {
                         echoCommand("build: invalid variable declaration: '" + part + "'");
