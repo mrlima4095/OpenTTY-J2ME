@@ -594,11 +594,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     String raw = (j < argList.length) ? argList[j].trim() : null;
 
-    String value;
-    if (raw == null || raw.length() == 0) {
-        if (argType.equals("char")) value = "' '";
-        else if (argType.equals("int") || argType.equals("float")) value = "0";
-        else value = "";
+    String value = raw == null || raw.length() == 0 ? argType.equals("char")) ? "' '" : "0";
     } else {
         value = substValues(raw, vars, program, root);
     }
@@ -627,6 +623,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
+        else if (expr.equals("' '")) { return " "; }
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
