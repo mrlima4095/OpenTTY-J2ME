@@ -799,7 +799,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String line = lines[i].trim();
             Hashtable cmd = new Hashtable();
 
-            if (line.equals("")) { }
+            if (line.equals("") || line.equals("' '")) { }
             else if (line.startsWith("printf") || line.startsWith("exec")) {
                 String msg = extractBetween(line, '(', ')');
                 cmd.put("type", line.startsWith("printf") ? "printf" : "exec");
