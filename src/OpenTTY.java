@@ -596,7 +596,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     String value;
     if (raw == null || raw.length() == 0) {
-        // Valor ausente ou vazio → substituto padrão
         if (argType.equals("char")) value = "' '";
         else if (argType.equals("int") || argType.equals("float")) value = "0";
         else value = "";
@@ -930,15 +929,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == '{') depthBrace++;
             else if (c == '}') depthBrace--;
             else if (c == separator && depthPar == 0 && depthBrace == 0) {
-                parts.addElement(code.substring(start, i).trim()); // <- CORRETO
+                String part = code.substring(start, i).trim();
+                if (part.equals("")) part = "' '";
+                parts.addElement(part);
                 start = i + 1;
             }
         }
     }
 
-    if (start < code.length()) {
-        parts.addElement(code.substring(start).trim());
-    }
+    // Último argumento
+    String part = code.substring(start).trim();
+    if (part.equals("")) part = "' '";
+    parts.addElement(part);
 
     String[] result = new String[parts.size()];
     parts.copyInto(result);
