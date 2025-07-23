@@ -510,7 +510,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("printf")) { echoCommand(format(substValues((String) cmd.get("value"), vars, program, root))); }
             else if (type.equals("exec")) { processCommand(format(substValues((String) cmd.get("value"), vars, program, root)), true, root); }
             else if (type.equals("assign")) {
-                String name = (String) cmd.get("name"), value = format(substValues((String) cmd.get("value"), vars, program, root)), instance = (String) cmd.get("instance");
+                String name = (String) cmd.get("name"), value = substValues((String) cmd.get("value"), vars, program, root), instance = (String) cmd.get("instance");
                 Hashtable local = new Hashtable();
 
                 if (instance == null) {
@@ -529,7 +529,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             else if (type.equals("return")) {
-                type = (String) context.get("type"); String value = format(substValues((String) cmd.get("value"), vars, program, root));
+                type = (String) context.get("type"); String value = substValues((String) cmd.get("value"), vars, program, root);
 
                 if (type.equals("int")) {
                     String expr = exprCommand(value);
@@ -622,7 +622,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (expr == null || expr.length() == 0) { return "' '"; }
         if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return expr.substring(1, expr.length() - 1); }
         
-        return "' '";
+        return expr;
     }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
