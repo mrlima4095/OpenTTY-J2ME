@@ -713,8 +713,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return true;
     }
     private Hashtable getFunction(String name, Hashtable program) { Hashtable functions = (Hashtable) program.get("functions"); return functions.containsKey(name) ? (Hashtable) functions.get(name) : null; }
-    // |
-    // Building
+    // | (Building)
     private Hashtable build(String source) {
         Hashtable program = new Hashtable();
         source = removeComments(source).trim();
@@ -908,46 +907,45 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); return result; }
     private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
     private String[] splitBlock(String code, char separator) {
-    Vector parts = new Vector();
-    int depthPar = 0, depthBrace = 0;
-    boolean inString = false;
-    int start = 0;
+        Vector parts = new Vector();
+        int depthPar = 0, depthBrace = 0;
+        boolean inString = false;
+        int start = 0;
 
-    for (int i = 0; i < code.length(); i++) {
-        char c = code.charAt(i);
+        for (int i = 0; i < code.length(); i++) {
+            char c = code.charAt(i);
 
-        if (c == '"') {
-            if (i == 0 || code.charAt(i - 1) != '\\') {
-                inString = !inString;
-            }
-        } else if (!inString) {
-            if (c == '(') depthPar++;
-            else if (c == ')') depthPar--;
-            else if (c == '{') depthBrace++;
-            else if (c == '}') depthBrace--;
-            else if (c == separator && depthPar == 0 && depthBrace == 0) {
-                String part = code.substring(start, i).trim();
-                if (part.equals("")) part = "' '";
-                parts.addElement(part);
-                start = i + 1;
+            if (c == '"') {
+                if (i == 0 || code.charAt(i - 1) != '\\') {
+                    inString = !inString;
+                }
+            } else if (!inString) {
+                if (c == '(') depthPar++;
+                else if (c == ')') depthPar--;
+                else if (c == '{') depthBrace++;
+                else if (c == '}') depthBrace--;
+                else if (c == separator && depthPar == 0 && depthBrace == 0) {
+                    String part = code.substring(start, i).trim();
+                    if (part.equals("")) part = "' '";
+                    parts.addElement(part);
+                    start = i + 1;
+                }
             }
         }
+
+        String part = code.substring(start).trim();
+        if (part.equals("")) part = "' '";
+        parts.addElement(part);
+
+        String[] result = new String[parts.size()];
+        parts.copyInto(result);
+        return result;
     }
-
-    // Último argumento
-    String part = code.substring(start).trim();
-    if (part.equals("")) part = "' '";
-    parts.addElement(part);
-
-    String[] result = new String[parts.size()];
-    parts.copyInto(result);
-    return result;
-}
-
     private boolean isFuncChar(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; }
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) return true; } return false; }
     private int findFunctionStart(String code) { String[] types = { "int", "char" }; for (int i = 0; i < code.length(); i++) { for (int t = 0; t < types.length; t++) { String type = types[t]; if (code.startsWith(type + " ", i)) { int nameStart = i + type.length() + 1; int p1 = code.indexOf('(', nameStart); if (p1 == -1) { continue; } int p2 = code.indexOf(')', p1); if (p2 == -1) { continue; } int brace = code.indexOf('{', p2); if (brace == -1) { continue; } String maybeName = code.substring(nameStart, p1).trim(); if (maybeName.indexOf(' ') != -1) { continue; } String beforeBrace = code.substring(p2 + 1, brace).trim(); if (beforeBrace.length() > 0) { continue; } return i; } } } return -1; }
     private boolean isIsolatedFunctionCall(String line) { line = line.trim(); int p1 = line.indexOf('('), p2 = line.lastIndexOf(')'); if (p1 == -1 || p2 == -1 || p2 <= p1) { return false; } if (line.indexOf('=') != -1) { return false; } String before = line.substring(0, p1).trim(); if (before.indexOf(' ') != -1) { return false; } if (startsWithAny(line, new String[]{"int ", "char "})) { return false; } return true; }
+    // | Render Objects as JSON
     private String renderJSON(Object obj, int indent) {
         StringBuffer json = new StringBuffer();
         String pad = "";
