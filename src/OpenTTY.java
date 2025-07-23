@@ -589,27 +589,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); }
 
         for (int j = 0; reads != null && j < reads.size(); j++) {
-    Hashtable a = (Hashtable) reads.elementAt(j);
-    String argName = (String) a.get("name");
-    String argType = (String) a.get("type");
+            Hashtable a = (Hashtable) reads.elementAt(j);
+            String argName = (String) a.get("name");
+            String argType = (String) a.get("type");
 
-    String raw = (j < argList.length) ? argList[j].trim() : null;
+            String raw = (j < argList.length) ? argList[j].trim() : null;
 
-    String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : substValues(raw, vars, program, root);
-    
+            String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : substValues(raw, vars, program, root);
+            
 
-    if (argType.equals("int")) {
-        value = exprCommand(value);
-        if (value.startsWith("expr: ")) {
-            throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
+            if (argType.equals("int")) {
+                value = exprCommand(value);
+                if (value.startsWith("expr: ")) {
+                    throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
+                }
+            }
+
+            Hashtable local = new Hashtable();
+            local.put("value", value);
+            local.put("instance", argType);
+            newVars.put(argName, local);
         }
-    }
-
-    Hashtable local = new Hashtable();
-    local.put("value", value);
-    local.put("instance", argType);
-    newVars.put(argName, local);
-}
 
 
         Hashtable newContext = new Hashtable();
@@ -635,7 +635,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (!expr.equals("' '") && expr.indexOf("' '") != -1) { expr = replace(expr, "' '", ""); }
         if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'") && !expr.equals("' '")) { return expr.substring(1, expr.length() - 1); }
-        
+
         while (true) {
             int open = expr.indexOf('(');
             if (open == -1) { break; }
@@ -661,8 +661,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
-
-
     private String replaceVarOnly(String expr, String name, String value) {
         StringBuffer out = new StringBuffer();
         int i = 0;
