@@ -595,7 +595,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String raw = (j < argList.length) ? argList[j].trim() : null;
 
-            String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : substValues(raw, vars, program, root);
+            String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : format(substValues(raw, vars, program, root));
             
 
             if (argType.equals("int")) {
@@ -619,10 +619,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return ret;
     }
     private String format(String expr) {
-        if (expr == null || expr.length() == 0) { return ""; }
+        if (expr == null || expr.length() == 0) { return "' '"; }
         if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return expr.substring(1, expr.length() - 1); }
         
-        return "";
+        return "' '";
     }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
@@ -632,7 +632,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             value = value == null || value.length() == 0 || value.equals("null") ? "" : value;
             
-            if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { expr = replace(expr, "%" + name, value); } 
+            if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { expr = replace(expr, "%" + name, value.equals("' '") ? "" : value); } 
             else { expr = replaceVarOnly(expr, name, value); }
         }
 
