@@ -892,7 +892,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     cmd.put("name", varName);
                     cmd.put("value", value);
                 } 
-                else { echoCommand("build: invalid value for '" + parts[0].trim() + "'"); return null; }
+                else { echoCommand("build: invalid value for '" + parts[0].trim() + "' in: " + line); return null; }
             }
 
             else { echoCommand("build: invalid syntax: '" + line + "'"); return null; }
