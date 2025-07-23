@@ -588,26 +588,35 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); }
 
         for (int j = 0; reads != null && j < reads.size(); j++) {
-            Hashtable a = (Hashtable) reads.elementAt(j);
-            String argName = (String) a.get("name"), argType = (String) a.get("type");
+    Hashtable a = (Hashtable) reads.elementAt(j);
+    String argName = (String) a.get("name");
+    String argType = (String) a.get("type");
 
-            String raw = argList[j].trim();
-            String value = substValues(raw, vars, program, root);
+    String raw = (j < argList.length) ? argList[j].trim() : null;
 
-            value = value == null || value.length() == 0 || value.equals(" ") ? (argType.equals("char") ? "' '" : "0") : value;
-            
-            if (argType.equals("int")) {
-                value = exprCommand(value);
-                if (value.startsWith("expr: ")) {
-                    throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
-                }
-            }
+    String value;
+    if (raw == null || raw.length() == 0) {
+        // Valor ausente ou vazio → substituto padrão
+        if (argType.equals("char")) value = "' '";
+        else if (argType.equals("int") || argType.equals("float")) value = "0";
+        else value = "";
+    } else {
+        value = substValues(raw, vars, program, root);
+    }
 
-            Hashtable local = new Hashtable();
-            local.put("value", value);
-            local.put("instance", argType);
-            newVars.put(argName, local);
+    if (argType.equals("int")) {
+        value = exprCommand(value);
+        if (value.startsWith("expr: ")) {
+            throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
         }
+    }
+
+    Hashtable local = new Hashtable();
+    local.put("value", value);
+    local.put("instance", argType);
+    newVars.put(argName, local);
+}
+
 
         Hashtable newContext = new Hashtable();
         newContext.put("variables", newVars);
