@@ -594,7 +594,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String raw = argList[j].trim();
             String value = substValues(raw, vars, program, root);
 
-            if (value == null || value.length() == 0 || value.equals(" ") || value.equals("null")) {
+            if (value == null || value.length() == 0 || value.equals(" ")) {
                 value = argType.equals("char")? "' '" : "0";
             } 
             if (argType.equals("int")) {
