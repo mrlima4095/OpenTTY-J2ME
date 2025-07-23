@@ -881,7 +881,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     source.addElement(cmd);
                 } continue;
             }
-            else if (line.startsWith("void ")) { echoCommand("build: variable invalid type 'void'"); return null; }
             else if (line.indexOf('=') != -1) {
                 String[] parts = split(line, '=');
                 if (parts.length == 2) {
