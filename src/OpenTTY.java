@@ -507,10 +507,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String type = (String) cmd.get("type");
 
             if (type == null) { }
-            else if (type.equals("printf")) { echoCommand(substValues((String) cmd.get("value"), vars, program, root)); }
-            else if (type.equals("exec")) { processCommand(substValues((String) cmd.get("value"), vars, program, root), true, root); }
+            else if (type.equals("printf")) { echoCommand(format(substValues((String) cmd.get("value"), vars, program, root))); }
+            else if (type.equals("exec")) { processCommand(format(substValues((String) cmd.get("value"), vars, program, root)), true, root); }
             else if (type.equals("assign")) {
-                String name = (String) cmd.get("name"), value = substValues((String) cmd.get("value"), vars, program, root), instance = (String) cmd.get("instance");
+                String name = (String) cmd.get("name"), value = format(substValues((String) cmd.get("value"), vars, program, root)), instance = (String) cmd.get("instance");
                 Hashtable local = new Hashtable();
 
                 if (instance == null) {
@@ -529,7 +529,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             else if (type.equals("return")) {
-                type = (String) context.get("type"); String value = substValues((String) cmd.get("value"), vars, program, root);
+                type = (String) context.get("type"); String value = formatvcfb(substValues((String) cmd.get("value")), vars, program, root);
 
                 if (type.equals("int")) {
                     String expr = exprCommand(value);
@@ -600,9 +600,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (argType.equals("int")) {
                 value = exprCommand(value);
-                if (value.startsWith("expr: ")) {
-                    throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'");
-                }
+                if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'"); }
             }
 
             Hashtable local = new Hashtable();
@@ -620,9 +618,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String ret = run((Vector) fn.get("source"), newContext, root, program, 3);
         return ret;
     }
+    private String format(String expr) {
+        if (expr == null || expr.length() == 0) { return ""; }
+        if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return expr.substring(1, expr.length() - 1); }
+    }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
-        else if (expr.equals("' '")) { return " "; }
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
@@ -633,8 +634,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { expr = replaceVarOnly(expr, name, value); }
         }
 
-        if (!expr.equals("' '") && expr.indexOf("' '") != -1) { expr = replace(expr, "' '", ""); }
-        if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'") && !expr.equals("' '")) { return expr.substring(1, expr.length() - 1); }
+        if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return expr; }
 
         while (true) {
             int open = expr.indexOf('(');
