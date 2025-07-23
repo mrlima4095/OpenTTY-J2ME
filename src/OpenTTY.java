@@ -481,6 +481,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
     // C Programming
+    // | (Runtime)
     private int C2ME(String code, boolean root) {
         Hashtable program = build(getcontent(code));
         if (program == null) { return 1; }
@@ -712,7 +713,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return true;
     }
     private Hashtable getFunction(String name, Hashtable program) { Hashtable functions = (Hashtable) program.get("functions"); return functions.containsKey(name) ? (Hashtable) functions.get(name) : null; }
-
+    // |
+    // Building
     private Hashtable build(String source) {
         Hashtable program = new Hashtable();
         source = removeComments(source).trim();
