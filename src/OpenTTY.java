@@ -623,7 +623,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
 
-            value = value == null || value.length() == 0 ? "" : value.equals("null") ? " " : value;
+            value = value == null || value.length() == 0 ? "" : value;
 
             if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { expr = replace(expr, "%" + name, value); } 
             else { expr = replaceVarOnly(expr, name, value); }
@@ -926,7 +926,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == '{') depthBrace++;
                 else if (c == '}') depthBrace--;
                 else if (c == separator && depthPar == 0 && depthBrace == 0) {
-                    parts.addElement(code.substring(start, i).trim());
+                    if (start < code.length()) {
+                        parts.addElement(code.substring(start).trim());
+                    }
                     start = i + 1;
                 }
             }
