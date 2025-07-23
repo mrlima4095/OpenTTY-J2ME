@@ -921,9 +921,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == '{') depthBrace++;
                 else if (c == '}') depthBrace--;
                 else if (c == separator && depthPar == 0 && depthBrace == 0) {
-                    if (start < code.length()) {
+                    //if (start < code.length()) {
                         parts.addElement(code.substring(start).trim());
-                    }
+                    //}
                     start = i + 1;
                 }
             }
