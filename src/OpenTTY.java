@@ -624,14 +624,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
 
-            value = value == null || value.length() == 0 ? "" : value;
+            value = value == null || value.length() == 0 || value.equals("null") ? "" : value;
 
             if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { expr = replace(expr, "%" + name, value); } 
             else { expr = replaceVarOnly(expr, name, value); }
         }
 
+        if (!expr.equals("' '") && expr.indexOf("' '") != -1) { expr = replace(expr, "' '", ""); }
         if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'") && !expr.equals("' '")) { return expr.substring(1, expr.length() - 1); }
-        else if (!expr.equals("' '") && expr.startsWith("' '")) {  }
         
         while (true) {
             int open = expr.indexOf('(');
