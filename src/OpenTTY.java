@@ -868,10 +868,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (eq != -1) { varName = part.substring(0, eq).trim(); varValue = part.substring(eq + 1).trim(); } 
                     else { varName = part; varValue = varType.equals("char") ? "' '" : "0"; }
 
-                    if (varName.equals("")) {
-                        echoCommand("build: invalid variable declaration: '" + part + "'");
-                        return null;
-                    }
+                    if (varName.equals("")) { echoCommand("build: invalid variable declaration: '" + part + "'"); return null; }
                     cmd = new Hashtable();
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
