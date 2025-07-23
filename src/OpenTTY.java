@@ -623,8 +623,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
 
-            value = value == null || value.length() == 0 ? "" : value;
-
+            value = value == null || value.length() == 0 || value.equals("null") ? "" : value;
+            
             if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { expr = replace(expr, "%" + name, value); } 
             else { expr = replaceVarOnly(expr, name, value); }
         }
@@ -849,8 +849,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
             }
             else if (line.startsWith("else")) { echoCommand("build: invalid token 'else'"); return null; }
-            else if (line.equals("break")) { cmd.put("type", "break"); }
-            else if (line.equals("continue")) { cmd.put("type", "continue"); }
+            else if (line.equals("break") || line.equals("continue")) { cmd.put("type", line); }
             else if (isIsolatedFunctionCall(line)) {
                 String name = line.substring(0, line.indexOf('(')).trim(), arg = extractBetween(line, '(', ')');
                 cmd.put("type", "call"); cmd.put("function", name); cmd.put("args", arg);
