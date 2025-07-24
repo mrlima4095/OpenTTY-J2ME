@@ -574,36 +574,46 @@ public class OpenTTY extends MIDlet implements CommandListener {
         int parIndex = code.indexOf('(');
         if (parIndex == -1 || !code.endsWith(")")) { return code; }
 
-        String fname = code.substring(0, parIndex).trim();
-        String argsBlock = code.substring(parIndex + 1, code.length() - 1);
+        String fname = code.substring(0, parIndex).trim(), argsBlock = code.substring(parIndex + 1, code.length() - 1);
+        String[] argList = argsBlock.equals("") ? new String[0] : splitBlock(argsBlock, ',');
 
         if (fname.equals("printf")) {
-            if (argsBlock.equals("")) { }
-            else {
-                echoCommand(format(substValues(argsBlock, vars, program, root))); return "' '";
-            }
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
+            else { echoCommand(format(substValues(argList[0], vars, program, root))); return "0"; }
         }
-        if (fname.equals("exec")) {
-            if (argsBlock.equals("")) { }
-            else {
-                return String.valueOf(processCommand(format(substValues(argsBlock, vars, program, root)), true, root));
-            }
+        else if (fname.equals("exec")) {
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
+            else { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); }
         }
+        else if (fname.equals("getenv")) {
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
+            else { return env(argList[0]); }
+        }
+        else if (fname.equals("lenstr")) {
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
+            else { return String.valueOf(argList[0].length()); }
+        }
+        else if (fname.equals("trim")) {
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
+            else { return argList[0].trim(); }
+        }
+        /*else if (fname.equals("scanf")) {
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
+            else { return env(argList[0]); }
+        }*/
+
 
         Hashtable fn = getFunction(fname, program);
         if (fn == null) { throw new RuntimeException("function '" + fname + "' not found"); }
 
         Hashtable newVars = new Hashtable();
         Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null;
-        String[] argList = argsBlock.equals("") ? new String[0] : splitBlock(argsBlock, ',');
 
         if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); }
 
         for (int j = 0; reads != null && j < reads.size(); j++) {
             Hashtable a = (Hashtable) reads.elementAt(j);
-            String argName = (String) a.get("name");
-            String argType = (String) a.get("type");
-
+            String argName = (String) a.get("name"), argType = (String) a.get("type");
             String raw = (j < argList.length) ? argList[j].trim() : null;
 
             String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : format(substValues(raw, vars, program, root));
@@ -611,12 +621,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (argType.equals("int")) {
                 value = exprCommand(value);
-                if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' — expected type 'int'"); }
+                if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' - expected type 'int'"); }
             }
 
             Hashtable local = new Hashtable();
-            local.put("value", value);
-            local.put("instance", argType);
+            local.put("value", value); local.put("instance", argType);
             newVars.put(argName, local);
         }
 
