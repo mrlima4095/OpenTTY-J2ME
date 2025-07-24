@@ -585,7 +585,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (fname.equals("len")) {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return String.valueOf(format(argList[0].length())); }
+            else { return format(String.valueOf(argList[0].length())); }
         }
 
 
