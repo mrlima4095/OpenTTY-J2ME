@@ -507,8 +507,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String type = (String) cmd.get("type");
 
             if (type == null) { }
-            else if (type.equals("printf")) { echoCommand(format(substValues((String) cmd.get("value"), vars, program, root))); }
-            else if (type.equals("exec")) { processCommand(format(substValues((String) cmd.get("value"), vars, program, root)), true, root); }
             else if (type.equals("assign")) {
                 String name = (String) cmd.get("name"), value = substValues((String) cmd.get("value"), vars, program, root), instance = (String) cmd.get("instance");
                 Hashtable local = new Hashtable();
@@ -578,6 +576,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         String fname = code.substring(0, parIndex).trim();
         String argsBlock = code.substring(parIndex + 1, code.length() - 1);
+
+        if (fname.equals("printf")) {
+            if (argsBlock.equals("")) { }
+            else {
+                echoCommand(format(substValues(argsBlock, vars, program, root)));
+            }
+        }
+        if (fname.equals("exec")) {
+            if (argsBlock.equals("")) { }
+            else {
+                processCommand(format(substValues(argsBlock, vars, program, root)), true, root);
+            }
+        }
 
         Hashtable fn = getFunction(fname, program);
         if (fn == null) { throw new RuntimeException("function '" + fname + "' not found"); }
