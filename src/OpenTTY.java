@@ -807,11 +807,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable cmd = new Hashtable();
 
             if (line.equals("") || line.equals("' '")) { }
-            else if (line.startsWith("printf") || line.startsWith("exec")) {
-                String msg = extractBetween(line, '(', ')');
-                cmd.put("type", line.startsWith("printf") ? "printf" : "exec");
-                cmd.put("value", msg);
-            }
             else if (line.startsWith("return")) { cmd.put("type", "return"); cmd.put("value", line.substring(7).trim()); }
             else if (line.startsWith("if")) {
                 String type = line.startsWith("if") ? "if" : "else";
