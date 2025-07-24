@@ -580,13 +580,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (fname.equals("printf")) {
             if (argsBlock.equals("")) { }
             else {
-                echoCommand(format(substValues(argsBlock, vars, program, root)));
+                echoCommand(format(substValues(argsBlock, vars, program, root))); return "' '";
             }
         }
         if (fname.equals("exec")) {
             if (argsBlock.equals("")) { }
             else {
-                processCommand(format(substValues(argsBlock, vars, program, root)), true, root);
+                return String.valueOf(processCommand(format(substValues(argsBlock, vars, program, root)), true, root));
             }
         }
 
