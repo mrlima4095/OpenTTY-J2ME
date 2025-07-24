@@ -513,13 +513,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (instance == null) {
                     if (vars.containsKey(name)) { instance = (String) ((Hashtable) vars.get(name)).get("instance"); }
-                    else { throw new RuntimeException("unknown declare of '" + name + "'"); }
+                    else { throw new RuntimeException("'" + name + "' undeclared"); }
                 } 
 
                 if (instance.equals("int")) {
                     value = exprCommand(value);
                     
-                    if (value.startsWith("expr: ")) { throw new RuntimeException("invalid declare value"); } 
+                    if (value.startsWith("expr: ")) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); } 
                 } 
 
                 local.put("value", value == null || value.length() == 0 ? "' '" : value); local.put("instance", instance);
@@ -532,7 +532,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (type.equals("int")) {
                     String expr = exprCommand(value);
                     
-                    if (expr.startsWith("expr: ")) { throw new RuntimeException("invalid return value"); } 
+                    if (expr.startsWith("expr: ")) { throw new RuntimeException("invalid return value for function of type 'int'"); } 
                     else { return expr; }
                     
                 } else { return value; }
@@ -563,9 +563,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 else { throw new RuntimeException("not in a loop"); }
             }
-            else if (type.equals("call")) {
-                call((String) cmd.get("function") + "(" + substValues((cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root);
-            }
+            else if (type.equals("call")) { call((String) cmd.get("function") + "(" + substValues((cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root); }
         }
 
         return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null;
@@ -717,7 +715,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         expr = expr.trim();
-        if (expr.equals("0") || expr.equals("")) return false;
+        if (expr.equals("0") || expr.equals("") || expr.equals("' '") || expr.equals("\"\"")) return false;
         return true;
     }
     private Hashtable getFunction(String name, Hashtable program) { Hashtable functions = (Hashtable) program.get("functions"); return functions.containsKey(name) ? (Hashtable) functions.get(name) : null; }
