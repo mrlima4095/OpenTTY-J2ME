@@ -585,22 +585,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
             else { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); }
         }
-        else if (fname.equals("getenv")) {
+        else if (fname.equals("len")) {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return env(argList[0]); }
+            else { return String.valueOf(format(argList[0].length())); }
         }
-        else if (fname.equals("lenstr")) {
-            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return String.valueOf(argList[0].length()); }
-        }
-        else if (fname.equals("trim")) {
-            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return argList[0].trim(); }
-        }
-        /*else if (fname.equals("scanf")) {
-            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return env(argList[0]); }
-        }*/
 
 
         Hashtable fn = getFunction(fname, program);
@@ -648,9 +636,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (expr == null || expr.length() == 0) { return ""; }
 
         for (Enumeration e = vars.keys(); e.hasMoreElements(); ) {
-            String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
+            String name = (String) e.nextElement(), value = ((String) ((Hashtable) vars.get(name)).get("value"));
 
-            value = value == null || value.length() == 0 || value.equals("null") ? "" : value;
+            value = value == null || value.length() == 0 || value.equals("null") ? "" : format(value);
             
             if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { expr = replace(expr, "%" + name, value.equals("' '") ? "" : value); } 
             else { expr = replaceVarOnly(expr, name, value); }
