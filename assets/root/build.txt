@@ -96,4 +96,4 @@
 [2025-1.16-02x29]	C2ME
 [2025-1.16-02x30]	!! can read args and set it as prefix for last command
 [2025-1.16-02x31]	X11 Lists reading FIRE button to tick user button
-[2025-1.16-02x32]	Command expr supporting operator "%"
+[2025-1.16-02x32]	Command expr supporting operator "%" (reverted)
