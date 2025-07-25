@@ -4,11 +4,9 @@
     Version: 1.0
 */
 
-int seed=1162025;
-
-
 // Environment Keys
 char getenv(char key) { return "$%key"; }
+char setenv(char key, char value) { return exec("set %key=%value") }
 char getuser() { return getenv("USERNAME"); }
 char hostname() { return getenv("HOSTNAME"); }
 char version() { return getenv("VERSION"); }
@@ -17,5 +15,5 @@ char version() { return getenv("VERSION"); }
 char append(char text, char buffer) { return "%buffer%text"; }
 
 
-int rand(int max) { seed = mod((seed * 1103515245 + 12345), 2147483648); return mod(seed, max); }
+int rand(int max) { int seed = getenv("SEED"); if (seed == "$.SEED") { seed = 116; }; seed = mod((seed * 1103515245 + 12345), 2147483648); seed = mod(seed, max); setenv("SEED", seed); return seed }
 int mod(int a, int b) { return a - (a / b) * b; }
