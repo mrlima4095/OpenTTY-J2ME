@@ -584,7 +584,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String OUT = format(argList[1]);
                     if (OUT.equals("stdout")) {
                         
-                    } else if (OUT.equals())
+                    } else if (OUT.equals("stdin")) {
+                        
+                    } else if (OUT.equals("nano")) {
+                        
+                    } else {
+                        
+                    }
                 } 
                 else {
                     stdout.setText(stdout.getText().equals("") ? value : stdout.getText() + "\n" + value);
