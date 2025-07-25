@@ -16,7 +16,7 @@ char append(char text, char buffer) { return "%buffer %text"; }
 int random(int max, int seed) {
     int i;
     if (seed != 0) { i = seed; } 
-    else { i = 1; };
+    else { i = 4095; };
 
     i = i * 1162025 + 12345;
 
