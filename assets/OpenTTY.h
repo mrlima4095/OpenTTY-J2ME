@@ -13,7 +13,7 @@ char getuser() { return "$USERNAME"; }
 char append(char text, char buffer) { return "%buffer %text"; }
 
 
-int random(int max, int seed) {
+char random(int max, int seed) {
     if (seed == 0) { seed = 4095; };
 
     seed = seed * 1162025 + 12345;
