@@ -15,17 +15,16 @@ char append(char text, char buffer) { return "%buffer %text"; }
 
 int random(int max, int seed) {
     int i;
-    if (seed != 0) {
-        i = seed;
-    } else {
-        i = 1;
-    }
+    if (seed != 0) { i = seed; } 
+    else { i = 1; };
 
     i = i * 1103515245 + 12345;
 
-    return i % max;
-}
+    int q = i / max;
+    int r = i - (q * max);
 
+    return r;
+}
 
 
 int main() {
