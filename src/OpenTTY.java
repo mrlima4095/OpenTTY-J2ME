@@ -626,7 +626,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private String format(String expr) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return "' '"; }
-        if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return expr.substring(1, expr.length() - 1); }
+        if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return env(expr.substring(1, expr.length() - 1)); }
         
         return env(expr);
     }
