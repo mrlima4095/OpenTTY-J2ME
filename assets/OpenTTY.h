@@ -18,7 +18,10 @@ char random(int max, int seed) {
 
     seed = seed * 1162025 + 12345;
 
-    return (seed / max) * (seed / 8);
+    while (seed > max) {
+    	seed = seed / 2;
+    };
+    return seed;
 }
 
 
