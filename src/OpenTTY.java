@@ -577,8 +577,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (fname.equals("")) { return "0"; }
         if (fname.equals("printf")) {
-            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { echoCommand(format(substValues(argList[0], vars, program, root))); return "0"; }
+            if (argList.length < 1 || argList > 2) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
+            else {
+                String value = format(substValues(argList[0], vars, program, root));
+                if (argList.length == 2) {
+                    String OUT = format(argList[1]);
+                    if (OUT.equals("stdout")) {
+                        
+                    } else if (OUT.equals())
+                } 
+                else {
+                    stdout.setText(stdout.getText().equals("") ? value : stdout.getText() + "\n" + value);
+                }
+                
+                return "0"; 
+            }
         }
         else if (fname.equals("exec")) {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
