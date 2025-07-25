@@ -483,7 +483,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // C Programming
     // | (Runtime)
     private int C2ME(String code, boolean root) {
-        Hashtable program = build(code.startsWith("int main()") ? code : getcontent(code));
+        Hashtable program = build(getcontent(code));
         if (program == null) { return 1; }
 
         Hashtable main = (Hashtable) program.get("main");
