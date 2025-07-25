@@ -5,10 +5,6 @@
 
 */
 
-char getuser() { return "$USERNAME"; }
-
-
-
 // Text API 
 char append(char text, char buffer) { return "%buffer %text"; }
 

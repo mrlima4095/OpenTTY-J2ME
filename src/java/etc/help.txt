@@ -14,8 +14,8 @@ File API:
   find  get getopt  getty  grep
   hash  head  html  install  json
   ls  lsblk  mkdir  mount  nano
-  open  ph2s pinc  pjnc  pwd  raw
-  read  rm  rraw  sed  tail  touch  wc
+  open  ph2s pinc  pjnc  pwd  read
+  rm  sed  tail  touch  wc
 
 Session API:
   login  logout  passwd  sudo  su
@@ -32,7 +32,7 @@ MIDlet Builtins:
   hostname  hostid  locale  log
   logcat  man  pkg  report  return
   set  sh  title  true  tty  uname
-  unalias  unset  uuid  warn  
+  unalias  unset  warn  
 
 Others API: 
   audio  java  prg  wrl  x11
