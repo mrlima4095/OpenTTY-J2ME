@@ -586,19 +586,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String value = format(substValues(argList[0], vars, program, root));
                 if (argList.length == 2) {
                     String OUT = format(substValues(argList[1], vars, program, root));;
-                    if (OUT.equals("stdout")) {
-                        stdout.setText(stdout.getText().equals("") ? value : stdout.getText() + "\n" + value);
-                    } else if (OUT.equals("stdin")) {
-                        stdin.setString(value);
-                    } else if (OUT.equals("nano")) {
-                        nanoContent = nanoContent.equals("") ? value : nanoContent + "\n" + value;
-                    } else {
-                        return String.valueOf(writeRMS(OUT, value));
-                    }
+                    
+                    if (OUT.equals("stdout")) { stdout.setText(stdout.getText().equals("") ? value : stdout.getText() + "\n" + value); } 
+                    else if (OUT.equals("stdin")) { stdin.setString(value); } 
+                    else if (OUT.equals("nano")) { nanoContent = nanoContent.equals("") ? value : nanoContent + "\n" + value; } 
+                    else { return String.valueOf(writeRMS(OUT, value)); }
                 } 
-                else {
-                    echoCommand(value);
-                }
+                else { echoCommand(value); }
                 
                 return "0"; 
             }
@@ -607,15 +601,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
             else {
                 String IN = format(substValues(argList[0], vars, program, root));
-                if (IN.equals("stdout")) {
-                    return stdout.getText();
-                }
-                else if (IN.equals("stdin")) {
-                    return stdin.getString();
-                }
+                if (IN.equals("stdout")) { return stdout.getText(); }
+                else if (IN.equals("stdin")) { return stdin.getString(); }
+
                 return getcontent(IN);
             }
         }
+        else if (fname.equals("format"))
         else if (fname.equals("exec")) {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
             else { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); }
