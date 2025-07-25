@@ -1,17 +1,19 @@
 /* 
-	OpenTTY C2ME APi
+	OpenTTY C2ME API
 	
 
 
 */
 
-// Text API 
+char getenv(char key) { return "$%key"; }
+char getuser() { return getenv("USERNAME"); }
+
+
+// Text 
 char append(char text, char buffer) { return "%buffer %text"; }
 
-// MIDlet
-int ttysize() { return len(open("stdout")); }
-int clear() { return exec("clear stdout"); }
+
 
 int main() {
-	printf("OpenTTY C2ME API");
+    printf("OpenTTY C2ME API");
 }
