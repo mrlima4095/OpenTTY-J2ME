@@ -729,8 +729,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int idx = expr.indexOf(op);
 
             if (idx != -1) {
-                String left = substValues(expr.substring(0, idx).trim(), vars, program, root);
-                String right = substValues(expr.substring(idx + op.length()).trim(), vars, program, root);
+                String left = format(substValues(expr.substring(0, idx).trim(), vars, program, root));
+                String right = format(substValues(expr.substring(idx + op.length()).trim(), vars, program, root));
 
                 Double a = getNumber(left);
                 Double b = getNumber(right);
