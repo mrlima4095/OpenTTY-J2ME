@@ -527,17 +527,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             if (value.startsWith("expr: ")) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); }
                         }
                         ((Hashtable) vars.get(name)).put("value", value);
-                    } else {
-                        Hashtable globals = (Hashtable) program.get("globals");
-                        if (globals != null && globals.containsKey(name)) {
-                            instance = (String) ((Hashtable) globals.get(name)).get("instance");
-                            if (instance.equals("int")) {
-                                value = exprCommand(value);
-                                if (value.startsWith("expr: ")) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); }
-                            }
-                            ((Hashtable) globals.get(name)).put("value", value);
-                        } else { throw new RuntimeException("'" + name + "' undeclared"); }
-                    }
+                    } else { throw new RuntimeException("'" + name + "' undeclared"); }
                 }
             }
             else if (type.equals("return")) {
@@ -687,20 +677,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { expr = replaceVarOnly(expr, name, value); }
         }
 
-        Hashtable globals = (Hashtable) program.get("globals");
-        if (globals != null) {
-            for (Enumeration g = globals.keys(); g.hasMoreElements();) {
-                String name = (String) g.nextElement(), value = (String) ((Hashtable) globals.get(name)).get("value");
-                value = value == null || value.length() == 0 || value.equals("null") ? "" : format(value);
-
-                if (vars.containsKey(name)) { } 
-                else {
-                    if ((expr.startsWith("\"") && expr.endsWith("\"")) || (expr.startsWith("'") && expr.endsWith("'"))) { expr = replace(expr, "%" + name, value.equals("' '") ? "" : value); } 
-                    else { expr = replaceVarOnly(expr, name, value); }
-                }
-            }
-        }
-
         if ((expr.startsWith("\"") && expr.endsWith("\"")) || (expr.startsWith("'") && expr.endsWith("'"))) { return expr; }
 
         while (true) {
@@ -815,50 +791,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (!globals.containsKey(k)) globals.put(k, importedGlobals.get(k));
                 }
             } else { echoCommand("build: invalid include format: " + line); return null; }
-        }
-
-        while (true) {
-            boolean found = false;
-            String[] lines = splitBlock(source, ';');
-            for (int i = 0; i < lines.length; i++) {
-                String line = lines[i].trim();
-                if (startsWithAny(line, new String[]{"int", "char"})){
-                    found = true;
-                    String varType = line.startsWith("char ") ? "char" : "int";
-                    String decls = line.substring(varType.length()).trim();
-
-                    String[] vars = split(decls, ',');
-                    for (int j = 0; j < vars.length; j++) {
-                        String part = vars[j].trim();
-                        String varName, varValue;
-                        int eq = part.indexOf('=');
-
-                        if (eq != -1) {
-                            varName = part.substring(0, eq).trim();
-                            varValue = part.substring(eq + 1).trim();
-                        } 
-                        else { varName = part; varValue = varType.equals("char") ? "' '" : "0"; }
-
-                        if (varName.equals("")) { echoCommand("build: invalid global declaration: '" + part + "'"); return null; }
-
-                        Hashtable info = new Hashtable();
-                        info.put("type", varType);
-
-                        if (varType.equals("int")) {
-                            String eval = exprCommand(varValue);
-                            if (eval.startsWith("expr:")) { echoCommand("build: invalid value for global var '" + varName + "'"); return null; }
-                            info.put("value", eval);
-                        } 
-                        else { info.put("value", varValue); }
-
-                        globals.put(varName, info);
-                    }
-
-                    int idx = source.indexOf(line + ";");
-                    if (idx != -1) { source = source.substring(0, idx) + source.substring(idx + (line + ";").length()); }
-                }
-            }
-            if (!found) break;
         }
 
         while (true) {
