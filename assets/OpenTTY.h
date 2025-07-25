@@ -17,5 +17,5 @@ char version() { return getenv("VERSION"); }
 char append(char text, char buffer) { return "%buffer%text"; }
 
 
-int rand(int max) { seed = (seed * 1103515245 + 12345) % 2147483648; return mod(seed, max); }
+int rand(int max) { seed = mod((seed * 1103515245 + 12345), 2147483648); return mod(seed, max); }
 int mod(int a, int b) { return a - (a / b) * b; }
