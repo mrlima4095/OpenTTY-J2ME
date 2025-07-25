@@ -1,19 +1,16 @@
-/* 
-	OpenTTY C2ME API
-	
-
-
+/*
+    OpenTTY C2ME Standard Library
+    Author: Mr. Lima
+    Version: 1.0
 */
 
+
+// Environment Keys
 char getenv(char key) { return "$%key"; }
 char getuser() { return getenv("USERNAME"); }
+char hostname() { return getenv("HOSTNAME"); }
+char version() { return getenv("VERSION"); }
 
+// Text Handlers
+char append(char text, char buffer) { return "%buffer%text"; }
 
-// Text 
-char append(char text, char buffer) { return "%buffer %text"; }
-
-
-
-int main() {
-    printf("OpenTTY C2ME API");
-}
