@@ -19,7 +19,11 @@ int rand(int max) {
     int seed = exec("case !key (SEED) set SEED=116"); 
 
     seed = getenv("$SEED"); 
-    seed = ((seed * 1103515245 + 12345) - (seed + 12345 / 2025) * 1162025) / (max * max);
+    seed = ((seed * 1103515245 + 12345) - (seed + 12345 / 2025) * 1162025) / (max);
+
+    while (seed > max) {
+        seed = seed - max;
+    };
 
     setenv("SEED", seed); 
 
