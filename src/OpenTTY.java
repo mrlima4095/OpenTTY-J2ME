@@ -490,31 +490,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String[] argList = argsBlock.equals("") ? new String[0] : splitBlock(argsBlock, ','); 
 
         if (fname.equals("")) { return "0"; } 
-        if (fname.equals("printf")) { if (argList.length < 1 || argList.length > 2) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); } else { String value = format(substValues(argList[0], vars, program, root)); if (argList.length == 2) { String OUT = format(substValues(argList[1], vars, program, root)); if (OUT.equals("stdout")) { stdout.setText(stdout.getText().equals("") ? value : stdout.getText() + "\n" + value); } else if (OUT.equals("stdin")) { stdin.setString(value); } else if (OUT.equals("nano")) { nanoContent = nanoContent.equals("") ? value : nanoContent + "\n" + value; } else { return String.valueOf(writeRMS(OUT, value)); } } else { echoCommand(value); } return "0"; } } 
-        else if (startsWithAny(fname, new String[]{"open", "getenv", "exec", "len", "rand"})) { 
+        else if (fname.equals("exec")) { 
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); } 
-            else { 
-                if (fname.equals("open")) { 
-                    String IN = format(substValues(argList[0], vars, program, root)); 
-                    IN = IN.equals("stdout") ? stdout.getText() : IN.equals("stdin") ? stdin.getString() : getcontent(IN); 
-
-                    return validChar(IN) ? IN : "\"" + IN + "\""; 
-                } 
-                else if (fname.equals("getenv")) { return format(substValues(argList[0], vars, program, root)); } 
-                else if (fname.equals("exec")) { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); } 
-                else if (fname.equals("len")) { return String.valueOf(format(substValues(argList[0], vars, program, root)).length()); } 
-                else if (fname.equals("rand")) { return String.valueOf(random.nextInt(Integer.parseInt(format(substValues(argList[0], vars, program, root))))); } 
-            }
-        } 
-
-        Hashtable fn = getFunction(fname, program); 
-        if (fn == null) { throw new RuntimeException("function '" + fname + "' not found"); } 
-
-        Hashtable newVars = new Hashtable(); 
-        Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null; 
-
-        if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); } 
-        for (int j = 0; reads != null && j < reads.size(); j++) { Hashtable a = (Hashtable) reads.elementAt(j); String argName = (String) a.get("name"), argType = (String) a.get("type"); String raw = (j < argList.length) ? argList[j].trim() : null; String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : format(substValues(raw, vars, program, root)); if (argType.equals("int")) { value = exprCommand(value); if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' - expected type 'int'"); } } Hashtable local = new Hashtable(); local.put("value", value); local.put("instance", argType); newVars.put(argName, local); } Hashtable newContext = new Hashtable(); newContext.put("variables", newVars); newContext.put("type", fn.get("type")); newContext.put("source", fn.get("source")); String ret = run((Vector) fn.get("source"), newContext, root, program, 3); return ret; }
+            else { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); } } Hashtable fn = getFunction(fname, program); if (fn == null) { throw new RuntimeException("function '" + fname + "' not found"); } Hashtable newVars = new Hashtable(); Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null; if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); } for (int j = 0; reads != null && j < reads.size(); j++) { Hashtable a = (Hashtable) reads.elementAt(j); String argName = (String) a.get("name"), argType = (String) a.get("type"); String raw = (j < argList.length) ? argList[j].trim() : null; String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : format(substValues(raw, vars, program, root)); if (argType.equals("int")) { value = exprCommand(value); if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' - expected type 'int'"); } } Hashtable local = new Hashtable(); local.put("value", value); local.put("instance", argType); newVars.put(argName, local); } Hashtable newContext = new Hashtable(); newContext.put("variables", newVars); newContext.put("type", fn.get("type")); newContext.put("source", fn.get("source")); String ret = run((Vector) fn.get("source"), newContext, root, program, 3); return ret; }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
 
