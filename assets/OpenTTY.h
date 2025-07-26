@@ -16,10 +16,9 @@ char append(char text, char buffer) { return "%buffer%text"; }
 
 int rand(int max) { 
     if (max <= 0) { return 0; };
-    exec("case !key (SEED) set SEED=116"); 
+    int seed = exec("case !key (SEED) set SEED=116"); 
 
-    int seed = getenv("$SEED"); 
-    
+    seed = getenv("$SEED"); 
     seed = mod((seed * 1103515245 + 12345), 1162025);
     seed = mod(seed, max); 
 
