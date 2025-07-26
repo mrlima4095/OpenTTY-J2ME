@@ -283,7 +283,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
-        else if (mainCommand.equals("c")) { echoCommand(renderJSON(build(getcontent(argument)), 0)); }
         else if (mainCommand.equals("build")) { if (argument.equals("")) { return 2; } else { return C2ME(argument, root); } }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
         
@@ -540,7 +539,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return out.toString();
     }
     private int findMatchingParen(String expr, int open) { int depth = 0; for (int i = open; i < expr.length(); i++) { char c = expr.charAt(i); if (c == '(') depth++; else if (c == ')') { depth--; if (depth == 0) { return i; } } } return -1; }
-
     private boolean eval(String expr, Hashtable vars, Hashtable program, boolean root) { String[] ops = {">=", "<=", "==", "!=", ">", "<", "startswith", "endswith", "contains"}; for (int i = 0; i < ops.length; i++) { String op = ops[i]; int idx = expr.indexOf(op); if (idx != -1) { String left = format(substValues(expr.substring(0, idx).trim(), vars, program, root)), right = format(substValues(expr.substring(idx + op.length()).trim(), vars, program, root)); Double a = getNumber(left), b = getNumber(right); if (a != null && b != null) { if (op.equals(">")) { return a > b; } if (op.equals("<")) { return a < b; } if (op.equals(">=")) { return a >= b; } if (op.equals("<=")) { return a <= b; } if (op.equals("==")) { return a.doubleValue() == b.doubleValue(); } if (op.equals("!=")) { return a.doubleValue() != b.doubleValue(); } } else { if (op.equals("==")) { return left.equals(right); } if (op.equals("!=")) { return !left.equals(right); } if (op.equals("endswith")) { return left.endsWith(right); } if (op.equals("startswith")) { return left.startsWith(right); } if (op.equals("contains")) { return left.indexOf(right) != -1; } } } } expr = expr.trim(); if (expr.equals("0") || expr.equals("") || expr.equals("' '") || expr.equals("\"\"")) { return false; } return true; }
     private boolean validInt(String expr) { return exprCommand(expr).startsWith("expr: ") ? false : true; }
     private boolean validChar(String expr) { return ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) }
