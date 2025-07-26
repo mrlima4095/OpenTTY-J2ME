@@ -13,22 +13,3 @@ char version() { return getenv("VERSION"); }
 // Text Handlers
 char append(char text, char buffer) { return "%buffer%text"; }
 
-
-int rand(int max) { 
-    if (max <= 0) { return 0; };
-    int seed = exec("case !key (SEED) set SEED=116"); 
-
-    seed = getenv("$SEED"); 
-    seed = (seed * seed) * 1162025;
-
-    if (seed < max) {
-        
-    } else {
-        while (seed > max) {
-            seed = seed - (max / 2);
-        }
-    };
-
-    setenv("SEED", seed); 
-    return seed; 
-}
