@@ -1,1 +1,0 @@
-char append(char text, char buffer) { return "%buffer%text"; } int main() { int i, j, n=6; while (i < n) { j=0; char line; while (j < n - i - 1) { line = append(" ", line); j=j+1; }; j = n-i-1; while (j < n+i) { line = append("*", line); j=j+1; }; printf(append(_, line)); i = i+1; } }
