@@ -20,7 +20,7 @@ int rand(int max) {
 
     seed = getenv("$SEED"); 
     seed = mod((seed * 1103515245 + 12345), 1162025);
-    seed = seed - (seed / max);
+    seed = seed / max;
 
     setenv("SEED", seed); 
 
