@@ -25,5 +25,5 @@ int rand(int max) {
 
     setenv("SEED", seed); 
 
-    return seed; a - (a / b) * b;
+    return seed; 
 }
