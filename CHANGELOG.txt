@@ -31,6 +31,7 @@ LTS Edition
 - Fixed history duplicated appending bug
 - **!!** can read args and set it as prefix for last command
 - **FIRE** button in X11 lists run user button
+- Command `cat` without args prints nano content
 
 [ _Notes_ ]
 
