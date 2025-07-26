@@ -511,24 +511,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String name = (String) cmd.get("name"), value = substValues((String) cmd.get("value"), vars, program, root), instance = (String) cmd.get("instance");
                 Hashtable local = new Hashtable();
 
-                if (instance != null) {
-                    if (instance.equals("int")) {
-                        value = exprCommand(value);
-                        if (value.startsWith("expr: ")) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); }
-                    }
-                    local.put("value", value == null || value.length() == 0 ? "' '" : value);
-                    local.put("instance", instance);
-                    vars.put(name, local);
-                } else {
-                    if (vars.containsKey(name)) {
-                        instance = (String) ((Hashtable) vars.get(name)).get("instance");
-                        if (instance.equals("int")) {
-                            value = exprCommand(value);
-                            if (value.startsWith("expr: ")) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); }
-                        }
-                        ((Hashtable) vars.get(name)).put("value", value);
-                    } else { throw new RuntimeException("'" + name + "' undeclared"); }
+                if (instance == null) {
+                    if (vars.containsKey(name)) { instance = (String) ((Hashtable) vars.get(name)).get("instance"); }
+                    else { throw new RuntimeException("'" + name + "' undeclared"); }
                 }
+
+                if (instance.equals("int")) {
+                    value = exprCommand(value);
+                    if (value.startsWith("expr: ")) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); }
+                }
+                else if (instance.equals("char") && (!(value.startsWith("\"") && value.endsWith("\"")) || !(value.startsWith("'") && value.endsWith("'")))) {
+                    value = "\"" + value + "\""
+                }
+                    
+
+                local.put("value", value == null || value.length() == 0 ? "' '" : value);
+                local.put("instance", instance);
+                vars.put(name, local);
             }
             else if (type.equals("return")) {
                 type = (String) context.get("type"); String value = substValues((String) cmd.get("value"), vars, program, root);

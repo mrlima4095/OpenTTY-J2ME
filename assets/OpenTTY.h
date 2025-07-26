@@ -14,5 +14,21 @@ char version() { return getenv("VERSION"); }
 char append(char text, char buffer) { return "%buffer%text"; }
 
 
+<<<<<<< Updated upstream
 int rand(int max) { int seed = getenv("$SEED"); if (seed == $.SEED) { seed = 116; }; seed = mod((seed * 1103515245 + 12345), 2147483648); seed = mod(seed, max); setenv("SEED", seed); return seed; }
+=======
+int rand(int max) { 
+    if (max <= 0) { return 0; };
+    exec("case !key (SEED) set SEED=116"); 
+
+    int seed = getenv("$SEED"); 
+    
+    seed = mod((seed * 1103515245 + 12345), 1162025);
+    seed = mod(seed, max); 
+
+    setenv("SEED", seed); 
+
+    return seed; 
+}
+>>>>>>> Stashed changes
 int mod(int a, int b) { return a - (a / b) * b; }
