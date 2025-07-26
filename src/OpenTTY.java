@@ -496,17 +496,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 if (fname.equals("open")) { 
                     String IN = format(substValues(argList[0], vars, program, root)); 
-                    if (IN.equals("stdout")) { return stdout.getText(); } 
-                    else if (IN.equals("stdin")) { return stdin.getString(); } 
+                    IN = IN.equals("stdout") ? stdout.getText() : IN.equals("stdin") ? stdin.getString() : getcontent(IN); 
 
-                    return getcontent(IN); 
+                    return validChar(IN) ? IN : "\"" + IN + "\""; 
                 } 
                 else if (fname.equals("getenv")) { return format(substValues(argList[0], vars, program, root)); } 
                 else if (fname.equals("exec")) { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); } 
-                else if (fname.equals("len")) { return format(String.valueOf(argList[0].length())); } 
-                else if (fname.equals("rand")) { return String.valueOf(random.nextInt(Integer.parseInt(argList[0]))); } 
+                else if (fname.equals("len")) { return String.valueOf(format(substValues(argList[0], vars, program, root)).length()); } 
+                else if (fname.equals("rand")) { return String.valueOf(random.nextInt(Integer.parseInt(format(substValues(argList[0], vars, program, root))))); } 
             }
-        } Hashtable fn = getFunction(fname, program); if (fn == null) { throw new RuntimeException("function '" + fname + "' not found"); } Hashtable newVars = new Hashtable(); Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null; if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); } for (int j = 0; reads != null && j < reads.size(); j++) { Hashtable a = (Hashtable) reads.elementAt(j); String argName = (String) a.get("name"), argType = (String) a.get("type"); String raw = (j < argList.length) ? argList[j].trim() : null; String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : format(substValues(raw, vars, program, root)); if (argType.equals("int")) { value = exprCommand(value); if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' - expected type 'int'"); } } Hashtable local = new Hashtable(); local.put("value", value); local.put("instance", argType); newVars.put(argName, local); } Hashtable newContext = new Hashtable(); newContext.put("variables", newVars); newContext.put("type", fn.get("type")); newContext.put("source", fn.get("source")); String ret = run((Vector) fn.get("source"), newContext, root, program, 3); return ret; }
+        } 
+
+        Hashtable fn = getFunction(fname, program); 
+        if (fn == null) { throw new RuntimeException("function '" + fname + "' not found"); } 
+
+        Hashtable newVars = new Hashtable(); 
+        Vector reads = fn.containsKey("read") ? (Vector) fn.get("read") : null; 
+
+        if ((reads == null && argList.length > 0) || (reads != null && reads.size() != argList.length)) { throw new RuntimeException("function '" + fname + "' expects " + (reads != null ? reads.size() : 0) + " argument(s), got " + argList.length); } 
+        for (int j = 0; reads != null && j < reads.size(); j++) { Hashtable a = (Hashtable) reads.elementAt(j); String argName = (String) a.get("name"), argType = (String) a.get("type"); String raw = (j < argList.length) ? argList[j].trim() : null; String value = raw == null || raw.length() == 0 ? (argType.equals("char") ? "' '" : "0") : format(substValues(raw, vars, program, root)); if (argType.equals("int")) { value = exprCommand(value); if (value.startsWith("expr: ")) { throw new RuntimeException("invalid argument for '" + argName + "' - expected type 'int'"); } } Hashtable local = new Hashtable(); local.put("value", value); local.put("instance", argType); newVars.put(argName, local); } Hashtable newContext = new Hashtable(); newContext.put("variables", newVars); newContext.put("type", fn.get("type")); newContext.put("source", fn.get("source")); String ret = run((Vector) fn.get("source"), newContext, root, program, 3); return ret; }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
 
@@ -514,11 +522,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
             value = value == null || value.length() == 0 || value.equals("null") ? "" : format(value);
 
-            if ((expr.startsWith("\"") && expr.endsWith("\"")) || (expr.startsWith("'") && expr.endsWith("'"))) { expr = replace(expr, "%" + name, value.equals("' '") ? "" : value); } 
+            if (validChar(expr)) { expr = replace(expr, "%" + name, value.equals("' '") ? "" : value); } 
             else { expr = replaceVarOnly(expr, name, value); }
         }
 
-        if ((expr.startsWith("\"") && expr.endsWith("\"")) || (expr.startsWith("'") && expr.endsWith("'"))) { return expr; }
+        if (validChar(expr)) { return expr; }
 
         while (true) {
             int open = expr.indexOf('(');
@@ -546,7 +554,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
-    private String format(String expr) throws RuntimeException { if (expr == null || expr.length() == 0) { return "' '"; } if (expr.startsWith("\"") && expr.endsWith("\"") || expr.startsWith("'") && expr.endsWith("'")) { return env(expr.substring(1, expr.length() - 1)); } return env(expr); }
+    private String format(String expr) throws RuntimeException { if (expr == null || expr.length() == 0) { return "' '"; } if (validChar(expr)) { return env(expr.substring(1, expr.length() - 1)); } return env(expr); }
     private String replaceVarOnly(String expr, String name, String value) {
         StringBuffer out = new StringBuffer();
         int i = 0;
@@ -575,17 +583,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String removeComments(String code) { while (true) { int idx = code.indexOf("//"); if (idx == -1) { break; } int endl = code.indexOf("\n", idx); if (endl == -1) { endl = code.length(); } code = code.substring(0, idx) + code.substring(endl); } while (true) { int start = code.indexOf("/*"); if (start == -1) { break; } int end = code.indexOf("*/", start + 2); if (end == -1) { code = code.substring(0, start); break; } code = code.substring(0, start) + code.substring(end + 2); } return code; }
     private String[] splitBlock(String code, char separator) {
         Vector parts = new Vector();
-        int depthPar = 0, depthBrace = 0;
+        int depthPar = 0, depthBrace = 0, start = 0;
         boolean inString = false;
-        int start = 0;
 
         for (int i = 0; i < code.length(); i++) {
             char c = code.charAt(i);
 
             if (c == '"') {
-                if (i == 0 || code.charAt(i - 1) != '\\') {
-                    inString = !inString;
-                }
+                if (i == 0 || code.charAt(i - 1) != '\\') { inString = !inString; }
             } else if (!inString) {
                 if (c == '(') depthPar++;
                 else if (c == ')') depthPar--;
