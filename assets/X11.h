@@ -1,19 +1,26 @@
-/* 
-	Graphics C2ME API
-	
+/*
+    Graphics C2ME Library
+    Author: Mr. Lima
+    Version: 1.0
 */
 
 #include "OpenTTY.h"
 
-
-int title(char text) { return exec("title %text"); }
-int WindowTitle(char text) { return exec("x11 title %text"); }
-
-int alert(char text) { return exec("warn %text"); }
-int gauge(char text) { return exec("gauge %text"); }
-int tick(char text) {
-	if (text == "hide") { return exec("tick"); } 
-	else { return exec("tick %text"); }
+int WindowTitle(char text) {
+    return exec("x11 title %text");
+}
+int Alert(char msg) {
+    return exec("warn %msg");
 }
 
+int SaveWindow(char name) {
+    return exec("x11 set %name");
+}
+int LoadWindow(char name) {
+    return exec("x11 load %name");
+}
+
+int SetTicker(char msg) {
+    return exec("x11 tick %msg");
+}
 
