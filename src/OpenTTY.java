@@ -500,7 +500,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { throw new RuntimeException("'" + name + "' undeclared"); }
                 }
 
-                if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); } }
+                if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); }
                 if (instance.equals("char") && !validChar(value)) { value = "\"" + value + "\""; }
                     
 
@@ -577,31 +577,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return "0"; 
             }
         }
-        else if (fname.equals("open")) {
+        else if (startsWithAny(fname, new String[]{"open", "getenv", "exec", "len", "rand"})) {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
             else {
-                String IN = format(substValues(argList[0], vars, program, root));
-                if (IN.equals("stdout")) { return stdout.getText(); }
-                else if (IN.equals("stdin")) { return stdin.getString(); }
+                if (fname.equals("open")) {
+                    else {
+                        String IN = format(substValues(argList[0], vars, program, root));
+                        if (IN.equals("stdout")) { return stdout.getText(); }
+                        else if (IN.equals("stdin")) { return stdin.getString(); }
 
-                return getcontent(IN);
+                        return getcontent(IN);
+                    }
+                }
+                else if (fname.equals("getenv")) { return format(substValues(argList[0], vars, program, root)); }
+                else if (fname.equals("exec")) { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); }
+                else if (fname.equals("len")) { return format(String.valueOf(argList[0].length())); }
+                else if (fname.equals("rand")) { return String.valueOf(random.nextInt(Integer.parseInt(argList[0]))); }
             }
-        }
-        else if (fname.equals("getenv")) {
-            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return format(substValues(argList[0], vars, program, root)); }
-        }
-        else if (fname.equals("exec")) {
-            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); }
-        }
-        else if (fname.equals("len")) {
-            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return format(String.valueOf(argList[0].length())); }
-        }
-        else if (fname.equals("rand")) {
-            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
-            else { return String.valueOf(random.nextInt(Integer.parseInt(argList[0]))); }
         }
 
 
@@ -903,7 +895,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (line.indexOf('=') != -1) {
                 String[] parts = split(line, '=');
-                if (parts.length == 2) {
+                if (parts.length == 2) { 
                     String varName = parts[0].trim(), value = parts[1].trim();
                     if (varName.indexOf(' ') != -1) { echoCommand("build: invalid type '" + getCommand(varName) + "'"); return null; }
                     
@@ -964,53 +956,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) return true; } return false; }
     private int findFunctionStart(String code) { String[] types = { "int", "char" }; for (int i = 0; i < code.length(); i++) { for (int t = 0; t < types.length; t++) { String type = types[t]; if (code.startsWith(type + " ", i)) { int nameStart = i + type.length() + 1; int p1 = code.indexOf('(', nameStart); if (p1 == -1) { continue; } int p2 = code.indexOf(')', p1); if (p2 == -1) { continue; } int brace = code.indexOf('{', p2); if (brace == -1) { continue; } String maybeName = code.substring(nameStart, p1).trim(); if (maybeName.indexOf(' ') != -1) { continue; } String beforeBrace = code.substring(p2 + 1, brace).trim(); if (beforeBrace.length() > 0) { continue; } return i; } } } return -1; }
     private boolean isIsolatedFunctionCall(String line) { line = line.trim(); int p1 = line.indexOf('('), p2 = line.lastIndexOf(')'); if (p1 == -1 || p2 == -1 || p2 <= p1) { return false; } if (line.indexOf('=') != -1) { return false; } String before = line.substring(0, p1).trim(); if (before.indexOf(' ') != -1) { return false; } if (startsWithAny(line, new String[]{"int ", "char "})) { return false; } return true; }
-    // | Render Objects as JSON
-    private String renderJSON(Object obj, int indent) {
-        StringBuffer json = new StringBuffer();
-        String pad = "";
-        for (int i = 0; i < indent; i++) pad += "  ";
-
-        if (obj instanceof Hashtable) {
-            Hashtable map = (Hashtable) obj;
-            json.append("{\n");
-            Enumeration keys = map.keys();
-            while (keys.hasMoreElements()) {
-                String key = (String) keys.nextElement();
-                Object val = map.get(key);
-                json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1));
-                if (keys.hasMoreElements()) json.append(",");
-                json.append("\n");
-            }
-            json.append(pad + "}");
-        }
-
-        else if (obj instanceof Vector) {
-            Vector list = (Vector) obj;
-            json.append("[\n");
-            for (int i = 0; i < list.size(); i++) {
-                json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1));
-                if (i < list.size() - 1) json.append(",");
-                json.append("\n");
-            }
-            json.append(pad + "]");
-        }
-
-        else if (obj instanceof String) {
-            String s = (String) obj;
-            s = replace(s, "\\", "\\\\");
-            s = replace(s, "\"", "\\\"");
-            s = replace(s, "\n", "\\n");
-            s = replace(s, "\r", "\\r");
-            s = replace(s, "\t", "\\t");
-            json.append("\"" + s + "\"");
-        }
-
-        else {
-            json.append(String.valueOf(obj));
-        }
-
-        return json.toString();
-    }
     // |
     // History
     public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN || c == List.SELECT_COMMAND) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
