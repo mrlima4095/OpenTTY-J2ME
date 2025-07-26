@@ -161,7 +161,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
         else if (mainCommand.equals("clear")) { if (argument.equals("") || argument.equals("stdout")) { stdout.setText(""); } else if (argument.equals("stdin")) { stdin.setString(""); } else if (argument.equals("history")) { history = new Vector(); } else if (argument.equals("logs")) { logs = ""; } else { echoCommand("clear: " + argument + ": not found"); return 127; } }
-        else if (mainCommand.equals("seed")) { try { echoCommand("" +  random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } }
+        else if (mainCommand.equals("seed")) { try { echoCommand("" + random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } }
 
         // API 009 - (Threads)
         // |
@@ -482,23 +482,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // C Programming
     // | (Runtime)
-    private int C2ME(String code, boolean root) {
-        Hashtable program = build(getcontent(code));
-        if (program == null) { return 1; }
-
-        Hashtable main = (Hashtable) program.get("main");
-        if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
-        else if (((String) main.get("type")).equals("int")) {
-            Vector source = (Vector) main.get("source");
-            try {
-                String result = run(source, main, root, program, 0);
-                
-                return Integer.valueOf(result);
-            }
-            catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); return 1; }
-        } 
-        else { echoCommand("C2ME: main() need to be an int function"); return 2; }
-    } 
+    private int C2ME(String code, boolean root) { Hashtable program = build(getcontent(code)); if (program == null) { return 1; } Hashtable main = (Hashtable) program.get("main"); if (main == null) { echoCommand("C2ME: main() missing"); return 1; } else if (((String) main.get("type")).equals("int")) { Vector source = (Vector) main.get("source"); try { String result = run(source, main, root, program, 0); return Integer.valueOf(result); } catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); return 1; } } else { echoCommand("C2ME: main() need to be an int function"); return 2; } } 
     private String run(Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException {
         Hashtable vars = (Hashtable) context.get("variables");
 
@@ -516,13 +500,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { throw new RuntimeException("'" + name + "' undeclared"); }
                 }
 
-                if (instance.equals("int")) {
-                    value = exprCommand(value);
-                    if (value.startsWith("expr: ")) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); }
-                }
-                else if (instance.equals("char") && (!(value.startsWith("\"") && value.endsWith("\"")) || !(value.startsWith("'") && value.endsWith("'")))) {
-                    value = "\"" + value + "\""
-                }
+                if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); } }
+                if (instance.equals("char") && !validChar(value)) { value = "\"" + value + "\""; }
                     
 
                 local.put("value", value == null || value.length() == 0 ? "' '" : value);
@@ -538,8 +517,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (expr.startsWith("expr: ")) { throw new RuntimeException("invalid return value for function of type '" + type + "'"); } 
                     else { return expr; }
                     
-                } else { return value; }
+                } 
+                else { return value; }
             }
+
             else if (type.equals("if")) {
                 String ret = null;
                 if (eval((String) cmd.get("expr"), vars, program, root)) { ret = run((Vector) cmd.get("source"), context, root, program, mode); } 
@@ -617,6 +598,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (fname.equals("len")) {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
             else { return format(String.valueOf(argList[0].length())); }
+        }
+        else if (fname.equals("rand")) {
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); }
+            else { return String.valueOf(random.nextInt(Integer.parseInt(argList[0]))); }
         }
 
 
@@ -748,6 +733,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (expr.equals("0") || expr.equals("") || expr.equals("' '") || expr.equals("\"\"")) return false;
         return true;
     }
+    private boolean validInt(String expr) { return exprCommand(expr).startsWith("expr: ") ? false : true; }
+    private boolean validChar(String expr) { return ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) }
     private Hashtable getFunction(String name, Hashtable program) { Hashtable functions = (Hashtable) program.get("functions"); return functions.containsKey(name) ? (Hashtable) functions.get(name) : null; }
     // | (Building)
     private Hashtable build(String source) {
@@ -756,9 +743,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (source.equals("")) { return null; }
 
         Hashtable functions = new Hashtable();
-        Hashtable globals = new Hashtable();
         program.put("functions", functions);
-        program.put("globals", globals);
 
         while (source.startsWith("#include")) {
             int endl = source.indexOf("\n");
@@ -773,16 +758,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (imported == null) { echoCommand("build: failed to include: " + file); return null; }
 
                 Hashtable importedFunctions = (Hashtable) imported.get("functions");
-                Hashtable importedGlobals = (Hashtable) imported.get("globals");
 
                 for (Enumeration e = importedFunctions.keys(); e.hasMoreElements();) {
                     String k = (String) e.nextElement();
                     if (!functions.containsKey(k)) functions.put(k, importedFunctions.get(k));
-                }
-
-                for (Enumeration g = importedGlobals.keys(); g.hasMoreElements();) {
-                    String k = (String) g.nextElement();
-                    if (!globals.containsKey(k)) globals.put(k, importedGlobals.get(k));
                 }
             } else { echoCommand("build: invalid include format: " + line); return null; }
         }
