@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x33"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x34"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -240,7 +240,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
         else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { processCommand("wc -c " + argument, false); } }
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
-        else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { echoCommand(getcontent(argument)); } }
+        else if (mainCommand.equals("cat")) { if (argument.equals("")) { echoCommand(nanoContent); } else { echoCommand(getcontent(argument)); } }
         else if (mainCommand.equals("get")) { if (argument.equals("") || argument.equals("nano")) { nanoContent = loadRMS("nano"); } else { nanoContent = getcontent(argument); } }
         else if (mainCommand.equals("read")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); attributes.put(ARGS[0], getcontent(ARGS[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); echoCommand(getcontent(ARGS[1]).indexOf(ARGS[0]) != -1 ? "true" : "false"); } }
