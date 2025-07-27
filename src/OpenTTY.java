@@ -498,7 +498,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { return String.valueOf(processCommand(format(substValues(argList[0], vars, program, root)), true, root)); }
         }
 
-        Hashtable fn = ((Hashtable) program.get("functions")).get(fname)
+        Hashtable fn = ((Hashtable) program.get("functions")).get(fname);
         if (fn == null) { throw new RuntimeException("function '" + fname + "' not found"); }
 
         Hashtable newVars = new Hashtable();
