@@ -837,7 +837,45 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
     private String extractParens(String code, int from) { int start = code.indexOf('(', from); if (start == -1) { return ""; } int depth = 0; for (int i = start; i < code.length(); i++) { char c = code.charAt(i); if (c == '(') { depth++; } else if (c == ')') { depth--; } if (depth == 0) { return code.substring(start + 1, i).trim(); } } return ""; }
     private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); return result; }
-    private String[] splitBlock(String code, char separator) { Vector parts = new Vector(); int depthPar = 0, depthBrace = 0, start = 0; boolean inString = false; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '"') { if (i == 0 || code.charAt(i - 1) != '\\') { inString = !inString; } } else if (!inString) { if (c == '(') {`depthPar++; } else if (c == ')') { depthPar--; }  else if (c == '{') { depthBrace++; } else if (c == '}') { depthBrace--; } else if (c == separator && depthPar == 0 && depthBrace == 0) { String part = code.substring(start, i).trim(); if (part.equals("")) { part = "' '"; } parts.addElement(part); start = i + 1; } } } String part = code.substring(start).trim(); if (part.equals("")) { part = "' '"; } parts.addElement(part); String[] result = new String[parts.size()]; parts.copyInto(result); return result; }
+    private String[] splitBlock(String code, char separator) { 
+        Vector parts = new Vector(); 
+        int depthPar = 0, depthBrace = 0, start = 0; 
+        boolean inString = false; 
+        
+        for (int i = 0; i < code.length(); i++) { 
+            char c = code.charAt(i); 
+            if (c == '"') { 
+                if (i == 0 || code.charAt(i - 1) != '\\') { inString = !inString; } 
+                
+            } 
+            else if (!inString) { 
+                if (c == '(') {`depthPar++; } 
+                else if (c == ')') { depthPar--; } 
+                else if (c == '{') { depthBrace++; } 
+                else if (c == '}') { depthBrace--; } 
+                else if (c == separator && depthPar == 0 && depthBrace == 0) { 
+                    String part = code.substring(start, i).trim(); 
+                    if (part.equals("")) { part = "' '"; } 
+                    parts.addElement(part); 
+                    
+                    start = i + 1; 
+                    
+                } 
+                
+            } 
+            
+        } 
+        
+        String part = code.substring(start).trim(); 
+        if (part.equals("")) { part = "' '"; } 
+        parts.addElement(part); 
+        
+        String[] result = new String[parts.size()]; 
+        parts.copyInto(result); 
+        
+        return result; 
+        
+    }
     private boolean isFuncChar(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; }
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) { return true; } } return false; }
     // |
