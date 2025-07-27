@@ -12,6 +12,8 @@ include=forge
 config=execute set SDK=1.1;
 command=sdk
 
+sdk=execute x11 list sdkme; true
+
 shell.name=sdk
 shell.args=new
 
