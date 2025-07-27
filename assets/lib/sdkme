@@ -23,7 +23,7 @@ setxback=execute alias xterm=exec sdk & unalias xterm;
 [ DISPLAY ]
 
 list.title=SmartME SDK
-list.content=New Project,Build (from nano),Download Libraries,Update SDK,About
+list.content=New Project,Continue editing,Build (from nano),Download Libraries,Update SDK,About
 
 New Project=execute execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; setxback;
 Continue editing=execute nano; sdk setxback;
