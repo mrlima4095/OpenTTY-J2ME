@@ -6,13 +6,14 @@ description=OpenTTY Toolkit
 
 api.version=1.16
 api.error=execute 
+api.match=minimum
 
 include=forge
 
 config=execute set SDK=1.1;
 command=sdk
 
-sdk=execute x11 list sdkme; true
+sdk=execute x11 list /home/sdkme; true
 
 shell.name=sdk
 shell.args=setxback
@@ -33,12 +34,12 @@ list.title=SmartME SDK
 list.content=Continue editing,New Project,Save Project,File Explorer,Build (from nano),Download Libraries,Documentation,Update SDK,About
 
 Continue editing=execute nano; sdk setxback;
-New Project=execute execute install nano; touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; sdk setxback;
+New Project=execute execute install /home/nano; touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; sdk setxback;
 Save Project=execute x11 quest sdkme;
 File Explorer=execute dir; sdk setxback;
 Build (from nano)=execute time build nano;
 Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=OpenTTY.h; yang install; set RESOURCE=X11.h; yang install; warn Downloaded Standard Libraries; false; sdk & warn Yang not found
 Documentation=execute sdk setxback; view <title>SmartME Docs</title>;
-Update SDK=execute sdk; install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install sdkme; get nano; import sdkme; tick; sdk; warn SmartME was installed the latest version from GitHub;
+Update SDK=execute sdk; install /home/nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install /home/sdkme; get nano; import /home/sdkme; tick; sdk; warn SmartME was installed the latest version from GitHub;
 About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
 
