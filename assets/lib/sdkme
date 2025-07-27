@@ -35,7 +35,7 @@ list.content=Continue editing,New Project,Save Project,File Explorer,Build (from
 
 Continue editing=execute nano; sdk setxback;
 New Project=execute execute install /home/nano; touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; sdk setxback;
-Save Project=execute x11 quest sdkme;
+Save Project=execute x11 quest /home/sdkme;
 File Explorer=execute dir; sdk setxback;
 Build (from nano)=execute time build nano;
 Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=OpenTTY.h; yang install; set RESOURCE=X11.h; yang install; warn Downloaded Standard Libraries; false; sdk & warn Yang not found
