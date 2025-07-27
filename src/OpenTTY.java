@@ -849,7 +849,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
             } 
             else if (!inString) { 
-                if (c == '(') {`depthPar++; } 
+                if (c == '(') { depthPar++; } 
                 else if (c == ')') { depthPar--; } 
                 else if (c == '{') { depthBrace++; } 
                 else if (c == '}') { depthBrace--; } 
