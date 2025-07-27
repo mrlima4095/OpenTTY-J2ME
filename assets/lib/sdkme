@@ -25,7 +25,7 @@ setxback=execute alias xterm=exec sdk & unalias xterm;
 list.title=SmartME SDK
 list.content=New Project,Continue editing,Build (from nano),Download Libraries,Update SDK,About
 
-New Project=execute execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; setxback;
+New Project=execute execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; sdk setxback;
 Continue editing=execute nano; sdk setxback;
 Build (from nano)=execute time build nano;
 Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=OpenTTY.h; yang install; set RESOURCE=X11.h; yang install; warn Downloaded Standard Libraries; false; sdk & warn Yang not found
