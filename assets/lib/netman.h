@@ -6,3 +6,7 @@
 
 #include "OpenTTY.h"
 
+int Query(char url, char file) {
+    exec("execute set OLD_QUERY=$QUERY; set QUERY=%file;");
+    exec("execute query %url;");
+}
