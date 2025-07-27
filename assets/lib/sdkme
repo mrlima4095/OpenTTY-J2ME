@@ -28,5 +28,5 @@ New Project=execute sdk new
 Build (from nano)=execute build nano;
 Download Libraries=
 Documentation=execute view <title>SmartME Docs</title>;
-Update SDK=execute
+Update SDK=exec case alias (yang) execute set REQUEST=OpenTTY.h; yang install; set REQUEST=X11.h; yang install;
 About=execute warn SmartME $SDK OpenTTY Toolkit;
