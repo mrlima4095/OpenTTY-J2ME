@@ -30,7 +30,7 @@ quest.back=execute sdk;
 
 
 list.title=SmartME SDK
-list.content=Continue editing,New Project,Save Project,Build (from nano),Download Libraries,Documentation,Update SDK,About
+list.content=Continue editing,New Project,Save Project,File Explorer,Build (from nano),Download Libraries,Documentation,Update SDK,About
 
 Continue editing=execute nano; sdk setxback;
 New Project=execute execute install nano; touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; sdk setxback;
