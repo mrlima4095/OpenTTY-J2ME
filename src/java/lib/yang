@@ -6,7 +6,7 @@ description=OpenTTY Package Manager
 
 include=/java/lib/settings
 
-config=execute touch /home/.yang-lock; case file (yang) exec import /home/yang & false; case !key (REPO) set REPO=opentty.xyz:31522; 
+config=execute touch /home/.yang-lock; case !key (REPO) set REPO=opentty.xyz:31522; case file (yang) import /home/yang;
 command=yang,setrepo
 
 yang=execute x11 list /java/lib/yang;
