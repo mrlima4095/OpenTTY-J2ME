@@ -61,7 +61,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int processCommand(String command, boolean ignore, boolean root) { 
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
-        String[] args = split(argument, ' ');
+        String[] args = splitArgs(argument);
 
         if (username.equals("root")) { root = true; }
         if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { return processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true", ignore, root); } else if (args.containsKey(getCommand(argument).toLowerCase())) { return processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument), ignore, root); } else { return processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "echo " + mainCommand + ": " + getCommand(argument) + ": not found", args.containsKey("shell.unknown") ? true : false, root); } }
@@ -243,12 +243,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { echoCommand(nanoContent); } else { echoCommand(getcontent(argument)); } }
         else if (mainCommand.equals("get")) { if (argument.equals("") || argument.equals("nano")) { nanoContent = loadRMS("nano"); } else { nanoContent = getcontent(argument); } }
-        else if (mainCommand.equals("read")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); attributes.put(ARGS[0], getcontent(ARGS[1])); } }
-        else if (mainCommand.equals("grep")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); echoCommand(getcontent(ARGS[1]).indexOf(ARGS[0]) != -1 ? "true" : "false"); } }
-        else if (mainCommand.equals("find")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); String CONTENT = getcontent(ARGS[1]), VALUE = (String) parseProperties(CONTENT).get(ARGS[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
+        else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); attributes.put(ARGS[0], getcontent(ARGS[1])); } }
+        else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); echoCommand(getcontent(ARGS[1]).indexOf(ARGS[0]) != -1 ? "true" : "false"); } }
+        else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); String CONTENT = getcontent(ARGS[1]), VALUE = (String) parseProperties(CONTENT).get(ARGS[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
         else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(10, LINES.length); for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } } }
         else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.max(0, LINES.length - 10); for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } } }
-        else if (mainCommand.equals("diff")) { if (argument.equals("") || split(argument, ' ').length < 2) { return 2; } else { String[] FILES = split(argument, ' '); String[] LINES1 = split(getcontent(FILES[0]), '\n'), LINES2 = split(getcontent(FILES[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
+        else if (mainCommand.equals("diff")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] FILES = split(argument, ' '); String[] LINES1 = split(getcontent(FILES[0]), '\n'), LINES2 = split(getcontent(FILES[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
         else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); String CONTENT = getcontent(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } String FILENAME = basename(argument); if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } else { echoCommand(LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME); } } }
         // |
         // Text Parsers
@@ -327,6 +327,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
 
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
+    private String[] splitArgs(String content) {
+        Vector args = new Vector();
+        boolean inQuotes = false;
+        int start = 0;
+    
+        for (int i = 0; i < content.length(); i++) {
+            char c = content.charAt(i);
+    
+            if (c == '"') {
+                inQuotes = !inQuotes; // alterna dentro/fora de aspas
+                continue; // não adiciona as aspas
+            }
+    
+            if (!inQuotes && c == ' ') {
+                if (i > start) {
+                    args.addElement(content.substring(start, i));
+                }
+                start = i + 1;
+            }
+        }
+    
+        // último argumento
+        if (start < content.length()) {
+            args.addElement(content.substring(start));
+        }
+    
+        // converter para String[]
+        String[] result = new String[args.size()];
+        args.copyInto(result);
+        return result;
+    }
+
     private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     
