@@ -14,4 +14,3 @@ int SaveWindow(char name) { exec("x11 set %name"); }
 int LoadWindow(char name) { exec("x11 load %name"); }
 
 int SetTicker(char msg) { exec("x11 tick %msg"); }
-
