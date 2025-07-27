@@ -22,7 +22,7 @@ new=execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; 
 [ DISPLAY ]
 
 list.title=SmartME SDK
-list.content=New Project,
+list.content=New Project,Build (from nano),Download Libraries,Update SDK,About
 
 New Project=execute sdk new;
 Build (from nano)=execute build nano;
