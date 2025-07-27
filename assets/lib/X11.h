@@ -1,10 +1,12 @@
 /*
-    Graphics C2ME Library
+    X11 C2ME Library
     Author: Mr. Lima
     Version: 1.0
 */
 
 #include "OpenTTY.h"
+
+
 
 int Title(char title) { exec("title %title"); }
 int WindowTitle(char title) { exec("x11 title %text"); }
