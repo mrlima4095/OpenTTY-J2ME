@@ -30,5 +30,5 @@ New Project=execute sdk new;
 Build (from nano)=execute time build nano;
 Download Libraries=exec sdk & case alias (yang) execute set REQUEST=OpenTTY.h; yang install; set REQUEST=X11.h; yang install; warn Downloaded Standard Libraries;
 Documentation=execute view <title>SmartME Docs</title>;
-Update SDK=execute sdk; install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install sdkme; get nano; import sdkme; tick; forge; warn SmartME was installed the latest version from GitHub;
+Update SDK=execute sdk; install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install sdkme; get nano; import sdkme; tick; sdk; warn SmartME was installed the latest version from GitHub;
 About=execute sdk; warn SmartME $SDK OpenTTY Toolkit;
