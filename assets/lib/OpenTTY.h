@@ -4,7 +4,7 @@
     Version: 1.0
 */
 
+
+
 int printf(char text) { exec("echo %text"); }
-
-
 
