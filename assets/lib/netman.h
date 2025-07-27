@@ -8,5 +8,5 @@
 
 int Query(char url, char file) {
     exec("execute set OLD_QUERY=$QUERY; set QUERY=%file;");
-    exec("execute query %url;");
+    exec("execute query %url; set QUERY=$OLD_QUERY; unset OLD_QUERY; ");
 }
