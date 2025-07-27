@@ -9,7 +9,7 @@ api.error=execute
 
 include=forge
 
-config=execute set SDK=1.1
+config=execute set SDK=1.1;
 command=sdk
 
 shell.name=sdk
