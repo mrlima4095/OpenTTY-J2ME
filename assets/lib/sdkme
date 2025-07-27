@@ -1,25 +1,32 @@
 [ Config ]
 
 name=SmartME
-version=1.0
+version=1.1
 description=OpenTTY Toolkit
+
+api.version=1.16
+api.error=execute 
 
 include=forge
 
-config=execute set SDK=1.0; about sdkme;
-command=sdk,mp
+config=execute set SDK=1.1
+command=sdk
 
-sdk=execute x11 list sdkme; 
-mp=execute open http://mp.nnchan.ru;
+shell.name=sdk
+shell.args=new
+
+new=execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; 
 
 
 
 [ DISPLAY ]
 
 list.title=SmartME SDK
-list.content=Forge,Create HTML Page,About SDK
-list.back=
+list.content=New Project,
 
-Forge=execute forge; 
-New HTML Page=execute touch; add HTTP/1.1 200 OK\nContent-Type: text/html\nConnection: close\n\n\n<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Page Title</title>\n</head>\n<body>\n    <p>Write here the page content.</p>\n</body>\n</html>; nano
-About SDK=execute sdk; set OLD_TITLE=$TITLE; title About SmartME; warn SmartME $SDK\nOpenTTY Toolkit; title $OLD_TITLE; unset OLD_TITLE;
+New Project=execute sdk new
+Build (from nano)=execute build nano;
+Download Libraries=
+Documentation=execute view <title>SmartME Docs</title>;
+Update SDK=execute
+About=execute warn SmartME $SDK OpenTTY Toolkit;
