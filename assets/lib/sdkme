@@ -15,10 +15,9 @@ command=sdk
 sdk=execute x11 list sdkme; true
 
 shell.name=sdk
-shell.args=new
+shell.args=setxback
 
-new=execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; 
-
+setxback=execute alias xterm=exec sdk & unalias xterm;
 
 
 [ DISPLAY ]
@@ -26,9 +25,10 @@ new=execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; 
 list.title=SmartME SDK
 list.content=New Project,Build (from nano),Download Libraries,Update SDK,About
 
-New Project=execute sdk new;
+New Project=execute execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; setxback;
+Continue editing=execute nano; sdk setxback;
 Build (from nano)=execute time build nano;
 Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=OpenTTY.h; yang install; set RESOURCE=X11.h; yang install; warn Downloaded Standard Libraries; false; sdk & warn Yang not found
-Documentation=execute view <title>SmartME Docs</title>;
+Documentation=execute sdk setxback; view <title>SmartME Docs</title>;
 Update SDK=execute sdk; install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install sdkme; get nano; import sdkme; tick; sdk; warn SmartME was installed the latest version from GitHub;
 About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
