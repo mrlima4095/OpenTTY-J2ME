@@ -24,9 +24,9 @@ new=execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; 
 list.title=SmartME SDK
 list.content=New Project,
 
-New Project=execute sdk new
+New Project=execute sdk new;
 Build (from nano)=execute build nano;
-Download Libraries=
+Download Libraries=exec case alias (yang) execute set REQUEST=OpenTTY.h; yang install; set REQUEST=X11.h; yang install;
 Documentation=execute view <title>SmartME Docs</title>;
-Update SDK=exec case alias (yang) execute set REQUEST=OpenTTY.h; yang install; set REQUEST=X11.h; yang install;
+Update SDK=execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install sdkme; get nano; import sdkme; tick; forge; warn SmartME was installed the latest version from GitHub;
 About=execute warn SmartME $SDK OpenTTY Toolkit;
