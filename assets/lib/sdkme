@@ -22,13 +22,22 @@ setxback=execute alias xterm=exec sdk & unalias xterm;
 
 [ DISPLAY ]
 
+quest.title=Save Project
+quest.label=File name
+quest.key=FILENAME
+quest.cmd=execute install $FILENAME; unset FILENAME;
+quest.back=execute sdk;
+
+
 list.title=SmartME SDK
-list.content=New Project,Continue editing,Build (from nano),Download Libraries,Update SDK,About
+list.content=New Project,Continue editing,Save Project,Build (from nano),Download Libraries,Update SDK,About
 
 New Project=execute execute touch; add #include "OpenTTY.h"; add; add int main() {; add; add }; nano; sdk setxback;
 Continue editing=execute nano; sdk setxback;
+Save Project=execute x11 quest sdkme;
 Build (from nano)=execute time build nano;
 Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=OpenTTY.h; yang install; set RESOURCE=X11.h; yang install; warn Downloaded Standard Libraries; false; sdk & warn Yang not found
 Documentation=execute sdk setxback; view <title>SmartME Docs</title>;
 Update SDK=execute sdk; install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install sdkme; get nano; import sdkme; tick; sdk; warn SmartME was installed the latest version from GitHub;
 About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
+
