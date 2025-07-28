@@ -144,6 +144,7 @@ quest.cmd=execute install nano; touch; add $JBUNTU_NOTES; install .jbuntu-notes;
 # JBuntu Apps Menu
 list.title=JBuntu Apps
 list.content=Text Editor,File Explorer,Network Tools,OpenTTY Store,Terminal,Monitor
+list.source=.jbuntu-apps
 list.button=Open
 # |
 Text Editor=execute nano;
