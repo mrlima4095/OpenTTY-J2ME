@@ -335,25 +335,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (int i = 0; i < content.length(); i++) {
             char c = content.charAt(i);
     
-            if (c == '"') {
-                inQuotes = !inQuotes; // alterna dentro/fora de aspas
-                continue; // não adiciona as aspas
-            }
+            if (c == '"') { inQuotes = !inQuotes; continue; }
     
             if (!inQuotes && c == ' ') {
-                if (i > start) {
-                    args.addElement(content.substring(start, i));
-                }
+                if (i > start) { args.addElement(content.substring(start, i)); }
+                
                 start = i + 1;
             }
         }
     
-        // último argumento
-        if (start < content.length()) {
-            args.addElement(content.substring(start));
-        }
+        if (start < content.length()) { args.addElement(content.substring(start)); }
     
-        // converter para String[]
         String[] result = new String[args.size()];
         args.copyInto(result);
         return result;
