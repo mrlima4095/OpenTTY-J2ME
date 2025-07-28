@@ -467,13 +467,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2); 
                 list.addCommand(BACK); list.addCommand(USER); 
 
-                String source = getenv("list.source"); 
-                if (source.equals("")) { source.equals(getenv("list.content")); }
-                else { source = getcontent(source); }
-
-                String[] content = split(source, ','); 
-
+                
+                String[] content = split(getenv("list.content"), ','); 
                 for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); } 
+
+                if (lib.containsKey("list.source")) {
+                    String source = getcontent(getenv("list.source"));
+                    
+                    if (source.equals("")) {
+                        
+                    } else {
+                        String[] content = split(source, '\n'); 
+                        for (int i = 0; i < content.length; i++) {
+                            String key = content[i], value = "true";
+                            
+                            int index = content[i].indexOf("=");
+                            if (index == -1) { }
+                            else {
+                                value = key.substring(index + 1);
+                                key = key.substring(0, index);
+                            }
+                            
+                            list.append(key, IMG); 
+                            lib.put(key, value);
+                        } 
+
+                    }
+                }
 
                 list.setCommandListener(this); 
                 display.setCurrent(list); 
