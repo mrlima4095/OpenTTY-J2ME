@@ -32,6 +32,7 @@ LTS Edition
 - **!!** can read args and set it as prefix for last command
 - **FIRE** button in X11 lists run user button
 - Command `cat` without args prints nano content
+- **X Server** updated to **0.6.3**
 
 [ _Notes_ ]
 
