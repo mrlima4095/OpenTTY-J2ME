@@ -515,7 +515,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // C Programming
     // | (Runtime)
     private int C2ME(String code, boolean root) { 
-        Hashtable program = build(getcontent(code)); if (program == null) { return 1; } 
+        Hashtable program = build(getcontent(code)); if (program == null) { echoCommand("Build failed!"); return 1; } 
         Hashtable main = (Hashtable) program.get("main"); 
 
         if (main == null) { echoCommand("C2ME: main() missing"); return 1; } 
@@ -670,7 +670,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         while (source.startsWith("#include")) {
             int endl = source.indexOf("\n");
-            if (endl == -1) { echoCommand("build: invalid include syntax"); return null; }
+            if (endl == -1) { return null; }
 
             String line = source.substring(0, endl).trim();
             source = source.substring(endl).trim();
@@ -685,7 +685,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String k = (String) e.nextElement();
                     if (!functions.containsKey(k)) { functions.put(k, importedFunctions.get(k)); }
                 }
-            } else { echoCommand("build: invalid include format: " + line); return null; }
+            } else { return null; }
         }
 
         while (true) {
@@ -726,7 +726,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String type = source.substring(start, start + source.substring(start).indexOf(" ")).trim(), name = source.substring(start + type.length(), p1).trim(), params = extractBetween(source.substring(p1, p2 + 1), '(', ')'), block = getBlock(source.substring(b1));
 
-            if (block == null) { echoCommand("build: incomplete function '" + name + "'"); return null; }
+            if (block == null) { return null; }
 
             source = source.substring(b1 + block.length()).trim();
 
@@ -739,7 +739,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int i = 0; i < paramList.length; i++) {
                     String param = paramList[i].trim();
                     String[] parts = split(param, ' ');
-                    if (parts.length != 2) { echoCommand("build: invalid parameter: " + param); return null; }
+                    if (parts.length != 2) { return null; }
 
                     Hashtable arg = new Hashtable();
                     arg.put("type", parts[0]);
@@ -819,7 +819,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 cmd.put("expr", extractParens(line, 0));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
             } 
-            else if (line.startsWith("else")) { echoCommand("build: invalid token 'else'"); return null; } 
+            else if (line.startsWith("else")) { return null; } 
             else if (line.equals("break") || line.equals("continue")) { cmd.put("type", line); } 
             else if (line.indexOf('(') != -1 && line.lastIndexOf(')') > line.indexOf('(') && line.indexOf('=') == -1 && !startsWithAny(line, new String[]{"int ", "char "}) && line.substring(0, line.indexOf('(')).trim().indexOf(' ') == -1 ) {
                 cmd.put("type", "call");
@@ -864,10 +864,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else { echoCommand("build: invalid value for '" + parts[0].trim() + "'"); return null; }
             } 
-            else {
-                echoCommand("build: invalid syntax: '" + line + "'");
-                return null;
-            }
+            else { return null; }
 
             source.addElement(cmd);
         }
@@ -877,45 +874,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getBlock(String code) { int depth = 0; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '{') { depth++; } else if (c == '}') { depth--; } if (depth == 0) { return code.substring(0, i + 1); } } return null; }
     private String extractParens(String code, int from) { int start = code.indexOf('(', from); if (start == -1) { return ""; } int depth = 0; for (int i = start; i < code.length(); i++) { char c = code.charAt(i); if (c == '(') { depth++; } else if (c == ')') { depth--; } if (depth == 0) { return code.substring(start + 1, i).trim(); } } return ""; }
     private String extractBetween(String text, char open, char close) { int start = text.indexOf(open), end = text.lastIndexOf(close); if (start == -1 || end == -1 || end <= start) { return ""; } String result = text.substring(start + 1, end).trim(); return result; }
-    private String[] splitBlock(String code, char separator) { 
-        Vector parts = new Vector(); 
-        int depthPar = 0, depthBrace = 0, start = 0; 
-        boolean inString = false; 
-        
-        for (int i = 0; i < code.length(); i++) { 
-            char c = code.charAt(i); 
-            if (c == '"') { 
-                if (i == 0 || code.charAt(i - 1) != '\\') { inString = !inString; } 
-                
-            } 
-            else if (!inString) { 
-                if (c == '(') { depthPar++; } 
-                else if (c == ')') { depthPar--; } 
-                else if (c == '{') { depthBrace++; } 
-                else if (c == '}') { depthBrace--; } 
-                else if (c == separator && depthPar == 0 && depthBrace == 0) { 
-                    String part = code.substring(start, i).trim(); 
-                    if (part.equals("")) { part = "' '"; } 
-                    parts.addElement(part); 
-                    
-                    start = i + 1; 
-                    
-                } 
-                
-            } 
-            
-        } 
-        
-        String part = code.substring(start).trim(); 
-        if (part.equals("")) { part = "' '"; } 
-        parts.addElement(part); 
-        
-        String[] result = new String[parts.size()]; 
-        parts.copyInto(result); 
-        
-        return result; 
-        
-    }
+    private String[] splitBlock(String code, char separator) { Vector parts = new Vector(); int depthPar = 0, depthBrace = 0, start = 0; boolean inString = false; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '"') { if (i == 0 || code.charAt(i - 1) != '\\') { inString = !inString; } } else if (!inString) { if (c == '(') { depthPar++; } else if (c == ')') { depthPar--; } else if (c == '{') { depthBrace++; } else if (c == '}') { depthBrace--; } else if (c == separator && depthPar == 0 && depthBrace == 0) { String part = code.substring(start, i).trim(); if (part.equals("")) { part = "' '"; } parts.addElement(part); start = i + 1; } } } String part = code.substring(start).trim(); if (part.equals("")) { part = "' '"; } parts.addElement(part); String[] result = new String[parts.size()]; parts.copyInto(result); return result; }
     private boolean isFuncChar(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; }
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) { return true; } } return false; }
     // |
