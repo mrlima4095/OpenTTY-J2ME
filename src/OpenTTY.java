@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x34"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x35"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -30,7 +30,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public void startApp() {
         if (!trace.containsKey("sh")) {
-            attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.2");
+            attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
             runScript(read("/java/etc/initd.sh")); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
@@ -506,9 +506,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) { 
             if (c == BACK) { 
                 processCommand("xterm"); 
-                if (TYPE == SCREEN) { processCommand(getvalue("screen.back", "true")); } 
-                else if (TYPE == LIST) { processCommand(getvalue("list.back", "true")); } 
-                else if (TYPE == QUEST) { processCommand(getvalue("quest.back", "true")); } 
+                processCommand(getvalue((TYPE == SCREEN ? "screen" : TYPE == LIST ? "list" : "quest") + ".back", "true"));
             } 
             else if (c == USER || c == List.SELECT_COMMAND) { 
                 if (TYPE == QUEST) { String value = INPUT.getString().trim(); if (!value.equals("")) { processCommand("set " + getenv("quest.key") + "=" + env(value)); processCommand("xterm"); processCommand(getvalue("quest.cmd", "true")); } } 
@@ -526,12 +524,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             boolean password = false; 
             if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } 
 
-            int base = TextField.ANY; 
-            if (mode.equals("number")) { base = TextField.NUMERIC; } 
-            else if (mode.equals("email")) { base = TextField.EMAILADDR; } 
-            else if (mode.equals("phone")) { base = TextField.PHONENUMBER; } 
-            else if (mode.equals("decimal")) { base = TextField.DECIMAL; } 
-
+            int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY
             return password ? (base | TextField.PASSWORD) : base; 
         } 
     }
