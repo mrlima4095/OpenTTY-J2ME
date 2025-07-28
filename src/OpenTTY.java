@@ -536,7 +536,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             boolean password = false; 
             if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } 
 
-            int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY
+            int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY;
             return password ? (base | TextField.PASSWORD) : base; 
         } 
     }
