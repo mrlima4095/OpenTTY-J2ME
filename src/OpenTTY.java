@@ -243,7 +243,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { echoCommand(nanoContent); } else { echoCommand(getcontent(argument)); } }
         else if (mainCommand.equals("get")) { if (argument.equals("") || argument.equals("nano")) { nanoContent = loadRMS("nano"); } else { nanoContent = getcontent(argument); } }
-        else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); attributes.put(ARGS[0], getcontent(ARGS[1])); } }
+        else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); echoCommand(getcontent(ARGS[1]).indexOf(ARGS[0]) != -1 ? "true" : "false"); } }
         else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] ARGS = split(argument, ' '); String CONTENT = getcontent(ARGS[1]), VALUE = (String) parseProperties(CONTENT).get(ARGS[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
         else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(argument); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(10, LINES.length); for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } } }
@@ -448,8 +448,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                 } 
 
-                screen.setCommandListener(this); 
-                display.setCurrent(screen); 
+                screen.setCommandListener(this); display.setCurrent(screen); 
             } 
             else if (type.equals("list")) { 
                 TYPE = LIST; 
@@ -495,8 +494,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 }
 
-                list.setCommandListener(this); 
-                display.setCurrent(list); 
+                list.setCommandListener(this); display.setCurrent(list); 
             } 
             else if (type.equals("quest")) { 
                 TYPE = QUEST; 
@@ -509,8 +507,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); 
                 screen.append(INPUT); screen.addCommand(BACK); screen.addCommand(USER); 
 
-                screen.setCommandListener(this); 
-                display.setCurrent(screen); 
+                screen.setCommandListener(this); display.setCurrent(screen); 
             } 
 
             else { return; } 
