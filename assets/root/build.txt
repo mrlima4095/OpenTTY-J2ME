@@ -99,3 +99,4 @@
 [2025-1.16-02x32]	Command expr supporting operator "%" (reverted)
 [2025-1.16-02x33]	Debugging C2ME
 [2025-1.16-02x34]	Command 'CAT' without arguments prints nano content
+[2025-1.16-02x35]	X Server 0.6.3
