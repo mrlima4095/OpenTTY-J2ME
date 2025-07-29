@@ -159,6 +159,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else { username = loadRMS("OpenRMS"); processCommand("sh", false); } 
         }
+
+        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { 
+            if (loadRMS("OpenRMS").equals(username)) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); } 
+            else { username = loadRMS("OpenRMS"); processCommand("sh", false); } 
+        }
         
         // API 004 - (LCDUI Interface)
         // |
@@ -1189,7 +1194,72 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); return 1; } 
         } 
         else { echoCommand("C2ME: main() need to be an int function"); return 2; } } 
-    private String C2ME(Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException { Hashtable vars = (Hashtable) context.get("variables"); for (int i = 0; i < source.size(); i++) { Hashtable cmd = (Hashtable) source.elementAt(i); String type = (String) cmd.get("type"); if (type == null) { } else if (type.equals("assign")) { String name = (String) cmd.get("name"), value = substValues((String) cmd.get("value"), vars, program, root), instance = (String) cmd.get("instance"); Hashtable local = new Hashtable(); if (instance == null) { if (vars.containsKey(name)) { instance = (String) ((Hashtable) vars.get(name)).get("instance"); } else { throw new RuntimeException("'" + name + "' undeclared"); } } if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); } if (instance.equals("char") && !validChar(value)) { value = "\"" + value + "\""; } local.put("value", value == null || value.length() == 0 ? "' '" : value); local.put("instance", instance); vars.put(name, local); } else if (type.equals("return")) { type = (String) context.get("type"); String value = substValues((String) cmd.get("value"), vars, program, root); if (type.equals("int")) { String expr = exprCommand(value); if (expr.startsWith("expr: ")) { throw new RuntimeException("invalid return value for function of type '" + type + "'"); } else { return expr; } } else { return value; } } else if (type.equals("if")) { String ret = null; if (eval((String) cmd.get("expr"), vars, program, root)) { ret = C2ME((Vector) cmd.get("source"), context, root, program, mode); } else if (cmd.containsKey("else")) { ret = C2ME((Vector) cmd.get("else"), context, root, program, mode); } if (ret == null) { continue; } else { return ret; } } else if (type.equals("while")) { String expr = substValues((String) cmd.get("expr"), vars, program, root); while (eval(expr, vars, program, root)) { String ret = C2ME((Vector) cmd.get("source"), context, root, program, 1); expr = substValues((String) cmd.get("expr"), vars, program, root); if (ret == null) { break; } else if (ret.equals("+[continue]")) { continue; } else { return ret; } } } else if (type.equals("continue") || type.equals("break")) { if (mode == 1) { if (type.equals("break")) { return null; } else { return "+[continue]"; } } else { throw new RuntimeException("not in a loop"); } } else if (type.equals("call")) { call((String) cmd.get("function") + "(" + substValues((cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root); } } return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null; }
+    private String C2ME(Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException { 
+        Hashtable vars = (Hashtable) context.get("variables"); 
+
+        for (int i = 0; i < source.size(); i++) { 
+            Hashtable cmd = (Hashtable) source.elementAt(i); 
+            String type = (String) cmd.get("type"); 
+
+            if (type == null) { } 
+            else if (type.equals("assign")) { 
+                String name = (String) cmd.get("name"), value = substValues((String) cmd.get("value"), vars, program, root), instance = (String) cmd.get("instance"); 
+                Hashtable local = new Hashtable(); 
+
+                if (instance == null) { 
+                    if (vars.containsKey(name)) { instance = (String) ((Hashtable) vars.get(name)).get("instance"); } 
+                    else { throw new RuntimeException("'" + name + "' undeclared"); } 
+                } 
+                if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); } 
+                if (instance.equals("char") && !validChar(value)) { value = "\"" + value + "\""; } 
+
+                local.put("value", value == null || value.length() == 0 ? "' '" : value); 
+                local.put("instance", instance); 
+                vars.put(name, local); 
+            } 
+            else if (type.equals("return")) { 
+                type = (String) context.get("type"); 
+                String value = substValues((String) cmd.get("value"), vars, program, root); 
+
+                if (type.equals("int")) { 
+                    String expr = exprCommand(value); 
+
+                    if (expr.startsWith("expr: ")) { throw new RuntimeException("invalid return value for function of type '" + type + "'"); } 
+                    else { return expr; } 
+                } 
+                else { return value; } 
+            } 
+            else if (type.equals("if")) { 
+                String ret = null; 
+                if (eval((String) cmd.get("expr"), vars, program, root)) { ret = C2ME((Vector) cmd.get("source"), context, root, program, mode); } 
+                else if (cmd.containsKey("else")) { ret = C2ME((Vector) cmd.get("else"), context, root, program, mode); } 
+
+                if (ret == null) { continue; } 
+                else { return ret; } 
+            } 
+            else if (type.equals("while")) { 
+                String expr = substValues((String) cmd.get("expr"), vars, program, root); 
+                while (eval(expr, vars, program, root)) { 
+                    String ret = C2ME((Vector) cmd.get("source"), context, root, program, 1); 
+                    expr = substValues((String) cmd.get("expr"), vars, program, root); 
+
+                    if (ret == null) { break; } 
+                    else if (ret.equals("+[continue]")) { continue; } 
+                    else { return ret; } 
+                }
+            } 
+            else if (type.equals("continue") || type.equals("break")) { 
+                if (mode == 1) { 
+                    if (type.equals("break")) { return null; } 
+                    else { return "+[continue]"; } 
+                } 
+                else { throw new RuntimeException("not in a loop"); } 
+            } 
+            else if (type.equals("call")) { call((String) cmd.get("function") + "(" + substValues((cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root); } 
+        } 
+
+        return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null; 
+    }
     private String call(String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         int parIndex = code.indexOf('(');
         if (parIndex == -1 || !code.endsWith(")")) { return code; }
@@ -1291,7 +1361,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             if (close == -1) { throw new RuntimeException("invalid expression — missing ')'"); }
 
-            String full = expr.substring(i + 1, close + 1), value = call(full, vars, program, false);
+            String value = call(expr.substring(i + 1, close + 1), vars, program, false);
 
             expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
         }
@@ -1483,13 +1553,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (line.startsWith("else")) { return null; } 
             else if (line.equals("break") || line.equals("continue")) { cmd.put("type", line); } 
-            else if (line.indexOf('(') != -1 && line.lastIndexOf(')') > line.indexOf('(') && line.indexOf('=') == -1 && !startsWithAny(line, new String[]{"int ", "char "}) && line.substring(0, line.indexOf('(')).trim().indexOf(' ') == -1 ) {
+            else if (line.indexOf('(') != -1 && line.lastIndexOf(')') > line.indexOf('(') && line.indexOf('=') == -1 && !startsWithAny(line, new String[]{"int ", "char "}) && line.substring(0, line.indexOf('(')).trim().indexOf(' ') == -1) {
                 cmd.put("type", "call");
                 cmd.put("function", line.substring(0, line.indexOf('(')).trim());
                 cmd.put("args", extractBetween(line, '(', ')'));
             }
 
-            else if (startsWithAny(line, new String[]{"int", "char"})) {
+            else if (line.indexOf('=') != -1) {
                 String varType = line.startsWith("char ") ? "char" : "int";
                 String decls = line.substring(varType.length()).trim();
                 String[] vars = split(decls, ',');
@@ -1512,7 +1582,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 continue;
             } 
-            else if (line.indexOf('=') != -1) {
+            else if () {
                 String[] parts = split(line, '=');
                 if (parts.length == 2) {
                     String varName = parts[0].trim();
