@@ -306,42 +306,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Vector BUFFER = new Vector(); 
 
             if (path.equals("/mnt/")) { try { for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } 
-            else if (path.startsWith("/mnt/")) { 
-                try { 
-                    String REALPWD = "file:///" + path.substring(5); 
-                    if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
-
-                    FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
-                    
-                    for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { 
-                        String ITEM = (String) CONTENT.nextElement(); 
-                        BUFFER.addElement(ITEM); 
-                    } 
-                    CONN.close(); 
-                } catch (Exception e) { } 
-            } 
-            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { 
-                try { 
-                    String[] FILES = RecordStore.listRecordStores(); 
-                    if (FILES != null) { 
-                        for (int i = 0; i < FILES.length; i++) { 
-                            String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } 
-                        } 
-                    } 
-                } 
-                catch (RecordStoreException e) { } 
-            } 
+            else if (path.startsWith("/mnt/")) { try { String REALPWD = "file:///" + path.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } 
+            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } 
             else if (path.equals("/home/")) { new Explorer(); return 0; } 
 
-            String[] FILES = (String[]) paths.get(path); 
-            if (FILES != null) { 
-                for (int i = 0; i < FILES.length; i++) { 
-                    String file = FILES[i].trim(); 
-                    if (file == null || file.equals("..") || file.equals("/")) { continue; } 
-
-                    if (!BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } 
-                } 
-            } 
+            String[] FILES = (String[]) paths.get(path); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String file = FILES[i].trim(); if (file == null || file.equals("..") || file.equals("/")) { continue; } if (!BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } } } 
             if (!BUFFER.isEmpty()) { 
                 StringBuffer FORMATTED = new StringBuffer(); 
 
