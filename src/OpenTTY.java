@@ -1,4 +1,4 @@
-
+import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
