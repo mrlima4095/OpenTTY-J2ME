@@ -114,8 +114,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
         else if (mainCommand.equals("env")) { 
             if (argument.equals("")) { 
-                Enumeration KEYS = attributes.keys(); 
-                while (KEYS.hasMoreElements()) { 
+                
+                while (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements()) { 
                     String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); 
 
                     if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } 
