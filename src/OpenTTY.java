@@ -311,7 +311,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (path.equals("/home/")) { new Explorer(); return 0; } 
 
             String[] FILES = (String[]) paths.get(path); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String file = FILES[i].trim(); if (file == null || file.equals("..") || file.equals("/")) { continue; } if (!BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } } } 
-            if (!BUFFER.isEmpty()) { 
+            if (BUFFER.isEmpty()) { }
+            else {
                 StringBuffer FORMATTED = new StringBuffer(); 
 
                 for (int i = 0; i < BUFFER.size(); i++) { 
