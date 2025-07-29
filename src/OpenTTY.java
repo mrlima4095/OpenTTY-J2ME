@@ -91,11 +91,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } 
             } 
         }  
-        else if (mainCommand.equals("unalias")) { 
-            if (argument.equals("")) { } 
-            else if (aliases.containsKey(argument)) { aliases.remove(argument); } 
-            else { echoCommand("unalias: " + argument + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else if (aliases.containsKey(argument)) { aliases.remove(argument); } else { echoCommand("unalias: " + argument + ": not found"); return 127; } }
         // |
         // Environment Keys
         else if (mainCommand.equals("set")) { 
@@ -1560,33 +1556,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             else if (line.indexOf('=') != -1) {
-                String varType = line.startsWith("char ") ? "char" : "int";
-                String decls = line.substring(varType.length()).trim();
-                String[] vars = split(decls, ',');
+                if (startsWithAny(line, new String[]{"int", "char"})) {
+                    String varType = line.startsWith("char ") ? "char" : "int";
+                    String decls = line.substring(varType.length()).trim();
+                    String[] vars = split(decls, ',');
 
-                for (int j = 0; j < vars.length; j++) {
-                    String part = vars[j].trim(), varName, varValue;
-                    int eq = part.indexOf('=');
+                    for (int j = 0; j < vars.length; j++) {
+                        String part = vars[j].trim(), varName, varValue;
+                        int eq = part.indexOf('=');
 
-                    if (eq != -1) { varName = part.substring(0, eq).trim(); varValue = part.substring(eq + 1).trim(); } 
-                    else { varName = part; varValue = varType.equals("char") ? "' '" : "0"; }
+                        if (eq != -1) { varName = part.substring(0, eq).trim(); varValue = part.substring(eq + 1).trim(); } 
+                        else { varName = part; varValue = varType.equals("char") ? "' '" : "0"; }
 
-                    if (varName.equals("")) { echoCommand("build: invalid variable declaration: '" + part + "'"); return null; }
+                        if (varName.equals("")) { echoCommand("build: invalid variable declaration: '" + part + "'"); return null; }
 
-                    cmd = new Hashtable();
-                    cmd.put("type", "assign");
-                    cmd.put("name", varName);
-                    cmd.put("instance", varType);
-                    cmd.put("value", varValue);
-                    source.addElement(cmd);
+                        cmd = new Hashtable();
+                        cmd.put("type", "assign");
+                        cmd.put("name", varName);
+                        cmd.put("instance", varType);
+                        cmd.put("value", varValue);
+                        source.addElement(cmd);
+                    }
+                    continue;
                 }
-                continue;
-            } 
-            else if () {
+
                 String[] parts = split(line, '=');
                 if (parts.length == 2) {
-                    String varName = parts[0].trim();
-                    String value = parts[1].trim();
+                    String varName = parts[0].trim(), value = parts[1].trim();
 
                     if (varName.indexOf(' ') != -1) { echoCommand("build: invalid type '" + getCommand(varName) + "'"); return null; }
 
