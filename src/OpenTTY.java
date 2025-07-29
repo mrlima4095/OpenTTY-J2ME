@@ -976,7 +976,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Interfaces
     public class Screen implements CommandListener { 
-        private Hashtable lib; 
+        private Hashtable PKG; 
         private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3; 
         private Form screen = new Form(form.getTitle()); 
         private List list = new List(form.getTitle(), List.IMPLICIT); 
@@ -986,16 +986,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public Screen(String type, String args) { 
             if (type == null || type.length() == 0 || args == null || args.length() == 0) { return; } 
 
-            lib = parseProperties(getcontent(args)); 
+            PKG = parseProperties(getcontent(args)); 
             if (type.equals("make")) { 
                 TYPE = SCREEN; 
 
-                if (lib.containsKey("screen.title")) { screen.setTitle(getenv("screen.title")); } 
+                if (PKG.containsKey("screen.title")) { screen.setTitle(getenv("screen.title")); } 
                 BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); 
                 USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); 
                 screen.addCommand(BACK); 
-                if (lib.containsKey("screen.button")) { screen.addCommand(USER); } 
-                if (lib.containsKey("screen.fields")) { 
+                if (PKG.containsKey("screen.button")) { screen.addCommand(USER); } 
+                if (PKG.containsKey("screen.fields")) { 
                     String[] fields = split(getenv("screen.fields"), ','); 
 
                     for (int i = 0; i < fields.length; i++) { 
@@ -1026,10 +1026,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TYPE = LIST; 
                 Image IMG = null; 
 
-                if (!lib.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } 
+                if (!PKG.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } 
 
-                if (lib.containsKey("list.title")) { list.setTitle(getenv("list.title")); } 
-                if (lib.containsKey("list.icon")) { 
+                if (PKG.containsKey("list.title")) { list.setTitle(getenv("list.title")); } 
+                if (PKG.containsKey("list.icon")) { 
                     try { IMG = Image.createImage(getenv("list.icon")); } 
                     catch (Exception e) { MIDletLogs("add warn Image '" + getenv("list.icon") + "' cannot be loaded"); } 
                 } 
@@ -1042,7 +1042,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String[] content = split(getenv("list.content"), ','); 
                 for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); } 
 
-                if (lib.containsKey("list.source")) {
+                if (PKG.containsKey("list.source")) {
                     String source = getcontent(getenv("list.source"));
                     
                     if (source.equals("")) { } 
@@ -1070,8 +1070,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("quest")) { 
                 TYPE = QUEST; 
                 
-                if (!lib.containsKey("quest.label") || !lib.containsKey("quest.cmd") || !lib.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } 
-                if (lib.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); } 
+                if (!PKG.containsKey("quest.label") || !PKG.containsKey("quest.cmd") || !PKG.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } 
+                if (PKG.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); } 
 
                 INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); 
                 BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); 
