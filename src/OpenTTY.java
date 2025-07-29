@@ -166,53 +166,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Long executors
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, root); }
         else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
-        else if (mainCommand.equals("cron")) { 
-            if (argument.equals("")) { } 
-            else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, root); } 
-        }
-        else if (mainCommand.equals("sleep")) { 
-            if (argument.equals("")) { } 
-            else { 
-                try { Thread.sleep(Integer.parseInt(argument) * 1000); } 
-                catch (Exception e) { echoCommand(getCatch(e)); return 2; } 
-            } 
-        }
-        else if (mainCommand.equals("time")) { 
-            if (argument.equals("")) { } 
-            else { 
-                long START = System.currentTimeMillis(); 
-                int STATUS = processCommand(argument, ignore, root); 
-                echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); 
-                return STATUS; 
-            } 
-        } 
+        else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, root); } }
+        else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { echoCommand(getCatch(e)); return 2; } } }
+        else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore, root); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } } 
         // |
         // Chain executors
-        else if (mainCommand.startsWith("exec")) { 
-            String[] CMDS = split(argument, mainCommand.equals("exec") ? '&' : ';'); 
-            for (int i = 0; i < CMDS.length; i++) { 
-                int STATUS = processCommand(CMDS[i].trim(), ignore, root); 
-                if (STATUS != 0) { return STATUS; } 
-            } 
-        }
+        else if (mainCommand.startsWith("exec")) { String[] CMDS = split(argument, mainCommand.equals("exec") ? '&' : ';'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), ignore, root); if (STATUS != 0) { return STATUS; } } }
 
         // API 006 - (Process)
         // |
         // Memory
-        else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
-        else if (mainCommand.equals("top")) { 
-            if (argument.equals("")) { new HTopViewer("monitor"); } 
-            else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
-            else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
-            else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } 
-            else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("gc")) { System.gc(); } else if (mainCommand.equals("htop")) { new HTopViewer(argument); }
+        else if (mainCommand.equals("top")) { if (argument.equals("")) { new HTopViewer("monitor"); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } }
         // |
         // Process
-        else if (mainCommand.equals("start")) { start(argument); } 
-        else if (mainCommand.equals("kill")) { kill(argument); } 
-        else if (mainCommand.equals("stop")) { stop(argument); }
+        else if (mainCommand.equals("start")) { start(argument); } else if (mainCommand.equals("kill")) { kill(argument); } else if (mainCommand.equals("stop")) { stop(argument); }
         else if (mainCommand.equals("ps")) { 
             echoCommand("PID\tPROCESS"); 
             Enumeration KEYS = trace.keys(); 
