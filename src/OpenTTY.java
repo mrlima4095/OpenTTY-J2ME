@@ -301,10 +301,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return STATUS; 
             } 
         }
-        else if (mainCommand.equals("popd")) { 
-            if (stack.isEmpty()) { echoCommand("popd: empty stack"); } 
-            else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } 
-        }
+        else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
 
@@ -369,10 +366,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Device Files
         else if (mainCommand.equals("fdisk")) { return processCommand("lsblk", false); }
-        else if (mainCommand.equals("lsblk")) { 
-            if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } 
-            else { echoCommand("lsblk: " + argument + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else { echoCommand("lsblk: " + argument + ": not found"); return 127; } }
         // |
         // RMS Files
         else if (mainCommand.equals("rm")) { 
