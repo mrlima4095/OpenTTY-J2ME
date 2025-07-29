@@ -220,15 +220,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 010 - (Requests)
         // |
         // Connecting to Device API
-        else if (mainCommand.equals("call")) { if (argument.equals("")) { } 
-            else { 
-                try { platformRequest("tel:" + argument); } 
-                catch (Exception e) { } 
-            } 
-        }
-        else if (mainCommand.equals("open")) { if (argument.equals("")) { } 
-            else { 
-                try { platformRequest(argument); } 
+        else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
+        else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } 
                 catch (Exception e) { echoCommand("open: " + argument + ": not found"); return 127; } 
             } 
         }
