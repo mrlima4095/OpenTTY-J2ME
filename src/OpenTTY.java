@@ -616,14 +616,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { } 
             else { echoCommand("" + getcontent(argument).hashCode()); } 
         }
-        else if (mainCommand.equals("cat")) { 
-            if (argument.equals("")) { echoCommand(nanoContent); } 
-            else { echoCommand(getcontent(argument)); } 
-        }
-        else if (mainCommand.equals("get")) { 
-            if (argument.equals("") || argument.equals("nano")) { nanoContent = loadRMS("nano"); } 
-            else { nanoContent = getcontent(argument); } 
-        }
+        else if (mainCommand.equals("cat")) { echoCommand(argument.equals("") ? nanoContent : getcontent(argument)); }
+        else if (mainCommand.equals("get")) { nanoContent = argument.equals("") || argument.equals("nano") ? loadRMS("nano") : getcontent(argument); }
         else if (mainCommand.equals("read")) { 
             if (argument.equals("") || args.length < 2) { return 2; } 
             else { attributes.put(args[0], getcontent(args[1])); } 
@@ -635,9 +629,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("find")) { 
             if (argument.equals("") || args.length < 2) { return 2; } 
             else { 
-                String[] ARGS = split(argument, ' '); 
-
-                String CONTENT = getcontent(ARGS[1]), VALUE = (String) parseProperties(CONTENT).get(ARGS[0]); 
+                String VALUE = (String) parseProperties(getcontent(args[1])).get(args[0]); 
                 echoCommand(VALUE != null ? VALUE : "null"); 
             } 
         }
@@ -713,7 +705,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("vnt")) { 
             if (argument.equals("")) { } 
             else { 
-                String IN = getcontent(getCommand(argument)), OUT = getArgument(argument); 
+                String IN = getcontent(args[0]), OUT = args.length > 1 ? args[1] : ""; 
 
                 if (OUT.equals("")) { nanoContent = text2note(IN); } 
                 else { writeRMS(OUT, text2note(IN)); } 
