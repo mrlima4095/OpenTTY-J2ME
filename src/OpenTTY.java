@@ -165,13 +165,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Long executors
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, root); }
-        else if (mainCommand.equals("bruteforce")) { 
-            start("bruteforce"); 
-            while (trace.containsKey("bruteforce")) { 
-                int STATUS = processCommand(argument, ignore, root); 
-                if (STATUS != 0) { stop("bruteforce"); return STATUS; } 
-            } 
-        }
+        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
         else if (mainCommand.equals("cron")) { 
             if (argument.equals("")) { } 
             else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, root); } 
