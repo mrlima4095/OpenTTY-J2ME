@@ -331,18 +331,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // RMS Files
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { return deleteFile(argument); } }
-        else if (mainCommand.equals("install")) { 
-            if (argument.equals("")) { } 
-            else { return writeRMS(argument, nanoContent); } 
-        }
-        else if (mainCommand.equals("touch")) { 
-            if (argument.equals("")) { nanoContent = ""; } 
-            else { return writeRMS(argument, ""); } 
-        }
+        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { return writeRMS(argument, nanoContent); } }
+        else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { return writeRMS(argument, ""); } }
         else if (mainCommand.equals("mkdir")) { 
             if (argument.equals("")) { } 
             else { 
-                argument = argument.endsWith("/") ? argument : argument + "/"; argument = argument.startsWith("/") ? argument : path + argument; 
+                argument = argument.endsWith("/") ? argument : argument + "/"; 
+                argument = argument.startsWith("/") ? argument : path + argument; 
 
                 if (argument.startsWith("/mnt/")) { 
                     try { 
@@ -355,7 +350,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
                     catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
                 } 
-                else if (argument.startsWith("/home/")) { echoCommand("mkdir: 405 Method not allowed"); return 3; } 
+                else if (argument.startsWith("/home/")) { echoCommand("-"); return 3; } 
                 else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
             } 
         }
