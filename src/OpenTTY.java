@@ -75,8 +75,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Aliases
         else if (mainCommand.equals("alias")) { 
             if (argument.equals("")) {
-                Enumeration KEYS = aliases.keys(); 
-                while (KEYS.hasMoreElements()) { 
+                 
+                while (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements()) { 
                     String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); 
                     
                     if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } 
@@ -88,7 +88,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } 
                     else { echoCommand("alias: " + argument + ": not found"); return 127; } 
                 } 
-                else { aliases.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
+                else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } 
             } 
         }  
         else if (mainCommand.equals("unalias")) { 
