@@ -1045,9 +1045,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (lib.containsKey("list.source")) {
                     String source = getcontent(getenv("list.source"));
                     
-                    if (source.equals("")) {
-                        
-                    } else {
+                    if (source.equals("")) { } 
+                    else {
                         String[] content = split(source, '\n'); 
                         for (int i = 0; i < content.length; i++) {
                             String key = content[i], value = "true";
