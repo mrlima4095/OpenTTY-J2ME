@@ -189,12 +189,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Device ID
         else if (mainCommand.equals("hostname")) { processCommand(argument.equals("") ? "echo $HOSTNAME" : "set HOSTNAME=" + getCommand(argument), false); }
-        else if (mainCommand.equals("hostid")) { 
-            String DATA = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); 
-            int HASH = 7; for (int i = 0; i < DATA.length(); i++) { HASH = HASH * 31 + DATA.charAt(i); } 
-
-            echoCommand(Integer.toHexString(HASH).toLowerCase()); 
-        }
+        else if (mainCommand.equals("hostid")) { String DATA = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int HASH = 7; for (int i = 0; i < DATA.length(); i++) { HASH = HASH * 31 + DATA.charAt(i); } echoCommand(Integer.toHexString(HASH).toLowerCase()); }
 
         // API 008 - (Logic I/O) Text
         // |
@@ -212,17 +207,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
-        else if (mainCommand.equals("clear")) { 
-            if (argument.equals("") || argument.equals("stdout")) { stdout.setText(""); } 
-            else if (argument.equals("stdin")) { stdin.setString(""); } 
-            else if (argument.equals("history")) { history = new Vector(); } 
-            else if (argument.equals("logs")) { logs = ""; } 
-            else { echoCommand("clear: " + argument + ": not found"); return 127; } 
-        }
-        else if (mainCommand.equals("seed")) { 
-            try { echoCommand("" + random.nextInt(Integer.parseInt(argument)) + ""); } 
-            catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } 
-        }
+        else if (mainCommand.equals("clear")) { if (argument.equals("") || argument.equals("stdout")) { stdout.setText(""); } else if (argument.equals("stdin")) { stdin.setString(""); } else if (argument.equals("history")) { history = new Vector(); } else if (argument.equals("logs")) { logs = ""; } else { echoCommand("clear: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("seed")) { try { echoCommand("" + random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } }
 
         // API 009 - (Threads)
         // |
