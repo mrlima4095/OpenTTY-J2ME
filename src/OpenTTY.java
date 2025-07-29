@@ -234,8 +234,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // HTTP Interfaces
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
-        else if (mainCommand.equals("pong")) { 
-            if (argument.equals("")) { } 
+        else if (mainCommand.equals("pong")) { if (argument.equals("")) { } 
             else { 
                 long START = System.currentTimeMillis(); 
                 try { 
@@ -246,8 +245,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } 
             } 
         }
-        else if (mainCommand.equals("ping")) { 
-            if (argument.equals("")) { } else { 
+        else if (mainCommand.equals("ping")) { if (argument.equals("")) { } 
+            else { 
                 long START = System.currentTimeMillis(); 
                 try { 
                     HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? argument = "http://" + argument : argument); 
