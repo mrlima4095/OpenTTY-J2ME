@@ -262,10 +262,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("dir")) { new Explorer(); }
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
-        else if (mainCommand.equals("mount")) { 
-            if (argument.equals("")) { } 
-            else { mount(getcontent(argument)); } 
-        }
+        else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { 
             if (argument.equals("")) { path = "/home/"; } 
             else if (argument.equals("..")) { 
