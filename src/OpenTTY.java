@@ -1,4 +1,4 @@
-import javax.microedition.lcdui.*;
+
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
@@ -75,8 +75,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Aliases
         else if (mainCommand.equals("alias")) { 
             if (argument.equals("")) {
-                 
-                while (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements()) { 
+                Enumeration KEYS = aliases.keys();
+                while (KEYS.hasMoreElements()) { 
                     String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); 
                     
                     if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } 
@@ -114,8 +114,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
         else if (mainCommand.equals("env")) { 
             if (argument.equals("")) { 
-                
-                while (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements()) { 
+                Enumeration KEYS = attributes.keys();
+                while (KEYS.hasMoreElements()) { 
                     String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); 
 
                     if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } 
