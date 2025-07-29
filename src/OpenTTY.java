@@ -407,7 +407,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("who")) { 
             StringBuffer SESSIONS = new StringBuffer(); 
             for (int i = 0; i < sessions.size(); i++) { SESSIONS.append((String) sessions.elementAt(i)).append("\n"); } 
-            choCommand(SESSIONS.toString().trim()); 
+            echoCommand(SESSIONS.toString().trim()); 
         }
         // |
         // IP Tools
