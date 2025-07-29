@@ -265,7 +265,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (argument.equals("-p")) { INFO = "$CONFIG"; } 
             else if (argument.equals("-n")) { INFO = "$HOSTNAME"; } 
             else { echoCommand("uname: " + argument + ": not found"); return 127; } 
-*/
+            */
 
             if (INFO == null) { echoCommand("uname: " + argument + ": not found"); return 127; }
             else { echoCommand(env(INFO)); }
