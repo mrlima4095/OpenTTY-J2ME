@@ -808,10 +808,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { viewer(form.getTitle(), content); } 
             } 
         }
-        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { 
-            if (username.equals("root")) { processCommand("logout", false, false); } 
-            else { writeRMS("/home/nano", nanoContent); notifyDestroyed(); } 
-        }
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
