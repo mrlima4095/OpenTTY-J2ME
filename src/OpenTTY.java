@@ -189,12 +189,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 echoCommand(PID + "\t" + KEY); 
             } 
         }
-        else if (mainCommand.equals("trace")) { 
-            if (argument.equals("")) { } 
-            else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } 
-            else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } 
-            else { echoCommand("trace: " + getCommand(argument) + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); return 127; } }
 
         // API 007 - (Bundle)
         // |
