@@ -305,24 +305,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
 
-            if (path.equals("/mnt/")) { 
-                try { 
-                    Enumeration ROOTS = FileSystemRegistry.listRoots(); 
-                    while (ROOTS.hasMoreElements()) { 
-                        String ROOT = (String) ROOTS.nextElement(); 
-                        if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
-                    } 
-                } 
-                catch (Exception e) { } 
-            } 
+            if (path.equals("/mnt/")) { try { for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } 
             else if (path.startsWith("/mnt/")) { 
                 try { 
                     String REALPWD = "file:///" + path.substring(5); 
                     if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
 
                     FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
-                    Enumeration CONTENT = CONN.list(); 
-                    while (CONTENT.hasMoreElements()) { 
+                    
+                    for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { 
                         String ITEM = (String) CONTENT.nextElement(); 
                         BUFFER.addElement(ITEM); 
                     } 
