@@ -94,14 +94,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else if (aliases.containsKey(argument)) { aliases.remove(argument); } else { echoCommand("unalias: " + argument + ": not found"); return 127; } }
         // |
         // Environment Keys
-        else if (mainCommand.equals("set")) { 
-            if (argument.equals("")) { } 
-            else { 
-                int INDEX = argument.indexOf('='); 
-                if (INDEX == -1) { attributes.put(argument, ""); } 
-                else { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
-            } 
-        } 
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { attributes.put(argument, ""); } else { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } } } 
         else if (mainCommand.equals("unset")) { 
             if (argument.equals("")) { } 
             else if (attributes.containsKey(argument)) { attributes.remove(argument); } 
