@@ -96,17 +96,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { attributes.put(argument, ""); } else { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } } } 
         else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (attributes.containsKey(argument)) { attributes.remove(argument); } else { } }
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
-        else if (mainCommand.equals("env")) { if (argument.equals("")) { 
-                
-                for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { 
-                    String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); 
-
-                    if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } 
-                } 
-            } 
-            else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } 
-            else { echoCommand("env: " + argument + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("env")) { if (argument.equals("")) { for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } } } else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { echoCommand("env: " + argument + ": not found"); return 127; } }
 
         // API 002 - (Logs)
         // |
