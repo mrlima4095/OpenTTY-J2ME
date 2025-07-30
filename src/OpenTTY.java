@@ -445,7 +445,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
                     } 
                     catch (SecurityException e) { STATUS = 13; } 
-                    catch (Exception e) { STATUS = 1; } 
+                    catch (IOException e) { STATUS = 1; }
+                    catch (Exception e) { STATUS = 3; } 
                 } 
                 else if (argument.equals("*")) { 
                      
