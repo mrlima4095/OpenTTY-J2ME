@@ -582,20 +582,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { return importScript(argument, root); }
         else if (mainCommand.equals("run")) { return processCommand(". " + argument, false, root); }
-        else if (mainCommand.equals("function")) { 
-            if (argument.equals("")) { } 
-            else { 
-                int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); 
-
-                if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { 
-                    String name = getCommand(argument).trim(); 
-                    String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); 
-
-                    functions.put(name, body); 
-                } 
-                else { echoCommand("invalid syntax"); return 2; } 
-            } 
-        }
+        else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 2; } } }
 
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument, ignore, root)); } }
         else if (mainCommand.equals("return")) { return getNumber(argument, 2, true); }
