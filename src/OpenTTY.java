@@ -554,21 +554,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { return 2; } 
             else { return C2ME(argument, root); } 
         }
-        else if (mainCommand.equals("which")) { 
-            if (argument.equals("")) { } 
-            else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } 
-        }
-        
+        else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
+
         // API 014 - (OpenTTY)
         // |
         // Low-level commands
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
-        else if (mainCommand.equals("@alert")) { 
-            try { display.vibrate(argument.equals("") ? 500 : Integer.parseInt(argument) * 100); } 
-            catch (Exception e) { echoCommand(getCatch(e)); return 2; } 
-        }
+        else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); 
         else if (mainCommand.equals("@reload")) { 
-            shell = new Hashtable(); aliases = new Hashtable(); 
+            shell = new Hashtable(); aliases = new Hashtable(); functions = new Hashtable();
             username = loadRMS("OpenRMS"); 
 
             MIDletLogs("add debug API reloaded"); 
