@@ -746,7 +746,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (TYPE == SCREEN) { processCommand("xterm"); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found")); } 
             } 
         } 
-        private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; } 
+        private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
         private String getenv(String key) { return env(getvalue(key, "")); } 
 
