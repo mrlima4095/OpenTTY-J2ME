@@ -373,38 +373,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
         else if (mainCommand.equals("cat")) { echoCommand(argument.equals("") ? nanoContent : getcontent(argument)); }
         else if (mainCommand.equals("get")) { nanoContent = argument.equals("") || argument.equals("nano") ? loadRMS("nano") : getcontent(argument); }
-        else if (mainCommand.equals("read")) { 
-            if (argument.equals("") || args.length < 2) { return 2; } 
-            else { attributes.put(args[0], getcontent(args[1])); } 
-        }
-        else if (mainCommand.equals("grep")) { 
-            if (argument.equals("") || args.length < 2) { return 2; } 
-            else { echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } 
-        }
-        else if (mainCommand.equals("find")) { 
-            if (argument.equals("") || args.length < 2) { return 2; } 
-            else { 
-                String VALUE = (String) parseProperties(getcontent(args[1])).get(args[0]); 
-                echoCommand(VALUE != null ? VALUE : "null"); 
-            } 
-        }
+        else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
+        else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
+        else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String VALUE = (String) parseProperties(getcontent(args[1])).get(args[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
         else if (mainCommand.equals("head")) { 
             if (argument.equals("")) { } 
             else { 
-                String CONTENT = getcontent(argument); 
+                String CONTENT = getcontent(args[0]); 
                 String[] LINES = split(CONTENT, '\n'); 
 
-                int COUNT = Math.min(10, LINES.length); 
+                int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, false) : 10, LINES.length); 
                 for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } 
             } 
         }
         else if (mainCommand.equals("tail")) { 
             if (argument.equals("")) { } 
             else { 
-                String CONTENT = getcontent(argument); 
+                String CONTENT = getcontent(args[0]); 
                 String[] LINES = split(CONTENT, '\n'); 
 
-                int COUNT = Math.max(0, LINES.length - 10); 
+                int COUNT = Math.max(0, LINES.length - args.length > 1 ? getNumber(args[1], 10, false) : 10); 
                 for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } 
             } 
         }
