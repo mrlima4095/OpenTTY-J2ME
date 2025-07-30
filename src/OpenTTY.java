@@ -369,14 +369,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("sed")) { return StringEditor(argument); }
         else if (mainCommand.equals("getty")) { nanoContent = stdout.getText(); }
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
-        else if (mainCommand.equals("du")) { 
-            if (argument.equals("")) { } 
-            else { processCommand("wc -c " + argument, false); } 
-        }
-        else if (mainCommand.equals("hash")) { 
-            if (argument.equals("")) { } 
-            else { echoCommand("" + getcontent(argument).hashCode()); } 
-        }
+        else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { processCommand("wc -c " + argument, false); } }
+        else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
         else if (mainCommand.equals("cat")) { echoCommand(argument.equals("") ? nanoContent : getcontent(argument)); }
         else if (mainCommand.equals("get")) { nanoContent = argument.equals("") || argument.equals("nano") ? loadRMS("nano") : getcontent(argument); }
         else if (mainCommand.equals("read")) { 
@@ -463,8 +457,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
-        else if (mainCommand.equals("vnt")) { 
-            if (argument.equals("")) { } 
+        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } 
             else { 
                 String IN = getcontent(args[0]), OUT = args.length > 1 ? args[1] : ""; 
 
@@ -472,20 +465,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { writeRMS(OUT, text2note(IN)); } 
             } 
         }
-        else if (mainCommand.equals("ph2s")) { 
-            StringBuffer BUFFER = new StringBuffer(); 
-
-            for (int i = 0; i < history.size() - 1; i++) { 
-                BUFFER.append(history.elementAt(i)); 
-
-                if (i < history.size() - 1) { BUFFER.append("\n"); } 
-            } 
-
-            String script = "#!/java/bin/sh\n\n" + BUFFER.toString(); 
-
-            if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } 
-            else { writeRMS(argument, script); } 
-        }
+        else if (mainCommand.equals("ph2s")) { StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/java/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script); } }
         // |
         // Interfaces
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
