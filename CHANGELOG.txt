@@ -34,6 +34,8 @@ LTS Edition
 - Command `cat` without args prints nano content
 - **X Server** updated to **0.6.3**
 - API **@reload** clears shell functions
+- Command `chmod` default IP Address to open socket set **1.1.1.1:53**, if key `$REPO` is found use it.
+- Fixed `chmod *` granting permission `null` as last permission node.
 
 [ _Notes_ ]
 
