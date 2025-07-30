@@ -530,7 +530,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Low-level commands
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
-        else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); 
+        else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); }
         else if (mainCommand.equals("@reload")) { 
             shell = new Hashtable(); aliases = new Hashtable(); functions = new Hashtable();
             username = loadRMS("OpenRMS"); 
