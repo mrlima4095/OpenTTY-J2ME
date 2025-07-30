@@ -513,7 +513,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             MIDletLogs("add debug API reloaded"); 
             processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); 
         }
-        else if (mainCommand.startsWith("@")) { display.vibrate(500); }
+        else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
 
         // API 015 - (Scripts)
         // |
