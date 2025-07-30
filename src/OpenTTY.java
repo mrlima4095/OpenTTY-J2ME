@@ -711,7 +711,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             }
                             
                             list.append(key, IMG); 
-                            lib.put(key, value);
+                            PKG.put(key, value);
                         } 
 
                     }
