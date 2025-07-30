@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x35"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x36"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -431,7 +431,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (NODES.containsKey(argument)) { 
                     try { 
                         if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
-                        else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://"))).close(); } 
+                        else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + attributes.containsKey("REPO") ? env("$REPO") : "1.1.1.1:53"))).close(); } 
                         else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } 
                         else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
                     } 
