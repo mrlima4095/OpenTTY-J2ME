@@ -69,7 +69,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (aliases.containsKey(mainCommand) && ignore) { return processCommand((String) aliases.get(mainCommand) + " " + argument, ignore, root); }
         if (functions.containsKey(mainCommand) && ignore) { return runScript((String) functions.get(mainCommand)); }
         
-        if (mainCommand.equals("")) { odjfn }
+        if (mainCommand.equals("")) { odjfn; }
 
         // API 001 - (Registry)
         // |
