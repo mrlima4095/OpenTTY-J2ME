@@ -168,16 +168,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
         else if (mainCommand.equals("uname")) { 
             String INFO = argument.equals("") || argument.equals("-i") ? "$TYPE" : argument.equals("-a") || argument.equals("--all") ? "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE" : argument.equals("-r") || argument.equals("--release") ? "$VERSION" : argument.equals("-v") || argument.equals("--build") ? build : argument.equals("-s") ? "J2ME" : argument.equals("-m") ? "$PROFILE" : argument.equals("-p") ? "$CONFIG" : argument.equals("-n") ? "$HOSTNAME" : null;
-            /*if (argument.equals("") || argument.equals("-i")) { INFO = "$TYPE"; } 
-            else if (argument.equals("-a") || argument.equals("--all")) { INFO = "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE"; } 
-            else if (argument.equals("-r") || argument.equals("--release")) { INFO = "$VERSION"; } 
-            else if (argument.equals("-v") || argument.equals("--build")) { INFO = build; } 
-            else if (argument.equals("-s")) { INFO = "J2ME"; } 
-            else if (argument.equals("-m")) { INFO = "$PROFILE"; } 
-            else if (argument.equals("-p")) { INFO = "$CONFIG"; } 
-            else if (argument.equals("-n")) { INFO = "$HOSTNAME"; } 
-            else { echoCommand("uname: " + argument + ": not found"); return 127; } 
-            */
 
             if (INFO == null) { echoCommand("uname: " + argument + ": not found"); return 127; }
             else { echoCommand(env(INFO)); }
