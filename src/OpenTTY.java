@@ -27,7 +27,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
     private Command EXECUTE = new Command("Send", Command.OK, 1), HELP = new Command("Help", Command.SCREEN, 2), NANO = new Command("Nano", Command.SCREEN, 3),
                     CLEAR = new Command("Clear", Command.SCREEN, 4), HISTORY = new Command("History", Command.SCREEN, 5);
-
+    // |
+    // MIDlet Loader
     public void startApp() {
         if (!trace.containsKey("sh")) {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
@@ -39,10 +40,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { runScript(read("/home/initd")); }
         } 
     }
-
+    // | (Triggers)
     public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "pauseApp()" : "true"); }
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
-
+    // | (X11 Main Listener)
     public void commandAction(Command c, Displayable d) {
         if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); } 
 
@@ -54,8 +55,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); }
         else if (c.getCommandType() == Command.EXIT) { processCommand("exit"); }
     }
-
-    // OpenTTY Command Processor
+    // |
+    // MIDlet Shell
     private int processCommand(String command) { return processCommand(command, true, false); }
     private int processCommand(String command, boolean ignore) { return processCommand(command, true, false); }
     private int processCommand(String command, boolean ignore, boolean root) { 
