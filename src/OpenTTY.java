@@ -457,14 +457,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
-        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } 
-            else { 
-                String IN = getcontent(args[0]), OUT = args.length > 1 ? args[1] : ""; 
-
-                if (OUT.equals("")) { nanoContent = text2note(IN); } 
-                else { writeRMS(OUT, text2note(IN)); } 
-            } 
-        }
+        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String IN = getcontent(args[0]), OUT = args.length > 1 ? args[1] : ""; if (OUT.equals("")) { nanoContent = text2note(IN); } else { writeRMS(OUT, text2note(IN)); } } }
         else if (mainCommand.equals("ph2s")) { StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/java/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script); } }
         // |
         // Interfaces
