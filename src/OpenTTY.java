@@ -329,11 +329,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("cp")) { 
             if (argument.equals("") || args.length < 2) { echoCommand("cp: missing [origin]"); } 
-            else { 
-                String ORIGIN = getCommand(args[0]), TARGET = getArgument(argument); 
-
-                return writeRMS(TARGET.equals("") ? ORIGIN + "-copy" : TARGET, getcontent(ORIGIN)); 
-            } 
+            else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } 
         }
         // |
         // Text Manager
