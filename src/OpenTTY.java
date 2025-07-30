@@ -470,10 +470,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Interfaces
         else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
         else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
-        else if (mainCommand.equals("view")) { 
-            if (argument.equals("")) { } 
-            else { viewer(extractTitle(env(argument)), html2text(env(argument))); } 
-        }
+        else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument)), html2text(env(argument))); } }
         // |
         // Audio Manager
         else if (mainCommand.equals("audio")) { return audio(argument); }
@@ -501,8 +498,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (Exception e) { STATUS = 1; } 
                 } 
                 else if (argument.equals("*")) { 
-                    Enumeration KEYS = NODES.keys(); 
-                    while (KEYS.hasMoreElements()) { processCommand("chmod " + (String) KEYS.nextElement(), false); } 
+                     
+                    for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { processCommand("chmod " + (String) KEYS.nextElement(), false); } 
                 }
                 else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
 
