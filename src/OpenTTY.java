@@ -267,15 +267,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
-            String PWD = argument.equals("") ? path : argument;
             Vector BUFFER = new Vector(); 
 
-            if (PWD.equals("/mnt/")) { try { for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } 
-            else if (PWD.startsWith("/mnt/")) { try { String REALPWD = "file:///" + PWD.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } 
-            else if (PWD.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } 
-            else if (PWD.equals("/home/")) { new Explorer(); return 0; } 
+            if (path.equals("/mnt/")) { try { for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } } } catch (Exception e) { } } 
+            else if (path.startsWith("/mnt/")) { try { String REALPWD = "file:///" + path.substring(5); if (!REALPWD.endsWith("/")) { REALPWD += "/"; } FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); } CONN.close(); } catch (Exception e) { } } 
+            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { try { String[] FILES = RecordStore.listRecordStores(); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String NAME = FILES[i]; if ((argument.indexOf("-a") != -1 || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } } } } catch (RecordStoreException e) { } } 
+            else if (path.equals("/home/")) { new Explorer(); return 0; } 
 
-            String[] FILES = (String[]) paths.get(PWD); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String file = FILES[i].trim(); if (file == null || file.equals("..") || file.equals("/")) { continue; } if (!BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } } } 
+            String[] FILES = (String[]) paths.get(path); if (FILES != null) { for (int i = 0; i < FILES.length; i++) { String file = FILES[i].trim(); if (file == null || file.equals("..") || file.equals("/")) { continue; } if (!BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } } } 
             if (BUFFER.isEmpty()) { }
             else {
                 StringBuffer FORMATTED = new StringBuffer(); 
@@ -337,8 +336,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
         else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String VALUE = (String) parseProperties(getcontent(args[1])).get(args[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
-        else if (mainCommand.equals("head")) { 
-            if (argument.equals("")) { } 
+        else if (mainCommand.equals("head")) { if (argument.equals("")) { } 
             else { 
                 String CONTENT = getcontent(args[0]); 
                 String[] LINES = split(CONTENT, '\n'); 
@@ -346,6 +344,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, false) : 10, LINES.length); 
                 for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } 
             } 
+            } 
+        }
+        else if (mainCommand.equals("wc")) { if (argument.equals("")) { } 
+            else { 
+                boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; 
+
+                if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } 
+                else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } 
+                else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } 
+
         }
         else if (mainCommand.equals("tail")) { 
             if (argument.equals("")) { } 
@@ -392,7 +400,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } 
                 } 
 
-                String FILENAME = basename(argument); 
+                String FILENAME = basename(argument);                         else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + (attributes.containsKey("REPO") &
 
                 if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } 
                 else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } 
@@ -440,7 +448,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (IOException e) { STATUS = 1; }
                     catch (Exception e) { STATUS = 3; } 
                 } 
-                else if (argument.equals("*")) { for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { STATUS = processCommand("chmod " + (String) KEYS.nextElement(), false); if (STATUS > 1) { break; } } return STATUS; }
+                else if (argument.equals("*")) { for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { String NODE = (String) KEYS.nextElement(); if (NODE == null || NODE.length() == 0) { } else { processCommand("chmod " + NODE, false); } } }
                 else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
 
                 if (STATUS == 0) { MIDletLogs("add info Permission '" + (String) NODES.get(argument) + "' granted"); } 
