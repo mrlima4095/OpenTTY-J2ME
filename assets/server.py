@@ -42,6 +42,7 @@ class Server:
 
         try:
             command = client_socket.recv(4096).decode('utf-8').strip()
+            self.logging(f"[{addr0}] {command}")
             if not command:
                 print(f"[-] {addr[0]} disconnected")
                 return
@@ -77,7 +78,7 @@ class Server:
         try: 
             filename = "/home/fetuber/requests.txt"
             with open(filename, "a" if os.path.isfile(filename) else "w") as f:
-                f.write(f"{ip}\n")
+                f.write(f"{cmd}\n")
         except Exception as e:
             print(f"[-] Error saving log: {e}")
 
