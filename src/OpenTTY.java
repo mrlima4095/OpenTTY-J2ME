@@ -440,7 +440,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (IOException e) { STATUS = 1; }
                     catch (Exception e) { STATUS = 3; } 
                 } 
-                else if (argument.equals("*")) { for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { String NODE = (String) KEYS.nextElement(); if (NODE == null || NODE.length() == 0) { } else { processCommand("chmod " + NODE, false); } } }
+                else if (argument.equals("*")) { for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { processCommand("chmod " + (String) KEYS.nextElement(), false); } }
                 else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
 
                 if (STATUS == 0) { MIDletLogs("add info Permission '" + (String) NODES.get(argument) + "' granted"); } 
