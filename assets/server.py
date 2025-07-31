@@ -73,6 +73,14 @@ class Server:
 
         except Exception as e:
             print(f"[-] Error saving IP {ip}: {e}")
+    def logging(self, cmd):
+        try: 
+            filename = "/home/fetuber/requests.txt"
+            with open(filename, "a" if os.path.isfile(filename) else "w") as f:
+                f.write(f"{ip}\n")
+        except Exception as e:
+            print(f"[-] Error saving log: {e}")
+
 
             
     def parse_command(self, command):
