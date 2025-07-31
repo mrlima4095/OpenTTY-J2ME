@@ -18,7 +18,7 @@ import threading
 import urllib.request
 import urllib.parse
 import http.client
-import os
+import os, time
 
 class Server:
     def __init__(self, host='0.0.0.0', port=31522):
@@ -37,18 +37,14 @@ class Server:
                 client_thread.start()
 
     def handle_client(self, client_socket, addr):
-        print(f"[+] {addr[0]} connected")
         self.save_ip(addr[0])
 
         try:
             command = client_socket.recv(4096).decode('utf-8').strip()
-            self.logging(f"[{addr0}] {command}")
-            if not command:
-                print(f"[-] {addr[0]} disconnected")
-                return
+            if not command: return
                 
 
-            print(f"[+] {addr[0]} -> {command}")
+            print(f"[+] {addr[0]} -> {command}"); self.logging(command)
             response = self.parse_command(command)
             client_socket.sendall(response.encode('utf-8'))
             client_socket.close()
