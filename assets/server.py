@@ -11,14 +11,15 @@
 #   that you have connected there. (I'M NOT PARTNER OF nnproject).
 #
 
-import sys
+import sys, os
 import socket
 import subprocess
 import threading
 import urllib.request
 import urllib.parse
 import http.client
-import os, time
+
+from datetime import datetime
 
 class Server:
     def __init__(self, host='0.0.0.0', port=31522):
@@ -37,14 +38,13 @@ class Server:
                 client_thread.start()
 
     def handle_client(self, client_socket, addr):
-        self.save_ip(addr[0])
-
         try:
             command = client_socket.recv(4096).decode('utf-8').strip()
             if not command: return
                 
 
-            print(f"[+] {addr[0]} -> {command}"); self.logging(command)
+            print(f"[+] {addr[0]} -> {command}")
+            self.logging(addr[0], command);
             response = self.parse_command(command)
             client_socket.sendall(response.encode('utf-8'))
             client_socket.close()
@@ -53,31 +53,17 @@ class Server:
             print(f"[-] {addr[0]} -- {e}")
             client_socket.close()
 
-    def save_ip(self, ip):
+    def logging(self, ip, cmd):
         try:
-            filename = "/home/fetuber/clients.txt"
-            if not os.path.isfile(filename):
-                with open(filename, "w") as f:
-                    f.write(f"{ip}\n")
-                return
+            filename = "/home/fetuber/logs.txt"
+            now = datetime.now().strftime("[%H:%M:%S %d/%m/%Y]")
+            log_line = f"{now} {ip} -> ({cmd})\n"
 
-            with open(filename, "r") as f:
-                ips = f.read().splitlines()
-
-            if ip not in ips:
-                with open(filename, "a") as f:
-                    f.write(f"{ip}\n")
-
-        except Exception as e:
-            print(f"[-] Error saving IP {ip}: {e}")
-    def logging(self, cmd):
-        try: 
-            filename = "/home/fetuber/requests.txt"
             with open(filename, "a" if os.path.isfile(filename) else "w") as f:
-                f.write(f"{cmd}\n")
+                f.write(log_line)
+
         except Exception as e:
             print(f"[-] Error saving log: {e}")
-
 
             
     def parse_command(self, command):
