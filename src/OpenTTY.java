@@ -400,8 +400,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } 
                 } 
 
-                String FILENAME = basename(argument);                         else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + (attributes.containsKey("REPO") &
-
+                String FILENAME = basename(argument);
+                
                 if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } 
                 else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } 
                 else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } 
