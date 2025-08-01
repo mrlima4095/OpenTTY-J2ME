@@ -57,7 +57,7 @@ class Server:
         try:
             filename = "/home/fetuber/logs.txt"
             now = datetime.now().strftime("[%H:%M:%S %d/%m/%Y]")
-            log_line = f"{now} {ip} -> ({cmd})\n"
+            log_line = f"{now} {ip} -> {cmd}\n"
 
             with open(filename, "a" if os.path.isfile(filename) else "w") as f:
                 f.write(log_line)
