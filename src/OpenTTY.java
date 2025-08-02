@@ -920,7 +920,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (CONN != null) { CONN.closeRecordStore(); } 
         } 
-        catch (RecordStoreException e) { echoCommand(getCatch(e)); return 1; } 
+        catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
 
         return 0; 
     }
