@@ -242,16 +242,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
-            if (path.equals("/mnt/")) { 
-                try { 
+            
+            try { 
+                if (path.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
                         String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
-                    } 
+                    }
                 } 
-                catch (Exception e) { } 
-            } 
-            else if (path.startsWith("/mnt/")) { 
-                try { 
+                else if (path.startsWith("/mnt/")) { 
                     String REALPWD = "file:///" + path.substring(5); 
                     if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
 
@@ -261,10 +259,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                     CONN.close(); 
                 } 
-                catch (Exception e) { } 
-            } 
-            else if (path.equals("/home/") && argument.indexOf("-v") != -1) { 
-                try { 
+                else if (path.equals("/home/") && argument.indexOf("-v") != -1) { 
                     String[] FILES = RecordStore.listRecordStores(); 
                     if (FILES != null) { 
                         for (int i = 0; i < FILES.length; i++) { 
@@ -272,9 +267,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } 
                     } 
                 } 
-                catch (RecordStoreException e) { } 
-            } 
-            else if (path.equals("/home/")) { new Explorer(); return 0; } 
+                else if (path.equals("/home/")) { new Explorer(); return 0; } 
+            } catch (IOException e) { } 
 
             String[] FILES = (String[]) paths.get(path); 
             if (FILES != null) { 
@@ -470,7 +464,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 return STATUS; 
             } 
-        }
+        } }
         // |
         // General Utilities
         else if (mainCommand.equals("history")) { new History(); }
@@ -803,11 +797,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void addDirectory(String fullPath) { boolean isDirectory = fullPath.endsWith("/"); if (!paths.containsKey(fullPath)) { if (isDirectory) { paths.put(fullPath, new String[] { ".." }); String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/', fullPath.length() - 2) + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } String dirName = fullPath.substring(parentPath.length(), fullPath.length() - 1); updatedContents.addElement(dirName + "/"); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } else { String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); String fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } updatedContents.addElement(fileName); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } } }
     public class Explorer implements CommandListener { 
         private List screen = new List(form.getTitle(), List.IMPLICIT); 
-        private Command BACK = new Command("Back", Command.BACK, 1), 
-                        OPEN = new Command("Open", Command.OK, 1), 
-                        DELETE = new Command("Delete", Command.OK, 2), 
-                        RUN = new Command("Run Script", Command.OK, 3), 
-                        IMPORT = new Command("Import File", Command.OK, 4); 
+        private Command BACK = new Command("Back", Command.BACK, 1), OPEN = new Command("Open", Command.OK, 1), 
+                        DELETE = new Command("Delete", Command.OK, 2), RUN = new Command("Run Script", Command.OK, 3), IMPORT = new Command("Import File", Command.OK, 4); 
         private Image DIR = null, FILE = null, UP = null; 
 
         public Explorer() { 
@@ -939,7 +930,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (CONN != null) { CONN.closeRecordStore(); } 
         } 
-        catch (RecordStoreException e) { return 1; } 
+        catch (RecordStoreException e) { echoCommand(getCatch(e)); return 1; } 
 
         return 0; 
     }
