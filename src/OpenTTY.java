@@ -237,28 +237,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
-        else if (mainCommand.equals("cd")) { 
-            if (argument.equals("")) { path = "/home/"; } 
-            else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } 
-            else { 
-                String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
-                if (!TARGET.endsWith("/")) { TARGET += "/"; } 
-                if (paths.containsKey(TARGET)) { path = TARGET; } 
-                else if (TARGET.startsWith("/mnt/")) { 
-                    try { 
-                        String REALPWD = "file:///" + TARGET.substring(5); 
-                        
-                        FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); 
-                        if (fc.exists() && fc.isDirectory()) { path = TARGET; } 
-                        else { echoCommand("cd: " + basename(TARGET) + ": not " + (fc.exists() ? "a directory" : "found")); return 127; } 
-
-                        fc.close(); 
-                    } 
-                    catch (IOException e) { echoCommand("cd: " + basename(TARGET) + ": " + getCatch(e)); return 1; } 
-                } 
-                else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } 
-            } 
-        }
+        else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/home/"; } else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } else { String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); if (!TARGET.endsWith("/")) { TARGET += "/"; } if (paths.containsKey(TARGET)) { path = TARGET; } else if (TARGET.startsWith("/mnt/")) { try { String REALPWD = "file:///" + TARGET.substring(5); FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); if (fc.exists() && fc.isDirectory()) { path = TARGET; } else { echoCommand("cd: " + basename(TARGET) + ": not " + (fc.exists() ? "a directory" : "found")); return 127; } fc.close(); } catch (IOException e) { echoCommand("cd: " + basename(TARGET) + ": " + getCatch(e)); return 1; } } else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } } }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
