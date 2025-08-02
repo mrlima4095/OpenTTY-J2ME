@@ -65,13 +65,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String[] args = splitArgs(getArgument(command));
 
         if (username.equals("root")) { root = true; }
-        if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { return processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true", ignore, root); } else if (args.containsKey(getCommand(argument).toLowerCase())) { return processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument), ignore, root); } else { return processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "echo " + mainCommand + ": " + getCommand(argument) + ": not found", args.containsKey("shell.unknown") ? true : false, root); } }
-        if (aliases.containsKey(mainCommand) && ignore) { return processCommand((String) aliases.get(mainCommand) + " " + argument, ignore, root); }
-        if (functions.containsKey(mainCommand) && ignore) { return runScript((String) functions.get(mainCommand)); }
-        
+
+
         if (mainCommand.equals("")) { }
 
         // API 001 - (Registry)
+        // |
+        // (Calls)
+        else if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { return processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true", ignore, root); } else if (args.containsKey(getCommand(argument).toLowerCase())) { return processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument), ignore, root); } else { return processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "echo " + mainCommand + ": " + getCommand(argument) + ": not found", args.containsKey("shell.unknown") ? true : false, root); } }
+        else if (aliases.containsKey(mainCommand) && ignore) { return processCommand((String) aliases.get(mainCommand) + " " + argument, ignore, root); }
+        else if (functions.containsKey(mainCommand) && ignore) { return runScript((String) functions.get(mainCommand)); }
         // |
         // Aliases
         else if (mainCommand.equals("alias")) { if (argument.equals("")) {
