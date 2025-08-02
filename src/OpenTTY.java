@@ -325,7 +325,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
         }
         else if (mainCommand.equals("cp")) { 
-            if (argument.equals("") || args.length < 2) { echoCommand("cp: missing [origin]"); } 
+            if (argument.equals("") || args.length < 1) { echoCommand("cp: missing [origin]"); } 
             else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } 
         }
         // |
@@ -920,7 +920,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (CONN != null) { CONN.closeRecordStore(); } 
         } 
-        catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
+        catch (Exce e) { echoCommand(getCatch(e)); return 1; } 
 
         return 0; 
     }
