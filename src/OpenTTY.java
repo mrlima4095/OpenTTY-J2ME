@@ -358,7 +358,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String CONTENT = getcontent(args[0]); 
                 String[] LINES = split(CONTENT, '\n'); 
 
-                int COUNT = Math.max(0, LINES.length - args.length > 1 ? getNumber(args[1], 10, false) : 10); 
+                int COUNT = Math.max(0, LINES.length - (args.length > 1 ? getNumber(args[1], 10, false) : 10)); 
                 for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } 
             } 
         }
