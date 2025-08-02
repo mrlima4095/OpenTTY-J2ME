@@ -352,15 +352,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
              
             } 
         }
-        else if (mainCommand.equals("wc")) { if (argument.equals("")) { } 
-            else { 
-                boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; 
-
-                if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } 
-                else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } 
-                else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } 
-
-        }
         else if (mainCommand.equals("tail")) { 
             if (argument.equals("")) { } 
             else { 
