@@ -324,7 +324,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
                     catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
                 } 
-                else if (argument.startsWith("/home/")) { echoCommand("-"); return 3; } 
+                else if (argument.startsWith("/home/")) { 
+
+                } 
                 else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
             } 
         }
@@ -820,13 +822,127 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.setCommandListener(this); load(); 
             display.setCurrent(screen); 
         } 
-        public void commandAction(Command c, Displayable d) { String selected = screen.getString(screen.getSelectedIndex()); if (c == BACK) { processCommand("xterm"); } else if (c == OPEN  || c == List.SELECT_COMMAND) { if (selected != null) { if (selected.endsWith("..")) { int lastSlash = path.lastIndexOf('/', path.length() - 2); if (lastSlash != -1) { path = path.substring(0, lastSlash + 1); } } else if (selected.endsWith("/")) { path += selected; } else { new NanoEditor(path + selected); } stdin.setLabel(username + " " + path + " $"); load(); } } else if (c == DELETE) { int STATUS = deleteFile(path + selected); if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } load(); } else if (c == RUN) { processCommand("xterm"); runScript(getcontent(path + selected)); } else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } } private void load() { screen.deleteAll(); if (!path.equals("/")) { screen.append("..", UP); } if (isWritable(path)) { screen.addCommand(DELETE); } else { screen.removeCommand(DELETE); } if (isRoot(path)) { screen.removeCommand(RUN); screen.removeCommand(IMPORT); } else { screen.addCommand(RUN); screen.addCommand(IMPORT); } try { if (path.equals("/mnt/")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), DIR); } } else if (path.startsWith("/mnt/")) { try { FileConnection dir = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ); Enumeration content = dir.list(); Vector dirs = new Vector(), files = new Vector(); while (content.hasMoreElements()) { String name = (String) content.nextElement(); if (name.endsWith("/")) { dirs.addElement(name); } else { files.addElement(name); } } while (!dirs.isEmpty()) { screen.append(getFirstString(dirs), DIR); } while (!files.isEmpty()) { screen.append(getFirstString(files), FILE); } dir.close(); } catch (IOException e) { } } else if (path.equals("/home/")) { try { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], FILE); } } } catch (RecordStoreException e) { } } String[] files = (String[]) paths.get(path); if (files != null) { for (int i = 0; i < files.length; i++) { String f = files[i]; if (f != null && !f.equals("..") && !f.equals("/")) { if (f.endsWith("/")) { screen.append(f, DIR); } else { screen.append(f, FILE); } } } } } catch (IOException e) { } } private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); } private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); } private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } }
+        public void commandAction(Command c, Displayable d) { 
+            String selected = screen.getString(screen.getSelectedIndex()); 
+
+            if (c == BACK) { processCommand("xterm"); } 
+            else if (c == OPEN || c == List.SELECT_COMMAND) { 
+                if (selected != null) { 
+                    if (selected.endsWith("..")) { 
+                        int lastSlash = path.lastIndexOf('/', path.length() - 2); 
+                        if (lastSlash != -1) { path = path.substring(0, lastSlash + 1); } 
+                    } 
+                    else if (selected.endsWith("/")) { path += selected; } 
+                    else { new NanoEditor(path + selected); } 
+
+                    stdin.setLabel(username + " " + path + " $"); load(); 
+                } 
+            } 
+            else if (c == DELETE) { 
+                int STATUS = deleteFile(path + selected); 
+
+                if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
+
+                load(); 
+            } 
+            else if (c == RUN) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
+            else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
+        } 
+        private void load() { 
+            screen.deleteAll(); 
+
+            if (!path.equals("/")) { screen.append("..", UP); } 
+
+            if (isWritable(path)) { screen.addCommand(DELETE); } 
+            else { screen.removeCommand(DELETE); }
+
+            if (isRoot(path)) { screen.removeCommand(RUN); screen.removeCommand(IMPORT); } 
+            else { screen.addCommand(RUN); screen.addCommand(IMPORT); }
+
+            try { 
+                if (path.equals("/mnt/")) { 
+                    Enumeration roots = FileSystemRegistry.listRoots(); 
+                    while (roots.hasMoreElements()) { screen.append((String) roots.nextElement(), DIR); } 
+                } 
+                else if (path.startsWith("/mnt/")) { 
+                    FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ); 
+
+                    Enumeration content = CONN.list(); 
+                    Vector dirs = new Vector(), files = new Vector(); 
+
+                    while (content.hasMoreElements()) { 
+                        String name = (String) content.nextElement(); 
+                        if (name.endsWith("/")) { dirs.addElement(name); } 
+                        else { files.addElement(name); } 
+                    } 
+                    while (!dirs.isEmpty()) { screen.append(getFirstString(dirs), DIR); } 
+                    while (!files.isEmpty()) { screen.append(getFirstString(files), FILE); } 
+
+                    CONN.close(); 
+                } 
+                else if (path.equals("/home/")) { 
+                    String[] recordStores = RecordStore.listRecordStores(); 
+
+                    for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { screen.append(recordStores[i], FILE); } } 
+                } 
+                String[] files = (String[]) paths.get(path); 
+
+                if (files != null) { 
+                    for (int i = 0; i < files.length; i++) { 
+                        String f = files[i]; 
+
+                        if (f != null && !f.equals("..") && !f.equals("/")) { 
+                            if (f.endsWith("/")) { screen.append(f, DIR); } 
+                            else { screen.append(f, FILE); } 
+                        } 
+                    } 
+                } 
+            } catch (IOException e) { } 
+        } 
+        private boolean isWritable(String path) { return path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")); } 
+        private boolean isRoot(String path) { return path.equals("/") || path.equals("/mnt/"); } 
+
+        private static String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } 
+    }
     private String readStack() { StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
     private int deleteFile(String filename) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (CONN.exists()) { CONN.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); return 127; } CONN.close(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { try { filename = filename.substring(6); if (filename.equals("OpenRMS")) { echoCommand("rm: " + filename + ": permission denied"); return 13; } RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); return 127; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return deleteFile(path + filename); } return 0; }
-    private int writeRMS(String filename, byte[] data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
-    private int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (RecordStoreException e) { return 1; } return 0; }
+    private int writeRMS(String filename, byte[] data) { 
+        if (filename == null || filename.length() == 0) { return 2; } 
+        else if (filename.startsWith("/mnt/")) { 
+            try { 
+                FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
+                if (!CONN.exists()) { CONN.create(); } 
+
+                OutputStream OUT = CONN.openOutputStream(); 
+                OUT.write(data); OUT.flush(); 
+
+                OUT.close(); CONN.close();
+            } 
+            catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
+            catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
+        } 
+        else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
+        else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
+        else { return writeRMS(path + filename, data); } 
+
+        return 0; 
+    }
+    private int writeRMS(String filename, byte[] data, int index) { 
+        try { 
+            RecordStore CONN = RecordStore.openRecordStore(filename, true); 
+
+            while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } 
+
+            CONN.setRecord(index, data, 0, data.length); 
+
+            if (CONN != null) { CONN.closeRecordStore(); } 
+        } 
+        catch (RecordStoreException e) { return 1; } 
+
+        return 0; 
+    }
     private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
     private String loadRMS(String filename) { return read("/home/" + filename); }
     // |
