@@ -442,8 +442,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
                     } 
                     catch (SecurityException e) { STATUS = 13; } 
-                    catch (IOException e) { STATUS = 1; }
-                    catch (Exception e) { STATUS = 3; } 
+                    catch (IOException e) { STATUS = 1; } catch (Exception e) { STATUS = 3; } 
                 } 
                 else if (argument.equals("*")) { for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { STATUS = processCommand("chmod " + (String) KEYS.nextElement(), false); if (STATUS > 1) { break; } } return STATUS; }
                 else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
