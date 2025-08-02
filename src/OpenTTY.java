@@ -74,8 +74,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 001 - (Registry)
         // |
         // Aliases
-        else if (mainCommand.equals("alias")) { 
-            if (argument.equals("")) {
+        else if (mainCommand.equals("alias")) { if (argument.equals("")) {
                 for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { 
                     String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); 
                     
@@ -448,7 +447,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (IOException e) { STATUS = 1; }
                     catch (Exception e) { STATUS = 3; } 
                 } 
-                else if (argument.equals("*")) { for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { String NODE = (String) KEYS.nextElement(); if (NODE == null || NODE.length() == 0) { } else { processCommand("chmod " + NODE, false); } } }
+                else if (argument.equals("*")) { for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { STATUS = processCommand("chmod " + NODE, false); if (STATUS > 1) { break; } } return STATUS; }
                 else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
 
                 if (STATUS == 0) { MIDletLogs("add info Permission '" + (String) NODES.get(argument) + "' granted"); } 
