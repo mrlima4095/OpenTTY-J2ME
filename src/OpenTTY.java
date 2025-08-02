@@ -349,7 +349,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, false) : 10, LINES.length); 
                 for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } 
-            } 
+             
             } 
         }
         else if (mainCommand.equals("wc")) { if (argument.equals("")) { } 
@@ -464,7 +464,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 return STATUS; 
             } 
-        } }
+        }
         // |
         // General Utilities
         else if (mainCommand.equals("history")) { new History(); }
