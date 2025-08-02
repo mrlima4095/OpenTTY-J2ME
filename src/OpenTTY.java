@@ -239,12 +239,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { 
             if (argument.equals("")) { path = "/home/"; } 
-            else if (argument.equals("..")) { 
-                if (path.equals("/")) { return 0; } 
-
-                int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); 
-                path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); 
-            } 
+            else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } 
             else { 
                 String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
                 if (!TARGET.endsWith("/")) { TARGET += "/"; } 
@@ -253,11 +248,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     try { 
                         String REALPWD = "file:///" + TARGET.substring(5); 
                         
-                        if (!REALPWD.endsWith("/")) REALPWD += "/"; 
-
                         FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); 
                         if (fc.exists() && fc.isDirectory()) { path = TARGET; } 
-                        else { echoCommand("cd: " + basename(TARGET) + ": not " + (!fc.exists() ? "found" : "a directory")); return 127; } 
+                        else { echoCommand("cd: " + basename(TARGET) + ": not " + (fc.exists() ? "a directory" : "found")); return 127; } 
 
                         fc.close(); 
                     } 
