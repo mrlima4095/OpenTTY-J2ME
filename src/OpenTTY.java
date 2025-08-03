@@ -297,6 +297,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
             String PWD = argument.equals("") ? path : argument;
+            if (!PWD.startsWith("/")) { PWD = path + PWD; } 
             if (!PWD.endsWith("/")) { PWD += "/"; } 
 
             try { 
@@ -378,10 +379,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
             } 
         }
-        else if (mainCommand.equals("cp")) { 
-            if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
-            else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } 
-        }
+        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } }
         // |
         // Text Manager
         else if (mainCommand.equals("raw")) { echoCommand(nanoContent); }
