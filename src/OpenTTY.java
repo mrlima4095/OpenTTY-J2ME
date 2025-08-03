@@ -1050,7 +1050,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (vars.containsKey(name)) { instance = (String) ((Hashtable) vars.get(name)).get("instance"); } 
                     else { throw new RuntimeException("'" + name + "' undeclared"); } 
                 } 
-                if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("error: invalid value for '" + name + "' (expected " + instance + ")"); } 
+                if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("invalid value for '" + name + "' (expected int)"); } 
                 if (instance.equals("char") && !validChar(value)) { value = "\"" + value + "\""; } 
 
                 local.put("value", value == null || value.length() == 0 ? "' '" : value); 
