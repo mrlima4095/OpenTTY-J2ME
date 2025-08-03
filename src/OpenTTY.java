@@ -433,10 +433,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (argument.equals("*")) { return processCommand("chmod http socket file prg", false, root); }
             else { 
                 Hashtable NODES = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); 
-                String NODE = (String) NODES.get(argument);
                 
                 int STATUS = 0; 
                 for (int i = 0; i < args.length; i++) {
+                    String NODE = (String) NODES.get(args[i]);
+                    
                     if (NODES.containsKey(argument)) { 
                         try { 
                             if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
@@ -450,10 +451,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
                     
                     if (STATUS == 0) { MIDletLogs("add info Permission '" + NODE + "' granted"); } 
-                    else if (STATUS == 1) { MIDletLogs("add debug Permission '" +  + "' granted with exceptions"); } 
-                    else if (STATUS == 13) { MIDletLogs("add error Permission '" + (String) NODES.get(argument) + "' denied"); } 
+                    else if (STATUS == 1) { MIDletLogs("add debug Permission '" + NODE + "' granted with exceptions"); } 
+                    else if (STATUS == 13) { MIDletLogs("add error Permission '" + NODE + "' denied"); } 
                     else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } 
-
+                    
+                    if (STATUS > 1) { break; }
                 }
                 return STATUS; 
             } 
