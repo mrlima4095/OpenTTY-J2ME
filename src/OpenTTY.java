@@ -66,7 +66,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (username.equals("root")) { root = true; }
 
-
+//for (int i = 0; i < args.length; i++) 
         if (mainCommand.equals("")) { }
 
         // API 001 - (Registry)
@@ -87,6 +87,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 int INDEX = argument.indexOf('='); 
                 if (INDEX == -1) { 
+                    for (int i = 0; i < args.length; i++) {
+                        
+                    }
                     if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } 
                     else { echoCommand("alias: " + argument + ": not found"); return 127; } 
                 } 
