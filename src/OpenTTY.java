@@ -396,9 +396,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cat")) {
             if (argument.equals("")) { echoCommand(nanoContent); }
             else {
-                for (int i = 0; i < args.length; i++) {
-                    echoCommand(getcontent(args[i]));
-                }
+                for (int i = 0; i < args.length; i++) { echoCommand(getcontent(args[i])); }
             }
             
         }
