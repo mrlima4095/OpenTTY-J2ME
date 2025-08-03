@@ -393,7 +393,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
         else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { processCommand("wc -c " + argument, false); } }
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
-        else if (mainCommand.equals("cat")) { echoCommand(argument.equals("") ? nanoContent : getcontent(argument)); }
+        else if (mainCommand.equals("cat")) {
+            if (argument.equals("")) { }
+            else {
+                for (int i = 0; i < args.length; i++) {
+                
+                }
+            }
+            
+            echoCommand(argument.equals("") ? nanoContent : getcontent(argument)); 
+            
+        }
         else if (mainCommand.equals("get")) { nanoContent = argument.equals("") || argument.equals("nano") ? loadRMS("nano") : getcontent(argument); }
         else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
