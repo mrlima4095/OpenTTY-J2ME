@@ -36,6 +36,7 @@ LTS Edition
 - API **@reload** clears shell functions
 - Command `chmod` default IP Address to open socket set **1.1.1.1:53**, if key `$REPO` is found use it.
 - Fixed `chmod *` granting permission `null` as last permission node.
+- Command `ls` read argument to render directory content
 
 [ _Notes_ ]
 
