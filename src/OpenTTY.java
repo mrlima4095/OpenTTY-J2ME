@@ -341,7 +341,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int i = 0; i < BUFFER.size(); i++) { 
                     String ITEM = (String) BUFFER.elementAt(i); 
 
-                    if (!ITEM.equals("/")) { FORMATTED.append(ITEM).append(path.equals("/home/") ? "\n" : "\t"); } 
+                    if (!ITEM.equals("/")) { FORMATTED.append(ITEM).append(PWD.startsWith("/home/") ? "\n" : "\t"); } 
                 } 
 
                 echoCommand(FORMATTED.toString().trim()); 
