@@ -461,7 +461,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); 
                 
                 String CONTENT = getcontent(argument); 
-                int LINES = 0, WORDS = 0, CHARghS = CONTENT.length(); 
+                int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); 
                 String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; 
 
                 for (int i = 0; i < LINE_ARRAY.length; i++) { 
