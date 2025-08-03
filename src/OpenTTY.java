@@ -141,10 +141,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
             } else {
                 for (int i = 0; i < args.length; i++) {
-                    if (attributes.containsKey(args[i])) { echoCommand(argument + "=" + (String) attributes.get(args[i])); } 
+                    if (attributes.containsKey(args[i])) {
+                        echoCommand(argument + "=" + (String) attributes.get(args[i])); } 
                     else { echoCommand("env: " + argument + ": not found"); }
                 }
             }
+            else if (attributes.containsKey(argument)) { 
+                echoCommand(argument + "=" + (String) attributes.get(argument)); 
+                
+            } 
+            else { echoCommand("env: " + argument + ": not found"); return 127; } 
             
         }
 
