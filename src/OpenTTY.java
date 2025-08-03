@@ -297,7 +297,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
             String PWD = argument.equals("") ? path : argument;
-            
+            if (!PWD.endsWith("/")) { PWD += "/"; } 
+
             try { 
                 if (PWD.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
