@@ -110,9 +110,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { } 
             else { 
                 int INDEX = argument.indexOf('='); 
-                if (INDEX == -1) { 
-                    for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); }
-                } 
+                if (INDEX == -1) { for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); } } 
                 else { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
                 
             } 
@@ -120,13 +118,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         else if (mainCommand.equals("unset")) { 
             if (argument.equals("")) { } 
-            else {
-                for (int i = 0; i < args.length; i++) {
-                    if (attributes.containsKey(args[i])) {
-                        attributes.remove(args[i]);
-                    } else { }
-                }
-            }
+            else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { attributes.remove(args[i]); } else { } } }
             
         }
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
@@ -139,13 +131,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                 } 
                 
-            } else {
-                for (int i = 0; i < args.length; i++) {
-                    if (attributes.containsKey(args[i])) {
-                        echoCommand(argument + "=" + (String) attributes.get(args[i])); } 
-                    else { echoCommand("env: " + argument + ": not found"); }
-                }
-            }
+            } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { echoCommand(argument + "=" + (String) attributes.get(args[i])); } else { echoCommand("env: " + argument + ": not found"); } } }
             
         }
 
