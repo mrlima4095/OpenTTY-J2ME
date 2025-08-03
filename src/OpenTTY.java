@@ -88,10 +88,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int INDEX = argument.indexOf('='); 
                 if (INDEX == -1) { 
                     for (int i = 0; i < args.length; i++) {
-                        
+                        if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } 
+                        else { echoCommand("alias: " + argument + ": not found"); return 127; } 
                     }
-                    if (aliases.containsKey(argument)) { echoCommand("alias " + argument + "='" + (String) aliases.get(argument) + "'"); } 
-                    else { echoCommand("alias: " + argument + ": not found"); return 127; } 
                 } 
                 else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } 
             } 
