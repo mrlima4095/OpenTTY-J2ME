@@ -675,7 +675,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Interfaces
     public class Screen implements CommandListener { 
         private Hashtable PKG; 
-        private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3; 
+        private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3, EDIT = 4; 
         private Form screen = new Form(form.getTitle()); 
         private List list = new List(form.getTitle(), List.IMPLICIT); 
         private Command BACK, USER; 
