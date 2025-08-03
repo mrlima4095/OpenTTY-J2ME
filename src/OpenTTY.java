@@ -430,28 +430,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Permissions
         else if (mainCommand.equals("chmod")) { 
             if (argument.equals("")) { } 
+            else if (argument.equals("*")) { return processCommand("chmod http socket file prg", false, root); }
             else { 
                 Hashtable NODES = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); 
-
+                String NODE = (String) NODES.get(argument);
+                
                 int STATUS = 0; 
-                if (NODES.containsKey(argument)) { 
-                    try { 
-                        if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
-                        else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + ((attributes.containsKey("REPO") && !(env("$REPO").equals("") && !(env("$REPO").equals("$REPO"))) ? "$REPO" : "1.1.1.1:53"))))).close(); } 
-                        else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } 
-                        else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
+                for (int i = 0; i < args.length; i++) {
+                    if (NODES.containsKey(argument)) { 
+                        try { 
+                            if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
+                            else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + ((attributes.containsKey("REPO") && !(env("$REPO").equals("") && !(env("$REPO").equals("$REPO"))) ? "$REPO" : "1.1.1.1:53"))))).close(); } 
+                            else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } 
+                            else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
+                        } 
+                        catch (SecurityException e) { STATUS = 13; } 
+                        catch (IOException e) { STATUS = 1; } catch (Exception e) { STATUS = 3; } 
                     } 
-                    catch (SecurityException e) { STATUS = 13; } 
-                    catch (IOException e) { STATUS = 1; } catch (Exception e) { STATUS = 3; } 
-                } 
-                else if (argument.equals("*")) { for (Enumeration KEYS = NODES.keys(); KEYS.hasMoreElements();) { STATUS = processCommand("chmod " + (String) KEYS.nextElement(), false); if (STATUS > 1) { break; } } return STATUS; }
-                else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
+                    else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
+                    
+                    if (STATUS == 0) { MIDletLogs("add info Permission '" + NODE + "' granted"); } 
+                    else if (STATUS == 1) { MIDletLogs("add debug Permission '" +  + "' granted with exceptions"); } 
+                    else if (STATUS == 13) { MIDletLogs("add error Permission '" + (String) NODES.get(argument) + "' denied"); } 
+                    else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } 
 
-                if (STATUS == 0) { MIDletLogs("add info Permission '" + (String) NODES.get(argument) + "' granted"); } 
-                else if (STATUS == 1) { MIDletLogs("add debug Permission '" + (String) NODES.get(argument) + "' granted with exceptions"); } 
-                else if (STATUS == 13) { MIDletLogs("add error Permission '" + (String) NODES.get(argument) + "' denied"); } 
-                else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } 
-
+                }
                 return STATUS; 
             } 
         }
