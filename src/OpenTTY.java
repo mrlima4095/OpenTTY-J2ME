@@ -909,7 +909,48 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (CURSOR != null) { g.drawImage(CURSOR, cursorX, cursorY, Graphics.TOP | Graphics.LEFT); } 
             else { setpallete("mouse.color", g, 255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } 
         } 
-        protected void keyPressed(int keyCode) { int gameAction = getGameAction(keyCode); if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); }  else if (gameAction == FIRE) { for (int i = 0; i < fields.size(); i++) { Hashtable f = (Hashtable) fields.elementAt(i); int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue(); String type = (String) f.get("type"), cmd = (String) f.get("cmd"), val = (String) f.get("value"); if (cmd != null && !cmd.equals("")) { boolean hit = false; if (type.equals("circle")) { int dx = cursorX - x, dy = cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } else if (type.equals("text")) { Font font = newFont(getenv((String) f.get("style"), "default")); int textW = font.stringWidth(val), textH = font.getHeight(); hit = cursorX + cursorSize > x && cursorX < x + textW && cursorY + cursorSize > y && cursorY < y + textH; } else if (type.equals("line")) { continue; } else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; } if (hit) { processCommand(cmd); break; } } } } repaint(); } protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; keyPressed(-5); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); processCommand(getvalue("canvas.back", "true")); } else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); } } private void setpallete(String node, Graphics screen, int r, int g, int b) { try { String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } } private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; } private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } private String getenv(String key) { return env(getvalue(key, "")); } }
+        protected void keyPressed(int keyCode) { 
+            int gameAction = getGameAction(keyCode); 
+
+            if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } 
+            else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } 
+            else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } 
+            else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } 
+            else if (gameAction == FIRE) { 
+                for (int i = 0; i < fields.size(); i++) { 
+                    Hashtable f = (Hashtable) fields.elementAt(i); 
+
+                    int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue(); 
+                    String type = (String) f.get("type"), cmd = (String) f.get("cmd"), val = (String) f.get("value"); 
+
+                    if (cmd != null && !cmd.equals("")) { 
+                        boolean hit = false; 
+
+                        if (type.equals("circle")) { int dx = cursorX - x, dy = cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } 
+                        else if (type.equals("text")) { 
+                            Font font = newFont(getenv((String) f.get("style"), "default")); 
+
+                            int textW = font.stringWidth(val), textH = font.getHeight(); 
+                            hit = cursorX + cursorSize > x && cursorX < x + textW && cursorY + cursorSize > y && cursorY < y + textH; 
+                        } 
+                        else if (type.equals("line")) { continue; } 
+                        else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; } 
+
+                        if (hit) { processCommand(cmd); break; } 
+                    } 
+                } 
+            } 
+
+            repaint(); 
+        } 
+
+        protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; keyPressed(-5); } 
+
+        public void commandAction(Command c, Displayable d) { 
+            if (c == BACK) { processCommand("xterm"); processCommand(getvalue("canvas.back", "true")); } 
+            else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); } 
+        } 
+        private void setpallete(String node, Graphics screen, int r, int g, int b) { try { String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } } private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; } private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } private String getenv(String key) { return env(getvalue(key, "")); } }
     // |
     // Item MOD Loader
     public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; private String node; public ItemLoader(Form screen, String prefix, String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseProperties(getcontent(args)); node = prefix; if (!lib.containsKey(node + ".label") || !lib.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command(env((String) lib.get(node + ".label")), Command.ITEM, 1); s = new StringItem(null, env((String) lib.get(node + ".label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); screen.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get(node + ".cmd")); } } }
