@@ -99,11 +99,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { } 
             else {
                 for (int i = 0; i < args.length; i++) {
-                    if (aliases.containsKey(args[i])) {
-                        aliases.remove(args[i]);
-                    } else {
-                        echoCommand("unalias: "+ args[i] + ": not found"); return 127;
-                    }
+                    if (aliases.containsKey(args[i])) { aliases.remove(args[i]); } 
+                    else { echoCommand("unalias: "+ args[i] + ": not found"); return 127; }
                 }
             }
         }
@@ -114,27 +111,50 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 int INDEX = argument.indexOf('='); 
                 if (INDEX == -1) { 
-                    attributes.put(argument, ""); 
-                    
+                    for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); }
                 } 
-                else { 
-                    attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); 
-                    
-                } 
+                else { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } 
                 
             } 
             
         } 
         else if (mainCommand.equals("unset")) { 
             if (argument.equals("")) { } 
-            else if (attributes.containsKey(argument)) { 
-                attributes.remove(argument); 
-                
-            } else { } 
+            else {
+                for (int i = 0; i < args.length; i++) {
+                    if (attributes.containsKey(args[i])) {
+                        attributes.remove(args[i])
+                    } else { }
+                }
+            }
             
         }
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
-        else if (mainCommand.equals("env")) { if (argument.equals("")) { for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } } } else if (attributes.containsKey(argument)) { echoCommand(argument + "=" + (String) attributes.get(argument)); } else { echoCommand("env: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("env")) { 
+            if (argument.equals("")) { 
+                for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { 
+                    String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); 
+                    
+                    if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } 
+                    
+                } 
+                
+            } else {
+                for (int i = 0; i < args.length; i++) {
+                    if (attributes.containsKey(args[i])) {
+                        echoCommand(argument + "=" + (String) attributes.get(args[i]));
+                    } else {
+                        echoCommand("env: ")
+                    }
+                }
+            }
+            else if (attributes.containsKey(argument)) { 
+                echoCommand(argument + "=" + (String) attributes.get(argument)); 
+                
+            } 
+            else { echoCommand("env: " + argument + ": not found"); return 127; } 
+            
+        }
 
         // API 002 - (Logs)
         // |
