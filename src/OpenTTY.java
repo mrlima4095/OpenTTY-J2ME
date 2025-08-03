@@ -502,17 +502,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int i = 0; i < args.length; i++) {
                     String NODE = (String) NODES.get(args[i]);
                     
-                    if (NODES.containsKey(argument)) { 
+                    if (NODES.containsKey(args[i])) { 
                         try { 
-                            if (argument.equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
-                            else if (argument.equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + ((attributes.containsKey("REPO") && !(env("$REPO").equals("") && !(env("$REPO").equals("$REPO"))) ? "$REPO" : "1.1.1.1:53"))))).close(); } 
-                            else if (argument.equals("file")) { FileSystemRegistry.listRoots(); } 
-                            else if (argument.equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
+                            if (args[i].equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
+                            else if (args[i].equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + ((attributes.containsKey("REPO") && !(env("$REPO").equals("") && !(env("$REPO").equals("$REPO"))) ? "$REPO" : "1.1.1.1:53"))))).close(); } 
+                            else if (args[i].equals("file")) { FileSystemRegistry.listRoots(); } 
+                            else if (args[i].equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
                         } 
                         catch (SecurityException e) { STATUS = 13; } 
                         catch (IOException e) { STATUS = 1; } catch (Exception e) { STATUS = 3; } 
                     } 
-                    else { echoCommand("chmod: " + argument + ": not found"); return 127; } 
+                    else { echoCommand("chmod: " + args[i] + ": not found"); return 127; } 
                     
                     if (STATUS == 0) { MIDletLogs("add info Permission '" + NODE + "' granted"); } 
                     else if (STATUS == 1) { MIDletLogs("add debug Permission '" + NODE + "' granted with exceptions"); } 
