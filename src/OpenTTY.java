@@ -778,7 +778,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 screen.setCommandListener(this); display.setCurrent(screen); 
             } 
-
             else { return; } 
         } 
         public void commandAction(Command c, Displayable d) { 
