@@ -304,13 +304,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String PWD = argument.equals("") ? path : argument;
             
             try { 
-                if (path.equals("/mnt/")) { 
+                if (PWD.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
                         String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
                     }
                 } 
-                else if (path.startsWith("/mnt/")) { 
-                    String REALPWD = "file:///" + path.substring(5); 
+                else if (PWD.startsWith("/mnt/")) { 
+                    String REALPWD = "file:///" + PWD.substring(5); 
                     if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
 
                     FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
@@ -319,7 +319,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                     CONN.close(); 
                 } 
-                else if (path.equals("/home/") && argument.indexOf("-v") != -1) { 
+                else if (PWD.equals("/home/") && argument.indexOf("-v") != -1) { 
                     String[] FILES = RecordStore.listRecordStores(); 
                     if (FILES != null) { 
                         for (int i = 0; i < FILES.length; i++) { 
@@ -327,10 +327,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } 
                     } 
                 } 
-                else if (path.equals("/home/")) { new Explorer(); return 0; } 
+                else if (PWD.equals("/home/")) { new Explorer(); return 0; } 
             } catch (IOException e) { } 
 
-            String[] FILES = (String[]) paths.get(path); 
+            String[] FILES = (String[]) paths.get(PWD); 
             if (FILES != null) { 
                 for (int i = 0; i < FILES.length; i++) { 
                     String file = FILES[i].trim(); 
