@@ -123,7 +123,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else {
                 for (int i = 0; i < args.length; i++) {
                     if (attributes.containsKey(args[i])) {
-                        attributes.remove(args[i])
+                        attributes.remove(args[i]);
                     } else { }
                 }
             }
