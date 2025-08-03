@@ -374,9 +374,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
                     catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
                 } 
-                else if (argument.startsWith("/home/")) { 
-
-                } 
+                else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } 
                 else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
             } 
         }
