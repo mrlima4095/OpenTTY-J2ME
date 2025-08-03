@@ -357,7 +357,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // RMS Files
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { return deleteFile(argument); } }
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { return writeRMS(argument, nanoContent); } }
-        else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { return writeRMS(argument, ""); } }
+        else if (mainCommand.equals("touch")) { 
+            if (argument.equals("")) { nanoContent = ""; } 
+            else {
+                for (int i = 0; i < args.length; i++) {
+                    if (args[i].equals("nano")) { nanoContent = ""; }
+                    else { int STATUS = writeRMS(argument, ""); if (STATUS != 0) { return STATUS; } }
+                }
+            } 
+        }
         else if (mainCommand.equals("mkdir")) { 
             if (argument.equals("")) { } 
             else { 
@@ -382,7 +390,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } }
         // |
         // Text Manager
-        else if () { echoCommand(nanoContent); }
         else if (mainCommand.equals("rraw")) { stdout.setText(nanoContent); }
         else if (mainCommand.equals("sed")) { return StringEditor(argument); }
         else if (mainCommand.equals("getty")) { nanoContent = stdout.getText(); }
@@ -446,7 +453,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); 
                 
                 String CONTENT = getcontent(argument); 
-                int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); 
+                int LINES = 0, WORDS = 0, CHARghS = CONTENT.length(); 
                 String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; 
 
                 for (int i = 0; i < LINE_ARRAY.length; i++) { 
