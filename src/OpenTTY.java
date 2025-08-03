@@ -453,7 +453,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (STATUS == 0) { MIDletLogs("add info Permission '" + NODE + "' granted"); } 
                     else if (STATUS == 1) { MIDletLogs("add debug Permission '" + NODE + "' granted with exceptions"); } 
                     else if (STATUS == 13) { MIDletLogs("add error Permission '" + NODE + "' denied"); } 
-                    else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + (String) NODES.get(argument) + "'"); } 
+                    else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + NODE + "'"); } 
                     
                     if (STATUS > 1) { break; }
                 }
