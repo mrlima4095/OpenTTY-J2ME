@@ -1362,7 +1362,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         if (validChar(expr)) { return expr; }
-
+ 
         while (true) {
             int open = expr.indexOf('(');
             if (open == -1) { break; }
