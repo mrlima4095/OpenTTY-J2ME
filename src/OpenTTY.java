@@ -251,16 +251,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
         else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } } }
         else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + getCatch(e)); return 101; } } }
-        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) { return runScript(RESPONSE); } } }
+        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
+            if (argument.equals("")) { } 
+            else { 
+                String URL = getCommand(argument); 
+
+                if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } 
+                Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); 
+
+                String RESPONSE = request(URL, HEADERS); 
+                if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } 
+                else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } 
+                else if (mainCommand.equals("clone")) { return runScript(RESPONSE); } 
+            } 
+        }
         // |
         // Socket Interfaces
         else if (mainCommand.equals("query")) { 
             try { 
-                String response = query(argument); 
+                String response = query(argument), file = env("$QUERY"); 
                 
-                if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); } 
-                else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(response); } 
-                else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = response; echoCommand("query: data retrieved"); } 
+                if (file.equals("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); } 
+                else if (file.toLowerCase().equals("show")) { echoCommand(response); } 
+                else if (file.toLowerCase().equals("nano")) { nanoContent = response; echoCommand("query: data retrieved"); } 
                 else { writeRMS(env("$QUERY"), response); }
             }
             catch (SecurityException e) { echoCommand(getCatch(e)); return 13; }
