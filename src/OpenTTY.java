@@ -1046,24 +1046,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { processCommand("xterm"); } 
             else if (c == CONNECT || c == List.SELECT_COMMAND) { new RemoteConnection(host + ":" + screen.getString(screen.getSelectedIndex())); } 
         } 
-
-        public void run() { 
-            screen.setTicker(new Ticker("Scanning...")); 
-
-            for (int port = start; port <= 65535; port++) { 
-                screen.setTicker(new Ticker("Scanning Port " + port + "...")); 
-
-                try { 
-                    SocketConnection CONN = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false); 
-
-                    screen.append(Integer.toString(port), null); CONN.close(); 
-                } 
-                catch (IOException e) { } 
-            } 
-
-            screen.setTicker(null); 
-        } 
-    }
+        public void run() { for (int port = start; port <= 65535; port++) { screen.setTicker(new Ticker("Scanning Port " + port + "...")); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false); screen.append(Integer.toString(port), null); CONN.close(); } catch (Exception e) { } } screen.setTicker(null); } }
     public class RemoteConnection implements CommandListener, Runnable { 
         private SocketConnection socket; 
         private InputStream inputStream; 
@@ -1074,7 +1057,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command BACK = new Command("Back", Command.SCREEN, 1), 
                         EXECUTE = new Command("Send", Command.OK, 1), 
                         CLEAR = new Command("Clear", Command.SCREEN, 1), 
-                        VIEW = new Command("Show info", Command.SCREEN, 1); 
+                        VIEW = new Command("View info", Command.SCREEN, 1); 
         private StringItem console = new StringItem("", ""); 
 
         public RemoteConnection(String args) { 
@@ -1100,10 +1083,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         public void commandAction(Command c, Displayable d) { 
             if (c == EXECUTE) { 
-                String data = inputField.getString().trim(); 
+                String PAYLOAD = inputField.getString().trim(); 
+
+                if (PAYLOAD.("/")) {
+
+                }
                 inputField.setString(""); 
 
-                try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } 
+                try { outputStream.write((PAYLOAD + "\n").getBytes()); outputStream.flush(); } 
                 catch (Exception e) { processCommand("warn " + getCatch(e)); } 
             } 
             else if (c == BACK) { 
@@ -1121,9 +1108,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void run() { 
             while (trace.containsKey("remote")) { 
                 try { 
-                    byte[] buffer = new byte[4096]; 
-                    int length = inputStream.read(buffer); 
-                    if (length != -1) { echoCommand(new String(buffer, 0, length), console); } 
+                    byte[] BUFFER = new byte[4096]; 
+                    int LENGTH = inputStream.read(BUFFER); 
+                    if (LENGTH != -1) { echoCommand(new String(BUFFER, 0, LENGTH), console); } 
                 } 
                 catch (Exception e) { processCommand("warn " + getCatch(e)); stop("remote"); } 
             } 
