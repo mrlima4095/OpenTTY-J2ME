@@ -271,12 +271,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try { 
                 String response = query(argument), file = env("$QUERY"); 
                 
-                if (file.equals("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); } 
+                if (file.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); } 
                 else if (file.toLowerCase().equals("show")) { echoCommand(response); } 
                 else if (file.toLowerCase().equals("nano")) { nanoContent = response; echoCommand("query: data retrieved"); } 
                 else { writeRMS(env("$QUERY"), response); }
             }
-            catch (Exception e) { echoCommand(getCatch(e)); return e.getClass() == SecurityException ? 13 : e.getClass() == RuntimeException ? 2 : 1; }
+            catch (SecurityException e) { echoCommand(getCatch(e)); return 13; }
+            catch (RuntimeException e) { echoCommand(getCatch(e)); return 2; }
+            catch (Exception e) { echoCommand(getCatch(e)); return 1; }
         }
         else if (mainCommand.equals("prscan")) { new PortScanner(argument); }
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
@@ -434,8 +436,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String CONTENT = getcontent(args[0]); 
                 String[] LINES = split(CONTENT, '\n'); 
 
-                int COUNT = args.length >1  ? getNumber(args[1], 10, false) : 10;
-                for (int i = Math.max(0, LINES.length - COUNT); i < LINES.length; i++) { echoCommand(LINES[i]); } 
+                int COUNT = args.length > 1 ? getNumber(args[1], 10, false) : 10;
+                COUNT = Math.max(0, LINES.length - COUNT); 
+                for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } 
             } 
         }
         else if (mainCommand.equals("diff")) { 
@@ -712,7 +715,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
                             screen.append(content); 
                         } 
-                        else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, code); } 
+                        else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, args); } 
                         else if (type.equals("spacer")) { 
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
                             screen.append(new Spacer(width, height)); 
@@ -1558,18 +1561,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (line.startsWith("while")) {
                 int lineIndexInBlock = block.indexOf(line);
-                if (lineIndexInBlock == -1) { return null; }
+                if (lineIndexInBlock == -1) { echoCommand("while error 1"); return null; }
 
                 int braceIndex = -1;
                 for (int j = lineIndexInBlock; j < block.length(); j++) {
                     if (block.charAt(j) == '{') { braceIndex = j; break; }
                 }
 
-                if (braceIndex == -1) { return null; }
+                if (braceIndex == -1) { echoCommand("while error 2"); return null; }
 
                 String remaining = block.substring(braceIndex);
                 String subblock = getBlock(remaining);
-                if (subblock == null) { return null; }
+                if (subblock == null) { echoCommand("while error 3"); return null; }
 
                 cmd.put("type", "while");
                 cmd.put("expr", extractParens(line, 0));

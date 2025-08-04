@@ -6,13 +6,14 @@ description=API for Android
 
 api.version=1.15
 api.error=execute log add error Android API requires OpenTTY 1.15; echo [ Android ] Required 1.15 OpenTTY API;
+api.match=minimum
 
 process.name=android
 process.port=10542
 
-include=forge,jauth2
+include=/java/bin/jauth2,forge
 
-config=execute set DROID_VERSION=1.0; log add info Running Android API $DROID_VERSION; echo [ Android ] Running Android API $DROID_VERSION; x11 item android;
+config=execute set DROID_VERSION=1.0; log add info Running Android API $DROID_VERSION; echo [ Android ] Running Android API $DROID_VERSION; import /java/lib/yang; x11 item android;
 command=droid
 
 droid=droid menu
@@ -38,9 +39,9 @@ list.content=Yang Repository,Stop Android API,Online README
 list.button=Select
 
 
-Yang Repository=
+Yang Repository=execute yang;
 
 
 Stop Android API=execute droid stop
-Online README=
+Online README=execute droid help
  
