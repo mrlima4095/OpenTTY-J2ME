@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
     private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x36"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x37"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -391,13 +391,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
         else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { processCommand("wc -c " + argument, false); } }
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
-        else if (mainCommand.equals("cat") || mainCommand.equals("raw")) {
-            if (argument.equals("")) { echoCommand(nanoContent); }
-            else {
-                for (int i = 0; i < args.length; i++) { echoCommand(getcontent(args[i])); }
-            }
-            
-        }
+        else if (mainCommand.equals("cat") || mainCommand.equals("raw")) { if (argument.equals("")) { echoCommand(nanoContent); } else { for (int i = 0; i < args.length; i++) { echoCommand(getcontent(args[i])); } } }
         else if (mainCommand.equals("get")) { nanoContent = argument.equals("") || argument.equals("nano") ? loadRMS("nano") : getcontent(argument); }
         else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
@@ -648,8 +642,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("load")) { if (argument.equals("")) { } else { if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } } }
         // |
         // Interfaces
-        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "OpenRMS" : argument)); }
-        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest")) { new Screen(mainCommand, argument); }
+        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
+        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest")) { new Screen(mainCommand, getcontent(argument)); }
         else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
@@ -668,10 +662,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command BACK, USER; 
         private TextField INPUT; 
 
-        public Screen(String type, String args) { 
-            if (type == null || type.length() == 0 || args == null || args.length() == 0) { return; } 
+        public Screen(String type, String code) { 
+            if (type == null || type.length() == 0 || code == null || code.length() == 0) { return; } 
 
-            PKG = parseProperties(getcontent(args)); 
+            PKG = parseProperties(code); 
             if (type.equals("make")) { 
                 TYPE = SCREEN; 
 
@@ -800,10 +794,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Vector fields = new Vector(); 
         private final int cursorSize = 5; 
 
-        public MyCanvas(String args) { 
-            if (args == null || args.length() == 0) { return; } 
+        public MyCanvas(String code) { 
+            if (code == null || code.length() == 0) { return; } 
 
-            lib = parseProperties(getcontent(args)); 
+            lib = parseProperties(code); 
             setTitle(getenv("canvas.title", form.getTitle())); 
 
             BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1); 
