@@ -406,8 +406,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
              
             } 
         }
-        else if (mainCommand.equals("tail")) { 
-            if (argument.equals("")) { } 
+        else if (mainCommand.equals("tail")) { if (argument.equals("")) { } 
             else { 
                 String CONTENT = getcontent(args[0]); 
                 String[] LINES = split(CONTENT, '\n'); 
