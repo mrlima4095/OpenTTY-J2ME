@@ -1558,18 +1558,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (line.startsWith("while")) {
                 int lineIndexInBlock = block.indexOf(line);
-                if (lineIndexInBlock == -1) { echoCommand("while error 1"); return null; }
+                if (lineIndexInBlock == -1) { return null; }
 
                 int braceIndex = -1;
                 for (int j = lineIndexInBlock; j < block.length(); j++) {
                     if (block.charAt(j) == '{') { braceIndex = j; break; }
                 }
 
-                if (braceIndex == -1) { echoCommand("while error 2"); return null; }
+                if (braceIndex == -1) { return null; }
 
                 String remaining = block.substring(braceIndex);
                 String subblock = getBlock(remaining);
-                if (subblock == null) { echoCommand("while error 3"); return null; }
+                if (subblock == null) { return null; }
 
                 cmd.put("type", "while");
                 cmd.put("expr", extractParens(line, 0));
