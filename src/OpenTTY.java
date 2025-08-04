@@ -77,7 +77,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (functions.containsKey(mainCommand) && ignore) { return runScript((String) functions.get(mainCommand)); }
         // |
         // Aliases
-        else if (mainCommand.equals("alias")) { if (argument.equals("")) {
+        else if (mainCommand.equals("alias")) { 
+            if (argument.equals("")) {
                 for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { 
                     String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); 
                     
