@@ -572,7 +572,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // OpenTTY Packages
         else if (mainCommand.equals("about")) { about(argument); }
         else if (mainCommand.equals("import")) { return importScript(argument, root); }
-        else if (mainCommand.equals("run")) { return processCommand(". " + argument, false, root); }
         else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 2; } } }
 
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument, ignore, root)); } }
@@ -580,7 +579,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS")); }
         else if (mainCommand.equals("!!")) { stdin.setString((argument.equals("") ? "" : argument + " ") + getLastHistory()); }
-        else if (mainCommand.equals(".")) { return runScript(argument.equals("") ? nanoContent : getcontent(argument), root); }
+        else if (mainCommand.equals(".") || mainCommand.equals("run")) { return runScript(argument.equals("") ? nanoContent : getcontent(argument), root); }
 
         else { echoCommand(mainCommand + ": not found"); return 127; }
 
