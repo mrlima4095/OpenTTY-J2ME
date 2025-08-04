@@ -1042,10 +1042,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             display.setCurrent(screen); 
         } 
 
-        public void commandAction(Command c, Displayable d) { 
-            if (c == BACK) { processCommand("xterm"); } 
-            else if (c == CONNECT || c == List.SELECT_COMMAND) { new RemoteConnection(host + ":" + screen.getString(screen.getSelectedIndex())); } 
-        } 
+        public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == CONNECT || c == List.SELECT_COMMAND) { new RemoteConnection(host + ":" + screen.getString(screen.getSelectedIndex())); } } 
         public void run() { for (int port = start; port <= 65535; port++) { screen.setTicker(new Ticker("Scanning Port " + port + "...")); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false); screen.append(Integer.toString(port), null); CONN.close(); } catch (Exception e) { } } screen.setTicker(null); } }
     public class RemoteConnection implements CommandListener, Runnable { 
         private SocketConnection socket; 
@@ -1071,7 +1068,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.setCommandListener(this); 
 
             try { 
-                socket = (SocketConnection) Connector.open("socket://" + args); 
+                socket = (SocketConnection) Connector.open(args.indexOf("://") != -1 ? args : "socket://" + args); 
                 inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); 
             } 
             catch (IOException e) { echoCommand(getCatch(e)); return; } 
@@ -1085,9 +1082,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == EXECUTE) { 
                 String PAYLOAD = inputField.getString().trim(); 
 
-                if (PAYLOAD.("/")) {
-
-                }
                 inputField.setString(""); 
 
                 try { outputStream.write((PAYLOAD + "\n").getBytes()); outputStream.flush(); } 
