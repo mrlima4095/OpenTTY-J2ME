@@ -254,7 +254,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) { return runScript(RESPONSE); } } }
         // |
         // Socket Interfaces
-        else if (mainCommand.equals("query")) { return query(argument); }
+        else if (mainCommand.equals("query")) { 
+            try { 
+                String response = query(argument); 
+                
+                if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); } 
+                else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(response); } 
+                else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = response; echoCommand("query: data retrieved"); } 
+                else { writeRMS(env("$QUERY"), response); }
+            }
+            catch (SecurityException e) { echoCommand(getCatch(e)); return 13; }
+            catch (RuntimeException e) { echoCommand(getCatch(e)); return 2; }
+            catch (Exception e) { echoCommand(getCatch(e)); return 1; }
+        }
         else if (mainCommand.equals("prscan")) { new PortScanner(argument); }
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
         else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
@@ -986,7 +998,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    private int query(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { echoCommand("query: missing [address]"); } else { try { StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } ByteArrayOutputStream BAOS = new ByteArrayOutputStream(); byte[] BUFFER = new byte[1024]; int LENGTH; while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } String DATA = new String(BAOS.toByteArray(), "UTF-8"); if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(DATA); } else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } else { writeRMS(env("$QUERY"), DATA); } IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } return 0; }
+    private String query(String command) throws Exception { 
+        command = env(command.trim()); 
+
+        String mainCommand = getCommand(command), argument = getArgument(command), response = ""; 
+
+        if (mainCommand.equals("")) { throw new RuntimeException("query: missing [address]"); } 
+        else { 
+            StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); 
+            InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); 
+
+            if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } 
+
+            ByteArrayOutputStream BAOS = new ByteArrayOutputStream(); 
+
+            byte[] BUFFER = new byte[1024]; int LENGTH; 
+            while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } 
+
+            response = new String(BAOS.toByteArray(), "UTF-8");  
+
+            IN.close(); OUT.close(); CONN.close(); 
+        } 
+
+        return response; 
+    }
     private int wireless(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("") || mainCommand.equals("id")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); } else { echoCommand("wrl: " + mainCommand + ": not found"); return 127; } return 0; }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
     public class PortScanner implements CommandListener, Runnable { private String host; private int start = 1; private List screen; private Command BACK = new Command("Back", Command.BACK, 1), CONNECT = new Command("Connect", Command.OK, 1); public PortScanner(String args) { if (args == null || args.length() == 0) { return; } if (!getArgument(args).equals("")) { try { start = Integer.parseInt(getArgument(args)); } catch (NumberFormatException e) { echoCommand("prscan: " + getArgument(args) + ": invalid start port"); return; } } host = getCommand(args); screen = new List(host + " Ports", List.IMPLICIT); screen.addCommand(BACK); screen.addCommand(CONNECT); screen.setCommandListener(this); new Thread(this, "Port-Scanner").start(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == CONNECT || c == List.SELECT_COMMAND) { new RemoteConnection(host + ":" + screen.getString(screen.getSelectedIndex())); } } public void run() { screen.setTicker(new Ticker("Scanning...")); for (int port = start; port <= 65535; port++) { screen.setTicker(new Ticker("Scanning Port " + port + "...")); try { SocketConnection socket = (SocketConnection) Connector.open("socket://" + host + ":" + port, Connector.READ_WRITE, false); screen.append(Integer.toString(port), null); socket.close(); } catch (IOException e) { } } screen.setTicker(null); } }
