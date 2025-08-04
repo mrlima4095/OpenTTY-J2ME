@@ -38,6 +38,7 @@ LTS Edition
 - Fixed `chmod *` granting permission `null` as last permission node
 - Command `ls` read argument to render directory content
 - MIDlet shell reading multiple args in some tools
+- Shell scripts can be called with `sh [file]`
 
 [ _Notes_ ]
 
