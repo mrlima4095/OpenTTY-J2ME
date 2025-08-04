@@ -786,7 +786,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
     }
     public class MyCanvas extends Canvas implements CommandListener { 
-        private Hashtable lib; 
+        private Hashtable PKG; 
         private Graphics screen; 
         private Command BACK, USER; 
         private Image CURSOR = null; 
@@ -796,15 +796,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public MyCanvas(String code) { 
             if (code == null || code.length() == 0) { return; } 
 
-            lib = parseProperties(code); 
+            PKG = parseProperties(code); 
             setTitle(getenv("canvas.title", form.getTitle())); 
 
             BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1); 
             USER = new Command(getenv("canvas.button"), Command.SCREEN, 2); 
 
             addCommand(BACK); 
-            if (lib.containsKey("canvas.button")) { addCommand(USER); } 
-            if (lib.containsKey("canvas.mouse")) { 
+            if (PKG.containsKey("canvas.button")) { addCommand(USER); } 
+            if (PKG.containsKey("canvas.mouse")) { 
                 try { 
                     String[] pos = split(getenv("canvas.mouse"), ','); 
 
@@ -813,11 +813,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } 
             } 
-            if (lib.containsKey("canvas.mouse.img")) { 
+            if (PKG.containsKey("canvas.mouse.img")) { 
                 try { CURSOR = Image.createImage(getenv("canvas.mouse.img")); } 
                 catch (IOException e) { MIDletLogs("add warn Cursor " + getenv("canvas.mouse.img") + " could not be loaded"); } 
             } 
-            if (lib.containsKey("canvas.fields")) { 
+            if (PKG.containsKey("canvas.fields")) { 
                 String[] names = split(getenv("canvas.fields"), ','); 
 
                 for (int i = 0; i < names.length; i++) { 
@@ -842,7 +842,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); 
 
-            if (lib.containsKey("canvas.background")) { 
+            if (PKG.containsKey("canvas.background")) { 
                 String backgroundType = getenv("canvas.background.type", "default"); 
 
                 if (backgroundType.equals("color") || backgroundType.equals("default")) { setpallete("background", g, 0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); } 
@@ -855,7 +855,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + getCatch(e)); } 
                 } 
             } 
-            if (lib.containsKey("canvas.fields")) { 
+            if (PKG.containsKey("canvas.fields")) { 
                 for (int i = 0; i < fields.size(); i++) { 
                     Hashtable f = (Hashtable) fields.elementAt(i); 
 
@@ -929,7 +929,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { processCommand("xterm"); processCommand(getvalue("canvas.back", "true")); } 
             else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); } 
         } 
-        private void setpallete(String node, Graphics screen, int r, int g, int b) { try { String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); } catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } } private String getvalue(String key, String fallback) { return lib.containsKey(key) ? (String) lib.get(key) : fallback; } private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } private String getenv(String key) { return env(getvalue(key, "")); } }
+        private void setpallete(String node, Graphics screen, int r, int g, int b) { 
+            try { 
+                String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); 
+                screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); 
+            } 
+            catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } 
+        } 
+
+        private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
+        private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
+        private String getenv(String key) { return env(getvalue(key, "")); } 
+    }
     // |
     // Item MOD Loader
     public class ItemLoader implements ItemCommandListener { private Hashtable lib; private Command run; private StringItem s; private String node; public ItemLoader(Form screen, String prefix, String args) { if (args == null || args.length() == 0) { return; } else if (args.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } lib = parseProperties(getcontent(args)); node = prefix; if (!lib.containsKey(node + ".label") || !lib.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command(env((String) lib.get(node + ".label")), Command.ITEM, 1); s = new StringItem(null, env((String) lib.get(node + ".label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); screen.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) lib.get(node + ".cmd")); } } }
