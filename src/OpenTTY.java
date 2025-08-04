@@ -1064,7 +1064,71 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.setTicker(null); 
         } 
     }
-    public class RemoteConnection implements CommandListener, Runnable { private SocketConnection socket; private InputStream inputStream; private OutputStream outputStream; private String host; private Form screen = new Form(form.getTitle()); private TextField inputField = new TextField("Command", "", 256, TextField.ANY); private Command BACK = new Command("Back", Command.SCREEN, 1), EXECUTE = new Command("Send", Command.OK, 1), CLEAR = new Command("Clear", Command.SCREEN, 1), VIEW = new Command("Show info", Command.SCREEN, 1); private StringItem console = new StringItem("", ""); public RemoteConnection(String args) { if (args == null || args.length() == 0) { return; } host = args; inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); screen.append(console); screen.append(inputField); screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW); screen.setCommandListener(this); try { socket = (SocketConnection) Connector.open("socket://" + args); inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); } catch (IOException e) { echoCommand(getCatch(e)); return; } start("remote"); new Thread(this, "Remote").start(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == EXECUTE) { String data = inputField.getString().trim(); inputField.setString(""); try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } catch (Exception e) { processCommand("warn " + getCatch(e)); } } else if (c == BACK) { try { outputStream.write("".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); socket.close(); } catch (IOException e) { } writeRMS("remote", console.getText()); stop("remote"); processCommand("xterm"); } else if (c == CLEAR) { console.setText(""); } else if (c == VIEW) { try { warnCommand("Information", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Address: " + socket.getLocalAddress() + "\n" + "Local Port: " + socket.getLocalPort()); } catch (IOException e) { } } } public void run() { while (trace.containsKey("remote")) { try { byte[] buffer = new byte[4096]; int length = inputStream.read(buffer); if (length != -1) { echoCommand(new String(buffer, 0, length), console); } } catch (Exception e) { processCommand("warn " + getCatch(e)); stop("remote"); } } } }
+    public class RemoteConnection implements CommandListener, Runnable { 
+        private SocketConnection socket; 
+        private InputStream inputStream; 
+        private OutputStream outputStream; 
+        private String host; 
+        private Form screen = new Form(form.getTitle()); 
+        private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
+        private Command BACK = new Command("Back", Command.SCREEN, 1), 
+                        EXECUTE = new Command("Send", Command.OK, 1), 
+                        CLEAR = new Command("Clear", Command.SCREEN, 1), 
+                        VIEW = new Command("Show info", Command.SCREEN, 1); 
+        private StringItem console = new StringItem("", ""); 
+
+        public RemoteConnection(String args) { 
+            if (args == null || args.length() == 0) { return; } 
+
+            host = args; 
+            inputField.setLabel("Remote (" + split(args, ':')[0] + ")"); 
+
+            screen.append(console); screen.append(inputField); 
+            screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW); 
+            screen.setCommandListener(this); 
+
+            try { 
+                socket = (SocketConnection) Connector.open("socket://" + args); 
+                inputStream = socket.openInputStream(); outputStream = socket.openOutputStream(); 
+            } 
+            catch (IOException e) { echoCommand(getCatch(e)); return; } 
+
+            start("remote"); 
+            new Thread(this, "Remote").start(); 
+
+            display.setCurrent(screen); 
+        } 
+        public void commandAction(Command c, Displayable d) { 
+            if (c == EXECUTE) { 
+                String data = inputField.getString().trim(); 
+                inputField.setString(""); 
+
+                try { outputStream.write((data + "\n").getBytes()); outputStream.flush(); } 
+                catch (Exception e) { processCommand("warn " + getCatch(e)); } 
+            } 
+            else if (c == BACK) { 
+                try { outputStream.write("".getBytes()); outputStream.flush(); inputStream.close(); outputStream.close(); socket.close(); } 
+                catch (IOException e) { } 
+
+                writeRMS("remote", console.getText()); stop("remote"); processCommand("xterm"); 
+            } 
+            else if (c == CLEAR) { console.setText(""); } 
+            else if (c == VIEW) { 
+                try { warnCommand("Information", "Host: " + split(host, ':')[0] + "\n" + "Port: " + split(host, ':')[1] + "\n\n" + "Local Address: " + socket.getLocalAddress() + "\n" + "Local Port: " + socket.getLocalPort()); } 
+                catch (IOException e) { } 
+            } 
+        } 
+        public void run() { 
+            while (trace.containsKey("remote")) { 
+                try { 
+                    byte[] buffer = new byte[4096]; 
+                    int length = inputStream.read(buffer); 
+                    if (length != -1) { echoCommand(new String(buffer, 0, length), console); } 
+                } 
+                catch (Exception e) { processCommand("warn " + getCatch(e)); stop("remote"); } 
+            } 
+        } 
+    }
 
     // API 012 - (File)
     // |
