@@ -1175,7 +1175,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                 }
 
-                list.addCommand(BACK); list.addCommand(EXECUTE);
+                list.addCommand(EXECUTE); list.addCommand(BACK); 
                 if (TYPE == GOBUSTER) { list.addCommand(SAVE); }
                 list.setCommandListener(this);
                 display.setCurrent(list);
@@ -1221,9 +1221,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote"); }
                 }
             } else if (TYPE == PRSCAN) {
-                list.setTicker(new Ticker("Scanning..."));
                 for (int port = start; port <= 65535; port++) {
                     try {
+                        list.setTicker(new Ticker("Scanning port " + port + "..."));
+                        
                         Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
                         list.append("" + port, null);
                     } catch (Exception e) { }
