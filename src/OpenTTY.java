@@ -1118,7 +1118,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5;
 
         private int TYPE;
-        private StreamConnection CONN;
+        private SocketConnection CONN;
         private InputStream IN;
         private OutputStream OUT;
 
@@ -1147,14 +1147,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 screen = new Form(form.getTitle());
                 
-                inputField.setLabel("Remote (" + address.indexOf("://") != -1 ? address : split(args, ':')[0] + ")");
+                inputField.setLabel("Remote (" + split(args, ':')[0] + ")");
                 screen.append(console); screen.append(inputField); 
                 screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
 
                 try {
-                    CONN = (StreamConnection) Connector.open(addr.indexOf("://") != -1 ? addr : "socket://" + addr);
+                    CONN = (SocketConnection) Connector.open("socket://" + addr);
                     IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
                 } catch (Exception e) { echoCommand(getCatch(e)); }
             } 
@@ -1197,7 +1197,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     stop("remote"); processCommand("xterm");
                 } else if (c == CLEAR) { console.setText(""); }
                 else if (c == VIEW) { 
-                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + ((SocketConnection) CONN).getLocalAddress() + "\n" + "Local Port: " + ((SocketConnection) CONN).getLocalPort()); } 
+                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
                     catch (Exception e) { } 
                 } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
