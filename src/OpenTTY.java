@@ -1106,6 +1106,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         CLEAR = new Command("Clear", Command.SCREEN, 1),
                         VIEW = new Command("View info", Command.SCREEN, 1),
                         CONNECT = new Command("Connect", Command.OK, 1),
+                        OPEN = new Command("Open", Command.OK, 1),
                         SAVE = new Command("Save", Command.OK, 1);
 
         public RemoteConnection(int mode, String args) {
@@ -1139,17 +1140,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
                 if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
                 setupListUI("GoBuster (" + address + ")");
-            } else if (TYPE == SERVER || TYPE == BIND) { address = getCommand(args); prefix = getArgument(args); }
+            } 
+            else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
+
+                screen = new List(title, List.IMPLICIT);
+                screen.addCommand(BACK); screen.addCommand(TYPE == PRSCAN ? CONNECT : OPEN);
+                if (TYPE == GOBUSTER) { listScreen.addCommand(SAVE); }
+                listScreen.setCommandListener(this);
+                display.setCurrent(listScreen);
+            }
+            else if (TYPE == SERVER || TYPE == BIND) { address = getCommand(args); prefix = getArgument(args); }
 
             new Thread(this, "NET").start();
-        }
-        private void setupListUI(String title) {
-            listScreen = new List(title, List.IMPLICIT);
-            listScreen.addCommand(BACK);
-            if (TYPE == PRSCAN) listScreen.addCommand(CONNECT);
-            if (TYPE == GOBUSTER) { listScreen.addCommand(OPEN); listScreen.addCommand(SAVE); }
-            listScreen.setCommandListener(this);
-            display.setCurrent(listScreen);
         }
 
         public void commandAction(Command c, Displayable d) {
@@ -1173,9 +1175,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (c == BACK) { processCommand("xterm"); }
                 else if (c == CONNECT || c == List.SELECT_COMMAND) { new RemoteConnection(NC, address + ":" + ); }
-            } else if (TYPE == GOBUSTER) {
-                if (c == BACK) processCommand("xterm");
-                else if (c == OPEN) processCommand("wget " + address + "/" + getArgument(((List) screen).getString(((List) screen).getSelectedIndex())));
+                else if (c == OPEN) processCommand(TYPE == PRSCAN ? "nc " address + ":" + ITEM : "wget " + address + "/" + getArgument(ITEM));
                 else if (c == SAVE) { nanoContent = saveGoBuster(); }
             }
         }
