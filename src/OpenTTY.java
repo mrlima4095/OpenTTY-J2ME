@@ -1141,7 +1141,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else {
                     wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
                     if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
-                    CONNECT = new Command("Request", Command.OK, 1),
+                    CONNECT = new Command("Request", Command.OK, 1);
                 }
 
                 screen.addCommand(BACK); screen.addCommand(CONNECT);
