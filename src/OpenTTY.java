@@ -1131,12 +1131,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private StringItem console = new StringItem("", "");
 
-        private Command BACK = new Command("Back", Command.OK, 1),
+        private Command BACK = new Command("Back", Command.SCREEN, 1),
                         EXECUTE = new Command("Send", Command.OK, 1),
                         CLEAR = new Command("Clear", Command.SCREEN, 1),
                         VIEW = new Command("View info", Command.SCREEN, 1),
-                        CONNECT = new Command("Connect", Command.OK, 1),
-                        SAVE = new Command("Save", Command.OK, 1);
+                        SAVE = new Command("Save", Command.SCREEN, 1);
 
         public RemoteConnection(int mode, String args) {
             this.TYPE = mode;
@@ -1161,6 +1160,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
                 list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
+                EXECUTE = new Command(TYPE == PRSCAN ? "Connect" : "GET Request", Command.OK, 1);
 
                 if (TYPE == PRSCAN) {
                     if (!getArgument(args).equals("")) {
@@ -1171,7 +1171,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else {
                     wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
                     if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
-                    CONNECT = new Command("GET Request", Command.OK, 1);
+                    
                 }
 
                 list.addCommand(BACK); list.addCommand(CONNECT);
@@ -1200,10 +1200,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (Exception e) { } 
                 } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                String ITEM = list.getString(list.getSelectedIndex());
-
                 if (c == BACK) { processCommand("xterm"); }
-                else if (c == CONNECT || c == List.SELECT_COMMAND) { processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute wget " + address + "/" + getArgument(ITEM) + "; nano; true"); }
+                else if (c == CONNECT || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute wget " + address + "/" + getArgument(ITEM) + "; nano; true"); }
                 else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
                     for (int i = 0; i < list.size(); i++) { BUFFER.append(getArgument(list.getString(i))).append("\n"); }
