@@ -1272,15 +1272,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (IN.available() > 0) {
                             byte[] BUFFER = new byte[IN.available()];
                             int LENGTH = IN.read(BUFFER);
-                            if (LENGTH > 0) {
-                                echoCommand(new String(BUFFER, 0, LENGTH), console);
-                            }
+                            if (LENGTH > 0) { echoCommand(new String(BUFFER, 0, LENGTH), console); }
                         }
                     }
-                } catch (Exception e) {
-                    warnCommand(form.getTitle(), getCatch(e));
-                    stop("remote");
-                }
+                } 
+                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote"); }
             } else if (TYPE == PRSCAN) {
                 for (int port = start; port <= 65535; port++) {
                     try {
@@ -1312,7 +1308,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private int verifyHTTP(String fullUrl) throws IOException {
             try {
                 HttpConnection CONN = (HttpConnection) Connector.open(fullUrl);
-                CONN.setRequestMethod(HttpConnection.GET);
+                CONN.setRequestMethod(HttpConnection.GET); 
                 return CONN.getResponseCode();
             } finally { if (CONN != null) CONN.close(); }
         }
