@@ -1122,7 +1122,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private InputStream IN;
         private OutputStream OUT;
 
-        private String address, response, prefix;
+        private String address;
         private int start = 1;
         private String[] wordlist;
 
@@ -1138,7 +1138,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         SAVE = new Command("Save", Command.SCREEN, 1);
 
         public RemoteConnection(int mode, String args) {
-            this.TYPE = mode;
+            TYPE = mode;
             if (args == null || args.length() == 0) return;
 
             if (TYPE == NC) {
