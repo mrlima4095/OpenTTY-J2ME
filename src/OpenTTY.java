@@ -1050,7 +1050,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public Server(String mode, String args, boolean PERM) {
             if (args == null || args.length() == 0 || args.equals("$PORT")) {
                 processCommand("set PORT=31522", false);
-                new Server(mode, "31522");
+                new Server(mode, "31522", root);
                 return;
             }
 
