@@ -39,6 +39,8 @@ LTS Edition
 - Command `ls` read argument to render directory content
 - MIDlet shell reading multiple args in some tools
 - Shell scripts can be called with `sh [file]`
+- Command `nc` button **Show info** changed to **View info**
+- **Bind** Thread name changed to `NET`
 
 [ _Notes_ ]
 
