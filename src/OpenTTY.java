@@ -1043,21 +1043,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class Server implements Runnable {
         private static final int SERVER = 1, BIND = 2;
         private int TYPE = 0;
+
         private boolean root;
-        private String port, prefix, response;
+        private String port, mod, service;
         private ServerSocketConnection serverSocket = null;
 
         public Server(String mode, String args, boolean PERM) {
             if (args == null || args.length() == 0 || args.equals("$PORT")) {
                 processCommand("set PORT=31522", false);
-                new Server(mode, "31522", root);
+                new Server(mode, "31522", PERM);
                 return;
             }
 
             TYPE = (mode == null || mode.equals("bind")) ? BIND : SERVER;
+            service = TYPE == SERVER ? "server" : "bind";
             port = getCommand(args);
-            prefix = getArgument(args);
-            response = prefix != null ? prefix : "";
+            mod = getArgument(args);
+            root = PERM;
 
             new Thread(this, TYPE == BIND ? "Bind" : "Server").start();
         }
@@ -1065,67 +1067,64 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void run() {
             try {
                 serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
-                echoCommand("[+] listening at port " + port);
-                MIDletLogs("add info Server listening at port " + port);
-                start(TYPE == SERVER ? "server" : "bind");
+                echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port);
+                start(service);
 
                 while (trace.containsKey(TYPE == SERVER ? "server" : "bind")) {
                     SocketConnection clientSocket = null;
-                    InputStream is = null;
-                    OutputStream os = null;
+                    InputStream is = null; OutputStream os = null;
 
                     try {
                         clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
                         String address = clientSocket.getAddress();
                         echoCommand("[+] " + address + " connected");
 
-                        is = clientSocket.openInputStream();
-                        os = clientSocket.openOutputStream();
-
-                        // Leitura dos dados enviados pelo cliente
-                        byte[] buffer = new byte[4096];
-                        int bytesRead = is.read(buffer);
-                        if (bytesRead == -1) {
-                            echoCommand("[-] Empty request from " + address);
-                            continue;
-                        }
-
-                        String clientData = new String(buffer, 0, bytesRead).trim();
-                        echoCommand("[+] " + address + " -> " + env(clientData));
+                        is = clientSocket.openInputStream(); os = clientSocket.openOutputStream();
 
                         if (TYPE == SERVER) {
-                            if (response.startsWith("/")) { os.write(read(response).getBytes()); }
-                            else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } 
-                            else { os.write(loadRMS(response).getBytes()); }
+                            byte[] buffer = new byte[4096];
+                            int bytesRead = is.read(buffer);
+                            if (bytesRead != -1) {
+                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                                echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+
+                                os.write(getcontent(mod).getBytes());
+                                os.flush();
+                            }
                         } else if (TYPE == BIND) {
-                            // Executa comando remoto
-                            String command = (prefix == null || prefix.length() == 0 || prefix.equals("null"))
-                                    ? clientData
-                                    : prefix + " " + clientData;
+                            while (trace.containsKey("bind")) {
+                                byte[] buffer = new byte[4096];
+                                int bytesRead = is.read(buffer);
+                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); stop("bind"); }
 
-                            String beforeCommand = stdout != null ? stdout.getText() : "";
-                            processCommand(command);
-                            String afterCommand = stdout != null ? stdout.getText() : "";
+                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                                echoCommand("[+] " + address + " -> " + env(PAYLOAD));
 
-                            String output = afterCommand.length() >= beforeCommand.length()
-                                    ? afterCommand.substring(beforeCommand.length()).trim() + "\n"
-                                    : "\n";
+                                String command = (mod == null || mod.length() == 0 || mod.equals("null"))
+                                        ? PAYLOAD
+                                        : mod + " " + PAYLOAD;
 
-                            os.write(output.getBytes());
+                                String beforeCommand = stdout != null ? stdout.getText() : "";
+                                processCommand(command, true, root); 
+                                String afterCommand = stdout != null ? stdout.getText() : "";
+
+                                String output = afterCommand.length() >= beforeCommand.length()
+                                        ? afterCommand.substring(beforeCommand.length()).trim() + "\n"
+                                        : "\n";
+
+                                os.write(output.getBytes());
+                                os.flush();
+                            }
                         }
 
-                        os.flush();
                     } catch (IOException e) {
                         echoCommand("[-] " + getCatch(e));
-                        stop(TYPE == SERVER ? "server" : "bind");
                     } finally {
                         try {
-                            if (is != null) is.close();
-                            if (os != null) os.close();
-                            if (clientSocket != null) clientSocket.close();
-                        } catch (IOException e) {
-                            stop(TYPE == SERVER ? "server" : "bind");
-                        }
+                            if (clientSocket != null) { clientSocket.close(); }
+                            if (is != null) { is.close(); }
+                            if (os != null) { os.close(); }
+                        } catch (IOException e) { }
                     }
                 }
 
@@ -1137,11 +1136,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             try {
-                if (serverSocket != null) {
-                    serverSocket.close();
-                }
-            } catch (IOException e) {
-            }
+                if (serverSocket != null) serverSocket.close();
+            } catch (IOException e) { }
         }
     }
 
