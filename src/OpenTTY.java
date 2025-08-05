@@ -188,9 +188,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Process
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { 
             for (int i = 0; i < args.length; i++) {
-                if (mainCommand.equals("start")) { start(args[i]); }
-                else if (mainCommand.equals("stop")) { stop(args[i]); }
-                else { kill(args[i]); }
+                if (mainCommand.equals("start")) { start(args[i]); } else if (mainCommand.equals("stop")) { stop(args[i]); } else { kill(args[i]); }
             }
         } 
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), PID = (String) trace.get(KEY); echoCommand(PID + "\t" + KEY); } }
@@ -1127,8 +1125,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 }
 
-                echoCommand("[-] Server stopped");
-                MIDletLogs("add info Server was stopped");
+                echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped");
             } catch (IOException e) {
                 echoCommand("[-] " + getCatch(e));
                 MIDletLogs("add error Server crashed '" + getCatch(e) + "'");
