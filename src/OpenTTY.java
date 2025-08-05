@@ -1006,7 +1006,63 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String port, prefix; 
 
         public Bind(String args) { 
-            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Bind("31522"); return; } port = getCommand(args); prefix = getArgument(args); new Thread(this, "Bind").start(); } public void run() { ServerSocketConnection serverSocket = null; try { serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); start("bind"); while (trace.containsKey("bind")) { SocketConnection clientSocket = null; InputStream is = null; OutputStream os = null; try { clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); String address = clientSocket.getAddress(); echoCommand("[+] " + address + " connected"); sessions.addElement(address); is = clientSocket.openInputStream(); os = clientSocket.openOutputStream(); while (trace.containsKey("bind")) { byte[] buffer = new byte[4096]; int bytesRead = is.read(buffer); if (bytesRead == -1) { break; } String command = new String(buffer, 0, bytesRead).trim(); echoCommand("[+] " + address + " -> " + env(command)); command = (prefix == null || prefix.length() == 0 || prefix.equals("null")) ? command : prefix + " " + command; String beforeCommand = stdout != null ? stdout.getText() : ""; processCommand(command); String afterCommand = stdout != null ? stdout.getText() : ""; String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n"; os.write(output.getBytes()); os.flush(); } echoCommand("[-] " + address + " disconnected"); sessions.removeElement(address); } catch (IOException e) { echoCommand("[-] " + getCatch(e)); stop("bind"); } finally { try { if (clientSocket != null) { clientSocket.close(); } if (os != null) { os.close(); } if (is != null) { is.close(); } } catch (IOException e) { stop("bind"); } } } echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); } catch (IOException e) { echoCommand("[-] " + getCatch(e)); MIDletLogs("add error Server crashed '" + getCatch(e) + "'"); } try { if (serverSocket != null) { serverSocket.close(); } } catch (IOException e) { } } }
+            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Bind("31522"); return; } 
+            port = getCommand(args); prefix = getArgument(args); new Thread(this, "Bind").start(); 
+        } 
+
+        public void run() { 
+            ServerSocketConnection serverSocket = null; 
+            try { 
+                serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); 
+                echoCommand("[+] listening at port " + port); 
+                MIDletLogs("add info Server listening at port " + port); 
+                start("bind"); 
+                while (trace.containsKey("bind")) { 
+                    SocketConnection clientSocket = null;
+                    InputStream is = null; 
+                    OutputStream os = null; 
+                    try { 
+                        clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); 
+                        String address = clientSocket.getAddress(); 
+
+                        echoCommand("[+] " + address + " connected"); 
+                        sessions.addElement(address); 
+                        is = clientSocket.openInputStream(); 
+                        os = clientSocket.openOutputStream(); 
+                        while (trace.containsKey("bind")) { 
+                            byte[] buffer = new byte[4096]; 
+                            int bytesRead = is.read(buffer); 
+                            if (bytesRead == -1) { break; } 
+
+                            String command = new String(buffer, 0, bytesRead).trim(); 
+                            echoCommand("[+] " + address + " -> " + env(command)); 
+                            command = (prefix == null || prefix.length() == 0 || prefix.equals("null")) ? command : prefix + " " + command; 
+                            String beforeCommand = stdout != null ? stdout.getText() : ""; 
+                            processCommand(command); 
+                            String afterCommand = stdout != null ? stdout.getText() : ""; 
+                            String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n"; 
+
+                            os.write(output.getBytes()); os.flush(); 
+                        } 
+                        echoCommand("[-] " + address + " disconnected"); 
+                        sessions.removeElement(address); 
+                    } 
+                    catch (IOException e) { echoCommand("[-] " + getCatch(e)); stop("bind"); } 
+                    finally { 
+                        try { 
+                            if (clientSocket != null) { clientSocket.close(); } 
+                            if (os != null) { os.close(); } if (is != null) { is.close(); } 
+                        } 
+                        catch (IOException e) { stop("bind"); } 
+                    } 
+                } 
+                echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); 
+            } 
+            catch (IOException e) { echoCommand("[-] " + getCatch(e)); MIDletLogs("add error Server crashed '" + getCatch(e) + "'"); } 
+
+            try { if (serverSocket != null) { serverSocket.close(); } } catch (IOException e) { } 
+        } 
+    }
     public class Server implements Runnable { 
         private String port, response; 
 
@@ -1041,17 +1097,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private int start = 1;
         private String[] wordlist;
 
-        private Form screen;
+        private Displayable screen;
         private TextField inputField;
         private StringItem console;
-        private List listScreen;
 
         private Command BACK = new Command("Back", Command.SCREEN, 1),
                         EXECUTE = new Command("Send", Command.OK, 1),
                         CLEAR = new Command("Clear", Command.SCREEN, 1),
                         VIEW = new Command("View info", Command.SCREEN, 1),
                         CONNECT = new Command("Connect", Command.OK, 1),
-                        OPEN = new Command("Open", Command.OK, 1),
                         SAVE = new Command("Save", Command.OK, 1);
 
         public RemoteConnection(int mode, String args) {
@@ -1060,8 +1114,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (TYPE == NC) {
                 address = args;
-                setupNCUI();
-                initSocket(address);
+
+                screen = new Form(form.getTitle());
+                console = new StringItem("", "");
+                inputField = new TextField("Remote (" + split(args, ':')[0] + ")", "", 256, TextField.ANY); 
+                screen.append(console); screen.append(inputField); 
+                screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
+                screen.setCommandListener(this);
+                display.setCurrent(screen);
+
+                try {
+                    CONN = (StreamConnection) Connector.open(addr.indexOf("://") != -1 ? addr : "socket://" + addr);
+                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
+                } catch (Exception e) { echoCommand(getCatch(e)); }
             } else if (TYPE == PRSCAN) {
                 address = getCommand(args);
                 if (!getArgument(args).equals("")) {
@@ -1084,21 +1149,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             new Thread(this, "Remote").start();
         }
-
-        private void setupNCUI() {
-            screen = new Form("Remote Shell");
-            console = new StringItem("", "");
-            inputField = new TextField("Command", "", 256, TextField.ANY);
-            screen.append(console);
-            screen.append(inputField);
-            screen.addCommand(EXECUTE);
-            screen.addCommand(BACK);
-            screen.addCommand(CLEAR);
-            screen.addCommand(VIEW);
-            screen.setCommandListener(this);
-            display.setCurrent(screen);
-        }
-
         private void setupListUI(String title) {
             listScreen = new List(title, List.IMPLICIT);
             listScreen.addCommand(BACK);
@@ -1108,41 +1158,32 @@ public class OpenTTY extends MIDlet implements CommandListener {
             display.setCurrent(listScreen);
         }
 
-        private void initSocket(String addr) {
-            try {
-                CONN = (StreamConnection) Connector.open(addr.indexOf("://") != -1 ? addr : "socket://" + addr);
-                IN = CONN.openInputStream();
-                OUT = CONN.openOutputStream();
-            } catch (IOException e) { echoCommand(getCatch(e)); }
-        }
-
         public void commandAction(Command c, Displayable d) {
             if (TYPE == NC) {
                 if (c == EXECUTE) {
                     String PAYLOAD = inputField.getString().trim();
                     inputField.setString("");
+
                     try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
-                    catch (Exception e) { warnCommand("Error", getCatch(e)); }
+                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
                 } else if (c == BACK) {
-                    closeNC();
-                    processCommand("xterm");
+                    try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
+                    stop("remote"); processCommand("xterm");
                 } else if (c == CLEAR) { console.setText(""); }
-                else if (c == VIEW) { try { warnCommand("Info", "Host: " + address); } catch (Exception e) {} }
-            } else if (TYPE == PRSCAN) {
-                if (c == BACK) processCommand("xterm");
-                else if (c == CONNECT || c == List.SELECT_COMMAND) {
-                    new RemoteConnection(NC, address + ":" + listScreen.getString(listScreen.getSelectedIndex()));
-                }
+                else if (c == VIEW) { 
+                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + socket.getLocalAddress() + "\n" + "Local Port: " + socket.getLocalPort()); } 
+                    catch (Exception e) { } 
+                } 
+            } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
+                String ITEM = ((List) screen).getString(((List) screen).getSelectedIndex());
+
+                if (c == BACK) { processCommand("xterm"); }
+                else if (c == CONNECT || c == List.SELECT_COMMAND) { new RemoteConnection(NC, address + ":" + ); }
             } else if (TYPE == GOBUSTER) {
                 if (c == BACK) processCommand("xterm");
-                else if (c == OPEN) processCommand("wget " + address + "/" + getArgument(listScreen.getString(listScreen.getSelectedIndex())));
-                else if (c == SAVE) nanoContent = saveGoBuster();
+                else if (c == OPEN) processCommand("wget " + address + "/" + getArgument(((List) screen).getString(((List) screen).getSelectedIndex())));
+                else if (c == SAVE) { nanoContent = saveGoBuster(); }
             }
-        }
-
-        private void closeNC() {
-            try { IN.close(); OUT.close(); CONN.close(); } catch (IOException e) {}
-            stop("remote");
         }
 
         public void run() {
