@@ -1156,7 +1156,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         command = env(command.trim()); 
         String mainCommand = getCommand(command), argument = getArgument(command); 
 
-        if (mainCommand.equals("") || mainCommand.equals("id")) { echoCommand(System.getProperty("wireless.messaging.sms.smsc")); } 
+        if (mainCommand.equals("") || mainCommand.equals("id")) { String ID = System.getProperty("wireless.messaging.sms.smsc") if (ID == null) { echoCommand("Unsupported API"); return 3; } else { echoCommand(ID); } } 
         else { echoCommand("wrl: " + mainCommand + ": not found"); return 127; } 
 
         return 0; 
