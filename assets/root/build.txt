@@ -102,3 +102,4 @@
 [2025-1.16-02x35]	X Server 0.6.3
 [2025-1.16-02x36]	Chmod sockets addresses
 [2025-1.16-02x37]	Shell multiple args
+[2025-1.16-02x38]	Added X11 deleting screens support
