@@ -248,7 +248,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("server")) { new Server(env((argument.equals("") ? "$PORT" : argument) + " $RESPONSE")); }
         // |
         // HTTP Interfaces
-        else if (mainCommand.equals("gobuster")) { new GoBuster(argument); }
+        else if (mainCommand.equals("gobuster")) { new RemoteConnection(3, argument); }
         else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } } }
         else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + getCatch(e)); return 101; } } }
         else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
@@ -280,9 +280,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (RuntimeException e) { echoCommand(getCatch(e)); return 2; }
             catch (Exception e) { echoCommand(getCatch(e)); return 1; }
         }
-        else if (mainCommand.equals("prscan")) { new PortScanner(argument); }
+        else if (mainCommand.equals("prscan")) { new RemoteConnection(2, argument); }
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
-        else if (mainCommand.equals("nc")) { new RemoteConnection(argument); }
+        else if (mainCommand.equals("nc")) { new RemoteConnection(1, argument); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
         else if (mainCommand.equals("who")) { StringBuffer SESSIONS = new StringBuffer(); for (int i = 0; i < sessions.size(); i++) { SESSIONS.append((String) sessions.elementAt(i)).append("\n"); } echoCommand(SESSIONS.toString().trim()); }
