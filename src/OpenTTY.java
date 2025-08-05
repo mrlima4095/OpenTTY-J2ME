@@ -1145,9 +1145,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 screen.addCommand(BACK); screen.addCommand(CONNECT);
-                if (TYPE == GOBUSTER) { listScreen.addCommand(SAVE); }
-                listScreen.setCommandListener(this);
-                display.setCurrent(listScreen);
+                if (TYPE == GOBUSTER) { screen.addCommand(SAVE); }
+                screen.setCommandListener(this);
+                display.setCurrent(screen);
             }
             else if (TYPE == SERVER || TYPE == BIND) { address = getCommand(args); prefix = getArgument(args); }
 
