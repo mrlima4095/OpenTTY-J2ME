@@ -40,7 +40,7 @@ LTS Edition
 - MIDlet shell reading multiple args in some tools
 - Shell scripts can be called with `sh [file]`
 - Command `nc` button **Show info** changed to **View info**
-- **Bind** Thread name changed to `NET`
+- Command `prscan` new button **Save Logs** to load recognized ports in nano
 
 [ _Notes_ ]
 
