@@ -1057,6 +1057,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             service = TYPE == SERVER ? "server" : "bind";
             port = getCommand(args);
             mod = getArgument(args);
+            mod = mod.equals("") && TYPE == SERVER ? env("$RESPONSE") : mod
             root = PERM;
 
             new Thread(this, TYPE == BIND ? "Bind" : "Server").start();
