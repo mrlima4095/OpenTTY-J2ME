@@ -1144,6 +1144,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
 
                 screen = new List(title, List.IMPLICIT);
+
                 screen.addCommand(BACK); screen.addCommand(TYPE == PRSCAN ? CONNECT : OPEN);
                 if (TYPE == GOBUSTER) { listScreen.addCommand(SAVE); }
                 listScreen.setCommandListener(this);
@@ -1174,9 +1175,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String ITEM = ((List) screen).getString(((List) screen).getSelectedIndex());
 
                 if (c == BACK) { processCommand("xterm"); }
-                else if (c == CONNECT || c == List.SELECT_COMMAND) { new RemoteConnection(NC, address + ":" + ); }
-                else if (c == OPEN) processCommand(TYPE == PRSCAN ? "nc " address + ":" + ITEM : "wget " + address + "/" + getArgument(ITEM));
-                else if (c == SAVE) { nanoContent = saveGoBuster(); }
+                else if (c == CONNECT || c == List.SELECT_COMMAND) { processCommand(TYPE == PRSCAN ? "nc " address + ":" + ITEM : "wget " + address + "/" + getArgument(ITEM)); }
+                else if (c == SAVE) { 
+                    StringBuffer BUFFER = new StringBuffer();
+                    for (int i = 0; i < ((List) screen).size(); i++) { BUFFER.append(getArgument(((List) screen).getString(i))).append("\n"); }
+                    nanoContent = BUFFER.toString().trim(); 
+                }
             }
         }
 
@@ -1187,30 +1191,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         byte[] BUFFER = new byte[4096];
                         int LENGTH = IN.read(BUFFER);
                         if (LENGTH != -1) echoCommand(new String(BUFFER, 0, LENGTH), console);
-                    } catch (Exception e) { warnCommand("Error", getCatch(e)); stop("remote"); }
+                    } catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote"); }
                 }
             } else if (TYPE == PRSCAN) {
-                listScreen.setTicker(new Ticker("Scanning..."));
+                screen.setTicker(new Ticker("Scanning..."));
                 for (int port = start; port <= 65535; port++) {
                     try {
                         Connector.open("socket://" + address + ":" + port).close();
-                        listScreen.append("" + port, null);
+                        screen.append("" + port, null);
                     } catch (Exception e) {}
                 }
-                listScreen.setTicker(null);
+                screen.setTicker(null);
             } else if (TYPE == GOBUSTER) {
-                listScreen.setTicker(new Ticker("Searching..."));
+                screen.setTicker(new Ticker("Searching..."));
                 for (int i = 0; i < wordlist.length; i++) {
                     String path = wordlist[i].trim();
                     if (!path.equals("") && !path.startsWith("#")) {
                         String fullUrl = address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path;
                         try {
                             int code = verifyHTTP(fullUrl);
-                            if (code != 404) listScreen.append(code + " /" + path, null);
+                            if (code != 404) screen.append(code + " /" + path, null);
                         } catch (IOException e) {}
                     }
                 }
-                listScreen.setTicker(null);
+                screen.setTicker(null);
             }
         }
 
@@ -1221,12 +1225,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 conn.setRequestMethod(HttpConnection.GET);
                 return conn.getResponseCode();
             } finally { if (conn != null) conn.close(); }
-        }
-
-        private String saveGoBuster() {
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < listScreen.size(); i++) sb.append(getArgument(listScreen.getString(i))).append("\n");
-            return sb.toString().trim();
         }
 
         private void runServer() {
