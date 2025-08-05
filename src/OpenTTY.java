@@ -1223,7 +1223,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 echoCommand(new String(BUFFER, 0, LENGTH), console);
                             }
                         }
-                        Thread.sleep(100);
                     }
                 } catch (Exception e) {
                     warnCommand(form.getTitle(), getCatch(e));
@@ -1237,7 +1236,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         
                         Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
                         list.append("" + port, null);
-                    } catch (Exception e) { }
+                    } catch (IOException e) { }
                 }
                 list.setTicker(null); stop("prscan");
             } else if (TYPE == GOBUSTER) {
@@ -1250,7 +1249,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         try {
                             int code = verifyHTTP(fullUrl);
                             if (code != 404) list.append(code + " /" + path, null);
-                        } catch (IOException e) {}
+                        } catch (IOException e) { }
                     }
                 }
                 list.setTicker(null); stop("gobuster");
