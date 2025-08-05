@@ -1258,7 +1258,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (Exception e) { } 
                 } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                if (c == BACK) { processCommand("xterm"); stop(TYPE == PRSCAN ? "prscan" : "gobuster"); }
+                if (c == BACK) { processCommand("xterm"); }
                 else if (c == CONNECT || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
                 else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
@@ -1266,6 +1266,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     nanoContent = BUFFER.toString().trim(); 
                     new NanoEditor("");
                 }
+                stop(TYPE == PRSCAN ? "prscan" : "gobuster"); 
             }
         }
 
