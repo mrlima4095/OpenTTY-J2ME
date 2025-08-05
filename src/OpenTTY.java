@@ -1196,7 +1196,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     stop("remote"); processCommand("xterm");
                 } else if (c == CLEAR) { console.setText(""); }
                 else if (c == VIEW) { 
-                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + socket.getLocalAddress() + "\n" + "Local Port: " + socket.getLocalPort()); } 
+                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
                     catch (Exception e) { } 
                 } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
@@ -1247,12 +1247,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private int verifyHTTP(String fullUrl) throws IOException {
-            HttpConnection conn = null;
             try {
-                conn = (HttpConnection) Connector.open(fullUrl);
-                conn.setRequestMethod(HttpConnection.GET);
-                return conn.getResponseCode();
-            } finally { if (conn != null) conn.close(); }
+                CONN = (HttpConnection) Connector.open(fullUrl);
+                CONN.setRequestMethod(HttpConnection.GET);
+                return CONN.getResponseCode();
+            } finally { if (CONN != null) conn.close(); }
         }
 
         private void runServer() {
