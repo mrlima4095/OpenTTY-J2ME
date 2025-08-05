@@ -1174,7 +1174,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String ITEM = ((List) screen).getString(((List) screen).getSelectedIndex());
 
                 if (c == BACK) { processCommand("xterm"); }
-                else if (c == CONNECT || c == List.SELECT_COMMAND) { processCommand(TYPE == PRSCAN ? "nc " address + ":" + ITEM : "execute wget " + address + "/" + getArgument(ITEM) + "; nano; true"); }
+                else if (c == CONNECT || c == List.SELECT_COMMAND) { processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute wget " + address + "/" + getArgument(ITEM) + "; nano; true"); }
                 else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
                     for (int i = 0; i < ((List) screen).size(); i++) { BUFFER.append(getArgument(((List) screen).getString(i))).append("\n"); }
