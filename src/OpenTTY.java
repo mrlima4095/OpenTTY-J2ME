@@ -1179,8 +1179,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list.setCommandListener(this);
                 display.setCurrent(list);
             }
-            else if (TYPE == SERVER || TYPE == BIND) { address = getCommand(args); prefix = getArgument(args); }
-
+            
             new Thread(this, "NET").start();
         }
 
