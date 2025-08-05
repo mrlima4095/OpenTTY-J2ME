@@ -1184,7 +1184,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private Command BACK = new Command("Back", Command.SCREEN, 2),
                         EXECUTE = new Command("Send", Command.OK, 1),
-                        CONNECT = new Command("Connect", Command.OK, 1),
+                        CONNECT = new Command("Connect", Command.BACK, 1),
                         CLEAR = new Command("Clear", Command.SCREEN, 2),
                         VIEW = new Command("View info", Command.SCREEN, 2),
                         SAVE = new Command("Save Logs", Command.SCREEN, 2);
