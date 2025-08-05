@@ -1096,7 +1096,53 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String port, response; 
 
         public Server(String args) { 
-            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server("31522"); return; } port = getCommand(args); response = getArgument(args); new Thread(this, "Server").start(); } public void run() { ServerSocketConnection serverSocket = null; try { serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); start("server"); while (trace.containsKey("server")) { SocketConnection clientSocket = null; InputStream is = null; OutputStream os = null; try { clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); is = clientSocket.openInputStream(); os = clientSocket.openOutputStream(); echoCommand("[+] " + clientSocket.getAddress() + " connected"); byte[] buffer = new byte[4096]; int bytesRead = is.read(buffer); String clientData = new String(buffer, 0, bytesRead); echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim())); if (response.startsWith("/")) { os.write(read(response).getBytes()); } else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } else { os.write(loadRMS(response).getBytes()); } os.flush(); } catch (IOException e) { } finally { try { if (is != null) is.close(); if (os != null) os.close(); if (clientSocket != null) clientSocket.close(); } catch (IOException e) { } } } echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); } catch (IOException e) { echoCommand("[-] " + getCatch(e)); MIDletLogs("add error Server crashed '" + getCatch(e) + "'");  } try { if (serverSocket != null) { serverSocket.close(); } } catch (IOException e) { } } }
+            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server("31522"); return; } 
+
+            port = getCommand(args); response = getArgument(args); 
+            new Thread(this, "Server").start(); 
+        } 
+        public void run() { 
+            ServerSocketConnection serverSocket = null; 
+
+            try { 
+                serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); 
+                echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port); start("server"); 
+
+                while (trace.containsKey("server")) { 
+                    SocketConnection clientSocket = null; 
+                    InputStream is = null; OutputStream os = null; 
+
+                    try { 
+                        clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); 
+                        is = clientSocket.openInputStream(); os = clientSocket.openOutputStream(); 
+
+                        echoCommand("[+] " + clientSocket.getAddress() + " connected"); 
+                        byte[] buffer = new byte[4096]; 
+                        int bytesRead = is.read(buffer); 
+                        String clientData = new String(buffer, 0, bytesRead); 
+
+                        echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim())); 
+
+                        if (response.startsWith("/")) { os.write(read(response).getBytes()); } 
+                        else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } 
+                        else { os.write(loadRMS(response).getBytes()); } 
+
+                        os.flush(); 
+                    } 
+                    catch (IOException e) { } 
+                    finally { 
+                        try { if (is != null) is.close(); if (os != null) os.close(); if (clientSocket != null) clientSocket.close(); } 
+                        catch (IOException e) { } 
+                    } 
+                } 
+                echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); 
+            } 
+            catch (IOException e) { echoCommand("[-] " + getCatch(e)); MIDletLogs("add error Server crashed '" + getCatch(e) + "'"); } 
+
+            try { if (serverSocket != null) { serverSocket.close(); } } 
+            catch (IOException e) { } 
+        } 
+    }
     // |
     // HTTP Interfaces
     private String request(String url, Hashtable headers) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); if (headers != null) { Enumeration keys = headers.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) headers.get(key); conn.setRequestProperty(key, value); } } InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return getCatch(e); } }
@@ -1198,7 +1244,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 if (c == BACK) { processCommand("xterm"); stop(TYPE == PRSCAN ? "prscan" : "gobuster"); }
-                else if (c == EXECUTE || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute wget " + address + "/" + getArgument(ITEM) + "; nano; true"); }
+                else if (c == EXECUTE || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
                 else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
                     for (int i = 0; i < list.size(); i++) { BUFFER.append(getArgument(list.getString(i))).append("\n"); }
