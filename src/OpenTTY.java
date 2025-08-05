@@ -1162,6 +1162,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 address = getCommand(args);
                 list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
                 EXECUTE = new Command(TYPE == PRSCAN ? "Connect" : "GET Request", Command.OK, 1);
+                start(TYPE == PRSCAN ? "prscan" : "gobuster")
 
                 if (TYPE == PRSCAN) {
                     if (!getArgument(args).equals("")) {
@@ -1232,6 +1233,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int port = start; port <= 65535; port++) {
                     try {
                         list.setTicker(new Ticker("Scanning port " + port + "..."));
+                        if (!trace.containsKey("prscan")) { break; }
                         
                         Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
                         list.append("" + port, null);
@@ -1242,6 +1244,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list.setTicker(new Ticker("Searching..."));
                 for (int i = 0; i < wordlist.length; i++) {
                     String path = wordlist[i].trim();
+                    if (!trace.containsKey("gobuster")) { break; }
                     if (!path.equals("") && !path.startsWith("#")) {
                         String fullUrl = address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path;
                         try {
