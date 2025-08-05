@@ -1140,7 +1140,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         echoCommand("[+] " + clientSocket.getAddress() + " -> " + env(clientData.trim())); 
 
-                        if (response.startsWith("/")) { os.write(read(response).getBytes()); } 
+                        if (response.startsWith("/")) { os.write(read(a).getBytes()); } 
                         else if (response.equals("nano")) { os.write(nanoContent.getBytes()); } 
                         else { os.write(loadRMS(response).getBytes()); } 
 
