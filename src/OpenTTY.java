@@ -279,7 +279,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (Exception e) { echoCommand(getCatch(e)); return 1; }
         }
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
-        else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(command); }
+        else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
         else if (mainCommand.equals("who")) { StringBuffer SESSIONS = new StringBuffer(); for (int i = 0; i < sessions.size(); i++) { SESSIONS.append((String) sessions.elementAt(i)).append("\n"); } echoCommand(SESSIONS.toString().trim()); }
