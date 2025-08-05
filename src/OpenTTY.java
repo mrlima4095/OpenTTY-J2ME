@@ -1106,7 +1106,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         CLEAR = new Command("Clear", Command.SCREEN, 1),
                         VIEW = new Command("View info", Command.SCREEN, 1),
                         CONNECT = new Command("Connect", Command.OK, 1),
-                        OPEN = new Command("Open", Command.OK, 1),
                         SAVE = new Command("Save", Command.OK, 1);
 
         public RemoteConnection(int mode, String args) {
@@ -1128,24 +1127,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     CONN = (StreamConnection) Connector.open(addr.indexOf("://") != -1 ? addr : "socket://" + addr);
                     IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
                 } catch (Exception e) { echoCommand(getCatch(e)); }
-            } else if (TYPE == PRSCAN) {
-                address = getCommand(args);
-                if (!getArgument(args).equals("")) {
-                    try { start = Integer.parseInt(getArgument(args)); }
-                    catch (NumberFormatException e) { echoCommand("Invalid start port"); return; }
-                }
-                setupListUI(address + " Ports");
-            } else if (TYPE == GOBUSTER) {
-                address = getCommand(args);
-                wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
-                if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
-                setupListUI("GoBuster (" + address + ")");
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-
+                address = getCommand(args);
                 screen = new List(title, List.IMPLICIT);
 
-                screen.addCommand(BACK); screen.addCommand(TYPE == PRSCAN ? CONNECT : OPEN);
+                if (TYPE == PRSCAN) {
+                    if (!getArgument(args).equals("")) {
+                        try { start = Integer.parseInt(getArgument(args)); }
+                        catch (NumberFormatException e) { echoCommand("Invalid start port"); return; }
+                    }
+                }
+                else {
+                    wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
+                    if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
+                    CONNECT = new Command("Request", Command.OK, 1),
+                }
+
+                screen.addCommand(BACK); screen.addCommand(CONNECT);
                 if (TYPE == GOBUSTER) { listScreen.addCommand(SAVE); }
                 listScreen.setCommandListener(this);
                 display.setCurrent(listScreen);
@@ -1175,7 +1174,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String ITEM = ((List) screen).getString(((List) screen).getSelectedIndex());
 
                 if (c == BACK) { processCommand("xterm"); }
-                else if (c == CONNECT || c == List.SELECT_COMMAND) { processCommand(TYPE == PRSCAN ? "nc " address + ":" + ITEM : "wget " + address + "/" + getArgument(ITEM)); }
+                else if (c == CONNECT || c == List.SELECT_COMMAND) { processCommand(TYPE == PRSCAN ? "nc " address + ":" + ITEM : "execute wget " + address + "/" + getArgument(ITEM) + "; nano; true"); }
                 else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
                     for (int i = 0; i < ((List) screen).size(); i++) { BUFFER.append(getArgument(((List) screen).getString(i))).append("\n"); }
