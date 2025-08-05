@@ -1104,10 +1104,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String port, response; 
 
         public Server(String args) { 
-            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server("31522"); return; } 
+            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server("31522"); return; }
 
-            port = getCommand(args); response = getArgument(args); 
-            new Thread(this, "Server").start(); 
+            
         } 
         public void run() { 
             ServerSocketConnection serverSocket = null; 
@@ -1169,19 +1168,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
     public class RemoteConnection implements CommandListener, Runnable {
-        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, BIND = 4, SERVER = 5;
+        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3;
 
         private int TYPE;
         private SocketConnection CONN;
-        private InputStream IN;
-        private OutputStream OUT;
+        private InputStream IN; private OutputStream OUT;
 
         private String address;
-        private int start = 1;
+        private int port, start;
         private String[] wordlist;
 
-        private Form screen;
-        private List list;
+        private Form screen; private List list;
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private StringItem console = new StringItem("", "");
 
@@ -1193,10 +1190,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         SAVE = new Command("Save Logs", Command.SCREEN, 2);
 
         public RemoteConnection(String mode, String args) {
+            TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
+
             if (args == null || args.length() == 0) { return; }
 
-            TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("bind") ? BIND : SERVER; 
-
+            
             if (TYPE == NC) {
                 address = args;
 
@@ -1205,8 +1203,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); start("remote");
                 } catch (Exception e) { echoCommand(getCatch(e)); return; }
 
-                screen = new Form(form.getTitle());
                 
+                screen.setTitle(form.getTitle());
                 inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
                 screen.append(console); screen.append(inputField); 
                 screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
@@ -1219,7 +1217,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
                 start(TYPE == PRSCAN ? "prscan" : "gobuster");
 
-                if (TYPE == PRSCAN) { start = getNumber(getArgument(args), 1, true); }
+                if (TYPE == PRSCAN) { start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true); }
                 else {
                     wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
                     if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
@@ -1228,7 +1226,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
                 list.setCommandListener(this);
                 display.setCurrent(list);
-            }
+            } 
             
             new Thread(this, "NET").start();
         }
