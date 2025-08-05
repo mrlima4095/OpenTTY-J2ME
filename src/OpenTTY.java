@@ -1131,7 +1131,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private StringItem console = new StringItem("", "");
 
-        private Command BACK = new Command("Back", Command.SCREEN, 1),
+        private Command BACK = new Command("Back", Command.OK, 1),
                         EXECUTE = new Command("Send", Command.OK, 1),
                         CLEAR = new Command("Clear", Command.SCREEN, 1),
                         VIEW = new Command("View info", Command.SCREEN, 1),
@@ -1222,16 +1222,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote"); }
                 }
             } else if (TYPE == PRSCAN) {
-                screen.setTicker(new Ticker("Scanning..."));
+                list.setTicker(new Ticker("Scanning..."));
                 for (int port = start; port <= 65535; port++) {
                     try {
                         Connector.open("socket://" + address + ":" + port).close();
                         list.append("" + port, null);
-                    } catch (Exception e) {}
+                    } catch (Exception e) { }
                 }
-                screen.setTicker(null);
+                list.setTicker(null);
             } else if (TYPE == GOBUSTER) {
-                screen.setTicker(new Ticker("Searching..."));
+                list.setTicker(new Ticker("Searching..."));
                 for (int i = 0; i < wordlist.length; i++) {
                     String path = wordlist[i].trim();
                     if (!path.equals("") && !path.startsWith("#")) {
@@ -1242,7 +1242,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } catch (IOException e) {}
                     }
                 }
-                screen.setTicker(null);
+                list.setTicker(null);
             }
         }
 
