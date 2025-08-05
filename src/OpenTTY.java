@@ -1160,7 +1160,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
-                list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address +; ")", List.IMPLICIT);
+                list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
 
                 if (TYPE == PRSCAN) {
                     if (!getArgument(args).equals("")) {
