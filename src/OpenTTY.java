@@ -1249,7 +1249,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private int verifyHTTP(String fullUrl) throws IOException {
             try {
-                CONN = (HttpConnection) Connector.open(fullUrl);
+                HttpConnection CONN = (HttpConnection) Connector.open(fullUrl);
                 CONN.setRequestMethod(HttpConnection.GET);
                 return CONN.getResponseCode();
             } finally { if (CONN != null) conn.close(); }
