@@ -662,9 +662,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
         // |
         // Screen Manager
-        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
-        else if (mainCommand.equals("load")) { if (argument.equals("")) { } else { if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } } }
-        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { desktops. } }
+        else if (mainCommand.equals("set")) { 
+            if (argument.equals("")) { } 
+            else { desktops.put(argument, display.getCurrent()); } 
+        }
+        else if (mainCommand.equals("load")) { 
+            if (argument.equals("")) { } 
+            else if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } 
+            else { echoCommand("x11: load: " + argument + ": not found"); return 127; } 
+        }
+        else if (mainCommand.equals("unset")) { 
+            if (argument.equals("")) { } 
+            else if (desktops.containsKey(argument)) { desktops.remove(argument); } 
+            else { echoCommand("x11: unset: " + argument + ": not found"); return 127; } 
+        }
         // |
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
