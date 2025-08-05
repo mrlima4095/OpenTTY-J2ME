@@ -1098,8 +1098,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String[] wordlist;
 
         private Displayable screen;
-        private TextField inputField;
-        private StringItem console;
+        private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
+        private StringItem console = new StringItem("", "");
 
         private Command BACK = new Command("Back", Command.SCREEN, 1),
                         EXECUTE = new Command("Send", Command.OK, 1),
@@ -1116,8 +1116,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 address = args;
 
                 screen = new Form(form.getTitle());
-                console = new StringItem("", "");
-                inputField = new TextField("Remote (" + split(args, ':')[0] + ")", "", 256, TextField.ANY); 
+                
+                inputField.setLabel("Remote (" + address.indexOf("://") != -1 ? address : split(args, ':')[0] + ")");
                 screen.append(console); screen.append(inputField); 
                 screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
                 screen.setCommandListener(this);
@@ -1139,15 +1139,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
                 if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
                 setupListUI("GoBuster (" + address + ")");
-            } else if (TYPE == SERVER) {
-                address = getCommand(args);
-                response = getArgument(args);
-            } else if (TYPE == BIND) {
-                address = getCommand(args);
-                prefix = getArgument(args);
-            }
+            } else if (TYPE == SERVER || TYPE == BIND) { address = getCommand(args); prefix = getArgument(args); }
 
-            new Thread(this, "Remote").start();
+            new Thread(this, "NET").start();
         }
         private void setupListUI(String title) {
             listScreen = new List(title, List.IMPLICIT);
