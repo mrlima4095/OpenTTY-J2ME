@@ -1258,9 +1258,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private int verifyHTTP(String fullUrl) throws IOException {
             try {
-                HttpConnection CONN = (HttpConnection) Connector.open(fullUrl);
+                /*HttpConnection CONN = (HttpConnection) Connector.open(fullUrl);
                 CONN.setRequestMethod(HttpConnection.GET);
-                return CONN.getResponseCode();
+                return CONN.getResponseCode();*/
+                return ((HttpConnection) Connector.open(fullUrl)).setRequestMethod(HttpConnection.GET).getResponseCode();
             } finally { if (CONN != null) CONN.close(); }
         }
     }
