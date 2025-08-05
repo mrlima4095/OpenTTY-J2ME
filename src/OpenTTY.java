@@ -1253,14 +1253,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return CONN.getResponseCode();
             } finally { if (CONN != null) CONN.close(); }
         }
-
-        private void runServer() {
-            // Lógica do SERVER original aqui
-        }
-
-        private void runBind() {
-            // Lógica do BIND original aqui
-        }
     }
 
 
