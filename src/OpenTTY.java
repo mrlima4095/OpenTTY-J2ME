@@ -1099,17 +1099,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 String PAYLOAD = new String(buffer, 0, bytesRead).trim();
                                 echoCommand("[+] " + address + " -> " + env(PAYLOAD));
 
-                                String command = (mod == null || mod.length() == 0 || mod.equals("null"))
-                                        ? PAYLOAD
-                                        : mod + " " + PAYLOAD;
+                                String command = (mod == null || mod.length() == 0 || mod.equals("null")) ? PAYLOAD : mod + " " + PAYLOAD; 
 
                                 String beforeCommand = stdout != null ? stdout.getText() : "";
                                 processCommand(command, true, root); 
                                 String afterCommand = stdout != null ? stdout.getText() : "";
 
-                                String output = afterCommand.length() >= beforeCommand.length()
-                                        ? afterCommand.substring(beforeCommand.length()).trim() + "\n"
-                                        : "\n";
+                                String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n";
 
                                 os.write(output.getBytes());
                                 os.flush();
