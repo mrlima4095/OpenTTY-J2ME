@@ -1252,7 +1252,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 HttpConnection CONN = (HttpConnection) Connector.open(fullUrl);
                 CONN.setRequestMethod(HttpConnection.GET);
                 return CONN.getResponseCode();
-            } finally { if (CONN != null) conn.close(); }
+            } finally { if (CONN != null) CONN.close(); }
         }
 
         private void runServer() {
