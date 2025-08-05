@@ -1144,6 +1144,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (TYPE == NC) {
                 address = args;
 
+                try {
+                    CONN = (SocketConnection) Connector.open("socket://" + address);
+                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); start("remote");
+                } catch (Exception e) { echoCommand(getCatch(e)); return; }
+
                 screen = new Form(form.getTitle());
                 
                 inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
@@ -1152,10 +1157,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
 
-                try {
-                    CONN = (SocketConnection) Connector.open("socket://" + address);
-                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
-                } catch (Exception e) { echoCommand(getCatch(e)); }
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
@@ -1193,7 +1194,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
                 } else if (c == BACK) {
                     try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
-                    stop("remote"); processCommand("xterm");
+                    writeRMS("/home/remote", console.getText()); stop("remote"); processCommand("xterm");
                 } else if (c == CLEAR) { console.setText(""); }
                 else if (c == VIEW) { 
                     try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
@@ -1223,7 +1224,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list.setTicker(new Ticker("Scanning..."));
                 for (int port = start; port <= 65535; port++) {
                     try {
-                        Connector.open("socket://" + address + ":" + port).close();
+                        Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
                         list.append("" + port, null);
                     } catch (Exception e) { }
                 }
