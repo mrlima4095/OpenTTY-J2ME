@@ -1093,6 +1093,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
     }
     public class Server implements Runnable { 
+        private static final int SERVER = 1, BIND = 2;
+        private int TYPE = 0;
         private String port, response; 
 
         public Server(String args) { 
