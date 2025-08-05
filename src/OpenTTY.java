@@ -1126,7 +1126,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private int start = 1;
         private String[] wordlist;
 
-        private Displayable screen;
+        private Form screen;
+        private List list;
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private StringItem console = new StringItem("", "");
 
@@ -1159,7 +1160,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
-                screen = new List(title, List.IMPLICIT);
+                list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address +; ")", List.IMPLICIT);
 
                 if (TYPE == PRSCAN) {
                     if (!getArgument(args).equals("")) {
@@ -1173,10 +1174,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     CONNECT = new Command("Request", Command.OK, 1);
                 }
 
-                screen.addCommand(BACK); screen.addCommand(CONNECT);
-                if (TYPE == GOBUSTER) { screen.addCommand(SAVE); }
-                screen.setCommandListener(this);
-                display.setCurrent(screen);
+                screen.addCommand(BACK); list.addCommand(CONNECT);
+                if (TYPE == GOBUSTER) { list.addCommand(SAVE); }
+                list.setCommandListener(this);
+                display.setCurrent(list);
             }
             else if (TYPE == SERVER || TYPE == BIND) { address = getCommand(args); prefix = getArgument(args); }
 
@@ -1200,13 +1201,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (Exception e) { } 
                 } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                String ITEM = ((List) screen).getString(((List) screen).getSelectedIndex());
+                String ITEM = list.getString(list.getSelectedIndex());
 
                 if (c == BACK) { processCommand("xterm"); }
                 else if (c == CONNECT || c == List.SELECT_COMMAND) { processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute wget " + address + "/" + getArgument(ITEM) + "; nano; true"); }
                 else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
-                    for (int i = 0; i < ((List) screen).size(); i++) { BUFFER.append(getArgument(((List) screen).getString(i))).append("\n"); }
+                    for (int i = 0; i < ((List) screen).size(); i++) { BUFFER.append(getArgument(list.getString(i))).append("\n"); }
                     nanoContent = BUFFER.toString().trim(); 
                 }
             }
@@ -1226,7 +1227,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int port = start; port <= 65535; port++) {
                     try {
                         Connector.open("socket://" + address + ":" + port).close();
-                        screen.append("" + port, null);
+                        list.append("" + port, null);
                     } catch (Exception e) {}
                 }
                 screen.setTicker(null);
@@ -1238,7 +1239,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String fullUrl = address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path;
                         try {
                             int code = verifyHTTP(fullUrl);
-                            if (code != 404) screen.append(code + " /" + path, null);
+                            if (code != 404) list.append(code + " /" + path, null);
                         } catch (IOException e) {}
                     }
                 }
