@@ -1213,12 +1213,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void run() {
             if (TYPE == NC) {
-                while (trace.containsKey("remote")) {
-                    try {
-                        byte[] BUFFER = new byte[4096];
-                        int LENGTH = IN.read(BUFFER);
-                        if (LENGTH != -1) echoCommand(new String(BUFFER, 0, LENGTH), console);
-                    } catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote"); }
+                try {
+                    while (trace.containsKey("remote")) {
+                        if (IN.available() > 0) {
+                            byte[] BUFFER = new byte[IN.available()];
+                            int LENGTH = IN.read(BUFFER);
+                            if (LENGTH > 0) {
+                                echoCommand(new String(BUFFER, 0, LENGTH), console);
+                            }
+                        }
+                        Thread.sleep(100);
+                    }
+                } catch (Exception e) {
+                    warnCommand(form.getTitle(), getCatch(e));
+                    stop("remote");
                 }
             } else if (TYPE == PRSCAN) {
                 for (int port = start; port <= 65535; port++) {
