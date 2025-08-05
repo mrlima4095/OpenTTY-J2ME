@@ -1239,7 +1239,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         list.append("" + port, null);
                     } catch (Exception e) { }
                 }
-                list.setTicker(null);
+                list.setTicker(null); stop("prscan");
             } else if (TYPE == GOBUSTER) {
                 list.setTicker(new Ticker("Searching..."));
                 for (int i = 0; i < wordlist.length; i++) {
@@ -1253,7 +1253,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } catch (IOException e) {}
                     }
                 }
-                list.setTicker(null);
+                list.setTicker(null); stop("gobuster");
             }
         }
 
