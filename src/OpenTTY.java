@@ -1042,7 +1042,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public Bind(String args) { 
             if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Bind("31522"); return; } 
-            port = getCommand(args); prefix = getArgument(args); new Thread(this, "Bind").start(); 
+            
         } 
 
         public void run() { 
@@ -1101,12 +1101,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class Server implements Runnable { 
         private static final int SERVER = 1, BIND = 2;
         private int TYPE = 0;
-        private String port, response; 
+        private String port, prefix, response; 
 
-        public Server(String args) { 
-            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server("31522"); return; }
-
+        public Server(String mode, String args) { 
+            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server(mode, "31522"); return; }
+            TYPE = mode == null || mode.equals("bind") ? BIND : SERVER;
+            port = getCommand(args); prefix = getArgument(args); new Thread(this, "Bind").start(); 
             
+            command = env(command.trim());
+            String mainCommand = getCommand(command), argument = getArgument(command);
+            
+            if (mainCommand.equals("") || mainCommand.equals("server")) {
+                
+            } else if (mainCommand.equals("bind")) {
+                
+            }
+
         } 
         public void run() { 
             ServerSocketConnection serverSocket = null; 
