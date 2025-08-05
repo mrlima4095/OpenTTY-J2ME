@@ -1942,8 +1942,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Start and handle APP process
         if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name")); }
-        if (PKG.containsKey("process.type")) { String TYPE = (String) PKG.get("process.type"); if (TYPE.equals("server")) { } else if (TYPE.equals("bind")) { new Server("bind", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.db"))); } else { MIDletLogs("add warn '" + TYPE.toUpperCase() + "' is a invalid value for 'process.type'"); } }
-        if (PKG.containsKey("process.host") && PKG.containsKey("process.port")) { new Server("server", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host"))); }
+        if (PKG.containsKey("process.type")) { String TYPE = (String) PKG.get("process.type"); if (TYPE.equals("server")) { } else if (TYPE.equals("bind")) { new Server("bind", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.db")), root); } else { MIDletLogs("add warn '" + TYPE.toUpperCase() + "' is a invalid value for 'process.type'"); } }
+        if (PKG.containsKey("process.host") && PKG.containsKey("process.port")) { new Server("server", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host")), root); }
         // |
         // Start Application
         if (PKG.containsKey("config")) { int STATUS = processCommand((String) PKG.get("config"), true, root); if (STATUS != 0) { return STATUS; } }
