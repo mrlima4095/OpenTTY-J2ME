@@ -244,7 +244,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 011 - (Network)
         // | 
         // Servers
-        else if (mainCommand.equals("bind") || mainCommand.equals("server")) { new Server(command, root); }
+        else if (mainCommand.equals("bind") || mainCommand.equals("server")) { new Server(mainCommand, argument, root); }
         // |
         // HTTP Interfaces
         else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } } }
