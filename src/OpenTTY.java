@@ -1164,12 +1164,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 EXECUTE = new Command(TYPE == PRSCAN ? "Connect" : "GET Request", Command.OK, 1);
                 start(TYPE == PRSCAN ? "prscan" : "gobuster");
 
-                if (TYPE == PRSCAN) {
-                    if (!getArgument(args).equals("")) {
-                        try { start = Integer.parseInt(getArgument(args)); }
-                        catch (NumberFormatException e) { echoCommand("Invalid start port"); return; }
-                    }
-                }
+                if (TYPE == PRSCAN) { start = getNumber(getArgument(args), 1, true); }
                 else {
                     wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
                     if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
@@ -1258,10 +1253,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private int verifyHTTP(String fullUrl) throws IOException {
             try {
-                /*HttpConnection CONN = (HttpConnection) Connector.open(fullUrl);
+                HttpConnection CONN = (HttpConnection) Connector.open(fullUrl);
                 CONN.setRequestMethod(HttpConnection.GET);
-                return CONN.getResponseCode();*/
-                return ((HttpConnection) Connector.open(fullUrl)).setRequestMethod(HttpConnection.GET).getResponseCode();
+                return CONN.getResponseCode();
             } finally { if (CONN != null) CONN.close(); }
         }
     }
