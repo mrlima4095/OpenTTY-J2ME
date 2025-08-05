@@ -1179,11 +1179,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private StringItem console = new StringItem("", "");
 
-        private Command BACK = new Command("Back", Command.SCREEN, 1),
+        private Command BACK = new Command("Back", Command.SCREEN, 2),
                         EXECUTE = new Command("Send", Command.OK, 1),
-                        CLEAR = new Command("Clear", Command.SCREEN, 1),
-                        VIEW = new Command("View info", Command.SCREEN, 1),
-                        SAVE = new Command("Save Logs", Command.SCREEN, 1);
+                        CONNECT = new Command("Connect", Command.OK, 1),
+                        CLEAR = new Command("Clear", Command.SCREEN, 2),
+                        VIEW = new Command("View info", Command.SCREEN, 2),
+                        SAVE = new Command("Save Logs", Command.SCREEN, 2);
 
         public RemoteConnection(int mode, String args) {
             TYPE = mode;
@@ -1216,11 +1217,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else {
                     wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
                     if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
-                    
                 }
 
-                list.addCommand(BACK); list.addCommand(EXECUTE); 
-                if (TYPE == GOBUSTER) { list.addCommand(SAVE); }
+                list.addCommand(BACK); list.addCommand(EXECUTE); list.addCommand(SAVE); 
                 list.setCommandListener(this);
                 display.setCurrent(list);
             }
