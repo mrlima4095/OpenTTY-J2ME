@@ -1154,7 +1154,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(screen);
 
                 try {
-                    CONN = (SocketConnection) Connector.open("socket://" + addr);
+                    CONN = (SocketConnection) Connector.open("socket://" + address);
                     IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
                 } catch (Exception e) { echoCommand(getCatch(e)); }
             } 
