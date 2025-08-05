@@ -1210,7 +1210,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
                 list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
-                EXECUTE = new Command(TYPE == PRSCAN ? "Connect" : "GET Request", Command.OK, 1);
                 start(TYPE == PRSCAN ? "prscan" : "gobuster");
 
                 if (TYPE == PRSCAN) { start = getNumber(getArgument(args), 1, true); }
@@ -1219,7 +1218,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
                 }
 
-                list.addCommand(BACK); list.addCommand(EXECUTE); list.addCommand(SAVE); 
+                list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
                 list.setCommandListener(this);
                 display.setCurrent(list);
             }
@@ -1245,7 +1244,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 if (c == BACK) { processCommand("xterm"); stop(TYPE == PRSCAN ? "prscan" : "gobuster"); }
-                else if (c == EXECUTE || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
+                else if (c == CONNECT || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
                 else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
                     for (int i = 0; i < list.size(); i++) { BUFFER.append(getArgument(list.getString(i))).append("\n"); }
