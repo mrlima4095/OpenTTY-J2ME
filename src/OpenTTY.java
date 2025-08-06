@@ -1086,7 +1086,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String address = clientSocket.getAddress();
                     echoCommand("[+] " + address + " connected");
 
-                    is = clientSocket.openInputStos = clientSocket.openOutputStream();
+                    is = clientSocket.openInputStream(); os = clientSocket.openOutputStream();
 
                     if (TYPE == SERVER) {
                         byte[] buffer = new byte[4096];
