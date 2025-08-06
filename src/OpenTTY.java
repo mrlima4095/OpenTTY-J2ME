@@ -12,12 +12,15 @@ import java.io.*;
 
 
 public class OpenTTY extends MIDlet implements CommandListener {
-    private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
+    private int cursorX = 10, cursorY = 10;
+    private int MAX_STDOUT_LEN = -1;
+    // |
     private Player player = null;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
-    private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), 
-                      paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable();
+    private Hashtable attributes = new Hashtable(), paths = new Hashtable(), desktops = new Hashtable(),  
+                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(),
+                      trace = new Hashtable(), sessions = new Hashtable(), collectors = new Hashtable();
     private Vector stack = new Vector(), history = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     private String logs = "", path = "/home/", build = "2025-1.16-02x39"; 
@@ -30,7 +33,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Loader
     public void startApp() {
-        if (!trace.containsKey("sh")) {
+        if (getprocess("sh") == null) {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
@@ -1041,33 +1044,61 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class HTopViewer implements CommandListener { private Form monitor = new Form(form.getTitle()); private List process = new List(form.getTitle(), List.IMPLICIT); private StringItem status = new StringItem("Memory Status:", ""); private Command BACK = new Command("Back", Command.BACK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2); private int TYPE = 0, MONITOR = 1, PROCESS = 2; public HTopViewer(String args) { if (args == null || args.length() == 0 || args.equals("memory")) { TYPE = MONITOR; monitor.append(status); load(); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); } else if (args.equals("process")) { TYPE = PROCESS; load(); process.addCommand(BACK); process.addCommand(KILL); process.setCommandListener(this); display.setCurrent(process); } else { echoCommand("htop: " + args + ": not found"); } } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == REFRESH) { System.gc(); load(); } else if (c == KILL) { int index = process.getSelectedIndex(); if (index >= 0) { processCommand("kill " + split(process.getString(index), '\t')[0]); load(); } } } private void load() { if (TYPE == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\nFree Memory: " + runtime.freeMemory() / 1024 + " KB\nTotal Memory: " + runtime.totalMemory() / 1024 + " KB"); } else if (TYPE == PROCESS) { process.deleteAll(); Enumeration keys = trace.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String pid = (String) trace.get(key); process.append(pid + "\t" + key, null); } } } }
     // |
     // Process
-    private int kill(String pid) {
-        if (app == null || app.length() == 0) { return 2; } 
-        else if (app.equals("sh")) { processCommand("exit", false); }
-        else if (trace.containsKey(pid)) { trace.remove(pid); echoCommand("Process with PID " + pid + " terminated"); }
-        else { echoCommand("PID '" + pid + "' not found"); return 127; }
+    private int kill(String pid, boolean root) {
+        if (pid == null || pid.length() == 0) { return 2; }
+        else if (trace.containsKey(pid)) {
+            Hashtable proc = (Hashtable) trace.get(pid);
+            String name = (String) proc.get("name");
+            String collector = (String) proc.get("collector");
 
-        return 0;
-    } 
-    private int start(String app) { return start(app, String.valueOf(1000 + random.nextInt(9000))); }
-    private int start(String app, String pid) {
-        if (app == null || app.length() == 0) { return 2; } 
-        else if (app.equals("sh")) { pid = "1"; sessions.put(pid, "127.0.0.1"); }
-        else if (trace.containsKey(pid)) { return start(app); }
+            trace.remove(pid);
+            echoCommand("Process with PID " + pid + " (" + name + ") terminated");
 
-        trace.put(pid, app);
+            if (collector != null && collector.length() > 0) {
+                processCommand(collector, true, root);
+            }
+        } else {
+            echoCommand("PID '" + pid + "' not found");
+            return 127;
+        }
         return 0;
     }
+
+    private int start(String app) {
+        return start(app, String.valueOf(1000 + random.nextInt(9000)), null);
+    }
+
+    private int start(String app, String pid, String collector) {
+        if (app == null || app.length() == 0) { return 2; }
+        else if (app.equals("sh")) {
+            pid = "1";
+            collector = "exit";
+            sessions.put(pid, "127.0.0.1");
+        }
+        else if (trace.containsKey(pid)) { return start(app); }
+
+        Hashtable proc = new Hashtable();
+        proc.put("name", app);
+        if (collector != null) {
+            proc.put("collector", collector);
+        }
+
+        trace.put(pid, proc);
+        return 0;
+    }
+
     private int stop(String app) {
-        if (app == null || app.length() == 0) { return 2; } 
+        if (app == null || app.length() == 0) { return 2; }
 
-        for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements()) { 
-            String KEY = (String) KEYS.nextElement(); 
+        for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
+            String KEY = (String) KEYS.nextElement();
+            Hashtable proc = (Hashtable) trace.get(KEY);
+            String name = (String) proc.get("name");
 
-            if (KEY.equals("sh")) { processCommand("exit", false); } 
-            else if (pid.equals(trace.get(KEY))) { trace.remove(KEY); break; }
-        } 
-
+            if (app.equals(name)) {
+                kill(KEY, false);
+            }
+        }
         return 0;
     }
 
@@ -1103,7 +1134,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void run() {
-            if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable."); return; }
+            if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
             start(service, port);
 
             while (trace.containsKey(port)) {
@@ -1285,7 +1316,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void run() {
             if (TYPE == NC) {
                 try {
-                    while (trace.containsKey("remote")) {
+                    while (getprocess("remote") != null) {
                         if (IN.available() > 0) {
                             byte[] BUFFER = new byte[IN.available()];
                             int LENGTH = IN.read(BUFFER);
@@ -1298,7 +1329,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int port = start; port <= 65535; port++) {
                     try {
                         list.setTicker(new Ticker("Scanning port " + port + "..."));
-                        if (!trace.containsKey("prscan")) { break; }
+                        if (getprocess("prscan") == null) { break; }
                         
                         Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
                         list.append("" + port, null);
@@ -1309,7 +1340,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list.setTicker(new Ticker("Searching..."));
                 for (int i = 0; i < wordlist.length; i++) {
                     String path = wordlist[i].trim();
-                    if (!trace.containsKey("gobuster")) { break; }
+                    if (getprocess("gobuster") == null) { break; }
+
                     if (!path.equals("") && !path.startsWith("#")) {
                         String fullUrl = address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path;
                         try {
@@ -1945,6 +1977,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (script == null || script.length() == 0) { return 2; }
 
         Hashtable PKG = parseProperties(getcontent(script));
+        String PID = String.valueOf(1000 + random.nextInt(9000));
         // |
         // Verify current API version
         if (PKG.containsKey("api.version")) {
@@ -1970,12 +2003,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Start and handle APP process
         if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name")); }
-        if (PKG.containsKey("process.type")) { String TYPE = (String) PKG.get("process.type"); if (TYPE.equals("server")) { } else if (TYPE.equals("bind")) { new Server("bind", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.db")), root); } else { MIDletLogs("add warn '" + TYPE.toUpperCase() + "' is a invalid value for 'process.type'"); } }
-        if (PKG.containsKey("process.host") && PKG.containsKey("process.port")) { new Server("server", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host")), root); }
+        if (PKG.containsKey("process.exit")) {
+            collectors.put((String) PKG.get("process.exit"))            
+        }
+        if (PKG.containsKey("process.type")) { 
+            String TYPE = (String) PKG.get("process.type"); 
+
+            if (TYPE.equals("server")) { 
+
+            } 
+            else if (TYPE.equals("bind")) { 
+                new Server("bind", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.db")), root); 
+            } 
+            else { MIDletLogs("add warn '" + TYPE.toUpperCase() + "' is a invalid value for 'process.type'"); } 
+        }
+        if (PKG.containsKey("process.host") && PKG.containsKey("process.port")) { 
+            new Server("server", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host")), root); 
+        }
+        if (PKG.containsKey("process.type"))
         // |
         // Start Application
         if (PKG.containsKey("config")) { int STATUS = processCommand((String) PKG.get("config"), true, root); if (STATUS != 0) { return STATUS; } }
-        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String PROCESS = (String) PKG.get("process.name"), MOD = (String) PKG.get("mod"); final boolean ROOT = root; new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PROCESS)) { int STATUS = processCommand(MOD, true, ROOT); if (STATUS != 0) { return; } } } }.start(); }
+        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { 
+            final String PROCESS = (String) PKG.get("process.name"), MOD = (String) PKG.get("mod"); 
+            final boolean ROOT = root; 
+
+            new Thread("MIDlet-Mod") { 
+                public void run() { 
+                    while (getprocess(PROCESS) != null) { 
+                        int STATUS = processCommand(MOD, true, ROOT); 
+
+                        if (STATUS != 0) { return; } 
+                    } 
+                } 
+            }.start(); 
+        }
         // |
         // Generate items - Command & Files
         if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(commands[i]))); } else { MIDletLogs("add error Failed to create command '" + commands[i] + "' content not found"); } } }
