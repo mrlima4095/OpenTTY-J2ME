@@ -283,7 +283,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("who")) { 
             echoCommand("PORT\tADDRESS"); 
             for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { 
-                String PORT = (String) KEYS.nextElement(), ADDR = (String) trace.get(PORT); 
+                String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); 
                 echoCommand(PORT + "\t" + ADDR); 
             } 
         }
