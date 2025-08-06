@@ -1045,7 +1045,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements()) { 
                 String KEY = (String) KEYS.nextElement(); 
 
-                if (KEY.equals(EXPR)) { CONDITION } 
+                if (KEY.equals(EXPR)) { CONDITION =  } 
                 else if (pid.equals(trace.get(KEY))) { trace.remove(KEY); break; }
             } 
         } 
@@ -1093,6 +1093,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
+    private boolean isRunning(String app) {
+        for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements()) { 
+            String KEY = (String) KEYS.nextElement(); 
+
+            else if (pid.equals(trace.get(KEY))) { return true; }
+        } 
+        return false;
+    }
 
     // API 008 - (Logic I/O) Text
     // |
@@ -1126,7 +1134,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void run() {
-            if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavaliable."); return; }
+            if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable."); return; }
             start(service, port);
 
             while (trace.containsKey(port)) {
