@@ -43,6 +43,8 @@ LTS Edition
 - Command `prscan` new button **Save Logs** to load recognized ports in nano
 - New X11 command `unset` to remove a saved screen
 - Command `who` show where IP Addresses is connected
+- Service `bind` and `server` process ID changed to it respective port
+
 
 [ _Notes_ ]
 
