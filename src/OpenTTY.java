@@ -1113,13 +1113,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
 
                     } catch (IOException e) { echoCommand("[-] " + getCatch(e)); stop(service); } 
-                    finally {
+                    
                         try {
                             if (clientSocket != null) { clientSocket.close(); }
                             if (is != null) { is.close(); }
                             if (os != null) { os.close(); }
                         } catch (IOException e) { }
-                    }
+                    
                 }
 
                 echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped");
