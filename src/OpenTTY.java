@@ -1148,8 +1148,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        echoCommand("[-] Service stopped");
-        MIDletLogs("add info Service was stopped");
+        echoCommand("[-] Server stopped");
+        MIDletLogs("add info Server was stopped");
     }
 }
 
