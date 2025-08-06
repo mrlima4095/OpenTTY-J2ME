@@ -1072,10 +1072,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 while (trace.containsKey(TYPE == SERVER ? "server" : "bind")) {
                     SocketConnection clientSocket = null;
                     InputStream is = null; OutputStream os = null;
+                    String address = "127.0.0.2";
 
                     try {
                         clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
-                        String address = clientSocket.getAddress();
+                        address = clientSocket.getAddress();
                         echoCommand("[+] " + address + " connected");
 
                         is = clientSocket.openInputStream(); os = clientSocket.openOutputStream();
@@ -1095,7 +1096,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             while (trace.containsKey("bind")) {
                                 byte[] buffer = new byte[4096];
                                 int bytesRead = is.read(buffer);
-                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); stop("bind"); }
+                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); stop("bind"); sessions.removeElement(address) }
 
                                 String PAYLOAD = new String(buffer, 0, bytesRead).trim();
                                 echoCommand("[+] " + address + " -> " + env(PAYLOAD));
