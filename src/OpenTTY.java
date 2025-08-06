@@ -170,7 +170,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Long executors
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, root); }
-        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (trace.containsKey("bruteforce")) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
+        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (getprocess("bruteforce") != null) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, root); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { echoCommand(getCatch(e)); return 2; } } }
         else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore, root); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } } 
@@ -193,11 +193,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), PID = (String) trace.get(KEY); echoCommand(PID + "\t" + KEY); } }
         else if (mainCommand.equals("trace")) { 
             if (argument.equals("")) { } 
-            else if (getCommand(argument).equals("pid")) { echoCommand(trace.containsKey(getArgument(argument)) ? (String) trace.get(getArgument(argument)) : "null"); } 
-            else if (getCommand(argument).equals("check")) { echoCommand(trace.containsKey(getArgument(argument)) ? "true" : "false"); } 
+            else if (getCommand(argument).equals("pid")) { echoCommand(getprocess(getArgument(argument))); } 
+            else if (getCommand(argument).equals("check")) { echoCommand(getprocess(getArgument(argument)) != null ? "true" : "false"); } 
             else { echoCommand("trace: " + getCommand(argument) + ": not found"); return 127; } 
         }
-
         // API 007 - (Bundle)
         // |
         // Properties
@@ -284,13 +283,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
-        else if (mainCommand.equals("who")) { 
-            echoCommand("PORT\tADDRESS"); 
-            for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { 
-                String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); 
-                echoCommand(PORT + "\t" + ADDR); 
-            } 
-        }
+        else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) trace.get(PORT); echoCommand(PORT + "\t" + ADDR); } }
+        
         
         // |
         // IP Tools
@@ -627,6 +621,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
+    private String getprocess(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements()) { String KEY = (String) KEYS.nextElement(); if (name.equals(trace.get(KEY))) { return KEY; } } return null; }
 
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(content.substring(start, i)); } start = i + 1; } } if (start < content.length()) { args.addElement(content.substring(start)); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
@@ -668,20 +663,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
         // |
         // Screen Manager
-        else if (mainCommand.equals("set")) { 
-            if (argument.equals("")) { } 
-            else { desktops.put(argument, display.getCurrent()); } 
-        }
-        else if (mainCommand.equals("load")) { 
-            if (argument.equals("")) { } 
-            else if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } 
-            else { echoCommand("x11: load: " + argument + ": not found"); return 127; } 
-        }
-        else if (mainCommand.equals("unset")) { 
-            if (argument.equals("")) { } 
-            else if (desktops.containsKey(argument)) { desktops.remove(argument); } 
-            else { echoCommand("x11: unset: " + argument + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
+        else if (mainCommand.equals("load")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { desktops.remove(argument); } else { echoCommand("x11: unset: " + argument + ": not found"); return 127; } }
         // |
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
@@ -1041,14 +1025,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("screen")) { CONDITION = desktops.containsKey(EXPR); } 
         else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } 
         else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } 
-        else if (METHOD.equals("trace")) { CONDITION = trace.containsKey(EXPR); 
-            for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements()) { 
-                String KEY = (String) KEYS.nextElement(); 
-
-                if (KEY.equals(EXPR)) { CONDITION =  } 
-                else if (pid.equals(trace.get(KEY))) { trace.remove(KEY); break; }
-            } 
-        } 
+        else if (METHOD.equals("trace")) { CONDITION = getprocess(EXPR) != null ? true : false; } 
         else if (METHOD.equals("passwd")) { CONDITION = String.valueOf(EXPR.hashCode()).equals(passwd(false, null)); } 
         else if (METHOD.equals("user")) { CONDITION = username.equals(EXPR); if (EXPR.equals("root") && root == true) { CONDITION = true; } root = true; } 
 
@@ -1092,14 +1069,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
 
         return 0;
-    }
-    private boolean isRunning(String app) {
-        for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements()) { 
-            String KEY = (String) KEYS.nextElement(); 
-
-            else if (pid.equals(trace.get(KEY))) { return true; }
-        } 
-        return false;
     }
 
     // API 008 - (Logic I/O) Text
