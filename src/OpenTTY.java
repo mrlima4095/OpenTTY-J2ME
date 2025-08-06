@@ -1039,120 +1039,119 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Servers
     public class Server implements Runnable {
-    private static final int SERVER = 1, BIND = 2;
-    private int TYPE = 0;
+        private static final int SERVER = 1, BIND = 2;
+        private int TYPE = 0;
 
-    private boolean root;
-    private String port, mod, service;
+        private boolean root;
+        private String port, mod, service;
 
-    public Server(String mode, String args, boolean PERM) {
-        if (args == null || args.length() == 0 || args.equals("$PORT")) {
-            processCommand("set PORT=31522", false);
-            new Server(mode, "31522", PERM);
-            return;
+        public Server(String mode, String args, boolean PERM) {
+            if (args == null || args.length() == 0 || args.equals("$PORT")) {
+                processCommand("set PORT=31522", false);
+                new Server(mode, "31522", PERM);
+                return;
+            }
+
+            TYPE = (mode == null || mode.equals("bind")) ? BIND : SERVER;
+            service = TYPE == SERVER ? "server" : "bind";
+            port = getCommand(args);
+            mod = getArgument(args);
+            mod = mod.equals("") && TYPE == SERVER ? env("$RESPONSE") : mod;
+            root = PERM;
+
+            new Thread(this, TYPE == BIND ? "Bind" : "Server").start();
         }
 
-        TYPE = (mode == null || mode.equals("bind")) ? BIND : SERVER;
-        service = TYPE == SERVER ? "server" : "bind";
-        port = getCommand(args);
-        mod = getArgument(args);
-        mod = mod.equals("") && TYPE == SERVER ? env("$RESPONSE") : mod;
-        root = PERM;
+        public void run() {
+            start(service);
+            echoCommand("[+] Starting service on port " + port);
+            MIDletLogs("add info Service started on port " + port);
 
-        new Thread(this, TYPE == BIND ? "Bind" : "Server").start();
-    }
+            while (trace.containsKey(service)) {
+                ServerSocketConnection serverSocket = null;
+                SocketConnection clientSocket = null;
+                InputStream is = null;
+                OutputStream os = null;
 
-    public void run() {
-        start(service);
-        echoCommand("[+] Starting service on port " + port);
-        MIDletLogs("add info Service started on port " + port);
+                try {
+                    // Abre o socket do servidor
+                    serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
+                    echoCommand("[+] Listening at port " + port);
 
-        while (trace.containsKey(service)) {
-            ServerSocketConnection serverSocket = null;
-            SocketConnection clientSocket = null;
-            InputStream is = null;
-            OutputStream os = null;
+                    // Aguarda cliente conectar
+                    clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
+                    String address = clientSocket.getAddress();
+                    echoCommand("[+] " + address + " connected");
 
-            try {
-                // Abre o socket do servidor
-                serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
-                echoCommand("[+] Listening at port " + port);
+                    // Abre streams
+                    is = clientSocket.openInputStream();
+                    os = clientSocket.openOutputStream();
 
-                // Aguarda cliente conectar
-                clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
-                String address = clientSocket.getAddress();
-                echoCommand("[+] " + address + " connected");
-
-                // Abre streams
-                is = clientSocket.openInputStream();
-                os = clientSocket.openOutputStream();
-
-                if (TYPE == SERVER) {
-                    byte[] buffer = new byte[4096];
-                    int bytesRead = is.read(buffer);
-
-                    if (bytesRead == -1) {
-                        echoCommand("[-] " + address + " disconnected");
-                    } else {
-                        String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                        echoCommand("[+] " + address + " -> " + env(PAYLOAD));
-                        os.write(getcontent(mod).getBytes());
-                        os.flush();
-                    }
-                } else if (TYPE == BIND) {
-                    sessions.addElement(address);
-                    while (trace.containsKey("bind")) {
+                    if (TYPE == SERVER) {
                         byte[] buffer = new byte[4096];
                         int bytesRead = is.read(buffer);
 
                         if (bytesRead == -1) {
                             echoCommand("[-] " + address + " disconnected");
-                            sessions.removeElement(address);
-                            break;
+                        } else {
+                            String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                            echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+                            os.write(getcontent(mod).getBytes());
+                            os.flush();
                         }
+                    } else if (TYPE == BIND) {
+                        sessions.addElement(address);
+                        while (trace.containsKey("bind")) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead = is.read(buffer);
 
-                        String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                        echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+                            if (bytesRead == -1) {
+                                echoCommand("[-] " + address + " disconnected");
+                                sessions.removeElement(address);
+                                break;
+                            }
 
-                        String command = (mod == null || mod.length() == 0 || mod.equals("null")) ? PAYLOAD : mod + " " + PAYLOAD;
+                            String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                            echoCommand("[+] " + address + " -> " + env(PAYLOAD));
 
-                        String beforeCommand = stdout != null ? stdout.getText() : "";
-                        processCommand(command, true, root);
-                        String afterCommand = stdout != null ? stdout.getText() : "";
+                            String command = (mod == null || mod.length() == 0 || mod.equals("null")) ? PAYLOAD : mod + " " + PAYLOAD;
 
-                        String output = afterCommand.length() >= beforeCommand.length()
-                                ? afterCommand.substring(beforeCommand.length()).trim() + "\n"
-                                : "\n";
+                            String beforeCommand = stdout != null ? stdout.getText() : "";
+                            processCommand(command, true, root);
+                            String afterCommand = stdout != null ? stdout.getText() : "";
 
-                        os.write(output.getBytes());
-                        os.flush();
+                            String output = afterCommand.length() >= beforeCommand.length()
+                                    ? afterCommand.substring(beforeCommand.length()).trim() + "\n"
+                                    : "\n";
+
+                            os.write(output.getBytes());
+                            os.flush();
+                        }
                     }
+
+                } catch (IOException e) {
+                    echoCommand("[-] Error: " + getCatch(e));
+                } finally {
+                    // Fecha tudo do cliente
+                    try {
+                        if (is != null) is.close();
+                        if (os != null) os.close();
+                        if (clientSocket != null) clientSocket.close();
+                    } catch (IOException e) { }
+
+                    // Fecha o socket do servidor antes de reabrir
+                    try {
+                        if (serverSocket != null) serverSocket.close();
+                    } catch (IOException e) { }
+
+                    echoCommand("[*] Waiting for next connection...");
                 }
-
-            } catch (IOException e) {
-                echoCommand("[-] Error: " + getCatch(e));
-            } finally {
-                // Fecha tudo do cliente
-                try {
-                    if (is != null) is.close();
-                    if (os != null) os.close();
-                    if (clientSocket != null) clientSocket.close();
-                } catch (IOException e) { }
-
-                // Fecha o socket do servidor antes de reabrir
-                try {
-                    if (serverSocket != null) serverSocket.close();
-                } catch (IOException e) { }
-
-                echoCommand("[*] Waiting for next connection...");
             }
+
+            echoCommand("[-] Server stopped");
+            MIDletLogs("add info Server was stopped");
         }
-
-        echoCommand("[-] Server stopped");
-        MIDletLogs("add info Server was stopped");
     }
-}
-
     // |
     // HTTP Interfaces
     private String request(String url, Hashtable headers) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); if (headers != null) { Enumeration keys = headers.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) headers.get(key); conn.setRequestProperty(key, value); } } InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return getCatch(e); } }
