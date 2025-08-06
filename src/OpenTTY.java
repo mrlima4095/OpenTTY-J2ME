@@ -1106,8 +1106,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                             if (bytesRead == -1) {
                                 echoCommand("[-] " + address + " disconnected");
-                                sessions.remove(port);
-                                break;
+                                sessions.remove(port); break;
                             }
 
                             String PAYLOAD = new String(buffer, 0, bytesRead).trim();
