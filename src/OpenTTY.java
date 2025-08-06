@@ -1096,7 +1096,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else {
                             String PAYLOAD = new String(buffer, 0, bytesRead).trim();
                             echoCommand("[+] " + address + " -> " + env(PAYLOAD));
-                            os.write(getconten(mod).getBytes());
+                            os.write(getcontent(mod).getBytes());
                             os.flush();
                         }
                     } else if (TYPE == BIND) {
