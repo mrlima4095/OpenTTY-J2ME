@@ -1074,16 +1074,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 OutputStream os = null;
 
                 try {
-                    // Abre o socket do servidor
                     serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
                     echoCommand("[+] Listening at port " + port);
 
-                    // Aguarda cliente conectar
                     clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
                     String address = clientSocket.getAddress();
                     echoCommand("[+] " + address + " connected");
 
-                    // Abre streams
                     is = clientSocket.openInputStream();
                     os = clientSocket.openOutputStream();
 
@@ -1091,9 +1088,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         byte[] buffer = new byte[4096];
                         int bytesRead = is.read(buffer);
 
-                        if (bytesRead == -1) {
-                            echoCommand("[-] " + address + " disconnected");
-                        } else {
+                        if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); } 
+                        else {
                             String PAYLOAD = new String(buffer, 0, bytesRead).trim();
                             echoCommand("[+] " + address + " -> " + env(PAYLOAD));
                             os.write(getcontent(mod).getBytes());
@@ -1132,7 +1128,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (IOException e) {
                     echoCommand("[-] Error: " + getCatch(e));
                 } finally {
-                    // Fecha tudo do cliente
                     try {
                         if (is != null) is.close();
                         if (os != null) os.close();
