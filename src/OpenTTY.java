@@ -1091,6 +1091,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 os.flush();
                             }
                         } else if (TYPE == BIND) {
+                            sessions.addElement(address);
                             while (trace.containsKey("bind")) {
                                 byte[] buffer = new byte[4096];
                                 int bytesRead = is.read(buffer);
@@ -1114,11 +1115,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     } catch (IOException e) { echoCommand("[-] " + getCatch(e)); stop(service); } 
                     
-                        try {
-                            if (clientSocket != null) { clientSocket.close(); }
-                            if (is != null) { is.close(); }
-                            if (os != null) { os.close(); }
-                        } catch (IOException e) { }
+                    try {
+                        if (clientSocket != null) { clientSocket.close(); }
+                        if (is != null) { is.close(); }
+                        if (os != null) { os.close(); }
+                    } catch (IOException e) { }
                     
                 }
 
@@ -1287,6 +1288,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try {
                 HttpConnection CONN = (HttpConnection) Connector.open(fullUrl);
                 CONN.setRequestMethod(HttpConnection.GET); 
+                
                 return CONN.getResponseCode();
             } finally { if (CONN != null) CONN.close(); }
         }
