@@ -1114,8 +1114,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                     ? afterCommand.substring(beforeCommand.length()).trim() + "\n"
                                     : "\n";
 
-                            os.write(output.getBytes());
-                            os.flush();
+                            os.write(output.getBytes()); os.flush();
                         }
                     }
 
