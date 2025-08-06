@@ -66,7 +66,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (username.equals("root")) { root = true; }
 
-//for (int i = 0; i < args.length; i++) 
         if (mainCommand.equals("")) { }
 
         // API 001 - (Registry)
