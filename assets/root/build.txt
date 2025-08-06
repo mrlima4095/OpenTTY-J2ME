@@ -103,3 +103,4 @@
 [2025-1.16-02x36]	Chmod sockets addresses
 [2025-1.16-02x37]	Shell multiple args
 [2025-1.16-02x38]	Added X11 deleting screens support
+[2025-1.16-02x39]	Command 'who' show where IP Addresses is connected
