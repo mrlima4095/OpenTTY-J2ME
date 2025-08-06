@@ -1096,7 +1096,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             while (trace.containsKey("bind")) {
                                 byte[] buffer = new byte[4096];
                                 int bytesRead = is.read(buffer);
-                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); stop("bind"); sessions.removeElement(address) }
+                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); stop("bind"); sessions.removeElement(address); }
 
                                 String PAYLOAD = new String(buffer, 0, bytesRead).trim();
                                 echoCommand("[+] " + address + " -> " + env(PAYLOAD));
