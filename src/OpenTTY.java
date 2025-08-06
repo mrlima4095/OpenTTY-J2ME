@@ -1039,102 +1039,121 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Servers
     public class Server implements Runnable {
-        private static final int SERVER = 1, BIND = 2;
-        private int TYPE = 0;
+    private static final int SERVER = 1, BIND = 2;
+    private int TYPE = 0;
 
-        private boolean root;
-        private String port, mod, service;
-        private ServerSocketConnection serverSocket = null;
+    private boolean root;
+    private String port, mod, service;
+    private ServerSocketConnection serverSocket = null;
 
-        public Server(String mode, String args, boolean PERM) {
-            if (args == null || args.length() == 0 || args.equals("$PORT")) {
-                processCommand("set PORT=31522", false);
-                new Server(mode, "31522", PERM);
-                return;
-            }
-
-            TYPE = (mode == null || mode.equals("bind")) ? BIND : SERVER;
-            service = TYPE == SERVER ? "server" : "bind";
-            port = getCommand(args);
-            mod = getArgument(args);
-            mod = mod.equals("") && TYPE == SERVER ? env("$RESPONSE") : mod;
-            root = PERM;
-
-            new Thread(this, TYPE == BIND ? "Bind" : "Server").start();
+    public Server(String mode, String args, boolean PERM) {
+        if (args == null || args.length() == 0 || args.equals("$PORT")) {
+            processCommand("set PORT=31522", false);
+            new Server(mode, "31522", PERM);
+            return;
         }
 
-        public void run() {
-            try {
-                serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
-                echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port);
-                start(service);
+        TYPE = (mode == null || mode.equals("bind")) ? BIND : SERVER;
+        service = TYPE == SERVER ? "server" : "bind";
+        port = getCommand(args);
+        mod = getArgument(args);
+        mod = mod.equals("") && TYPE == SERVER ? env("$RESPONSE") : mod;
+        root = PERM;
 
-                while (trace.containsKey(TYPE == SERVER ? "server" : "bind")) {
-                    SocketConnection clientSocket = null;
-                    InputStream is = null; OutputStream os = null;
-                    String address = "127.0.0.2";
+        new Thread(this, TYPE == BIND ? "Bind" : "Server").start();
+    }
 
-                    try {
-                        clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
-                        address = clientSocket.getAddress();
-                        echoCommand("[+] " + address + " connected");
+    public void run() {
+        try {
+            serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
+            echoCommand("[+] listening at port " + port);
+            MIDletLogs("add info Server listening at port " + port);
+            start(service);
 
-                        is = clientSocket.openInputStream(); os = clientSocket.openOutputStream();
+            while (trace.containsKey(service)) {
+                SocketConnection clientSocket = null;
+                InputStream is = null;
+                OutputStream os = null;
+                String address = "unknown";
 
-                        if (TYPE == SERVER) {
-                            byte[] buffer = new byte[4096];
-                            int bytesRead = is.read(buffer);
-                            if (bytesRead != -1) {
-                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                                echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+                try {
+                    clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
+                    address = clientSocket.getAddress();
+                    echoCommand("[+] " + address + " connected");
 
-                                os.write(getcontent(mod).getBytes());
-                                os.flush();
-                            }
-                        } else if (TYPE == BIND) {
-                            sessions.addElement(address);
-                            while (trace.containsKey("bind")) {
-                                byte[] buffer = new byte[4096];
-                                int bytesRead = is.read(buffer);
-                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); sessions.removeElement(address); break; }
+                    is = clientSocket.openInputStream();
+                    os = clientSocket.openOutputStream();
 
-                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                                echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+                    if (TYPE == SERVER) {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead = is.read(buffer);
 
-                                String command = (mod == null || mod.length() == 0 || mod.equals("null")) ? PAYLOAD : mod + " " + PAYLOAD; 
-
-                                String beforeCommand = stdout != null ? stdout.getText() : "";
-                                processCommand(command, true, root); 
-                                String afterCommand = stdout != null ? stdout.getText() : "";
-
-                                String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n";
-
-                                os.write(output.getBytes());
-                                os.flush();
-                            }
+                        if (bytesRead == -1) {
+                            echoCommand("[-] " + address + " disconnected");
+                            continue; // volta para aceitar outro cliente
                         }
 
-                    } catch (IOException e) { echoCommand("[-] " + getCatch(e)); } 
-                    
-                    try {
-                        if (clientSocket != null) { clientSocket.close(); }
-                        if (is != null) { is.close(); }
-                        if (os != null) { os.close(); }
-                    } catch (IOException e) { echoCommand("[-] " + getCatch(e)); stop(service); } 
-                    
-                }
+                        String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                        echoCommand("[+] " + address + " -> " + env(PAYLOAD));
 
-                echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped");
-            } catch (IOException e) {
-                echoCommand("[-] " + getCatch(e));
-                MIDletLogs("add error Server crashed '" + getCatch(e) + "'");
+                        os.write(getcontent(mod).getBytes());
+                        os.flush();
+                    } else if (TYPE == BIND) {
+                        sessions.addElement(address);
+                        while (trace.containsKey("bind")) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead = is.read(buffer);
+
+                            if (bytesRead == -1) {
+                                echoCommand("[-] " + address + " disconnected");
+                                sessions.removeElement(address);
+                                break; // sai do loop do BIND, mas volta para aceitar outro cliente
+                            }
+
+                            String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                            echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+
+                            String command = (mod == null || mod.length() == 0 || mod.equals("null")) ? PAYLOAD : mod + " " + PAYLOAD;
+
+                            String beforeCommand = stdout != null ? stdout.getText() : "";
+                            processCommand(command, true, root);
+                            String afterCommand = stdout != null ? stdout.getText() : "";
+
+                            String output = afterCommand.length() >= beforeCommand.length()
+                                    ? afterCommand.substring(beforeCommand.length()).trim() + "\n"
+                                    : "\n";
+
+                            os.write(output.getBytes());
+                            os.flush();
+                        }
+                    }
+
+                } catch (IOException e) {
+                    echoCommand("[-] Client error: " + getCatch(e));
+                } finally {
+                    try {
+                        if (is != null) is.close();
+                        if (os != null) os.close();
+                        if (clientSocket != null) clientSocket.close();
+                    } catch (IOException e) {
+                        echoCommand("[-] " + getCatch(e));
+                    }
+                }
             }
 
+            echoCommand("[-] Server stopped");
+            MIDletLogs("add info Server was stopped");
+
+        } catch (IOException e) {
+            echoCommand("[-] " + getCatch(e));
+            MIDletLogs("add error Server crashed '" + getCatch(e) + "'");
+        } finally {
             try {
                 if (serverSocket != null) serverSocket.close();
             } catch (IOException e) { }
         }
     }
+}
 
     // |
     // HTTP Interfaces
