@@ -1072,10 +1072,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             start(service);
 
             while (trace.containsKey(service)) {
-                ServerSocketConnection serverSocket = null;
-                SocketConnection clientSocket = null;
-                InputStream is = null;
-                OutputStream os = null;
+                ServerSocketConnection serverSocket = null; SocketConnection clientSocket = null;
+                InputStream is = null; OutputStream os = null;
 
                 try {
                     serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); 
