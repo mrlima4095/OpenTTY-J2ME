@@ -1126,6 +1126,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void run() {
+            if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavaliable."); return; }
             start(service, port);
 
             while (trace.containsKey(port)) {
@@ -1134,7 +1135,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); 
-                    if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port"); COUNT++; }
+                    if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port " + port); COUNT++; }
 
                     clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
                     String address = clientSocket.getAddress();
