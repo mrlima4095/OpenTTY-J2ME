@@ -1139,10 +1139,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (clientSocket != null) clientSocket.close();
                     } catch (IOException e) { }
 
-                    // Fecha o socket do servidor antes de reabrir
-                    try {
-                        if (serverSocket != null) serverSocket.close();
-                    } catch (IOException e) { }
+                    try { if (serverSocket != null) serverSocket.close(); } catch (IOException e) { }
 
                     echoCommand("[*] Waiting for next connection...");
                 }
