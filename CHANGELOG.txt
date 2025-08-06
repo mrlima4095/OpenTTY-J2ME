@@ -42,6 +42,7 @@ LTS Edition
 - Command `nc` button **Show info** changed to **View info**
 - Command `prscan` new button **Save Logs** to load recognized ports in nano
 - New X11 command `unset` to remove a saved screen
+- Command `who` show where IP Addresses is connected
 
 [ _Notes_ ]
 
