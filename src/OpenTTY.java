@@ -17,10 +17,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), 
-                      paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable();
-    private Vector stack = new Vector(), history = new Vector(), sessions = new Vector();
+                      paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable();
+    private Vector stack = new Vector(), history = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x38"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x39"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -280,7 +280,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
-        else if (mainCommand.equals("who")) { StringBuffer SESSIONS = new StringBuffer(); for (int i = 0; i < sessions.size(); i++) { SESSIONS.append((String) sessions.elementAt(i)).append("\n"); } echoCommand(SESSIONS.toString().trim()); }
+        else if (mainCommand.equals("ps")) { 
+            echoCommand("PORT\tADDRESS"); 
+            for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { 
+                String PORT = (String) KEYS.nextElement(), ADDR = (String) trace.get(KEY); 
+                echoCommand(PORT + "\t" + ADDR); 
+            } 
+        }
+        
         // |
         // IP Tools
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
@@ -1040,7 +1047,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Servers
     public class Server implements Runnable {
         private static final int SERVER = 1, BIND = 2;
-        private int TYPE = 0;
+        private int TYPE = 0, COUNT = 1;
 
         private boolean root;
         private String port, mod, service;
@@ -1064,8 +1071,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void run() {
             start(service);
-            echoCommand("[+] Starting service on port " + port);
-            MIDletLogs("add info Service started on port " + port);
 
             while (trace.containsKey(service)) {
                 ServerSocketConnection serverSocket = null;
@@ -1074,15 +1079,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 OutputStream os = null;
 
                 try {
-                    serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port);
-                    echoCommand("[+] Listening at port " + port);
+                    serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); 
+                    if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port"); COUNT++; }
 
                     clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
                     String address = clientSocket.getAddress();
                     echoCommand("[+] " + address + " connected");
 
-                    is = clientSocket.openInputStream();
-                    os = clientSocket.openOutputStream();
+                    is = clientSocket.openInputStos = clientSocket.openOutputStream();
 
                     if (TYPE == SERVER) {
                         byte[] buffer = new byte[4096];
@@ -1092,18 +1096,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else {
                             String PAYLOAD = new String(buffer, 0, bytesRead).trim();
                             echoCommand("[+] " + address + " -> " + env(PAYLOAD));
-                            os.write(getcontent(mod).getBytes());
+                            os.write(getconten(mod).getBytes());
                             os.flush();
                         }
                     } else if (TYPE == BIND) {
-                        sessions.addElement(address);
+                        sessions.put(port, address);
                         while (trace.containsKey("bind")) {
                             byte[] buffer = new byte[4096];
                             int bytesRead = is.read(buffer);
 
                             if (bytesRead == -1) {
                                 echoCommand("[-] " + address + " disconnected");
-                                sessions.removeElement(address);
+                                sessions.remote(port);
                                 break;
                             }
 
@@ -1126,22 +1130,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
 
                 } catch (IOException e) {
-                    echoCommand("[-] Error: " + getCatch(e));
+                    echoCommand("[-] " + getCatch(e));
                 } finally {
                     try {
-                        if (is != null) is.close();
-                        if (os != null) os.close();
-                        if (clientSocket != null) clientSocket.close();
+                        if (is != null) { is.close(); } if (os != null) { os.close(); }
+                        if (clientSocket != null) { clientSocket.close(); }
                     } catch (IOException e) { }
 
                     try { if (serverSocket != null) serverSocket.close(); } catch (IOException e) { }
-
-                    echoCommand("[*] Waiting for next connection...");
                 }
             }
 
-            echoCommand("[-] Server stopped");
-            MIDletLogs("add info Server was stopped");
+            echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped");
         }
     }
     // |
