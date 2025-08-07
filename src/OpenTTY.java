@@ -338,7 +338,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                     CONN.close(); 
                 } 
-                else if (PWD.equals("/home/") && argument.indexOf("-v") != -1) { 
+                else if (PWD.equals("/home/")) { 
                     String[] FILES = RecordStore.listRecordStores(); 
                     if (FILES != null) { 
                         for (int i = 0; i < FILES.length; i++) { 
