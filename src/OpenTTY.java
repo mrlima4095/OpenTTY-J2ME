@@ -192,7 +192,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (mainCommand.equals("start")) { start(args[i]); } else if (mainCommand.equals("stop")) { stop(args[i]); } else { kill(args[i], root); }
             }
         } 
-        else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), PID = (String) trace.get(KEY); echoCommand(PID + "\t" + KEY); } }
+        else if (mainCommand.equals("ps")) {
+    echoCommand("PID\tPROCESS");
+    for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
+        String PID = (String) KEYS.nextElement();
+        Hashtable proc = (Hashtable) trace.get(PID);
+        String name = (String) proc.get("name");
+        echoCommand(PID + "\t" + name);
+    }
+}
         else if (mainCommand.equals("trace")) { 
             if (argument.equals("")) { } 
             else if (getCommand(argument).equals("pid")) { echoCommand(getprocess(getArgument(argument))); } 
@@ -1082,7 +1090,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             collector = "exit";
             sessions.put(pid, "127.0.0.1");
         }
-        else if (trace.containsKey(pid)) { return start(app); }
+        else if (trace.containsKey(pid)) { return start(app, String.valueOf(1000 + random.nextInt(9000)), collector); }
 
         Hashtable proc = new Hashtable();
         proc.put("name", app);
