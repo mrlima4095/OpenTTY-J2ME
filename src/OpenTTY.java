@@ -1150,7 +1150,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (app.equals("sh")) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
         
         if (pid == null || pid.length() == 0) { pid = genpid(); } 
-        if (trace.containsKey(pid)) { return start(app, null, collector, root); }
+        if (trace.containsKey(pid)) { return app.equals("sh") ? 1 : start(app, null, collector, root); }
 
         Hashtable proc = new Hashtable();
         proc.put("name", app);
