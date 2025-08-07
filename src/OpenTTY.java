@@ -189,7 +189,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Process
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { 
             for (int i = 0; i < args.length; i++) {
-                int STATUS = mainCommand.equals("start") ? start(args[i], null, null, root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root);
+                int STATUS = mainCommand.equals("start") ? start(args[i], null, root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root);
             }
         } 
         else if (mainCommand.equals("ps")) {
