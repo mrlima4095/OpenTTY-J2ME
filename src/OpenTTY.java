@@ -1380,7 +1380,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     nanoContent = BUFFER.toString().trim(); 
                     new NanoEditor("");
                 }
-                stop(TYPE == PRSCAN ? "prscan" : "gobuster"); 
+                stop(TYPE == PRSCAN ? "prscan" : "gobuster", false); 
             }
         }
 
