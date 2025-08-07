@@ -44,7 +44,7 @@ LTS Edition
 - New X11 command `unset` to remove a saved screen
 - Command `who` show where IP Addresses is connected
 - Service `bind` and `server` process ID changed to it respective port
-
+- Added support for new key `process.exit` that is trigged when process `process.name` is killed
 
 [ _Notes_ ]
 
