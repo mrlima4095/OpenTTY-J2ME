@@ -1080,12 +1080,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(monitor);
             } else if (args.equals("process")) {
                 TYPE = PROCESS; root = PERM;
-                load();
-                process.addCommand(BACK); process.addCommand(KILL);
-                
                 try { APP = Image.createImage("/java/etc/icons/exec.png"); } 
                 catch (IOException e) { } 
-                
+                load();
+                process.addCommand(BACK); process.addCommand(KILL);
                 process.setCommandListener(this);
                 display.setCurrent(process);
             } else {
