@@ -1121,17 +1121,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Process
-    private int kill(String pid, boolean root) {
+    private int kill(String pid, boolean print, boolean root) {
         if (pid == null || pid.length() == 0) { return 2; }
         else if (trace.containsKey(pid)) {
             Hashtable proc = (Hashtable) trace.get(pid);
             String name = (String) proc.get("name"), collector = (String) proc.get("collector");
 
             trace.remove(pid);
-            echoCommand("Process with PID " + pid + " terminated");
+            if (print) { echoCommand("Process with PID " + pid + " terminated"); }
 
             if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
-        } else { echoCommand("PID '" + pid + "' not found"); return 127; }
+        } else { if (print) { echoCommand("PID '" + pid + "' not found"); } return 127; }
 
         return 0;
     }
@@ -1157,9 +1157,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
             String KEY = (String) KEYS.nextElement();
             Hashtable proc = (Hashtable) trace.get(KEY);
-            String name = (String) proc.get("name");
+            String name = (String) proc.get("name"), collector = (String) proc.get("name");
 
-            if (app.equals(name)) { kill(KEY, root); }
+            if (app.equals(name)) { kill(KEY, false, root); }
         }
         return 0;
     }
