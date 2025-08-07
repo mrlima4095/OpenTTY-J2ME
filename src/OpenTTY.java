@@ -1136,7 +1136,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable proc = (Hashtable) trace.get(pid);
             String name = (String) proc.get("name"), collector = (String) proc.get("collector");
             
-            boolean owner = (String) proc.get("root");
+            boolean owner = (boolean) proc.get("root");
             if (owner == true && root == false) { if (print) { echoCommand("Permission denied!"); } return 13; }
 
             trace.remove(pid);
