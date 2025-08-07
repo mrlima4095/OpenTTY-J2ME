@@ -316,6 +316,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
+            boolean verbose = args[0].equals("-v"); if (verbose) { argument = argument.substring(3).trim(); }
             String PWD = argument.equals("") ? path : argument;
             if (!PWD.startsWith("/")) { PWD = path + PWD; } 
             if (!PWD.endsWith("/")) { PWD += "/"; } 
@@ -1157,8 +1158,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
             String KEY = (String) KEYS.nextElement();
             Hashtable proc = (Hashtable) trace.get(KEY);
-            String name = (String) proc.get("name"), collector = (String) proc.get("name");
-
+            String name = (String) proc.get("name");
+            
             if (app.equals(name)) { kill(KEY, false, root); }
         }
         return 0;
