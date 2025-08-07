@@ -193,14 +193,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         } 
         else if (mainCommand.equals("ps")) {
-    echoCommand("PID\tPROCESS");
-    for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
-        String PID = (String) KEYS.nextElement();
-        Hashtable proc = (Hashtable) trace.get(PID);
-        String name = (String) proc.get("name");
-        echoCommand(PID + "\t" + name);
-    }
-}
+            echoCommand("PID\tPROCESS");
+            for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
+                String PID = (String) KEYS.nextElement();
+                Hashtable proc = (Hashtable) trace.get(PID);
+                String name = (String) proc.get("name");
+                echoCommand(PID + "\t" + name);
+            }
+        }
         else if (mainCommand.equals("trace")) { 
             if (argument.equals("")) { } 
             else if (getCommand(argument).equals("pid")) { echoCommand(getprocess(getArgument(argument))); } 
@@ -635,7 +635,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable proc = (Hashtable) trace.get(KEY);
             String procName = (String) proc.get("name");
 
-            if (name.equals(procName)) { return KEY;  }
+            if (name.equals(procName)) { return KEY; }
         }
         return null;
     }
@@ -668,7 +668,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // X11 Loader
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
-        else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); xserver("font"); form.removeCommand(EXECUTE); }
+        else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); xserver("font"); stop("x11-server"); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd"); start("x11-server", "2", "x11 stop"); form.setCommandListener(this); }
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { xserver("init"); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
