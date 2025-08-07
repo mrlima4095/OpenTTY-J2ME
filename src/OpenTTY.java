@@ -635,9 +635,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable proc = (Hashtable) trace.get(KEY);
             String procName = (String) proc.get("name");
 
-            if (name.equals(procName)) {
-                return KEY; 
-            }
+            if (name.equals(procName)) { return KEY;  }
         }
         return null;
     }
