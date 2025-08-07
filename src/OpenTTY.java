@@ -641,6 +641,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         return null;
     }
+    
+    private String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
 
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(content.substring(start, i)); } start = i + 1; } } if (start < content.length()) { args.addElement(content.substring(start)); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
@@ -1149,7 +1151,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (app == null || app.length() == 0) { return 2; }
         else if (app.equals("sh")) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
         
-        if (pid == null || pid.length() == 0) { pid = String.valueOf(1000 + random.nextInt(9000)); } 
+        if (pid == null || pid.length() == 0) { pid = genpid(); } 
         if (trace.containsKey(pid)) { return start(app, null, collector, root); }
 
         Hashtable proc = new Hashtable();
