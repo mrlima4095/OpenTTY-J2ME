@@ -1143,7 +1143,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void run() {
             if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
-            start(service, port, root);
+            start(service, port, null);
 
             while (trace.containsKey(port)) {
                 ServerSocketConnection serverSocket = null; SocketConnection clientSocket = null;
