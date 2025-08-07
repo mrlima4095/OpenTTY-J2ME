@@ -1149,9 +1149,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (app == null || app.length() == 0) { return 2; }
         else if (app.equals("sh")) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
         
+        if (pid == null || pid.length() == 0) { pid = String.valueOf(1000 + random.nextInt(9000)); } 
         if (trace.containsKey(pid)) { return start(app, null, collector, root); }
-        
-        pid =  ? String.valueOf(1000 + random.nextInt(9000)) : pid;
 
         Hashtable proc = new Hashtable();
         proc.put("name", app);
