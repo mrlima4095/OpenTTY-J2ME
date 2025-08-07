@@ -1205,7 +1205,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void run() {
             if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
-            start(service, port, null, null);
+            start(service, port, null, root);
 
             while (trace.containsKey(port)) {
                 ServerSocketConnection serverSocket = null; SocketConnection clientSocket = null;
@@ -2069,7 +2069,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i], root); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start and handle APP process
-        if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), String.valueOf(1000 + random.nextInt(9000)), (String) PKG.get("process.exit")); }
+        if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), null, (String) PKG.get("process.exit"), root); }
         if (PKG.containsKey("process.type")) { 
             String TYPE = (String) PKG.get("process.type"), MOD = TYPE.equals("bind") ? (String) PKG.get("process.db") : (String) PKG.get("process.host"); 
 
