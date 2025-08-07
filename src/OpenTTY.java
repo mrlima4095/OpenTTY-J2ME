@@ -293,7 +293,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
-        else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) trace.get(PORT); echoCommand(PORT + "\t" + ADDR); } }
+        else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); echoCommand(PORT + "\t" + ADDR); } }
         
         
         // |
