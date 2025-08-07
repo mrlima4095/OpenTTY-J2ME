@@ -1065,9 +1065,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         KILL = new Command("Kill", Command.SCREEN, 2);
 
         private int TYPE = 0, MONITOR = 1, PROCESS = 2;
+        private boolean root = false;
         private Image APP = null;
 
-        public HTopViewer(String args) {
+        public HTopViewer(String args, boolean PERM) {
             if (args == null || args.length() == 0 || args.equals("memory")) {
                 TYPE = MONITOR;
                 monitor.append(status);
@@ -1077,15 +1078,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 monitor.setCommandListener(this);
                 display.setCurrent(monitor);
             } else if (args.equals("process")) {
-                TYPE = PROCESS;
+                TYPE = PROCESS; root = PERM;
                 load();
                 process.addCommand(BACK);
                 process.addCommand(KILL);
                 
-                try { 
-                    APP = Image.createImage("/java/etc/icons/exec.png"); 
-                    
-                } 
+                try { APP = Image.createImage("/java/etc/icons/exec.png"); } 
                 catch (IOException e) { } 
                 process.setCommandListener(this);
                 display.setCurrent(process);
@@ -1103,7 +1101,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else if (c == KILL) {
                 int index = process.getSelectedIndex();
                 if (index >= 0) {
-                    processCommand("kill " + split(process.getString(index), '\t')[0]);
+                    processCommand("kill " + split(process.getString(index), '\t')[0], false);
                     load();
                 }
             }
