@@ -1102,7 +1102,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else if (c == KILL) {
                 int index = process.getSelectedIndex();
                 if (index >= 0) {
-                    processCommand("kill " + split(process.getString(index), '\t')[0], false);
+                    int STATUS = kill(split(process.getString(index), '\t')[0], false, root);
                     load();
                 }
             }
