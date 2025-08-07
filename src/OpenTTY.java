@@ -172,7 +172,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Long executors
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, root); }
-        else if (mainCommand.equals("bruteforce")) { start("bruteforce"); while (getprocess("bruteforce") != null) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
+        else if (mainCommand.equals("bruteforce")) { String PID = genpid(); start("bruteforce", null, null, root); while (trace.containsKey(PID)) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { stop("bruteforce"); return STATUS; } } }
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, root); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { echoCommand(getCatch(e)); return 2; } } }
         else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore, root); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } } 
@@ -189,10 +189,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Process
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { 
             for (int i = 0; i < args.length; i++) {
-                int STATUS = 0;
-                if (mainCommand.equals("start")) start(args[i], null, null, root);
-                if (mainCommand.equals("stop")) stop(args[i], root);
-                else kill(args[i], true, root);
+                int STATUS = mainCommand.equals("start") ? start(args[i], "", "", root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root);
             }
         } 
         else if (mainCommand.equals("ps")) {
