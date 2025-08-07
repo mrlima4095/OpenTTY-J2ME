@@ -1117,8 +1117,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 );
             } else if (TYPE == PROCESS) {
                 process.deleteAll();
-                Enumeration keys = trace.keys();
-                while (keys.hasMoreElements()) {
+                
+                for (Enumeration keys = trace.keys(); keys.hasMoreElements();) {
                     String PID = (String) keys.nextElement();
                     Hashtable proc = (Hashtable) trace.get(PID);
                     String name = (String) proc.get("name");
