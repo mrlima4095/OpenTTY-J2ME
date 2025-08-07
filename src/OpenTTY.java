@@ -1128,6 +1128,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (trace.containsKey(pid)) {
             Hashtable proc = (Hashtable) trace.get(pid);
             String name = (String) proc.get("name"), collector = (String) proc.get("collector");
+            
+            boolean owner = (String) proc.get("root");
+            if (owner == true && root == false) { if (print) { echoCommand("Permission denied!"); } return 13; }
 
             trace.remove(pid);
             if (print) { echoCommand("Process with PID " + pid + " terminated"); }
@@ -1137,15 +1140,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-
-    private int start(String app) { return start(app, String.valueOf(1000 + random.nextInt(9000)), null); }
-    private int start(String app, String pid, String collector) {
+    private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
         else if (app.equals("sh")) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
-        else if (trace.containsKey(pid)) { return start(app, String.valueOf(1000 + random.nextInt(9000)), collector); }
+        
+        if (trace.containsKey(pid)) { return start(app, null, collector, root); }
+        
+        pid =  ? String.valueOf(1000 + random.nextInt(9000)) : pid;
 
         Hashtable proc = new Hashtable();
         proc.put("name", app);
+        proc.put("root", root);
 
         if (collector != null) { proc.put("collector", collector); }
 
@@ -1156,15 +1161,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int stop(String app, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
         
+        int STATUS = 0;
         for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
             String KEY = (String) KEYS.nextElement();
             Hashtable proc = (Hashtable) trace.get(KEY);
             String name = (String) proc.get("name");
             
-            
-            if (app.equals(name)) { kill(KEY, false, root); }
+            if (app.equals(name)) { STATUS = kill(KEY, false, root); }
         }
-        return 0;
+        return STATUS;
     }
 
     // API 008 - (Logic I/O) Text
@@ -1200,7 +1205,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void run() {
             if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
-            start(service, port, null);
+            start(service, port, null, null);
 
             while (trace.containsKey(port)) {
                 ServerSocketConnection serverSocket = null; SocketConnection clientSocket = null;
