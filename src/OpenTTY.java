@@ -1325,7 +1325,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     CONN = (SocketConnection) Connector.open("socket://" + address);
-                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); start("remote");
+                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); start("remote", null, null, false);
                 } catch (Exception e) { echoCommand(getCatch(e)); return; }
 
                 
@@ -1365,7 +1365,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
                 } else if (c == BACK) {
                     try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
-                    writeRMS("/home/remote", console.getText()); stop("remote"); processCommand("xterm");
+                    writeRMS("/home/remote", console.getText()); stop("remote", false); processCommand("xterm");
                 } else if (c == CLEAR) { console.setText(""); }
                 else if (c == VIEW) { 
                     try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
@@ -1395,7 +1395,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     }
                 } 
-                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote"); }
+                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote", false); }
             } else if (TYPE == PRSCAN) {
                 for (int port = start; port <= 65535; port++) {
                     try {
@@ -1406,7 +1406,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         list.append("" + port, null);
                     } catch (IOException e) { }
                 }
-                list.setTicker(null); stop("prscan");
+                list.setTicker(null); stop("prscan", false);
             } else if (TYPE == GOBUSTER) {
                 list.setTicker(new Ticker("Searching..."));
                 for (int i = 0; i < wordlist.length; i++) {
@@ -1421,7 +1421,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } catch (IOException e) { }
                     }
                 }
-                list.setTicker(null); stop("gobuster");
+                list.setTicker(null); stop("gobuster", false);
             }
         }
 
