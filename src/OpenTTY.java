@@ -1297,7 +1297,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private SocketConnection CONN;
         private InputStream IN; private OutputStream OUT;
 
-        private String address;
+        private String address, PID = genpid();
         private int port, start;
         private String[] wordlist;
 
@@ -1385,7 +1385,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void run() {
             if (TYPE == NC) {
                 try {
-                    while (getprocess("remote") != null) {
+                    while (trace.containsKey(PID)) {
                         if (IN.available() > 0) {
                             byte[] BUFFER = new byte[IN.available()];
                             int LENGTH = IN.read(BUFFER);
@@ -1398,7 +1398,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int port = start; port <= 65535; port++) {
                     try {
                         list.setTicker(new Ticker("Scanning port " + port + "..."));
-                        if (getprocess("prscan") == null) { break; }
+                        if (trace.containsKey("Av.  hu")) { break; }
                         
                         Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
                         list.append("" + port, null);
