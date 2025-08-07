@@ -624,17 +624,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     private String getprocess(String name) {
-    for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
-        String KEY = (String) KEYS.nextElement();
-        Hashtable proc = (Hashtable) trace.get(KEY);
-        String procName = (String) proc.get("name");
+        for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
+            String KEY = (String) KEYS.nextElement();
+            Hashtable proc = (Hashtable) trace.get(KEY);
+            String procName = (String) proc.get("name");
 
-        if (name.equals(procName)) {
-            return KEY; // retorna o PID
+            if (name.equals(procName)) {
+                return KEY; 
+            }
         }
+        return null;
     }
-    return null;
-}
 
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(content.substring(start, i)); } start = i + 1; } } if (start < content.length()) { args.addElement(content.substring(start)); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
@@ -1074,10 +1074,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
 
-    private int start(String app) {
-        return start(app, String.valueOf(1000 + random.nextInt(9000)), null);
-    }
-
+    private int start(String app) { return start(app, String.valueOf(1000 + random.nextInt(9000)), null); }
     private int start(String app, String pid, String collector) {
         if (app == null || app.length() == 0) { return 2; }
         else if (app.equals("sh")) {
@@ -1089,6 +1086,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         Hashtable proc = new Hashtable();
         proc.put("name", app);
+
         if (collector != null) {
             proc.put("collector", collector);
         }
@@ -1191,17 +1189,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             processCommand(command, true, root);
                             String afterCommand = stdout != null ? stdout.getText() : "";
 
-                            String output = afterCommand.length() >= beforeCommand.length()
-                                    ? afterCommand.substring(beforeCommand.length()).trim() + "\n"
-                                    : "\n";
+                            String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : "\n";
 
                             os.write(output.getBytes()); os.flush();
                         }
                     }
 
-                } catch (IOException e) {
-                    echoCommand("[-] " + getCatch(e));
-                } finally {
+                } 
+                catch (IOException e) { echoCommand("[-] " + getCatch(e)); } 
+                finally {
                     try {
                         if (is != null) { is.close(); } if (os != null) { os.close(); }
                         if (clientSocket != null) { clientSocket.close(); }
@@ -1987,7 +1983,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (script == null || script.length() == 0) { return 2; }
 
         Hashtable PKG = parseProperties(getcontent(script));
-        String PID = String.valueOf(1000 + random.nextInt(9000));
         // |
         // Verify current API version
         if (PKG.containsKey("api.version")) {
@@ -2012,25 +2007,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i], root); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start and handle APP process
-        if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name")); }
-        if (PKG.containsKey("process.exit")) {
-            collectors.put((String) PKG.get("process.exit"))            
-        }
+        if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), String.valueOf(1000 + random.nextInt(9000)), (String) PKG.get("process.exit")); }
         if (PKG.containsKey("process.type")) { 
             String TYPE = (String) PKG.get("process.type"); 
 
-            if (TYPE.equals("server")) { 
-
-            } 
-            else if (TYPE.equals("bind")) { 
-                new Server("bind", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.db")), root); 
-            } 
-            else { MIDletLogs("add warn '" + TYPE.toUpperCase() + "' is a invalid value for 'process.type'"); } 
+            new Server(TYPE, env((String) PKG.get("process.port") + " " + TYPE.equals("server") ? (String) PKG.get("process.host") : (String) PKG.get("process.db")), root); 
         }
-        if (PKG.containsKey("process.host") && PKG.containsKey("process.port")) { 
-            new Server("server", env((String) PKG.get("process.port") + " " + (String) PKG.get("process.host")), root); 
-        }
-        if (PKG.containsKey("process.type"))
         // |
         // Start Application
         if (PKG.containsKey("config")) { int STATUS = processCommand((String) PKG.get("config"), true, root); if (STATUS != 0) { return STATUS; } }
