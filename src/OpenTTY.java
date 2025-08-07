@@ -1103,7 +1103,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int index = process.getSelectedIndex();
                 if (index >= 0) {
                     int STATUS = kill(split(process.getString(index), '\t')[0], false, root);
-                    if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!") }
+                    if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); }
                     load();
                 }
             }
