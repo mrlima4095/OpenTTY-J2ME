@@ -1133,7 +1133,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server(mode, "31522", PERM); return; }
 
             TYPE = (mode == null || mode.equals("bind")) ? BIND : SERVER;
-            service = TYPE == SERVER ? "server" : "bind";
+            service = TYPE == BIND ? "bind" : "server";
             port = getCommand(args); mod = getArgument(args);
             mod = mod.equals("") && TYPE == SERVER ? env("$RESPONSE") : mod;
             root = PERM;
@@ -2009,9 +2009,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Start and handle APP process
         if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), String.valueOf(1000 + random.nextInt(9000)), (String) PKG.get("process.exit")); }
         if (PKG.containsKey("process.type")) { 
-            String TYPE = (String) PKG.get("process.type"); 
+            String TYPE = (String) PKG.get("process.type"), MOD = TYPE.equals("bind") ? (String) PKG.get("process.db") : (String) PKG.get("process.host"); 
 
-            new Server(TYPE, env((String) PKG.get("process.port") + " " + TYPE.equals("server") ? (String) PKG.get("process.host") : (String) PKG.get("process.db")), root); 
+            new Server(TYPE, env((String) PKG.get("process.port") + " " + (MOD == null ? "" : MOD)), root); 
         }
         // |
         // Start Application
