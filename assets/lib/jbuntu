@@ -9,6 +9,7 @@ api.error=execute log add error JBuntu requires OpenTTY 1.14; set OLD_TITLE=$TIT
 api.match=minimum
 
 process.name=jbuntu
+process.exit=execute log add info JBuntu was stopped!; x11 stop; x11 init; 
 
 include=/java/lib/netkit,/java/lib/settings,/java/lib/yang,/java/lib/jauth2
 
