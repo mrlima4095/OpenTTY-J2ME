@@ -1155,13 +1155,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int stop(String app) { return stop(app, false); }
     private int stop(String app, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
-
+        
         for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
             String KEY = (String) KEYS.nextElement();
             Hashtable proc = (Hashtable) trace.get(KEY);
             String name = (String) proc.get("name");
             
-            if (name.startsWith(app)) { kill(KEY, false, root); }
+            
+            if (app.equals(name)) { kill(KEY, false, root); }
         }
         return 0;
     }
