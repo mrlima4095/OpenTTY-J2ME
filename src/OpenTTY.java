@@ -273,8 +273,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             boolean all = argument.startsWith("-a"); if (all) { argument = argument.substring(2).trim(); }
 
             String PWD = argument.equals("") ? path : argument; 
-            if (!PWD.startsWith("/")) { PWD = path + PWD; } 
-            if (!PWD.endsWith("/")) { PWD += "/"; } 
+            if (!PWD.startsWith("/")) { PWD = path + PWD; } if (!PWD.endsWith("/")) { PWD += "/"; } 
 
             try { 
                 if (PWD.equals("/mnt/")) { 
