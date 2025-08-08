@@ -78,37 +78,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (functions.containsKey(mainCommand) && ignore) { return runScript((String) functions.get(mainCommand)); }
         // |
         // Aliases
-        else if (mainCommand.equals("alias")) { 
-            if (argument.equals("")) { for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } } } 
-            else { 
-                int INDEX = argument.indexOf('='); 
-                if (INDEX == -1) { 
-                    for (int i = 0; i < args.length; i++) { 
-                        if (aliases.containsKey(args[i])) { echoCommand("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'"); } 
-                        else { echoCommand("alias: " + argument + ": not found"); return 127; } 
-                    } 
-                } else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } }  
+        else if (mainCommand.equals("alias")) { if (argument.equals("")) { for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { echoCommand("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'"); } else { echoCommand("alias: " + argument + ": not found"); return 127; } } } else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } }  
         else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { aliases.remove(args[i]); } else { echoCommand("unalias: "+ args[i] + ": not found"); return 127; } } } }
         // |
         // Environment Keys
-        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); } } else { attributes.put(argument.substring(0, INDEX).trim(), argument.substring(INDEX + 1).trim()); } } } 
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); } } else { attributes.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } } 
         else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { attributes.remove(args[i]); } else { } } } }
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false); }
-        else if (mainCommand.equals("env")) { 
-            if (argument.equals("")) { 
-                for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { 
-                    String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); 
-                    
-                    if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } 
-                } 
-            } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { echoCommand(args[i] + "=" + (String) attributes.get(args[i])); } else { echoCommand("env: " + args[i] + ": not found"); return 127; } } }
-        }
+        else if (mainCommand.equals("env")) { if (argument.equals("")) { for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { echoCommand(KEY + "=" + VALUE.trim()); } } } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { echoCommand(args[i] + "=" + (String) attributes.get(args[i])); } else { echoCommand("env: " + args[i] + ": not found"); return 127; } } } }
 
         // API 002 - (Logs)
         // |
         // OpenTTY Logging Manager
-        else if (mainCommand.equals("log")) { return MIDletLogs(argument); }
-        else if (mainCommand.equals("logcat")) { echoCommand(logs); }
+        else if (mainCommand.equals("log")) { return MIDletLogs(argument); } else if (mainCommand.equals("logcat")) { echoCommand(logs); }
 
         // API 003 - (User-Integration)
         // |
@@ -460,34 +442,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("history")) { new History(); }
         else if (mainCommand.equals("debug")) { return runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
-        else if (mainCommand.equals("man")) { 
-            boolean verbose = argument.indexOf("-v") != -1; 
-
-            argument = replace(argument, "-v", "").trim(); 
-
-            if (argument.equals("")) { argument = "sh"; } 
-
-            String content = read("/home/man.html"); 
-
-            if (content.equals("") || argument.equals("--update")) { 
-                int STATUS = processCommand("netstat"); 
-                if (STATUS == 0) { 
-                    STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); 
-
-                    if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } 
-                    else { return STATUS; } 
-                } 
-                else { echoCommand("man: download error"); return STATUS; } 
-            } 
-
-            content = extractTag(content, argument.toLowerCase(), ""); 
-
-            if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } 
-            else { 
-                if (verbose) { echoCommand(content); } 
-                else { viewer(form.getTitle(), content); } 
-            } 
-        }
+        else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; argument = replace(argument, "-v", "").trim(); if (argument.equals("")) { argument = "sh"; } String content = loadRMS("man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat", false); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
