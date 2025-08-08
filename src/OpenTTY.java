@@ -1980,6 +1980,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (script == null || script.length() == 0) { return 2; }
 
         Hashtable PKG = parseProperties(getcontent(script));
+        String PID = genpid();
         // |
         // Verify current API version
         if (PKG.containsKey("api.version")) {
@@ -2004,7 +2005,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(include[i], root); if (STATUS != 0) { return STATUS; } } }
         // |
         // Start and handle APP process
-        if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), null, (String) PKG.get("process.exit"), root); }
+        if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), PID, (String) PKG.get("process.exit"), root); }
         if (PKG.containsKey("process.type")) { 
             String TYPE = (String) PKG.get("process.type"), MOD = TYPE.equals("bind") ? (String) PKG.get("process.db") : (String) PKG.get("process.host"); 
 
@@ -2019,10 +2020,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             new Thread("MIDlet-Mod") { 
                 public void run() { 
-                    while (getprocess(PROCESS) != null) { 
+                    while (trace.containsKey(PID)) { 
                         int STATUS = processCommand(MOD, true, ROOT); 
 
-                        if (STATUS != 0) { return; } 
+                        if (STATUS != 0) { kill(PID, false, root); } 
                     } 
                 } 
             }.start(); 
