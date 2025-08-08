@@ -1980,7 +1980,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (script == null || script.length() == 0) { return 2; }
 
         Hashtable PKG = parseProperties(getcontent(script));
-        String PID = genpid();
+        final String PID = genpid();
         // |
         // Verify current API version
         if (PKG.containsKey("api.version")) {
@@ -2015,7 +2015,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Start Application
         if (PKG.containsKey("config")) { int STATUS = processCommand((String) PKG.get("config"), true, root); if (STATUS != 0) { return STATUS; } }
         if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { 
-            final String PROCESS = (String) PKG.get("process.name"), MOD = (String) PKG.get("mod"); 
+            final String MOD = (String) PKG.get("mod"); 
             final boolean ROOT = root; 
 
             new Thread("MIDlet-Mod") { 
