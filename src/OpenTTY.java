@@ -183,7 +183,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Process
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { 
             for (int i = 0; i < args.length; i++) {
-                int STATUS = mainCommand.equals("start") ? start(args[i], "", "", root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root);
+                int STATUS = mainCommand.equals("start") ? start(args[i], genpid(), null, root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root);
                 
                 if (STATUS != 0) {
                     return STATUS;
@@ -201,7 +201,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("trace")) { 
             if (argument.equals("")) { } 
             else if (getCommand(argument).equals("pid")) { echoCommand(getprocess(getArgument(argument))); } 
-            else if (getCommand(argument).equals("check")) { echoCommand(getprocess(getArgument(argument)) != null ? "true" : "false"); } 
+            else if (getCommand(argument).equals("owner")) { echoCommand(getowner(getArgument(argument))); }
+            else if (getCommand(argument).equals("check")) { echoCommand(getprocess(getArgument(argument)) != null ? "true" : "false"); }
             else { echoCommand("trace: " + getCommand(argument) + ": not found"); return 127; } 
         }
         // API 007 - (Bundle)
