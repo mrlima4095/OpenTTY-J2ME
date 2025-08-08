@@ -660,15 +660,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
         private String getenv(String key) { return env(getvalue(key, "")); } 
 
-        private int getQuest(String mode) { 
-            if (mode == null || mode.length() == 0) { return TextField.ANY; } 
-
-            boolean password = false; 
-            if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } 
-
-            int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY;
-            return password ? (base | TextField.PASSWORD) : base; 
-        } 
+        private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
     }
     public class MyCanvas extends Canvas implements CommandListener { 
         private Hashtable PKG; 
