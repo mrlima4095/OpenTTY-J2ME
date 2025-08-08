@@ -1049,7 +1049,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable proc = (Hashtable) trace.get(pid);
         if (proc == null) { if (print) { echoCommand("PID '" + pid + "' not found"); } return 127; }
 
-        String owner = (String) proc.get("root"), collector = (String) proc.get("collector");
+        String owner = (String) proc.get("owner"), collector = (String) proc.get("collector");
 
         if (owner.equals("root") && !root) { if (print) { echoCommand("Permission denied!"); } return 13; }
 
