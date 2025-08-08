@@ -329,25 +329,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else { echoCommand("lsblk: " + argument + ": not found"); return 127; } }
         // |
         // RMS Files
-        else if (mainCommand.equals("rm")) { 
-            if (argument.equals("")) { } 
-            else {
-                for (int i = 0; i < args.length; i++) {
-                    int STATUS = deleteFile(argument);
-                    if (STATUS != 0) { return STATUS; }
-                }
-            } 
-        }
+        else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = deleteFile(argument); if (STATUS != 0) { return STATUS; } } } }
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { return writeRMS(argument, nanoContent); } }
-        else if (mainCommand.equals("touch")) { 
-            if (argument.equals("")) { nanoContent = ""; } 
-            else {
-                for (int i = 0; i < args.length; i++) {
-                    if (args[i].equals("nano")) { nanoContent = ""; }
-                    else { int STATUS = writeRMS(argument, ""); if (STATUS != 0) { return STATUS; } }
-                }
-            } 
-        }
+        else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { for (int i = 0; i < args.length; i++) { int STATUS = writeRMS(argument, ""); if (STATUS != 0) { return STATUS; } } } }
         else if (mainCommand.equals("mkdir")) { if (argument.equals("")) { } else { argument = argument.endsWith("/") ? argument : argument + "/"; argument = argument.startsWith("/") ? argument : path + argument; if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } } }
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } }
         // |
