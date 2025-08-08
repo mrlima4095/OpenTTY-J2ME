@@ -973,7 +973,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String port, mod, service;
 
         public Server(String mode, String args, boolean permission) {
-            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server(mode, "31522", PERM); return; }
+            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server(mode, "31522", permission); return; }
 
             TYPE = (mode == null || mode.equals("bind")) ? BIND : SERVER;
             service = TYPE == BIND ? "bind" : "server";
