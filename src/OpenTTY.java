@@ -125,7 +125,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // System UI
         else if (mainCommand.equals("x11")) { return xserver(argument); }
-        else if (mainCommand.equals("xterm")) { loadScreen(form); }
+        else if (mainCommand.equals("xterm")) { return loadScreen(form); }
         else if (mainCommand.equals("gauge")) { return xserver("gauge " + argument); }
         else if (mainCommand.equals("warn")) { return warnCommand(form.getTitle(), argument); }
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
@@ -576,7 +576,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
         else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default"); } else { stdout.setFont(newFont(argument)); } }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
-        else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); loadScreen(alert); }
+        else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); return loadScreen(alert); }
         // |
         // Screen Manager
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
@@ -594,7 +594,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int loadScreen(Displayable screen) { 
         if (screen == null) { return 1; }
-        else if (trace.containsKey("2")) { loadScreen(screen); } 
+        else if (trace.containsKey("2")) { display.setCurrent(screen); } 
         else { return 69; }
 
         return 0;
