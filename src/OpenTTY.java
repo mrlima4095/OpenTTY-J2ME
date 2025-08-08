@@ -270,7 +270,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
-            boolean all = args[0].equals("-a"); if (all) { argument = argument.substring(2).trim(); }
+            boolean all = argument.startsWith("-a"); if (all) { argument = argument.substring(2).trim(); }
+
             String PWD = argument.equals("") ? path : argument; 
             if (!PWD.startsWith("/")) { PWD = path + PWD; } 
             if (!PWD.endsWith("/")) { PWD += "/"; } 
@@ -278,16 +279,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try { 
                 if (PWD.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
-                        String ROOT = (String) ROOTS.nextElement(); if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
+                        String ROOT = (String) ROOTS.nextElement(); 
+                        if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
                     }
                 } 
                 else if (PWD.startsWith("/mnt/")) { 
                     String REALPWD = "file:///" + PWD.substring(5); 
                     if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
-
                     FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
                     for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { 
-                        String ITEM = (String) CONTENT.nextElement(); BUFFER.addElement(ITEM); 
+                        String ITEM = (String) CONTENT.nextElement(); 
+                        BUFFER.addElement(ITEM); 
                     } 
                     CONN.close(); 
                 } 
@@ -295,7 +297,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String[] FILES = RecordStore.listRecordStores(); 
                     if (FILES != null) { 
                         for (int i = 0; i < FILES.length; i++) { 
-                            String NAME = FILES[i]; if ((all || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } 
+                            String NAME = FILES[i]; 
+                            if ((all || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { 
+                                BUFFER.addElement(NAME); 
+                            } 
                         } 
                     } 
                 } 
@@ -305,22 +310,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (FILES != null) { 
                 for (int i = 0; i < FILES.length; i++) { 
                     String file = FILES[i].trim(); 
-
-                    if (file == null || file.equals("..") || file.equals("/")) { continue; } 
-                    if (!BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } 
+                    if (file == null || file.equals("..") || file.equals("/")) continue; 
+                    if (!BUFFER.contains(file) && !BUFFER.contains(file + "/")) { 
+                        BUFFER.addElement(file); 
+                    } 
                 } 
             } 
 
-            if (BUFFER.isEmpty()) { } 
-            else { 
-                StringBuffer FORMATTED = new StringBuffer(); 
+            if (!BUFFER.isEmpty()) { 
+                String formatted = "";
                 for (int i = 0; i < BUFFER.size(); i++) { 
                     String ITEM = (String) BUFFER.elementAt(i); 
-
-                    if (!ITEM.equals("/")) { FORMATTED.append(ITEM).append(PWD.startsWith("/home/") ? "\n" : "\t"); } 
+                    if (!ITEM.equals("/")) { 
+                        formatted += ITEM + (PWD.startsWith("/home/") ? "\n" : "\t"); 
+                    } 
                 } 
-
-                echoCommand(FORMATTED.toString().trim()); 
+                echoCommand(formatted.trim()); 
             } 
         }
         // |
