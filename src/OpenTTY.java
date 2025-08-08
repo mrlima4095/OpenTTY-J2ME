@@ -1093,14 +1093,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | 
     // Controls
-    private String getprocess(String name) {
-        for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
-            String KEY = (String) KEYS.nextElement(), PNAME = (String) ((Hashtable) trace.get(KEY)).get("name");
-
-            if (name.equals(PNAME)) { return KEY; }
-        }
-        return null;
-    }
+    private String getprocess(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), PNAME = (String) ((Hashtable) trace.get(KEY)).get("name"); if (name.equals(PNAME)) { return KEY; } } return null; }
     private String getowner(String pid) { return trace.containsKey(pid) ? (String) ((Hashtable) trace.get(pid)).get("owner") : null; }
     private String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
 
