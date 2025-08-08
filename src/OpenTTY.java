@@ -187,6 +187,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else if (mainCommand.equals("setmaxout")) {
                 if (argument.equals("")) { }
                 else { MAX_STDOUT_LEN = getNumber(argument, MAX_STDOUT_LEN, true); }
+            } else {
+                echoCommand("stty: " + mainCommand + ": not found"); return 127;
             }
         }
         // |
