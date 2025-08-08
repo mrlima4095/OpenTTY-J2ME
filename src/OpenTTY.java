@@ -876,8 +876,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TYPE = MONITOR;
                 monitor.append(status);
                 load();
-                monitor.addCommand(BACK);
-                monitor.addCommand(REFRESH);
+                monitor.addCommand(BACK); monitor.addCommand(REFRESH);
                 monitor.setCommandListener(this);
                 loadScreen(monitor);
             } else if (args.equals("process")) {
