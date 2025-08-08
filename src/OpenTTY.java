@@ -985,7 +985,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private int TYPE = 0, MONITOR = 1, PROCESS = 2;
         private boolean root = false;
-        private Image APP = null;
 
         public HTopViewer(String args, boolean PERM) {
             if (args == null || args.length() == 0 || args.equals("memory")) {
@@ -998,8 +997,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(monitor);
             } else if (args.equals("process")) {
                 TYPE = PROCESS; root = PERM;
-                try { APP = Image.createImage("/java/etc/icons/exec.png"); } 
-                catch (IOException e) { } 
                 load();
                 process.addCommand(BACK); process.addCommand(KILL);
                 process.setCommandListener(this);
