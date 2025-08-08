@@ -22,7 +22,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     private Vector stack = new Vector(), history = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x40"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x41"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -179,17 +179,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
         else if (mainCommand.equals("stty")) {
-            mainCommand = getCommand(argument);
-            argument = getArgument(argument);
-            
-            if (mainCommand.equals("")) {
-                
-            } else if (mainCommand.equals("setmaxout")) {
-                if (argument.equals("")) { }
-                else { MAX_STDOUT_LEN = getNumber(argument, MAX_STDOUT_LEN, true); }
-            } else {
-                echoCommand("stty: " + mainCommand + ": not found"); return 127;
-            }
+            if (argument.equals("")) { }
+            else { MAX_STDOUT_LEN = getNumber(argument, MAX_STDOUT_LEN, true); }
         }
         // |
         // Text related commands
@@ -577,7 +568,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // X11 Loader
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
         else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); xserver("font"); stop("x11-server", true); form.removeCommand(EXECUTE); }
-        else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd"); start("x11-server", "2", "x11 stop", true); form.setCommandListener(this); }
+        else if (mainCommand.equals("init")) { if (trace.containsKey("2")) {  return; } form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd"); start("x11-server", "2", "x11 stop", true); form.setCommandListener(this); }
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { xserver("init"); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
@@ -598,6 +589,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : getcontent(argument)); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
+
+        return 0;
+    }
+    private int Push(Displayable screen) { 
+        if (screen == null) { return 1; }
+        else if (trace.containsKey("2")) { display.setCurrent(screen); } 
+        else { return 69; }
 
         return 0;
     }
@@ -1025,9 +1023,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (app == null || app.length() == 0) { return 2; }
 
         if (app.equals("sh")) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
+        if (app.equals("x11-server")) { pid = "2"; collector = "x11 stop"; }
 
         if (pid == null || pid.length() == 0) { pid = genpid(); }
-        if (trace.containsKey(pid)) { return app.equals("sh") ? 1 : start(app, null, collector, root); }
+        if (trace.containsKey(pid)) { return app.equals("sh") || app.equals("x11-server") ? 68 : start(app, null, collector, root); }
 
         Hashtable proc = new Hashtable();
         proc.put("name", app); proc.put("owner", root ? "root" : username);
@@ -1097,7 +1096,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void run() {
-            if (trace.containsKey(port) || getNumber(port, 65536, false) > 65535) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
+            if (trace.containsKey(port) || getNumber(port, 65536, false) > 65535 || port.equals("2")) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
             start(service, port, null, root);
 
             while (trace.containsKey(port)) {
