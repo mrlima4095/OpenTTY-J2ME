@@ -184,6 +184,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { 
             for (int i = 0; i < args.length; i++) {
                 int STATUS = mainCommand.equals("start") ? start(args[i], "", "", root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root);
+                
+                if (STATUS != 0) {
+                    return STATUS;
+                }
             }
         } 
         else if (mainCommand.equals("ps")) {
@@ -1061,7 +1065,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
-        if ("sh".equals(app)) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
+        if (app.equals("sh")) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
 
         if (pid == null || pid.length() == 0) { pid = genpid(); }
         if (trace.containsKey(pid)) { return app.equals("sh") ? 1 : start(app, null, collector, root); }
