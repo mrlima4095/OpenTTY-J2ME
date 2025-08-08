@@ -1036,7 +1036,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String PID = (String) keys.nextElement();
                     Hashtable proc = (Hashtable) trace.get(PID);
                     String name = (String) proc.get("name");
-                    process.append(PID + "\t" + name, APP);
+                    process.append(PID + "\t" + name, null);
                 }
             }
         }
