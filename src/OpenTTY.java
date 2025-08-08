@@ -1142,7 +1142,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             start(service, port, null, root);
 
             while (trace.containsKey(port)) {
-                ServerSocketConnection sherverSocket = null; SocketConnection clientSocket = null;
+                ServerSocketConnection serverSocket = null; SocketConnection clientSocket = null;
                 InputStream is = null; OutputStream os = null;
 
                 try {
