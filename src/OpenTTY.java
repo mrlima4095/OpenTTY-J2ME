@@ -515,11 +515,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Screen Manager
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
-        else if (mainCommand.equals("load")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { loadScreen((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("load")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { return loadScreen((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } }
         else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { desktops.remove(argument); } else { echoCommand("x11: unset: " + argument + ": not found"); return 127; } }
         // |
         // Interfaces
-        else if (mainCommand.equals("canvas")) { loadScreen(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
+        else if (mainCommand.equals("canvas")) { return loadScreen(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
         else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest")) { new Screen(mainCommand, getcontent(argument)); }
         else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : getcontent(argument)); }
 
