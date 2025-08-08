@@ -277,7 +277,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             boolean all = argument.startsWith("-a"); if (all) { argument = argument.substring(2).trim(); }
 
             String PWD = argument.equals("") ? path : argument; 
-            if (!PWD.startsWith("/")) { PWD = path + PWD; } if (!PWD.endsWith("/")) { PWD += "/"; } 
+            if (!PWD.startsWith("/")) { PWD = path + PWD; } 
+            if (!PWD.endsWith("/")) { PWD += "/"; } 
 
             try { 
                 if (PWD.equals("/mnt/")) { 
@@ -498,13 +499,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Low-level commands
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); }
-        else if (mainCommand.equals("@reload")) { 
-            shell = new Hashtable(); aliases = new Hashtable(); functions = new Hashtable();
-            username = loadRMS("OpenRMS"); 
-
-            MIDletLogs("add debug API reloaded"); 
-            processCommand("execute x11 stop; x11 init; x11 term; run initd; sh;"); 
-        }
+        else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
 
         // API 015 - (Scripts)
