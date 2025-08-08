@@ -592,7 +592,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int Push(Displayable screen) { 
+    private int loadScreen(Displayable screen) { 
         if (screen == null) { return 1; }
         else if (trace.containsKey("2")) { display.setCurrent(screen); } 
         else { return 69; }
