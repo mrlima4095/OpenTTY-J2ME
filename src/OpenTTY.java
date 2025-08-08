@@ -1059,7 +1059,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
     private int start(String app, String pid, String collector, boolean root) {
-        if (app == null || app.isEmpty()) return 2;
+        if (app == null || app.length() == 0) return 2;
 
         if ("sh".equals(app)) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
 
@@ -1075,7 +1075,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
     private int stop(String app, boolean root) {
-        if (app == null || app.isEmpty()) return 2;
+        if (app == null || app.length() == 0) return 2;
 
         int STATUS = 0;
 
