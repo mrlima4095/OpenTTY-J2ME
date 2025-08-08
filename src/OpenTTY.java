@@ -1049,7 +1049,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         String owner = (String) proc.get("root"), collector = (String) proc.get("collector");
 
-        if (!username.equals(owner)) { if (print) { echoCommand("Permission denied!"); } return 13; }
+        if (owner.equals("root") && !root) { if (print) { echoCommand("Permission denied!"); } return 13; }
 
         trace.remove(pid);
         if (print) { echoCommand("Process with PID " + pid + " terminated"); }
@@ -1064,12 +1064,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if ("sh".equals(app)) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
 
         if (pid == null || pid.isEmpty()) pid = genpid();
-        if (trace.containsKey(pid)) {
-            return "sh".equals(app) ? 1 : start(app, null, collector, root);
-        }
+        if (trace.containsKey(pid)) { return app.equals("sh") ? 1 : start(app, null, collector, root); }
 
         Hashtable proc = new Hashtable();
-        proc.put("name", app); proc.put("owner", root ? "root" : loadRMS("OpenRMS"));
+        proc.put("name", app); proc.put("owner", root ? "root" : username);
         if (collector != null) { proc.put("collector", collector); }
 
         trace.put(pid, proc);
