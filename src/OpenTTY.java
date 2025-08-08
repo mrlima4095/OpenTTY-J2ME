@@ -1258,7 +1258,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     CONN = (SocketConnection) Connector.open("socket://" + address);
-                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); start("remote", null, null, false);
+                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); start("remote", PID, null, false);
                 } catch (Exception e) { echoCommand(getCatch(e)); return; }
 
                 
@@ -1272,7 +1272,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
                 list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
-                start(TYPE == PRSCAN ? "prscan" : "gobuster", null, null, false);
+                start(TYPE == PRSCAN ? "prscan" : "gobuster", PID, null, false);
 
                 if (TYPE == PRSCAN) { start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true); }
                 else {
@@ -1333,7 +1333,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int port = start; port <= 65535; port++) {
                     try {
                         list.setTicker(new Ticker("Scanning port " + port + "..."));
-                        if (trace.containsKey("Av.  hu")) { break; }
+                        if (!trace.containsKey(PID)) { break; }
                         
                         Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
                         list.append("" + port, null);
@@ -1344,7 +1344,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list.setTicker(new Ticker("Searching..."));
                 for (int i = 0; i < wordlist.length; i++) {
                     String path = wordlist[i].trim();
-                    if (getprocess("gobuster") == null) { break; }
+                    if (!trace.containsKey(PID)) { break; }
 
                     if (!path.equals("") && !path.startsWith("#")) {
                         String fullUrl = address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path;
