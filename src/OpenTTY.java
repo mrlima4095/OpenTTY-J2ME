@@ -2023,7 +2023,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     while (trace.containsKey(PID)) { 
                         int STATUS = processCommand(MOD, true, ROOT); 
 
-                        if (STATUS != 0) { kill(PID, false, root); } 
+                        if (STATUS != 0) { kill(PID, false, ROOT); } 
                     } 
                 } 
             }.start(); 
