@@ -1085,10 +1085,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String PID = (String) keys.nextElement(), NAME = (String) ((Hashtable) trace.get(PID)).get("name");
 
             if (app.equals(NAME)) {
-                
-                if ((STATUS = kill(PID, false, root)) != 0) {
-                    break;
-                }
+                if ((STATUS = kill(PID, false, root)) != 0) { break; }
             }
         }
 
