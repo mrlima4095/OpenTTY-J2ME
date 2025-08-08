@@ -1043,49 +1043,59 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Process
     private int kill(String pid, boolean print, boolean root) {
         if (pid == null || pid.length() == 0) { return 2; }
-        else if (trace.containsKey(pid)) {
-            Hashtable proc = (Hashtable) trace.get(pid);
-            String name = (String) proc.get("name"), collector = (String) proc.get("collector"), owner = (String) proc.get("root");
-            if (owner.equals("true") && root == false) { if (print) { echoCommand("Permission denied!"); } return 13; }
 
-            trace.remove(pid);
-            if (print) { echoCommand("Process with PID " + pid + " terminated"); }
+        Hashtable proc = (Hashtable) trace.get(pid);
+        if (proc == null) { if (print) { echoCommand("PID '" + pid + "' not found"); } return 127; }
 
-            if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
-        } else { if (print) { echoCommand("PID '" + pid + "' not found"); } return 127; }
+        String owner = (String) proc.get("root"), collector = (String) proc.get("collector");
 
+        if (!username.equals(owner)) { if (print) { echoCommand("Permission denied!"); } return 13; }
+
+        trace.remove(pid);
+        if (print) { echoCommand("Process with PID " + pid + " terminated"); }
+
+        if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
         return 0;
     }
+
     private int start(String app, String pid, String collector, boolean root) {
-        if (app == null || app.length() == 0) { return 2; }
-        else if (app.equals("sh")) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
-        
-        if (pid == null || pid.length() == 0) { pid = genpid(); } 
-        if (trace.containsKey(pid)) { return app.equals("sh") ? 1 : start(app, null, collector, root); }
+        if (app == null || app.isEmpty()) return 2;
+
+        if ("sh".equals(app)) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
+
+        if (pid == null || pid.isEmpty()) pid = genpid();
+        if (trace.containsKey(pid)) {
+            return "sh".equals(app) ? 1 : start(app, null, collector, root);
+        }
 
         Hashtable proc = new Hashtable();
-        proc.put("name", app);
-        proc.put("root", root == true ? "root" : loadRMS("OpenRMS"));
-
+        proc.put("name", app); proc.put("owner", root ? "root" : loadRMS("OpenRMS"));
         if (collector != null) { proc.put("collector", collector); }
 
         trace.put(pid, proc);
         return 0;
     }
-    private int stop(String app, boolean root) {
-        if (app == null || app.length() == 0) { return 2; }
-        
-        int STATUS = 0;
-        for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) {
-            String KEY = (String) KEYS.nextElement();
-            Hashtable proc = (Hashtable) trace.get(KEY);
-            String name = (String) proc.get("name"), collector = (String) proc.get("collector"), owner = (String) proc.get("owner");
-            
-            if (app.equals(name)) {
 
-            }
+    private int stop(String app, boolean root) {
+        if (app == null || app.isEmpty()) return 2;
+
+        int status = 0;
+        Vector<String> toKill = new Vector();
+
+        for (Enumeration keys = trace.keys(); keys.hasMoreElements();) {
+            String pid = (String) keys.nextElement();
+            Hashtable proc = (Hashtable) trace.get(pid);
+            String name = (String) proc.get("name");
+
+            if (app.equals(name)) toKill.addElement(pid);
         }
-        return STATUS;
+
+        for (int i = 0; i < toKill.size(); i++) {
+            int code = kill(toKill.elementAt(i), false, root);
+            if (code != 0) status = code; // mantém último erro
+        }
+
+        return status;
     }
     // | 
     // Controls
