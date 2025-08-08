@@ -1079,23 +1079,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int stop(String app, boolean root) {
         if (app == null || app.isEmpty()) return 2;
 
-        int status = 0;
-        Vector<String> toKill = new Vector();
+        int STATUS = 0;
 
         for (Enumeration keys = trace.keys(); keys.hasMoreElements();) {
-            String pid = (String) keys.nextElement();
-            Hashtable proc = (Hashtable) trace.get(pid);
-            String name = (String) proc.get("name");
+            String PID = (String) keys.nextElement(), NAME = (String) ((Hashtable) trace.get(pid)).get("name");
 
-            if (app.equals(name)) toKill.addElement(pid);
+            if (app.equals(name)) {
+                
+                if ((STATUS = kill(PID, false, root)) != 0) {
+                    break;
+                }
+            }
         }
 
-        for (int i = 0; i < toKill.size(); i++) {
-            int code = kill(toKill.elementAt(i), false, root);
-            if (code != 0) status = code; // mantém último erro
-        }
-
-        return status;
+        return STATUS;
     }
     // | 
     // Controls
