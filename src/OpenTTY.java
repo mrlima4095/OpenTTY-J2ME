@@ -1138,7 +1138,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void run() {
-            if (trace.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
+            if (trace.containsKey(port) || getNumber(port, 65536, false) > 65535) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
             start(service, port, null, root);
 
             while (trace.containsKey(port)) {
