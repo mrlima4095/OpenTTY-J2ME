@@ -395,27 +395,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             } 
         }
-        else if (mainCommand.equals("mkdir")) { 
-            if (argument.equals("")) { } 
-            else { 
-                argument = argument.endsWith("/") ? argument : argument + "/"; 
-                argument = argument.startsWith("/") ? argument : path + argument; 
-
-                if (argument.startsWith("/mnt/")) { 
-                    try { 
-                        FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); 
-                        if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } 
-                        else { echoCommand("mkdir: " + basename(argument) + ": found"); } 
-
-                        CONN.close(); 
-                    } 
-                    catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
-                    catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
-                } 
-                else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } 
-                else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
-            } 
-        }
+        else if (mainCommand.equals("mkdir")) { if (argument.equals("")) { } else { argument = argument.endsWith("/") ? argument : argument + "/"; argument = argument.startsWith("/") ? argument : path + argument; if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } } }
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } }
         // |
         // Text Manager
