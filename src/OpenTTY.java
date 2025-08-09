@@ -54,8 +54,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (c == CLEAR) { stdout.setText(""); }
         else if (c == HISTORY) { new History(); }
 
-        else if (c.getCommandType() == Command.BACK) { processCommand("xterm"); }
-        else if (c.getCommandType() == Command.EXIT) { processCommand("exit"); }
+        else { processCommand(c.getCommandType() == Command.BACK ? "xterm" : "exit"); }
     }
     // |
     // MIDlet Shell
