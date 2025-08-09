@@ -1303,27 +1303,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // RMS Files
     private int deleteFile(String filename) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (CONN.exists()) { CONN.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); return 127; } CONN.close(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { try { filename = filename.substring(6); if (filename.equals("OpenRMS")) { echoCommand("rm: " + filename + ": permission denied"); return 13; } RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); return 127; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return deleteFile(path + filename); } return 0; }
-    private int writeRMS(String filename, byte[] data) { 
-        if (filename == null || filename.length() == 0) { return 2; } 
-        else if (filename.startsWith("/mnt/")) { 
-            try { 
-                FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
-                if (!CONN.exists()) { CONN.create(); } 
-
-                OutputStream OUT = CONN.openOutputStream(); 
-                OUT.write(data); OUT.flush(); 
-
-                OUT.close(); CONN.close();
-            } 
-            catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } 
-            catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
-        } 
-        else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
-        else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
-        else { return writeRMS(path + filename, data); } 
-
-        return 0; 
-    }
+    private int writeRMS(String filename, byte[] data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
     private int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { echoCommand(getCatch(e)); return 1; } return 0; }
     private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
     private String loadRMS(String filename) { return read("/home/" + filename); }
@@ -1833,27 +1813,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Start and handle APP process
         if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), PID, (String) PKG.get("process.exit"), root); }
         if (PKG.containsKey("process.type")) { 
-            String TYPE = (String) PKG.get("process.type"), MOD = TYPE.equals("bind") ? (String) PKG.get("process.db") : (String) PKG.get("process.host"); 
+            String TYPE = (String) PKG.get("process.type"), PORT = (String) PKG.get("process.port"), MOD = TYPE.equals("bind") ? (String) PKG.get("process.db") : (String) PKG.get("process.host"); 
+            if (trace.containsKey(PORT)) { MIDletLogs("add warn Application port is unavailable."); return 68; }
 
-            new Server(TYPE, env((String) PKG.get("process.port") + " " + (MOD == null ? "" : MOD)), root); 
+            new Server(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); 
         }
         // |
         // Start Application
         if (PKG.containsKey("config")) { int STATUS = processCommand((String) PKG.get("config"), true, root); if (STATUS != 0) { return STATUS; } }
-        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { 
-            final String MOD = (String) PKG.get("mod"); 
-            final boolean ROOT = root; 
-
-            new Thread("MIDlet-Mod") { 
-                public void run() { 
-                    while (trace.containsKey(PID)) { 
-                        int STATUS = processCommand(MOD, true, ROOT); 
-
-                        if (STATUS != 0) { kill(PID, false, ROOT); } 
-                    } 
-                } 
-            }.start(); 
-        }
+        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { final String MOD = (String) PKG.get("mod"); final boolean ROOT = root; new Thread("MIDlet-Mod") { public void run() { while (trace.containsKey(PID)) { int STATUS = processCommand(MOD, true, ROOT); if (STATUS != 0) { kill(PID, false, ROOT); } } } }.start(); }
         // |
         // Generate items - Command & Files
         if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(commands[i]))); } else { MIDletLogs("add error Failed to create command '" + commands[i] + "' content not found"); } } }
