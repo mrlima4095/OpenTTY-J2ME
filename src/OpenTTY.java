@@ -1206,7 +1206,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (IN.available() > 0) {
                             byte[] BUFFER = new byte[IN.available()];
                             int LENGTH = IN.read(BUFFER);
-                            if (LENGTH > 0) { echoCommand(new String(BUFFER, 0, LENGTH), console); }
+                            if (LENGTH > 0) { echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console); }
                         }
                     }
                 } 
