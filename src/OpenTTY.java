@@ -557,7 +557,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("xfinit")) { 
             if (argument.equals("")) { return xserver("init", root); } 
-            else { form.append(argument.equals("stdin") ? stdin : stdout); } 
+            else if (argument.equals("stdin")) {
+                form.append(stdin);
+            }
+            else if (argument.equals("stdout")) {
+                form.append(stdout);
+            } else {
+                echoCommand("x11: xfinit: " + argument + ": not found"); return 127;
+            }
+            else { form.append( ? stdin : stdout); } 
         }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
@@ -581,7 +589,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2")) { display.setCurrent(screen); } else { return 69; } return 0; }
+    private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2") || getprocess("x11-cli") != null) { display.setCurrent(screen); } else { return 69; } return 0; }
     private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); loadScreen(alert); return 0; }
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); return loadScreen(viewer); }
     // |
