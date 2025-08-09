@@ -540,22 +540,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // X11 Loader
         else if (mainCommand.equals("term")) { loadScreen(form); }
         else if (mainCommand.equals("stop")) { 
-            if (trace.containsKey("2") || getprocess("x11-cli") != null) {
-                form = new Form(null); loadScreen(form); 
+            if (trace.containsKey("2")) {
+                processCommand("execute x11 tick; x11 font; stop x11-server;", false, true);
 
-                processCommand("execute x11 tick; x11 font; stop x11-cli; stop x11-server;", false, true);
+                form.setCommandListener(null);
             } 
             else { return 69; }
         }
         else if (mainCommand.equals("init")) { 
-            if (trace.containsKey("2")) { return 0; }
-            else {
-                form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); form.setCommandListener(this);
-                processCommand("execute x11 cmd; stop x11-cli; start x11-server;", false, true);
-            } 
+            form.deleteAll(); form.append(stdout); form.append(stdin); form.setCommandListener(this);
+            processCommand("execute title; x11 cmd; start x11-server;", false, true);
         }
         else if (mainCommand.equals("xfinit")) { 
-            if (getprocess("x11-cli") != null) { start("x11-cli", null, null, false); }
             
             if (argument.equals("")) { } 
             else if (argument.equals("stdin")) { form.append(stdin); }
@@ -584,7 +580,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2") || getprocess("x11-cli") != null) { display.setCurrent(screen); } else { return 69; } return 0; }
+    private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2")) { display.setCurrent(screen); } else { return 69; } return 0; }
     private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); loadScreen(alert); return 0; }
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); return loadScreen(viewer); }
     // |
@@ -625,12 +621,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                             content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
                             screen.append(content); 
-                        } 
+                        }
+                        else if (type.equals("stdin")) {  } 
+                        else if (type.equals("stdout")) {  } 
                         else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, code); } 
                         else if (type.equals("spacer")) { 
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
                             screen.append(new Spacer(width, height)); 
-                        } 
+                        }
                     } 
                 } 
 
@@ -694,7 +692,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 screen.setCommandListener(this); loadScreen(screen); 
             } 
-
+            else if (type.equals("edit")) {
+                TYPE = EDIT;
+                
+            }
             else { return; } 
         } 
         public void commandAction(Command c, Displayable d) { 
@@ -958,7 +959,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             collector = app.equals("sh") ? "exit" : "x11 stop";
 
             if (trace.containsKey(pid)) { return 68; }
-            else if (app.equals("x11-server") && !root) { xserver("init", root); }
         }
 
         if (pid == null || pid.length() == 0) { pid = genpid(); }
