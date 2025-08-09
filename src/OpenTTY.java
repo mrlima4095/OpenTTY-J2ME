@@ -22,7 +22,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     private Vector stack = new Vector(), history = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x42"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x43"; 
     private Display display = Display.getDisplay(this);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -211,7 +211,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String RESPONSE = request(URL, HEADERS); 
                 if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } 
                 else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } 
-                else if (mainCommand.equals("clone")) { return runScript(RESPONSE); } 
+                else if (mainCommand.equals("clone")) { return runScript(RESPONSE, root); } 
             } 
         }
         // |
