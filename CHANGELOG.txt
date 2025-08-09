@@ -48,7 +48,7 @@ LTS Edition
 - Service `bind` and `server` process ID changed to it respective port
 - Added support for new key `process.exit` that is triggered when process `process.name` is killed
 - Load script `/java/etc/initd.sh` run with super-user permissions
--
+- New X11 Screen **edit**
 
 [ _Notes_ ]
 
