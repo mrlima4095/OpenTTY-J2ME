@@ -551,11 +551,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (trace.containsKey("2")) { return 0; }
             else {
                 form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); form.setCommandListener(this);
-                processCommand("execute x11 cmd; stop start x11-server;", false, true);
+                processCommand("execute x11 cmd; stop x11-cli; start x11-server;", false, true);
             } 
         }
         else if (mainCommand.equals("xfinit")) { 
-            if (getprocess("x11-cli") != null) { start("x11-cli", null, "x11 stop", false); }
+            if (getprocess("x11-cli") != null) { start("x11-cli", null, null, false); }
             
             if (argument.equals("")) { } 
             else if (argument.equals("stdin")) { form.append(stdin); }
