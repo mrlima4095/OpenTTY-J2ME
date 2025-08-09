@@ -536,7 +536,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("buffer")) { echoCommand(display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight()); }
         // |
         // X11 Loader
-        else if (mainCommand.equals("term")) { display.setCurrent(form); }
+        else if (mainCommand.equals("term")) { return loadScreen(form); }
         else if (mainCommand.equals("stop")) { form.setTitle(null); form.setTicker(null); form.deleteAll(); xserver("cmd hide", root); trace.remove("2"); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("init")) { 
             form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); 
@@ -567,7 +567,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2")) { display.setCurrent(screen); } else { return 69; } return 0; }
+    private int loadScreen(Displayable screen) { display.setCurrent(screen); return 0; }
+    //private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2")) { display.setCurrent(screen); } else { return 69; } return 0; }
     private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); return loadScreen(alert); }
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); return loadScreen(viewer); }
     // |
