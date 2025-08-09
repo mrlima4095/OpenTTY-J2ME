@@ -542,15 +542,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("term")) { loadScreen(form); }
         else if (mainCommand.equals("stop")) { 
             if (trace.containsKey("2")) {
-                processCommand("execute x11 tick; x11 font; stop x11-server;", false, true);
+                processCommand("execute x11 tick; x11 font;", false, true);
 
-                form.setCommandListener(null);
+                trace.remove("x11-server"); form.setCommandListener(null);
             } 
             else { return 69; }
         }
         else if (mainCommand.equals("init")) { 
             form.deleteAll(); form.append(stdout); form.append(stdin); form.setCommandListener(this);
             processCommand("execute title; x11 cmd; start x11-server;", false, true);
+        }
+        else if (mainCommand.equals("clear")) {
+            if (trace.containsKey("2")) {
+                return loadScreen((form = new Form(null))); 
+            } else { return 69; }
         }
         else if (mainCommand.equals("xfinit")) { 
             
@@ -696,7 +701,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TYPE = EDIT;
 
                 if (PKG.containsKey("edit.title")) { edit.setTitle(getenv("edit.title")); }
-                edit.setString(PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? getcontent(getenv("edit.source")) : ""); }
+                edit.setString(PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? getcontent(getenv("edit.source")) : "");
 
                 BACK = new Command(getenv("edit.back.label", "Back"), Command.OK, 1);
                 USER = new Command(getenv("edit.cmd.label", "Run"), Command.SCREEN, 2);
