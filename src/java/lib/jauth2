@@ -15,6 +15,6 @@ quest.title=$TITLE - Locked
 quest.label=[lock] password for $USERNAME
 quest.type=password
 quest.key=INPUT
-quest.cmd=execute case passwd ($INPUT) exec cp /home/initd-backup /home/initd & rm /home/initd-backup & xterm & case !key (LOCK_CURRENT) . initd & return 20; @alert; x11 quest /java/lib/jauth2; warn Access denied!;
+quest.cmd=execute case passwd ($INPUT) exec cp /home/initd-backup /home/initd & rm /home/initd-backup & xterm & case !key (LOCK_CURRENT) . initd & false; @alert; x11 quest /java/lib/jauth2; warn Access denied!;
 quest.back=execute exit;
 quest.back.label=Exit
