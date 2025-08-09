@@ -109,7 +109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("xterm")) { return loadScreen(form); }
         else if (mainCommand.equals("x11")) { return xserver(argument, root); }
         else if (mainCommand.equals("warn")) { return warnCommand(form.getTitle(), argument); }
-        else if (mainCommand.equals("title")) { return xserver("title " + (argument.equals("") ? env("OpenTTY $VERSION") : argument), root); }
+        else if (mainCommand.equals("title")) { return form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { return xserver("tick " + argument, root); } }
 
         // API 005 - (Operators)
@@ -545,7 +545,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { return 69; }
         }
         else if (mainCommand.equals("init")) { 
-            from.deleteAll(); form.append(stdout); form.append(stdin); form. form.setCommandListener(this);
+            form.deleteAll(); form.append(stdout); form.append(stdin); form. form.setCommandListener(this);
             processCommand("execute x11 cmd; start x11-server;", false, true);
         }
         else if (mainCommand.equals("clear")) {
