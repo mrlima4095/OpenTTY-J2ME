@@ -106,3 +106,4 @@
 [2025-1.16-02x39]	Command 'who' show where IP Addresses is connected
 [2025-1.16-02x40]	Package initd.sh script is called with super-user permission
 [2025-1.16-02x41]	Added Command 'STTY'
+[2025-1.16-02x42]	Added Command 'CATCH'
