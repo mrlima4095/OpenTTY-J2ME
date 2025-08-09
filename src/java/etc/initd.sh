@@ -15,8 +15,4 @@ mount /java/etc/fstab
 x11 init
 x11 term
 
-bind
-ifconfig
-warn Listening at $OUTPUT:31522
-
 start sh
