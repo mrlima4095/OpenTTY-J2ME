@@ -102,7 +102,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 004 - (LCDUI Interface)
         // |
         // System UI
-        else if (mainCommand.equals("xterm")) { return loadScreen(form); }
+        else if (mainCommand.equals("xterm")) { display.setCurrent(form); }
         else if (mainCommand.equals("x11")) { return xserver(argument, root); }
         else if (mainCommand.equals("warn")) { return warnCommand(form.getTitle(), argument); }
         else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument); }
@@ -532,7 +532,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("buffer")) { echoCommand(display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight()); }
         // |
         // X11 Loader
-        else if (mainCommand.equals("term")) { return loadScreen(form); }
+        else if (mainCommand.equals("term")) { display.setCurrent(form); }
         else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide", root); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("init")) { form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd; start x11-wm", false, true); form.setCommandListener(this); }
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { return xserver("init", root); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
@@ -542,15 +542,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
         else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default", root); } else { stdout.setFont(newFont(argument)); } }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
-        else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); return loadScreen(alert); }
+        else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
         // |
         // Screen Manager
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
-        else if (mainCommand.equals("load")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { return loadScreen((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("load")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } }
         else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { desktops.remove(argument); } else { echoCommand("x11: unset: " + argument + ": not found"); return 127; } }
         // |
         // Interfaces
-        else if (mainCommand.equals("canvas")) { return loadScreen(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
+        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
         else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, getcontent(argument)); }
         else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : getcontent(argument)); }
 
@@ -558,10 +558,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int loadScreen(Displayable screen) { display.setCurrent(screen); return 0; }
-    //private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2")) { display.setCurrent(screen); } else { return 69; } return 0; }
-    private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); return loadScreen(alert); }
-    private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); return loadScreen(viewer); }
+    private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); return 0; }
+    private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
     // |
     // Interfaces
     public class Screen implements CommandListener { 
