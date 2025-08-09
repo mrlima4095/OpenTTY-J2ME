@@ -540,10 +540,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // X11 Loader
         else if (mainCommand.equals("term")) { loadScreen(form); }
         else if (mainCommand.equals("stop")) { 
-            if (trace.containsKey("2")) {
+            if (trace.containsKey("2") || getprocess("x11-cli") != null) {
                 form = new Form(null); loadScreen(form); 
 
-                processCommand("execute x11 tick; x11 font; stop x11-server;", false, true);
+                processCommand("execute x11 tick; x11 font; stop x11-cli; stop x11-server;", false, true);
             } 
             else { return 69; }
         }
@@ -551,19 +551,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (trace.containsKey("2")) { return 0; }
             else {
                 form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); form.setCommandListener(this);
-                processCommand("execute x11 cmd; start x11-server;", false, true);
+                processCommand("execute x11 cmd; stop start x11-server;", false, true);
             } 
         }
         else if (mainCommand.equals("xfinit")) { 
+            if (getprocess("x11-cli")) { start("x11-cli", null, "x11 stop", ""); }
+            
             if (argument.equals("")) { } 
             else if (argument.equals("stdin")) { form.append(stdin); }
-            else if (argument.equals("stdout")) {
-                form.append(stdout);
-            } 
-            else {
-                echoCommand("x11: xfinit: " + argument + ": not found"); return 127;
-            }
-            
+            else if (argument.equals("stdout")) { form.append(stdout); } 
+            else { echoCommand("x11: xfinit: " + argument + ": not found"); return 127; }
         }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
