@@ -12,8 +12,6 @@ set QUERY=nano
 
 mount /java/etc/fstab
 
-start x11-wm
-
 x11 init
 x11 term
 
