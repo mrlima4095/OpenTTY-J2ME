@@ -37,7 +37,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
             //runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
-            xserver("init"); xserver("term"); warnCommand("FOI?");
+            xserver("init", true); xserver("term", true); warnCommand("FOI?");
             if (username.equals("") || passwd(false, null).equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
         } 
