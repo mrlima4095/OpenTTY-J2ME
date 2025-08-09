@@ -897,7 +897,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.append(s);
         } 
         public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) PKG.get(node + ".cmd")); } } 
-        
     }
     // |
     // Font Generator
@@ -950,7 +949,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
         return 0;
     }
-
     private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
@@ -973,7 +971,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         trace.put(pid, proc);
         return 0;
     }
-
     private int stop(String app, boolean root) {
         if (app == null || app.length() == 0) return 2;
 
@@ -994,7 +991,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getprocess(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), PNAME = (String) ((Hashtable) trace.get(KEY)).get("name"); if (name.equals(PNAME)) { return KEY; } } return null; }
     private String getowner(String pid) { return trace.containsKey(pid) ? (String) ((Hashtable) trace.get(pid)).get("owner") : null; }
     private String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
-
 
     // API 008 - (Logic I/O) Text
     // |
