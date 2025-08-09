@@ -533,7 +533,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // X11 Loader
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
-        else if (mainCommand.equals("init")) { start("x11-wm", null, null, true); }
+        else if (mainCommand.equals("init")) { form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;", false, true); form.setCommandListener(this); }
         else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide", root); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { return xserver("init", root); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
@@ -954,15 +954,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (app == null || app.length() == 0) { return 2; }
 
         if (app.equals("sh") || app.equals("x11-wm")) {
-            pid = app.equals("sh") ? "1" : "2";
+            /*pid = app.equals("sh") ? "1" : "2";
             collector = app.equals("sh") ? "exit" : "x11 stop";
 
             if (trace.containsKey(pid)) { return 68; }
-            else if (app.equals("x11-wm")) { form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;", false, true); form.setCommandListener(this); }
-            else if (app.equals("sh")) { sessions.put(pid, "127.0.0.1"); }
-        } else { while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } } 
+            else if (app.equals("x11-wm")) {  }
+            else if (app.equals("sh")) { sessions.put(pid, "127.0.0.1"); }*/
+        } else {  } 
 
-        
+        while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); }
 
         Hashtable proc = new Hashtable();
         proc.put("name", app); proc.put("owner", root ? "root" : username); proc.put("collector", collector);
