@@ -543,8 +543,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (trace.containsKey("2")) {
                 form = new Form(null); loadScreen(form); 
 
-                xserver("cmd hide", root); xserver("font", root); 
-                stop("x11-server", true); 
+                processCommand("execute x11 tick; x11 font; stop x11-server;", false, true);
             } 
             else { return 69; }
         }
@@ -552,17 +551,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (trace.containsKey("2")) { return 0; }
             else {
                 form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); form.setCommandListener(this);
-                xserver("cmd", root); start("x11-server", "2", "x11 stop", true); 
+                processCommand("execute x11 cmd; start x11-server;", false, true);
             } 
         }
         else if (mainCommand.equals("xfinit")) { 
-            if (argument.equals("")) { return xserver("init", root); } 
-            else if (argument.equals("stdin")) {
-                form.append(stdin);
-            }
+            if (argument.equals("")) { } 
+            else if (argument.equals("stdin")) { form.append(stdin); }
             else if (argument.equals("stdout")) {
                 form.append(stdout);
-            } else {
+            } 
+            else {
                 echoCommand("x11: xfinit: " + argument + ": not found"); return 127;
             }
             
