@@ -537,23 +537,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // X11 Loader
         else if (mainCommand.equals("term")) { return loadScreen(form); }
-        else if (mainCommand.equals("stop")) { 
-            if (trace.containsKey("2")) { form = new Form(null); trace.remove("x11-server"); desktops = new Hashtable(); } 
-            else { return 69; }
-        }
+        else if (mainCommand.equals("stop")) { form.setTitle(null); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); trace.remove("2"); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("init")) { 
-            if (trace.containsKey("2")) { }
-            else {
-                form.deleteAll(); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); form.setCommandListener(this);
-                processCommand("execute x11 cmd; start x11-server;", false, true);
-            }
+            form.setTitle(env("OpenTTY $VERSION")); 
+            form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); 
+            processCommand("execute title; x11 cmd; start x11-server;", false, true);
+            form.setCommandListener(this); 
         }
-        else if (mainCommand.equals("xfinit")) { 
-            if (argument.equals("")) { } 
-            else if (argument.equals("stdin")) { form.append(stdin); }
-            else if (argument.equals("stdout")) { form.append(stdout); } 
-            else { echoCommand("x11: xfinit: " + argument + ": not found"); return 127; }
-        }
+        else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { xserver("init"); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
+        
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
         // Screen MODs
@@ -569,14 +561,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Interfaces
         else if (mainCommand.equals("canvas")) { return loadScreen(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
-        else if (equals(mainCommand, new String[]{ "make", "list", "quest", "edit" })) { new Screen(mainCommand, getcontent(argument)); }
+        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, getcontent(argument)); }
         else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : getcontent(argument)); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
 
         return 0;
     }
-    private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2")) { display.setCurrent(screen); } else { return 69; } return 0; }
+    private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2") || getprocess("x11-wm") != null) { display.setCurrent(screen); } else { return 69; } return 0; }
     private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); return loadScreen(alert); }
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); return loadScreen(viewer); }
     // |
@@ -972,12 +964,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
-        if (app.equals("sh")) { pid = "1"; collector = "exit"; sessions.put(pid, "127.0.0.1"); }
         if (app.equals("sh") || app.equals("x11-server")) {
             pid = app.equals("sh") ? "1" : "2";
             collector = app.equals("sh") ? "exit" : "x11 stop";
 
             if (trace.containsKey(pid)) { return 68; }
+            else if (app.equals("sh")) { sessions.put(pid, "127.0.0.1"); }
         }
 
         if (pid == null || pid.length() == 0) { pid = genpid(); }
