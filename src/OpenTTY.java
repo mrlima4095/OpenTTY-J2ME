@@ -965,7 +965,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             collector = app.equals("sh") ? "exit" : "x11 stop";
 
             if (trace.containsKey(pid)) { return 68; }
-            else if (app.equals("x11-server")) { xserver("x11 init"); }
+            else if (app.equals("x11-server")) { xserver("x11 init", root); }
         }
 
         if (pid == null || pid.length() == 0) { pid = genpid(); }
