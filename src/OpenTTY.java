@@ -533,7 +533,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // X11 Loader
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
-        else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd", true) form.setCommandListener(this); }
+        else if (mainCommand.equals("init")) { form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd", true); form.setCommandListener(this); }
         else if (mainCommand.equals("stop")) { form.setTitle(null); form.setTicker(null); form.deleteAll(); xserver("cmd hide", root); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { return xserver("init", root); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
