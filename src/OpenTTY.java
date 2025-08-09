@@ -479,7 +479,51 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     private int indexOf(String key, String[] array) { for (int i = 0; i < array.length; i++) { if (array[i].equals(key)) { return i; } } return -1; }
 
-    public class Credentials implements CommandListener { private int TYPE = 0, SIGNUP = 1, REQUEST = 2; private boolean asking_user = username.equals(""), asking_passwd = passwd(false, null).equals(""); private String command = ""; private Form screen = new Form(form.getTitle()); private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); public Credentials(String args) { if (args == null || args.length() == 0 || args.equals("login")) { TYPE = SIGNUP; screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); if (asking_user) { asking_user = true; screen.append(USER); } if (asking_passwd) { screen.append(PASSWD); } } else { TYPE = REQUEST; if (asking_passwd) { new Credentials(null); return; } asking_passwd = true; command = args; PASSWD.setLabel("[sudo] password for " + username); screen.append(PASSWD); LOGIN = new Command("Send", Command.OK, 1); EXIT = new Command("Back", Command.SCREEN, 2); } screen.addCommand(LOGIN); screen.addCommand(EXIT); screen.setCommandListener(this); loadScreen(screen); } public void commandAction(Command c, Displayable d) { if (c == LOGIN) { String password = PASSWD.getString().trim(); if (TYPE == SIGNUP) { if (asking_user) { username = USER.getString().trim(); } if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } else { if (asking_user) { writeRMS("/home/OpenRMS", username); } if (asking_passwd) { passwd(true, password); } loadScreen(form); runScript(loadRMS("initd")); } } else if (TYPE == REQUEST) { if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else { if (String.valueOf(password.hashCode()).equals(passwd(false, null))) { processCommand(command, true, true); processCommand("xterm"); } else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } } } stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); } else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); } } }
+    public class Credentials implements CommandListener { 
+        private int TYPE = 0, SIGNUP = 1, REQUEST = 2; 
+
+        private boolean asking_user = username.equals(""), asking_passwd = passwd(false, null).equals(""); 
+        private String command = ""; 
+        private Form screen = new Form(form.getTitle()); 
+        private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); 
+        private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); 
+
+        public Credentials(String args) { 
+            if (args == null || args.length() == 0 || args.equals("login")) { 
+                TYPE = SIGNUP; screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); 
+                if (asking_user) { asking_user = true; screen.append(USER); } 
+                if (asking_passwd) { screen.append(PASSWD); } 
+            } 
+            else { 
+                TYPE = REQUEST; if (asking_passwd) { new Credentials(null); return; } 
+                asking_passwd = true; 
+                command = args; 
+
+                PASSWD.setLabel("[sudo] password for " + username); screen.append(PASSWD); 
+                LOGIN = new Command("Send", Command.OK, 1); EXIT = new Command("Back", Command.SCREEN, 2); 
+            } 
+
+            screen.addCommand(LOGIN); screen.addCommand(EXIT); 
+            screen.setCommandListener(this); loadScreen(screen); 
+        } 
+        public void commandAction(Command c, Displayable d) { 
+            if (c == LOGIN) { 
+                String password = PASSWD.getString().trim(); 
+                if (TYPE == SIGNUP) { 
+                    if (asking_user) { username = USER.getString().trim(); } 
+                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
+                    else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); 
+                } 
+                else { 
+                    if (asking_user) { writeRMS("/home/OpenRMS", username); } 
+                    if (asking_passwd) { passwd(true, password); } 
+
+                    loadScreen(form); runScript(loadRMS("initd")); 
+                } 
+            } 
+            else if (TYPE == REQUEST) { 
+                if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
+                else { if (String.valueOf(password.hashCode()).equals(passwd(false, null))) { processCommand("xterm"); processCommand(command, true, true); } else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } } } stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); } else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); } } }
     private String passwd(boolean write, String value) { if (write && value != null) { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); } else { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { return ""; } } return ""; } 
 
     // API 002 - (Logs)
