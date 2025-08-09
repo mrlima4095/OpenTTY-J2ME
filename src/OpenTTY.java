@@ -673,6 +673,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("edit")) {
                 TYPE = EDIT;
 
+                if (!!PKG.containsKey("edit.cmd") || !PKG.containsKey("edit.key")) { MIDletLogs("add error Editor crashed while init, malformed settings"); return; } 
                 if (PKG.containsKey("edit.title")) { edit.setTitle(getenv("edit.title")); }
                 edit.setString(PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? getcontent(getenv("edit.source")) : "");
 
