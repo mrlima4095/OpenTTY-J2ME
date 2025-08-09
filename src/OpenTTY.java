@@ -37,7 +37,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
             //runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
-            display.setCurrent(form);
+            new HTopViewer("process")
             if (username.equals("") || passwd(false, null).equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
         } 
@@ -493,7 +493,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
 
             screen.addCommand(LOGIN); screen.addCommand(EXIT); 
-            screen.setCommandListener(this); loadScreen(screen); 
+            screen.setCommandListener(this); display.setCurrent(screen); 
         } 
         public void commandAction(Command c, Displayable d) { 
             if (c == LOGIN) { 
@@ -507,7 +507,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (asking_user) { writeRMS("/home/OpenRMS", username); } 
                     if (asking_passwd) { passwd(true, password); } 
 
-                    loadScreen(form); runScript(loadRMS("initd")); 
+                    display.setCurrent(form); runScript(loadRMS("initd")); 
                 } 
             } 
             else if (TYPE == REQUEST) { 
@@ -608,7 +608,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                 } 
 
-                screen.setCommandListener(this); loadScreen(screen); 
+                screen.setCommandListener(this); display.setCurrent(screen); 
             } 
             else if (type.equals("list")) { 
                 TYPE = LIST; 
@@ -653,7 +653,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 }
 
-                list.setCommandListener(this); loadScreen(list); 
+                list.setCommandListener(this); display.setCurrent(list); 
             } 
             else if (type.equals("quest")) { 
                 TYPE = QUEST; 
@@ -666,7 +666,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); 
                 screen.append(INPUT); screen.addCommand(BACK); screen.addCommand(USER); 
 
-                screen.setCommandListener(this); loadScreen(screen); 
+                screen.setCommandListener(this); display.setCurrent(screen); 
             } 
             else if (type.equals("edit")) {
                 TYPE = EDIT;
@@ -678,7 +678,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 USER = new Command(getenv("edit.cmd.label", "Run"), Command.SCREEN, 2);
                 edit.addCommand(BACK); edit.addCommand(USER);
 
-                edit.setCommandListener(this); loadScreen(edit);
+                edit.setCommandListener(this); display.setCurrent(edit);
 
             }
             else { return; } 
@@ -924,8 +924,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public HTopViewer(String args, boolean root) {
             this.root = root;
-            if (args == null || args.length() == 0 || args.equals("memory")) { TYPE = MONITOR; monitor.append(status); load(); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); loadScreen(monitor); } 
-            else if (args.equals("process")) { TYPE = PROCESS; load(); process.addCommand(BACK); process.addCommand(KILL); process.setCommandListener(this); loadScreen(process); } 
+            if (args == null || args.length() == 0 || args.equals("memory")) { TYPE = MONITOR; monitor.append(status); load(); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); } 
+            else if (args.equals("process")) { TYPE = PROCESS; load(); process.addCommand(BACK); process.addCommand(KILL); process.setCommandListener(this); display.setCurrent(process); } 
             else { echoCommand("htop: " + args + ": not found"); } 
         }
 
@@ -1148,7 +1148,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 screen.append(console); screen.append(inputField); 
                 screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
                 screen.setCommandListener(this);
-                loadScreen(screen);
+                display.setCurrent(screen);
 
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
@@ -1164,7 +1164,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
                 list.setCommandListener(this);
-                loadScreen(list);
+                display.setCurrent(list);
             } 
             
             new Thread(this, "NET").start();
@@ -1263,7 +1263,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             screen.addCommand(BACK); screen.addCommand(OPEN); 
             screen.setCommandListener(this); load(); 
-            loadScreen(screen); 
+            display.setCurrent(screen); 
         } 
         public void commandAction(Command c, Displayable d) { 
             String selected = screen.getString(screen.getSelectedIndex()); 
@@ -1365,7 +1365,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String text2note(String content) { if (content == null || content.length() == 0) { return "BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:\nEND:VNOTE"; } content = replace(content, "=", "=3D"); content = replace(content, "\n", "=0A"); StringBuffer vnote = new StringBuffer(); vnote.append("BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:" + content + "\nEND:VNOTE"); return vnote.toString(); }
     // |
     // Interfaces
-    public class NanoEditor implements CommandListener { private TextBox screen = new TextBox("Nano", "", 31522, TextField.ANY); private Command BACK = new Command("Back", Command.BACK, 1), LINE = new Command("Add line", Command.OK, 1), CLEAR = new Command("Clear", Command.OK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1); public NanoEditor(String args) { screen.setString((args == null || args.length() == 0) ? nanoContent : getcontent(args)); screen.addCommand(BACK); if (attributes.containsKey("J2EMU")) { screen.addCommand(LINE); } screen.addCommand(CLEAR); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.addCommand(VIEW); screen.setCommandListener(this); loadScreen(screen); } public void commandAction(Command c, Displayable d) { nanoContent = screen.getString(); if (c == BACK) { processCommand("xterm"); } else if (c == LINE) { screen.setString(nanoContent + "\n"); } else if (c == CLEAR) { screen.setString(""); } else if (c == RUN) { processCommand("xterm"); runScript(nanoContent); } else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } else if (c == VIEW) { viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
+    public class NanoEditor implements CommandListener { private TextBox screen = new TextBox("Nano", "", 31522, TextField.ANY); private Command BACK = new Command("Back", Command.BACK, 1), LINE = new Command("Add line", Command.OK, 1), CLEAR = new Command("Clear", Command.OK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1); public NanoEditor(String args) { screen.setString((args == null || args.length() == 0) ? nanoContent : getcontent(args)); screen.addCommand(BACK); if (attributes.containsKey("J2EMU")) { screen.addCommand(LINE); } screen.addCommand(CLEAR); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.addCommand(VIEW); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { nanoContent = screen.getString(); if (c == BACK) { processCommand("xterm"); } else if (c == LINE) { screen.setString(nanoContent + "\n"); } else if (c == CLEAR) { screen.setString(""); } else if (c == RUN) { processCommand("xterm"); runScript(nanoContent); } else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } else if (c == VIEW) { viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
     private String extractTitle(String htmlContent) { return extractTag(htmlContent, "title", "HTML Viewer"); }
     private String extractTag(String htmlContent, String tag, String fallback) { String startTag = "<" + tag + ">", endTag = "</" + tag + ">"; int start = htmlContent.indexOf(startTag), end = htmlContent.indexOf(endTag); if (start != -1 && end != -1 && end > start) { return htmlContent.substring(start + startTag.length(), end).trim(); } else { return fallback; } }
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
@@ -1821,7 +1821,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) { return true; } } return false; }
     // |
     // History
-    public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); loadScreen(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN || c == List.SELECT_COMMAND) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
+    public class History implements CommandListener { private List screen = new List(form.getTitle(), List.IMPLICIT); private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); public History() { screen.addCommand(BACK); screen.addCommand(RUN); screen.addCommand(EDIT); screen.setCommandListener(this); load(); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == RUN || c == List.SELECT_COMMAND) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } } else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } } private void load() { screen.deleteAll(); for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } } }
     private void add2History(String command) { if (command.equals("") || command.equals(getLastHistory()) || command.startsWith("!!") || command.startsWith("#")) { } else { history.addElement(command.trim()); } }
     private String getLastHistory() { return history.size() > 0 ? (String) history.elementAt(history.size() - 1) : ""; }
 
