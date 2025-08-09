@@ -565,7 +565,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else {
                 echoCommand("x11: xfinit: " + argument + ": not found"); return 127;
             }
-            else { form.append( ? stdin : stdout); } 
+            
         }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
