@@ -101,14 +101,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("su")) { if (root) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; processCommand("sh", false); } else { echoCommand("su: permission denied"); return 13; } }
         else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else { if (root) { passwd(true, argument); } else { echoCommand("passwd: permission denied"); return 13; } } }
         else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (root) { writeRMS("/home/OpenRMS", ""); processCommand("exit", false); } else { echoCommand("logout: permission denied"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
-        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (loadRMS("OpenRMS").equals(username)) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
+        else if (equals(mainCommand, new String(){ "exit", "quit" })) { if (loadRMS("OpenRMS").equals(username)) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
         
         // API 004 - (LCDUI Interface)
         // |
         // System UI
-        else if (mainCommand.equals("x11")) { return xserver(argument, root); }
         else if (mainCommand.equals("xterm")) { return loadScreen(form); }
-        else if (mainCommand.equals("gauge")) { return xserver("gauge " + argument, root); }
+        else if (mainCommand.equals("x11")) { return xserver(argument, root); }
         else if (mainCommand.equals("warn")) { return warnCommand(form.getTitle(), argument); }
         else if (mainCommand.equals("title")) { return xserver("title " + (argument.equals("") ? env("OpenTTY $VERSION") : argument), root); }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { return xserver("tick " + argument, root); } }
@@ -199,7 +198,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // HTTP Interfaces
         else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } } }
         else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + getCatch(e)); return 101; } } }
-        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
+        else if (equals(mainCommand, new String[]{ "curl", "wget", "clone", "proxy" })) { 
             if (argument.equals("")) { } 
             else { 
                 String URL = getCommand(argument); 
@@ -420,7 +419,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("debug")) { return runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
         else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; argument = replace(argument, "-v", "").trim(); if (argument.equals("")) { argument = "sh"; } String content = loadRMS("man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat", false); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
-        else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
+        else if (equals(mainCommand, new String[]{ "true", "#" })) { }
         else if (mainCommand.equals("false")) { return 255; }
 
         else if (mainCommand.equals("build")) { if (argument.equals("")) { return 2; } else { return C2ME(argument, root); } }
@@ -539,18 +538,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("buffer")) { echoCommand(display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight()); }
         // |
         // X11 Loader
-        else if (mainCommand.equals("term")) { loadScreen(form); }
+        else if (mainCommand.equals("term")) { return loadScreen(form); }
         else if (mainCommand.equals("stop")) { 
             if (trace.containsKey("2")) {
-                processCommand("execute x11 tick; x11 font;", false, true);
-
-                trace.remove("x11-server"); form.setCommandListener(null);
+                form.setTicker(null); trace.remove("x11-server"); desktops = new Hashtable(); form.setCommandListener(null);
             } 
             else { return 69; }
         }
         else if (mainCommand.equals("init")) { 
-            form.deleteAll(); form.append(stdout); form.append(stdin); form.setCommandListener(this);
-            processCommand("execute title; x11 cmd; start x11-server;", false, true);
+            from.deleteAll(); form.append(stdout); form.append(stdin); form. form.setCommandListener(this);
+            processCommand("execute x11 cmd; start x11-server;", false, true);
         }
         else if (mainCommand.equals("clear")) {
             if (trace.containsKey("2")) {
