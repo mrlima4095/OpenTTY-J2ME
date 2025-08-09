@@ -968,7 +968,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
 
         Hashtable proc = new Hashtable();
-        proc.put("name", app); proc.put("owner", root ? "root" : username); proc.put("collector", collector);
+        proc.put("name", app); proc.put("owner", root ? "root" : username);
+        if (collector != null) { proc.put("collector", collector); }
 
         trace.put(pid, proc);
         return 0;
