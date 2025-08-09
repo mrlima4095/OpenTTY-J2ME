@@ -34,7 +34,7 @@ list.title=Repository
 list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,X Server 0.4
 list.button=Install
 
-Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install; set RESOURCE=debuggers; yang install; set RESOURCE=jauth2; yang install;
+Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install;
 Armitage=execute set RESOURCE=armitage; yang install;
 Auto Clean=execute set RESOURCE=autogc; yang install;
 Auto Syntax=execute set RESOURCE=tab; yang install; 
