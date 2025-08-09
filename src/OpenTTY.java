@@ -530,7 +530,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 004 - (LCDUI Interface)
     // |
     // System UI
-    private int xserver(String command) {
+    private int xserver(String command, boolean root) {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 
@@ -540,14 +540,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // X11 Loader
         else if (mainCommand.equals("term")) { loadScreen(form); }
-        else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide"); xserver("font"); stop("x11-server", true); form.removeCommand(EXECUTE); }
-        else if (mainCommand.equals("init")) { if (trace.containsKey("2")) { return 0; } form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); xserver("cmd"); start("x11-server", "2", "x11 stop", true); form.setCommandListener(this); }
-        else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { xserver("init"); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
+        else if (mainCommand.equals("stop")) { 
+            if (trace.containsKey("2")) {
+                form = new Form(null); 
+
+                xserver("cmd hide", root); xserver("font", root); 
+                stop("x11-server", true); 
+            } 
+            else { return 69; }        
+        }
+        else if (mainCommand.equals("init")) { 
+            if (trace.containsKey("2")) { return 0; }
+            else {
+                form.setTitle(env("OpenTTY $VERSION")); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); form.setCommandListener(this);
+                xserver("cmd", root); start("x11-server", "2", "x11 stop", true); 
+            } 
+        }
+        else if (mainCommand.equals("xfinit")) { 
+            if (argument.equals("")) { return xserver("init", root); } 
+            else { form.append(argument.equals("stdin") ? stdin : stdout); } 
+        }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
         // Screen MODs
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
-        else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default"); } else { stdout.setFont(newFont(argument)); } }
+        else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default", root); } else { stdout.setFont(newFont(argument)); } }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); return loadScreen(alert); }
         // |
@@ -565,15 +582,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int loadScreen(Displayable screen) { 
-        if (screen == null) { return 1; }
-        else if (trace.containsKey("2")) { display.setCurrent(screen); } 
-        else { return 69; }
-
-        return 0;
-    }
+    private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2")) { display.setCurrent(screen); } else { return 69; } return 0; }
     private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); loadScreen(alert); return 0; }
-    private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); loadScreen(viewer); return 0; }
+    private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); return loadScreen(viewer); }
     // |
     // Interfaces
     public class Screen implements CommandListener { 
