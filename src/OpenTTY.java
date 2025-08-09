@@ -220,8 +220,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String response = query(argument), file = env("$QUERY"); 
 
                 if (file.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); }
-                else if (file.equalsIgnoreCase("show")) { echoCommand(response); }
-                else if (file.equalsIgnoreCase("nano")) { nanoContent = response; echoCommand("query: data retrieved"); }
+                else if (file.equals("show")) { echoCommand(response); }
+                else if (file.equals("nano")) { nanoContent = response; echoCommand("query: data retrieved"); }
                 else { writeRMS(env("$QUERY"), response); }
             }
             catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : (e instanceof RuntimeException) ? 2 : 1; }
@@ -541,12 +541,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("term")) { loadScreen(form); }
         else if (mainCommand.equals("stop")) { 
             if (trace.containsKey("2")) {
-                form = new Form(null); 
+                form = new Form(null); loadScreen(form); 
 
                 xserver("cmd hide", root); xserver("font", root); 
                 stop("x11-server", true); 
             } 
-            else { return 69; }        
+            else { return 69; }
         }
         else if (mainCommand.equals("init")) { 
             if (trace.containsKey("2")) { return 0; }
@@ -965,7 +965,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             collector = app.equals("sh") ? "exit" : "x11 stop";
 
             if (trace.containsKey(pid)) { return 68; }
-            else if (app.equals("x11-server")) { xserver("x11 init", root); }
+            else if (app.equals("x11-server")) { xserver("init", root); }
         }
 
         if (pid == null || pid.length() == 0) { pid = genpid(); }
