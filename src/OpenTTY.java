@@ -341,9 +341,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; 
 
-                if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } 
-                else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } 
-                else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } 
+                if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } 
 
                 argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); 
                 
@@ -359,9 +357,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 String FILENAME = basename(argument);
                 
-                if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } 
-                else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } 
-                else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } 
+                if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } 
                 else { echoCommand(LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME); } 
             } 
         }
