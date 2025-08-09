@@ -115,9 +115,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 005 - (Operators)
         // |
         // Operators
-        else if (equals(mainCommand, new String[]{ "if", "for", "case" })) {
-            return mainCommand.equals("if") ? ifCommand(argument, ignore, root) : mainCommand.equals("for") ? forCommand(argument, ignore, root) : caseCommand(argument, ignore, root);
-        }
+        else if (equals(mainCommand, new String[]{ "if", "for", "case" })) { return mainCommand.equals("if") ? ifCommand(argument, ignore, root) : mainCommand.equals("for") ? forCommand(argument, ignore, root) : caseCommand(argument, ignore, root); }
         // |
         // Long executors
         else if (equals(mainCommand, new String[]{ "builtin", "command" })) { return processCommand(argument, false, root); }
