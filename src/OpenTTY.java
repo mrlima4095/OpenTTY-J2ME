@@ -96,12 +96,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Session
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(root == true ? "root": username); }
-        else if (equals(mainCommand, new String[]{ "sh" , "login" })) { return processCommand(argument.equals("") ? "import /java/bin/sh" : ". " + argument, false); }
+        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return processCommand(argument.equals("") ? "import /java/bin/sh" : ". " + argument, false); }
         else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (root) { return processCommand(argument, ignore, root); } else { new Credentials(argument); } }
         else if (mainCommand.equals("su")) { if (root) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; processCommand("sh", false); } else { echoCommand("su: permission denied"); return 13; } }
         else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else { if (root) { passwd(true, argument); } else { echoCommand("passwd: permission denied"); return 13; } } }
         else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (root) { writeRMS("/home/OpenRMS", ""); processCommand("exit", false); } else { echoCommand("logout: permission denied"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
-        else if (equals(mainCommand, new String[]{ "exit", "quit" })) { if (loadRMS("OpenRMS").equals(username)) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
+        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (loadRMS("OpenRMS").equals(username)) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
         
         // API 004 - (LCDUI Interface)
         // |
@@ -115,10 +115,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 005 - (Operators)
         // |
         // Operators
-        else if (equals(mainCommand, new String[]{ "if", "for", "case" })) { return mainCommand.equals("if") ? ifCommand(argument, ignore, root) : mainCommand.equals("for") ? forCommand(argument, ignore, root) : caseCommand(argument, ignore, root); }
+        else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, ignore, root) : mainCommand.equals("for") ? forCommand(argument, ignore, root) : caseCommand(argument, ignore, root); }
         // |
         // Long executors
-        else if (equals(mainCommand, new String[]{ "builtin", "command" })) { return processCommand(argument, false, root); }
+        else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, root); }
         else if (mainCommand.equals("bruteforce")) { String PID = genpid(); start("bruteforce", PID, null, root); while (trace.containsKey(PID)) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { kill(PID, false, root); return STATUS; } } }
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, root); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { echoCommand(getCatch(e)); return 2; } } }
@@ -197,7 +197,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // HTTP Interfaces
         else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } } }
         else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + getCatch(e)); return 101; } } }
-        else if (equals(mainCommand, new String[]{ "curl", "wget", "clone", "proxy" })) { 
+        else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { 
             if (argument.equals("")) { } 
             else { 
                 String URL = getCommand(argument); 
@@ -210,7 +210,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } 
                 else if (mainCommand.equals("clone")) { return runScript(RESPONSE, root); } 
             } 
-        }
+        } 
         // |
         // Socket Interfaces
         else if (mainCommand.equals("query")) { 
@@ -418,7 +418,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("debug")) { return runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
         else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; argument = replace(argument, "-v", "").trim(); if (argument.equals("")) { argument = "sh"; } String content = loadRMS("man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat", false); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
-        else if (equals(mainCommand, new String[]{ "true", "#" })) { }
+        else if (mainCommand.equals("true") || mainCommand.equals("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
         else if (mainCommand.equals("build")) { if (argument.equals("")) { return 2; } else { return C2ME(argument, root); } }
@@ -445,7 +445,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS")); }
         else if (mainCommand.equals("!!")) { stdin.setString((argument.equals("") ? "" : argument + " ") + getLastHistory()); }
-        else if (equals(mainCommand, new String[]{ "run", "." })) { return runScript(argument.equals("") ? nanoContent : getcontent(argument), root); }
+        else if (mainCommand.equals("run") || mainCommand.equals(".")) { return runScript(argument.equals("") ? nanoContent : getcontent(argument), root); }
 
         else { echoCommand(mainCommand + ": not found"); return 127; }
 
@@ -471,8 +471,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
 
     private int indexOf(String key, String[] array) { for (int i = 0; i < array.length; i++) { if (array[i].equals(key)) { return i; } } return -1; }
-    private boolean equals(String command, String[] patterns) { for (int i = 0; i < patterns.length; i++) { if (command.equals(patterns[i])) { return true; } } return false; }
-
+    
     public class Credentials implements CommandListener { 
         private int TYPE = 0, SIGNUP = 1, REQUEST = 2; 
 
@@ -539,22 +538,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // X11 Loader
         else if (mainCommand.equals("term")) { return loadScreen(form); }
         else if (mainCommand.equals("stop")) { 
-            if (trace.containsKey("2")) {
-                form.setTicker(null); trace.remove("x11-server"); desktops = new Hashtable(); form.setCommandListener(null);
-            } 
+            if (trace.containsKey("2")) { form = new Form(null); trace.remove("x11-server"); desktops = new Hashtable(); } 
             else { return 69; }
         }
         else if (mainCommand.equals("init")) { 
-            form.deleteAll(); form.append(stdout); form.append(stdin); form.setCommandListener(this);
-            processCommand("execute x11 cmd; start x11-server;", false, true);
-        }
-        else if (mainCommand.equals("clear")) {
-            if (trace.containsKey("2")) {
-                return loadScreen((form = new Form(null))); 
-            } else { return 69; }
+            if (trace.containsKey("2")) { }
+            else {
+                form.deleteAll(); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); form.setCommandListener(this);
+                processCommand("execute x11 cmd; start x11-server;", false, true);
+            }
         }
         else if (mainCommand.equals("xfinit")) { 
-            
             if (argument.equals("")) { } 
             else if (argument.equals("stdin")) { form.append(stdin); }
             else if (argument.equals("stdout")) { form.append(stdout); } 
