@@ -964,13 +964,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
-        if (app.equals("sh") || app.equals("x11-wm")) {
+        /*if (app.equals("sh") || app.equals("x11-wm")) {
             pid = app.equals("sh") ? "1" : "2";
             collector = app.equals("sh") ? "exit" : "x11 stop";
 
             if (trace.containsKey(pid)) { return 68; }
             else if (app.equals("sh")) { sessions.put(pid, "127.0.0.1"); }
-        }
+        }/*/
 
         if (pid == null || pid.length() == 0) { pid = genpid(); }
         if (trace.containsKey(pid)) { return start(app, null, collector, root); }
