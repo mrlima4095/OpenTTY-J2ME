@@ -11,7 +11,7 @@ set PORT=31522
 set QUERY=nano
 
 mount /java/etc/fstab
-
+@alert 5000
 x11 init
 x11 term
 
