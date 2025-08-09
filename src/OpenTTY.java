@@ -115,11 +115,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 005 - (Operators)
         // |
         // Operators
-        else if (mainCommand.equals("for")) { return forCommand(argument, ignore, root); } 
-        else if (mainCommand.equals("if")) { return ifCommand(argument, ignore, root); } else if (mainCommand.equals("case")) { return caseCommand(argument, ignore, root); }
+        else if (equals(mainCommand, new String[]{ "if", "for", "case" })) {
+            return mainCommand.equals("if") ? ifCommand(argument, ignore, root) : mainCommand.equals("for") ? forCommand(argument, ignore, root) : caseCommand(argument, ignore, root);
+        }
         // |
         // Long executors
-        else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, root); }
+        else if (equals(mainCommand, new String[]{ "builtin", "command" })) { return processCommand(argument, false, root); }
         else if (mainCommand.equals("bruteforce")) { String PID = genpid(); start("bruteforce", PID, null, root); while (trace.containsKey(PID)) { int STATUS = processCommand(argument, ignore, root); if (STATUS != 0) { kill(PID, false, root); return STATUS; } } }
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, root); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { echoCommand(getCatch(e)); return 2; } } }
@@ -584,7 +585,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private int loadScreen(Displayable screen) { if (screen == null) { return 1; } else if (trace.containsKey("2")) { display.setCurrent(screen); } else { return 69; } return 0; }
-    private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); loadScreen(alert); return 0; }
+    private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); return loadScreen(alert); }
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(new StringItem(null, env(text))); viewer.addCommand(new Command("Back", Command.BACK, 1)); viewer.setCommandListener(this); return loadScreen(viewer); }
     // |
     // Interfaces
