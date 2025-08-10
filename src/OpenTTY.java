@@ -1061,8 +1061,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 byte[] BUFFER = new byte[1024];
                 int LENGTH;
 
-                while (IN.available() > 0) { LENGTH = IN.read(BUFFER); if (LENGTH > 0) { BAOS.write(BUFFER, 0, LENGTH); } }
-
+                while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } 
+                
 
                 String DATA = new String(BAOS.toByteArray(), "UTF-8"), FILE = env("$QUERY"); if (FILE.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } else if (FILE.equals("show")) { echoCommand(DATA); } else if (FILE.equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } else { writeRMS(FILE, DATA); } IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } return 0; }
     private int wireless(String command) { 
