@@ -1364,16 +1364,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { 
                 return audio("resume", root); 
             } else { 
-                if (argument.startsWith("/mnt/")) { 
-                    argument = argument.substring(5); 
-                } else if (argument.startsWith("/home/") || argument.equals("/mnt/")) { 
-                    echoCommand("audio: invalid source."); 
-                    return 1; 
-                } 
+                if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } 
+                else if (argument.startsWith("/home/") || argument.equals("/mnt/")) { echoCommand("audio: invalid source."); return 1; } 
 
                 try { 
+                    InputStream IN = null;
                     if (argument.startsWith("/")) { 
-                        // Tocar recurso do JAR
                         InputStream IN = getClass().getResourceAsStream(argument);
                         if (IN == null) {
                             echoCommand("audio: " + argument + ": resource not found");
