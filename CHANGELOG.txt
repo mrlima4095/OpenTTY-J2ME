@@ -52,6 +52,7 @@ LTS Edition
 - When X11 stops, it drops all saved screens
 - Command `gauge` removed, usage `x11 gauge`
 - Class `OpenTTY$HTopViewer` renamed to `Monitor`
+- Command `query` now linked with an PID to stop the activities
 
 [ _Notes_ ]
 
