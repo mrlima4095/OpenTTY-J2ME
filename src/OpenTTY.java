@@ -418,13 +418,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); }
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
-        else if (mainCommand.equals("cam")) {
-            Capture();
-        }
-        else if (mainCommand.equals("rec")) {
-            try { byte[] data = ((VideoControl) player.getControl("VideoControl")).getSnapshot(null); return writeRMS(argument.startsWith("/") ? argument : path + argument, data); }
-            catch (Exception e) { echoCommand(getCatch(e)); return 1; }
-        }
+
         // API 015 - (Scripts)
         // |
         // OpenTTY Packages
@@ -1424,24 +1418,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.endsWith(".wav")) { return "audio/x-wav"; } 
         else { return "audio/mpeg"; } 
     }
-    // | 
-    // Image Capture
-    private int Capture() {
-        try {
-            player = Manager.createPlayer("capture://video");
-            player.realize();
-            VideoControl ctrl = (VideoControl) player.getControl("VideoControl");
-            if (ctrl != null) {
-                Item videoItem = (Item) ctrl.initDisplayMode(VideoControl.USE_GUI_PRIMITIVE, null);
-                form.append(videoItem);
-            }
-        } catch (Exception e) {
-            echoCommand(getCatch(e));
-        }
-
-        return 0;
-    }
-
+    
     // API 013 - (MIDlet)
     // |
     // Java Runtime
