@@ -1418,7 +1418,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.endsWith(".wav")) { return "audio/x-wav"; } 
         else { return "audio/mpeg"; } 
     }
+    // | 
+    // Image Capture
+    private int Capture() {
+        try {
+            player = Manager.createPlayer("capture://video");
+            player.realize();
+            VideoControl ctrl = (VideoControl) player.getControl("VideoControl");
+            if (ctrl != null) {
+                Item videoItem = (Item) ctrl.initDisplayMode(VideoControl.USE_GUI_PRIMITIVE, null);
+                form.append(videoItem);
+            }
+        } catch (Exception e) {
+            echoCommand(getCatch(e));
+        }
 
+        return 0;
+    }
 
     // API 013 - (MIDlet)
     // |
