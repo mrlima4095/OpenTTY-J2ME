@@ -109,3 +109,4 @@
 [2025-1.16-02x42]	Added Command 'CATCH'
 [2025-1.16-02x43]	Fixed sudo screen crashes
 [2025-1.16-02x44]	New X11 Screen 'EDIT'
+[2025-1.16-02x45]	Command 'QUERY' rewrited
