@@ -210,68 +210,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         // |
         // Socket Interfaces
-        else if (mainCommand.equals("query")) { 
-            try { 
-                String response = "";
-                
-                {
-                    String cmd = env(argument.trim());
-                    String addr = getCommand(cmd);
-                    String arg = getArgument(cmd);
-
-                    if (addr.equals("")) {
-                        throw new RuntimeException("query: missing [address]");
-                    }
-
-                    StreamConnection CONN = null;
-                    InputStream IN = null;
-                    OutputStream OUT = null;
-                    ByteArrayOutputStream BAOS = null;
-
-                    try {
-                        CONN = (StreamConnection) Connector.open(addr);
-                        IN = CONN.openInputStream();
-                        OUT = CONN.openOutputStream();
-
-                        if (!arg.equals("")) {
-                            OUT.write((arg + "\r\n").getBytes());
-                            OUT.flush();
-                        }
-
-                        BAOS = new ByteArrayOutputStream();
-                        byte[] BUFFER = new byte[1024];
-                        int LENGTH;
-
-                        while (true) {
-                            try {
-                                LENGTH = IN.read(BUFFER);
-                                if (LENGTH == -1) break;
-                                BAOS.write(BUFFER, 0, LENGTH);
-                            } catch (IOException readErr) { break; }
-
-                        }
-
-                        response = new String(BAOS.toByteArray(), "UTF-8");
-
-                    } catch (IOException e) {
-                        response = "query: IOException - " + e.getMessage();
-                    } finally {
-                        try { if (IN != null) IN.close(); } catch (Exception ignored) {}
-                        try { if (OUT != null) OUT.close(); } catch (Exception ignored) {}
-                        try { if (CONN != null) CONN.close(); } catch (Exception ignored) {}
-                        try { if (BAOS != null) BAOS.close(); } catch (Exception ignored) {}
-                    }
-                }
-
-                String file = env("$QUERY"); 
-                if (file.equals("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); }
-                else if (file.equalsIgnoreCase("show")) { echoCommand(response); }
-                else if (file.equalsIgnoreCase("nano")) { nanoContent = response; echoCommand("query: data retrieved"); }
-                else { writeRMS(env("$QUERY"), response); }
-
-            } 
-            catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : (e instanceof RuntimeException) ? 2 : 1; }
-        }
+        else if (mainCommand.equals("query")) { return query(argument); }
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument); }
         // |
@@ -1107,6 +1046,45 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
+    private int query(String command) {
+        command = env(command.trim()); 
+        String mainCommand = getCommand(command), argument = getArgument(command), file = env("$QUERY"), response = "";
+
+        if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return 2; }
+
+        StreamConnection CONN = null; 
+        InputStream IN = null; OutputStream OUT = null; 
+        ByteArrayOutputStream BAOS = null;
+
+        try {
+            CONN = (StreamConnection) Connector.open(mainCommand);
+            IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); 
+
+            if (argument.equals("")) { }
+            else { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); }
+
+            BAOS = new ByteArrayOutputStream();
+            byte[] BUFFER = new byte[4096];
+            int LENGTH;
+
+            while ((LENGTH = IN.read(BUFFER)) != -1) { if (LENGTH > 0) { BAOS.write(BUFFER, 0, LENGTH); } }
+
+            response = new String(BAOS.toByteArray(), "UTF-8");
+        } 
+        catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : (e instanceof RuntimeException) ? 2 : 1; }
+        finally {
+            try {
+                if (BAOS != null) BAOS.close(); if (IN != null) IN.close(); if (OUT != null) OUT.close(); if (CONN != null) CONN.close();
+            } catch (Exception e) { }
+        }
+
+        if (file.equals("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); }
+        else if (file.equalsIgnoreCase("show")) { echoCommand(response); }
+        else if (file.equalsIgnoreCase("nano")) { nanoContent = response; echoCommand("query: data retrieved"); }
+        else { writeRMS(env("$QUERY"), response); }
+
+        return 0;
+    }
     private int wireless(String command) { 
         command = env(command.trim()); 
         String mainCommand = getCommand(command), argument = getArgument(command); 
