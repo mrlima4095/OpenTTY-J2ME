@@ -1083,7 +1083,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 IN.close(); OUT.close(); CONN.close(); 
             } 
-            catch (Exception e) { echoCommand(getCatch(e)); trace.remove(PID); return (e instanceof SecurityException) ? 13 : 1; } 
+            catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } 
         } 
 
         return 0; 
