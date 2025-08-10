@@ -1060,8 +1060,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             CONN = (StreamConnection) Connector.open(mainCommand);
             IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); 
 
-            if (argument.equals("")) { }
-            else { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); }
+            if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); }
 
             BAOS = new ByteArrayOutputStream();
             byte[] BUFFER = new byte[4096];
