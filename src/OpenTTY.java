@@ -1381,7 +1381,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } 
                 else if (argument.startsWith("/home/") || argument.equals("/mnt/")) { echoCommand("audio: invalid source."); return 1; } 
                 else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return 1; } 
-                else { return audio("play " + path + argument); } 
+                else { return audio("play " + path + argument, root); } 
 
                 try { 
                     FileConnection CONN = (FileConnection) Connector.open("file:///" + argument, Connector.READ); 
