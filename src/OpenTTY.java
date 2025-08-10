@@ -1026,7 +1026,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
 
                 } 
-                catch (IOException e) { echoCommand("[-] " + getCatch(e)); } 
+                catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { break; } } 
                 finally {
                     try {
                         if (is != null) { is.close(); } if (os != null) { os.close(); }
