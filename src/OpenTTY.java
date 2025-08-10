@@ -1439,10 +1439,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         try {
             player = Manager.createPlayer("capture://video");
             player.realize();
-            videoControl = (VideoControl) player.getControl("VideoControl");
-            if (videoControl != null) {
-                videoControl.initDisplayMode(VideoControl.USE_GUI_PRIMITIVE, null);
-                form.append((Item) videoControl.getDisplayControl());
+            ctrl = (VideoControl) player.getControl("VideoControl");
+            if (ctrl != null) {
+                ctrl.initDisplayMode(VideoControl.USE_GUI_PRIMITIVE, null);
+                form.append((Item) ctrl.getDisplayControl());
                 player.start();
             }
         } catch (Exception e) {
