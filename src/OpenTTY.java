@@ -541,7 +541,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // | 
         // Screen MODs
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
-        else if (mainCommand.equals("font")) { if (argument.equals("")) { xserver("font default", root); } else { stdout.setFont(newFont(argument)); } }
+        else if (mainCommand.equals("font")) { stdout.setFont(newFont(argument.equals("") ? "default" : argument)); }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
         // |
