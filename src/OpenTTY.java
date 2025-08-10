@@ -419,13 +419,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
 
-        else if (mainCommand.equals("args")) { for (int i = 0; i < args.length; i++) { echoCommand(args[i]); } }
-        else if (mainCommand.equals("ctrl")) {
-            Control[] controls = player.getControls();
-            for (int i = 0; i < controls.length; i++) {
-                echoCommand("Control: " + controls[i].getClass().getName());
-            }
-        }
         // API 015 - (Scripts)
         // |
         // OpenTTY Packages
