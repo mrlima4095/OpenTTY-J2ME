@@ -1056,7 +1056,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    private String query(String command) throws Exception { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command), response = ""; if (mainCommand.equals("")) { throw new RuntimeException("query: missing [address]"); } else { StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } ByteArrayOutputStream BAOS = new ByteArrayOutputStream(); byte[] BUFFER = new byte[1024]; int LENGTH; while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } response = new String(BAOS.toByteArray(), "UTF-8"); IN.close(); OUT.close(); CONN.close(); } return response; }
+    private String query(String command) throws Exception { 
+        command = env(command.trim()); 
+        String mainCommand = getCommand(command), argument = getArgument(command), response = ""; 
+
+        if (mainCommand.equals("")) { throw new RuntimeException("query: missing [address]"); } 
+        else { 
+            StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); 
+            InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); 
+
+            if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } 
+            ByteArrayOutputStream BAOS = new ByteArrayOutputStream(); 
+            byte[] BUFFER = new byte[1024]; 
+            int LENGTH; while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } 
+
+            response = new String(BAOS.toByteArray(), "UTF-8"); 
+            IN.close(); OUT.close(); CONN.close(); 
+        } 
+
+        return response; 
+    }
     private int wireless(String command) { 
         command = env(command.trim()); 
         String mainCommand = getCommand(command), argument = getArgument(command); 
