@@ -430,7 +430,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Capture();
         }
         else if (mainCommand.equals("rec")) {
-            try { return writeRMS(argument.startsWith("/") ? argument : path + argument, videoControl.getSnapshot(null)); }
+            try { byte[] data = videoControl.getSnapshot(null); return writeRMS(argument.startsWith("/") ? argument : path + argument, data); }
             catch (Exception e) { echoCommand(getCatch(e)); return 1; }
         }
 
