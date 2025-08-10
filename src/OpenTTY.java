@@ -420,6 +420,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
 
         else if (mainCommand.equals("args")) { for (int i = 0; i < args.length; i++) { echoCommand(args[i]); } }
+        else if (mainCommand.equals("ctrl")) {
+            Control[] controls = player.getControls();
+            for (int i = 0; i < controls.length; i++) {
+                System.out.println("Control: " + controls[i].getClass().getName());
+            }
+        }
 
         // API 015 - (Scripts)
         // |
@@ -1062,8 +1068,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 start("query " + mainCommand, PID, null, root);
                 while ((LENGTH = IN.read(BUFFER)) != -1 && trace.containsKey(PID)) { BAOS.write(BUFFER, 0, LENGTH); }
-                
-                
 
                 String DATA = new String(BAOS.toByteArray(), "UTF-8"), FILE = env("$QUERY"); 
                 if (FILE.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
@@ -1077,7 +1081,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
 
         return 0; 
-        }
+    }
     private int wireless(String command) { 
         command = env(command.trim()); 
         String mainCommand = getCommand(command), argument = getArgument(command); 
