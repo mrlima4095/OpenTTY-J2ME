@@ -264,7 +264,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 String file = env("$QUERY"); 
-                if (file.equalsIgnoreCase("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); }
+                if (file.equals("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); }
                 else if (file.equalsIgnoreCase("show")) { echoCommand(response); }
                 else if (file.equalsIgnoreCase("nano")) { nanoContent = response; echoCommand("query: data retrieved"); }
                 else { writeRMS(env("$QUERY"), response); }
