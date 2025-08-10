@@ -1060,7 +1060,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Socket Interfaces
     private int query(String command, boolean root) { 
         command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command), PID = genpid(); 
+        String mainCommand = getCommand(command), argument = getArgument(command); 
         if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return 2; } 
         else { 
             try { 
@@ -1072,8 +1072,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 ByteArrayOutputStream BAOS = new ByteArrayOutputStream();
                 byte[] BUFFER = new byte[1024]; int LENGTH;
 
-                start("query " + mainCommand, PID, null, root);
-                while ((LENGTH = IN.read(BUFFER)) != -1 && trace.containsKey(PID)) { BAOS.write(BUFFER, 0, LENGTH); }
+                while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); }
 
                 String DATA = new String(BAOS.toByteArray(), "UTF-8"), FILE = env("$QUERY"); 
                 if (FILE.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
@@ -1081,7 +1080,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (FILE.equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } 
                 else { writeRMS(FILE, DATA); } 
 
-                trace.remove(PID); IN.close(); OUT.close(); CONN.close(); 
+                IN.close(); OUT.close(); CONN.close(); 
             } 
             catch (Exception e) { echoCommand(getCatch(e)); trace.remove(PID); return (e instanceof SecurityException) ? 13 : 1; } 
         } 
@@ -1416,7 +1415,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.stop(); player.close(); 
                     player = null; 
 
-                    mj
+                    trace.remove()
                 } 
                 else { echoCommand("audio: not running."); return 69; } 
             } 
