@@ -1046,44 +1046,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    private int query(String command) {
+    private int query(String command) { 
         command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command), file = env("$QUERY"), response = "";
+        String mainCommand = getCommand(command), argument = getArgument(command); 
+        if (mainCommand.equals("")) { echoCommand("query: missing [address]"); } 
+        else { 
+            try { 
+                StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); 
+                InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); 
 
-        if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return 2; }
+                if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } 
 
-        StreamConnection CONN = null; 
-        InputStream IN = null; OutputStream OUT = null; 
-        ByteArrayOutputStream BAOS = null;
+                ByteArrayOutputStream BAOS = new ByteArrayOutputStream(); 
+                byte[] BUFFER = new byte[1024]; 
+                int LENGTH; 
 
-        try {
-            CONN = (StreamConnection) Connector.open(mainCommand);
-            IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); 
+                while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } 
 
-            if (argument.equals("")) { }
-            else { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); }
+                String DATA = new String(BAOS.toByteArray(), "UTF-8"); 
 
-            BAOS = new ByteArrayOutputStream();
-            byte[] BUFFER = new byte[4096];
-            int LENGTH;
+                if (env("$QUERY").equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
+                else if (env("$QUERY").toLowerCase().equals("show")) { echoCommand(DATA); } 
+                else if (env("$QUERY").toLowerCase().equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } 
+                else { writeRMS(env("$QUERY"), DATA); } 
 
-            while ((LENGTH = IN.read(BUFFER)) != -1) { if (LENGTH > 0) { BAOS.write(BUFFER, 0, LENGTH); } }
-
-            response = new String(BAOS.toByteArray(), "UTF-8");
+                IN.close(); OUT.close(); CONN.close(); 
+            } 
+            catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } 
         } 
-        catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : (e instanceof RuntimeException) ? 2 : 1; }
-        /*finally {
-            try {
-                if (BAOS != null) { BAOS.close(); } if (IN != null) { IN.close(); } if (OUT != null) { OUT.close(); } if (CONN != null) { CONN.close(); }
-            } catch (Exception e) { }
-        }*/
 
-        if (file.equals("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); }
-        else if (file.equalsIgnoreCase("show")) { echoCommand(response); }
-        else if (file.equalsIgnoreCase("nano")) { nanoContent = response; echoCommand("query: data retrieved"); }
-        else { writeRMS(env("$QUERY"), response); }
-
-        return 0;
+        return 0; 
     }
     private int wireless(String command) { 
         command = env(command.trim()); 
