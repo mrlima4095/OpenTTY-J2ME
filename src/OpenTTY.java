@@ -463,11 +463,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
     private String getCatch(Exception e) { String message = e.getMessage(); return message == null || message.length() == 0 || message.equals("null") ? e.getClass().getName() : message; }
     // |
-    private String getcontent(String file) { file = getpattern(file); return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
+    private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // |
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
-    private String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(content.substring(start, i)); } start = i + 1; } } if (start < content.length()) { args.addElement(content.substring(start)); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
+    private String[] splitArgs(String content) { 
+        Vector args = new Vector(); 
+        boolean inQuotes = false; 
+        int start = 0; 
+        for (int i = 0; i < content.length(); i++) { 
+            char c = content.charAt(i); 
+            
+            if (c == '"') { inQuotes = !inQuotes; continue; } 
+            if (!inQuotes && c == ' ') { 
+                if (i > start) { args.addElement(getpattern(content.substring(start, i))); } 
+                
+                start = i + 1; 
+                
+            } 
+            
+        } 
+        if (start < content.length()) { args.addElement(getpattern(content.substring(start))); } 
+        String[] result = new String[args.size()]; 
+        args.copyInto(result); 
+        
+        return result; 
+        
+    }
     // |
     private Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (!line.startsWith("#")) { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { String key = line.substring(0, equalIndex).trim(); String value = line.substring(equalIndex + 1).trim(); properties.put(key, value); } } } return properties; }
     private int getNumber(String s, int fallback, boolean print) { try { return Integer.valueOf(s); } catch (Exception e) { if (print) {echoCommand(getCatch(e)); } return fallback; } }
