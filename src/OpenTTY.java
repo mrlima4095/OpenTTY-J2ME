@@ -1072,11 +1072,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             response = new String(BAOS.toByteArray(), "UTF-8");
         } 
         catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : (e instanceof RuntimeException) ? 2 : 1; }
-        finally {
+        /*finally {
             try {
                 if (BAOS != null) { BAOS.close(); } if (IN != null) { IN.close(); } if (OUT != null) { OUT.close(); } if (CONN != null) { CONN.close(); }
             } catch (Exception e) { }
-        }
+        }*/
 
         if (file.equals("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); }
         else if (file.equalsIgnoreCase("show")) { echoCommand(response); }
