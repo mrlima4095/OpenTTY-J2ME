@@ -426,14 +426,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 echoCommand("Control: " + controls[i].getClass().getName());
             }
         }
-        else if (mainCommand.equals("cam")) {
-            Capture();
-        }
-        else if (mainCommand.equals("rec")) {
-            try { byte[] data = ((VideoControl) player.getControl("VideoControl")).getSnapshot(null); return writeRMS(argument.startsWith("/") ? argument : path + argument, data); }
-            catch (Exception e) { echoCommand(getCatch(e)); return 1; }
-        }
-
         // API 015 - (Scripts)
         // |
         // OpenTTY Packages
