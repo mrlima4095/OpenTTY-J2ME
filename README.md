@@ -3,7 +3,7 @@
 
 ## OpenTTY 1.16 LTS
 
-[OpenTTY 1.16-rc1](http://opentty.xyz/repo/dist/1.16-rc1/dist.jar)
+[OpenTTY 1.16 rc-1](http://opentty.xyz/repo/dist/1.16/rc1.jar)
 
 ---
 
