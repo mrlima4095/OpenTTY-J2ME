@@ -423,7 +423,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ctrl")) {
             Control[] controls = player.getControls();
             for (int i = 0; i < controls.length; i++) {
-                System.out.println("Control: " + controls[i].getClass().getName());
+                echoCommand("Control: " + controls[i].getClass().getName());
             }
         }
 
