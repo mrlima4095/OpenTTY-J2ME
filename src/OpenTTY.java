@@ -360,7 +360,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument)), html2text(env(argument))); } }
         // |
         // Audio Manager
-        else if (mainCommand.equals("audio")) { return audio(argument); }
+        else if (mainCommand.equals("audio")) { return audio(argument, root); }
         
         // API 013 - (MIDlet)
         // |
@@ -425,6 +425,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             for (int i = 0; i < controls.length; i++) {
                 echoCommand("Control: " + controls[i].getClass().getName());
             }
+        }
+        else if (mainCommand.equals("cam")) {
+            Capture();
+        }
+        else if (mainCommand.equals("rec")) {
+            return writeRMS(argument.startsWith("/") ? argument : path + argument, videoControl.getSnapshot(null));
         }
 
         // API 015 - (Scripts)
@@ -1353,7 +1359,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
     // |
     // Audio Manager
-    private int audio(String command) { 
+    private int audio(String command, boolean root) { 
         command = env(command.trim()); 
         String mainCommand = getCommand(command), argument = getArgument(command); 
 
@@ -1370,7 +1376,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { echoCommand("audio: not running."); return 69; } 
         } 
         else if (mainCommand.equals("play")) { 
-            if (argument.equals("")) { } 
+            if (argument.equals("")) { return audio("resume", ) } 
             else { 
                 if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } 
                 else if (argument.startsWith("/home/") || argument.equals("/mnt/")) { echoCommand("audio: invalid source."); return 1; } 
@@ -1385,7 +1391,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player = Manager.createPlayer(IN, getMimeType(argument)); 
                     player.prefetch(); player.start(); 
 
-                    start("audio", null, "audio stop", false); 
+                    if (getprocess("audio") == null) { start("audio", null, "audio stop", root); }
                 } 
                 catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
             } 
@@ -1410,7 +1416,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.stop(); player.close(); 
                     player = null; 
 
-                    stop("audio", false); 
+                    mj
                 } 
                 else { echoCommand("audio: not running."); return 69; } 
             } 
@@ -1427,6 +1433,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.endsWith(".wav")) { return "audio/x-wav"; } 
         else { return "audio/mpeg"; } 
     }
+    // | 
+    // Image Capture
+    private int Capture() {
+        try {
+            player = Manager.createPlayer("capture://video");
+            player.realize();
+            videoControl = (VideoControl) player.getControl("VideoControl");
+            if (videoControl != null) {
+                videoControl.initDisplayMode(VideoControl.USE_GUI_PRIMITIVE, null);
+                form.append((Item) videoControl.getDisplayControl());
+                player.start();
+            }
+        } catch (Exception e) {
+            echoCommand(getCatch(e));
+        }
+
+        return 0;
+    }
+
 
     // API 013 - (MIDlet)
     // |
