@@ -210,8 +210,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         // |
         // Socket Interfaces
-        else if (mainCommand.equals("query")) { return query(argument); }
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
+        else if (mainCommand.equals("query")) { return query(argument, root); }
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
@@ -1046,10 +1046,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    private int query(String command) { 
+    private int query(String command, boolean root) { 
         command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command); 
-        if (mainCommand.equals("")) { echoCommand("query: missing [address]"); } 
+        String mainCommand = getCommand(command), argument = getArgument(command), PID = genpid(); 
+        if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return 2; } 
         else { 
             try { 
                 StreamConnection CONN = (StreamConnection) Connector.open(mainCommand); 
@@ -1058,13 +1058,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } 
 
                 ByteArrayOutputStream BAOS = new ByteArrayOutputStream();
-                byte[] BUFFER = new byte[1024];
-                int LENGTH;
+                byte[] BUFFER = new byte[1024]; int LENGTH;
 
-                while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); } 
+                start("query " + mainCommand, PID, null, root);
+                while ((LENGTH = IN.read(BUFFER)) != -1 && trace.containsKey(PID)) { BAOS.write(BUFFER, 0, LENGTH); }
+                
                 
 
-                String DATA = new String(BAOS.toByteArray(), "UTF-8"), FILE = env("$QUERY"); if (FILE.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } else if (FILE.equals("show")) { echoCommand(DATA); } else if (FILE.equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } else { writeRMS(FILE, DATA); } IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } return 0; }
+                String DATA = new String(BAOS.toByteArray(), "UTF-8"), FILE = env("$QUERY"); 
+                if (FILE.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
+                else if (FILE.equals("show")) { echoCommand(DATA); } 
+                else if (FILE.equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } 
+                else { writeRMS(FILE, DATA); } 
+
+                trace.remove(PID); IN.close(); OUT.close(); CONN.close(); 
+            } 
+            catch (Exception e) { echoCommand(getCatch(e)); trace.remove(PID); return (e instanceof SecurityException) ? 13 : 1; } 
+        } 
+
+        return 0; 
+        }
     private int wireless(String command) { 
         command = env(command.trim()); 
         String mainCommand = getCommand(command), argument = getArgument(command); 
