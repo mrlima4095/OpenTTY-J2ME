@@ -214,7 +214,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try { 
                 String response = "";
                 
-                // Versão segura do query
                 {
                     String cmd = env(argument.trim());
                     String addr = getCommand(cmd);
@@ -248,9 +247,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 LENGTH = IN.read(BUFFER);
                                 if (LENGTH == -1) break;
                                 BAOS.write(BUFFER, 0, LENGTH);
-                            } catch (IOException readErr) {
-                                break; // Servidor fechou conexão
-                            }
+                            } catch (IOException readErr) { break; }
+
                         }
 
                         response = new String(BAOS.toByteArray(), "UTF-8");
@@ -266,25 +264,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 String file = env("$QUERY"); 
-                if (file.equals("$QUERY") || env("$QUERY").equals("")) { 
-                    echoCommand(response); 
-                    MIDletLogs("add warn Query storage setting not found"); 
-                }
-                else if (file.equals("show")) { 
-                    echoCommand(response); 
-                }
-                else if (file.equals("nano")) { 
-                    nanoContent = response; 
-                    echoCommand("query: data retrieved"); 
-                }
-                else { 
-                    writeRMS(env("$QUERY"), response); 
-                }
+                if (file.equalsIgnoreCase("$QUERY") || file.equals("")) { echoCommand(response); MIDletLogs("add warn Query storage setting not found"); }
+                else if (file.equalsIgnoreCase("show")) { echoCommand(response); }
+                else if (file.equalsIgnoreCase("nano")) { nanoContent = response; echoCommand("query: data retrieved"); }
+                else { writeRMS(env("$QUERY"), response); }
 
-            } catch (Exception e) { 
-                echoCommand(getCatch(e)); 
-                return (e instanceof SecurityException) ? 13 : (e instanceof RuntimeException) ? 2 : 1; 
-            }
+            } 
+            catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : (e instanceof RuntimeException) ? 2 : 1; }
         }
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument); }
