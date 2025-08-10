@@ -1361,26 +1361,58 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { echoCommand("audio: not running."); return 69; } 
         } 
         else if (mainCommand.equals("play")) { 
-            if (argument.equals("")) { return audio("resume", root); } 
-            else { 
-                if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } 
-                else if (argument.startsWith("/home/") || argument.equals("/mnt/")) { echoCommand("audio: invalid source."); return 1; } 
-                else if (argument.startsWith("/")) { echoCommand("audio: invalid source."); return 1; } 
-                else { return audio("play " + path + argument, root); } 
+            if (argument.equals("")) { 
+                return audio("resume", root); 
+            } else { 
+                if (argument.startsWith("/mnt/")) { 
+                    argument = argument.substring(5); 
+                } else if (argument.startsWith("/home/") || argument.equals("/mnt/")) { 
+                    echoCommand("audio: invalid source."); 
+                    return 1; 
+                } 
 
                 try { 
-                    FileConnection CONN = (FileConnection) Connector.open("file:///" + argument, Connector.READ); 
-                    if (!CONN.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } 
+                    if (argument.startsWith("/")) { 
+                        // Tocar recurso do JAR
+                        InputStream IN = getClass().getResourceAsStream(argument);
+                        if (IN == null) {
+                            echoCommand("audio: " + argument + ": resource not found");
+                            return 127;
+                        }
 
-                    InputStream IN = CONN.openInputStream(); CONN.close(); 
-                    player = Manager.createPlayer(IN, getMimeType(argument)); 
-                    player.prefetch(); player.start(); 
+                        player = Manager.createPlayer(IN, getMimeType(argument)); 
+                        player.prefetch(); 
+                        player.start(); 
 
-                    if (getprocess("audio") == null) { start("audio", null, "audio stop", root); }
+                        if (getprocess("audio") == null) { 
+                            start("audio", null, "audio stop", root); 
+                        }
+                    } else { 
+                        // Arquivo no sistema de arquivos
+                        String filePath = path + argument;
+                        FileConnection CONN = (FileConnection) Connector.open("file:///" + filePath, Connector.READ); 
+                        if (!CONN.exists()) { 
+                            echoCommand("audio: " + basename(filePath) + ": not found"); 
+                            return 127; 
+                        } 
+
+                        InputStream IN = CONN.openInputStream(); 
+                        CONN.close(); 
+
+                        player = Manager.createPlayer(IN, getMimeType(filePath)); 
+                        player.prefetch(); 
+                        player.start(); 
+
+                        if (getprocess("audio") == null) { 
+                            start("audio", null, "audio stop", root); 
+                        }
+                    } 
+                } catch (Exception e) { 
+                    echoCommand(getCatch(e)); 
+                    return 1; 
                 } 
-                catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
             } 
-        } 
+        }
         else if (mainCommand.equals("pause")) { 
             try { 
                 if (player != null) { player.stop(); } 
