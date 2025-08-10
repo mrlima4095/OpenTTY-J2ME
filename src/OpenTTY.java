@@ -877,7 +877,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 006 - (Process)
     // |
     // Memory
-    public class HTopViewer implements CommandListener {
+    public class Monitor implements CommandListener {
         private Form monitor = new Form(form.getTitle());
         private List process = new List(form.getTitle(), List.IMPLICIT);
         private StringItem status = new StringItem("Memory Status:", "");
@@ -886,7 +886,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private int TYPE = 0, MONITOR = 1, PROCESS = 2;
         private boolean root = false;
 
-        public HTopViewer(String args, boolean root) {
+        public Monitor(String args, boolean root) {
             this.root = root;
             if (args == null || args.length() == 0 || args.equals("memory")) { TYPE = MONITOR; monitor.append(status); load(); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); } 
             else if (args.equals("process")) { TYPE = PROCESS; load(); process.addCommand(BACK); process.addCommand(KILL); process.setCommandListener(this); display.setCurrent(process); } 
