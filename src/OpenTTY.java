@@ -1384,7 +1384,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             start("audio", null, "audio stop", root); 
                         }
                     } else { 
-                        // Arquivo no sistema de arquivos
                         String filePath = path + argument;
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + filePath, Connector.READ); 
                         if (!CONN.exists()) { 
