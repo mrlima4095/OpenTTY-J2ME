@@ -1394,19 +1394,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         InputStream IN = getClass().getResourceAsStream(argument);
                         
                     } else { 
-                        String filePath = path + argument;
-                        FileConnection CONN = (FileConnection) Connector.open("file:///" + filePath, Connector.READ); 
-                        if (!CONN.exists()) { echoCommand("audio: " + basename(filePath) + ": not found"); return 127; } 
+                        FileConnection CONN = (FileConnection) Connector.open("file:///" + path + argument, Connector.READ); 
+                        if (!CONN.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } 
                         InputStream IN = CONN.openInputStream(); 
                         CONN.close(); 
                     } 
 
-                    if (IN == null) { echoCommand("audio: " + argument + ": not found"); return 127; }
+                    if (IN == null) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; }
 
                     player = Manager.createPlayer(IN, getMimeType(argument)); 
                     player.prefetch(); player.start(); 
 
-                    if (trace.containsKey("3")) {  }
+                    if (!trace.containsKey("3")) {
+                        Hashtable proc = new Hashtable();
+                        proc.put("name", "audio"); proc.put("owner", root ? "root" : username);
+                        proc.put("collector", "audio stop");
+                
+                        trace.put(pid, proc);
+                    }
                 } catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
             } 
         }
