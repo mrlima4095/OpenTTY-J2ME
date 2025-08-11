@@ -447,9 +447,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     // |
     private int indexOf(String key, String[] array) { for (int i = 0; i < array.length; i++) { if (array[i].equals(key)) { return i; } } return -1; }
-    private int getCatch(Exception e, int fallback) {
-        return (e instanceof SecurityException) ? 13 : fallback;
-    }
+    private int getCatch(Exception e, int fallback) { return (e instanceof SecurityException) ? 13 : fallback; }
     // |
     private Image loadImage(String file) throws Exception {
         if (file.startsWith("/mnt/")) {
