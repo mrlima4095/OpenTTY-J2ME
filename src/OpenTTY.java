@@ -752,7 +752,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); 
                     } 
-                    catch (IOException e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + getCatch(e)); } 
+                    catch (Exception e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + getCatch(e)); } 
                 } 
             } 
             if (PKG.containsKey("canvas.fields")) { 
