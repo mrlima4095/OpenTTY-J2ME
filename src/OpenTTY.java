@@ -1410,7 +1410,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         proc.put("name", "audio"); proc.put("owner", root ? "root" : username);
                         proc.put("collector", "audio stop");
                 
-                        trace.put(pid, proc);
+                        trace.put("3", proc);
                     }
                 } catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
             } 
