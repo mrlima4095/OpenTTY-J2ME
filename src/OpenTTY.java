@@ -1375,7 +1375,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (mainCommand.equals("")) { } 
         else if (mainCommand.equals("volume")) { 
-            if (player != null) { 
+            if (trace.containsKey("3")) { 
                 VolumeControl vc = (VolumeControl) player.getControl("VolumeControl"); 
                 if (argument.equals("")) { echoCommand("" + vc.getLevel()); } 
                 else { 
@@ -1441,7 +1441,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
         } 
-        else if (mainCommand.equals("status")) { echoCommand(player != null ? "true" : "false"); } 
+        else if (mainCommand.equals("status")) { echoCommand(trace.containsKey("3") ? "true" : "false"); } 
         else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } 
 
         return 0; 
