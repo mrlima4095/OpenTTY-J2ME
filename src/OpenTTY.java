@@ -238,7 +238,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("popd")) { if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
         else if (mainCommand.equals("ls")) { 
             Vector BUFFER = new Vector(); 
-            boolean all = argument.startsWith("-a"); if (all) { argument = argument.substring(2).trim(); }
+            boolean all = false, verbose = false;
+
+            for (int i = 0; i < args.length; i++) {
+                if (args[i].equals("-a")) { all = true; } 
+                else if (args[i].equals("-v")) { verbose = true; } 
+                else { argument = join(args, " ", i); break; }
+            }
 
             String PWD = argument.equals("") ? path : argument; 
             if (!PWD.startsWith("/")) { PWD = path + PWD; } 
@@ -258,7 +264,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { BUFFER.addElement((String) CONTENT.nextElement()); } 
                     CONN.close(); 
                 } 
-                else if (PWD.equals("/home/")) { 
+                else if (PWD.equals("/home/") && verbose) { 
                     String[] FILES = RecordStore.listRecordStores(); 
                     if (FILES != null) { 
                         for (int i = 0; i < FILES.length; i++) { 
@@ -269,6 +275,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } 
                     } 
                 } 
+                else if (PWD.equals("/home/")) {
+                    new Explorer();
+                }
             } catch (IOException e) { } 
 
             String[] FILES = (String[]) paths.get(PWD); 
