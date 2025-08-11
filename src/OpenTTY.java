@@ -243,7 +243,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             for (int i = 0; i < args.length; i++) {
                 if (args[i].equals("-a")) { all = true; } 
                 else if (args[i].equals("-v")) { verbose = true; } 
-                else { argument = join(args, " ", i); break; }
+                else { argument = join(args, " ", i++); break; }
             }
 
             String PWD = argument.equals("") ? path : argument; 
@@ -476,6 +476,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     // |
     private int indexOf(String key, String[] array) { for (int i = 0; i < array.length; i++) { if (array[i].equals(key)) { return i; } } return -1; }
+    private int getCatch(Exception e, int fallback) {
+        return (e instanceof SecurityException) ? 13 : fallback
+    }
     // |
     public class Credentials implements CommandListener { private int TYPE = 0, SIGNUP = 1, REQUEST = 2; private boolean asking_user = username.equals(""), asking_passwd = passwd(false, null).equals(""); private String command = ""; private Form screen = new Form(form.getTitle()); private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); public Credentials(String args) { if (args == null || args.length() == 0 || args.equals("login")) { TYPE = SIGNUP; screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); if (asking_user) { asking_user = true; screen.append(USER); } if (asking_passwd) { screen.append(PASSWD); } } else { TYPE = REQUEST; if (asking_passwd) { new Credentials(null); return; } asking_passwd = true; command = args; PASSWD.setLabel("[sudo] password for " + username); screen.append(PASSWD); LOGIN = new Command("Send", Command.OK, 1); EXIT = new Command("Back", Command.SCREEN, 2); } screen.addCommand(LOGIN); screen.addCommand(EXIT); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == LOGIN) { String password = PASSWD.getString().trim(); if (TYPE == SIGNUP) { if (asking_user) { username = USER.getString().trim(); } if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } else { if (asking_user) { writeRMS("/home/OpenRMS", username); } if (asking_passwd) { passwd(true, password); } display.setCurrent(form); runScript(loadRMS("initd")); } } else if (TYPE == REQUEST) { if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else { if (String.valueOf(password.hashCode()).equals(passwd(false, null))) { processCommand("xterm"); processCommand(command, true, true); } else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } } } stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); } else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); } } }
     private String passwd(boolean write, String value) { if (write && value != null) { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); } else { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { return ""; } } return ""; } 
@@ -1385,23 +1388,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("play")) { 
             if (argument.equals("")) { return audio("resume", root); } 
             else { 
-                if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } 
-                else if (argument.startsWith("/home/") || argument.equals("/mnt/")) { echoCommand("audio: invalid source."); return 1; } 
-
-                try { 
+                try {
                     InputStream IN = null;
-                    if (argument.startsWith("/")) { 
-                        IN = getClass().getResourceAsStream(argument);
-                        
-                    } 
-                    else { 
-                        FileConnection CONN = (FileConnection) Connector.open("file:///" + path + argument, Connector.READ); 
+                    
+                    if (argument.startsWith("/mnt/")) {
+                        FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ); 
                         IN = CONN.exists() ? CONN.openInputStream() : null; 
                         CONN.close(); 
                     } 
-
+                    else if (argument.startsWith("/home/")) { echoCommand("audio: invalid source."); return 1; } 
+                    else if (argument.startsWith("/")) { IN = getClass().getResourceAsStream(argument); }
+                    else { return audio("play " + path + argument, root); }
+                    
                     if (IN == null) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; }
-
+                    
                     player = Manager.createPlayer(IN, getMimeType(argument)); 
                     player.prefetch(); player.start(); 
 
@@ -1413,7 +1413,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         trace.put("3", proc);
                     }
                 } catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
-            } 
+            }
         }
         else if (mainCommand.equals("pause")) { 
             try { 
