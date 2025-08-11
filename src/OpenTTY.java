@@ -1406,9 +1406,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player = Manager.createPlayer(IN, getMimeType(argument)); 
                     player.prefetch(); player.start(); 
 
-                    if (trace.containsKey("3")) { 
-                        trace.put("3", (new Hashtable()).put("name", "audio").put("owner", root == true ? "root" : username).put("collector", "audio stop"));
-                    }
+                    if (trace.containsKey("3")) {  }
                 } catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
             } 
         }
