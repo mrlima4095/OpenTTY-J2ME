@@ -456,7 +456,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // |
-    public static String join(String[] array, String spacer, int start) { 
+    private String join(String[] array, String spacer, int start) { 
         if (array == null || array.length == 0 || start >= array.length) { return ""; }
         
         StringBuffer sb = new StringBuffer();
