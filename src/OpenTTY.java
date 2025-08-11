@@ -455,14 +455,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // |
     public static String join(String[] array, String spacer, int start) { 
-        if (array == null || array.length == 0 || inicio >= array.length) { return ""; }
+        if (array == null || array.length == 0 || start >= array.length) { return ""; }
         
         StringBuffer sb = new StringBuffer();
-        for (int i = start; i < arr.length; i++) {
+        for (int i = start; i < array.length; i++) {
             if (i > start) {
-                sb.append(joinChar);
+                sb.append(spacer);
             }
-            sb.append(arr[i]);
+            sb.append(array[i]);
         }
 
         return sb.toString();
