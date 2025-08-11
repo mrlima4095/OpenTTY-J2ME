@@ -323,13 +323,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("wc")) { 
             if (argument.equals("")) { } 
             else { 
-                boolean SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; 
-
-                if (argument.indexOf("-c") != -1) { SHOW_BYTES = true; } else if (argument.indexOf("-w") != -1) { SHOW_WORDS = true; } else if (argument.indexOf("-l") != -1) { SHOW_LINES = true; } 
-
-                argument = replace(argument, "-w", ""); argument = replace(argument, "-c", ""); argument = replace(argument, "-l", "").trim(); 
+                boolean FOUND = false, SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; 
+                int MODE = args[0].indexOf("-c") != -1 ? 1 : args[0].indexOf("-w") != -1 ? 2 : args[0].indexOf("-l") != -1 ? 3 : 0;
+                if (MODE != 0) { argument = join(args, " ", 1); }
                 
-                String CONTENT = getcontent(argument); 
+                String CONTENT = getcontent(argument), FILENAME = basename(argument); 
                 int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); 
                 String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; 
 
@@ -339,10 +337,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } 
                 } 
 
-                String FILENAME = basename(argument);
-                
-                if (SHOW_LINES) { echoCommand(LINES + "\t" + FILENAME); } else if (SHOW_WORDS) { echoCommand(WORDS + "\t" + FILENAME); } else if (SHOW_BYTES) { echoCommand(CHARS + "\t" + FILENAME); } 
-                else { echoCommand(LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME); } 
+                echoCommand(MODE == 0 ? LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME : MODE == 1 ? CHARS + "\t" + FILENAME : MODE == 2 ? WORDS + "\t" + FILENAME : LINES + "\t" + FILENAME);
             } 
         }
         // |
@@ -394,7 +389,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (STATUS == 13) { MIDletLogs("add error Permission '" + NODE + "' denied"); } 
                     else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + NODE + "'"); } 
                     
-                    if (STATUS > 1) { break; }
+                    if (STATUS > 1) { break; } 
                 }
                 return STATUS; 
             } 
@@ -450,6 +445,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // |
+    public static String join(String[] array, String spacer, int start) { 
+        if (array == null || array.length == 0 || inicio >= array.length) { return ""; }
+        
+        StringBuffer sb = new StringBuffer();
+        for (int i = start; i < arr.length; i++) {
+            if (i > start) {
+                sb.append(joinChar);
+            }
+            sb.append(arr[i]);
+        }
+
+        return sb.toString();
+    }
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(getpattern(content.substring(start, i))); } start = i + 1; } } if (start < content.length()) { args.addElement(getpattern(content.substring(start))); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
     // |
