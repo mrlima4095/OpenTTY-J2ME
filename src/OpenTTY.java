@@ -482,7 +482,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     private Image loadImage(String file) throws IOException {
         if (file.startsWith("/mnt/")) {
-            argument = argument.substring(5);
+            file = file.substring(5);
         } 
         else if (file.startsWith("/home/")) {
             throw new IOException("Loading from an invalid source");
@@ -491,10 +491,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
         } 
         else {
-            argument = path + argument;
+            file = path + file;
         }
         
-        Image content = Image.createImage(getenv("canvas.background")); 
+        Image content = Image.createImage(file); 
         return content;
     }
     // |
