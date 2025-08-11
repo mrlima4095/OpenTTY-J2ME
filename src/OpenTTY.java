@@ -921,11 +921,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (app.equals("sh") || app.equals("x11-wm") || app.equals("audio")) {
             pid = app.equals("sh") ? "1" : "2";
-            collector = app.equals("sh") ? "exit" : app.equals("x11-wm") ? "x11 stop" : "audio stop";
+            collector = app.equals("sh") ? "exit" : "x11 stop";
 
             if (trace.containsKey(pid)) { return 68; }
             else if (app.equals("sh")) { sessions.put(pid, "127.0.0.1"); }
             else if (app.equals("x11-wm")) { form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;"); form.setCommandListener(this); }
+            else if (app.equals("audio")) {
+                echoCommand("audio: start with play [file]");
+                return 1;
+            }
         } else { while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } } 
 
         
@@ -1399,10 +1403,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     if (IN == null) { echoCommand("audio: " + argument + ": not found"); return 127; }
 
-                    player = Manager.createPlayer(IN, getMimeType(filePath)); 
+                    player = Manager.createPlayer(IN, getMimeType(argument)); 
                     player.prefetch(); player.start(); 
 
-                    if (getprocess("audio") == null) { start("audio", null, "audio stop", root); }
+                    if (trace.containsKey("3")) { 
+                        trace.put("3", (new Hashtable()).put("name", "audio").put("owner", root == true ? "root" : username).put("collector", "audio stop"));
+                    }
                 } catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
             } 
         }
@@ -1426,7 +1432,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.stop(); player.close(); 
                     player = null; 
 
-                    trace.containsKey("3");
+                    trace.remove("3");
                 } 
                 else { echoCommand("audio: not running."); return 69; } 
             } 
