@@ -254,14 +254,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (PWD.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
                         String ROOT = (String) ROOTS.nextElement(); 
-                        if (!BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
+                        if ((all || !ROOT.startsWith(".")) && !BUFFER.contains(ROOT)) { 
+                            BUFFER.addElement(ROOT); 
+                        } 
                     }
                 } 
                 else if (PWD.startsWith("/mnt/")) { 
                     String REALPWD = "file:///" + PWD.substring(5); 
                     if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
                     FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
-                    for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { BUFFER.addElement((String) CONTENT.nextElement()); } 
+                    for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { 
+                        String ITEM = (String) CONTENT.nextElement();
+                        if ((all || !ITEM.startsWith(".")) && !BUFFER.contains(ITEM)) {
+                            BUFFER.addElement(ITEM); 
+                        }
+                    } 
                     CONN.close(); 
                 } 
                 else if (PWD.equals("/home/") && verbose) { 
@@ -285,7 +292,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int i = 0; i < FILES.length; i++) { 
                     String file = FILES[i].trim(); 
                     if (file == null || file.equals("..") || file.equals("/")) continue; 
-                    if (!BUFFER.contains(file) && !BUFFER.contains(file + "/")) { 
+                    if ((all || !file.startsWith(".")) && !BUFFER.contains(file) && !BUFFER.contains(file + "/")) { 
                         BUFFER.addElement(file); 
                     } 
                 } 
@@ -332,7 +339,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("wc")) { 
             if (argument.equals("")) { } 
             else { 
-                boolean FOUND = false, SHOW_LINES = false, SHOW_WORDS = false, SHOW_BYTES = false; 
                 int MODE = args[0].indexOf("-c") != -1 ? 1 : args[0].indexOf("-w") != -1 ? 2 : args[0].indexOf("-l") != -1 ? 3 : 0;
                 if (MODE != 0) { argument = join(args, " ", 1); }
                 
@@ -459,9 +465,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         StringBuffer sb = new StringBuffer();
         for (int i = start; i < array.length; i++) {
-            if (i > start) {
-                sb.append(spacer);
-            }
+            if (i > start) { sb.append(spacer); }
+
             sb.append(array[i]);
         }
 
