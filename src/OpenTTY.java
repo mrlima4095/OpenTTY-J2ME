@@ -276,15 +276,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (FILES != null) { 
                         for (int i = 0; i < FILES.length; i++) { 
                             String NAME = FILES[i]; 
-                            if ((all || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { 
-                                BUFFER.addElement(NAME); 
-                            } 
+                            if ((all || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } 
                         } 
                     } 
                 } 
-                else if (PWD.equals("/home/")) {
-                    new Explorer();
-                }
+                else if (PWD.equals("/home/")) { new Explorer(); }
             } catch (IOException e) { } 
 
             String[] FILES = (String[]) paths.get(PWD); 
@@ -923,13 +919,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
-        if (app.equals("sh") || app.equals("x11-wm")) {
+        if (app.equals("sh") || app.equals("x11-wm") || app.equals("audio")) {
             pid = app.equals("sh") ? "1" : "2";
-            collector = app.equals("sh") ? "exit" : "x11 stop";
+            collector = app.equals("sh") ? "exit" : app.equals("x11-wm") ? "x11 stop" : "audio stop";
 
             if (trace.containsKey(pid)) { return 68; }
-            else if (app.equals("x11-wm")) { form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;"); form.setCommandListener(this); }
             else if (app.equals("sh")) { sessions.put(pid, "127.0.0.1"); }
+            else if (app.equals("x11-wm")) { form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;"); form.setCommandListener(this); }
         } else { while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } } 
 
         
@@ -993,7 +989,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void run() {
-            if (trace.containsKey(port) || getNumber(port, 65536, false) > 65535 || port.equals("2")) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
+            if (trace.containsKey(port) || getNumber(port, 65536, false) > 65535 || getNumber(port, 65536, false) < 4) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
             start(service, port, null, root);
 
             while (trace.containsKey(port)) {
@@ -1383,9 +1379,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { echoCommand("audio: not running."); return 69; } 
         } 
         else if (mainCommand.equals("play")) { 
-            if (argument.equals("")) { 
-                return audio("resume", root); 
-            } else { 
+            if (argument.equals("")) { return audio("resume", root); } 
+            else { 
                 if (argument.startsWith("/mnt/")) { argument = argument.substring(5); } 
                 else if (argument.startsWith("/home/") || argument.equals("/mnt/")) { echoCommand("audio: invalid source."); return 1; } 
 
@@ -1393,41 +1388,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     InputStream IN = null;
                     if (argument.startsWith("/")) { 
                         InputStream IN = getClass().getResourceAsStream(argument);
-                        if (IN == null) {
-                            echoCommand("audio: " + argument + ": resource not found");
-                            return 127;
-                        }
-
-                        player = Manager.createPlayer(IN, getMimeType(argument)); 
-                        player.prefetch(); 
-                        player.start(); 
-
-                        if (getprocess("audio") == null) { 
-                            start("audio", null, "audio stop", root); 
-                        }
+                        
                     } else { 
                         String filePath = path + argument;
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + filePath, Connector.READ); 
-                        if (!CONN.exists()) { 
-                            echoCommand("audio: " + basename(filePath) + ": not found"); 
-                            return 127; 
-                        } 
-
+                        if (!CONN.exists()) { echoCommand("audio: " + basename(filePath) + ": not found"); return 127; } 
                         InputStream IN = CONN.openInputStream(); 
                         CONN.close(); 
-
-                        player = Manager.createPlayer(IN, getMimeType(filePath)); 
-                        player.prefetch(); 
-                        player.start(); 
-
-                        if (getprocess("audio") == null) { 
-                            start("audio", null, "audio stop", root); 
-                        }
                     } 
-                } catch (Exception e) { 
-                    echoCommand(getCatch(e)); 
-                    return 1; 
-                } 
+
+                    if (IN == null) { echoCommand("audio: " + argument + ": not found"); return 127; }
+
+                    player = Manager.createPlayer(IN, getMimeType(filePath)); 
+                    player.prefetch(); player.start(); 
+
+                    if (getprocess("audio") == null) { start("audio", null, "audio stop", root); }
+                } catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
             } 
         }
         else if (mainCommand.equals("pause")) { 
@@ -1450,7 +1426,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.stop(); player.close(); 
                     player = null; 
 
-                    stop("audio", root);
+                    trace.containsKey("3");
                 } 
                 else { echoCommand("audio: not running."); return 69; } 
             } 
@@ -1978,7 +1954,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script, boolean root) { 
         String[] CMDS = split(script, '\n'); 
 
-//        if (CMDS[0].equals("[ Config ]")) { return importScript(script, root); }
         for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } 
 
         return 0; 
