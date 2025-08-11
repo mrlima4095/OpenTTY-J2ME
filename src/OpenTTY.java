@@ -1396,8 +1396,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                     else { 
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + path + argument, Connector.READ); 
-                        if (!CONN.exists()) { echoCommand("audio: " + basename(argument) + ": not found"); return 127; } 
-                        IN = CONN.openInputStream(); 
+                        IN = CONN.exists() ? CONN.openInputStream() : null; 
                         CONN.close(); 
                     } 
 
