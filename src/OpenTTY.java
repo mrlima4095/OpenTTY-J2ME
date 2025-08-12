@@ -43,9 +43,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             // |
-            Command[] NANO_CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
-            Command[] HISTORY_CMDS = { BACK, RUN, EDIT }; for (int i = 0; i < HISTORY_CMDS.length; i++) { preview.addCommand(HISTORY_CMDS[i]); } preview.setCommandListener(this);
-            Command[] EXPLORER_CMDS = { BACK, OPEN }; for (int i = 0; i < EXPLORER_CMDS.length; i++) { explorer.addCommand(EXPLORER_CMDS[i]); } explorer.setCommandListener(this);
+            //Command[] NANO_CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
+            //Command[] HISTORY_CMDS = { BACK, RUN, EDIT }; for (int i = 0; i < HISTORY_CMDS.length; i++) { preview.addCommand(HISTORY_CMDS[i]); } preview.setCommandListener(this);
+            //Command[] EXPLORER_CMDS = { BACK, OPEN }; for (int i = 0; i < EXPLORER_CMDS.length; i++) { explorer.addCommand(EXPLORER_CMDS[i]); } explorer.setCommandListener(this);
             // |
             runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
             // |
@@ -104,15 +104,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
         } else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
-            else { //processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "exit"); }
-        }}
+            else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "exit"); }
+        }
     }
     private int load(int ITEM) {
         if (ITEM == PREVIEW) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
         else if (ITEM == EXPLORER) {
             explorer.setTitle(path); explorer.deleteAll(); 
 
-            if (!path.equals("/")) { explorer.append("..", null); } 
+            if (!path.equals("/")) { explorer.append("..", UP); } 
 
             if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { explorer.addCommand(DELETE); } 
             else { explorer.removeCommand(DELETE); }
@@ -136,15 +136,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (name.endsWith("/")) { dirs.addElement(name); } 
                         else { files.addElement(name); } 
                     } 
-                    while (!dirs.isEmpty()) { explorer.append(getFirstString(dirs), null); } 
-                    while (!files.isEmpty()) { explorer.append(getFirstString(files), null); } 
+                    while (!dirs.isEmpty()) { explorer.append(getFirstString(dirs), DIR); } 
+                    while (!files.isEmpty()) { explorer.append(getFirstString(files), FILE); } 
 
                     CONN.close(); 
                 } 
                 else if (path.equals("/home/")) { 
                     String[] recordStores = RecordStore.listRecordStores(); 
 
-                    for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { explorer.append(recordStores[i], null); } } 
+                    for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { explorer.append(recordStores[i], FILE); } } 
                 } 
                 String[] files = (String[]) paths.get(path); 
 
@@ -152,7 +152,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (int i = 0; i < files.length; i++) { 
                         String f = files[i]; 
 
-                        if (f != null && !f.equals("..") && !f.equals("/")) { explorer.append(f, f.endsWith("/") ? null : null); } 
+                        if (f != null && !f.equals("..") && !f.equals("/")) { explorer.append(f, f.endsWith("/") ? DIR : FILE); } 
                     } 
                 } 
             } catch (IOException e) { } 
