@@ -75,7 +75,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         } else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
-            else if (c == HELP) { processCommand("help"); } else if (c == NANO) { processCommand("nano", false); } else if (c == CLEAR) { stdout.setText(""); } else if (c == HISTORY) { new History(); }
+            else if (c == HELP) { processCommand("help"); } else if (c == NANO) { processCommand("nano", false); } else if (c == CLEAR) { stdout.setText(""); } else if (c == HISTORY) { processCommand("history", false); }
 
             else { processCommand(c.getCommandType() == Command.BACK ? "xterm" : "exit"); }
         }
