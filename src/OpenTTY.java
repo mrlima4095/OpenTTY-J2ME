@@ -169,12 +169,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
             } catch (IOException e) { } 
         }
-        if (ITEM == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
+        if (ITEM == MONITOR) { 
+            if (build) { monitor = new Form("Monitor", BACK, REFRESH); monitor.setCommandListener(this); }
+
+            status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
+        } 
         else if (ITEM == PROCESS) { 
             if (build) { preview = new List(form.getTitle(), List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(KILL); preview.setCommandListener(this); }
 
-            process.deleteAll(); 
-            for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); process.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
+            preview.deleteAll(); 
+            for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
         } 
         
         return 0;
