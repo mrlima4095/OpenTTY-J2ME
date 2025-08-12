@@ -254,7 +254,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { if (argument.equals("") || argument.equals("memory")) { load(MONITOR); display.setCurrent(monitor); } else if (argument.equals("process")) { load(PROCESS); display.setCurrent(process); } else { echoCommand("htop: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("htop")) { if (argument.equals("") || argument.equals("memory")) { load(MONITOR); display.setCurrent(monitor); } else if (argument.equals("process")) { load(PROCESS); display.setCurrent(preview); } else { echoCommand("htop: " + argument + ": not found"); return 127; } }
         else if (mainCommand.equals("top")) { if (argument.equals("")) { processCommand("htop", false); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } }
         // |
         // Process
@@ -358,7 +358,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Directories Manager
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
-        else if (mainCommand.equals("dir")) { load(EXPLORER, true); display.setCurrent(preview); }
+        else if (mainCommand.equals("dir")) { load(EXPLORER); display.setCurrent(preview); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/home/"; } else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } else { String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); if (!TARGET.endsWith("/")) { TARGET += "/"; } if (paths.containsKey(TARGET)) { path = TARGET; } else if (TARGET.startsWith("/mnt/")) { try { String REALPWD = "file:///" + TARGET.substring(5); FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); if (fc.exists() && fc.isDirectory()) { path = TARGET; } else { echoCommand("cd: " + basename(TARGET) + ": not " + (fc.exists() ? "a directory" : "found")); return 127; } fc.close(); } catch (IOException e) { echoCommand("cd: " + basename(TARGET) + ": " + getCatch(e)); return 1; } } else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } } }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
@@ -517,7 +517,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // General Utilities
         else if (mainCommand.equals("debug")) { return runScript(read("/scripts/debug.sh")); }
-        else if (mainCommand.equals("history")) { load(PREVIEW, true); display.setCurrent(preview); }
+        else if (mainCommand.equals("history")) { load(PREVIEW); display.setCurrent(preview); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
         else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; argument = replace(argument, "-v", "").trim(); if (argument.equals("")) { argument = "sh"; } String content = loadRMS("man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat", false); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
