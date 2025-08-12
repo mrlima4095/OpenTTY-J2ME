@@ -58,8 +58,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (d == nano) {
             nanoContent = nano.getString(); 
 
-            if (c == BACK) { processCommand("xterm"); } 
-            //else if (c == LINE) { nano.setString(nanoContent + "\n"); } 
+            if (c == BACK) { processCommand("xterm"); }  
             else if (c == CLEAR) { nano.setString(""); } 
             else if (c == RUNS) { processCommand("xterm"); runScript(nanoContent); } 
             else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } 
@@ -69,10 +68,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (c == BACK) { return; }
 
-            int index = screen.getSelectedIndex(); 
+            int index = preview.getSelectedIndex(); 
             if (index >= 0) {
                 if (c == RUN || c == List.SELECT_COMMAND) { processCommand(preview.getString(index)); }
-                else if (c == EDIT) { stdin.setString(screen.getString(index)); }
+                else if (c == EDIT) { stdin.setString(preview.getString(index)); }
             }
         } else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
