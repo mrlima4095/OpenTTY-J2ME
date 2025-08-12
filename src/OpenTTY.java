@@ -170,8 +170,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
             } catch (IOException e) { } 
         }
-        if (TYPE == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
-        else if (TYPE == PROCESS) { process.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); process.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } } 
+        if (ITEM == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
+        else if (ITEM == PROCESS) { process.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); process.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } } 
         
         return 0;
     }   
