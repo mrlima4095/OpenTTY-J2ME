@@ -58,6 +58,7 @@ LTS Edition
 - Audio codec can play audio files from **JAR** Package.
 - **Nano Editor** and **History** Threads joined into Main Thread
 - File Explorer Window title changed to current path
+- Command `title hide` hide MIDlet Main Window title
 
 [ _Notes_ ]
 
