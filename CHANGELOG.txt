@@ -56,7 +56,7 @@ LTS Edition
 - If header **[ Config ]** is found in first line of script, MIDlet will treat this as an Application
 - Command `ls` hide files that has prefix **.** in all filesystems
 - Audio codec can play audio files from **JAR** Package.
-
+- **Nano Editor** and **History** Threads joined into Main Thread
 
 [ _Notes_ ]
 
