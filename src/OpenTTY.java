@@ -707,7 +707,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } 
             } 
             if (PKG.containsKey("canvas.mouse.img")) { 
-                try { CURSOR = loadImage(getenv("canvas.mouse.img")); } 
+                try { CURSOR = Image.createImage(getenv("canvas.mouse.img")); } 
                 catch (Exception e) { MIDletLogs("add warn Malformed Cursor '" + getenv("canvas.mouse.img") + "'"); } 
             } 
             if (PKG.containsKey("canvas.fields")) { 
