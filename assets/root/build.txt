@@ -111,3 +111,4 @@
 [2025-1.16-02x44]	New X11 Screen 'EDIT'
 [2025-1.16-02x45]	Command 'QUERY' rewrited
 [2025-1.16-02x46]	Join 'Nano' and 'History' into Main Thread
+[2025-1.16-02x47]	File Explorer v2
