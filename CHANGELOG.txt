@@ -59,6 +59,7 @@ LTS Edition
 - **Nano Editor** and **History** Threads joined into Main Thread
 - File Explorer Window title changed to current path
 - Command `title hide` hide MIDlet Main Window title
+- Player Object non referred in globals, traced by Process
 
 [ _Notes_ ]
 
