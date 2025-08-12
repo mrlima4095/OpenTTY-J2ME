@@ -27,11 +27,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Display display = Display.getDisplay(this);
     private List preview = new List(null, List.IMPLICIT);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
-    private Form monitor = new Form("Monitor", status, BACK, REFRESH), 
-                 form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
-    private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
+    private Form monitor = new Form("Monitor"), form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n"),
                        status = new StringItem("Memory Status:", "");
+    private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4),
                     BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1),
                     OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2), DELETE = new Command("Delete", Command.OK, 2);
@@ -171,7 +170,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } catch (IOException e) { } 
         }
         if (ITEM == MONITOR) { 
-            if (build) { monitor.setCommandListener(this); }
+            if (build) { monitor.append(status); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); }
 
             status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
         } 
