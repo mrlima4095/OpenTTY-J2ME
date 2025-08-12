@@ -39,13 +39,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Loader
     public void startApp() {
-        if (trace.containsKey("1")) {
+        if (!trace.containsKey("1")) {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             // |
-            //Command[] NANO_CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
-            //Command[] HISTORY_CMDS = { BACK, RUN, EDIT }; for (int i = 0; i < HISTORY_CMDS.length; i++) { preview.addCommand(HISTORY_CMDS[i]); } preview.setCommandListener(this);
-            //Command[] EXPLORER_CMDS = { BACK, OPEN }; for (int i = 0; i < EXPLORER_CMDS.length; i++) { explorer.addCommand(EXPLORER_CMDS[i]); } explorer.setCommandListener(this);
+            Command[] NANO_CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
+            Command[] HISTORY_CMDS = { BACK, RUN, EDIT }; for (int i = 0; i < HISTORY_CMDS.length; i++) { preview.addCommand(HISTORY_CMDS[i]); } preview.setCommandListener(this);
+            Command[] EXPLORER_CMDS = { BACK, OPEN }; for (int i = 0; i < EXPLORER_CMDS.length; i++) { explorer.addCommand(EXPLORER_CMDS[i]); } explorer.setCommandListener(this);
             // |
             runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
             // |
