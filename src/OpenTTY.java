@@ -364,7 +364,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Interfaces
         else if (mainCommand.equals("nano")) { 
-            screen.setString(argument.equals("") ? nanoContent : getcontent(argument));
+            nano.setString(argument.equals("") ? nanoContent : getcontent(argument));
 
             display.setCurrent(nano);
 
