@@ -17,6 +17,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int MAX_STDOUT_LEN = -1;
     // |
     private Player player = null;
+    private Image DIR = null, FILE = null, UP = null;
+    // |
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable(), 
@@ -113,12 +115,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } 
         } 
         else if (ITEM == EXPLORER) {
-            explorer.deleteAll(); 
+            explorer.setTitle(path); explorer.deleteAll(); 
 
-            if (!path.equals("/")) { screen.append("..", UP); } 
+            if (!path.equals("/")) { explorer.append("..", UP); } 
 
-            if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")) { screen.addCommand(DELETE); } 
-            else { screen.removeCommand(DELETE); }
+            if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")) { explorer.addCommand(DELETE); } 
+            else { explorer.removeCommand(DELETE); }
 
             if (path.equals("/") || path.equals("/mnt/")) { explorer.removeCommand(RUN); explorer.removeCommand(IMPORT); } 
             else { explorer.addCommand(RUN); explorer.addCommand(IMPORT); }
@@ -165,30 +167,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         
         return 0;
-    } 
-    public class Explorer implements CommandListener { 
-        private List screen = new List(form.getTitle(), List.IMPLICIT); 
-        private Command BACK = new Command("Back", Command.BACK, 1), 
-                        , RUN = new Command("Run Script", Command.OK, 3), IMPORT = new Command("Import File", Command.OK, 4); 
-        private Image DIR = null, FILE = null, UP = null; 
-
-        public Explorer() { 
-            try { 
-                FILE = Image.createImage("/java/etc/icons/file.png"); 
-                DIR = Image.createImage("/java/etc/icons/dir.png"); 
-                UP = Image.createImage("/java/etc/icons/up.png"); 
-            } 
-            catch (IOException e) { } 
-
-            screen.addCommand(BACK); screen.addCommand(OPEN); 
-            screen.setCommandListener(this); load(); 
-            display.setCurrent(screen); 
-        } 
-        private void load() { 
-                
-        }  
-
-        
     }
     // |
     // MIDlet Shell
@@ -368,7 +346,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Directories Manager
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
-        else if (mainCommand.equals("dir")) { explorer.setTitle(path); load(EXPLORER); display.setCurrent(explorer); }
+        else if (mainCommand.equals("dir")) { load(EXPLORER); display.setCurrent(explorer); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/home/"; } else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } else { String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); if (!TARGET.endsWith("/")) { TARGET += "/"; } if (paths.containsKey(TARGET)) { path = TARGET; } else if (TARGET.startsWith("/mnt/")) { try { String REALPWD = "file:///" + TARGET.substring(5); FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); if (fc.exists() && fc.isDirectory()) { path = TARGET; } else { echoCommand("cd: " + basename(TARGET) + ": not " + (fc.exists() ? "a directory" : "found")); return 127; } fc.close(); } catch (IOException e) { echoCommand("cd: " + basename(TARGET) + ": " + getCatch(e)); return 1; } } else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } } }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
