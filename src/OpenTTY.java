@@ -77,7 +77,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else if (MOD == EXPLORER) {
                 String selected = explorer.getString(explorer.getSelectedIndex()); 
 
-                else if (c == OPEN || c == List.SELECT_COMMAND) { 
+                if (c == OPEN || c == List.SELECT_COMMAND) { 
                     if (selected != null) { 
                         processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
 
