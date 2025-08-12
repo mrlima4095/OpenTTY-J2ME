@@ -75,7 +75,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (c == EDIT) { stdin.setString(selected); }
                 }
             } else if (MOD == EXPLORER) {
-                String selected = explorer.getString(explorer.getSelectedIndex()); 
+                String selected = preview.getString(preview.getSelectedIndex()); 
 
                 if (c == OPEN || c == List.SELECT_COMMAND) { 
                     if (selected != null) { 
@@ -96,9 +96,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (c == BACK) { processCommand("xterm"); } 
                 else if (c == REFRESH) { System.gc(); load(MONITOR, false); } 
                 else if (c == KILL) { 
-                    int index = process.getSelectedIndex(); 
+                    int index = preview.getSelectedIndex(); 
                     if (index >= 0) { 
-                        int STATUS = kill(split(process.getString(index), '\t')[0], false, username.equals("root") ? true : false); 
+                        int STATUS = kill(split(preview.getString(index), '\t')[0], false, username.equals("root") ? true : false); 
                         if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } 
                         load(PROCESS, false); 
                     } 
