@@ -850,25 +850,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 006 - (Process)
     // |
     // Memory
-    public class Monitor implements CommandListener {
-        private Form monitor = new Form(form.getTitle());
-        private List process = new List(form.getTitle(), List.IMPLICIT);
-        private StringItem status = new StringItem("Memory Status:", "");
-        private Command BACK = new Command("Back", Command.BACK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2);
-
-        private int TYPE = 0, MONITOR = 1, PROCESS = 2;
-        private boolean root = false;
-
-        public Monitor(String args, boolean root) {
-            this.root = root;
-            if (args == null || args.length() == 0 || args.equals("memory")) { TYPE = MONITOR; monitor.append(status); load(); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); } 
-            else if (args.equals("process")) { TYPE = PROCESS; load(); process.addCommand(BACK); process.addCommand(KILL); process.setCommandListener(this); display.setCurrent(process); } 
-            else { echoCommand("htop: " + args + ": not found"); } 
-        }
-
-        public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == REFRESH) { System.gc(); load(); } else if (c == KILL) { int index = process.getSelectedIndex(); if (index >= 0) { int STATUS = kill(split(process.getString(index), '\t')[0], false, root); if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } load(); } } }
-        private void load() { if (TYPE == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } else if (TYPE == PROCESS) { process.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); process.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } } }
-    }
+    public class Monitor implements CommandListener { private Form monitor = new Form(form.getTitle()); private List process = new List(form.getTitle(), List.IMPLICIT); private StringItem status = new StringItem("Memory Status:", ""); private Command BACK = new Command("Back", Command.BACK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2); private int TYPE = 0, MONITOR = 1, PROCESS = 2; private boolean root = false; public Monitor(String args, boolean root) { this.root = root; if (args == null || args.length() == 0 || args.equals("memory")) { TYPE = MONITOR; monitor.append(status); load(); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); } else if (args.equals("process")) { TYPE = PROCESS; load(); process.addCommand(BACK); process.addCommand(KILL); process.setCommandListener(this); display.setCurrent(process); } else { echoCommand("htop: " + args + ": not found"); } } public void commandAction(Command c, Displayable d) { if (c == BACK) { processCommand("xterm"); } else if (c == REFRESH) { System.gc(); load(); } else if (c == KILL) { int index = process.getSelectedIndex(); if (index >= 0) { int STATUS = kill(split(process.getString(index), '\t')[0], false, root); if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } load(); } } } private void load() { if (TYPE == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } else if (TYPE == PROCESS) { process.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); process.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } } } }
     // |
     // Process
     private int kill(String pid, boolean print, boolean root) {
@@ -1375,11 +1357,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.prefetch(); player.start(); 
 
                     if (!trace.containsKey("3")) {
-                        Hashtable proc = new Hashtable();
-                        proc.put("name", "audio"); proc.put("owner", root ? "root" : username);
-                        proc.put("collector", "audio stop");
-                
-                        trace.put("3", proc);
+                        trace.put("3", new Hashtable() {{ put("name", "audio"); put("owner", root ? "root" : username); put("collector", "audio stop"); }});
+
                     }
                 } catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
             }
