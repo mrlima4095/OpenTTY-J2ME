@@ -100,7 +100,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 load(EXPLORER); 
             } 
-            else if (c == RUN) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
+            else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
             else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
         } else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
@@ -118,7 +118,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { explorer.removeCommand(DELETE); }
 
             if (path.equals("/") || path.equals("/mnt/")) { explorer.removeCommand(RUN); explorer.removeCommand(IMPORT); } 
-            else { explorer.addCommand(RUN); explorer.addCommand(IMPORT); }
+            else { explorer.addCommand(RUNS); explorer.addCommand(IMPORT); }
 
             try { 
                 if (path.equals("/mnt/")) { 
