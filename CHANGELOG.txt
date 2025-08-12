@@ -57,6 +57,7 @@ LTS Edition
 - Command `ls` hide files that has prefix **.** in all filesystems
 - Audio codec can play audio files from **JAR** Package.
 
+
 [ _Notes_ ]
 
 - If you are logged as **root** command `logout` and `exit` will return you to normal user.

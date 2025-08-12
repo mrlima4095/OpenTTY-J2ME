@@ -24,11 +24,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     private String logs = "", path = "/home/", build = "2025-1.16-02x45"; 
     private Display display = Display.getDisplay(this);
+    private TextBox nano = new TextBox("Nano Editor", nanoContent, 31522, TextField.ANY);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
-    private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 2), NANO = new Command("Nano", Command.SCREEN, 3),
-                    CLEAR = new Command("Clear", Command.SCREEN, 4), HISTORY = new Command("History", Command.SCREEN, 5);
+    private Command EXECUTE = new Command("Send", Command.OK, 0), 
+                    BACK = new Command("Back", Command.BACK, 1),
+                    HELP = new Command("Help", Command.OK, 1), 
+                    NANO = new Command("Nano", Command.OK, 1),
+                    LINE = new Command("Add line", Command.OK, 1),
+                    RUN = new Command("Run Script", Command.OK, 1), 
+                    CLEAR = new Command("Clear", Command.OK, 1), 
+                    HISTORY = new Command("History", Command.OK, 1),
+                    VIEW = new Command("View as HTML", Command.OK, 1),
+                    IMPORT = new Command("Import File", Command.OK, 1);
     // |
     // MIDlet Loader
     public void startApp() {
@@ -36,9 +45,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
 
-            runScript(read("/java/etc/initd.sh"), true); 
-            stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
-            
+            Command[] CMDS = { BACK, CLEAR, RUN, IMPORT, VIEW }; for (int i = 0; i < CMDS.length; i++) { nano.addCommand(CMDS[i]); } nano.setCommandListener(this);
+            runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
+
             if (username.equals("") || passwd(false, null).equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
         } 
@@ -48,10 +57,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
     // | (X11 Main Listener)
     public void commandAction(Command c, Displayable d) {
-        if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); } 
-        else if (c == HELP) { processCommand("help"); } else if (c == NANO) { new NanoEditor(""); } else if (c == CLEAR) { stdout.setText(""); } else if (c == HISTORY) { new History(); }
+        if (d == nano) {
+            nanoContent = nano.getString(); 
 
-        else { processCommand(c.getCommandType() == Command.BACK ? "xterm" : "exit"); }
+            if (c == BACK) { processCommand("xterm"); } 
+            else if (c == LINE) { nano.setString(nanoContent + "\n"); } 
+            else if (c == CLEAR) { nano.setString(""); } 
+            else if (c == RUN) { processCommand("xterm"); runScript(nanoContent); } 
+            else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } 
+            else if (c == VIEW) { viewer(extractTitle(nanoContent), html2text(nanoContent)); } 
+        } else {
+            if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
+            else if (c == HELP) { processCommand("help"); } else if (c == NANO) { processCommand("nano", false); } else if (c == CLEAR) { stdout.setText(""); } else if (c == HISTORY) { new History(); }
+
+            else { processCommand(c.getCommandType() == Command.BACK ? "xterm" : "exit"); }
+        }
+        
+
     }
     // |
     // MIDlet Shell
@@ -343,7 +365,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ph2s")) { StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/java/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script); } }
         // |
         // Interfaces
-        else if (mainCommand.equals("nano")) { new NanoEditor(argument); }
+        else if (mainCommand.equals("nano")) { 
+            screen.setString(argument.equals("") ? nanoContent : getcontent(argument));
+
+            display.setCurrent(nano);
+
+        }
         else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument)), html2text(env(argument))); } }
         // |
@@ -1142,7 +1169,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     StringBuffer BUFFER = new StringBuffer();
                     for (int i = 0; i < list.size(); i++) { BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
                     nanoContent = BUFFER.toString().trim(); 
-                    new NanoEditor("");
+                    processCommand("nano", false);
                 }
                 stop(TYPE == PRSCAN ? "prscan" : "gobuster", false); 
             }
@@ -1225,7 +1252,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (lastSlash != -1) { path = path.substring(0, lastSlash + 1); } 
                     } 
                     else if (selected.endsWith("/")) { path += selected; } 
-                    else { new NanoEditor(path + selected); } 
+                    else { processCommand("nano " + path + selected, false); } 
 
                     stdin.setLabel(username + " " + path + " $"); load(); 
                 } 
@@ -1314,7 +1341,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String text2note(String content) { if (content == null || content.length() == 0) { return "BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:\nEND:VNOTE"; } content = replace(content, "=", "=3D"); content = replace(content, "\n", "=0A"); StringBuffer vnote = new StringBuffer(); vnote.append("BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:" + content + "\nEND:VNOTE"); return vnote.toString(); }
     // |
     // Interfaces
-    public class NanoEditor implements CommandListener { private TextBox screen = new TextBox("Nano", "", 31522, TextField.ANY); private Command BACK = new Command("Back", Command.BACK, 1), LINE = new Command("Add line", Command.OK, 1), CLEAR = new Command("Clear", Command.OK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1); public NanoEditor(String args) { screen.setString((args == null || args.length() == 0) ? nanoContent : getcontent(args)); screen.addCommand(BACK); if (attributes.containsKey("J2EMU")) { screen.addCommand(LINE); } screen.addCommand(CLEAR); screen.addCommand(RUN); screen.addCommand(IMPORT); screen.addCommand(VIEW); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { nanoContent = screen.getString(); if (c == BACK) { processCommand("xterm"); } else if (c == LINE) { screen.setString(nanoContent + "\n"); } else if (c == CLEAR) { screen.setString(""); } else if (c == RUN) { processCommand("xterm"); runScript(nanoContent); } else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } else if (c == VIEW) { viewer(extractTitle(nanoContent), html2text(nanoContent)); } } }
     private String extractTitle(String htmlContent) { return extractTag(htmlContent, "title", "HTML Viewer"); }
     private String extractTag(String htmlContent, String tag, String fallback) { String startTag = "<" + tag + ">", endTag = "</" + tag + ">"; int start = htmlContent.indexOf(startTag), end = htmlContent.indexOf(endTag); if (start != -1 && end != -1 && end > start) { return htmlContent.substring(start + startTag.length(), end).trim(); } else { return fallback; } }
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
