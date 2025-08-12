@@ -99,7 +99,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
 
-                load(); 
+                load(EXPLORER); 
             } 
             else if (c == RUN) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
             else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
