@@ -13,8 +13,8 @@ import java.io.*;
 
 public class OpenTTY extends MIDlet implements CommandListener {
     private static final int PREVIEW = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4;
+    private int MOD = 0, MAX_STDOUT_LEN = -1;
     private int cursorX = 10, cursorY = 10;
-    private int MAX_STDOUT_LEN = -1;
     // |
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
@@ -26,10 +26,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String logs = "", path = "/home/", build = "2025-1.16-02x48"; 
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
-    private List preview = new List(null, List.IMPLICIT), 
-                 process = new List(null, List.IMPLICIT),
-                 explorer = new List(null, List.IMPLICIT);
-    private Form monitor = new Form(form.getTitle());
+    private List preview = new List(null, List.IMPLICIT);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n"),
@@ -45,10 +42,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             // |
             Command[] NANO_CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
-            Command[] HISTORY_CMDS = { BACK, RUN, EDIT }; for (int i = 0; i < HISTORY_CMDS.length; i++) { preview.addCommand(HISTORY_CMDS[i]); } preview.setCommandListener(this);
-            explorer.addCommand(BACK); explorer.addCommand(OPEN); explorer.setCommandListener(this);
-            monitor.append(status);  monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); 
-            process.addCommand(BACK); process.addCommand(KILL); process.setCommandListener(this); 
             // |
             runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
             // |
@@ -118,10 +111,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "exit"); }
         }
     }
-    private int load(int ITEM) {
-        if (ITEM == PREVIEW) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
+    private int load(int ITEM) { return load(ITEM, false); }
+    private int load(int ITEM, boolean ) {
+        MOD = ITEM;
+
+        if (ITEM == PREVIEW) { 
+            preview = new List(form.getTitle(), List.IMPLICIT); 
+
+            for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } 
+        } 
         else if (ITEM == EXPLORER) {
-            explorer.setTitle(path); explorer.deleteAll(); 
+            preview = new List(path, List.IMPLICIT);
 
             if (!path.equals("/")) { explorer.append("..", UP); } 
 
