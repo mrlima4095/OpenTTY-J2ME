@@ -88,7 +88,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         int lastSlash = path.lastIndexOf('/', path.length() - 2); 
                         if (lastSlash != -1) { path = path.substring(0, lastSlash + 1); } 
                     } 
-                    else if (selected.endsWith("/")) { path += selected; } 
+                    else if (selected.endsWith("/")) { path += selected; load(EXPLORER); } 
                     else { processCommand("nano " + path + selected, false); } 
 
                     stdin.setLabel(username + " " + path + " $"); load(); 
@@ -96,7 +96,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (c == DELETE) { 
                 int STATUS = deleteFile(path + selected); 
-
                 if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
 
                 load(EXPLORER); 
@@ -1890,13 +1889,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int runScript(String script, boolean root) { 
-        String[] CMDS = split(script, '\n'); 
-
-        for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } 
-
-        return 0; 
-    }
+    private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 
 }
