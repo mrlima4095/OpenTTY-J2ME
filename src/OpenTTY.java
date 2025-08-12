@@ -157,8 +157,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String f = files[i]; 
 
                         if (f != null && !f.equals("..") && !f.equals("/")) { 
-                            if (f.endsWith("/")) { explorer.append(f, DIR); } 
-                            else { explorer.append(f, FILE); } 
+                            explorer.append(f, f.endsWith("/") ? DIR : FILE);
                         } 
                     } 
                 } 
