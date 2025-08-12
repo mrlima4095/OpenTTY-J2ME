@@ -30,7 +30,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
     private Command EXECUTE = new Command("Send", Command.OK, 0), 
                     BACK = new Command("Back", Command.BACK, 1),
-                    HELP = new Command("Help", Command.HELP, 1), 
+                    HELP = new Command("Help", Command.SCREEN, 1), 
                     NANO = new Command("Nano", Command.SCREEN, 1),
                     LINE = new Command("Add line", Command.OK, 1),
                     RUN = new Command("Run Script", Command.OK, 1), 
