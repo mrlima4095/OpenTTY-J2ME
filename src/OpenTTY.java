@@ -24,18 +24,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     private String logs = "", path = "/home/", build = "2025-1.16-02x45"; 
     private Display display = Display.getDisplay(this);
-    private TextBox nano = new TextBox("Nano Editor", "", 31522, TextField.ANY);
+    private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
     private Command EXECUTE = new Command("Send", Command.OK, 0), 
                     BACK = new Command("Back", Command.BACK, 1),
-                    HELP = new Command("Help", Command.OK, 1), 
-                    NANO = new Command("Nano", Command.OK, 1),
+                    HELP = new Command("Help", Command.HELP, 1), 
+                    NANO = new Command("Nano", Command.SCREEN, 1),
                     LINE = new Command("Add line", Command.OK, 1),
                     RUN = new Command("Run Script", Command.OK, 1), 
-                    CLEAR = new Command("Clear", Command.OK, 1), 
-                    HISTORY = new Command("History", Command.OK, 1),
+                    CLEAR = new Command("Clear", Command.SCREEN, 1), 
+                    HISTORY = new Command("History", Command.SCREEN, 1),
                     VIEW = new Command("View as HTML", Command.OK, 1),
                     IMPORT = new Command("Import File", Command.OK, 1);
     // |
