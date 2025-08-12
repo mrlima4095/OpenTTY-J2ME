@@ -65,15 +65,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } 
             else if (c == VIEW) { viewer(extractTitle(nanoContent), html2text(nanoContent)); } 
         } 
-        else if (c == preview) {
+        else if (d == preview) {
             if (c == BACK) { processCommand("xterm"); } 
 
             if (MOD == PREVIEW) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
-                if (selected != null) {
-                    if (c == RUN || c == List.SELECT_COMMAND) { processCommand(selected); }
-                    else if (c == EDIT) { stdin.setString(selected); }
-                }
+
+                if (selected != null) { processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); }
             } else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
 
@@ -107,7 +105,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
-            else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn LOCO"); }
+            else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "exit"); }
         }
     }
     private int load(int ITEM) { return load(ITEM, true); }
@@ -122,8 +120,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (ITEM == EXPLORER) {
             if (build) { preview = new List(path, List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(OPEN); preview.setCommandListener(this); }
 
-            if (!path.equals("/")) { preview.append("..", UP); } 
-
             if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); } 
             else { preview.removeCommand(DELETE); }
 
@@ -131,6 +127,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
 
             preview.deleteAll();
+            if (!path.equals("/")) { preview.append("..", UP); } 
 
             try { 
                 if (path.equals("/mnt/")) { 
