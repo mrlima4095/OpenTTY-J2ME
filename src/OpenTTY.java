@@ -894,6 +894,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
         return 0;
     }
+    private Hashtable genprocess(String name, boolean root, String collector) {
+        Hashtable proc = new Hashtable();
+        proc.put("name", name); proc.put("owner", root ? "root" : username);
+        if (collector != null) { proc.put("collector", collector); }
+        
+        return proc;
+    }
     private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
@@ -905,19 +912,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (app.equals("sh")) { sessions.put(pid, "127.0.0.1"); }
             else if (app.equals("x11-wm")) { form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;"); form.setCommandListener(this); }
         } 
-        else if (app.equals("audio")) {
-            echoCommand("usage: audio play [file]");
-            return 1;
-        }
+        else if (app.equals("audio")) { echoCommand("usage: audio play [file]"); return 1; }
         else { while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } } 
 
-        
-
-        Hashtable proc = new Hashtable();
-        proc.put("name", app); proc.put("owner", root ? "root" : username);
-        if (collector != null) { proc.put("collector", collector); }
-
-        trace.put(pid, proc);
+        trace.put(pid, genprocess(app, root, collector));
         return 0;
     }
     private int stop(String app, boolean root) {
@@ -1381,7 +1379,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.prefetch(); player.start(); 
 
                     if (!trace.containsKey("3")) {
-                        trace.put("3", new Hashtable() {{ put("name", "audio"); put("owner", root ? "root" : username); put("collector", "audio stop"); }});
+                        trace.put("3", genprocess("audio", root, "audio stop"));
 
                     }
                 } catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
