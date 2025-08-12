@@ -25,7 +25,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     private Vector stack = new Vector(), history = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x46"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x47"; 
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private List preview = new List(null, List.IMPLICIT), 
