@@ -104,7 +104,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
         } else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
-            else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : BACK ? "xterm" : "exit"); }
+            else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "exit"); }
         }
     }
     private int load(int ITEM) {
