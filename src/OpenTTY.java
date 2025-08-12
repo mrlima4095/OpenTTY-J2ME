@@ -81,10 +81,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { processCommand(c.getCommandType() == Command.BACK ? "xterm" : "exit"); }
         }
     }
-    private int load() { 
-        screen.deleteAll();
+    private int load() {
+        preview.deleteAll();
         
-        for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } 
+        for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } 
         
     } 
     // |
