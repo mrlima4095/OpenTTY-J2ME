@@ -22,16 +22,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     private Vector stack = new Vector(), history = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x45"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x46"; 
     private Display display = Display.getDisplay(this);
-    
+    private List preview = new List(form.getTitle(), List.IMPLICIT);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
     private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4),
-                    BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1),
-                    RUN = new Command("Run Script", Command.OK, 1),  EDIT = new Command("Edit", Command.OK, 1);
+                    BACK = new Command("Back", Command.BACK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1),
+                    RUN = new Command("Run Script", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1);
     // |
     // MIDlet Loader
     public void startApp() {
@@ -39,8 +39,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             // |
-            Command[] CMDS = { BACK, CLEAR, RUN, IMPORT, VIEW }; for (int i = 0; i < CMDS.length; i++) { nano.addCommand(CMDS[i]); } nano.setCommandListener(this);
-            Command[] CMDS = { BACK, , EDIT }; for (int i = 0; i < CMDS.length; i++) { nano.addCommand(CMDS[i]); } nano.setCommandListener(this);
+            Command[] CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < CMDS.length; i++) { nano.addCommand(CMDS[i]); } nano.setCommandListener(this);
+            Command[] CMDS = { BACK, RUN, EDIT }; for (int i = 0; i < CMDS.length; i++) { preview.addCommand(CMDS[i]); } preview.setCommandListener(this);
             // |
             runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
             // |
@@ -48,41 +48,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { runScript(read("/home/initd")); }
         } 
     }
-    public class History implements CommandListener { 
-    private List screen = new List(form.getTitle(), List.IMPLICIT); 
-    private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1); 
-    
-    public History() {
-        screen.addCommand(BACK); 
-        screen.addCommand(RUN); 
-        screen.addCommand(EDIT); 
-        screen.setCommandListener(this);
-        load(); display.setCurrent(screen); 
-        
-    }
-    public void commandAction(Command c, Displayable d) { 
-        if (c == BACK) { processCommand("xterm"); } 
-        else if (c == RUN || c == List.SELECT_COMMAND) { 
-            int index = screen.getSelectedIndex(); 
-            if (index >= 0) { processCommand("xterm"); processCommand(screen.getString(index)); } 
-            
-        } 
-        else if (c == EDIT) { int index = screen.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); stdin.setString(screen.getString(index)); } } 
-        
-    } 
-    private void load() { 
-        screen.deleteAll();
-        
-        for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } 
-        
-    } 
-        
-    }
-    
+    // |
     // | (Triggers)
     public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "pauseApp()" : "true"); }
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
-    // | (X11 Main Listener)
+    // |
+    // | (Main Listener)
     public void commandAction(Command c, Displayable d) {
         if (d == nano) {
             nanoContent = nano.getString(); 
@@ -90,11 +61,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { processCommand("xterm"); } 
             else if (c == LINE) { nano.setString(nanoContent + "\n"); } 
             else if (c == CLEAR) { nano.setString(""); } 
-            else if (c == RUN) { processCommand("xterm"); runScript(nanoContent); } 
+            else if (c == RUNS) { processCommand("xterm"); runScript(nanoContent); } 
             else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } 
             else if (c == VIEW) { viewer(extractTitle(nanoContent), html2text(nanoContent)); } 
-        } else if () {
-            
+        } else if (c == preview) {
+            processCommand("xterm");
+
+            if (c == BACK) { return; }
+
+            int index = screen.getSelectedIndex(); 
+            if (index >= 0) {
+                if (c == RUN || c == List.SELECT_COMMAND) { processCommand(preview.getString(index)); }
+                else if (c == EDIT) { stdin.setString(screen.getString(index)); }
+            }
         } else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
             else if (c == HELP) { processCommand("help"); } else if (c == NANO) { processCommand("nano", false); } else if (c == CLEAR) { stdout.setText(""); } else if (c == HISTORY) { new History(); }
@@ -102,6 +81,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { processCommand(c.getCommandType() == Command.BACK ? "xterm" : "exit"); }
         }
     }
+    private int load() { 
+        screen.deleteAll();
+        
+        for (int i = 0; i < history.size(); i++) { screen.append((String) history.elementAt(i), null); } 
+        
+    } 
     // |
     // MIDlet Shell
     private int processCommand(String command) { return processCommand(command, true, false); }
@@ -392,12 +377,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ph2s")) { StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/java/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script); } }
         // |
         // Interfaces
-        else if (mainCommand.equals("nano")) { 
-            nano.setString(argument.equals("") ? nanoContent : getcontent(argument));
-
-            display.setCurrent(nano);
-
-        }
+        else if (mainCommand.equals("nano")) { nano.setString(argument.equals("") ? nanoContent : getcontent(argument)); display.setCurrent(nano); }
         else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument)), html2text(env(argument))); } }
         // |
@@ -899,13 +879,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
         return 0;
     }
-    private Hashtable genprocess(String name, boolean root, String collector) {
-        Hashtable proc = new Hashtable();
-        proc.put("name", name); proc.put("owner", root ? "root" : username);
-        if (collector != null) { proc.put("collector", collector); }
-        
-        return proc;
-    }
     private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
@@ -940,6 +913,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | 
     // Controls
+    private Hashtable genprocess(String name, boolean root, String collector) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", root ? "root" : username); if (collector != null) { proc.put("collector", collector); } return proc; }
     private String getprocess(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), PNAME = (String) ((Hashtable) trace.get(KEY)).get("name"); if (name.equals(PNAME)) { return KEY; } } return null; }
     private String getowner(String pid) { return trace.containsKey(pid) ? (String) ((Hashtable) trace.get(pid)).get("owner") : null; }
     private String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
