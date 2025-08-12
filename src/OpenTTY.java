@@ -16,6 +16,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int MAX_STDOUT_LEN = -1;
     // |
     private Player player = null;
+    private Command[] CMDS = null;
     private Random random = new Random();
     private Runtime runtime = Runtime.getRuntime();
     private Hashtable attributes = new Hashtable(), paths = new Hashtable(), desktops = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable(), 
@@ -39,8 +40,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
             // |
-            Command[] CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < CMDS.length; i++) { nano.addCommand(CMDS[i]); } nano.setCommandListener(this);
-            Command[] CMDS = { BACK, RUN, EDIT }; for (int i = 0; i < CMDS.length; i++) { preview.addCommand(CMDS[i]); } preview.setCommandListener(this);
+            CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < CMDS.length; i++) { nano.addCommand(CMDS[i]); } nano.setCommandListener(this);
+            CMDS = { BACK, RUN, EDIT }; for (int i = 0; i < CMDS.length; i++) { preview.addCommand(CMDS[i]); } preview.setCommandListener(this);
             // |
             runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
             // |
