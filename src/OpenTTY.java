@@ -28,26 +28,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
-    private Command EXECUTE = new Command("Send", Command.OK, 0), 
-                    BACK = new Command("Back", Command.BACK, 1),
-                    HELP = new Command("Help", Command.SCREEN, 1), 
-                    NANO = new Command("Nano", Command.SCREEN, 1),
-                    LINE = new Command("Add line", Command.OK, 1),
-                    RUN = new Command("Run Script", Command.OK, 1), 
-                    CLEAR = new Command("Clear", Command.SCREEN, 1), 
-                    HISTORY = new Command("History", Command.SCREEN, 1),
-                    VIEW = new Command("View as HTML", Command.OK, 1),
-                    IMPORT = new Command("Import File", Command.OK, 1);
+    private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4),
+                    BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1),
+                    
     // |
     // MIDlet Loader
     public void startApp() {
         if (getprocess("sh") == null) {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
             attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
-
+            // |
             Command[] CMDS = { BACK, CLEAR, RUN, IMPORT, VIEW }; for (int i = 0; i < CMDS.length; i++) { nano.addCommand(CMDS[i]); } nano.setCommandListener(this);
+            // |
             runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
-
+            // |
             if (username.equals("") || passwd(false, null).equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
         } 
