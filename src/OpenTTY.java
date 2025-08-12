@@ -25,8 +25,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     private String logs = "", path = "/home/", build = "2025-1.16-02x48"; 
     private Display display = Display.getDisplay(this);
-    private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private List preview = new List(null, List.IMPLICIT);
+    private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n"),
