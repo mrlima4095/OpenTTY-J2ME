@@ -835,32 +835,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Item MOD Loader
-    public class ItemLoader implements ItemCommandListener { 
-        private Hashtable PKG; 
-        private Command run; 
-        private StringItem s; 
-        private String node; 
-        
-        public ItemLoader(Form screen, String prefix, String code) { 
-            if (code == null || code.length() == 0) { return; } 
-            else if (code.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
-            
-            PKG = parseProperties(code); 
-            node = prefix; 
-            
-            if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
-            
-            run = new Command(env((String) PKG.get(node + ".label")), Command.ITEM, 1); 
-            s = new StringItem(null, env((String) PKG.get(node + ".label")), StringItem.BUTTON); 
-            s.setFont(Font.getDefaultFont()); 
-            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
-            s.addCommand(run); 
-            s.setDefaultCommand(run); 
-            s.setItemCommandListener(this); 
-            screen.append(s);
-        } 
-        public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) PKG.get(node + ".cmd")); } } 
-    }
+    public class ItemLoader implements ItemCommandListener { private Hashtable PKG; private Command run; private StringItem s; private String node; public ItemLoader(Form screen, String prefix, String code) { if (code == null || code.length() == 0) { return; } else if (code.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } PKG = parseProperties(code); node = prefix; if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command(env((String) PKG.get(node + ".label")), Command.ITEM, 1); s = new StringItem(null, env((String) PKG.get(node + ".label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); screen.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) PKG.get(node + ".cmd")); } } }
     // |
     // Font Generator
     private Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
