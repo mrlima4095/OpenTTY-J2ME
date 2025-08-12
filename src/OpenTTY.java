@@ -474,30 +474,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int indexOf(String key, String[] array) { for (int i = 0; i < array.length; i++) { if (array[i].equals(key)) { return i; } } return -1; }
     private int getCatch(Exception e, int fallback) { return (e instanceof SecurityException) ? 13 : fallback; }
     // |
-    private Image loadImage(String file) throws Exception {
-        if (file.startsWith("/mnt/")) {
-            FileConnection CONN = (FileConnection) Connector.open("file:///" + file.substring(5), Connector.READ);
-            if (!CONN.exists()) {
-                CONN.close();
-                throw new Exception("");
-            }
-            InputStream IN = CONN.openInputStream();
-            Image IMG = Image.createImage(IN);
-            IN.close();
-            CONN.close();
-            return IMG;
-        } 
-        else if (file.startsWith("/home/")) { throw new RuntimeException("Loading from an invalid source"); } 
-        else if (file.startsWith("/")) {
-            InputStream IN = getClass().getResourceAsStream(file);
-            if (IN == null) { return null; }
-            Image IMG = Image.createImage(IN);
-            IN.close();
-            return IMG;
-        } 
-        else { return loadImage(path + file); }
-    }
-    // |
     public class Credentials implements CommandListener { private int TYPE = 0, SIGNUP = 1, REQUEST = 2; private boolean asking_user = username.equals(""), asking_passwd = passwd(false, null).equals(""); private String command = ""; private Form screen = new Form(form.getTitle()); private TextField USER = new TextField("Username", "", 256, TextField.ANY), PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); private Command LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2); public Credentials(String args) { if (args == null || args.length() == 0 || args.equals("login")) { TYPE = SIGNUP; screen.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); if (asking_user) { asking_user = true; screen.append(USER); } if (asking_passwd) { screen.append(PASSWD); } } else { TYPE = REQUEST; if (asking_passwd) { new Credentials(null); return; } asking_passwd = true; command = args; PASSWD.setLabel("[sudo] password for " + username); screen.append(PASSWD); LOGIN = new Command("Send", Command.OK, 1); EXIT = new Command("Back", Command.SCREEN, 2); } screen.addCommand(LOGIN); screen.addCommand(EXIT); screen.setCommandListener(this); display.setCurrent(screen); } public void commandAction(Command c, Displayable d) { if (c == LOGIN) { String password = PASSWD.getString().trim(); if (TYPE == SIGNUP) { if (asking_user) { username = USER.getString().trim(); } if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); } else { if (asking_user) { writeRMS("/home/OpenRMS", username); } if (asking_passwd) { passwd(true, password); } display.setCurrent(form); runScript(loadRMS("initd")); } } else if (TYPE == REQUEST) { if (password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } else { if (String.valueOf(password.hashCode()).equals(passwd(false, null))) { processCommand("xterm"); processCommand(command, true, true); } else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password!"); } } } stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); } else if (c == EXIT) { processCommand(TYPE == REQUEST ? "xterm" : "exit", false); } } }
     private String passwd(boolean write, String value) { if (write && value != null) { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); } else { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { return ""; } } return ""; } 
 
@@ -577,7 +553,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String type = getenv("screen." + field + ".type"); 
 
                         if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) { 
-                            try { screen.append(new ImageItem(null, loadImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
+                            try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
                             catch (Exception e) { MIDletLogs("add warn Malformed Image '" + getenv("screen." + field + ".img") + "'"); } 
                         } 
                         else if (type.equals("text") && !getenv("screen." + field + ".value").equals("")) { 
@@ -765,7 +741,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (backgroundType.equals("color") || backgroundType.equals("default")) { setpallete("background", g, 0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); } 
                 else if (backgroundType.equals("image")) { 
                     try { 
-                        Image content = loadImage(getenv("canvas.background")); 
+                        Image content = Image.createImage(getenv("canvas.background")); 
 
                         g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); 
                     } 
@@ -787,7 +763,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                     else if (type.equals("image")) { 
                         try { 
-                            Image IMG = loadImage(val); 
+                            Image IMG = Image.createImage(val); 
 
                             g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT); 
 
