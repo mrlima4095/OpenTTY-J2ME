@@ -84,7 +84,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         preview.deleteAll();
         
         for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } 
-        
+
+        return 0;        
     } 
     // |
     // MIDlet Shell
