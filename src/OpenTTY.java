@@ -580,7 +580,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (PKG.containsKey("list.title")) { list.setTitle(getenv("list.title")); } 
                 if (PKG.containsKey("list.icon")) { 
-                    try { IMG = loadImage(getenv("list.icon")); } 
+                    try { IMG = Image.createImage(getenv("list.icon")); } 
                     catch (Exception e) { MIDletLogs("add warn Malformed Image '" + getenv("list.icon") + "'"); } 
                 } 
 
