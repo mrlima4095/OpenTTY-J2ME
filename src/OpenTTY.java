@@ -62,7 +62,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { processCommand("execute xterm; " + (c == RUNS ? "." : c == IMPORT ? "import nano" : c == VIEW ? "html" : "true")); }
         } 
         else if (d == preview || d == monitor) {
-            if (c == BACK) { processCommand("xterm"); return; } 
+            if (c == BACK) { processCommand("xterm"); return;    } 
 
             if (MOD == PREVIEW) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
@@ -174,7 +174,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } catch (IOException e) { } 
         }
         if (ITEM == MONITOR) { 
-            if (build) { monitor = new Form("Monitor"); monitor.append(status); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); }
+            if (build) { monitor = new Form(form.getTitle()); monitor.append(status); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); }
 
             status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
         } 
