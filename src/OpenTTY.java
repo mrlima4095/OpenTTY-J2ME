@@ -1239,8 +1239,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
                 screen.append(console); screen.append(inputField); 
                 screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
-                screen.setCommandListener(this);
-                proc.put("screen", screen); display.setCurrent(screen);
+                screen.setCommandListener(this); proc.put("screen", screen); 
+
+                display.setCurrent(screen);
 
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
@@ -1254,7 +1255,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
-                proc.put("screen", list); list.setCommandListener(this);
+                list.setCommandListener(this); proc.put("screen", list); 
+                
+                display.setCurrent(list);
             } 
 
             trace.put(PID, proc); 
@@ -1265,7 +1268,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (d == confirm) {
                 processCommand("xterm");
                 if (c == NO) { 
-                    if (TYPE == NC) { try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } }
                     stop(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root); 
                 } 
                 else { keep = true; }
@@ -1303,16 +1305,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         public void run() {
             if (TYPE == NC) {
-                try {
-                    while (trace.containsKey(PID)) {
+                
+                while (trace.containsKey(PID)) {
+                    try {
                         if (IN.available() > 0) {
                             byte[] BUFFER = new byte[IN.available()];
                             int LENGTH = IN.read(BUFFER);
                             if (LENGTH > 0) { echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console); }
                         }
-                    }
-                } 
-                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); trace.remove(PID); }
+                    } 
+                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); trace.remove(PID); }
+                }
+
+                try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
             } else if (TYPE == PRSCAN) {
                 for (int port = start; port <= 65535; port++) {
                     try {
@@ -1353,140 +1358,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
         }
     }
-    /*public class RemoteConnection implements CommandListener, Runnable {
-        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3;
-
-        private int TYPE;
-        private SocketConnection CONN;
-        private InputStream IN; private OutputStream OUT;
-
-        private String address, PID = genpid();
-        private int port, start;
-        private String[] wordlist;
-
-        private Form screen = new Form(form.getTitle()); private List list;
-        private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
-        private StringItem console = new StringItem("", "");
-
-        private Command BACK = new Command("Back", Command.SCREEN, 2),
-                        EXECUTE = new Command("Send", Command.OK, 1),
-                        CONNECT = new Command("Connect", Command.BACK, 1),
-                        CLEAR = new Command("Clear", Command.SCREEN, 2),
-                        VIEW = new Command("View info", Command.SCREEN, 2),
-                        SAVE = new Command("Save Logs", Command.SCREEN, 2);
-
-        public RemoteConnection(String mode, String args, boolean root) {
-            TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
-
-            if (args == null || args.length() == 0) { return; }
-
-            
-            if (TYPE == NC) {
-                address = args;
-
-                try {
-                    CONN = (SocketConnection) Connector.open("socket://" + address);
-                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); start("remote", PID, null, false);
-                } catch (Exception e) { echoCommand(getCatch(e)); return; }
-
-                
-                inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
-                screen.append(console); screen.append(inputField); 
-                screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
-                screen.setCommandListener(this);
-                display.setCurrent(screen);
-
-            } 
-            else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                address = getCommand(args);
-                list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
-                start(TYPE == PRSCAN ? "prscan" : "gobuster", PID, null, false);
-
-                if (TYPE == PRSCAN) { start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true); }
-                else {
-                    wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
-                    if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
-                }
-
-                list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
-                list.setCommandListener(this);
-                display.setCurrent(list);
-            } 
-            
-            new Thread(this, "NET").start();
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (TYPE == NC) {
-                if (c == EXECUTE) {
-                    String PAYLOAD = inputField.getString().trim();
-                    inputField.setString("");
-
-                    try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
-                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
-                } else if (c == BACK) {
-                    try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
-                    writeRMS("/home/remote", console.getText()); stop("remote", false); processCommand("xterm");
-                } else if (c == CLEAR) { console.setText(""); }
-                else if (c == VIEW) { 
-                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
-                    catch (Exception e) { } 
-                } 
-            } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                if (c == BACK) { processCommand("xterm"); }
-                else if (c == CONNECT || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
-                else if (c == SAVE) { 
-                    StringBuffer BUFFER = new StringBuffer();
-                    for (int i = 0; i < list.size(); i++) { BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
-                    nanoContent = BUFFER.toString().trim(); 
-                    warnCommand("Saved", "result saved");
-                }
-                stop(TYPE == PRSCAN ? "prscan" : "gobuster", false); 
-            }
-        }
-
-        public void run() {
-            if (TYPE == NC) {
-                try {
-                    while (trace.containsKey(PID)) {
-                        if (IN.available() > 0) {
-                            byte[] BUFFER = new byte[IN.available()];
-                            int LENGTH = IN.read(BUFFER);
-                            if (LENGTH > 0) { echoCommand(new String(BUFFER, 0, LENGTH), console); }
-                        }
-                    }
-                } 
-                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote", false); }
-            } else if (TYPE == PRSCAN) {
-                for (int port = start; port <= 65535; port++) {
-                    try {
-                        list.setTicker(new Ticker("Scanning port " + port + "..."));
-                        if (!trace.containsKey(PID)) { break; }
-                        
-                        Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
-                        list.append("" + port, null);
-                    } catch (IOException e) { }
-                }
-                list.setTicker(null); stop("prscan", false);
-            } else if (TYPE == GOBUSTER) {
-                list.setTicker(new Ticker("Searching..."));
-                for (int i = 0; i < wordlist.length; i++) {
-                    String path = wordlist[i].trim();
-                    if (!trace.containsKey(PID)) { break; }
-
-                    if (!path.equals("") && !path.startsWith("#")) {
-                        try {
-                            int code = verifyHTTP(address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path);
-                            if (code != 404) list.append(code + " /" + path, null);
-                        } catch (IOException e) { }
-                    }
-                }
-                list.setTicker(null); stop("gobuster", false);
-            }
-        }
-
-        private int verifyHTTP(String fullUrl) throws IOException { try { HttpConnection CONN = (HttpConnection) Connector.open(fullUrl); CONN.setRequestMethod(HttpConnection.GET); return CONN.getResponseCode(); } finally { if (CONN != null) { CONN.close(); } } } 
-    }*/
 
     // API 012 - (File)
     // |
