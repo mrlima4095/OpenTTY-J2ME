@@ -62,6 +62,7 @@ LTS Edition
 - Player Object non referred in globals, traced by Process
 - X11 Support symbolic links loading and saving by Virtual Process **PID**
 - Command `nc`, `prscan` and `gobuster` ask if you want keep thread alive before close window
+- File Explorer don't using icons anymore
 
 [ _Notes_ ]
 
