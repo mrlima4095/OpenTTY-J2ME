@@ -1176,7 +1176,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private SocketConnection CONN; private InputStream IN; private OutputStream OUT;
 
         private String address, PID = genpid();
-        private boolean root, backact = false, keep = false;
+        private boolean root = false, backact = false, keep = false;
         private int port, start;
         private String[] wordlist;
 
@@ -1256,14 +1256,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
                     catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
                 } else if (c == BACK) {
-                    writeRMS("/home/remote", console.getText()); goback();
+                    writeRMS("/home/remote", console.getText()); back();
                 } else if (c == CLEAR) { console.setText(""); }
                 else if (c == VIEW) { 
                     try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
                     catch (Exception e) { } 
                 } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                if (c == BACK) { goback(); }
+                if (c == BACK) { back(); }
                 else if (c == CONNECT || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
                 else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
@@ -1286,7 +1286,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     }
                 } 
-                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote", root); }
+                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); trace.remove(PID); }
             } else if (TYPE == PRSCAN) {
                 for (int port = start; port <= 65535; port++) {
                     try {
@@ -1316,7 +1316,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private int verifyHTTP(String fullUrl) throws IOException { try { HttpConnection CONN = (HttpConnection) Connector.open(fullUrl); CONN.setRequestMethod(HttpConnection.GET); return CONN.getResponseCode(); } finally { if (CONN != null) { CONN.close(); } } } 
-        private void goback() {
+        private void back() {
             Alert confirm = new Alert(
                 "Background Process",
                 "Keep this process running in background?",
