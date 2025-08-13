@@ -23,7 +23,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     private Vector stack = new Vector(), history = new Vector();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x48"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x49"; 
     private Display display = Display.getDisplay(this);
     private List preview = new List(null, List.IMPLICIT);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
@@ -59,11 +59,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (d == nano) {
             nanoContent = nano.getString(); 
 
-            if (c == BACK) { processCommand("xterm"); }  
-            else if (c == CLEAR) { nano.setString(""); } 
-            else if (c == RUNS) { processCommand("xterm"); runScript(nanoContent); } 
-            else if (c == IMPORT) { processCommand("xterm"); importScript("nano"); } 
-            else if (c == VIEW) { viewer(extractTitle(nanoContent), html2text(nanoContent)); } 
+            if (c == CLEAR) { nano.setString(""); } 
+            else { processCommand("execute xterm; " + (c == RUNS ? "." : c == IMPORT ? "import nano" : c == VIEW ? "html" : "true")); }
         } 
         else if (d == preview) {
             if (c == BACK) { processCommand("xterm"); } 
@@ -340,7 +337,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Socket Interfaces
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
         else if (mainCommand.equals("query")) { return query(argument, root); }
-        else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument); }
+        else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new RemoteConnection(mainCommand, argument, root); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
         else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); echoCommand(PORT + "\t" + ADDR); } }
@@ -600,7 +597,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // X11 Loader
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
         else if (mainCommand.equals("init")) { start("x11-wm", null, null, true); }
-        else if (mainCommand.equals("stop")) { form.setTitle(null); form.setTicker(null); form.deleteAll(); xserver("cmd hide", root); trace.remove("2"); desktops = new Hashtable(); form.removeCommand(EXECUTE); }
+        else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide", root); trace.remove("2"); desktops = new Hashtable(); form.removeCommand(EXECUTE); }
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { return xserver("init", root); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
@@ -612,6 +609,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Screen Manager
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
+        else if (mainCommand.equals("import") || mainCommand.equals("export")) { 
+            if (argument.equals("")) { } 
+            else {
+                if (trace.containsKey(argument)) {
+                    if (getowner(argument).equals("root") && !root) { echoCommand("Permission denied"); return 13; }
+
+                    if (mainCommand.equals("import")) {
+                        Displayable screen = (Displayable) ((Hashtable) getprocess(argument)).get("screen");
+
+                        if (screen == null) { echoCommand("x11: import: " + argument + ": no screens"); return 69; }
+                        else { display.setCurrent(screen); }
+                    } else {
+                        ((Hashtable) getprocess(argument)).put(display.getCurrent());
+                    }
+                } else {
+                    echoCommand("x11: " + mainCommand + ": " + argument + ": not found"); return 127;
+                }
+            } 
+        }
         else if (mainCommand.equals("load")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } }
         else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { desktops.remove(argument); } else { echoCommand("x11: unset: " + argument + ": not found"); return 127; } }
         // |
@@ -964,30 +980,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String owner = (String) proc.get("owner"), collector = (String) proc.get("collector");
 
         if (owner.equals("root") && !root) { if (print) { echoCommand("Permission denied!"); } return 13; }
+        if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
 
         trace.remove(pid);
         if (print) { echoCommand("Process with PID " + pid + " terminated"); }
 
-        if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
         return 0;
     }
     private int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
+        Hashtable proc = genprocess(app, root, collector);
+
         if (app.equals("sh") || app.equals("x11-wm")) {
-            pid = app.equals("sh") ? "1" : "2";
-            collector = app.equals("sh") ? "exit" : "x11 stop";
+            pid = app.equals("sh") ? "1" : "2"; collector = app.equals("sh") ? "exit" : "x11 stop";
+            proc.put("screen", form); 
 
             if (trace.containsKey(pid)) { return 68; }
             else if (app.equals("sh")) { sessions.put(pid, "127.0.0.1"); }
-            else if (app.equals("x11-wm")) { 
-                form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;"); form.setCommandListener(this); 
-            }
+            else if (app.equals("x11-wm")) { form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;"); form.setCommandListener(this); }
         } 
         else if (app.equals("audio")) { echoCommand("usage: audio play [file]"); return 1; }
         else { while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } } 
 
-        trace.put(pid, genprocess(app, root, collector));
+        trace.put(pid, proc);
         return 0;
     }
     private int stop(String app, boolean root) {
@@ -1007,23 +1023,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Virtual Objects
     // | (Generators)
     private String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
-    private Hashtable genprocess(String name, boolean root, String collector) { 
-        Hashtable proc = new Hashtable(); 
-        proc.put("name", name); 
-        proc.put("owner", root ? "root" : username); 
-        if (collector != null) { proc.put("collector", collector); } 
-
-        return proc; 
-    }
+    private Hashtable genprocess(String name, boolean root, String collector) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", root ? "root" : username); if (collector != null) { proc.put("collector", collector); } return proc; }
     // | (Trackers)
     private Hashtable getprocess(String pid) { return trace.containsKey(pid) ? (Hashtable) trace.get(pid) : null; }
-    private String getpid(String name) { 
-        for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { 
-            String PID = (String) KEYS.nextElement(); 
-            if (name.equals((String) ((Hashtable) trace.get(PID)).get("name"))) { return PID; } 
-        } 
-        return null; 
-    }
+    private String getpid(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) trace.get(PID)).get("name"))) { return PID; } } return null; } 
     private String getowner(String pid) { return trace.containsKey(pid) ? (String) ((Hashtable) trace.get(pid)).get("owner") : null; }
 
     // API 008 - (Logic I/O) Text
@@ -1171,14 +1174,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
     public class RemoteConnection implements CommandListener, Runnable {
         private int TYPE, NC = 1, PRSCAN = 2, GOBUSTER = 3;
-        private SocketConnection CONN;
-        private InputStream IN; private OutputStream OUT;
+        private SocketConnection CONN; private InputStream IN; private OutputStream OUT;
 
         private String address, PID = genpid();
+        private boolean root, backact = false;
         private int port, start;
         private String[] wordlist;
 
-        private Form screen = new Form(form.getTitle()); private List list;
+        private Form remote = new Form(form.getTitle()); private List list;
+        private Displayable screen = null;
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private StringItem console = new StringItem("", "");
 
@@ -1189,7 +1193,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         VIEW = new Command("View info", Command.SCREEN, 2),
                         SAVE = new Command("Save Logs", Command.SCREEN, 2);
 
-        public RemoteConnection(String mode, String args) {
+        public RemoteConnection(String mode, String args, boolean root) {
             TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
 
             if (args == null || args.length() == 0) { return; }
@@ -1199,21 +1203,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     CONN = (SocketConnection) Connector.open("socket://" + address);
-                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); start("remote", PID, null, false);
+                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
                 } catch (Exception e) { echoCommand(getCatch(e)); return; }
 
                 
                 inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
-                screen.append(console); screen.append(inputField); 
-                screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
-                screen.setCommandListener(this);
-                display.setCurrent(screen);
+                remote.append(console); remote.append(inputField); 
+                remote.addCommand(EXECUTE); remote.addCommand(BACK); remote.addCommand(CLEAR); remote.addCommand(VIEW);
+                remote.setCommandListener(this);
 
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
                 list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
-                start(TYPE == PRSCAN ? "prscan" : "gobuster", PID, null, false);
 
                 if (TYPE == PRSCAN) { start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true); }
                 else {
@@ -1225,6 +1227,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list.setCommandListener(this);
                 display.setCurrent(list);
             } 
+
+            screen = TYPE == NC ? screen : list; this.root = root;
+            Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
+            proc.put("screen", screen);
+            trace.put(PID, proc); 
+            display.setCurrent(screen);
             
             new Thread(this, "NET").start();
         }
@@ -1239,7 +1247,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
                 } else if (c == BACK) {
                     try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
-                    writeRMS("/home/remote", console.getText()); stop("remote", false); processCommand("xterm");
+                    writeRMS("/home/remote", console.getText()); processCommand("xterm");
                 } else if (c == CLEAR) { console.setText(""); }
                 else if (c == VIEW) { 
                     try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
@@ -1254,9 +1262,49 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     nanoContent = BUFFER.toString().trim(); 
                     processCommand("nano", false);
                 }
-                stop(TYPE == PRSCAN ? "prscan" : "gobuster", false); 
             }
         }
+
+        public void commandAction(Command c, Displayable d) {
+            if (backact) {
+                backact = false;
+
+                processCommand("xterm");
+                if (c.getLabel().equals("No")) { stop(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", false); }
+                return;
+            }
+
+            if (TYPE == NC) {
+                if (c == EXECUTE) {
+                    String PAYLOAD = inputField.getString().trim();
+                    inputField.setString("");
+                    try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
+                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
+                } else if (c == BACK) {
+                    goback();
+                } else if (c == CLEAR) {
+                    console.setText("");
+                } else if (c == VIEW) {
+                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
+                    catch (Exception e) { } 
+                }
+            } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
+                if (c == BACK) {
+                    
+                } else if (c == CONNECT || c == List.SELECT_COMMAND) {
+                    String ITEM = list.getString(list.getSelectedIndex());
+                    processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true");
+                } else if (c == SAVE) {
+                    StringBuffer BUFFER = new StringBuffer();
+                    for (int i = 0; i < list.size(); i++) {
+                        BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n");
+                    }
+                    nanoContent = BUFFER.toString().trim(); 
+                    processCommand("nano", false);
+                }
+            }
+        }
+
 
         public void run() {
             if (TYPE == NC) {
@@ -1299,6 +1347,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private int verifyHTTP(String fullUrl) throws IOException { try { HttpConnection CONN = (HttpConnection) Connector.open(fullUrl); CONN.setRequestMethod(HttpConnection.GET); return CONN.getResponseCode(); } finally { if (CONN != null) { CONN.close(); } } } 
+        private void goback() {
+            Alert confirm = new Alert(
+                "Background Process",
+                "Keep this process running in background?",
+                null,
+                AlertType.CONFIRMATION
+            );
+            confirm.addCommand(new Command("Yes", Command.OK, 1));
+            confirm.addCommand(new Command("No", Command.CANCEL, 2));
+            confirm.setCommandListener(this);
+            backact = true;
+            display.setCurrent(confirm);
+        }
     }
 
     // API 012 - (File)
