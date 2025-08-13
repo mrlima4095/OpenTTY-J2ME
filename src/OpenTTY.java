@@ -621,7 +621,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (screen == null) { echoCommand("x11: import: " + argument + ": no screens"); return 69; }
                         else { display.setCurrent(screen); }
                     } else {
-                        ((Hashtable) getprocess(argument)).put(display.getCurrent());
+                        ((Hashtable) getprocess(argument)).put("screen", display.getCurrent());
                     }
                 } else {
                     echoCommand("x11: " + mainCommand + ": " + argument + ": not found"); return 127;
