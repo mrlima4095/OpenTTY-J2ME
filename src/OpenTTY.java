@@ -1352,7 +1352,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             
         }
-    }*/
+    }
     /*public class RemoteConnection implements CommandListener, Runnable {
         private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3;
 
