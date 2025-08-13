@@ -1228,40 +1228,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
 
             this.root = root;
+            Displayable screen = TYPE == NC ? (Displayable) remote : (Displayable) list; this.root = root;
             Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
-            if (TYPE == NC) { proc.put("screen", remote); display.setCurrent(remote); }
-            else { proc.put("screen", list); display.setCurrent(list); }
+            proc.put("screen", screen); display.setCurrent(screen);
             
             trace.put(PID, proc); 
             new Thread(this, "NET").start();
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (TYPE == NC) {
-                if (c == EXECUTE) {
-                    String PAYLOAD = inputField.getString().trim();
-                    inputField.setString("");
-
-                    try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
-                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
-                } else if (c == BACK) {
-                    try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
-                    writeRMS("/home/remote", console.getText()); processCommand("xterm");
-                } else if (c == CLEAR) { console.setText(""); }
-                else if (c == VIEW) { 
-                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
-                    catch (Exception e) { } 
-                } 
-            } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                if (c == BACK) { processCommand("xterm"); }
-                else if (c == CONNECT || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
-                else if (c == SAVE) { 
-                    StringBuffer BUFFER = new StringBuffer();
-                    for (int i = 0; i < list.size(); i++) { BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
-                    nanoContent = BUFFER.toString().trim(); 
-                    processCommand("nano", false);
-                }
-            }
         }
 
         public void commandAction(Command c, Displayable d) {
@@ -1269,35 +1241,34 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 backact = false;
 
                 processCommand("xterm");
-                if (c.getLabel().equals("No")) { stop(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", false); }
+                if (c.getLabel().equals("No")) { 
+                    if (TYPE == NC) { try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } }
+                    stop(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root); 
+                }
                 return;
             }
+
 
             if (TYPE == NC) {
                 if (c == EXECUTE) {
                     String PAYLOAD = inputField.getString().trim();
                     inputField.setString("");
+
                     try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
                     catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
                 } else if (c == BACK) {
-                    goback();
-                } else if (c == CLEAR) {
-                    console.setText("");
-                } else if (c == VIEW) {
+                    writeRMS("/home/remote", console.getText()); goback();
+                } else if (c == CLEAR) { console.setText(""); }
+                else if (c == VIEW) { 
                     try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
                     catch (Exception e) { } 
-                }
+                } 
             } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                if (c == BACK) {
-                    
-                } else if (c == CONNECT || c == List.SELECT_COMMAND) {
-                    String ITEM = list.getString(list.getSelectedIndex());
-                    processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true");
-                } else if (c == SAVE) {
+                if (c == BACK) { goback(); }
+                else if (c == CONNECT || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
+                else if (c == SAVE) { 
                     StringBuffer BUFFER = new StringBuffer();
-                    for (int i = 0; i < list.size(); i++) {
-                        BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n");
-                    }
+                    for (int i = 0; i < list.size(); i++) { BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
                     nanoContent = BUFFER.toString().trim(); 
                     processCommand("nano", false);
                 }
