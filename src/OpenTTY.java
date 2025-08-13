@@ -1211,12 +1211,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public RemoteConnection(String mode, String args, boolean root) {
             TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
-echoCommand("1");
+
             if (args == null || args.length() == 0) { return; }
 
             if (TYPE == NC) {
                 address = args;
-echoCommand("2");
+
                 try {
                     CONN = (SocketConnection) Connector.open("socket://" + address);
                     IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
@@ -1232,7 +1232,7 @@ echoCommand("2");
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
                 list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
-echoCommand("3");
+
                 if (TYPE == PRSCAN) { start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true); }
                 else {
                     wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
@@ -1242,7 +1242,7 @@ echoCommand("3");
                 list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
                 list.setCommandListener(this);
             } 
-echoCommand("criando");
+
             this.root = root;
             Displayable screen = TYPE == NC ? (Displayable) remote : (Displayable) list; this.root = root;
             Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
@@ -1264,7 +1264,6 @@ echoCommand("criando");
                 else { keep = true; }
                 return;
             }
-echoCommand("commandAction");
 
             if (TYPE == NC) {
                 if (c == EXECUTE) {
@@ -1342,11 +1341,11 @@ echoCommand("commandAction");
             }
             
             
-            confirm.addCommand(new Command("Yes", Command.OK, 1));
+            /*confirm.addCommand(new Command("Yes", Command.OK, 1));
             confirm.addCommand(new Command("No", Command.CANCEL, 2));
             confirm.setCommandListener(this);
             backact = true;
-            display.setCurrent(confirm);
+            display.setCurrent(confirm);*/
         }
     }
 
