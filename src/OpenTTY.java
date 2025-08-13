@@ -1351,7 +1351,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 "Background Process",
                 "Keep this process running in background?",
                 null,
-                AlertType.CONFIRMATION
+                AlertType.INFO
             );
             confirm.addCommand(new Command("Yes", Command.OK, 1));
             confirm.addCommand(new Command("No", Command.CANCEL, 2));
