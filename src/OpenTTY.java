@@ -1176,12 +1176,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private SocketConnection CONN; private InputStream IN; private OutputStream OUT;
 
         private String address, PID = genpid();
-        private boolean root, backact = false;
+        private boolean root, backact = false, keep = false;
         private int port, start;
         private String[] wordlist;
 
         private Form remote = new Form(form.getTitle()); private List list;
-        private Displayable screen = null;
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private StringItem console = new StringItem("", "");
 
@@ -1224,7 +1223,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
                 list.setCommandListener(this);
-                display.setCurrent(list);
             } 
 
             this.root = root;
@@ -1244,7 +1242,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (c.getLabel().equals("No")) { 
                     if (TYPE == NC) { try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } }
                     stop(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root); 
-                }
+                } 
+                else { keep = true; }
                 return;
             }
 
@@ -1287,7 +1286,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     }
                 } 
-                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote", false); }
+                catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); stop("remote", root); }
             } else if (TYPE == PRSCAN) {
                 for (int port = start; port <= 65535; port++) {
                     try {
@@ -1298,7 +1297,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         list.append("" + port, null);
                     } catch (IOException e) { }
                 }
-                list.setTicker(null); stop("prscan", false);
+                list.setTicker(null); if (!keep) { trace.remove(PID); }
             } else if (TYPE == GOBUSTER) {
                 list.setTicker(new Ticker("Searching..."));
                 for (int i = 0; i < wordlist.length; i++) {
@@ -1312,7 +1311,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } catch (IOException e) { }
                     }
                 }
-                list.setTicker(null); stop("gobuster", false);
+                list.setTicker(null); if (!keep) { trace.remove(PID); }
             }
         }
 
