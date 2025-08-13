@@ -1208,7 +1208,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         CLEAR = new Command("Clear", Command.SCREEN, 2),
                         VIEW = new Command("View info", Command.SCREEN, 2),
                         SAVE = new Command("Save Logs", Command.SCREEN, 2),
-                        YES = new Command("Yes", Command.OK, 1);
+                        YES = new Command("Yes", Command.OK, 1),
+                        NO = new Command("No", Command.BACK, 1);
 
         public RemoteConnection(String mode, String args, boolean root) {
             TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
@@ -1254,11 +1255,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void commandAction(Command c, Displayable d) {
-            if (backact) {
-                backact = false;
-
+            if (d == confirm) {
                 processCommand("xterm");
-                if (c.getLabel().equals("No")) { 
+                if (c == NO) { 
                     if (TYPE == NC) { try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } }
                     stop(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root); 
                 } 
@@ -1340,7 +1339,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 processCommand("xterm");
             }
             
-            
+            confirm.addCommand(YES);
+            confirm.addCommand(NO);
             confirm.setCommandListener(this);
             backact = true;
             display.setCurrent(confirm);
