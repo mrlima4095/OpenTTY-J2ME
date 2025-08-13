@@ -1342,7 +1342,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             confirm.setCommandListener(this);
             backact = true;
-            display.setCurrent(confirm);*/
+            display.setCurrent(confirm);
         }
     }
 
