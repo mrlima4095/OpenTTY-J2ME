@@ -1207,7 +1207,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         CONNECT = new Command("Connect", Command.BACK, 1),
                         CLEAR = new Command("Clear", Command.SCREEN, 2),
                         VIEW = new Command("View info", Command.SCREEN, 2),
-                        SAVE = new Command("Save Logs", Command.SCREEN, 2);
+                        SAVE = new Command("Save Logs", Command.SCREEN, 2),
+                        YES = new Command("Yes", Command.OK, 1);
 
         public RemoteConnection(String mode, String args, boolean root) {
             TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
