@@ -1317,6 +1317,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private int verifyHTTP(String fullUrl) throws IOException { try { HttpConnection CONN = (HttpConnection) Connector.open(fullUrl); CONN.setRequestMethod(HttpConnection.GET); return CONN.getResponseCode(); } finally { if (CONN != null) { CONN.close(); } } } 
         private void back() {
+            if (trace.containsKey(PID)) {
+                
+            } else {
+                processCommand("xterm");
+            }
+            
             Alert confirm = new Alert(
                 "Background Process",
                 "Keep this process running in background?",
