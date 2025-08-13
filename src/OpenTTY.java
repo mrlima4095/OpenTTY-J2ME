@@ -116,6 +116,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         else if (ITEM == EXPLORER) {
             if (build) { preview = new List(path, List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(OPEN); preview.setCommandListener(this); }
+            if (build) {
+                try {
+                    DIR = Image.createImage("/java/etc/icons/dir.png");
+                    FILE = Image.createImage("/java/etc/icons/file.png");
+                    UP = Image.createImage("/java/etc/icons/up.png");
+                } catch (Exception e) {
+
+                }
+
+            }
 
             if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); } 
             else { preview.removeCommand(DELETE); }
