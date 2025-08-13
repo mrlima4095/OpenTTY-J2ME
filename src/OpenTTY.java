@@ -1227,12 +1227,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(list);
             } 
 
-            screen = TYPE == NC ? (Displayable) remote : (Displayable) list; this.root = root;
+            this.root = root;
             Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
-            proc.put("screen", screen);
-            trace.put(PID, proc); 
-            display.setCurrent(screen);
+            if (TYPE == NC) { proc.put("screen", remote); display.setCurrent(remote); }
+            else { proc.put("screen", list); display.setCurrent(list); }
             
+            trace.put(PID, proc); 
             new Thread(this, "NET").start();
         }
 
