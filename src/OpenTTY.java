@@ -123,12 +123,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
 
             preview.deleteAll();
-            if (!path.equals("/")) { preview.append("..", UP); } 
+            if (!path.equals("/")) { preview.append("..", null); } 
 
             try { 
                 if (path.equals("/mnt/")) { 
                     Enumeration roots = FileSystemRegistry.listRoots(); 
-                    while (roots.hasMoreElements()) { preview.append((String) roots.nextElement(), DIR); } 
+                    while (roots.hasMoreElements()) { preview.append((String) roots.nextElement(), null); } 
                 } 
                 else if (path.startsWith("/mnt/")) { 
                     FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ); 
@@ -141,15 +141,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (name.endsWith("/")) { dirs.addElement(name); } 
                         else { files.addElement(name); } 
                     } 
-                    while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), DIR); } 
-                    while (!files.isEmpty()) { preview.append(getFirstString(files), FILE); } 
+                    while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), null); } 
+                    while (!files.isEmpty()) { preview.append(getFirstString(files), null); } 
 
                     CONN.close(); 
                 } 
                 else if (path.equals("/home/")) { 
                     String[] recordStores = RecordStore.listRecordStores(); 
 
-                    for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], FILE); } } 
+                    for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); } } 
                 } 
                 String[] files = (String[]) paths.get(path); 
 
@@ -157,7 +157,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     for (int i = 0; i < files.length; i++) { 
                         String f = files[i]; 
 
-                        if (f != null && !f.equals("..") && !f.equals("/")) { preview.append(f, f.endsWith("/") ? DIR : FILE); } 
+                        if (f != null && !f.equals("..") && !f.equals("/")) { preview.append(f, null); } 
                     } 
                 } 
             } catch (IOException e) { } 
