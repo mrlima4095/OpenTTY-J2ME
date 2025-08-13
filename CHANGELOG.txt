@@ -60,6 +60,8 @@ LTS Edition
 - File Explorer Window title changed to current path
 - Command `title hide` hide MIDlet Main Window title
 - Player Object non referred in globals, traced by Process
+- X11 Support symbolic links loading and saving by Virtual Process **PID**
+- Command `nc`, `prscan` and `gobuster` ask if you want keep thread alive before close window
 
 [ _Notes_ ]
 
@@ -68,3 +70,9 @@ LTS Edition
 - Remote shells interfaces cannot be loaded with super user permissions by default.
 - X11 Screens couldn't be called with `sudo`.
 - After you change max **stdout** size, remote interfaces like `bind` can be directly damaged by **stdout** redirect.
+
+[ _X11 Virtual Screens_ ]
+
+Usage: `x11 [ option ] [PID]`
+- `import`: load a screen referred into Virtual Process
+- `export`: save current screen in a Virtual Process
