@@ -608,7 +608,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Screen Manager
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { desktops.put(argument, display.getCurrent()); } }
-        /*else if (mainCommand.equals("import") || mainCommand.equals("export")) { 
+        else if (mainCommand.equals("import") || mainCommand.equals("export")) { 
             if (argument.equals("")) { } 
             else {
                 if (trace.containsKey(argument)) {
@@ -626,7 +626,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     echoCommand("x11: " + mainCommand + ": " + argument + ": not found"); return 127;
                 }
             } 
-        }*/
+        }
         else if (mainCommand.equals("load")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { display.setCurrent((Displayable) desktops.get(argument)); } else { echoCommand("x11: load: " + argument + ": not found"); return 127; } }
         else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else if (desktops.containsKey(argument)) { desktops.remove(argument); } else { echoCommand("x11: unset: " + argument + ": not found"); return 127; } }
         // |
@@ -1227,7 +1227,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(list);
             } 
 
-            screen = TYPE == NC ? screen : list; this.root = root;
+            screen = TYPE == NC ? remote : list; this.root = root;
             Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
             proc.put("screen", screen);
             trace.put(PID, proc); 
