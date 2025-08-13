@@ -1190,6 +1190,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private boolean root = false, backact = false, keep = false;
         private int port, start;
         private String[] wordlist;
+        
+        private Alert confirm = new Alert(
+                "Background Process",
+                "Keep this process running in background?",
+                null,
+                AlertType.INFO
+            );
 
         private Form remote = new Form(form.getTitle()); private List list;
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
@@ -1334,12 +1341,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 processCommand("xterm");
             }
             
-            Alert confirm = new Alert(
-                "Background Process",
-                "Keep this process running in background?",
-                null,
-                AlertType.INFO
-            );
+            
             confirm.addCommand(new Command("Yes", Command.OK, 1));
             confirm.addCommand(new Command("No", Command.CANCEL, 2));
             confirm.setCommandListener(this);
