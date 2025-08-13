@@ -1247,7 +1247,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Displayable screen = TYPE == NC ? (Displayable) remote : (Displayable) list; this.root = root;
             Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
             proc.put("screen", screen); display.setCurrent(screen);
-            echoCommand("colocou");
+            
             trace.put(PID, proc); 
             new Thread(this, "NET").start();
         }
@@ -1290,8 +1290,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
         }
-
-
+        
         public void run() {
             if (TYPE == NC) {
                 try {
@@ -1341,8 +1340,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             
             
-            /*confirm.addCommand(new Command("Yes", Command.OK, 1));
-            confirm.addCommand(new Command("No", Command.CANCEL, 2));
             confirm.setCommandListener(this);
             backact = true;
             display.setCurrent(confirm);*/
