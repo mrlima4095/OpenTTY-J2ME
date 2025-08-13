@@ -1447,7 +1447,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     StringBuffer BUFFER = new StringBuffer();
                     for (int i = 0; i < list.size(); i++) { BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
                     nanoContent = BUFFER.toString().trim(); 
-                    new NanoEditor("");
+                    warnCommand("Saved", "result saved");
                 }
                 stop(TYPE == PRSCAN ? "prscan" : "gobuster", false); 
             }
