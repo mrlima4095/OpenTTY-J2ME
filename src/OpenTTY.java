@@ -1195,9 +1195,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
-    /*public class RemoteConnection implements CommandListener, Runnable {
-        private int TYPE = 0, NC = 1, PRSCAN = 2, GOBUSTER = 3;
-        private SocketConnection CONN = null; private InputStream IN = null; private OutputStream OUT = null;
+    public class RemoteConnection implements CommandListener, Runnable {
+        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3;
+
+        private int TYPE;
+        private SocketConnection CONN;
+        private InputStream IN; private OutputStream OUT;
 
         private String address, PID = genpid();
         private boolean root = false, asked = false, keep = false;
@@ -1205,8 +1208,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String[] wordlist;
         
         private Alert confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING); 
-
-        private Form remote = new Form(form.getTitle()); private List list;
+        private Form screen = new Form(form.getTitle()); private List list;
         private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
         private StringItem console = new StringItem("", "");
 
@@ -1220,10 +1222,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         NO = new Command("No", Command.BACK, 1);
 
         public RemoteConnection(String mode, String args, boolean root) {
-            echoCommand("iniciado");
             TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
-
-            if (args == null || args.length() == 0) { echoCommand("retornado"); return; }
+            Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
+            
+            if (args == null || args.length() == 0) { return; }
 
             if (TYPE == NC) {
                 address = args;
@@ -1235,9 +1237,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 
                 inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
-                remote.append(console); remote.append(inputField); 
-                remote.addCommand(EXECUTE); remote.addCommand(BACK); remote.addCommand(CLEAR); remote.addCommand(VIEW);
-                remote.setCommandListener(this);
+                screen.append(console); screen.append(inputField); 
+                screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
+                screen.setCommandListener(this);
+                proc.put("screen", screen); display.setCurrent(screen);
 
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
@@ -1251,20 +1254,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
 
                 list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
-                list.setCommandListener(this);
+                proc.put("screen", list); list.setCommandListener(this);
             } 
 
-            this.root = root;
-            Displayable screen = TYPE == NC ? (Displayable) remote : (Displayable) list; this.root = root;
-            Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
-            proc.put("screen", screen); 
-
-            if (TYPE == NC) {
-                display.setCurrent(remote);
-            } else {
-                display.setCurrent(list);
-            }
-            
             trace.put(PID, proc); 
             new Thread(this, "NET").start();
         }
@@ -1361,7 +1353,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
         }
     }*/
-    public class RemoteConnection implements CommandListener, Runnable {
+    /*public class RemoteConnection implements CommandListener, Runnable {
         private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3;
 
         private int TYPE;
@@ -1494,7 +1486,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private int verifyHTTP(String fullUrl) throws IOException { try { HttpConnection CONN = (HttpConnection) Connector.open(fullUrl); CONN.setRequestMethod(HttpConnection.GET); return CONN.getResponseCode(); } finally { if (CONN != null) { CONN.close(); } } } 
-    }
+    }*/
 
     // API 012 - (File)
     // |
