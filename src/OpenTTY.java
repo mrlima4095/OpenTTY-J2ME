@@ -1402,7 +1402,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 screen.append(console); screen.append(inputField); 
                 screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
                 screen.setCommandListener(this);
-                loadScreen(screen);
+                display.setCurrent(screen);
 
             } 
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
@@ -1418,7 +1418,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
                 list.setCommandListener(this);
-                loadScreen(list);
+                display.setCurrent(list);
             } 
             
             new Thread(this, "NET").start();
