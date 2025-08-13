@@ -129,7 +129,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); } 
             else { preview.removeCommand(DELETE); }
 
-            if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUN); preview.removeCommand(IMPORT); } 
+            if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); } 
             else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
 
             preview.deleteAll();
