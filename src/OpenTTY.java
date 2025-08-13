@@ -1211,12 +1211,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public RemoteConnection(String mode, String args, boolean root) {
             TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
-
+echoCommand("1");
             if (args == null || args.length() == 0) { return; }
 
             if (TYPE == NC) {
                 address = args;
-
+echoCommand("2");
                 try {
                     CONN = (SocketConnection) Connector.open("socket://" + address);
                     IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
@@ -1232,7 +1232,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
                 address = getCommand(args);
                 list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
-
+echoCommand("3");
                 if (TYPE == PRSCAN) { start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true); }
                 else {
                     wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
@@ -1242,12 +1242,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
                 list.setCommandListener(this);
             } 
-
+echoCommand("criando");
             this.root = root;
             Displayable screen = TYPE == NC ? (Displayable) remote : (Displayable) list; this.root = root;
             Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
             proc.put("screen", screen); display.setCurrent(screen);
-            
+            echoCommand("colocou");
             trace.put(PID, proc); 
             new Thread(this, "NET").start();
         }
@@ -1264,7 +1264,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { keep = true; }
                 return;
             }
-
+echoCommand("commandAction");
 
             if (TYPE == NC) {
                 if (c == EXECUTE) {
