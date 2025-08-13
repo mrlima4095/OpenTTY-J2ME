@@ -61,13 +61,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == CLEAR) { nano.setString(""); } 
             else { processCommand("execute xterm; " + (c == RUNS ? "." : c == IMPORT ? "import nano" : c == VIEW ? "html" : "true")); }
         } 
-        else if (d == preview) {
+        else if (d == preview || d == monitor) {
             if (c == BACK) { processCommand("xterm"); } 
 
             if (MOD == PREVIEW) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
 
-                if (selected != null) { processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); }
+                if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); }
             } else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
 
@@ -86,9 +86,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
                 else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
-            } else if (MOD == MONITOR || MOD == PROCESS) {
+            } else if (MOD == MONITOR) {
+                System.gc(); load(MONITOR, false); 
+            } else if (MOD == PROCESS) {
                 if (c == BACK) { processCommand("xterm"); } 
-                else if (c == REFRESH) { System.gc(); load(MONITOR, false); } 
                 else if (c == KILL) { 
                     int index = preview.getSelectedIndex(); 
                     if (index >= 0) { 
@@ -101,7 +102,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
-            else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "exit"); }
+            else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn " + c.getCommandType()); }
         }
     }
     private int load(int ITEM) { return load(ITEM, true); }
