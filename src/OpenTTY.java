@@ -1187,7 +1187,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private SocketConnection CONN; private InputStream IN; private OutputStream OUT;
 
         private String address, PID = genpid();
-        private boolean root = false, backact = false, keep = false;
+        private boolean root = false, asked = false, keep = false;
         private int port, start;
         private String[] wordlist;
         
@@ -1333,17 +1333,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private int verifyHTTP(String fullUrl) throws IOException { try { HttpConnection CONN = (HttpConnection) Connector.open(fullUrl); CONN.setRequestMethod(HttpConnection.GET); return CONN.getResponseCode(); } finally { if (CONN != null) { CONN.close(); } } } 
         private void back() {
-            if (trace.containsKey(PID)) {
-                
+            if (trace.containsKey(PID) && !asked) {
+                confirm.addCommand(YES);
+                confirm.addCommand(NO);
+                confirm.setCommandListener(this);
+                asked = true;
+                display.setCurrent(confirm);
             } else {
                 processCommand("xterm");
             }
             
-            confirm.addCommand(YES);
-            confirm.addCommand(NO);
-            confirm.setCommandListener(this);
-            backact = true;
-            display.setCurrent(confirm);
+            
         }
     }
 
