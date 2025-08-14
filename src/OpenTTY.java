@@ -26,7 +26,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Display display = Display.getDisplay(this);
     private List preview = new List(null, List.IMPLICIT);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
-    private Form monitor = new Form(""), form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
+    private Form monitor = new Form("Monitor"), form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n"),
                        status = new StringItem("Memory Status:", "");
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
@@ -174,7 +174,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } catch (IOException e) { } 
         }
         if (ITEM == MONITOR) { 
-            if (build) { monitor = new Form(form.getTitle()); monitor.append(status); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); }
+            if (build) { monitor.deleteAll(); monitor.append(status); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); }
 
              status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
         } 
