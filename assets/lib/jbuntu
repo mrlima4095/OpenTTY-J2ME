@@ -153,5 +153,5 @@ File Explorer=execute dir f;
 Network Tools=execute nk;
 OpenTTY Store=execute yang;
 Terminal=execute jbuntu term;
-Monitor=execute install nano; touch; add list.title=$TITLE; add list.content=Memory,Process; add Memory=execute builtin htop; add Process=execute builtin htop process; x11 list nano; get nano;
+Monitor=execute htop;
 ---=execute x11 list jbuntu;
