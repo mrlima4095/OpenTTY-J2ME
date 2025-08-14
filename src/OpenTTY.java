@@ -144,6 +144,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (attributes.containsKey("J2EMU")) { }
             else { preview.setTitle(path); }
 
+            preview.deleteAll();
+            if (path.equals("/")) { }
+            else { preview.append("..", null); }
+
             try {
                 if (path.equals("/mnt/")) {
                     for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); }
