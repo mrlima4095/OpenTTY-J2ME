@@ -179,7 +179,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
              status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
         } 
         else if (ITEM == PROCESS) { 
-            if (build) { preview.setTitle(form.getTitle()); preview.addCommand(BACK); preview.addCommzand(KILL); preview.setCommandListener(this); display.setCurrent(preview); }
+            if (build) { preview.setTitle(form.getTitle()); preview.addCommand(BACK); preview.addCommand(KILL); preview.setCommandListener(this); display.setCurrent(preview); }
 
             preview.deleteAll(); 
             for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
