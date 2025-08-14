@@ -119,7 +119,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         MOD = ITEM;
 
         if (ITEM == PREVIEW) { 
-            if (build) { preview.addCommand(BACK); preview.addCommand(RUN); preview.addCommand(EDIT); preview.setCommandListener(this); display.setCurrent(preview); }
+            if (build) { preview.setTitle(form.getTitle()); preview.addCommand(BACK); preview.addCommand(RUN); preview.addCommand(EDIT); preview.setCommandListener(this); display.setCurrent(preview); }
 
             preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } 
         } 
