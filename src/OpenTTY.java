@@ -165,7 +165,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else if (path.startsWith("/home/")) {
                     String[] recordStores = RecordStore.listRecordStores();
 
-                    for (int i = 0; i < files.length; i++) {
+                    for (int i = 0; i < recordStores.length; i++) {
                         if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); }
                     }
                 }
@@ -194,7 +194,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
         } else if (ITEM == PROCESS) {
             if (build) {
-                preview = new List(form.getTitle());
+                preview = new List(form.getTitle(), List.IMPLICIT);
                 preview.addCommand(BACK);
                 preview.addCommand(KILL);
                 preview.setCommandListener(this);
