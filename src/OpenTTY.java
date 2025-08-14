@@ -205,6 +205,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             preview.deleteAll();
             for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
         }
+
+        return 0;
     }
     // |
     // MIDlet Shell
