@@ -179,7 +179,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
              status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
         } 
         else if (ITEM == PROCESS) { 
-            if (build) { preview.setTitle(form.getTitle()); preview.addCommand(BACK); preview.addCommand(KILL); preview.setCommandListener(this); display.setCurrent(preview); }
+            if (build) { preview.setTitle(form.getTitle()); preview.addCommand(BACK); preview.addCommzand(KILL); preview.setCommandListener(this); display.setCurrent(preview); }
 
             preview.deleteAll(); 
             for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
@@ -574,7 +574,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
     private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // |
-    private String join(String[] array, String spacer, int start) { if (array == null || array.length == 0 || start >= array.length) { return ""; } StringBuffer sb = new StringBuffer(); for (int i = start; i < array.length; i++) { if (i > start) { sb.append(spacer); } sb.append(array[i]); } return sb.toString(); }
+    private String join(String[] array, String spacer, int start) { 
+        if (array == null || array.length == 0 || start >= array.length) { return ""; } 
+
+        StringBuffer sb = new StringBuffer(); 
+        for (int i = start; i < array.length; i++) { 
+            if (i > start) { sb.append(spacer); } 
+
+            sb.append(array[i]); 
+        } 
+
+        return sb.toString(); 
+    }
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(getpattern(content.substring(start, i))); } start = i + 1; } } if (start < content.length()) { args.addElement(getpattern(content.substring(start))); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
     // |
