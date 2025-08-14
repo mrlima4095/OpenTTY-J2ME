@@ -203,7 +203,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         if (build) {
-            if (TYPE == MONITOR) {
+            if (ITEM == MONITOR) {
                 display.setCurrent(monitor);
             } else {
                 display.setCurrent(preview);
