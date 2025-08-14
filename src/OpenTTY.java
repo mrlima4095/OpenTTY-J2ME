@@ -114,7 +114,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (MOD == PREVIEW) {
             if (build) {
-                preview = new List(form.getTitle());
+                preview = new List(form.getTitle(), List.IMPLICIT);
                 preview.addCommand(BACK);
                 preview.addCommand(RUN); preview.addCommand(EDIT);
                 preview.setCommandListener(this);
@@ -127,7 +127,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); }
         } else if (MOD == EXPLORER) {
             if (build) {
-                preview = new List(form.getTitle());
+                preview = new List(form.getTitle(), List.IMPLICIT);
                 preview.addCommand(BACK);
                 preview.addCommand(OPEN);
                 preview.setCommandListener(this);
