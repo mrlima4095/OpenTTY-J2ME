@@ -75,7 +75,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (selected != null) { 
                         processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
 
-                        if (display.getCurrent() == preview) { load(EXPLORER, false); }
+                        if (display.getCurrent() == preview) { load(EXPLORER); }
 
                         stdin.setLabel(username + " " + path + " $"); 
                     } 
@@ -84,12 +84,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int STATUS = deleteFile(path + selected); 
                     if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
 
-                    load(EXPLORER, false); 
+                    load(EXPLORER); 
                 } 
                 else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
                 else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
             } 
-            else if (MOD == MONITOR) { System.gc(); load(MONITOR, false); } 
+            else if (MOD == MONITOR) { System.gc(); load(MONITOR); } 
             else if (MOD == PROCESS) {
                 if (c == BACK) { processCommand("xterm"); } 
                 else if (c == KILL) { 
@@ -98,7 +98,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         int STATUS = kill(split(preview.getString(index), '\t')[0], false, username.equals("root") ? true : false); 
                         if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } 
                         
-                        load(PROCESS, false); 
+                        load(PROCESS); 
                     } 
                 } 
             }
@@ -108,28 +108,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn " + c.getCommandType() + " " + c.getLabel()); }
         }
     }
-    private int load(int ITEM, boolean build) {
+    private int load(int ITEM) {
         MOD = ITEM;
 
-        if (MOD == PREVIEW) {
-            if (build) {
-                preview = new List(form.getTitle(), List.IMPLICIT);
-                preview.addCommand(BACK);
-                preview.addCommand(RUN); preview.addCommand(EDIT);
-                preview.setCommandListener(this);
-;
-            }
+        if (MOD == PREVIEW) {                
+            preview = new List(form.getTitle(), List.IMPLICIT);
+            preview.addCommand(BACK); preview.addCommand(RUN); preview.addCommand(EDIT);
+            preview.setCommandListener(this);
 
             preview.deleteAll();
 
             for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); }
-        } else if (MOD == EXPLORER) {
-            if (build) {
-                preview = new List(form.getTitle(), List.IMPLICIT);
-                preview.addCommand(BACK);
-                preview.addCommand(OPEN);
-                preview.setCommandListener(this);
-            }
+        } else if (MOD == EXPLORER) {                
+            preview = new List(form.getTitle(), List.IMPLICIT);
+            preview.addCommand(BACK); preview.addCommand(OPEN);
+            preview.setCommandListener(this);
 
             if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); }
             else { preview.removeCommand(DELETE); }
@@ -181,33 +174,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } catch (IOException e) { }
 
         } else if (MOD == MONITOR) {
-            if (build) {
                 monitor = new Form(form.getTitle());
                 monitor.append(status);
-                monitor.addCommand(BACK);
-                monitor.addCommand(REFRESH);
+                monitor.addCommand(BACK); monitor.addCommand(REFRESH);
                 monitor.setCommandListener(this);
-            }
+            
 
             status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
         } else if (ITEM == PROCESS) {
-            if (build) {
                 preview = new List(form.getTitle(), List.IMPLICIT);
-                preview.addCommand(BACK);
-                preview.addCommand(KILL);
+                preview.addCommand(BACK); preview.addCommand(KILL);
                 preview.setCommandListener(this);
-            }
+            
 
             preview.deleteAll();
             for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
         }
 
-        if (build) {
-            if (ITEM == MONITOR) {
-                display.setCurrent(monitor);
-            } else {
-                display.setCurrent(preview);
-            }
+        if (ITEM == MONITOR) {
+            display.setCurrent(monitor);
+        } else {
+            display.setCurrent(preview);
         }
 
         return 0;
