@@ -26,10 +26,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Display display = Display.getDisplay(this);
     private List preview = new List("Preview", List.IMPLICIT); 
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
-    private Form monitor = new Form("Monitor"), form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
-    private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n"),
-                       status = new StringItem("Memory Status:", "");
+    private Form monitor, form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
+    private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n"), status = new StringItem("Memory Status:", "");
     private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4),
                     BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1),
                     OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2), DELETE = new Command("Delete", Command.OK, 2);
@@ -50,7 +49,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // | (Triggers)
-    public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "pauseApp()" : "true"); }
+    public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "  ()" : "true"); }
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
     // |
     // | (Main Listener)
@@ -68,21 +67,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String selected = preview.getString(preview.getSelectedIndex()); 
 
                 if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); }
-            } else if (MOD == EXPLORER) {
+            } 
+            else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
 
                 if (c == OPEN || c == List.SELECT_COMMAND) { 
                     if (selected != null) { 
-                        processCommand(
-                            selected.endsWith("..") ? 
-                            "cd .." : 
-                            selected.endsWith("/") ? 
-                            "cd " + path + selected : 
-                            "nano " + path + selected, false);
-                            
-                        if (display.getCurrent() == preview) {
-                            load(EXPLORER, false); 
-                        }
+                        processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
+
+                        if (display.getCurrent() == preview) { load(EXPLORER, false); }
 
                         stdin.setLabel(username + " " + path + " $"); 
                     } 
@@ -95,15 +88,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
                 else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
-            } else if (MOD == MONITOR) {
-                System.gc(); load(MONITOR, false); 
-            } else if (MOD == PROCESS) {
+            } 
+            else if (MOD == MONITOR) { System.gc(); load(MONITOR, false); } 
+            else if (MOD == PROCESS) {
                 if (c == BACK) { processCommand("xterm"); } 
                 else if (c == KILL) { 
                     int index = preview.getSelectedIndex(); 
                     if (index >= 0) { 
                         int STATUS = kill(split(preview.getString(index), '\t')[0], false, username.equals("root") ? true : false); 
                         if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } 
+                        
                         load(PROCESS, false); 
                     } 
                 } 
@@ -118,75 +112,100 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int load(int ITEM, boolean build) {
         MOD = ITEM;
 
-        if (ITEM == PREVIEW) { 
-            if (build) { preview = new List(path, List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(RUN); preview.addCommand(EDIT); preview.setCommandListener(this); display.setCurrent(preview); }
+        if (MOD == PREVIEW) {
+            if (build) {
+                preview = new List(form.getTitle());
+                preview.addCommand(BACK);
+                preview.addCommand(RUN); preview.addCommand(EDIT);
+                preview.setCommandListener(this);
 
-            preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } 
-        } 
-        else if (ITEM == EXPLORER) {
-            if (build) { preview = new List(path, List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(OPEN); preview.setCommandListener(this); display.setCurrent(preview); }
-
-            if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); } 
-            else { preview.removeCommand(DELETE); }
-
-            if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); } 
-            else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
+                display.setCurrent(preview);
+            }
 
             preview.deleteAll();
-            preview.setTitle(path);
-            if (!path.equals("/")) { preview.append("..", null); } 
 
-            try { 
-                if (path.equals("/mnt/")) { 
-                    Enumeration roots = FileSystemRegistry.listRoots(); 
-                    while (roots.hasMoreElements()) { preview.append((String) roots.nextElement(), null); } 
-                } 
-                else if (path.startsWith("/mnt/")) { 
-                    FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ); 
+            for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); }
+        } else if (MOD == EXPLORER) {
+            if (build) {
+                preview = new List(form.getTitle());
+                preview.addCommand(BACK);
+                preview.addCommand(OPEN);
+                preview.setCommandListener(this);
 
-                    Enumeration content = CONN.list(); 
-                    Vector dirs = new Vector(), files = new Vector(); 
+                display.setCurrent(preview);
+            }
 
-                    while (content.hasMoreElements()) { 
-                        String name = (String) content.nextElement(); 
-                        if (name.endsWith("/")) { dirs.addElement(name); } 
-                        else { files.addElement(name); } 
-                    } 
-                    while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), null); } 
-                    while (!files.isEmpty()) { preview.append(getFirstString(files), null); } 
+            if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); }
+            else { preview.removeCommand(DELETE); }
 
-                    CONN.close(); 
-                } 
-                else if (path.equals("/home/")) { 
-                    String[] recordStores = RecordStore.listRecordStores(); 
+            if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); }
+            else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
 
-                    for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); } } 
-                } 
-                String[] files = (String[]) paths.get(path); 
+            if (attributes.containsKey("J2EMU")) { }
+            else { preview.setTitle(path); }
 
-                if (files != null) { 
-                    for (int i = 0; i < files.length; i++) { 
-                        String f = files[i]; 
+            try {
+                if (path.equals("/mnt/")) {
+                    for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); }
+                } else if (path.startsWith("/mnt/")) {
+                    FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
+                    Vector dirs = new Vector(), files = new Vector();
 
-                        if (f != null && !f.equals("..") && !f.equals("/")) { preview.append(f, null); } 
-                    } 
-                } 
-            } catch (IOException e) { } 
-        }
-        if (ITEM == MONITOR) { 
-            if (build) { monitor.deleteAll(); monitor.append(status); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); }
+                    for (Enumeration content = CONN.list(); content.hasMoreElements();) {
+                        String name = (String) content.nextElement();
 
-             status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
-        } 
-        else if (ITEM == PROCESS) { 
-            if (build) { preview = new List(form.getTitle(), List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(KILL); preview.setCommandListener(this); display.setCurrent(preview); }
+                        if (name.endsWith("/")) { dirs.addElement(name); }
+                        else { files.addElement(name); }
+                    }
 
-            preview.deleteAll(); 
+                    while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), null); }
+                    while (!files.isEmpty()) { preview.append(getFirstString(files), null); }
+
+                    CONN.close();
+                } else if (path.startsWith("/home/")) {
+                    String[] recordStores = RecordStore.listRecordStores();
+
+                    for (int i = 0; i < files.length; i++) {
+                        if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); }
+                    }
+                }
+
+                String[] files = (String[]) paths.get(path);
+                if (files != null) {
+                    for (int i = 0; i < files.length; i++) {
+                        String f = files[i];
+
+                        if (f != null && !f.equals("..") && !f.equals("/")) { preview.append(f, null); }
+                    }
+                }
+            } catch (IOException e) { }
+
+        } else if (MOD == MONITOR) {
+            if (build) {
+                monitor = new Form(form.getTitle());
+                monitor.append(status);
+                monitor.addCommand(BACK);
+                monitor.addCommand(REFRESH);
+                monitor.setCommandListener(this);
+
+                display.setCurrent(monitor);
+            }
+
+            status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
+        } else if (ITEM == PROCESS) {
+            if (build) {
+                preview = new List(form.getTitle());
+                preview.addCommand(BACK);
+                preview.addCommand(KILL);
+                preview.setCommandListener(this);
+
+                display.setCurrent(preview);
+            }
+
+            preview.deleteAll();
             for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
-        } 
-        
-        return 0;
-    }   
+        }
+    }
     // |
     // MIDlet Shell
     private int processCommand(String command) { return processCommand(command, true, false); }
@@ -618,7 +637,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // X11 Loader
         else if (mainCommand.equals("term")) { display.setCurrent(form); }
         else if (mainCommand.equals("init")) { start("x11-wm", null, null, true); } 
-        else if (mainCommand.equals("stop")) { kill("2", false, true); }
+        else if (mainCommand.equals("stop")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide", root); form.removeCommand(EXECUTE); trace.remove("2"); }
         else if (mainCommand.equals("xfinit")) { if (argument.equals("")) { return xserver("init", root); } if (argument.equals("stdin")) { form.append(stdin); } else if (argument.equals("stdout")) { form.append(stdout); } }
         else if (mainCommand.equals("cmd")) { Command[] CMDS = { HELP, NANO, CLEAR, HISTORY }; for (int i = 0; i < CMDS.length; i++) { if (argument.equals("hide")) { form.removeCommand(CMDS[i]); } else { form.addCommand(CMDS[i]); } } }
         // | 
@@ -631,20 +650,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Screen Manager
         else if (mainCommand.equals("set")) { 
             if (argument.equals("")) { } 
-            else if (!trace.containsKey("2")) { return 69; }
-            else { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); } 
+            else if (trace.containsKey("2")) { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); }
+            else { return 69; } 
         }
         else if (mainCommand.equals("load") || mainCommand.equals("unset")) {
             if (argument.equals("")) { }
-            else if (!trace.containsKey("2")) { return 69; }
-            else {
+            else if (trace.containsKey("2")) {
                 Hashtable desktops = (Hashtable) getobject("2", "saves");
 
                 if (desktops.containsKey(argument)) {
                     if (mainCommand.equals("load")) { display.setCurrent((Displayable) desktops.get(argument)); }
                     else { desktops.remove(argument); }
                 } else { echoCommand("x11: " + mainCommand + ": " + argument + ": not found"); return 127; }
-            }
+            } 
+            else { return 69; }
         }
         else if (mainCommand.equals("import") || mainCommand.equals("export")) { 
             if (argument.equals("")) { } 
@@ -1015,7 +1034,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String owner = (String) proc.get("owner"), collector = (String) proc.get("collector");
 
         if (owner.equals("root") && !root) { if (print) { echoCommand("Permission denied!"); } return 13; }
-        if (pid.equals("2")) { form.setTitle(""); form.setTicker(null); form.deleteAll(); xserver("cmd hide", root); form.removeCommand(EXECUTE);  }
         else if (collector != null && collector.length() > 0) { processCommand(collector, true, root); }
 
         trace.remove(pid);
@@ -1029,7 +1047,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable proc = genprocess(app, root, collector);
 
         if (app.equals("sh") || app.equals("x11-wm")) {
-            pid = app.equals("sh") ? "1" : "2"; collector = app.equals("sh") ? "exit" : "x11 stop";
+            pid = app.equals("sh") ? "1" : "2"; 
+            collector = app.equals("sh") ? "exit" : "x11 stop";
             proc.put("screen", form); 
 
             if (trace.containsKey(pid)) { return 68; }
