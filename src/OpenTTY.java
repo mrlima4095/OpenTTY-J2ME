@@ -119,12 +119,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         MOD = ITEM;
 
         if (ITEM == PREVIEW) { 
-            if (build) { preview = new List(form.getTitle(), List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(RUN); preview.addCommand(EDIT); preview.setCommandListener(this); }
+            if (build) { preview = new List(form.getTitle(), List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(RUN); preview.addCommand(EDIT); preview.setCommandListener(this); display.setCurrent(preview); }
 
             preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } 
         } 
         else if (ITEM == EXPLORER) {
-            if (build) { preview = new List(null, List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(OPEN); preview.setCommandListener(this); }
+            if (build) { preview = new List(null, List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(OPEN); preview.setCommandListener(this); display.setCurrent(preview); }
 
             if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); } 
             else { preview.removeCommand(DELETE); }
@@ -174,12 +174,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } catch (IOException e) { } 
         }
         if (ITEM == MONITOR) { 
-            if (build) { monitor = new Form(form.getTitle()); monitor.append(status); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); }
+            if (build) { monitor = new Form(form.getTitle()); monitor.append(status); monitor.addCommand(BACK); monitor.addCommand(REFRESH); monitor.setCommandListener(this); display.setCurrent(monitor); }
 
             status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
         } 
         else if (ITEM == PROCESS) { 
-            if (build) { preview = new List(form.getTitle(), List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(KILL); preview.setCommandListener(this); }
+            if (build) { preview = new List(form.getTitle(), List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(KILL); preview.setCommandListener(this); display.setCurrent(preview); }
 
             preview.deleteAll(); 
             for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
@@ -262,8 +262,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { if (argument.equals("") || argument.equals("memory")) { load(MONITOR); display.setCurrent(monitor); } else if (argument.equals("process")) { load(PROCESS); display.setCurrent(preview); } else { echoCommand("htop: " + argument + ": not found"); return 127; } }
-        else if (mainCommand.equals("top")) { if (argument.equals("")) { processCommand("htop", false); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } }
+        else if (mainCommand.equals("htop")) { new Screen("list.content=Memory,Process\nlist.button=Open\nMemory=execute top memory;\nProcess=execute top process;"); }
+        else if (mainCommand.equals("top")) { if (argument.equals("") || argument.equals("memory")) { load(MONITOR); } else if (argument.equals("process")) { load(PROCESS); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } }
         // |
         // Process
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], genpid(), null, root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root); if (STATUS != 0) { return STATUS; } } } 
@@ -364,9 +364,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 012 - (File)
         // |
         // Directories Manager
+        else if (mainCommand.equals("dir")) { load(EXPLORER); }
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
-        else if (mainCommand.equals("dir")) { load(EXPLORER); display.setCurrent(preview); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd")) { if (argument.equals("")) { path = "/home/"; } else if (argument.equals("..")) { if (path.equals("/")) { return 0; } int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); } else { String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); if (!TARGET.endsWith("/")) { TARGET += "/"; } if (paths.containsKey(TARGET)) { path = TARGET; } else if (TARGET.startsWith("/mnt/")) { try { String REALPWD = "file:///" + TARGET.substring(5); FileConnection fc = (FileConnection) Connector.open(REALPWD, Connector.READ); if (fc.exists() && fc.isDirectory()) { path = TARGET; } else { echoCommand("cd: " + basename(TARGET) + ": not " + (fc.exists() ? "a directory" : "found")); return 127; } fc.close(); } catch (IOException e) { echoCommand("cd: " + basename(TARGET) + ": " + getCatch(e)); return 1; } } else { echoCommand("cd: " + basename(TARGET) + ": not accessible"); return 127; } } }
         else if (mainCommand.equals("pushd")) { if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); } else { int STATUS = processCommand("cd " + argument, false); if (STATUS == 0) { stack.addElement(path); echoCommand(readStack()); } return STATUS; } }
@@ -383,7 +383,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String PWD = argument.equals("") ? path : argument; 
             if (!PWD.startsWith("/")) { PWD = path + PWD; } 
-            if (!PWD.endsWith("/")) { PWD += "/"; } 
+            if (!PWD.endsWith("/")) { PWD += "/"; } echoCommand(PWD);
 
             try { 
                 if (PWD.equals("/mnt/")) { 
@@ -639,7 +639,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { } 
             else {
                 if (trace.containsKey(argument)) {
-                    if (getowner(argument).equals("root") && !root) { echoCommand("Permission denied"); return 13; }
+                    if (getowner(argument).equals("root") && !root) { echoCommand("Permission denied!"); return 13; }
 
                     if (mainCommand.equals("import")) {
                         Displayable screen = (Displayable) getobject(argument, "screen");
