@@ -108,7 +108,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn " + c.getCommandType() + " " + c.getLabel()); }
         }
     }
-    private int load(int ITEM) { return load(ITEM, true); }
     private int load(int ITEM, boolean build) {
         MOD = ITEM;
 
@@ -118,8 +117,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 preview.addCommand(BACK);
                 preview.addCommand(RUN); preview.addCommand(EDIT);
                 preview.setCommandListener(this);
-
-                display.setCurrent(preview);
+;
             }
 
             preview.deleteAll();
@@ -131,8 +129,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 preview.addCommand(BACK);
                 preview.addCommand(OPEN);
                 preview.setCommandListener(this);
-
-                display.setCurrent(preview);
             }
 
             if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); }
@@ -191,8 +187,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 monitor.addCommand(BACK);
                 monitor.addCommand(REFRESH);
                 monitor.setCommandListener(this);
-
-                display.setCurrent(monitor);
             }
 
             status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); 
@@ -202,12 +196,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 preview.addCommand(BACK);
                 preview.addCommand(KILL);
                 preview.setCommandListener(this);
-
-                display.setCurrent(preview);
             }
 
             preview.deleteAll();
             for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } 
+        }
+
+        if (build) {
+            if (TYPE == MONITOR) {
+                display.setCurrent(monitor);
+            } else {
+                display.setCurrent(preview);
+            }
         }
 
         return 0;
