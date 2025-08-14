@@ -62,7 +62,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { processCommand("execute xterm; " + (c == RUNS ? "." : c == IMPORT ? "import nano" : c == VIEW ? "html" : "true")); }
         } 
         else if (d == preview || d == monitor) {
-            if (c == BACK) { processCommand("xterm"); return;    } 
+            if (c == BACK) { processCommand("xterm"); return; } 
 
             if (MOD == PREVIEW) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
