@@ -117,3 +117,4 @@
 [2025-1.16-02x50]	Moved screens HashMap into Virtual Process
 [2025-1.16-02x51]	J2EMU - Improving renderings methods for emulators
 [2025-1.16-02x52]	Merge Server and RemoteConnection Threads
+[2025-1.16-02x53]	Rewrote C2ME

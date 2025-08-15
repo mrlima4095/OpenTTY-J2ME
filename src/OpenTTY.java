@@ -329,9 +329,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (ClassNotFoundException e) { echoCommand("prg: " + getArgument(argument) + ": not found"); return 127; } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } catch (Exception e) { echoCommand(getCatch(e)); return 3; } }
 
         // API 011 - (Network)
-        // | 
-        // Servers
-        else if (mainCommand.equals("bind") || mainCommand.equals("server")) { new Connect(mainCommand, argument.equals("") ? env("$PORT") : argument, root); }
         // |
         // HTTP Interfaces
         else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } } }
@@ -341,7 +338,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Socket Interfaces
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
         else if (mainCommand.equals("query")) { return query(argument, root); }
-        else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster")) { new Connect(mainCommand, argument, root); }
+        else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster") || mainCommand.equals("bind") || mainCommand.equals("server")) { new Connect(mainCommand, argument, root); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
         else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); echoCommand(PORT + "\t" + ADDR); } }
@@ -1115,7 +1112,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (MOD == SERVER || MOD == BIND) {
                 if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); PID = "31522"; DB = ""; } 
                 else { PID = getCommand(args); DB = getArgument(args); DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB; }
-                
+
                 new Thread(this, MOD == BIND ? "Bind" : "Server").start();
                 return;
             } else if (MOD == DEAMON) {
@@ -1337,95 +1334,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else { processCommand("xterm"); }
         }
     }
-
-    // |
-    // Servers
-    /*public class Server implements Runnable {
-        private int TYPE = 0, SERVER = 1, BIND = 2, COUNT = 1;
-
-        private boolean root;
-        private String port, mod, service;
-
-        public Server(String mode, String args, boolean root) {
-            if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); new Server(mode, "31522", root); return; }
-
-            TYPE = (mode == null || mode.equals("bind")) ? BIND : SERVER;
-            service = TYPE == BIND ? "bind" : "server";
-            port = getCommand(args); mod = getArgument(args);
-            mod = mod.equals("") && TYPE == SERVER ? env("$RESPONSE") : mod;
-            this.root = root;
-
-            new Thread(this, TYPE == BIND ? "Bind" : "Server").start();
-        }
-
-        public void run() {
-            if (trace.containsKey(port) || getNumber(port, 65536, false) > 65535 || getNumber(port, 65536, false) < 4) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
-            start(service, port, null, root);
-
-            while (trace.containsKey(port)) {
-                ServerSocketConnection serverSocket = null; SocketConnection clientSocket = null;
-                InputStream is = null; OutputStream os = null;
-
-                try {
-                    serverSocket = (ServerSocketConnection) Connector.open("socket://:" + port); 
-                    if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port " + port); COUNT++; }
-
-                    clientSocket = (SocketConnection) serverSocket.acceptAndOpen(); 
-                    String address = clientSocket.getAddress();
-                    echoCommand("[+] " + address + " connected");
-
-                    is = clientSocket.openInputStream(); os = clientSocket.openOutputStream();
-
-                    if (TYPE == SERVER) {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead = is.read(buffer);
-
-                        if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); } 
-                        else {
-                            echoCommand("[+] " + address + " -> " + env(new String(buffer, 0, bytesRead).trim()));
-                            os.write(getcontent(mod).getBytes()); os.flush();
-                        }
-                    } else if (TYPE == BIND) {
-                        sessions.put(port, address);
-                        while (trace.containsKey(port)) {
-                            byte[] buffer = new byte[4096];
-                            int bytesRead = is.read(buffer);
-
-                            if (bytesRead == -1) {
-                                echoCommand("[-] " + address + " disconnected");
-                                break;
-                            }
-
-                            String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                            echoCommand("[+] " + address + " -> " + env(PAYLOAD));
-
-                            String command = (mod == null || mod.length() == 0 || mod.equals("null")) ? PAYLOAD : mod + " " + PAYLOAD;
-
-                            String beforeCommand = stdout != null ? stdout.getText() : "";
-                            processCommand(command, true, root);
-                            String afterCommand = stdout != null ? stdout.getText() : "";
-
-                            String output = afterCommand.length() >= beforeCommand.length() ? afterCommand.substring(beforeCommand.length()).trim() + "\n" : afterCommand + "\n";
-
-                            os.write(output.getBytes()); os.flush();
-                        }
-                    }
-
-                } 
-                catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); return; } } 
-                finally {
-                    try {
-                        if (is != null) { is.close(); } if (os != null) { os.close(); }
-                        if (clientSocket != null) { clientSocket.close(); }
-                    } catch (IOException e) { }
-
-                    try { if (serverSocket != null) serverSocket.close(); } catch (IOException e) { }
-                }
-            }
-
-            sessions.remove(port); echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped");
-        }
-    }*/
     // |
     // HTTP Interfaces
     private String request(String url, Hashtable headers) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); if (headers != null) { Enumeration keys = headers.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) headers.get(key); conn.setRequestProperty(key, value); } } InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return getCatch(e); } }
@@ -1471,169 +1379,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
-    /*public class RemoteConnection implements CommandListener, Runnable {
-        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3;
-
-        private int TYPE;
-        private SocketConnection CONN;
-        private InputStream IN; private OutputStream OUT;
-
-        private String address, PID = genpid();
-        private boolean root = false, asked = false, keep = false;
-        private int port, start;
-        private String[] wordlist;
-        
-        private Alert confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING); 
-        private Form screen = new Form(form.getTitle()); private List list;
-        private TextField inputField = new TextField("Command", "", 256, TextField.ANY); 
-        private StringItem console = new StringItem("", "");
-
-        private Command BACK = new Command("Back", Command.SCREEN, 2),
-                        EXECUTE = new Command("Send", Command.OK, 1),
-                        CONNECT = new Command("Connect", Command.BACK, 1),
-                        CLEAR = new Command("Clear", Command.SCREEN, 2),
-                        VIEW = new Command("View info", Command.SCREEN, 2),
-                        SAVE = new Command("Save Logs", Command.SCREEN, 2),
-                        YES = new Command("Yes", Command.OK, 1),
-                        NO = new Command("No", Command.BACK, 1);
-
-        public RemoteConnection(String mode, String args, boolean root) {
-            TYPE = mode == null || mode.equals("") || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : GOBUSTER; 
-            Hashtable proc = genprocess(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root, null);
-            
-            if (args == null || args.length() == 0) { return; }
-
-            if (TYPE == NC) {
-                address = args;
-
-                try {
-                    CONN = (SocketConnection) Connector.open("socket://" + address);
-                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
-                } catch (Exception e) { echoCommand(getCatch(e)); return; }
-
-                
-                inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
-                screen.append(console); screen.append(inputField); 
-                screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
-                screen.setCommandListener(this); proc.put("screen", screen); 
-
-                display.setCurrent(screen);
-
-            } 
-            else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                address = getCommand(args);
-                list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
-
-                if (TYPE == PRSCAN) { start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true); }
-                else {
-                    wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
-                    if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
-                }
-
-                list.addCommand(BACK); list.addCommand(CONNECT); list.addCommand(SAVE); 
-                list.setCommandListener(this); proc.put("screen", list); 
-                
-                display.setCurrent(list);
-            } 
-
-            trace.put(PID, proc); 
-            new Thread(this, "NET").start();
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (d == confirm) {
-                processCommand("xterm");
-                if (c == NO) { 
-                    stop(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root); 
-                } 
-                else { keep = true; }
-                return;
-            }
-
-            if (TYPE == NC) {
-                if (c == EXECUTE) {
-                    String PAYLOAD = inputField.getString().trim();
-                    inputField.setString("");
-
-                    try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
-                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (!keep) { trace.remove(PID); } }
-                } 
-                else if (c == BACK) {
-                    writeRMS("/home/remote", console.getText()); back();
-                } 
-                else if (c == CLEAR) { console.setText(""); }
-                else if (c == VIEW) { 
-                    try { warnCommand("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } 
-                    catch (Exception e) { } 
-                } 
-            } 
-            else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
-                if (c == BACK) { back(); }
-                else if (c == CONNECT || c == List.SELECT_COMMAND) { String ITEM = list.getString(list.getSelectedIndex()); processCommand(TYPE == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
-                else if (c == SAVE) { 
-                    StringBuffer BUFFER = new StringBuffer();
-                    for (int i = 0; i < list.size(); i++) { BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
-                    nanoContent = BUFFER.toString().trim(); 
-                    processCommand("nano", false);
-                }
-            }
-        }
-        
-        public void run() {
-            if (TYPE == NC) {
-                
-                while (trace.containsKey(PID)) {
-                    try {
-                        if (IN.available() > 0) {
-                            byte[] BUFFER = new byte[IN.available()];
-                            int LENGTH = IN.read(BUFFER);
-                            if (LENGTH > 0) { echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console); }
-                        }
-                    } 
-                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (!keep) { trace.remove(PID); } }
-                }
-
-                try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
-            } else if (TYPE == PRSCAN) {
-                for (int port = start; port <= 65535; port++) {
-                    try {
-                        list.setTicker(new Ticker("Scanning port " + port + "..."));
-                        if (!trace.containsKey(PID)) { break; }
-                        
-                        Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
-                        list.append("" + port, null);
-                    } catch (IOException e) { }
-                }
-                list.setTicker(null); if (!keep) { trace.remove(PID); }
-            } else if (TYPE == GOBUSTER) {
-                list.setTicker(new Ticker("Searching..."));
-                for (int i = 0; i < wordlist.length; i++) {
-                    String path = wordlist[i].trim();
-                    if (!trace.containsKey(PID)) { break; }
-
-                    if (!path.equals("") && !path.startsWith("#")) {
-                        try {
-                            int code = verifyHTTP(address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path);
-                            if (code != 404) list.append(code + " /" + path, null);
-                        } catch (IOException e) { }
-                    }
-                }
-                list.setTicker(null); if (!keep) { trace.remove(PID); }
-            }
-        }
-
-        private int verifyHTTP(String fullUrl) throws IOException { try { HttpConnection CONN = (HttpConnection) Connector.open(fullUrl); CONN.setRequestMethod(HttpConnection.GET); return CONN.getResponseCode(); } finally { if (CONN != null) { CONN.close(); } } } 
-        private void back() {
-            if (trace.containsKey(PID) && !asked) {
-                confirm.addCommand(YES); confirm.addCommand(NO);
-                confirm.setCommandListener(this);
-                asked = true;
-                display.setCurrent(confirm);
-            } else { processCommand("xterm"); }
-            
-            
-        }
-    }*/
 
     // API 012 - (File)
     // |
@@ -1745,54 +1490,49 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // C Programming
     // | (Runtime)
-    private int C2ME(String source, boolean root) {
-        Hashtable program = build(getcontent(source));
-        if (program == null) { echoCommand("C2ME: Build failed"); return 1; }
-        Hashtable main = (Hashtable) program.get("main");
-        Hashtable proc = genprocess("build " + source, root, null);
-        String pid = genpid();
+    private int C2ME(String source, String code, boolean root) {
+        Hashtable program = build(code == null ? getcontent(source) : code);
+        if (program == null) { echoCommand("C2ME: " + basename(source) + ": build failed"); return 1; }
+
+        Hashtable main = (Hashtable) program.get("main"), proc = genprocess("build " + basename(source), root, null);
+        String PID = genpid();
 
         if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
         else if (((String) main.get("type")).equals("int")) {
-            try { return Integer.valueOf(C2ME(pid, (Vector) main.get("source"), main, root, program, 0)); }
-            catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); }
-        } else { echoCommand("C2ME: main() need to be an int function"); return 2; }
-
-        return 0;
-
+            try { return Integer.valueOf(C2ME(PID, (Vector) main.get("source"), main, program, root, 0)); } 
+            catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); return 1; }
+        } 
+        else { echoCommand("C2ME: main() need to be an int function"); return 2; }
     }
-    private String C2ME(String pid, Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException { 
-        Hashtable vars = (Hashtable) context.get("variables"); 
+    private String C2ME(String PID, Vector source, Hashtable context, Hashtable program, boolean root, int mode) throws RuntimeException {
+        Hashtable vars = (Hashtable) context.get("variables");
 
-        for (int i = 0; i < source.size(); i++) { 
-            Hashtable cmd = (Hashtable) source.elementAt(i); 
-            String type = (String) cmd.get("type"); 
-            
-            if (trace.containsKey(pid)) {
-                
-            } else {
-                throw new RuntimeException("Process killed");
-            }
+        for (int i = 0; i < source.size(); i++) {
+            Hashtable cmd = (Hashtable) source.elementAt(i);
+            String type = (String) cmd.get("type");
 
-            if (type == null) { } 
-            else if (type.equals("assign")) { 
-                String name = (String) cmd.get("name"), value = substValues(pid, (String) cmd.get("value"), vars, program, root), instance = (String) cmd.get("instance"); 
-                Hashtable local = new Hashtable(); 
+            if (trace.containsKey(PID)) { }
+            else { throw new RuntimeException("Process killed"); }
+
+            if (type == null) { }
+            else if (type.equals("assign")) {
+                String name = (String) cmd.get("name"), value = subst(PID, (String) cmd.get("value"), vars, program, root), instance = (String) cmd.get("instance");
+                Hashtable local = new Hashtable();
 
                 if (instance == null) { 
                     if (vars.containsKey(name)) { instance = (String) ((Hashtable) vars.get(name)).get("instance"); } 
                     else { throw new RuntimeException("'" + name + "' undeclared"); } 
                 } 
                 if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("invalid value for '" + name + "' (expected int)"); } 
-                if (instance.equals("text") && !validChar(value)) { value = "\"" + value + "\""; } 
+                if (instance.equals("char") && !validChar(value)) { value = "\"" + value + "\""; } 
 
                 local.put("value", value == null || value.length() == 0 ? "' '" : value); 
                 local.put("instance", instance); 
                 vars.put(name, local); 
-            } 
+            }
             else if (type.equals("return")) { 
                 type = (String) context.get("type"); 
-                String value = substValues(pid, (String) cmd.get("value"), vars, program, root); 
+                String value = subst(PID, (String) cmd.get("value"), vars, program, root); 
 
                 if (type.equals("int")) { 
                     String expr = exprCommand(value); 
@@ -1802,49 +1542,61 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else { return value; } 
             } 
-            else if (type.equals("if")) { 
-                String ret = null; 
-                if (eval(pid, (String) cmd.get("expr"), vars, program, root)) { ret = C2ME(pid, (Vector) cmd.get("source"), context, root, program, mode); } 
-                else if (cmd.containsKey("else")) { ret = C2ME(pid, (Vector) cmd.get("else"), context, root, program, mode); } 
-
-                if (ret == null) { continue; } 
-                else { return ret; } 
-            } 
-            else if (type.equals("while")) { 
-                String expr = substValues(pid, (String) cmd.get("expr"), vars, program, root); 
-                while (eval(pid, expr, vars, program, root)) { 
-                    String ret = C2ME(pid, (Vector) cmd.get("source"), context, root, program, 1); 
-                    expr = substValues(pid, (String) cmd.get("expr"), vars, program, root); 
-
-                    if (ret == null) { break; } 
-                    else if (ret.equals("+[continue]")) { continue; } 
-                    else { return ret; } 
+            else if (type.equals("if")) {
+                String ret = null;
+                if (eval(PID, (String) cmd.get("expr"), vars, program, root)) {
+                    ret = C2ME(PID, (Vector) cmd.get("source"), context, program, root, mode);
+                } else if (cmd.containsKey("else")) {
+                    ret = C2ME(PID, (Vector) cmd.get("source"), context, program, root, mode);
                 }
-            } 
+
+                if (ret == null) { continue; }
+                else { return ret; }
+            }
+            else if (type.equals("while")) {
+                String expr = subst(PID, (String) cmd.get("expr"), vars, program, root);
+                while (eval(PID, expr, vars, program, root)) {
+                    String ret = C2ME(PID, (Vector) cmd.get("source"), context, root, program, 1);
+                    expr = subst(PID, (String) cmd.get("expr"), vars, program, root);
+
+                    if (ret == null) { break; }
+                    else if (ret.equals("+[continue]")) { continue; }
+                    else { return ret; }
+                }
+            }
             else if (type.equals("continue") || type.equals("break")) { 
-                if (mode == 1) { 
-                    if (type.equals("break")) { return null; } 
-                    else { return "+[continue]"; } 
-                } 
+                if (mode == 1) { return type.equals("break") ? null : "+[continue]"; } 
                 else { throw new RuntimeException("not in a loop"); } 
             } 
-            else if (type.equals("call")) { call(pid, (String) cmd.get("function") + "(" + substValues(pid, (cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root); } 
-        } 
+            else if (type.equals("call")) { C2ME(PID, (String) cmd.get("function") + "(" + subst(PID, (cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root); }
+        }
 
         return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null; 
+
     }
-    private String call(String pid, String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
+    private String C2ME(String PID, String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         int parIndex = code.indexOf('(');
         if (parIndex == -1 || !code.endsWith(")")) { return code; }
 
-        String fname = code.substring(0, parIndex).trim();
-        String argsBlock = code.substring(parIndex + 1, code.length() - 1);
+        String fname = code.substring(0, parIndex).trim(), argsBlock = code.substring(parIndex + 1, code.length() - 1);
         String[] argList = argsBlock.equals("") ? new String[0] : splitBlock(argsBlock, ',');
 
         if (fname.equals("")) { return "0"; } 
         else if (fname.equals("exec")) {
             if (argList.length != 1) { throw new RuntimeException("function 'exec' expects 1 argument(s), got 0"); } 
-            else { return String.valueOf(processCommand(format(pid, substValues(pid, argList[0], vars, program, root)), true, root)); }
+            else { return String.valueOf(processCommand(C2ME_format(subst(PID, argList[0], vars, program, root)), true, root)); }
+        }
+        else if (fname.equals("printf")) {
+
+        }
+        else if (fname.equals("scanf")) {
+            
+        }
+        else if (fname.equals("readf")) {
+
+        }
+        else if (fname.equals("exec")) {
+
         }
 
         Hashtable fn = (Hashtable) ((Hashtable) program.get("functions")).get(fname);
@@ -1857,11 +1609,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         for (int j = 0; reads != null && j < reads.size(); j++) {
             Hashtable a = (Hashtable) reads.elementAt(j);
-            String argName = (String) a.get("name");
-            String argType = (String) a.get("type");
+            String argName = (String) a.get("name"), argType = (String) a.get("type");
 
-            String raw = (j < argList.length) ? argList[j].trim() : null;
-            String value = (raw == null || raw.length() == 0) ? (argType.equals("char") ? "' '" : "0") : format(pid, substValues(pid, raw, vars, program, root));
+            String raw = (j < argList.length) ? argList[j].trim() : null, value = (raw == null || raw.length() == 0) ? (argType.equals("char") ? "' '" : "0") : C2ME_format(subst(PID, raw, vars, program, root));
 
             if (argType.equals("int")) {
                 value = exprCommand(value);
@@ -1870,8 +1620,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             Hashtable local = new Hashtable();
-            local.put("value", value);
-            local.put("instance", argType);
+            local.put("value", value); local.put("instance", argType);
             newVars.put(argName, local);
         }
 
@@ -1880,17 +1629,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         newContext.put("type", fn.get("type"));
         newContext.put("source", fn.get("source"));
 
-        return C2ME(pid, (Vector) fn.get("source"), newContext, root, program, 3);
+        return C2ME(PID, (Vector) fn.get("source"), newContext, program, root, 3);
+    
     }
-    private String substValues(String pid, String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
+    private String subst(String PID, String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
 
         for (Enumeration e = vars.keys(); e.hasMoreElements();) {
-            String name = (String) e.nextElement();
-            String value = (String) ((Hashtable) vars.get(name)).get("value");
-            value = value == null || value.length() == 0 || value.equals("null") ? "" : format(pid, value);
+            String name = (String) e.nextElement(), value = (String) ((Hashtable) vars.get(name)).get("value");
+            value = value == null || value.length() == 0 || value.equals("null") ? "" : C2ME_format(value);
 
-            if (validChar(expr)) { expr = replace(expr, "%" + name, value.equals("' '") ? "" : value); } 
+            if (validChar(expr)) { expr = replace(expr, "%" + name, value.equals("' '") ? "" : value); }
             else {
                 StringBuffer out = new StringBuffer();
                 int i = 0;
@@ -1908,7 +1657,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         if (validChar(expr)) { return expr; }
- 
+
         while (true) {
             int open = expr.indexOf('(');
             if (open == -1) { break; }
@@ -1932,7 +1681,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (depth == 0) { close = j; break; }
                 }
             }
-            if (close == -1) { throw new RuntimeException("invalid expression — missing ')'"); }
+            if (close == -1) { throw new RuntimeException("invalid expression - missing ')'"); }
 
             String value = call(pid, expr.substring(i + 1, close + 1), vars, program, false);
 
@@ -1942,30 +1691,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
-    private String format(String pid, String expr) throws RuntimeException { if (expr == null || expr.length() == 0) { return "' '"; } if (validChar(expr)) { return env(expr.substring(1, expr.length() - 1)); } return env(expr); }
-    private boolean eval(String pid, String expr, Hashtable vars, Hashtable program, boolean root) { String[] ops = {">=", "<=", "==", "!=", ">", "<", "startswith", "endswith", "contains"}; for (int i = 0; i < ops.length; i++) { String op = ops[i]; int idx = expr.indexOf(op); if (idx != -1) { String left = format(pid, substValues(pid, expr.substring(0, idx).trim(), vars, program, root)), right = format(pid, substValues(pid, expr.substring(idx + op.length()).trim(), vars, program, root)); Double a = getNumber(left), b = getNumber(right); if (a != null && b != null) { if (op.equals(">")) { return a > b; } if (op.equals("<")) { return a < b; } if (op.equals(">=")) { return a >= b; } if (op.equals("<=")) { return a <= b; } if (op.equals("==")) { return a.doubleValue() == b.doubleValue(); } if (op.equals("!=")) { return a.doubleValue() != b.doubleValue(); } } else { if (op.equals("==")) { return left.equals(right); } if (op.equals("!=")) { return !left.equals(right); } if (op.equals("endswith")) { return left.endsWith(right); } if (op.equals("startswith")) { return left.startsWith(right); } if (op.equals("contains")) { return left.indexOf(right) != -1; } } } } expr = expr.trim(); if (expr.equals("0") || expr.equals("") || expr.equals("' '") || expr.equals("\"\"")) { return false; } return true; }
+    private String C2ME_format(String expr) { 
+        if (expr == null || expr.length() == 0) { return "' '"; } 
+        if (validChar(expr)) { return env(expr.substring(1, expr.length() - 1)); } 
+
+        return env(expr); 
+    }
+    private boolean eval(String PID, String expr, Hashtable vars, Hashtable program, boolean root) {
+
+    }
     private boolean validInt(String expr) { return exprCommand(expr).startsWith("expr: ") ? false : true; }
     private boolean validChar(String expr) { return (expr.startsWith("\"") && expr.endsWith("\"")) || (expr.startsWith("'") && expr.endsWith("'")); }
     // | (Building)
     private Hashtable build(String source) {
         Hashtable program = new Hashtable();
 
-        while (true) {
-            int idx = source.indexOf("//");
-            if (idx == -1) { break; }
-
-            int endl = source.indexOf("\n", idx);
-            if (endl == -1) { endl = source.length(); }
-            source = source.substring(0, idx) + source.substring(endl);
-        }
-        while (true) { 
-            int start = source.indexOf("/*");
-            if (start == -1) { break; }
-    
-            int end = source.indexOf("*/", start + 2);
-            if (end == -1) { source = source.substring(0, start); break; }
-            source = source.substring(0, start) + source.substring(end + 2);
-        }
+        while (true) { int idx = source.indexOf("//"); if (idx == -1) { break; } int endl = source.indexOf("\n", idx); if (endl == -1) { endl = source.length(); } source = source.substring(0, idx) + source.substring(endl); } 
+        while (true) { int start = source.indexOf("/*"); if (start == -1) { break; } int end = source.indexOf("*/", start + 2); if (end == -1) { source = source.substring(0, start); break; } source = source.substring(0, start) + source.substring(end + 2); }
 
         source = source.trim();
         if (source.equals("")) { return new Hashtable(); }
@@ -2073,65 +1815,102 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String line = lines[i].trim();
             Hashtable cmd = new Hashtable();
 
-            if (line.equals("") || line.equals("' '")) { } 
-            else if (line.startsWith("return")) { cmd.put("type", "return"); cmd.put("value", line.substring(7).trim()); } 
-            else if (line.startsWith("if")) {
-                String type = line.startsWith("if") ? "if" : "else";
+            String preview = line.length() > 12 ? line.substring(0, 9) + "..." : line, ctxName = (context != null && context.containsKey("name")) ? ("function '" + context.get("name") + "'") : "anonymous block";
+
+            if (line.equals("") || line.equals("' '")) { }
+            else if (line.startsWith("return")) { cmd.put("type", "return"); cmd.put("value", line.substring(7).trim()); }
+            else if (line.startsWith("try")) {
                 int lineIndexInBlock = block.indexOf(line);
-                if (lineIndexInBlock == -1) { return null; }
+                if (lineIndexInBlock == -1) { echoCommand("build: parse error - 'try' token not found in " + ctxName + " near: \"" + preview + "\""); return null; }
 
                 int braceIndex = -1;
-                for (int j = lineIndexInBlock; j < block.length(); j++) {
-                    if (block.charAt(j) == '{') { braceIndex = j; break; }
+                for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
+                if (braceIndex == -1) { echoCommand("build: parse error - 'try' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+
+                String remaining = block.substring(braceIndex), trySub = getBlock(remaining);
+                if (trySub == null) { echoCommand("build: parse error - 'try' block not properly closed in " + ctxName + " starting near: \"" + preview + "\""); return null; }
+
+                cmd.put("type", "try"); 
+                cmd.put("source", parseBlock(trySub.substring(1, trySub.length() - 1).trim(), context));
+
+                int afterTryIndex = braceIndex + trySub.length(), catchIndex = block.indexOf("catch", afterTryIndex);
+                if (catchIndex != -1) {
+                    int parenStart = block.indexOf('(', catchIndex), parenEnd = (parenStart == -1) ? -1 : block.indexOf(')', parenStart);
+                    String catchInside = "";
+                    if (parenStart != -1 && parenEnd != -1) { catchInside = block.substring(parenStart + 1, parenEnd).trim(); }
+
+                    String catchVar = "", catchInstance = "char";
+
+                    if (!catchInside.equals("")) {
+                        String[] parts = split(catchInside, ' ');
+                        if (parts.length == 1) { catchVar = parts[0]; }  
+                        else if (parts.length == 2) { catchInstance = parts[0]; catchVar = parts[1]; } 
+                        else { echoCommand("build: invalid catch signature in " + ctxName + " - '" + catchInside + "' near: \"" + preview + "\""); return null; }
+                    }
+
+                    int catchBrace = (parenEnd == -1) ? block.indexOf('{', catchIndex) : block.indexOf('{', parenEnd);
+                    if (catchBrace != -1) {
+                        String catchRemaining = block.substring(catchBrace);
+                        String catchSub = getBlock(catchRemaining);
+                        if (catchSub == null) { echoCommand("build: parse error - 'catch' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
+
+                        cmd.put("catch", parseBlock(catchSub.substring(1, catchSub.length() - 1).trim(), context));
+                        cmd.put("catchVar", catchVar);
+                        cmd.put("catchInstance", catchInstance);
+                    } 
+                    else { echoCommand("build: parse error - 'catch' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
                 }
+            }
+            else if (line.startsWith("if")) {
+                int lineIndexInBlock = block.indexOf(line);
+                if (lineIndexInBlock == -1) { echoCommand("build: parse error - 'if' token not found in " + ctxName + " near: \"" + preview + "\""); return null; }
 
-                if (braceIndex == -1) { return null; }
+                int braceIndex = -1;
+                for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
 
-                String remaining = block.substring(braceIndex);
-                String subblock = getBlock(remaining);
-                if (subblock == null) { return null; }
+                if (braceIndex == -1) { echoCommand("build: parse error - 'if' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
 
-                cmd.put("type", type);
-                cmd.put("expr", extractParens(line, 0));
+                String remaining = block.substring(braceIndex), subblock = getBlock(remaining);
+                if (subblock == null) { echoCommand("build: parse error - 'if' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
+
+                cmd.put("type", "if"); cmd.put("expr", extractParens(line, 0));
 
                 int elseIndex = block.indexOf("else", braceIndex + subblock.length());
                 if (elseIndex != -1) {
                     int elseBrace = block.indexOf("{", elseIndex);
                     if (elseBrace != -1) {
                         String elseSub = getBlock(block.substring(elseBrace));
-                        if (elseSub != null) { cmd.put("else", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context)); }
+                        if (elseSub != null) { cmd.put("else", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context)); } 
+                        else { echoCommand("build: parse error - 'else' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
                     }
                 }
 
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
-            } 
+            }
             else if (line.startsWith("while")) {
                 int lineIndexInBlock = block.indexOf(line);
-                if (lineIndexInBlock == -1) { echoCommand("while error 1"); return null; }
+                if (lineIndexInBlock == -1) { echoCommand("build: parse error - 'while' token not found in " + ctxName + " near: \"" + preview + "\""); return null; }
 
                 int braceIndex = -1;
-                for (int j = lineIndexInBlock; j < block.length(); j++) {
-                    if (block.charAt(j) == '{') { braceIndex = j; break; }
-                }
+                for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
 
-                if (braceIndex == -1) { echoCommand("while error 2"); return null; }
+                if (braceIndex == -1) { echoCommand("build: parse error - 'while' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
 
-                String remaining = block.substring(braceIndex);
-                String subblock = getBlock(remaining);
-                if (subblock == null) { echoCommand("while error 3"); return null; }
+                String remaining = block.substring(braceIndex), subblock = getBlock(remaining);
+                if (subblock == null) { echoCommand("build: parse error - 'while' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
 
                 cmd.put("type", "while");
                 cmd.put("expr", extractParens(line, 0));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
-            } 
-            else if (line.startsWith("else")) { return null; } 
-            else if (line.equals("break") || line.equals("continue")) { cmd.put("type", line); } 
+            }
+            else if (line.startsWith("else")) { echoCommand("build: parse error - unexpected 'else' without matching 'if' in " + ctxName + " near: \"" + preview + "\""); return null; }
+            else if (line.startsWith("catch")) { echoCommand("build: parse error - unexpected 'catch' without matching 'try' in " + ctxName + " near: \"" + preview + "\""); return null; }
+            else if (line.equals("break") || line.equals("continue")) { cmd.put("type", line); }
             else if (line.indexOf('(') != -1 && line.lastIndexOf(')') > line.indexOf('(') && line.indexOf('=') == -1 && !startsWithAny(line, new String[]{"int ", "char "}) && line.substring(0, line.indexOf('(')).trim().indexOf(' ') == -1) {
                 cmd.put("type", "call");
                 cmd.put("function", line.substring(0, line.indexOf('(')).trim());
                 cmd.put("args", extractBetween(line, '(', ')'));
             }
-
             else if (line.indexOf('=') != -1) {
                 if (startsWithAny(line, new String[]{"int", "char"})) {
                     String varType = line.startsWith("char ") ? "char" : "int";
@@ -2142,10 +1921,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String part = vars[j].trim(), varName, varValue;
                         int eq = part.indexOf('=');
 
-                        if (eq != -1) { varName = part.substring(0, eq).trim(); varValue = part.substring(eq + 1).trim(); } 
-                        else { varName = part; varValue = varType.equals("char") ? "' '" : "0"; }
+                        if (eq != -1) {
+                            varName = part.substring(0, eq).trim();
+                            varValue = part.substring(eq + 1).trim();
+                        } else { 
+                            varName = part;
+                            varValue = varType.equals("char") ? "' '" : "0";
+                        }
 
-                        if (varName.equals("")) { echoCommand("build: invalid variable declaration: '" + part + "'"); return null; }
+                        if (varName.equals("")) { echoCommand("build: invalid variable declaration '" + part + "' in " + ctxName + " near: \"" + preview + "\""); return null; }
 
                         cmd = new Hashtable();
                         cmd.put("type", "assign");
@@ -2161,15 +1945,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (parts.length == 2) {
                     String varName = parts[0].trim(), value = parts[1].trim();
 
-                    if (varName.indexOf(' ') != -1) { echoCommand("build: invalid type '" + getCommand(varName) + "'"); return null; }
+                    if (varName.indexOf(' ') != -1) { echoCommand("build: invalid assignment target '" + getCommand(varName) + "' in " + ctxName + " near: \"" + preview + "\""); return null; }
 
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
                     cmd.put("value", value);
-                } 
-                else { echoCommand("build: invalid value for '" + parts[0].trim() + "'"); return null; }
-            } 
-            else { return null; }
+                }
+                else { echoCommand("build: invalid assignment syntax in " + ctxName + " near: \"" + preview + "\""); return null; }
+            }
+            else { echoCommand("build: invalid statement in " + ctxName + " near: \"" + preview + "\""); return null; }
 
             source.addElement(cmd);
         }
