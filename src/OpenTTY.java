@@ -2228,7 +2228,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String TYPE = (String) PKG.get("process.type"), PORT = (String) PKG.get("process.port"), MOD = (String) PKG.get("process." + (TYPE.equals("bind") ? "db" : "host")); 
             if (trace.containsKey(PORT)) { MIDletLogs("add warn Application port is unavailable."); return 68; }
 
-            new Server(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); 
+            new Connect(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); 
         }
         // |
         // Start Application
