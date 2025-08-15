@@ -1585,7 +1585,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (fname.equals("")) { return "0"; } 
         else if (fname.equals("exec")) {
             if (argList.length != 1) { throw new RuntimeException("function 'exec' expects 1 argument(s), got 0"); } 
-            else { return String.valueOf(processCommand(format(substValues(pid, argList[0], vars, program, root)), true, root)); }
+            else { return String.valueOf(processCommand(format(pid, substValues(pid, argList[0], vars, program, root)), true, root)); }
         }
 
         Hashtable fn = (Hashtable) ((Hashtable) program.get("functions")).get(fname);
@@ -1602,7 +1602,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String argType = (String) a.get("type");
 
             String raw = (j < argList.length) ? argList[j].trim() : null;
-            String value = (raw == null || raw.length() == 0) ? (argType.equals("char") ? "' '" : "0") : format(substValues(pid, raw, vars, program, root));
+            String value = (raw == null || raw.length() == 0) ? (argType.equals("char") ? "' '" : "0") : format(pid, substValues(pid, raw, vars, program, root));
 
             if (argType.equals("int")) {
                 value = exprCommand(value);
@@ -1629,7 +1629,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = vars.keys(); e.hasMoreElements();) {
             String name = (String) e.nextElement();
             String value = (String) ((Hashtable) vars.get(name)).get("value");
-            value = value == null || value.length() == 0 || value.equals("null") ? "" : format(value);
+            value = value == null || value.length() == 0 || value.equals("null") ? "" : format(pid, value);
 
             if (validChar(expr)) { expr = replace(expr, "%" + name, value.equals("' '") ? "" : value); } 
             else {
@@ -1683,8 +1683,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
-    private String format(String expr) throws RuntimeException { if (expr == null || expr.length() == 0) { return "' '"; } if (validChar(expr)) { return env(expr.substring(1, expr.length() - 1)); } return env(expr); }
-    private boolean eval(String expr, Hashtable vars, Hashtable program, boolean root) { String[] ops = {">=", "<=", "==", "!=", ">", "<", "startswith", "endswith", "contains"}; for (int i = 0; i < ops.length; i++) { String op = ops[i]; int idx = expr.indexOf(op); if (idx != -1) { String left = format(pid, substValues(expr.substring(0, idx).trim(), vars, program, root)), right = format(substValues(pid, expr.substring(idx + op.length()).trim(), vars, program, root)); Double a = getNumber(left), b = getNumber(right); if (a != null && b != null) { if (op.equals(">")) { return a > b; } if (op.equals("<")) { return a < b; } if (op.equals(">=")) { return a >= b; } if (op.equals("<=")) { return a <= b; } if (op.equals("==")) { return a.doubleValue() == b.doubleValue(); } if (op.equals("!=")) { return a.doubleValue() != b.doubleValue(); } } else { if (op.equals("==")) { return left.equals(right); } if (op.equals("!=")) { return !left.equals(right); } if (op.equals("endswith")) { return left.endsWith(right); } if (op.equals("startswith")) { return left.startsWith(right); } if (op.equals("contains")) { return left.indexOf(right) != -1; } } } } expr = expr.trim(); if (expr.equals("0") || expr.equals("") || expr.equals("' '") || expr.equals("\"\"")) { return false; } return true; }
+    private String format(String pid, String expr) throws RuntimeException { if (expr == null || expr.length() == 0) { return "' '"; } if (validChar(expr)) { return env(expr.substring(1, expr.length() - 1)); } return env(expr); }
+    private boolean eval(String expr, Hashtable vars, Hashtable program, boolean root) { String[] ops = {">=", "<=", "==", "!=", ">", "<", "startswith", "endswith", "contains"}; for (int i = 0; i < ops.length; i++) { String op = ops[i]; int idx = expr.indexOf(op); if (idx != -1) { String left = format(pid, substValues(expr.substring(0, idx).trim(), vars, program, root)), right = format(pid, substValues(pid, expr.substring(idx + op.length()).trim(), vars, program, root)); Double a = getNumber(left), b = getNumber(right); if (a != null && b != null) { if (op.equals(">")) { return a > b; } if (op.equals("<")) { return a < b; } if (op.equals(">=")) { return a >= b; } if (op.equals("<=")) { return a <= b; } if (op.equals("==")) { return a.doubleValue() == b.doubleValue(); } if (op.equals("!=")) { return a.doubleValue() != b.doubleValue(); } } else { if (op.equals("==")) { return left.equals(right); } if (op.equals("!=")) { return !left.equals(right); } if (op.equals("endswith")) { return left.endsWith(right); } if (op.equals("startswith")) { return left.startsWith(right); } if (op.equals("contains")) { return left.indexOf(right) != -1; } } } } expr = expr.trim(); if (expr.equals("0") || expr.equals("") || expr.equals("' '") || expr.equals("\"\"")) { return false; } return true; }
     private boolean validInt(String expr) { return exprCommand(expr).startsWith("expr: ") ? false : true; }
     private boolean validChar(String expr) { return (expr.startsWith("\"") && expr.endsWith("\"")) || (expr.startsWith("'") && expr.endsWith("'")); }
     // | (Building)
