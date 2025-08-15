@@ -64,7 +64,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4;
         private int MOD = 0;
         private boolean root;
-        private Form monitor = new Form("Monitor");
+        private Form monitor = new Form(form.getTitle());
         private List preview = new List(form.getTitle(), List.IMPLICIT);
         private StringItem status = new StringItem("Memory Status:", "");
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
