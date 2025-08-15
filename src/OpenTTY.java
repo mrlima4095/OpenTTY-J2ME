@@ -26,7 +26,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Display display = Display.getDisplay(this);
     private List preview = new List("Preview", List.IMPLICIT); 
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
-    private Form monitor, form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
+    private Form monitor = , form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n"), status = new StringItem("Memory Status:", "");
     private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4),
@@ -1286,7 +1286,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     inputField.setString("");
 
                     try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
-                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); }
+                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); trace.remove(PID); }
                 } 
                 else if (c == BACK) {
                     writeRMS("/home/remote", console.getText()); back();
@@ -1320,7 +1320,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             if (LENGTH > 0) { echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console); }
                         }
                     } 
-                    catch (Exception e) { warnCommand(form.getTitle(), "STREAM THREAD - " + getCatch(e)); trace.remove(PID); }
+                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); trace.remove(PID); }
                 }
 
                 try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
