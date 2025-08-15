@@ -115,3 +115,4 @@
 [2025-1.16-02x48]	Audio Player traced by Virtual Process
 [2025-1.16-02x49]	X11 import and export Windows into Virtual Process
 [2025-1.16-02x50]	Moved screens HashMap into Virtual Process	
+[2025-1.16-02x51]	J2EMU - Improving renderings methods for emulators 
