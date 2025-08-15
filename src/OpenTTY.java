@@ -126,7 +126,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             preview.setCommandListener(this); 
         }
 
-        load(MOD, true); 
+        load(MOD); 
         if (MOD == MONITOR) {
             display.setCurrent(monitor);
         } else {
