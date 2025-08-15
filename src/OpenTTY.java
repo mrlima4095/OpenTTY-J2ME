@@ -1683,7 +1683,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             if (close == -1) { throw new RuntimeException("invalid expression - missing ')'"); }
 
-            String value = call(pid, expr.substring(i + 1, close + 1), vars, program, false);
+            String value = C2ME(pid, expr.substring(i + 1, close + 1), vars, program, root);
 
             expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
         }
