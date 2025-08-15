@@ -1325,7 +1325,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             if (LENGTH > 0) { echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console); }
                         }
                     } 
-                    catch (Exception e) { asked = true; warnCommand(form.getTitle(), "STREAM THREAD - " + getCatch(e)); trace.remove(PID); }
+                    catch (Exception e) { warnCommand(form.getTitle(), "STREAM THREAD - " + getCatch(e)); trace.remove(PID); }
                 }
 
                 try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
