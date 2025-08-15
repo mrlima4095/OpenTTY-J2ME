@@ -177,65 +177,65 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             } 
             
+        private int load() {
+            
+            if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
+            else if (MOD == EXPLORER) {
+                if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); }
+                else { preview.removeCommand(DELETE); }
+    
+                if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); }
+                else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
+    
+                if (attributes.containsKey("J2EMU")) { }
+                else { preview.setTitle(path); }
+    
+                preview.deleteAll();
+                if (path.equals("/")) { }
+                else { preview.append("..", null); }
+    
+                try {
+                    if (path.equals("/mnt/")) {
+                        for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); }
+                    } else if (path.startsWith("/mnt/")) {
+                        FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
+                        Vector dirs = new Vector(), files = new Vector();
+    
+                        for (Enumeration content = CONN.list(); content.hasMoreElements();) {
+                            String name = (String) content.nextElement();
+    
+                            if (name.endsWith("/")) { dirs.addElement(name); }
+                            else { files.addElement(name); }
+                        }
+    
+                        while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), null); }
+                        while (!files.isEmpty()) { preview.append(getFirstString(files), null); }
+    
+                        CONN.close();
+                    } else if (path.startsWith("/home/")) {
+                        String[] recordStores = RecordStore.listRecordStores();
+    
+                        for (int i = 0; i < recordStores.length; i++) {
+                            if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); }
+                        }
+                    }
+    
+                    String[] files = (String[]) paths.get(path);
+                    if (files != null) {
+                        for (int i = 0; i < files.length; i++) {
+                            String f = files[i];
+    
+                            if (f != null && !f.equals("..") && !f.equals("/")) { preview.append(f, null); }
+                        }
+                    }
+                } catch (IOException e) { }
+    
+            } 
+            else if (MOD == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
+            else if (ITEM == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
+    
+            return 0;
         }
-    private int load() {
-        
-        if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
-        else if (MOD == EXPLORER) {
-            if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); }
-            else { preview.removeCommand(DELETE); }
-
-            if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); }
-            else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
-
-            if (attributes.containsKey("J2EMU")) { }
-            else { preview.setTitle(path); }
-
-            preview.deleteAll();
-            if (path.equals("/")) { }
-            else { preview.append("..", null); }
-
-            try {
-                if (path.equals("/mnt/")) {
-                    for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); }
-                } else if (path.startsWith("/mnt/")) {
-                    FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
-                    Vector dirs = new Vector(), files = new Vector();
-
-                    for (Enumeration content = CONN.list(); content.hasMoreElements();) {
-                        String name = (String) content.nextElement();
-
-                        if (name.endsWith("/")) { dirs.addElement(name); }
-                        else { files.addElement(name); }
-                    }
-
-                    while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), null); }
-                    while (!files.isEmpty()) { preview.append(getFirstString(files), null); }
-
-                    CONN.close();
-                } else if (path.startsWith("/home/")) {
-                    String[] recordStores = RecordStore.listRecordStores();
-
-                    for (int i = 0; i < recordStores.length; i++) {
-                        if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); }
-                    }
-                }
-
-                String[] files = (String[]) paths.get(path);
-                if (files != null) {
-                    for (int i = 0; i < files.length; i++) {
-                        String f = files[i];
-
-                        if (f != null && !f.equals("..") && !f.equals("/")) { preview.append(f, null); }
-                    }
-                }
-            } catch (IOException e) { }
-
-        } 
-        else if (MOD == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
-        else if (ITEM == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
-
-        return 0;
     }
     // |
     // MIDlet Shell
