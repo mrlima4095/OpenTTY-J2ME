@@ -366,9 +366,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             boolean all = false, verbose = false;
 
             for (int i = 0; i < args.length; i++) {
+                echoCommand(args[i] + " " + i);
                 if (args[i].equals("-a")) { all = true; } 
                 else if (args[i].equals("-v")) { verbose = true; } 
-                else { argument = join(args, " ", i); break; }
+                else { argument = join(args, " ", i); }
             }
 
             String PWD = argument.equals("") ? path : argument; 
