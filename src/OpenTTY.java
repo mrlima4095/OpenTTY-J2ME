@@ -1079,8 +1079,393 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     // API 011 - (Network)
     // |
+    // Connector
+    public class Connect implements CommandListener, Runnable {
+        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5;
+
+        // ---- estado comum
+        private int TYPE;
+        private boolean root = false, asked = false, keep = false;
+
+        // ---- NC
+        private SocketConnection CONN;
+        private InputStream IN; private OutputStream OUT;
+        private String address;
+        private String PID = genpid();
+
+        // ---- PRSCAN / GOBUSTER
+        private int start;
+        private String[] wordlist;
+
+        // ---- SERVER / BIND
+        private String srvPort, srvMod; // em SERVER/BIND usamos "port" como chave no trace/sessions
+        private int COUNT = 1;
+
+        // ---- UI (apenas NC/PRSCAN/GOBUSTER)
+        private Alert confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING);
+        private Form screen;
+        private List list;
+        private TextField inputField = new TextField("Command", "", 256, TextField.ANY);
+        private StringItem console = new StringItem("", "");
+
+        private Command BACK = new Command("Back", Command.SCREEN, 2),
+                        EXECUTE = new Command("Send", Command.OK, 1),
+                        CONNECT_CMD = new Command("Connect", Command.BACK, 1),
+                        CLEAR = new Command("Clear", Command.SCREEN, 2),
+                        VIEW = new Command("View info", Command.SCREEN, 2),
+                        SAVE = new Command("Save Logs", Command.SCREEN, 2),
+                        YES = new Command("Yes", Command.OK, 1),
+                        NO = new Command("No", Command.BACK, 1);
+
+        // ---- Construtores de modo único (compatível com o uso atual)
+        public Connect(String mode, String args, boolean root) {
+            init(mode, args, root);
+        }
+
+        // ---- ponto único de inicialização
+        private void init(String mode, String args, boolean root) {
+            this.root = root;
+
+            if (mode == null || mode.length() == 0) mode = "nc";
+            if ("nc".equals(mode)) TYPE = NC;
+            else if ("prscan".equals(mode)) TYPE = PRSCAN;
+            else if ("gobuster".equals(mode)) TYPE = GOBUSTER;
+            else if ("server".equals(mode)) TYPE = SERVER;
+            else /* "bind" e default */ TYPE = BIND;
+
+            if (TYPE == SERVER || TYPE == BIND) {
+                // ---- SERVER/BIND: sem Displayable
+                if (args == null || args.length() == 0 || args.equals("$PORT")) {
+                    processCommand("set PORT=31522", false);
+                    srvPort = "31522";
+                    srvMod  = getArgument(args); // pode vir vazio
+                } else {
+                    srvPort = getCommand(args);
+                    srvMod  = getArgument(args);
+                    if ((srvMod == null || srvMod.length() == 0 || "null".equals(srvMod)) && TYPE == SERVER) {
+                        srvMod = env("$RESPONSE");
+                    }
+                }
+                new Thread(this, TYPE == BIND ? "Bind" : "Server").start();
+                return;
+            }
+
+            // ---- NC/PRSCAN/GOBUSTER: com UI
+            if (args == null || args.length() == 0) return;
+
+            Hashtable proc = genprocess(
+                TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster",
+                root, null
+            );
+
+            if (TYPE == NC) {
+                address = args;
+                try {
+                    CONN = (SocketConnection) Connector.open("socket://" + address);
+                    IN   = CONN.openInputStream();
+                    OUT  = CONN.openOutputStream();
+                } catch (Exception e) {
+                    echoCommand(getCatch(e));
+                    return;
+                }
+
+                screen = new Form(form.getTitle());
+                inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
+                screen.append(console);
+                screen.append(inputField);
+                screen.addCommand(EXECUTE);
+                screen.addCommand(BACK);
+                screen.addCommand(CLEAR);
+                screen.addCommand(VIEW);
+                screen.setCommandListener(this);
+                proc.put("screen", screen);
+                display.setCurrent(screen);
+            } else {
+                address = getCommand(args);
+                list = new List(TYPE == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
+
+                if (TYPE == PRSCAN) {
+                    start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true);
+                } else { // GOBUSTER
+                    wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
+                    if (wordlist == null || wordlist.length == 0) {
+                        echoCommand("gobuster: blank word list");
+                        return;
+                    }
+                }
+
+                list.addCommand(BACK);
+                list.addCommand(CONNECT_CMD);
+                list.addCommand(SAVE);
+                list.setCommandListener(this);
+                proc.put("screen", list);
+                display.setCurrent(list);
+            }
+
+            trace.put(PID, proc);
+            new Thread(this, "NET").start();
+        }
+
+        // ---- CommandListener (apenas para modos com UI)
+        public void commandAction(Command c, Displayable d) {
+            if (d == confirm) {
+                processCommand("xterm");
+                if (c == NO) {
+                    stop(TYPE == NC ? "remote" : TYPE == PRSCAN ? "prscan" : "gobuster", root);
+                } else {
+                    keep = true;
+                }
+                return;
+            }
+
+            if (TYPE == NC) {
+                if (c == EXECUTE) {
+                    String PAYLOAD = inputField.getString().trim();
+                    inputField.setString("");
+                    try {
+                        OUT.write((PAYLOAD + "\n").getBytes());
+                        OUT.flush();
+                    } catch (Exception e) {
+                        warnCommand(form.getTitle(), getCatch(e));
+                        if (!keep) trace.remove(PID);
+                    }
+                } else if (c == BACK) {
+                    writeRMS("/home/remote", console.getText());
+                    back();
+                } else if (c == CLEAR) {
+                    console.setText("");
+                } else if (c == VIEW) {
+                    try {
+                        warnCommand("Information",
+                            "Host: " + split(address, ':')[0] + "\n" +
+                            "Port: " + split(address, ':')[1] + "\n\n" +
+                            "Local Address: " + CONN.getLocalAddress() + "\n" +
+                            "Local Port: " + CONN.getLocalPort());
+                    } catch (Exception e) { }
+                }
+            } else if (TYPE == PRSCAN || TYPE == GOBUSTER) {
+                if (c == BACK) {
+                    back();
+                } else if (c == CONNECT_CMD || c == List.SELECT_COMMAND) {
+                    String ITEM = list.getString(list.getSelectedIndex());
+                    if (TYPE == PRSCAN) {
+                        processCommand("nc " + address + ":" + ITEM);
+                    } else {
+                        processCommand("execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true");
+                    }
+                } else if (c == SAVE) {
+                    StringBuffer BUFFER = new StringBuffer();
+                    for (int i = 0; i < list.size(); i++) {
+                        BUFFER.append(TYPE == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n");
+                    }
+                    nanoContent = BUFFER.toString().trim();
+                    processCommand("nano", false);
+                }
+            }
+        }
+
+        // ---- Runnable: lida com os 5 modos
+        public void run() {
+            if (TYPE == NC) {
+                while (trace.containsKey(PID)) {
+                    try {
+                        if (IN.available() > 0) {
+                            byte[] BUFFER = new byte[IN.available()];
+                            int LENGTH = IN.read(BUFFER);
+                            if (LENGTH > 0) echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console);
+                        }
+                    } catch (Exception e) {
+                        warnCommand(form.getTitle(), getCatch(e));
+                        if (!keep) trace.remove(PID);
+                    }
+                }
+                try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
+                return;
+            }
+
+            if (TYPE == PRSCAN) {
+                for (int port = start; port <= 65535; port++) {
+                    try {
+                        list.setTicker(new Ticker("Scanning port " + port + "..."));
+                        if (!trace.containsKey(PID)) break;
+                        Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
+                        list.append("" + port, null);
+                    } catch (IOException e) { }
+                }
+                list.setTicker(null);
+                if (!keep) trace.remove(PID);
+                return;
+            }
+
+            if (TYPE == GOBUSTER) {
+                list.setTicker(new Ticker("Searching..."));
+                for (int i = 0; i < wordlist.length; i++) {
+                    String path = wordlist[i].trim();
+                    if (!trace.containsKey(PID)) break;
+                    if (!path.equals("") && !path.startsWith("#")) {
+                        try {
+                            int code = verifyHTTP(address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path);
+                            if (code != 404) list.append(code + " /" + path, null);
+                        } catch (IOException e) { }
+                    }
+                }
+                list.setTicker(null);
+                if (!keep) trace.remove(PID);
+                return;
+            }
+
+            // ---- SERVER / BIND (sem UI)
+            // validação de porta + exclusividade
+            if (trace.containsKey(srvPort) || getNumber(srvPort, 65536, false) > 65535 || getNumber(srvPort, 65536, false) < 4) {
+                echoCommand("[-] Port '" + srvPort + "' is unavailable");
+                return;
+            }
+
+            start(TYPE == SERVER ? "server" : "bind", srvPort, null, root);
+
+            ServerSocketConnection serverSocket = null;
+            try {
+                serverSocket = (ServerSocketConnection) Connector.open("socket://:" + srvPort);
+                if (COUNT == 1) {
+                    echoCommand("[+] listening on port " + srvPort);
+                    MIDletLogs("add info Server listening on port " + srvPort);
+                    COUNT++;
+                }
+
+                while (trace.containsKey(srvPort)) {
+                    SocketConnection clientSocket = null;
+                    InputStream is = null; OutputStream os = null;
+
+                    try {
+                        clientSocket = (SocketConnection) serverSocket.acceptAndOpen();
+                        String cliAddr = clientSocket.getAddress();
+                        echoCommand("[+] " + cliAddr + " connected");
+
+                        is = clientSocket.openInputStream();
+                        os = clientSocket.openOutputStream();
+
+                        if (TYPE == SERVER) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead = is.read(buffer);
+                            if (bytesRead == -1) {
+                                echoCommand("[-] " + cliAddr + " disconnected");
+                            } else {
+                                String msg = new String(buffer, 0, bytesRead).trim();
+                                echoCommand("[+] " + cliAddr + " -> " + env(msg));
+                                os.write(getcontent(srvMod).getBytes());
+                                os.flush();
+                            }
+                        } else { // BIND
+                            sessions.put(srvPort, cliAddr);
+                            while (trace.containsKey(srvPort)) {
+                                byte[] buffer = new byte[4096];
+                                int bytesRead = is.read(buffer);
+                                if (bytesRead == -1) {
+                                    echoCommand("[-] " + cliAddr + " disconnected");
+                                    break;
+                                }
+                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                                echoCommand("[+] " + cliAddr + " -> " + env(PAYLOAD));
+
+                                String command = (srvMod == null || srvMod.length() == 0 || "null".equals(srvMod))
+                                        ? PAYLOAD
+                                        : srvMod + " " + PAYLOAD;
+
+                                String before = stdout != null ? stdout.getText() : "";
+                                processCommand(command, true, root);
+                                String after  = stdout != null ? stdout.getText() : "";
+
+                                String output = after.length() >= before.length()
+                                        ? after.substring(before.length()).trim() + "\n"
+                                        : after + "\n";
+
+                                os.write(output.getBytes());
+                                os.flush();
+                            }
+                        }
+                    } catch (IOException e) {
+                        echoCommand("[-] " + getCatch(e));
+                        if (COUNT == 1) { echoCommand("[-] Server crashed"); break; }
+                    } finally {
+                        try { if (is != null) is.close(); } catch (IOException ignored) {}
+                        try { if (os != null) os.close(); } catch (IOException ignored) {}
+                        try { if (clientSocket != null) clientSocket.close(); } catch (IOException ignored) {}
+                    }
+                }
+            } catch (IOException e) {
+                echoCommand("[-] " + getCatch(e));
+            } finally {
+                try { if (serverSocket != null) serverSocket.close(); } catch (IOException ignored) {}
+                sessions.remove(srvPort);
+                echoCommand("[-] Server stopped");
+                MIDletLogs("add info Server was stopped");
+            }
+        }
+
+        // ---- helpers locais
+        private int verifyHTTP(String fullUrl) throws IOException {
+            HttpConnection H = null;
+            try {
+                H = (HttpConnection) Connector.open(fullUrl);
+                H.setRequestMethod(HttpConnection.GET);
+                return H.getResponseCode();
+            } finally {
+                try { if (H != null) H.close(); } catch (IOException ignored) {}
+            }
+        }
+
+        // back() só para modos com UI
+        private void back() {
+            if (TYPE == SERVER || TYPE == BIND) { // segurança extra, mas estes modos não chamam back()
+                processCommand("xterm");
+                return;
+            }
+
+            if (trace.containsKey(PID) && !asked) {
+                confirm.addCommand(YES);
+                confirm.addCommand(NO);
+                confirm.setCommandListener(this);
+                asked = true;
+                display.setCurrent(confirm);
+            } else {
+                processCommand("xterm");
+            }
+        }
+
+        // ---- stubs/externos esperados (do teu ambiente)
+        private native String genpid();
+        private native Hashtable genprocess(String name, boolean root, Object extra);
+        private native void processCommand(String cmd);
+        private native void processCommand(String cmd, boolean silent);
+        private native void processCommand(String cmd, boolean silent, boolean root);
+        private native void echoCommand(String s);
+        private native void echoCommand(String s, StringItem console);
+        private native void warnCommand(String title, String msg);
+        private native String getCatch(Exception e);
+        private native int getNumber(String s, int def, boolean min1);
+        private native String[] split(String s, char by);
+        private native String[] split(String s, char by, boolean keepEmpty);
+        private native String getCommand(String s);
+        private native String getArgument(String s);
+        private native String loadRMS(String k);
+        private native String getcontent(String pathOrKey);
+        private native String env(String s);
+        private native void writeRMS(String k, String v);
+        private native void start(String name, String key, Object data, boolean root);
+        private native void stop(String name, boolean root);
+
+        // globais do teu MIDlet/ambiente
+        private Display display;
+        private Form form;
+        private Hashtable trace;
+        private Hashtable sessions;
+        private StringItem stdout;
+        private String nanoContent;
+    }
+
+    // |
     // Servers
-    public class Server implements Runnable {
+    /*public class Server implements Runnable {
         private int TYPE = 0, SERVER = 1, BIND = 2, COUNT = 1;
 
         private boolean root;
@@ -1165,7 +1550,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             sessions.remove(port); echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped");
         }
-    }
+    }*/
     // |
     // HTTP Interfaces
     private String request(String url, Hashtable headers) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); if (headers != null) { Enumeration keys = headers.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) headers.get(key); conn.setRequestProperty(key, value); } } InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return getCatch(e); } }
@@ -1211,7 +1596,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
-    public class RemoteConnection implements CommandListener, Runnable {
+    /*public class RemoteConnection implements CommandListener, Runnable {
         private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3;
 
         private int TYPE;
@@ -1373,7 +1758,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             
         }
-    }
+    }*/
 
     // API 012 - (File)
     // |
