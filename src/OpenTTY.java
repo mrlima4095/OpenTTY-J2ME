@@ -1481,7 +1481,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // C Programming
     // | (Runtime)
     private int C2ME(String code, boolean root) { 
-        Hashtable program = build(getcontent(code)); if (program == null) { echoCommand("Build failed!"); return 1; } 
+        Hashtable program = build(getcontent(code)); if (program == null) { echoCommand("C2ME: build failed"); return 1; } 
         Hashtable main = (Hashtable) program.get("main"); 
 
         if (main == null) { echoCommand("C2ME: main() missing"); return 1; } 
@@ -1510,7 +1510,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { throw new RuntimeException("'" + name + "' undeclared"); } 
                 } 
                 if (instance.equals("int") && !validInt(value)) { throw new RuntimeException("invalid value for '" + name + "' (expected int)"); } 
-                if (instance.equals("char") && !validChar(value)) { value = "\"" + value + "\""; } 
+                if (instance.equals("text") && !validChar(value)) { value = "\"" + value + "\""; } 
 
                 local.put("value", value == null || value.length() == 0 ? "' '" : value); 
                 local.put("instance", instance); 
