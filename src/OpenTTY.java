@@ -1491,6 +1491,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable main = (Hashtable) program.get("main");
         Hashtable proc = genprocess("build " + source, root, null);
         String pid = genpid();
+        
+        trace.put(pid, proc);
 
         if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
         else if (((String) main.get("type")).equals("int")) {
@@ -1498,6 +1500,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); }
         } else { echoCommand("C2ME: main() need to be an int function"); return 2; }
 
+        trace.remove(pid);
         return 0;
 
     }
