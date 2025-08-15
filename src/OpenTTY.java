@@ -570,12 +570,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         StringBuffer sb = new StringBuffer(); 
         for (int i = start; i < array.length; i++) { 
-            //if (i > start) { sb.append(spacer); } 
-
             sb.append(array[i]).append(spacer); 
         } 
 
-        return sb.toString(); 
+        return sb.toString().trim(); 
     }
     private String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     private String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(getpattern(content.substring(start, i))); } start = i + 1; } } if (start < content.length()) { args.addElement(getpattern(content.substring(start))); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
