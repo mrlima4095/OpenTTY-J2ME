@@ -56,51 +56,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (c == CLEAR) { nano.setString(""); } 
             else { processCommand("execute xterm; " + (c == RUNS ? "." : c == IMPORT ? "import nano" : c == VIEW ? "html" : "true")); }
-        } 
-        else if (d == preview || d == monitor) {
-            if (c == BACK) { processCommand("xterm"); return; } 
-
-            if (MOD == PREVIEW) {
-                String selected = preview.getString(preview.getSelectedIndex()); 
-
-                if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); }
-            } 
-            else if (MOD == EXPLORER) {
-                String selected = preview.getString(preview.getSelectedIndex()); 
-
-                if (c == OPEN || c == List.SELECT_COMMAND) { 
-                    if (selected != null) { 
-                        processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
-
-                        if (display.getCurrent() == preview) { load(EXPLORER); }
-
-                        stdin.setLabel(username + " " + path + " $"); 
-                    } 
-                } 
-                else if (c == DELETE) { 
-                    int STATUS = deleteFile(path + selected); 
-                    if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
-
-                    load(EXPLORER); 
-                } 
-                else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
-                else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
-            } 
-            else if (MOD == MONITOR) { System.gc(); load(MONITOR); } 
-            else if (MOD == PROCESS) {
-                if (c == BACK) { processCommand("xterm"); } 
-                else if (c == KILL) { 
-                    int index = preview.getSelectedIndex(); 
-                    if (index >= 0) { 
-                        int STATUS = kill(split(preview.getString(index), '\t')[0], false, username.equals("root") ? true : false); 
-                        if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } 
-                        
-                        load(PROCESS); 
-                    } 
-                } 
-            }
-        } 
-        else {
+        } else {
             if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }            
             else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn " + c.getCommandType() + " " + c.getLabel()); }
         }
