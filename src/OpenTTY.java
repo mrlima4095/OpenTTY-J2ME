@@ -1531,7 +1531,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (type.equals("return")) { 
                 type = (String) context.get("type"); 
-                String value = substValues((String) cmd.get("value"), vars, program, root); 
+                String value = substValues(pid, (String) cmd.get("value"), vars, program, root); 
 
                 if (type.equals("int")) { 
                     String expr = exprCommand(value); 
@@ -1550,10 +1550,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { return ret; } 
             } 
             else if (type.equals("while")) { 
-                String expr = substValues((String) cmd.get("expr"), vars, program, root); 
+                String expr = substValues(pid, (String) cmd.get("expr"), vars, program, root); 
                 while (eval(expr, vars, program, root)) { 
                     String ret = C2ME(pid, (Vector) cmd.get("source"), context, root, program, 1); 
-                    expr = substValues((String) cmd.get("expr"), vars, program, root); 
+                    expr = substValues(pid, (String) cmd.get("expr"), vars, program, root); 
 
                     if (ret == null) { break; } 
                     else if (ret.equals("+[continue]")) { continue; } 
@@ -1621,7 +1621,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return C2ME(pid, (Vector) fn.get("source"), newContext, root, program, 3);
     }
-    private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
+    private String substValues(String pid, String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
 
         for (Enumeration e = vars.keys(); e.hasMoreElements();) {
@@ -1673,7 +1673,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             if (close == -1) { throw new RuntimeException("invalid expression — missing ')'"); }
 
-            String value = call(expr.substring(i + 1, close + 1), vars, program, false);
+            String value = call(pid, expr.substring(i + 1, close + 1), vars, program, false);
 
             expr = expr.substring(0, i + 1) + value + expr.substring(close + 1);
         }
