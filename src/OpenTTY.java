@@ -237,7 +237,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    }
     // |
     // MIDlet Shell
     private int processCommand(String command) { return processCommand(command, true, false); }
