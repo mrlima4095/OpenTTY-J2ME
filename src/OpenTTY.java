@@ -105,7 +105,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (selected != null) { 
                             processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
     
-                            if (display.getCurrent() == preview) {  }
+                            if (display.getCurrent() == preview) { reload(); }
     
                             stdin.setLabel(username + " " + path + " $"); 
                         } 
@@ -114,7 +114,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         int STATUS = deleteFile(path + selected); 
                         if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
     
-                        load(); 
+                        reload(); 
                     } 
                     else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
                     else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
@@ -128,17 +128,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             int STATUS = kill(split(preview.getString(index), '\t')[0], false, root); 
                             if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } 
                             
-                            load(); 
+                            reload();
                         } 
                     } 
                 }
             } 
         private int reload() {
-            if (attributes.containsKey("J2EMU")) {
-                new Monitor(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root);
-            } else {
-                load();
-            }
+            if (attributes.containsKey("J2EMU")) { new Monitor(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root); } 
+            else { load(); }
+
+            return 0;
         }
         private int load() {
             
