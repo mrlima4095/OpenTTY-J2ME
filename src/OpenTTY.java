@@ -1486,20 +1486,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // C Programming
     // | (Runtime)
-    private int C2ME(String code, boolean root) { 
-        Hashtable program = build(getcontent(code)); if (program == null) { echoCommand("C2ME: build failed"); return 1; } 
-        Hashtable main = (Hashtable) program.get("main"); String PID = genpid();
-        Hashtable proc = genprocess("build " + code, root, null);
+    private int C2ME(String source, boolean root) {
+        Hashtable program = build(getcontent(code));
+        if (program == null) { echoCommand("C2ME: Build failed"); return 1; }
+        Hashtable main = (Hashtable) program.get("main");
+        Hashtable proc = genprocess("build " + source, root, null);
+        String pid = genpid();
 
-        if (main == null) { echoCommand("C2ME: main() missing"); return 1; } 
-        else if (((String) main.get("type")).equals("int")) { 
-            Vector source = (Vector) main.get("source"); 
+        if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
+        else if (((String) main.get("type")).equals("int")) {
+            try { return Integer.valueOf(C2ME(pid, (Vector) main.get("source"), main, root, program, 0)); }
+            catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); }
+        } else { echoCommand("C2ME: main() need to be an int function"); return 2; }
 
-            try { return Integer.valueOf(C2ME(PID, source, main, root, program, 0)); } 
-            catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); return 1; } 
-        } 
-        else { echoCommand("C2ME: main() need to be an int function"); return 2; } 
-    } 
+    }
     private String C2ME(String pid, Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException { 
         Hashtable vars = (Hashtable) context.get("variables"); 
 
@@ -1510,7 +1510,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (trace.containsKey(pid)) {
                 
             } else {
-                throw new RuntimeException("process killed");
+                throw new RuntimeException("Process killed");
             }
 
             if (type == null) { } 
