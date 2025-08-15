@@ -571,9 +571,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         StringBuffer sb = new StringBuffer(); 
         for (int i = start; i < array.length; i++) { 
-            if (i > start) { sb.append(spacer); } 
+            //if (i > start) { sb.append(spacer); } 
 
-            sb.append(array[i]); 
+            sb.append(array[i]).append(spacer); 
         } 
 
         return sb.toString(); 
