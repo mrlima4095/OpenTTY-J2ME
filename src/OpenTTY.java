@@ -1556,7 +1556,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("while")) {
                 String expr = subst(PID, (String) cmd.get("expr"), vars, program, root);
                 while (eval(PID, expr, vars, program, root)) {
-                    String ret = C2ME(PID, (Vector) cmd.get("source"), context, root, program, 1);
+                    String ret = C2ME(PID, (Vector) cmd.get("source"), context, program, root, 1);
                     expr = subst(PID, (String) cmd.get("expr"), vars, program, root);
 
                     if (ret == null) { break; }
