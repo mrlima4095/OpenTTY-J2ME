@@ -1488,8 +1488,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Runtime)
     private int C2ME(String code, boolean root) { 
         Hashtable program = build(getcontent(code)); if (program == null) { echoCommand("C2ME: build failed"); return 1; } 
-        Hashtable main = (Hashtable) program.get("main"); 
-
+        Hashtable main = (Hashtable) program.get("main"); String PID = genpid();
+        Hashtable proc = genprocess("build " + code, PID, null, root);
+        
         if (main == null) { echoCommand("C2ME: main() missing"); return 1; } 
         else if (((String) main.get("type")).equals("int")) { 
             Vector source = (Vector) main.get("source"); 
@@ -1499,12 +1500,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         else { echoCommand("C2ME: main() need to be an int function"); return 2; } 
     } 
-    private String C2ME(Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException { 
+    private String C2ME(String pid, Vector source, Hashtable context, boolean root, Hashtable program, int mode) throws RuntimeException { 
         Hashtable vars = (Hashtable) context.get("variables"); 
 
         for (int i = 0; i < source.size(); i++) { 
             Hashtable cmd = (Hashtable) source.elementAt(i); 
             String type = (String) cmd.get("type"); 
+            
+            if (trace.containsKey(pid)) {
+                
+            } else {
+                throw new RuntimeException("process killed");
+            }
 
             if (type == null) { } 
             else if (type.equals("assign")) { 
@@ -1536,8 +1543,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (type.equals("if")) { 
                 String ret = null; 
-                if (eval((String) cmd.get("expr"), vars, program, root)) { ret = C2ME((Vector) cmd.get("source"), context, root, program, mode); } 
-                else if (cmd.containsKey("else")) { ret = C2ME((Vector) cmd.get("else"), context, root, program, mode); } 
+                if (eval((String) cmd.get("expr"), vars, program, root)) { ret = C2ME(pid, (Vector) cmd.get("source"), context, root, program, mode); } 
+                else if (cmd.containsKey("else")) { ret = C2ME(pid, (Vector) cmd.get("else"), context, root, program, mode); } 
 
                 if (ret == null) { continue; } 
                 else { return ret; } 
@@ -1545,7 +1552,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (type.equals("while")) { 
                 String expr = substValues((String) cmd.get("expr"), vars, program, root); 
                 while (eval(expr, vars, program, root)) { 
-                    String ret = C2ME((Vector) cmd.get("source"), context, root, program, 1); 
+                    String ret = C2ME(pid, (Vector) cmd.get("source"), context, root, program, 1); 
                     expr = substValues((String) cmd.get("expr"), vars, program, root); 
 
                     if (ret == null) { break; } 
@@ -1560,12 +1567,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else { throw new RuntimeException("not in a loop"); } 
             } 
-            else if (type.equals("call")) { call((String) cmd.get("function") + "(" + substValues((cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root); } 
+            else if (type.equals("call")) { call(pid, (String) cmd.get("function") + "(" + substValues((cmd.containsKey("args") ? (String) cmd.get("args") : ""), vars, program, root) + ")", vars, program, root); } 
         } 
 
         return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null; 
     }
-    private String call(String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
+    private String call(String pid, String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         int parIndex = code.indexOf('(');
         if (parIndex == -1 || !code.endsWith(")")) { return code; }
 
@@ -1612,7 +1619,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         newContext.put("type", fn.get("type"));
         newContext.put("source", fn.get("source"));
 
-        return C2ME((Vector) fn.get("source"), newContext, root, program, 3);
+        return C2ME(pid, (Vector) fn.get("source"), newContext, root, program, 3);
     }
     private String substValues(String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
