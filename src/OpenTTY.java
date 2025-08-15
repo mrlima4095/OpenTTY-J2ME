@@ -105,7 +105,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (selected != null) { 
                             processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
     
-                            if (display.getCurrent() == preview) { load(); }
+                            if (display.getCurrent() == preview) {  }
     
                             stdin.setLabel(username + " " + path + " $"); 
                         } 
@@ -133,7 +133,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                 }
             } 
-            
+        private int reload() {
+            if (attributes.containsKey("J2EMU")) {
+                new Monitor(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root);
+            } else {
+                load();
+            }
+        }
         private int load() {
             
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
