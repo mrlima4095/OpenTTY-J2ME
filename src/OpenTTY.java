@@ -1495,7 +1495,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (((String) main.get("type")).equals("int")) { 
             Vector source = (Vector) main.get("source"); 
 
-            try { return Integer.valueOf(C2ME(source, main, root, program, 0)); } 
+            try { return Integer.valueOf(C2ME(PID, source, main, root, program, 0)); } 
             catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); return 1; } 
         } 
         else { echoCommand("C2ME: main() need to be an int function"); return 2; } 
