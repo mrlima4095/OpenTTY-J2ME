@@ -1487,7 +1487,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // C Programming
     // | (Runtime)
     private int C2ME(String source, boolean root) {
-        Hashtable program = build(getcontent(code));
+        Hashtable program = build(getcontent(source));
         if (program == null) { echoCommand("C2ME: Build failed"); return 1; }
         Hashtable main = (Hashtable) program.get("main");
         Hashtable proc = genprocess("build " + source, root, null);
@@ -1925,6 +1925,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // History
     private void add2History(String command) { if (command.equals("") || command.equals(getLastHistory()) || command.startsWith("!!") || command.startsWith("#")) { } else { history.addElement(command.trim()); } }
     private String getLastHistory() { return history.size() > 0 ? (String) history.elementAt(history.size() - 1) : ""; }
+    // |
+    // Process Writing
+    private String 
 
     // API 015 - (Scripts)
     // |
