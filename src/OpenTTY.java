@@ -27,8 +27,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
     private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4),
-                    BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1),
-                    OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2), DELETE = new Command("Delete", Command.OK, 1);
+                    BACK = new Command("Back", Command.BACK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1);
     // |
     // MIDlet Loader
     public void startApp() {
@@ -1019,7 +1018,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (app.equals("sh") || app.equals("x11-wm")) {
             pid = app.equals("sh") ? "1" : "2"; 
-            collector = app.equals("sh") ? "exit" : "x11 stop";
+            proc.put("collector", app.equals("sh") ? "exit" : "x11 stop");
             proc.put("screen", form); 
 
             if (trace.containsKey(pid)) { return 68; }
@@ -1049,7 +1048,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Virtual Objects
     // | (Generators)
     private String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
-    private Hashtable genprocess(String name, boolean root, String collector) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", root ? "root" : username); if (collector != null) { proc.put("collector", collector); } return proc; }
+    private Hashtable genprocess(String name, boolean root, String collector) { 
+        Hashtable proc = new Hashtable(); 
+        
+        proc.put("name", name); 
+        proc.put("owner", root ? "root" : username); 
+        if (collector != null) { proc.put("collector", collector); } 
+        
+        return proc; 
+    }
     // | (Trackers)
     private Hashtable getprocess(String pid) { return trace.containsKey(pid) ? (Hashtable) trace.get(pid) : null; }
     private Object getobject(String pid, String item) { return (Object) getprocess(pid).get(item); }
