@@ -1114,11 +1114,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             if (MOD == SERVER || MOD == BIND) {
                 if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); PID = "31522"; DB = ""; } 
-                else { PID = getCommand(args); DB = getArgument(args);
-                    if ((DB == null || DB.length() == 0 || DB.equals("null")) && MOD == SERVER) { DB = env("$RESPONSE"); }
-
-                    mod = mod.equals("") && TYPE == SERVER ? env("$RESPONSE") : mod;
-                }
+                else { PID = getCommand(args); DB = getArgument(args); DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB; }
+                
                 new Thread(this, MOD == BIND ? "Bind" : "Server").start();
                 return;
             } else if (MOD == DEAMON) {
