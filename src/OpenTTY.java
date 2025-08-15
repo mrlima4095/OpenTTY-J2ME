@@ -104,7 +104,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (selected != null) { 
                             processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
     
-                            if (display.getCurrent() == preview) { load(EXPLORER); }
+                            if (display.getCurrent() == preview) { load(); }
     
                             stdin.setLabel(username + " " + path + " $"); 
                         } 
