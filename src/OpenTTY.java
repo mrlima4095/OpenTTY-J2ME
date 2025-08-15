@@ -1081,7 +1081,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Connector
     public class Connect implements CommandListener, Runnable {
-        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5;
+        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5, DEAMON = 6;
 
         private int MOD, COUNT = 1;
         private boolean root = false, asked = false, keep = false;
@@ -1109,7 +1109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         NO = new Command("No", Command.BACK, 1);
 
         public Connect(String mode, String args, boolean root) {
-            MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? TYPE : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : BIND;
+            MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? TYPE : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : mode.equals("bind") ? BIND : DEAMON;
             this.root = root;
             
             if (MOD == SERVER || MOD == BIND) {
@@ -1121,7 +1121,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 new Thread(this, MOD == BIND ? "Bind" : "Server").start();
                 return;
-            }
+            } else if (MOD == DEAMON) {
+
+            } 
 
             if (args == null || args.length() == 0) { return; }
 
@@ -1207,7 +1209,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        // ---- Runnable: lida com os 5 modos
         public void run() {
             if (MOD == NC) {
                 while (trace.containsKey(PID)) {
@@ -1263,10 +1264,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     while (trace.containsKey(PID)) {
                         try {
                             CONN = (SocketConnection) server.acceptAndOpen();
-                            address = clientSocket.getAddress();
-                            echoCommand("[+] " + cliAddr + " connected");
+                            address = CONN.getAddress();
+                            echoCommand("[+] " + address + " connected");
 
-                            IN = clientSocket.openInputStream(); OUT = clientSocket.openOutputStream();
+                            IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
 
                             if (MOD == SERVER) {
                                 byte[] buffer = new byte[4096];
