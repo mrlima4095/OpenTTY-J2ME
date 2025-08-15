@@ -1286,7 +1286,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     inputField.setString("");
 
                     try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); }
-                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); trace.remove(PID); }
+                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (!keep) { trace.remove(PID); } }
                 } 
                 else if (c == BACK) {
                     writeRMS("/home/remote", console.getText()); back();
@@ -1320,7 +1320,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             if (LENGTH > 0) { echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console); }
                         }
                     } 
-                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); trace.remove(PID); }
+                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (!keep) { trace.remove(PID); } }
                 }
 
                 try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
