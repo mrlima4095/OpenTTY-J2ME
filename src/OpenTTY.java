@@ -1704,7 +1704,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String op = ops[i]; 
             int idx = expr.indexOf(op); 
             if (idx != -1) { 
-                String left = format(subst(PID, expr.substring(0, idx).trim(), vars, program, root)), right = format(pid, subst(PID, expr.substring(idx + op.length()).trim(), vars, program, root)); 
+                String left = C2ME_format(subst(PID, expr.substring(0, idx).trim(), vars, program, root)), right = C2ME_format(pid, subst(PID, expr.substring(idx + op.length()).trim(), vars, program, root)); 
                 Double a = getNumber(left), b = getNumber(right); 
 
                 if (a != null && b != null) { 
