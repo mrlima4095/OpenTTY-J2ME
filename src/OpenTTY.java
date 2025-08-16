@@ -1403,19 +1403,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Certificates
     private int pki(String command) {
         command = env(command.trim());
-        final String mainCommand = getCommand(command);
-        final String argument = getArgument(command);
-
-        /*try {
-            if (mainCommand.equals("")) { }
-            else if (mainCommand.equals("inspect")) {
-                if (argument.equals("")) { return 2; }
-
+        String mainCommand = getCommand(command);
+        String argument = getArgument(command)
+        
+        if (mainCommand.equals("")) { }
+        else if (mainCommand.equals("inspect")) {
+            if (argument.equals("")) { return 2; }
+            else {
                 HttpsConnection hc = null;
                 InputStream is = null;
+                
                 try {
-                    hc = (javax.microedition.io.HttpsConnection) javax.microedition.io.Connector.open(argument);
-                    is = hc.openInputStream(); // força o handshake TLS
+                    hc = (HttpsConnection) Connector.open(argument);
+                    is = hc.openInputStream(); 
                     SecurityInfo si = hc.getSecurityInfo();
                     if (si == null) { echoCommand("sem SecurityInfo (conexão não segura?)"); return 70; }
                     Certificate cert = si.getServerCertificate();
@@ -1437,7 +1437,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     try { if (hc != null) hc.close(); } catch (Exception ignore) {}
                 }
             }
-            else if (mainCommand.equals("file")) {
+                
+                
+            /*else if (mainCommand.equals("file")) {
                 if (argument.equals("")) { echoCommand("pki: file: faltou <file>"); return 2; }
                 String content = getcontent(argument);
                 if (content == null) { echoCommand("pki: file: não abriu: " + argument); return 66; }
@@ -1492,7 +1494,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     echoCommand("total certificados PEM encontrados: " + count);
                 }
                 return 0;
-            }
+            }*/
 
 
             else {
@@ -1501,10 +1503,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             
 
-        } catch (Throwable t) {
-            echoCommand("pki erro: " + t.toString());
-            return 1;
-        }*/
+
 
         return 0;
     }
