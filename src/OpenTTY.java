@@ -1477,7 +1477,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
     // API 013 - (MIDlet)
     // |
-    // Java Runtime
+    // Java Machine
     private int java(String command) {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
@@ -1491,7 +1491,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     // |
-    // C Programming
+    // C2ME
     // | (Runtime)
     private int C2ME(String source, String code, boolean root) {
         Hashtable program = build(code == null ? getcontent(source) : code);
