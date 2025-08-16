@@ -534,7 +534,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); }
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
-
+        
+        else if (mainCommand.equals("where")) {
+            echoCommand("" + nano.getCaretPosition());
+        }
         // API 015 - (Scripts)
         // |
         // OpenTTY Packages
