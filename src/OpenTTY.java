@@ -373,7 +373,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
         }
         else if (mainCommand.equals("popd")) { 
-            Vector  = (Vector) getobject("1", "stack");
+            Vector stack = (Vector) getobject("1", "stack");
             if (stack.isEmpty()) { echoCommand("popd: empty stack"); } 
             else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } 
         }
