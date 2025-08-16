@@ -1137,7 +1137,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 new Thread(this, MOD == BIND ? "Bind" : "Server").start();
                 return;
-            } else if (MOD == -1) { return 127; } 
+            } else if (MOD == -1) { return; } 
 
             if (args == null || args.length() == 0) { return; }
 
