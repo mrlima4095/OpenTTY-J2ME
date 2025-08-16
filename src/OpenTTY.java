@@ -1497,7 +1497,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable main = (Hashtable) program.get("main"), proc = genprocess("build " + basename(source), root, null);
         String PID = genpid(); int STATUS = 0;
 
-        trace.put(PID, "build " + source);
+        trace.put(PID, proc);
 
         if (main == null) { echoCommand("C2ME: main() missing"); STATUS = 1; }
         else if (((String) main.get("type")).equals("int")) {
