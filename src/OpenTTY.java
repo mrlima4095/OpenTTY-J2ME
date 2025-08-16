@@ -1427,7 +1427,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     echoCommand("sigalg  : " + cert.getSigAlgName());
                     echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
                     // Drena a resposta (opcional)
-                    while (is.read() != -1) { /* discard */ }
+                    while (is.read() != -1) {  }
                     return 0;
                 } catch (java.io.IOException e) {
                     echoCommand("inspect IO: " + e.getMessage());
