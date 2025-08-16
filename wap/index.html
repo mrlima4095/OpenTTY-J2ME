@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en-US">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>OpenTTY WAP</title>
-    <meta name="description" content="OpenTTY Official WebSite." />
-    
+    <meta name="description" content="OpenTTY Official Website — Terminal emulator for J2ME devices." />
 
     <style>
         :root{
@@ -18,6 +17,7 @@
             --link-hover:#0b3c59;
             --line:#e6e6e6;
             --accent:#ffc857;
+            --max-width:1100px;
         }
         *{box-sizing:border-box}
         html,body{height:100%}
@@ -35,23 +35,30 @@
             background:var(--blue);
             color:#fff;
             border-bottom:4px solid rgba(0,0,0,.15);
+            position:sticky; top:0; z-index:20;
         }
         .topwrap{
-            max-width:1100px; margin:auto; padding:14px 16px; display:flex; align-items:center; gap:16px;
+            max-width:var(--max-width); margin:auto; padding:12px 16px; display:flex; align-items:center; gap:12px;
         }
         .logo{
             font-weight:800; letter-spacing:.2px; text-transform:uppercase; font-size:18px; white-space:nowrap;
         }
         .logo small{opacity:.85; font-weight:600}
         .brand-dot{display:inline-block; width:10px; height:10px; background:var(--accent); border-radius:50%; margin:0 6px 2px 6px}
+
+        /* Desktop nav */
         .nav{
-            margin-left:auto; display:flex; flex-wrap:wrap; gap:12px;
+            margin-left:auto; display:flex; gap:8px; align-items:center;
         }
-        .nav a{color:#e9f2fb; padding:6px 8px; border-radius:8px}
-        .nav a.active, .nav a:hover{background:rgba(255,255,255,.14); color:#fff; text-decoration:none}
+        .nav a{color:#e9f2fb; padding:8px 10px; border-radius:8px}
+        .nav a.active, .nav a:hover{background:rgba(255,255,255,.12); color:#fff; text-decoration:none}
+
+        /* Mobile menu button */
+        .menu-toggle{display:none; background:transparent; border:1px solid rgba(255,255,255,.12); color:#fff; padding:6px 8px; border-radius:8px; cursor:pointer}
+        .menu-toggle:focus{outline:3px solid rgba(255,255,255,.12)}
 
         /* Layout */
-        .wrap{max-width:1100px; margin:18px auto; padding:0 16px; display:grid; grid-template-columns:260px 1fr; gap:20px}
+        .wrap{max-width:var(--max-width); margin:16px auto; padding:0 16px; display:grid; grid-template-columns:260px 1fr; gap:20px}
         @media (max-width: 860px){
             .wrap{grid-template-columns:1fr}
             .sidebar{order:2}
@@ -84,7 +91,7 @@
         .table th{background:#f6f9fc; color:#234}
 
         /* Footer */
-        footer{max-width:1100px; margin:32px auto; padding:12px 16px 28px; color:#666; font-size:14px}
+        footer{max-width:var(--max-width); margin:32px auto; padding:12px 16px 28px; color:#666; font-size:14px}
 
         /* Alert */
         .note{border-left:4px solid var(--accent); background:#fff9e7; padding:10px 12px; border-radius:8px}
@@ -93,16 +100,12 @@
         pre, code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
         pre{background:#111; color:#e6e6e6; padding:12px 14px; border-radius:10px; overflow:auto}
 
-        /* Mirror selector */
+        /* Mirrors */
         .mirrors{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px}
         .mirror{border:1px solid var(--line); border-radius:10px; padding:10px; background:#fff}
         .mirror small{display:block; color:#777}
 
-        /* Simple banner reminiscent of classic sites */
-        .banner{display:flex; align-items:center; gap:10px; color:#fff; background:var(--blue); border-radius:10px; padding:10px 12px}
-        .banner b{background:#0003; padding:2px 8px; border-radius:999px}
-
-        .mirror {
+        .mirror-link {
             display: block;
             padding: 12px;
             margin: 8px 0;
@@ -112,14 +115,32 @@
             text-decoration: none;
             color: inherit;
         }
-        .mirror:hover {background: #eaeaea;}
+        .mirror-link:hover {background: #eaeaea;}
+
+        /* Mobile adjustments */
+        @media (max-width: 860px){
+            .menu-toggle{display:inline-block}
+            .nav{position:absolute; right:12px; top:56px; background:var(--blue); padding:12px; border-radius:8px; display:none; flex-direction:column; gap:8px; min-width:180px}
+            .nav.show{display:flex}
+            .topwrap{position:relative}
+            .logo{font-size:16px}
+            .hero h1{font-size:22px}
+            .card .body{padding:12px}
+            .sidebar{order:2}
+        }
+
+        /* small utilities */
+        .muted{color:var(--ink-soft); font-size:14px}
     </style>
 </head>
 <body>
     <header class="topbar" role="banner">
         <div class="topwrap">
             <div class="logo" aria-label="OpenTTY">OpenTTY<span class="brand-dot" aria-hidden="true"></span><small>Mirror</small></div>
-            <nav class="nav" aria-label="Primária">
+
+            <button class="menu-toggle" aria-expanded="false" aria-controls="primary-nav" id="menuToggle">Menu ▾</button>
+
+            <nav class="nav" id="primary-nav" aria-label="Primary navigation">
                 <a class="active" href="#">Home</a>
                 <a href="#downloads">Downloads</a>
                 <a href="#docs">Documentation</a>
@@ -132,13 +153,13 @@
     </header>
 
     <div class="wrap">
-        <aside class="sidebar card" aria-label="Navegação lateral">
+        <aside class="sidebar card" aria-label="Sidebar navigation">
             <div class="group">
                 <h3>Versions</h3>
                 <ul>
                     <li><a href="#downloads">Stable <span class="badge">v1.15</span></a></li>
                     <li><a href="#downloads">Pre-release <span class="badge">v1.16-rc1</span></a></li>
-                    <li><a href="#downloads">Legacy <span class="badge">v1.11 ></span></a></li>
+                    <li><a href="#downloads">Legacy <span class="badge">v1.11</span></a></li>
                 </ul>
             </div>
             <div class="group">
@@ -151,33 +172,33 @@
             <div class="group">
                 <h3>Help</h3>
                 <ul>
-                    <li><a href="#docs">Starting</a></li>
-                    <li><a href="#docs">Commands Manual</a></li>
-                    <li><a href="#docs">J2ME Permissions</a></li>
-                    <li><a href="#docs">FAQ</a></li>
+                    <li><a href="#docs">Getting started</a></li>
+                    <li><a href="#docs">Commands manual</a></li>
+                    <li><a href="#docs">J2ME permissions &amp; PushRegistry</a></li>
+                    <li><a href="#docs">Keys &amp; shortcuts</a> — e.g. press <span class="kbd">*</span> to open the menu</li>
                 </ul>
             </div>
             <div class="group">
                 <h3>Search</h3>
-                <form action="#" onsubmit="return false" aria-label="Busca no site">
-                    <input id="q" aria-label="Pesquisar" placeholder="Pesquisar…" />
-                    <small>Press <span class="kbd">Enter</span> to filter sections.</small>
+                <form action="#" onsubmit="return false" aria-label="Site search">
+                    <input id="q" aria-label="Search" placeholder="Search…" />
+                    <small class="muted">Press <span class="kbd">Enter</span> to filter sections.</small>
                 </form>
             </div>
         </aside>
 
         <main>
-            <section class="hero" id="inicio">
+            <section class="hero" id="home">
                 <div class="banner" role="status" aria-live="polite">
                     <b>OpenTTY</b>
                     <span>Unix-based Terminal Emulator for J2ME Devices.</span>
                 </div><br>
-                <h1></h1>
-                <p>Esta página fornece <strong>downloads verificados</strong>, <strong>checksums</strong>, documentação e notícias. Interface inspirada no estilo clássico de sites de linguagens — simples, rápida e direta.</p>
+                <h1>OpenTTY — lightweight terminal for feature phones and vintage devices</h1>
+                <p>This site provides <strong>verified downloads</strong>, <strong>checksums</strong>, documentation and news. The interface is inspired by classic language sites — simple, fast and direct.</p>
                 <div class="meta">
-                    <div>Última atualização: <time id="lastUpdate" datetime="">—</time></div>
-                    <div>Assinaturas: <a href="#checksums">SHA‑256</a></div>
-                    <div>Licença: <a href="#about">MIT</a></div>
+                    <div>Last updated: <time id="lastUpdate" datetime="">—</time></div>
+                    <div>Signatures: <a href="#checksums">SHA‑256</a></div>
+                    <div>License: <a href="#about">MIT</a></div>
                 </div>
             </section>
 
@@ -185,7 +206,7 @@
                 <section class="card" id="downloads">
                     <div class="body">
                         <h2>Downloads</h2>
-                        <p>Choice a version compatible with your J2ME Device. </p>
+                        <p>Choose a version compatible with your J2ME device.</p>
                         <table class="table" aria-describedby="downloads">
                             <thead>
                                 <tr>
@@ -217,7 +238,7 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <p id="checksums" class="note">All releases avaliable at <strong><a href="https://github.com/mrlima4095/OpenTTY-J2ME/releases">GitHub</a></strong>.</p>
+                        <p id="checksums" class="note">All releases available at <strong><a href="https://github.com/mrlima4095/OpenTTY-J2ME/releases">GitHub</a></strong>. Checksums and signed releases are recommended.</p>
                     </div>
                 </section>
 
@@ -225,14 +246,14 @@
                     <div class="body">
                         <h2>Documentation</h2>
                         <ul>
-                            <li><a href="#">Guia rápido: instalando no Java ME</a></li>
-                            <li><a href="#">Manual: comandos do OpenTTY</a></li>
-                            <li><a href="#">Permissões e <code>PushRegistry</code> (J2ME)</a></li>
-                            <li><a href="#">Teclas e atalhos</a> — ex.: pressione <span class="kbd">*</span> para abrir o menu</li>
+                            <li><a href="#">Quick guide: installing on Java ME</a></li>
+                            <li><a href="#">Manual: OpenTTY commands</a></li>
+                            <li><a href="#">Permissions and <code>PushRegistry</code> (J2ME)</a></li>
+                            <li><a href="#">Keys &amp; shortcuts</a> — e.g.: press <span class="kbd">*</span> to open the menu</li>
                         </ul>
-                        <h3>Exemplo de sessão</h3>
+                        <h3>Session example</h3>
                         <pre><code>$ uname -a
-Nokia S60 (OpenTTY 1.16) main/stable 
+Nokia S60 (OpenTTY 1.16) main/stable
 2025-1.16-02x50 - CLDC-1.1 MIDP-2.1
                         </code></pre>
                     </div>
@@ -243,8 +264,8 @@ Nokia S60 (OpenTTY 1.16) main/stable
                 <div class="body">
                     <h2>Screenshots</h2>
                     <div class="grid" role="list">
-                        <div class="card" role="listitem"><div class="body"><strong>Editor</strong><br><small>Nano‑like embutido</small></div></div>
-                        <div class="card" role="listitem"><div class="body"><strong>Conexão Remota</strong><br><small>Socket/HTTP</small></div></div>
+                        <div class="card" role="listitem"><div class="body"><strong>Editor</strong><br><small>Nano‑like embedded editor</small></div></div>
+                        <div class="card" role="listitem"><div class="body"><strong>Remote connection</strong><br><small>Socket / HTTP</small></div></div>
                     </div>
                 </div>
             </section>
@@ -252,8 +273,8 @@ Nokia S60 (OpenTTY 1.16) main/stable
             <section class="card" id="news" style="margin-top:16px">
                 <div class="body">
                     <h2>News</h2>
-                    <ul>
-                        <li><strong>[2025‑08‑09]</strong> OpenTTY 1.16-rc1 have been published.</li>
+                    <ul id="news-list">
+                        <li><strong>[2025‑08‑09]</strong> OpenTTY 1.16-rc1 has been published.</li>
                     </ul>
                 </div>
             </section>
@@ -261,10 +282,10 @@ Nokia S60 (OpenTTY 1.16) main/stable
             <section class="card" id="mirrors" style="margin-top:16px">
                 <div class="body">
                     <h2>Mirrors</h2>
-                    <p>Select a mirror next you to download more fast.</p>
+                    <p>Select a nearby mirror for faster downloads.</p>
                     <div class="mirrors" role="list">
-                        <a class="mirror" role="listitem" href="http://opentty.xyz/repo/">
-                            <strong>BR-Párana</strong>
+                        <a class="mirror-link" role="listitem" href="http://opentty.xyz/repo/">
+                            <strong>BR — Paraná</strong>
                             <small>http://opentty.xyz/repo/</small>
                         </a>
                     </div>
@@ -274,17 +295,63 @@ Nokia S60 (OpenTTY 1.16) main/stable
             <section class="card" id="about" style="margin-top:16px">
                 <div class="body">
                     <h2>About</h2>
-                    <p>OpenTTY is a Terminal Emulator for J2ME Devices with CLDC-1.0 and MIDP-2.0. It's support application creation, network access.</p>
-                    <p>This WebSite is in development.</p>
+                    <p>OpenTTY is a terminal emulator for J2ME devices (CLDC-1.0 / MIDP-2.0). It supports application creation and network access on constrained devices.</p>
+                    <p>This website is under development.</p>
                 </div>
             </section>
         </main>
     </div>
 
     <footer>
-        <div>© <span id="y"></span> OpenTTY — J2ME ToDay.</div>
+        <div>© <span id="y"></span> OpenTTY — J2ME Today.</div>
     </footer>
 
-    <script src="script.js"></script>
+    <script>
+        // Small inline JS to power the responsive menu and dynamic dates
+        (function(){
+            var menuBtn = document.getElementById('menuToggle');
+            var nav = document.getElementById('primary-nav');
+            menuBtn.addEventListener('click', function(){
+                var expanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', String(!expanded));
+                nav.classList.toggle('show');
+            });
+
+            // Close menu when clicking outside (mobile)
+            document.addEventListener('click', function(e){
+                if(!menuBtn.contains(e.target) && !nav.contains(e.target) && nav.classList.contains('show')){
+                    nav.classList.remove('show');
+                    menuBtn.setAttribute('aria-expanded','false');
+                }
+            });
+
+            // Fill last update and current year
+            var last = document.getElementById('lastUpdate');
+            if(last){
+                // Set a sensible default — adjust on server-side when generating pages
+                var d = new Date('2025-08-09');
+                last.textContent = d.toISOString().slice(0,10);
+                last.setAttribute('datetime', d.toISOString());
+            }
+            var y = document.getElementById('y'); if(y) y.textContent = new Date().getFullYear();
+
+            // Simple search filter for in-page sections
+            var q = document.getElementById('q');
+            if(q){
+                q.addEventListener('keydown', function(e){
+                    if(e.key === 'Enter'){
+                        var v = this.value.trim().toLowerCase();
+                        if(!v) return;
+                        // Basic visibility filter for sections
+                        var sections = document.querySelectorAll('main section, main .card');
+                        sections.forEach(function(s){
+                            var text = s.textContent.toLowerCase();
+                            s.style.display = text.indexOf(v) !== -1 ? '' : 'none';
+                        });
+                    }
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
