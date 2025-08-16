@@ -1494,7 +1494,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             // =============================== CSR =============================
-            else if (main.equals("csr")) {
+            else if (mainCommand.equals("csr")) {
                 if (argument.equals("")) {
                     echoCommand("pki: csr: faltou DN. Ex: pki csr \"CN=Meu Nome, O=Org, C=BR\" [rsa|dsa] [keylen] [auth|sign] [force]");
                     return 2;
@@ -1597,9 +1597,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     return 74;
                 }
             }
-
-            echoCommand("pki: " + main + ": not found");
-            return 127;
+            else {
+                echoCommand("pki: " + mainCommand + ": not found");
+                return 127;
+            }
+            
 
         } catch (Throwable t) {
             echoCommand("pki erro: " + t.toString());
