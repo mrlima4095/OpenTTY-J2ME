@@ -1404,10 +1404,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int pki(String command) {
         command = env(command.trim());
         String mainCommand = getCommand(command);
-        String argument = getArgument(command)
+        String argument = getArgument(command);
         
         if (mainCommand.equals("")) { }
-        else if (mainCommand.equals("inspect")) {
+        else if (mainCommand.equals("htpps")) {
             if (argument.equals("")) { return 2; }
             else {
                 HttpsConnection hc = null;
@@ -1437,7 +1437,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     try { if (hc != null) hc.close(); } catch (Exception ignore) {}
                 }
             }
-                
+        }     
                 
             /*else if (mainCommand.equals("file")) {
                 if (argument.equals("")) { echoCommand("pki: file: faltou <file>"); return 2; }
@@ -1495,8 +1495,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 return 0;
             }*/
-
-
             else {
                 echoCommand("pki: " + mainCommand + ": not found");
                 return 127;
