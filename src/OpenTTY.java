@@ -1613,7 +1613,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         return mode == 0 ? (((String) context.get("type")).equals("char") ? "' '" : "0") : mode == 1 ? "+[continue]" : null; 
-
     }
     private String C2ME(String PID, String code, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         int parIndex = code.indexOf('(');
@@ -1643,9 +1642,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return String.valueOf(STATUS); 
             }
         }
-        else if (fname.equals("scanf")) {
+        else if (fname.equals("httpget")) {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); } 
-            else { return "not available"; }
+            else { return request(C2ME_format(subst(PID, argList[0], vars, program, root))); }
         }
         else if (fname.equals("readf")) {
             if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); } 
@@ -1691,7 +1690,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         newContext.put("source", fn.get("source"));
 
         return C2ME(PID, (Vector) fn.get("source"), newContext, program, root, 3);
-    
     }
     private String subst(String PID, String expr, Hashtable vars, Hashtable program, boolean root) throws RuntimeException {
         if (expr == null || expr.length() == 0) { return ""; }
@@ -2095,7 +2093,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (trace.containsKey(PORT)) { MIDletLogs("add warn Application port is unavailable."); return 68; }
             
             if (TYPE.equals("bind") || TYPE.equals("server")) { new Connect(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); }
-            else { MIDletLogs("add error Unknown service mode '" + TYPE + "'"); return 1; }            
+            else { MIDletLogs("add error Invalid process type '" + TYPE + "'"); return 1; }            
         }
         // |
         // Start Application
