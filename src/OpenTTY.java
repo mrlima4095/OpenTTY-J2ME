@@ -1495,14 +1495,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (program == null) { echoCommand("C2ME: " + basename(source) + ": build failed"); return 1; }
 
         Hashtable main = (Hashtable) program.get("main"), proc = genprocess("build " + basename(source), root, null);
-        String PID = genpid();
+        String PID = genpid(); int STATUS = 0;
 
-        if (main == null) { echoCommand("C2ME: main() missing"); return 1; }
+        trace.put(PID, "build " + source);
+
+        if (main == null) { echoCommand("C2ME: main() missing"); STATUS = 1; }
         else if (((String) main.get("type")).equals("int")) {
             try { return Integer.valueOf(C2ME(PID, (Vector) main.get("source"), main, program, root, 0)); } 
-            catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); return 1; }
+            catch (Exception e) { echoCommand("C2ME: " + getCatch(e)); STATUS = 1; }
         } 
-        else { echoCommand("C2ME: main() need to be an int function"); return 2; }
+        else { echoCommand("C2ME: main() need to be an int function"); STATUS = 2; }
+
+        trace.remove(PID);
+        return STATUS;
     }
     private String C2ME(String PID, Vector source, Hashtable context, Hashtable program, boolean root, int mode) throws RuntimeException {
         Hashtable vars = (Hashtable) context.get("variables");
@@ -1544,11 +1549,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (type.equals("if")) {
                 String ret = null;
-                if (eval(PID, (String) cmd.get("expr"), vars, program, root)) {
-                    ret = C2ME(PID, (Vector) cmd.get("source"), context, program, root, mode);
-                } else if (cmd.containsKey("else")) {
-                    ret = C2ME(PID, (Vector) cmd.get("source"), context, program, root, mode);
-                }
+                if (eval(PID, (String) cmd.get("expr"), vars, program, root)) { ret = C2ME(PID, (Vector) cmd.get("source"), context, program, root, mode); } 
+                else if (cmd.containsKey("else")) { ret = C2ME(PID, (Vector) cmd.get("source"), context, program, root, mode); }
 
                 if (ret == null) { continue; }
                 else { return ret; }
@@ -1564,6 +1566,44 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { return ret; }
                 }
             }
+            else if (type.equals("try")) {
+                String ret = null;
+                
+                try {
+                    ret = C2ME(PID, (Vector) cmd.get("source"), context, program, root, mode);
+                } catch (Exception e) {
+                    if (cmd.containsKey("catch")) {
+                        String catchVar = cmd.containsKey("catchVar") ? (String) cmd.get("catchVar") : "";
+                        String catchInstance = cmd.containsKey("catchInstance") ? (String) cmd.get("catchInstance") : "char";
+                        String catchMsg = getCatch(e);
+                        String catchValue;
+                        
+                        if ("char".equals(catchInstance)) {
+                            catchMsg = catchMsg == null ? "" : catchMsg.replace("\"", "\\\"");
+                            catchValue = "\"" + catchMsg + "\"";
+                        } else { 
+                            catchValue = catchMsg == null ? "0" : catchMsg;
+                        }
+
+                        Hashtable oldVar = null;
+                        if (!catchVar.equals("")) {
+                            if (vars.containsKey(catchVar)) { oldVar = (Hashtable) vars.get(catchVar); }
+                            Hashtable newVar = new Hashtable();
+                            newVar.put("value", catchValue);
+                            newVar.put("instance", catchInstance);
+                            vars.put(catchVar, newVar);
+                        }
+
+                        ret = C2ME(PID, (Vector) cmd.get("catch"), context, program, root, mode);
+
+                        if (!catchVar.equals("")) {
+                            if (oldVar != null) { vars.put(catchVar, oldVar); }
+                            else { vars.remove(catchVar); }
+                        }
+                    } else { throw e; }
+                }
+            }
+
             else if (type.equals("continue") || type.equals("break")) { 
                 if (mode == 1) { return type.equals("break") ? null : "+[continue]"; } 
                 else { throw new RuntimeException("not in a loop"); } 
@@ -1582,21 +1622,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String[] argList = argsBlock.equals("") ? new String[0] : splitBlock(argsBlock, ',');
 
         if (fname.equals("")) { return "0"; } 
-        else if (fname.equals("exec")) {
-            if (argList.length != 1) { throw new RuntimeException("function 'exec' expects 1 argument(s), got 0"); } 
-            else { return String.valueOf(processCommand(C2ME_format(subst(PID, argList[0], vars, program, root)), true, root)); }
-        }
         else if (fname.equals("printf")) {
-
+            if (argList.length != 1) { throw new RuntimeException("function 'printf' expects 1 argument(s), got " + argList.length); } 
+            else { echoCommand(C2ME_format(subst(PID, argList[0], vars, program, root))); return 0; }
         }
         else if (fname.equals("scanf")) {
-            
+            if (argList.length != 1) { throw new RuntimeException("function 'scanf' expects 1 argument(s), got " + argList.length); } 
+            else { return "not available"; }
         }
         else if (fname.equals("readf")) {
-
+            if (argList.length != 1) { throw new RuntimeException("function 'readf' expects 1 argument(s), got " + argList.length); } 
+            else { return getcontent(C2ME_format(subst(PID, argList[0], vars, program, root))); }
         }
         else if (fname.equals("exec")) {
-
+            if (argList.length != 1) { throw new RuntimeException("function 'exec' expects 1 argument(s), got " + argList.length); } 
+            else { return String.valueOf(processCommand(C2ME_format(subst(PID, argList[0], vars, program, root)), true, root)); }
+        }
+        else if (fname.equals("throw")) {
+            if (argList.length != 1) { throw new RuntimeException("function 'throw' expects 1 argument(s), got " + argList.length); }  
+            else { throw new RuntimeException(C2ME_format(subst(PID, argList[0], vars, program, root))); }
         }
 
         Hashtable fn = (Hashtable) ((Hashtable) program.get("functions")).get(fname);
