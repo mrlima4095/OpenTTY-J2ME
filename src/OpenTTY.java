@@ -1911,20 +1911,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String line = lines[i].trim();
             Hashtable cmd = new Hashtable();
 
-            String preview = line.length() > 12 ? line.substring(0, 9) + "..." : line, ctxName = (context != null && context.containsKey("name")) ? ("function '" + context.get("name") + "'") : "anonymous block";
-
             if (line.equals("") || line.equals("' '")) { }
             else if (line.startsWith("return")) { cmd.put("type", "return"); cmd.put("value", line.substring(7).trim()); }
             else if (line.startsWith("try")) {
                 int lineIndexInBlock = block.indexOf(line);
-                if (lineIndexInBlock == -1) { echoCommand("build: parse error - 'try' token not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (lineIndexInBlock == -1) { echoCommand("build: 'try' token not found"); return null; }
 
                 int braceIndex = -1;
                 for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
-                if (braceIndex == -1) { echoCommand("build: parse error - 'try' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (braceIndex == -1) { echoCommand("build: 'try' block opening '{' not found"); return null; }
 
                 String remaining = block.substring(braceIndex), trySub = getBlock(remaining);
-                if (trySub == null) { echoCommand("build: parse error - 'try' block not properly closed in " + ctxName + " starting near: \"" + preview + "\""); return null; }
+                if (trySub == null) { echoCommand("build: 'try' block not properly closed"); return null; }
 
                 cmd.put("type", "try"); 
                 cmd.put("source", parseBlock(trySub.substring(1, trySub.length() - 1).trim(), context));
@@ -1941,33 +1939,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String[] parts = split(catchInside, ' ');
                         if (parts.length == 1) { catchVar = parts[0]; }  
                         else if (parts.length == 2) { catchInstance = parts[0]; catchVar = parts[1]; } 
-                        else { echoCommand("build: invalid catch signature in " + ctxName + " - '" + catchInside + "' near: \"" + preview + "\""); return null; }
+                        else { echoCommand("build: invalid catch signature"); return null; }
                     }
 
                     int catchBrace = (parenEnd == -1) ? block.indexOf('{', catchIndex) : block.indexOf('{', parenEnd);
                     if (catchBrace != -1) {
                         String catchRemaining = block.substring(catchBrace);
                         String catchSub = getBlock(catchRemaining);
-                        if (catchSub == null) { echoCommand("build: parse error - 'catch' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
+                        if (catchSub == null) { echoCommand("build: 'catch' block not properly closed"); return null; }
 
                         cmd.put("catch", parseBlock(catchSub.substring(1, catchSub.length() - 1).trim(), context));
                         cmd.put("catchVar", catchVar);
                         cmd.put("catchInstance", catchInstance);
                     } 
-                    else { echoCommand("build: parse error - 'catch' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+                    else { echoCommand("build: 'catch' block opening '{' not found"); return null; }
                 }
             }
             else if (line.startsWith("if")) {
                 int lineIndexInBlock = block.indexOf(line);
-                if (lineIndexInBlock == -1) { echoCommand("build: parse error - 'if' token not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (lineIndexInBlock == -1) { echoCommand("build: 'if' token not found "); return null; }
 
                 int braceIndex = -1;
                 for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
 
-                if (braceIndex == -1) { echoCommand("build: parse error - 'if' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (braceIndex == -1) { echoCommand("build: 'if' block opening '{' not found"); return null; }
 
                 String remaining = block.substring(braceIndex), subblock = getBlock(remaining);
-                if (subblock == null) { echoCommand("build: parse error - 'if' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (subblock == null) { echoCommand("build: parse error - 'if' block not properly closed"); return null; }
 
                 cmd.put("type", "if"); cmd.put("expr", extractParens(line, 0));
 
@@ -1977,7 +1975,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (elseBrace != -1) {
                         String elseSub = getBlock(block.substring(elseBrace));
                         if (elseSub != null) { cmd.put("else", parseBlock(elseSub.substring(1, elseSub.length() - 1).trim(), context)); } 
-                        else { echoCommand("build: parse error - 'else' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
+                        else { echoCommand("build: 'else' block not properly closed"); return null; }
                     }
                 }
 
@@ -1985,12 +1983,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (line.startsWith("while")) {
                 int lineIndexInBlock = block.indexOf(line);
-                if (lineIndexInBlock == -1) { echoCommand("build: parse error - 'while' token not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (lineIndexInBlock == -1) { echoCommand("build: 'while' token not found"); return null; }
 
                 int braceIndex = -1;
                 for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
 
-                if (braceIndex == -1) { echoCommand("build: parse error - 'while' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (braceIndex == -1) { echoCommand("build: 'while' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
 
                 String remaining = block.substring(braceIndex), subblock = getBlock(remaining);
                 if (subblock == null) { echoCommand("build: parse error - 'while' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
