@@ -369,7 +369,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 echoCommand(args[i] + " " + i);
                 if (args[i].equals("-a")) { all = true; } 
                 else if (args[i].equals("-v")) { verbose = true; } 
-                else { argument = join(args, " ", i++); break; }
+                else { argument = join(args, " ", i++).trim(); break; }
             }
 
             String PWD = argument.equals("") ? path : argument; 
@@ -1081,7 +1081,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Connector
     public class Connect implements CommandListener, Runnable {
-        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5, DEAMON = 6;
+        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5;
 
         private int MOD, COUNT = 1;
         private boolean root = false, asked = false, keep = false;
@@ -1109,7 +1109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         NO = new Command("No", Command.BACK, 1);
 
         public Connect(String mode, String args, boolean root) {
-            MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : mode.equals("bind") ? BIND : DEAMON;
+            MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : mode.equals("bind") ? BIND : -1;
             this.root = root;
             
             if (MOD == SERVER || MOD == BIND) {
@@ -1118,9 +1118,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 new Thread(this, MOD == BIND ? "Bind" : "Server").start();
                 return;
-            } else if (MOD == DEAMON) {
-
-            } 
+            } else if (MOD == -1) { return 127; } 
 
             if (args == null || args.length() == 0) { return; }
 
@@ -1629,39 +1627,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argList.length < 1 || argList.length > 2) { throw new RuntimeException("function 'printf' expects 1 argument(s), got " + argList.length); } 
             else { 
                 String value = C2ME_format(subst(PID, argList[0], vars, program, root)); 
+                int STATUS = 0;
                 
                 if (argList.length == 2) {
-                    if (argList[1].equals("stdout")) {
-                        echoCommand(value);
-                    } else if (argList[1].equals("stdin")) {
-                        stdin.setString(value);
-                    } else {
+                    if (argList[1].equals("stdin")) { stdin.setString(value); } 
+                    else if (argList[1].equals("stdout")) { stdout.setText(stdout.getText() + value); } 
+                    else if (argList[1].equals("nano")) { STATUS = processCommand("add " + value, false, root); } 
+                    else {
                         String content = getcontent(argList[1]);
-                        writeRMS(argList[1], content.equals("") ? value : content + "\n" + value);
+                        STATUS = writeRMS(argList[1], content.equals("") ? value : content + "\n" + value);
                     }
                 } 
-                else {
-                    echoCommand(value);
-                }
+                else { echoCommand(value); }
                 
-                return "0"; 
-                
+                return String.valueOf(STATUS); 
             }
         }
         else if (fname.equals("scanf")) {
-            if (argList.length != 1) { throw new RuntimeException("function 'scanf' expects 1 argument(s), got " + argList.length); } 
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); } 
             else { return "not available"; }
         }
         else if (fname.equals("readf")) {
-            if (argList.length != 1) { throw new RuntimeException("function 'readf' expects 1 argument(s), got " + argList.length); } 
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); } 
             else { return getcontent(C2ME_format(subst(PID, argList[0], vars, program, root))); }
         }
         else if (fname.equals("exec")) {
-            if (argList.length != 1) { throw new RuntimeException("function 'exec' expects 1 argument(s), got " + argList.length); } 
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); } 
             else { return String.valueOf(processCommand(C2ME_format(subst(PID, argList[0], vars, program, root)), true, root)); }
         }
         else if (fname.equals("throw")) {
-            if (argList.length != 1) { throw new RuntimeException("function 'throw' expects 1 argument(s), got " + argList.length); }  
+            if (argList.length != 1) { throw new RuntimeException("function '" + fname + "' expects 1 argument(s), got " + argList.length); } 
             else { throw new RuntimeException(C2ME_format(subst(PID, argList[0], vars, program, root))); }
         }
 
@@ -1757,12 +1752,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String result = exprCommand(expr);
         return result.startsWith("expr: ") ? expr : result;
     }
-    private String C2ME_format(String expr) { 
-        if (expr == null || expr.length() == 0) { return "' '"; } 
-        if (validChar(expr)) { return env(expr.substring(1, expr.length() - 1)); } 
-
-        return env(expr); 
-    }
+    private String C2ME_format(String expr) { if (expr == null || expr.length() == 0) { return "' '"; } if (validChar(expr)) { return env(expr.substring(1, expr.length() - 1)); } return env(expr); }
     private boolean eval(String PID, String expr, Hashtable vars, Hashtable program, boolean root) { 
         String[] ops = {">=", "<=", "==", "!=", ">", "<", "startswith", "endswith", "contains"}; 
 
@@ -2103,8 +2093,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("process.type")) { 
             String TYPE = (String) PKG.get("process.type"), PORT = (String) PKG.get("process.port"), MOD = (String) PKG.get("process." + (TYPE.equals("bind") ? "db" : "host")); 
             if (trace.containsKey(PORT)) { MIDletLogs("add warn Application port is unavailable."); return 68; }
-
-            new Connect(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); 
+            
+            if (TYPE.equals("bind") || TYPE.equals("server")) { new Connect(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); }
+            else { MIDletLogs("add error Unknown service mode '" + TYPE + "'"); return 1; }            
         }
         // |
         // Start Application

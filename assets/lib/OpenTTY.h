@@ -5,9 +5,3 @@
 */
 
 
-
-int printf(char text) { exec("echo %text"); }
-
-char write(char text, char file) {
-    
-}
