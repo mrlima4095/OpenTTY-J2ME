@@ -1579,7 +1579,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String catchValue;
                         
                         if ("char".equals(catchInstance)) {
-                            catchMsg = catchMsg == null ? "" : catchMsg.replace("\"", "\\\"");
+                            catchMsg = catchMsg == null ? "" : replace(catchMsg, "\"", "\\\"");
                             catchValue = "\"" + catchMsg + "\"";
                         } else { 
                             catchValue = catchMsg == null ? "0" : catchMsg;
