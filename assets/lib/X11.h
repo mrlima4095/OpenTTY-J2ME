@@ -13,6 +13,7 @@ int WindowTitle(char title) { exec("x11 title %text"); }
 int Alert(char msg) { exec("warn %msg"); }
 
 int SaveWindow(char name) { exec("x11 set %name"); }
-int LoadWindow(char name) { exec("x11 load %name"); }
+int LoadWindow(char name) { return exec("x11 load name"); }
+int LoadProcess(int pid) { return exec("x11 import name"); }
 
 int SetTicker(char msg) { exec("x11 tick %msg"); }
