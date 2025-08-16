@@ -5,6 +5,7 @@ import javax.microedition.io.file.*;
 import javax.wireless.messaging.*;
 import javax.microedition.media.*;
 import javax.microedition.rms.*;
+import javax.microedition.pki.*;
 import javax.microedition.io.*;
 import javax.bluetooh.*;
 import java.util.*;
@@ -350,6 +351,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("report")) { return processCommand("open mailto:felipebr4095@gmail.com"); }
         else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
         else if (mainCommand.equals("netstat")) { if (argument.equals("")) { argument = "http://ipinfo.io"; } int STATUS = 0; try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } else { STATUS = 101; } CONN.close(); } catch (SecurityException e) { STATUS = 13; } catch (Exception e) { STATUS = 101; } echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; }
+        // |
+        // Certificates
+        else if (mainCommand.equals("pki")) { return pki(argument); }
 
         // API 012 - (File)
         // |
@@ -545,9 +549,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("where")) {
-            echoCommand("" + nano.getCaretPosition());
-        }
+        else if (mainCommand.equals("")) { }
+        else if (mainCommand.equals("")) { }
+        else if (mainCommand.equals("")) { }
+        else if (mainCommand.equals("")) { }
+        else if (mainCommand.equals("")) { }
+
         // API 015 - (Scripts)
         // |
         // OpenTTY Packages
@@ -1390,6 +1397,215 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
+    // |
+    // Certificates
+    private int pki(String command) {
+        command = env(command.trim());
+        final String mainCommand = getCommand(command);
+        final String argument = getArgument(command);
+
+        try {
+            if (mainCommand.equals("")) { }
+            else if (mainCommand.equals("inspect")) {
+                if (argument.equals("")) { return 2; }
+
+                HttpsConnection hc = null;
+                InputStream is = null;
+                try {
+                    hc = (javax.microedition.io.HttpsConnection) javax.microedition.io.Connector.open(argument);
+                    is = hc.openInputStream(); // força o handshake TLS
+                    SecurityInfo si = hc.getSecurityInfo();
+                    if (si == null) { echoCommand("sem SecurityInfo (conexão não segura?)"); return 70; }
+                    Certificate cert = si.getServerCertificate();
+                    if (cert == null) { echoCommand("nenhum certificado do servidor"); return 70; }
+                    echoCommand("subject : " + cert.getSubject());
+                    echoCommand("issuer  : " + cert.getIssuer());
+                    echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
+                    echoCommand("serial  : " + cert.getSerialNumber());
+                    echoCommand("sigalg  : " + cert.getSigAlgName());
+                    echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
+                    // Drena a resposta (opcional)
+                    while (is.read() != -1) { /* discard */ }
+                    return 0;
+                } catch (java.io.IOException e) {
+                    echoCommand("inspect IO: " + e.getMessage());
+                    return 74;
+                } finally {
+                    try { if (is != null) is.close(); } catch (Exception ignore) {}
+                    try { if (hc != null) hc.close(); } catch (Exception ignore) {}
+                }
+            }
+            else if (mainCommand.equals("file")) {
+                if (argument.equals("")) { echoCommand("pki: file: faltou <file>"); return 2; }
+                String content = getcontent(argument);
+                if (content == null) { echoCommand("pki: file: não abriu: " + argument); return 66; }
+
+                int count = 0, idx = 0;
+                while (true) {
+                    int beg = content.indexOf("-----BEGIN CERTIFICATE-----", idx);
+                    if (beg < 0) break;
+                    int end = content.indexOf("-----END CERTIFICATE-----", beg);
+                    if (end < 0) break;
+
+                    // remove quebras do miolo base64
+                    String base64 = content.substring(beg + "-----BEGIN CERTIFICATE-----".length(), end);
+                    StringBuffer sbNoNl = new StringBuffer();
+                    for (int i = 0; i < base64.length(); i++) {
+                        char c = base64.charAt(i);
+                        if (c!='\r' && c!='\n') sbNoNl.append(c);
+                    }
+                    String b64 = sbNoNl.toString().trim();
+
+                    // decode base64 inline (sem método auxiliar)
+                    final String B64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+                    int[] T = new int[256]; for (int i=0;i<256;i++) T[i] = -1;
+                    for (int i=0;i<B64CHARS.length();i++) T[B64CHARS.charAt(i)] = i;
+                    T['='] = -2;
+                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                    int val = 0, valb = -8;
+                    for (int i=0;i<b64.length();i++) {
+                        int ch = b64.charAt(i);
+                        if (ch==' '||ch=='\t') continue;
+                        if (ch=='\r'||ch=='\n') continue;
+                        int d = (ch<256)?T[ch]:-1;
+                        if (d == -1) continue;
+                        if (d == -2) break;
+                        val = (val << 6) + d;
+                        valb += 6;
+                        if (valb >= 0) {
+                            baos.write((val >> valb) & 0xFF);
+                            valb -= 8;
+                        }
+                    }
+                    byte[] der = baos.toByteArray();
+
+                    count++;
+                    echoCommand("cert#" + count + ": DER " + der.length + " bytes");
+                    idx = end + "-----END CERTIFICATE-----".length();
+                }
+
+                if (count == 0) {
+                    echoCommand("arquivo não parece conter certificados PEM; tamanho=" + content.length() + " chars");
+                } else {
+                    echoCommand("total certificados PEM encontrados: " + count);
+                }
+                return 0;
+            }
+
+            // =============================== CSR =============================
+            else if (main.equals("csr")) {
+                if (argument.equals("")) {
+                    echoCommand("pki: csr: faltou DN. Ex: pki csr \"CN=Meu Nome, O=Org, C=BR\" [rsa|dsa] [keylen] [auth|sign] [force]");
+                    return 2;
+                }
+
+                // parse argumentos respeitando aspas (inline)
+                java.util.Vector v = new java.util.Vector();
+                boolean inQ = false; StringBuffer cur = new StringBuffer();
+                for (int i = 0; i < argument.length(); i++) {
+                    char c = argument.charAt(i);
+                    if (c == '\"') { inQ = !inQ; continue; }
+                    if (!inQ && Character.isWhitespace(c)) {
+                        if (cur.length() > 0) { v.addElement(cur.toString()); cur.setLength(0); }
+                    } else cur.append(c);
+                }
+                if (cur.length() > 0) v.addElement(cur.toString());
+                String[] toks = new String[v.size()]; v.copyInto(toks);
+
+                String dn = toks.length > 0 ? toks[0] : "";
+                String algoPref = toks.length > 1 ? toks[1].toLowerCase() : "rsa";
+                int keyLen;
+                try { keyLen = (toks.length > 2) ? Integer.parseInt(toks[2]) : 2048; }
+                catch (Exception ex) { keyLen = 2048; }
+                String usagePref = toks.length > 3 ? toks[3].toLowerCase() : "sign";
+                boolean force = toks.length > 4 ? toks[4].toLowerCase().startsWith("f") : true;
+
+                if (dn.length() == 0) { echoCommand("pki: csr: DN inválido"); return 2; }
+
+                try {
+                    // tenta duas classes possíveis do SATSA-PKI
+                    Class ucm;
+                    try {
+                        ucm = Class.forName("javax.microedition.securityservice.UserCredentialManager");
+                    } catch (ClassNotFoundException e1) {
+                        ucm = Class.forName("javax.microedition.pki.UserCredentialManager");
+                    }
+
+                    // constantes por reflection (com fallback simples)
+                    int KEY_USAGE_AUTH, KEY_USAGE_SIGN;
+                    String ALG_RSA, ALG_DSA;
+                    try { KEY_USAGE_AUTH = ((Integer)ucm.getField("KEY_USAGE_AUTHENTICATION").get(null)).intValue(); }
+                    catch (Throwable t) { KEY_USAGE_AUTH = 0; }
+                    try { KEY_USAGE_SIGN = ((Integer)ucm.getField("KEY_USAGE_NON_REPUDIATION").get(null)).intValue(); }
+                    catch (Throwable t) { KEY_USAGE_SIGN = 1; }
+                    try { ALG_RSA = (String) ucm.getField("ALGORITHM_RSA").get(null); }
+                    catch (Throwable t) { ALG_RSA = "1.2.840.113549.1.1.1"; }
+                    try { ALG_DSA = (String) ucm.getField("ALGORITHM_DSA").get(null); }
+                    catch (Throwable t) { ALG_DSA = "1.2.840.10040.4.1"; }
+
+                    String algorithm = algoPref.startsWith("d") ? ALG_DSA : ALG_RSA;
+                    int keyUsage = usagePref.startsWith("a") ? KEY_USAGE_AUTH : KEY_USAGE_SIGN;
+
+                    // assinatura do método generateCSR(...)
+                    java.lang.reflect.Method m = ucm.getMethod(
+                        "generateCSR",
+                        new Class[] { String.class, String.class, Integer.TYPE, Integer.TYPE, String.class, String.class, Boolean.TYPE }
+                    );
+
+                    byte[] csr = (byte[]) m.invoke(
+                        null,
+                        new Object[] { dn, algorithm, new Integer(keyLen), new Integer(keyUsage), null,
+                                       "Insira o elemento seguro se necessário", (force ? Boolean.TRUE : Boolean.FALSE) }
+                    );
+
+                    if (csr == null || csr.length == 0) { echoCommand("CSR vazio"); return 70; }
+
+                    // Base64 encode + wrap 64 cols (inline)
+                    final char[] B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
+                    StringBuffer b64 = new StringBuffer(((csr.length + 2) / 3) * 4);
+                    int i = 0;
+                    while (i < csr.length) {
+                        int a = csr[i++] & 0xff;
+                        int b = (i < csr.length) ? csr[i++] & 0xff : -1;
+                        int c = (i < csr.length) ? csr[i++] & 0xff : -1;
+                        b64.append(B64[a >>> 2]);
+                        b64.append(B64[((a & 0x3) << 4) | ((b >= 0 ? b : 0) >>> 4)]);
+                        b64.append(b >= 0 ? B64[((b & 0xf) << 2) | ((c >= 0 ? c : 0) >>> 6)] : '=');
+                        b64.append(c >= 0 ? B64[c & 0x3f] : '=');
+                    }
+                    String s = b64.toString();
+                    StringBuffer wrapped = new StringBuffer(s.length() + s.length()/64*2 + 64);
+                    for (int j = 0; j < s.length(); j += 64) {
+                        int end = Math.min(j + 64, s.length());
+                        wrapped.append(s.substring(j, end)).append('\n');
+                    }
+
+                    echoCommand("-----BEGIN CERTIFICATE REQUEST-----\n" +
+                                wrapped.toString() +
+                                "-----END CERTIFICATE REQUEST-----");
+                    return 0;
+
+                } catch (ClassNotFoundException e) {
+                    echoCommand("SATSA-PKI (UserCredentialManager) não disponível neste dispositivo.");
+                    return 69;
+                } catch (NoSuchMethodException e) {
+                    echoCommand("generateCSR não encontrado na implementação SATSA.");
+                    return 69;
+                } catch (Throwable t) {
+                    echoCommand("csr erro: " + t.toString());
+                    return 74;
+                }
+            }
+
+            echoCommand("pki: " + main + ": not found");
+            return 127;
+
+        } catch (Throwable t) {
+            echoCommand("pki erro: " + t.toString());
+            return 1;
+        }
+    }
+
 
     // API 012 - (File)
     // |

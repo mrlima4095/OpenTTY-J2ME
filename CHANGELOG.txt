@@ -13,6 +13,7 @@ LTS Edition
 - `build [file]`: Build and run a C2ME source-code
 - `stty [max]`: Set max char range that can be wrote at **stdout**
 - `catch [command]`: run command ignoring exceptions (always exit with code: 0)
+- `pki [command]`: Certificates Viewer
 
 [ _Updates_ ]
 
