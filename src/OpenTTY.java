@@ -1988,17 +1988,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int braceIndex = -1;
                 for (int j = lineIndexInBlock; j < block.length(); j++) { if (block.charAt(j) == '{') { braceIndex = j; break; } }
 
-                if (braceIndex == -1) { echoCommand("build: 'while' block opening '{' not found in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (braceIndex == -1) { echoCommand("build: 'while' block opening '{' not found"); return null; }
 
                 String remaining = block.substring(braceIndex), subblock = getBlock(remaining);
-                if (subblock == null) { echoCommand("build: parse error - 'while' block not properly closed in " + ctxName + " near: \"" + preview + "\""); return null; }
+                if (subblock == null) { echoCommand("build: parse error - 'while' block not properly closed"); return null; }
 
                 cmd.put("type", "while");
                 cmd.put("expr", extractParens(line, 0));
                 cmd.put("source", parseBlock(subblock.substring(1, subblock.length() - 1).trim(), context));
             }
-            else if (line.startsWith("else")) { echoCommand("build: parse error - unexpected 'else' without matching 'if' in " + ctxName + " near: \"" + preview + "\""); return null; }
-            else if (line.startsWith("catch")) { echoCommand("build: parse error - unexpected 'catch' without matching 'try' in " + ctxName + " near: \"" + preview + "\""); return null; }
+            else if (line.startsWith("else")) { echoCommand("build: unexpected 'else' without matching 'if'"); return null; }
+            else if (line.startsWith("catch")) { echoCommand("build: unexpected 'catch' without matching 'try'"); return null; }
             else if (line.equals("break") || line.equals("continue")) { cmd.put("type", line); }
             else if (line.indexOf('(') != -1 && line.lastIndexOf(')') > line.indexOf('(') && line.indexOf('=') == -1 && !startsWithAny(line, new String[]{"int ", "char "}) && line.substring(0, line.indexOf('(')).trim().indexOf(' ') == -1) {
                 cmd.put("type", "call");
@@ -2039,15 +2039,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (parts.length == 2) {
                     String varName = parts[0].trim(), value = parts[1].trim();
 
-                    if (varName.indexOf(' ') != -1) { echoCommand("build: invalid assignment target '" + getCommand(varName) + "' in " + ctxName + " near: \"" + preview + "\""); return null; }
+                    if (varName.indexOf(' ') != -1) { echoCommand("build: invalid assignment type '" + getCommand(varName) + "'"); return null; }
 
                     cmd.put("type", "assign");
                     cmd.put("name", varName);
                     cmd.put("value", value);
                 }
-                else { echoCommand("build: invalid assignment syntax in " + ctxName + " near: \"" + preview + "\""); return null; }
+                else { echoCommand("build: invalid assignment syntax"); return null; }
             }
-            else { echoCommand("build: invalid statement in " + ctxName + " near: \"" + preview + "\""); return null; }
+            else { echoCommand("build: invalid statement"); return null; }
 
             source.addElement(cmd);
         }
