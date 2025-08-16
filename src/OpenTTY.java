@@ -1505,6 +1505,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             echoCommand("pki erro: " + t.toString());
             return 1;
         }
+
+        return 0;
     }
 
 
