@@ -1406,7 +1406,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         final String mainCommand = getCommand(command);
         final String argument = getArgument(command);
 
-        try {
+        /*try {
             if (mainCommand.equals("")) { }
             else if (mainCommand.equals("inspect")) {
                 if (argument.equals("")) { return 2; }
@@ -1494,8 +1494,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return 0;
             }
 
-            // =============================== CSR =============================
-            
+
             else {
                 echoCommand("pki: " + mainCommand + ": not found");
                 return 127;
@@ -1505,7 +1504,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } catch (Throwable t) {
             echoCommand("pki erro: " + t.toString());
             return 1;
-        }
+        }*/
 
         return 0;
     }
