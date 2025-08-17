@@ -1422,12 +1422,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
                     Certificate cert = si.getServerCertificate();
                     if (cert == null) { echoCommand("no certificates found"); return 70; }
-                    echoCommand("subject : " + cert.getSubject());
-                    echoCommand("issuer  : " + cert.getIssuer());
-                    echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
-                    echoCommand("serial  : " + cert.getSerialNumber());
-                    echoCommand("sigalg  : " + cert.getSigAlgName());
-                    echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
+                    //echoCommand("subject : " + cert.getSubject());
+                  //  echoCommand("issuer  : " + cert.getIssuer());
+                    //echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
+                //    echoCommand("serial  : " + cert.getSerialNumber());
+                  //  echoCommand("sigalg  : " + cert.getSigAlgName());
+                    //echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
                     while (is.read() != -1) { /* drena */ }
                     return 0;
 
