@@ -123,14 +123,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
                     reload(); 
                 } 
-                else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
-                else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
+                else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected), root); } 
+                else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected, root); } 
             } 
             else if (MOD == MONITOR) { System.gc(); load(); } 
             else if (MOD == LOAD_SCREEN) {
                 int index = preview.getSelectedIndex(); 
                 if (index >= 0) {
-                    xserver((c == LOADS ? "load" : "unset") + " " + preview.getString(index));
+                    xserver((c == LOADS ? "load" : "unset") + " " + preview.getString(index), root);
                 }
             }
             else if (MOD == PROCESS) {
