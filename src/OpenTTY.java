@@ -1950,7 +1950,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 for (int i = 0; i < paramList.length; i++) {
                     String param = paramList[i].trim();
                     String[] parts = split(param, ' ');
-                    if (parts.length != 2) { return null; }
+                    if (parts.length != 2) { echoCommand("build: invalid reading"); return null; }
 
                     Hashtable arg = new Hashtable();
                     arg.put("type", parts[0]);
