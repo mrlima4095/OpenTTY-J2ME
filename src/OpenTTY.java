@@ -132,7 +132,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (c == LOAD) {
                         if (getowner(PID).equals("root") && !root) { STATUS = 13; }
 
-                        Displayable screen = (Displayable) getobject(argument, "screen");
+                        Displayable screen = (Displayable) getobject(PID, "screen");
 
                         if (screen == null) { STATUS = 69; }
                         else { display.setCurrent(screen); }
