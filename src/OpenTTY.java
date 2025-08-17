@@ -76,7 +76,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
             this.root = root;
             
-            if (MOD == MONITOR) { ,
+            if (MOD == MONITOR) {
                 monitor.append(status);
                 monitor.addCommand(BACK); monitor.addCommand(REFRESH);
                 monitor.setCommandListener(this);
