@@ -648,11 +648,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Screen Manager
         else if (mainCommand.equals("mod")) { new Monitor(argument, root); }
-        else if (mainCommand.equals("set")) { 
-            if (argument.equals("")) { } 
-            else if (trace.containsKey("2")) { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); }
-            else { return 69; } 
-        }
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else if (trace.containsKey("2")) { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); } else { return 69; } }
         else if (mainCommand.equals("load") || mainCommand.equals("unset")) {
             if (argument.equals("")) { }
             else if (trace.containsKey("2")) {
