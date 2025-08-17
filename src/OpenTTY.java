@@ -1414,107 +1414,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
         InputStream is = null;
         try {
             hc = (HttpsConnection) Connector.open(argument);
-            is = hc.openInputStream(); // força handshake
+            // Força o handshake
+            is = hc.openInputStream();
+
             SecurityInfo si = hc.getSecurityInfo();
             if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
 
             Certificate cert = si.getServerCertificate();
             if (cert == null) { echoCommand("no certificates found"); return 70; }
 
-            // Primeiro tenta obter bytes via reflection (várias assinaturas possíveis)
-            byte[] encoded = null;
+            // Tentativa 1: algumas implementações já devolvem uma representação legível via toString()
             try {
-                String[] cand = new String[] {
-                    "getEncoded", "getEncodedCertificate", "getCertificate", "getRaw",
-                    "getCert", "getDER", "getDerEncoded", "getBytes"
-                };
-                for (int i = 0; i < cand.length && encoded == null; i++) {
-                    try {
-                        java.lang.reflect.Method m = cert.getClass().getMethod(cand[i], new Class[] {});
-                        Object r = m.invoke(cert, new Object[] {});
-                        if (r instanceof byte[]) {
-                            encoded = (byte[]) r;
-                            break;
-                        } else if (r instanceof String) {
-                            // se já veio em Base64/PEM como String, tenta detectar
-                            String s = (String) r;
-                            if (s.indexOf("-----BEGIN CERTIFICATE-----") != -1) {
-                                // já é PEM — imprime diretamente
-                                echoCommand(s);
-                                encoded = new byte[0]; // marca como já impresso
-                                break;
-                            } else {
-                                // talvez seja base64: tenta decodificar com heurística
-                                try {
-                                    byte[] tryb = null;
-                                    // decodifica base64 simples (inline)
-                                    final char[] B64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
-                                    int[] T = new int[256];
-                                    for (int j=0;j<256;j++) T[j] = -1;
-                                    for (int j=0;j<B64CHARS.length;j++) T[B64CHARS[j]] = j;
-                                    T['='] = -2;
-                                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-                                    int val = 0, valb = -8;
-                                    for (int k=0;k<s.length();k++) {
-                                        int ch = s.charAt(k);
-                                        if (ch=='\r'||ch=='\n'||ch==' '||ch=='\t') continue;
-                                        int d = (ch<256)?T[ch]:-1;
-                                        if (d == -1) continue;
-                                        if (d == -2) break;
-                                        val = (val << 6) + d;
-                                        valb += 6;
-                                        if (valb >= 0) {
-                                            baos.write((val >> valb) & 0xFF);
-                                            valb -= 8;
-                                        }
-                                    }
-                                    tryb = baos.toByteArray();
-                                    if (tryb.length > 0) { encoded = tryb; break; }
-                                } catch (Throwable ignore) {}
-                            }
-                        }
-                    } catch (Throwable ignore) {
-                        // tenta próximo candidato
-                    }
-                }
-            } catch (Throwable t) {
-                // reflection falhou — seguir com encoded == null
-            }
-
-            // Se encontramos bytes, imprime PEM
-            if (encoded != null) {
-                if (encoded.length == 0) {
-                    // já impresso (string PEM) — nada a fazer
+                String rep = cert.toString();
+                if (rep != null && rep.indexOf("-----BEGIN CERTIFICATE-----") != -1) {
+                    // se a implementação devolveu PEM/texto completo, imprime direto
+                    echoCommand(rep);
+                    // drena resposta
+                    try { while (is.read() != -1) { } } catch (Throwable ignore) {}
                     return 0;
                 }
-                // base64 encode inline e wrap 64 cols
-                final char[] B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
-                StringBuffer b64 = new StringBuffer(((encoded.length + 2) / 3) * 4);
-                int ii = 0;
-                while (ii < encoded.length) {
-                    int a = encoded[ii++] & 0xff;
-                    int b = (ii < encoded.length) ? encoded[ii++] & 0xff : -1;
-                    int c = (ii < encoded.length) ? encoded[ii++] & 0xff : -1;
-                    b64.append(B64[a >>> 2]);
-                    b64.append(B64[((a & 0x3) << 4) | ((b >= 0 ? b : 0) >>> 4)]);
-                    b64.append(b >= 0 ? B64[((b & 0xf) << 2) | ((c >= 0 ? c : 0) >>> 6)] : '=');
-                    b64.append(c >= 0 ? B64[c & 0x3f] : '=');
-                }
-                String s = b64.toString();
-                StringBuffer wrapped = new StringBuffer(s.length() + s.length()/64*2 + 64);
-                for (int j = 0; j < s.length(); j += 64) {
-                    int end = Math.min(j + 64, s.length());
-                    wrapped.append(s.substring(j, end)).append('\n');
-                }
-                echoCommand("-----BEGIN CERTIFICATE-----");
-                echoCommand(wrapped.toString());
-                echoCommand("-----END CERTIFICATE-----");
-                // drena resposta e fecha
-                try { while (is.read() != -1) { } } catch (Throwable ignore) {}
-                return 0;
-            }
+            } catch (Throwable ignore) { /* toString pode falhar em alguns impls */ }
 
-            // fallback: se não achou bytes, imprime campos conhecidos
+            // API padrão: imprime os campos que o javax.microedition.pki.Certificate expõe
             try {
                 echoCommand("subject : " + cert.getSubject());
                 echoCommand("issuer  : " + cert.getIssuer());
@@ -1523,18 +1444,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 echoCommand("sigalg  : " + cert.getSigAlgName());
                 echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
             } catch (Throwable t) {
-                echoCommand("cert: não foi possível ler campos (impl. limitada)");
+                echoCommand("cert: não foi possível ler campos (implementação limitada)");
             }
+
+            // Se não temos bytes brutos, informar usuário e sugerir alternativas
+            echoCommand("-- raw certificate (PEM) not available via this device API --");
+            echoCommand("Alternativas:");
+            echoCommand("  1) Use um proxy no servidor que faça o TLS e retorne o PEM (ex: curl/openssl no servidor).");
+            echoCommand("  2) Em um PC: openssl s_client -showcerts -connect host:443");
+            echoCommand("  3) Se o aparelho suportar SATSA/native API para bytes, precisa de uma implementação específica do fornecedor.");
             try { while (is.read() != -1) { } } catch (Throwable ignore) {}
             return 0;
 
         } catch (javax.microedition.pki.CertificateException ce) {
             try { echoCommand("CertificateException: " + ce.getMessage() + " reason=" + ce.getReason()); }
-            catch (Throwable t) { echoCommand("CertificateException: " + getCatch(ce)); }
+            catch (Throwable tt) { echoCommand("CertificateException: " + getCatch(ce)); }
             return 74;
 
         } catch (NullPointerException npe) {
-            echoCommand("HTTPS handshake failed with NullPointerException inside TLS stack (implementation bug): " + getCatch(npe));
+            // NPE vindo da implementação TLS do aparelho
+            echoCommand("HTTPS handshake falhou com NullPointerException interno (bug na pilha TLS): " + getCatch(npe));
+            echoCommand("Sugestão: teste com um host conhecido compatível (RSA/TLS1.0) ou use proxy off-device.");
             return 74;
 
         } catch (Exception e) {
@@ -1542,8 +1472,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return 74;
 
         } finally {
-            try { if (is != null) is.close(); } catch (Exception ignore) { }
-            try { if (hc != null) hc.close(); } catch (Exception ignore) { }
+            try { if (is != null) is.close(); } catch (Exception ignore) {}
+            try { if (hc != null) hc.close(); } catch (Exception ignore) {}
         }
     }
 }
