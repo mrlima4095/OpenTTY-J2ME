@@ -122,7 +122,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
             } 
             else if (MOD == MONITOR) { System.gc(); load(); } 
-            else if (MOD == PROCESS || MOD == LOAD) {
+            else if (MOD == PROCESS || MOD == LOAD || c == List.SELECT_COMMAND) {
                 if (c == BACK) { processCommand("xterm"); } 
                 else if (c == KILL || c == LOADS) { 
                     int index = preview.getSelectedIndex(); 
