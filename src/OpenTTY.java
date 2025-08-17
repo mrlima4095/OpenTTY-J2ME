@@ -1449,7 +1449,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int end = content.indexOf("-----END CERTIFICATE-----", beg);
                 if (end < 0) break;
 
-                // remove quebras do miolo base64
                 String base64 = content.substring(beg + "-----BEGIN CERTIFICATE-----".length(), end);
                 StringBuffer sbNoNl = new StringBuffer();
                 for (int i = 0; i < base64.length(); i++) {
@@ -1458,7 +1457,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 String b64 = sbNoNl.toString().trim();
 
-                // decode base64 inline (sem método auxiliar)
                 final String B64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
                 int[] T = new int[256]; for (int i=0;i<256;i++) T[i] = -1;
                 for (int i=0;i<B64CHARS.length();i++) T[B64CHARS.charAt(i)] = i;
@@ -1492,12 +1490,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 echoCommand("total certificados PEM encontrados: " + count);
             }
             return 0;
-        }*/
+        }
         else {
             echoCommand("pki: " + mainCommand + ": not found");
             return 127;
         }
-        
+
         return 0;
     }
 
