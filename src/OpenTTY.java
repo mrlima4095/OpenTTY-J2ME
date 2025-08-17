@@ -1407,18 +1407,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String argument = getArgument(command);
         
         if (mainCommand.equals("")) { }
-        /*else if (mainCommand.equals("https")) {
+        else if (mainCommand.equals("https")) {
             if (argument.equals("")) { return 2; }
             else {
                 HttpsConnection hc = null;
                 InputStream is = null;
+                Certificate cert = null;
+                SecurityInfo si = null;
                 
                 try {
                     hc = (HttpsConnection) Connector.open(argument);
                     is = hc.openInputStream(); 
-                    SecurityInfo si = hc.getSecurityInfo();
+                    si = hc.getSecurityInfo();
                     if (si == null) { echoCommand("sem SecurityInfo (conexão não segura?)"); return 70; }
-                    Certificate cert = si.getServerCertificate();
+                    cert = si.getServerCertificate();
                     if (cert == null) { echoCommand("nenhum certificado do servidor"); return 70; }
                     echoCommand("subject : " + cert.getSubject());
                     echoCommand("issuer  : " + cert.getIssuer());
@@ -1437,7 +1439,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     try { if (hc != null) hc.close(); } catch (Exception ignore) { }
                 }
             }
-        }*/else if (mainCommand.equals("file")) {
+        } else if (mainCommand.equals("file")) {
             if (argument.equals("")) { echoCommand("pki: file: faltou <file>"); return 2; }
             String content = getcontent(argument);
             if (content == null) { echoCommand("pki: file: não abriu: " + argument); return 66; }
