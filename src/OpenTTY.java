@@ -33,6 +33,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void startApp() { 
         if (trace.containsKey("1")) { }
         else {
+            attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
+            // |
+            String[] KEYS = { "TYPE", "CONFIG", "PROFILE", "LOCALE" }, SYS = { "platform", "configuration", "profiles", "locale" };
+            for (int i = 0; i < KEYS.length; i++) { attributes.put(KEYS[i], System.getProperty("microedition." + SYS[i])); }
+            // |
             Command[] NANO_CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
             // |
             runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
@@ -1049,11 +1054,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (trace.containsKey(pid)) { return 68; }
             else if (app.equals("sh")) { 
-                attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
-
-                String[] KEYS = { "TYPE", "CONFIG", "PROFILE", "LOCALE" }, SYS = { "platform", "configuration", "profiles", "locale" };
-                for (int i = 0; i < KEYS.length; i++) { attributes.put(KEYS[i], System.getProperty("microedition." + SYS[i])); }
-    
                 proc.put("stack", new Vector());
                 proc.put("history", new Vector()); 
                 
