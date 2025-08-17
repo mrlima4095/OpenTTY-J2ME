@@ -1962,13 +1962,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (!reads.isEmpty()) { fn.put("read", reads); }
 
             block = block.substring(1, block.length() - 1).trim();
-            Vector src = parseBlock(block, fn);
-            if (src == null) {
-                return null;
-            }
             
             fn.put("variables", new Hashtable());
-            fn.put("source", src);
+            fn.put("source", parseBlock(block, fn));
 
             if (name.equals("main")) { program.put("main", fn); } 
             else { functions.put(name, fn); }
