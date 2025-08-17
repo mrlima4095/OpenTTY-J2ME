@@ -1533,7 +1533,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Runtime)
     private int C2ME(String source, String code, boolean root) {
         Hashtable program = build(code == null ? getcontent(source) : code);
-        if (program == null) { echoCommand("C2ME: " + basename(source) + ": build failed"); return 1; }
+        if (program == null) { return 1; }
 
         Hashtable main = (Hashtable) program.get("main"), proc = genprocess("build " + basename(source), root, null);
         String PID = genpid(); int STATUS = 0;
