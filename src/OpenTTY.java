@@ -1414,13 +1414,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 InputStream is = null;
                 Certificate cert = null;
                 SecurityInfo si = null;
-                
+
                 try {
                     hc = (HttpsConnection) Connector.open(argument);
-                    is = hc.openInputStream(); 
-                    si = hc.getSecurityInfo();
+                    is = hc.openInputStream(); // handshake acontece aqui
+                    SecurityInfo si = hc.getSecurityInfo();
                     if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
-                    cert = si.getServerCertificate();
+                    Certificate cert = si.getServerCertificate();
                     if (cert == null) { echoCommand("no certificates found"); return 70; }
                     echoCommand("subject : " + cert.getSubject());
                     echoCommand("issuer  : " + cert.getIssuer());
@@ -1428,15 +1428,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     echoCommand("serial  : " + cert.getSerialNumber());
                     echoCommand("sigalg  : " + cert.getSigAlgName());
                     echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
-                    while (is.read() != -1) {  }
-                    
+                    while (is.read() != -1) { /* drena */ }
                     return 0;
-                } catch (Exception e) {
-                    echoCommand(getCatch(e));
+
+                } catch (javax.microedition.pki.CertificateException ce) {
+                    echoCommand("TLS/Cert error: " + ce.getMessage() + " (reason=" + ce.getReason() + ")");
                     return 74;
+
+                } catch (Exception e) {
+                    echoCommand("HTTPS handshake failed: " + getCatch(e));
+                    return 74;
+
                 } finally {
-                    try { if (is != null) is.close(); } catch (Exception ignore) { }
-                    try { if (hc != null) hc.close(); } catch (Exception ignore) { }
+                    try { if (is != null) is.close(); } catch (Exception ignore) {}
+                    try { if (hc != null) hc.close(); } catch (Exception ignore) {}
                 }
             }
         } else if (mainCommand.equals("file")) {
