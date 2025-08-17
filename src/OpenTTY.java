@@ -209,9 +209,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 preview.deleteAll(); 
                 
                 if (trace.containsKey("2")) {
-                    Hashtable screens = (Hashtable) getobject("2", "saves");
-                
-                    for (Enumeration keys = screens.keys(); keys.hasMoreElements();) { 
+                    for (Enumeration keys = ((Hashtable) getobject("2", "saves")).keys(); keys.hasMoreElements();) { 
                         preview.append((String) keys.nextElement(), null); 
                     }
                 } else {
