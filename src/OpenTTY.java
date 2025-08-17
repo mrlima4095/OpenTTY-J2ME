@@ -1417,7 +1417,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     hc = (HttpsConnection) Connector.open(argument);
-                    is = hc.openInputStream(); // handshake acontece aqui
+                    //is = hc.openInputStream(); // handshake acontece aqui
                     //SecurityInfo si = hc.getSecurityInfo();
                     //if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
                     //Certificate cert = si.getServerCertificate();
