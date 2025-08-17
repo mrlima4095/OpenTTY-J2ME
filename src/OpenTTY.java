@@ -1504,7 +1504,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } 
 
         return 0; 
-    } 
     private String getMimeType(String filename) { 
         filename = filename.toLowerCase(); 
         if (filename.endsWith(".amr")) { return "audio/amr"; } 
