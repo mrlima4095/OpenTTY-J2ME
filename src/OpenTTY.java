@@ -129,7 +129,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (index >= 0) { 
                             String PID = split(preview.getString(index), '\t')[0];
                             int STATUS = MOD == PROCESS ? kill(PID, false, root) : xserver("import " + PID, root); 
-                            if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } 
+                            if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!"); } 
                             
                             reload();
                         } 
