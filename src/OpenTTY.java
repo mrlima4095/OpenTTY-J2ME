@@ -1828,7 +1828,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         while (true) { int start = source.indexOf("/*"); if (start == -1) { break; } int end = source.indexOf("*/", start + 2); if (end == -1) { source = source.substring(0, start); break; } source = source.substring(0, start) + source.substring(end + 2); }
 
         source = source.trim();
-        if (source.equals("")) { return new Hashtable(); }
+        if (source.equals("")) { return null; }
 
         Hashtable functions = new Hashtable();
         program.put("functions", functions);
