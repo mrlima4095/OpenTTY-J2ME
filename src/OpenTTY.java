@@ -69,16 +69,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List preview = new List(form.getTitle(), List.IMPLICIT);
         private StringItem status = new StringItem("Memory Status:", "");
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
-                    OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOADS = new Command("Load Screen", Command.OK, 1), 
+                    OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOAD = new Command("Load Screen", Command.OK, 1), 
                     DELETE = new Command("Delete", Command.OK, 1);
         
         public Monitor(String command, boolean root) {
             MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
             this.root = root;
             
-            if (MOD == -1) {
-                echoCommand("x11: mod: " + command + ": not found");
-            } else if (MOD == MONITOR) {
+            if (MOD == MONITOR) { ,
                 monitor.append(status);
                 monitor.addCommand(BACK); monitor.addCommand(REFRESH);
                 monitor.setCommandListener(this);
@@ -86,9 +84,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else {
                 preview.addCommand(BACK); 
                 
-                preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : MOD == HISTORY ? RUN : LOADS);
+                preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : RUN);
                 if (MOD == HISTORY) { preview.addCommand(EDIT); } 
-                else if (MOD == PROCESS) { preview.addCommand(LOADS); }
+                else if (MOD == PROCESS) { preview.addCommand(LOAD,v ); }
     
                 preview.setCommandListener(this); 
                 load(); display.setCurrent(preview);
