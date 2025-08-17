@@ -29,17 +29,12 @@ public class Registry extends MIDlet implements CommandListener {
 
     public void commandAction(Command c, Displayable d) {
         if (c == INIT) {
-            try { 
-                PushRegistry.registerAlarm(stdin.getString().trim(), System.currentTimeMillis() + 5000); 
-            } catch (ClassNotFoundException e) { 
-                AlertCommand("PushRegistry", "MIDlet Class '" + stdin.getString().trim() + "' not found!");
-            } catch (Exception e) { 
-                AlertCommand("PushRegistry", e.getMessage()); 
-            }
+            try { PushRegistry.registerAlarm(stdin.getString().trim(), System.currentTimeMillis() + 5000); } 
+            catch (ClassNotFoundException e) {  AlertCommand("PushRegistry", "MIDlet Class '" + stdin.getString().trim() + "' not found!"); } 
+            catch (Exception e) { AlertCommand("PushRegistry", getCatch(e)); }
         
-        } else if (c == EXIT) {
-            notifyDestroyed();
-        }
+        } 
+        else if (c == EXIT) { notifyDestroyed(); }
     }
 
     private void AlertCommand(String title, String message) { 
@@ -50,6 +45,7 @@ public class Registry extends MIDlet implements CommandListener {
 
         display.setCurrent(alert); 
     }
-    
 
+    private String getCatch(Exception e) { String message = e.getMessage(); return message == null || message.length() == 0 || message.equals("null") ? e.getClass().getName() : message; }
+    
 }
