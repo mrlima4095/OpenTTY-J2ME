@@ -1408,43 +1408,72 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         if (mainCommand.equals("")) { }
         else if (mainCommand.equals("https")) {
-            if (argument.equals("")) { return 2; }
-            else {
-                HttpsConnection hc = null;
-                InputStream is = null;
-                Certificate cert = null;
-                SecurityInfo si = null;
+    if (argument.equals("")) { return 2; }
+    else {
+        HttpsConnection hc = null;
+        InputStream is = null;
+        try {
+            hc = (HttpsConnection) Connector.open(argument);
+            // força handshake (local onde a implementação costuma quebrar)
+            is = hc.openInputStream();
+            SecurityInfo si = hc.getSecurityInfo();
+            if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
+            Certificate cert = si.getServerCertificate();
+            if (cert == null) { echoCommand("no certificates found"); return 70; }
+            echoCommand("subject : " + cert.getSubject());
+            echoCommand("issuer  : " + cert.getIssuer());
+            echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
+            echoCommand("serial  : " + cert.getSerialNumber());
+            echoCommand("sigalg  : " + cert.getSigAlgName());
+            echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
+            while (is.read() != -1) { }
+            return 0;
 
-                try {
-                    hc = (HttpsConnection) Connector.open(argument);
-                    //is = hc.openInputStream(); // handshake acontece aqui
-                    //SecurityInfo si = hc.getSecurityInfo();
-                    //if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
-                    //Certificate cert = si.getServerCertificate();
-                    //if (cert == null) { echoCommand("no certificates found"); return 70; }
-                    //echoCommand("subject : " + cert.getSubject());
-                  //  echoCommand("issuer  : " + cert.getIssuer());
-                    //echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
-                //    echoCommand("serial  : " + cert.getSerialNumber());
-                  //  echoCommand("sigalg  : " + cert.getSigAlgName());
-                    //echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
-                    while (is.read() != -1) { /* drena */ }
-                    return 0;
+        } catch (javax.microedition.pki.CertificateException ce) {
+            // API específica — imprime razão se houver
+            try { echoCommand("CertificateException: " + ce.getMessage() + " reason=" + ce.getReason()); }
+            catch (Throwable t) { echoCommand("CertificateException: " + getCatch(ce)); }
+            return 74;
 
-                } catch (CertificateException ce) {
-                    echoCommand("TLS/Cert error: " + ce.getMessage() + " (reason=" + ce.getReason() + ")");
-                    return 74;
-
-                } catch (Exception e) {
-                    echoCommand("HTTPS handshake failed: " + getCatch(e));
-                    return 74;
-
-                } finally {
-                    try { if (is != null) is.close(); } catch (Exception ignore) {}
-                    try { if (hc != null) hc.close(); } catch (Exception ignore) {}
+        } catch (NullPointerException npe) {
+            // Captura NPE ofuscado vindo da pilha TLS
+            echoCommand("HTTPS handshake failed with NullPointerException inside TLS stack (implementation bug).");
+            echoCommand("exception: " + getCatch(npe));
+            // diagnosticar se o problema é do host ou da pilha do aparelho:
+            try {
+                String testHost = "https://example.com/"; // troque por um host que você sabe que é compatível (RSA/TLS1.0)
+                echoCommand("-> tentando conectar ao host de teste: " + testHost);
+                HttpsConnection th = (HttpsConnection) Connector.open(testHost);
+                InputStream tis = th.openInputStream();
+                SecurityInfo tsi = th.getSecurityInfo();
+                if (tsi != null && tsi.getServerCertificate() != null) {
+                    echoCommand("teste: conexão com host de teste OK -> problema possivelmente no servidor alvo (cert/chain/tls).");
+                } else {
+                    echoCommand("teste: sem SecurityInfo no host de teste -> pilha TLS do aparelho possivelmente incapaz de negociar.");
                 }
+                try { while (tis.read() != -1) { } } catch (Exception ignore) {}
+                try { if (tis != null) tis.close(); } catch (Exception ignore) {}
+                try { if (th != null) th.close(); } catch (Exception ignore) {}
+            } catch (Throwable t) {
+                echoCommand("teste: falha ao contatar host de teste: " + getCatch(t));
+                echoCommand("-> indica limitação/bug na pilha TLS do aparelho.");
             }
-        } else if (mainCommand.equals("file")) {
+            return 74;
+
+        } catch (Exception e) {
+            // fallback genérico, mostra classe e mensagem
+            echoCommand("HTTPS handshake failed: " + e.getClass().getName() + " : " + getCatch(e));
+            // printa algumas dicas rápidas para diagnóstico
+            echoCommand("Dicas: verifique hora do dispositivo; cadeia completa; alg RSA vs ECDSA; suporte TLS versão.");
+            return 74;
+
+        } finally {
+            try { if (is != null) is.close(); } catch (Exception ignore) {}
+            try { if (hc != null) hc.close(); } catch (Exception ignore) {}
+        }
+    }
+}
+else if (mainCommand.equals("file")) {
             if (argument.equals("")) { echoCommand("pki: file: faltou <file>"); return 2; }
             String content = getcontent(argument);
             if (content == null) { echoCommand("pki: file: não abriu: " + argument); return 66; }
