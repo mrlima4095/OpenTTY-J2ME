@@ -61,7 +61,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     public class Monitor implements CommandListener {
-        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, LOAD_SCREEN = 5, LOAD_FPID = 6;
+        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, LOAD_SCREEN = 5;
         private int MOD = 0;
         private boolean root;
         private Vector stack = (Vector) getobject("1", "stack");
@@ -90,6 +90,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : MOD == HISTORY ? RUN : LOADS);
                 if (MOD == HISTORY) { preview.addCommand(EDIT); } 
                 else if (MOD == LOAD_SCREEN) { preview.addCommand(DELETE); }
+                else if (MOD == PROCESS) { preview.addCommand(LOADS); }
     
                 preview.setCommandListener(this); 
                 load(); display.setCurrent(preview);
@@ -132,11 +133,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     xserver((c == LOADS ? "load" : "unset") + " " + preview.getString(index));
                 }
             }
-            else if (MOD == PROCESS || MOD == LOAD_FPID) {
+            else if (MOD == PROCESS) {
                 int index = preview.getSelectedIndex(); 
                 if (index >= 0) { 
                     String PID = split(preview.getString(index), '\t')[0];
-                    int STATUS = MOD == PROCESS ? kill(PID, false, root) : xserver("import " + PID, root); 
+                    int STATUS = c == KILL || c == List.SELECT_COMMAND ? kill(PID, false, root) : xserver("import " + PID, root); 
                     if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!"); } 
                             
                     reload();
@@ -203,12 +204,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
             } 
             else if (MOD == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
-            else if (MOD == PROCESS || MOD == LOAD_FPID) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
+            else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
             else if (MOD == LOAD_SCREEN) {
                 preview.deleteAll(); 
                 
                 if (trace.containsKey("2")) {
-                    Hashtable screens = (Hashtable) getobject("2", "saves")
+                    Hashtable screens = (Hashtable) getobject("2", "saves");
                 
                     for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { 
                         preview.append((String) keys.nextElement(), null); 
