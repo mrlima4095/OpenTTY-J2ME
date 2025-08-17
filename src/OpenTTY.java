@@ -74,7 +74,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     DELETE = new Command("Delete", Command.OK, 1);
         
         public Monitor(String command, boolean root) {
-            MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : command.equals("x11-loads") ? LOAD_SCREEN : command.equals("process-screen") ? LOAD_FPID : -1;
+            MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : command.equals("x11-loads") ? LOAD_SCREEN : -1;
             this.root = root;
             
             if (MOD == -1) {
