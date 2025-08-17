@@ -1880,8 +1880,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         program.put("functions", functions);
 
         while (source.startsWith("#include")) {
-            int endl = source.indexOf("\n");
-            if (endl == -1) { return null; }
+            int endl = source.indexOf('\n');
+            if (endl == -1) { echoCommand("build: invalid including"); return null; }
 
             String line = source.substring(0, endl).trim();
             source = source.substring(endl).trim();
@@ -1896,7 +1896,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String k = (String) e.nextElement();
                     if (!functions.containsKey(k)) { functions.put(k, importedFunctions.get(k)); }
                 }
-            } else { return null; }
+            } else { echoCommand("build: invalid include syntax"); return null; }
         }
 
         while (true) {
