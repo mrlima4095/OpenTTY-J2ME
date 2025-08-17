@@ -30,19 +30,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     BACK = new Command("Back", Command.BACK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1);
     // |
     // MIDlet Loader
-    public void startApp() {
-        if (!trace.containsKey("1")) {
-            attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.3");
-            attributes.put("TYPE", System.getProperty("microedition.platform")); attributes.put("CONFIG", System.getProperty("microedition.configuration")); attributes.put("PROFILE", System.getProperty("microedition.profiles")); attributes.put("LOCALE", System.getProperty("microedition.locale"));
-            // |
-            Command[] NANO_CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
-            // |
-            runScript(read("/java/etc/initd.sh"), true); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
-            // |
-            if (username.equals("") || passwd(false, null).equals("")) { new Credentials(null); }
-            else { runScript(read("/home/initd")); }
-        } 
-    }
+    public void startApp() { start("sh", null, null) }
     // |
     // | (Triggers)
     public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "  ()" : "true"); }
