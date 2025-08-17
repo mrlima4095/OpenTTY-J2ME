@@ -101,41 +101,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); }
             } 
             else if (MOD == EXPLORER) {
-                    String selected = preview.getString(preview.getSelectedIndex()); 
-    
-                    if (c == OPEN || c == List.SELECT_COMMAND) { 
-                        if (selected != null) { 
-                            processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
-    
-                            if (display.getCurrent() == preview) { reload(); }
-    
-                            stdin.setLabel(username + " " + path + " $"); 
-                        } 
+                String selected = preview.getString(preview.getSelectedIndex()); 
+
+                if (c == OPEN || c == List.SELECT_COMMAND) { 
+                    if (selected != null) { 
+                        processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
+
+                        if (display.getCurrent() == preview) { reload(); }
+
+                        stdin.setLabel(username + " " + path + " $"); 
                     } 
-                    else if (c == DELETE) { 
-                        int STATUS = deleteFile(path + selected); 
-                        if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
-    
-                        reload(); 
-                    } 
-                    else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
-                    else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
                 } 
-                else if (MOD == MONITOR) { System.gc(); load(); } 
-                else if (MOD == PROCESS || MOD == LOAD) {
-                    if (c == BACK) { processCommand("xterm"); } 
-                    else if (c == KILL) { 
-                        int index = preview.getSelectedIndex(); 
-                        if (index >= 0) { 
-                            String PID = split(preview.getString(index), '\t')[0];
-                            int STATUS = MOD == PROCESS ? kill(PID, false, root) : xserver("import " + PID, root); 
-                            if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!"); } 
-                            
-                            reload();
-                        } 
-                    } 
-                }
+                else if (c == DELETE) { 
+                    int STATUS = deleteFile(path + selected); 
+                    if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
+    
+                    reload(); 
+                } 
+                else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected)); } 
+                else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
             } 
+            else if (MOD == MONITOR) { System.gc(); load(); } 
+            else if (MOD == PROCESS || MOD == LOAD) {
+                if (c == BACK) { processCommand("xterm"); } 
+                else if (c == KILL || c == LOADS) { 
+                    int index = preview.getSelectedIndex(); 
+                    if (index >= 0) { 
+                        String PID = split(preview.getString(index), '\t')[0];
+                        int STATUS = MOD == PROCESS ? kill(PID, false, root) : xserver("import " + PID, root); 
+                        if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!"); } 
+                            
+                        reload();
+                    } 
+                } 
+            } 
+        } 
         private int reload() {
             if (attributes.containsKey("J2EMU")) { new Monitor(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : MOD == HISTORY ? "history" : "x11-loader", root); } 
             else { load(); }
