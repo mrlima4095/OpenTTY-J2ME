@@ -1055,6 +1055,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 sessions.put(pid, "127.0.0.1"); 
             }
             else if (app.equals("x11-wm")) { proc.put("saves", new Hashtable()); form.append(stdout); form.append(stdin); form.addCommand(EXECUTE); processCommand("execute title; x11 cmd;"); form.setCommandListener(this); }
+
+                form.append(stdout); 
+                form.append(stdin); 
+                form.addCommand(EXECUTE); 
+                processCommand("execute title; x11 cmd;"); 
+                form.setCommandListener(this); 
         } 
         else if (app.equals("audio")) { echoCommand("usage: audio play [file]"); return 1; }
         else { while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } } 
