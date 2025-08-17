@@ -61,7 +61,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     public class Monitor implements CommandListener {
-        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4;
+        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, LOAD = 5;
         private int MOD = 0;
         private boolean root;
         private Vector history = (Vector) getobject("1", "history");
@@ -69,10 +69,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List preview = new List(form.getTitle(), List.IMPLICIT);
         private StringItem status = new StringItem("Memory Status:", "");
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
-                    OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.SCREEN, 2), DELETE = new Command("Delete", Command.OK, 1);
+                    OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOADS = new Command("Load Screen", Command.OK, 1), 
+                    DELETE = new Command("Delete", Command.OK, 1);
         
         public Monitor(String command, boolean root) {
-            MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : HISTORY;
+            MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : LOAD;
             this.root = root;
             
             if (MOD == MONITOR) {
@@ -121,12 +122,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected); } 
                 } 
                 else if (MOD == MONITOR) { System.gc(); load(); } 
-                else if (MOD == PROCESS) {
+                else if (MOD == PROCESS || MOD == LOADS) {
                     if (c == BACK) { processCommand("xterm"); } 
                     else if (c == KILL) { 
                         int index = preview.getSelectedIndex(); 
                         if (index >= 0) { 
-                            int STATUS = kill(split(preview.getString(index), '\t')[0], false, root); 
+                            String PID = split(preview.getString(index), '\t')[0];
+                            int STATUS = MOD == PROCESS ? kill(PID, false, root) : xserver("import " + PID, root); 
                             if (STATUS == 13) { warnCommand(form.getTitle(), "Permission denied!"); } 
                             
                             reload();
@@ -141,7 +143,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return 0;
         }
         private int load() {
-            
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
             else if (MOD == EXPLORER) {
                 if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); }
@@ -195,7 +196,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
             } 
             else if (MOD == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
-            else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
+            else if (MOD == PROCESS || MOD == LOAD) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
     
             return 0;
         }
@@ -354,7 +355,59 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("netstat")) { if (argument.equals("")) { argument = "http://ipinfo.io"; } int STATUS = 0; try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } else { STATUS = 101; } CONN.close(); } catch (SecurityException e) { STATUS = 13; } catch (Exception e) { STATUS = 101; } echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; }
         // |
         // Certificates
-        else if (mainCommand.equals("pki")) { return pki(argument); }
+        else if (mainCommand.equals("pki")) {
+            if (argument.equals("")) { }
+            else {
+                String content = getcontent(argument);
+                if (content.equals("")) { }
+                else {
+                    int count = 0, idx = 0;
+                    while (true) {
+                        int beg = content.indexOf("-----BEGIN CERTIFICATE-----", idx);
+                        if (beg < 0) { break; }
+                        int end = content.indexOf("-----END CERTIFICATE-----", beg);
+                        if (end < 0) { break; }
+
+                        String base64 = content.substring(beg + "-----BEGIN CERTIFICATE-----".length(), end);
+                        StringBuffer sbNoNl = new StringBuffer();
+                        for (int i = 0; i < base64.length(); i++) {
+                            char c = base64.charAt(i);
+                            if (c!='\r' && c!='\n') sbNoNl.append(c);
+                        }
+                        String b64 = sbNoNl.toString().trim();
+
+                        final String B64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+                        int[] T = new int[256]; for (int i=0;i<256;i++) T[i] = -1;
+                        for (int i=0;i<B64CHARS.length();i++) T[B64CHARS.charAt(i)] = i;
+                        T['='] = -2;
+                        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                        int val = 0, valb = -8;
+                        for (int i=0;i<b64.length();i++) {
+                            int ch = b64.charAt(i);
+                            if (ch==' '||ch=='\t') continue;
+                            if (ch=='\r'||ch=='\n') continue;
+                            int d = (ch<256)?T[ch]:-1;
+                            if (d == -1) continue;
+                            if (d == -2) break;
+                            val = (val << 6) + d;
+                            valb += 6;
+                            if (valb >= 0) {
+                                baos.write((val >> valb) & 0xFF);
+                                valb -= 8;
+                            }
+                        }
+                        byte[] der = baos.toByteArray();
+
+                        count++;
+                        echoCommand("cert#" + count + ": DER " + der.length + " bytes");
+                        idx = end + "-----END CERTIFICATE-----".length();
+                    }
+
+                    if (count == 0) { echoCommand("pki: " + argument + ": don't have PEM certs"); } 
+                    else { echoCommand("pki: found " + count + " PEM certs"); }
+                }
+            }       
+        }
 
         // API 012 - (File)
         // |
@@ -1399,147 +1452,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
-    // |
-    // Certificates
-    private int pki(String command) {
-        command = env(command.trim());
-        String mainCommand = getCommand(command);
-        String argument = getArgument(command);
-        
-        if (mainCommand.equals("")) { }
-        else if (mainCommand.equals("https")) {
-    if (argument.equals("")) { return 2; }
-    else {
-        HttpsConnection hc = null;
-        InputStream is = null;
-        try {
-            hc = (HttpsConnection) Connector.open(argument);
-            // Força o handshake
-            is = hc.openInputStream();
-
-            SecurityInfo si = hc.getSecurityInfo();
-            if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
-
-            Certificate cert = si.getServerCertificate();
-            if (cert == null) { echoCommand("no certificates found"); return 70; }
-
-            // Tentativa 1: algumas implementações já devolvem uma representação legível via toString()
-            try {
-                String rep = cert.toString();
-                if (rep != null && rep.indexOf("-----BEGIN CERTIFICATE-----") != -1) {
-                    // se a implementação devolveu PEM/texto completo, imprime direto
-                    echoCommand(rep);
-                    // drena resposta
-                    try { while (is.read() != -1) { } } catch (Throwable ignore) {}
-                    return 0;
-                }
-            } catch (Throwable ignore) { /* toString pode falhar em alguns impls */ }
-
-            // API padrão: imprime os campos que o javax.microedition.pki.Certificate expõe
-            try {
-                echoCommand("subject : " + cert.getSubject());
-                echoCommand("issuer  : " + cert.getIssuer());
-                echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
-                echoCommand("serial  : " + cert.getSerialNumber());
-                echoCommand("sigalg  : " + cert.getSigAlgName());
-                echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
-            } catch (Throwable t) {
-                echoCommand("cert: não foi possível ler campos (implementação limitada)");
-            }
-
-            // Se não temos bytes brutos, informar usuário e sugerir alternativas
-            echoCommand("-- raw certificate (PEM) not available via this device API --");
-            echoCommand("Alternativas:");
-            echoCommand("  1) Use um proxy no servidor que faça o TLS e retorne o PEM (ex: curl/openssl no servidor).");
-            echoCommand("  2) Em um PC: openssl s_client -showcerts -connect host:443");
-            echoCommand("  3) Se o aparelho suportar SATSA/native API para bytes, precisa de uma implementação específica do fornecedor.");
-            try { while (is.read() != -1) { } } catch (Throwable ignore) {}
-            return 0;
-
-        } catch (javax.microedition.pki.CertificateException ce) {
-            try { echoCommand("CertificateException: " + ce.getMessage() + " reason=" + ce.getReason()); }
-            catch (Throwable tt) { echoCommand("CertificateException: " + getCatch(ce)); }
-            return 74;
-
-        } catch (NullPointerException npe) {
-            // NPE vindo da implementação TLS do aparelho
-            echoCommand("HTTPS handshake falhou com NullPointerException interno (bug na pilha TLS): " + getCatch(npe));
-            echoCommand("Sugestão: teste com um host conhecido compatível (RSA/TLS1.0) ou use proxy off-device.");
-            return 74;
-
-        } catch (Exception e) {
-            echoCommand("HTTPS error: " + e.getClass().getName() + " : " + getCatch(e));
-            return 74;
-
-        } finally {
-            try { if (is != null) is.close(); } catch (Exception ignore) {}
-            try { if (hc != null) hc.close(); } catch (Exception ignore) {}
-        }
-    }
-}
-
-else if (mainCommand.equals("file")) {
-            if (argument.equals("")) { echoCommand("pki: file: faltou <file>"); return 2; }
-            String content = getcontent(argument);
-            if (content == null) { echoCommand("pki: file: não abriu: " + argument); return 66; }
-
-            int count = 0, idx = 0;
-            while (true) {
-                int beg = content.indexOf("-----BEGIN CERTIFICATE-----", idx);
-                if (beg < 0) break;
-                int end = content.indexOf("-----END CERTIFICATE-----", beg);
-                if (end < 0) break;
-
-                String base64 = content.substring(beg + "-----BEGIN CERTIFICATE-----".length(), end);
-                StringBuffer sbNoNl = new StringBuffer();
-                for (int i = 0; i < base64.length(); i++) {
-                    char c = base64.charAt(i);
-                    if (c!='\r' && c!='\n') sbNoNl.append(c);
-                }
-                String b64 = sbNoNl.toString().trim();
-
-                final String B64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-                int[] T = new int[256]; for (int i=0;i<256;i++) T[i] = -1;
-                for (int i=0;i<B64CHARS.length();i++) T[B64CHARS.charAt(i)] = i;
-                T['='] = -2;
-                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-                int val = 0, valb = -8;
-                for (int i=0;i<b64.length();i++) {
-                    int ch = b64.charAt(i);
-                    if (ch==' '||ch=='\t') continue;
-                    if (ch=='\r'||ch=='\n') continue;
-                    int d = (ch<256)?T[ch]:-1;
-                    if (d == -1) continue;
-                    if (d == -2) break;
-                    val = (val << 6) + d;
-                    valb += 6;
-                    if (valb >= 0) {
-                        baos.write((val >> valb) & 0xFF);
-                        valb -= 8;
-                    }
-                }
-                byte[] der = baos.toByteArray();
-
-                count++;
-                echoCommand("cert#" + count + ": DER " + der.length + " bytes");
-                idx = end + "-----END CERTIFICATE-----".length();
-            }
-
-            if (count == 0) {
-                echoCommand("arquivo não parece conter certificados PEM; tamanho=" + content.length() + " chars");
-            } else {
-                echoCommand("total certificados PEM encontrados: " + count);
-            }
-            return 0;
-        }
-        else {
-            echoCommand("pki: " + mainCommand + ": not found");
-            return 127;
-        }
-
-        return 0;
-    }
-
 
     // API 012 - (File)
     // |
