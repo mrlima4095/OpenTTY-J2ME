@@ -1937,7 +1937,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String type = source.substring(start, start + source.substring(start).indexOf(" ")).trim(), name = source.substring(start + type.length(), p1).trim(), params = extractBetween(source.substring(p1, p2 + 1), '(', ')'), block = getBlock(source.substring(b1));
 
-            if (block == null) { return null; }
+            if (block == null) { echoCommand("build: invalid block"); return null; }
 
             source = source.substring(b1 + block.length()).trim();
 
