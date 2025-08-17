@@ -1419,9 +1419,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     hc = (HttpsConnection) Connector.open(argument);
                     is = hc.openInputStream(); 
                     si = hc.getSecurityInfo();
-                    if (si == null) { echoCommand("sem SecurityInfo (conexão não segura?)"); return 70; }
+                    if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
                     cert = si.getServerCertificate();
-                    if (cert == null) { echoCommand("nenhum certificado do servidor"); return 70; }
+                    if (cert == null) { echoCommand("no certificates found"); return 70; }
                     echoCommand("subject : " + cert.getSubject());
                     echoCommand("issuer  : " + cert.getIssuer());
                     echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
