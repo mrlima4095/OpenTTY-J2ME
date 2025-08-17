@@ -137,7 +137,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             } 
         private int reload() {
-            if (attributes.containsKey("J2EMU")) { new Monitor(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root); } 
+            if (attributes.containsKey("J2EMU")) { new Monitor(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : MOD == HISTORY ? "history" : "x11-loader", root); } 
             else { load(); }
 
             return 0;
