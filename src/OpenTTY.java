@@ -213,7 +213,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         preview.append((String) keys.nextElement(), null); 
                     }
                 } else {
-                    warnCommand(form.getTitle(), "X11 Unavaliable!");
+                    warnCommand(form.getTitle(), "X11 not running!");
                     return 69;
                 }
                 
