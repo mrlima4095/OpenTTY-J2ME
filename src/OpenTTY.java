@@ -1414,65 +1414,140 @@ public class OpenTTY extends MIDlet implements CommandListener {
         InputStream is = null;
         try {
             hc = (HttpsConnection) Connector.open(argument);
-            // força handshake (local onde a implementação costuma quebrar)
-            is = hc.openInputStream();
+            is = hc.openInputStream(); // força handshake
             SecurityInfo si = hc.getSecurityInfo();
             if (si == null) { echoCommand("no SecurityInfo (insecure connection?)"); return 70; }
+
             Certificate cert = si.getServerCertificate();
             if (cert == null) { echoCommand("no certificates found"); return 70; }
-            echoCommand("subject : " + cert.getSubject());
-            echoCommand("issuer  : " + cert.getIssuer());
-            echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
-            echoCommand("serial  : " + cert.getSerialNumber());
-            echoCommand("sigalg  : " + cert.getSigAlgName());
-            echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
-            while (is.read() != -1) { }
+
+            // Primeiro tenta obter bytes via reflection (várias assinaturas possíveis)
+            byte[] encoded = null;
+            try {
+                String[] cand = new String[] {
+                    "getEncoded", "getEncodedCertificate", "getCertificate", "getRaw",
+                    "getCert", "getDER", "getDerEncoded", "getBytes"
+                };
+                for (int i = 0; i < cand.length && encoded == null; i++) {
+                    try {
+                        java.lang.reflect.Method m = cert.getClass().getMethod(cand[i], new Class[] {});
+                        Object r = m.invoke(cert, new Object[] {});
+                        if (r instanceof byte[]) {
+                            encoded = (byte[]) r;
+                            break;
+                        } else if (r instanceof String) {
+                            // se já veio em Base64/PEM como String, tenta detectar
+                            String s = (String) r;
+                            if (s.indexOf("-----BEGIN CERTIFICATE-----") != -1) {
+                                // já é PEM — imprime diretamente
+                                echoCommand(s);
+                                encoded = new byte[0]; // marca como já impresso
+                                break;
+                            } else {
+                                // talvez seja base64: tenta decodificar com heurística
+                                try {
+                                    byte[] tryb = null;
+                                    // decodifica base64 simples (inline)
+                                    final char[] B64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
+                                    int[] T = new int[256];
+                                    for (int j=0;j<256;j++) T[j] = -1;
+                                    for (int j=0;j<B64CHARS.length;j++) T[B64CHARS[j]] = j;
+                                    T['='] = -2;
+                                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                                    int val = 0, valb = -8;
+                                    for (int k=0;k<s.length();k++) {
+                                        int ch = s.charAt(k);
+                                        if (ch=='\r'||ch=='\n'||ch==' '||ch=='\t') continue;
+                                        int d = (ch<256)?T[ch]:-1;
+                                        if (d == -1) continue;
+                                        if (d == -2) break;
+                                        val = (val << 6) + d;
+                                        valb += 6;
+                                        if (valb >= 0) {
+                                            baos.write((val >> valb) & 0xFF);
+                                            valb -= 8;
+                                        }
+                                    }
+                                    tryb = baos.toByteArray();
+                                    if (tryb.length > 0) { encoded = tryb; break; }
+                                } catch (Throwable ignore) {}
+                            }
+                        }
+                    } catch (Throwable ignore) {
+                        // tenta próximo candidato
+                    }
+                }
+            } catch (Throwable t) {
+                // reflection falhou — seguir com encoded == null
+            }
+
+            // Se encontramos bytes, imprime PEM
+            if (encoded != null) {
+                if (encoded.length == 0) {
+                    // já impresso (string PEM) — nada a fazer
+                    return 0;
+                }
+                // base64 encode inline e wrap 64 cols
+                final char[] B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
+                StringBuffer b64 = new StringBuffer(((encoded.length + 2) / 3) * 4);
+                int ii = 0;
+                while (ii < encoded.length) {
+                    int a = encoded[ii++] & 0xff;
+                    int b = (ii < encoded.length) ? encoded[ii++] & 0xff : -1;
+                    int c = (ii < encoded.length) ? encoded[ii++] & 0xff : -1;
+                    b64.append(B64[a >>> 2]);
+                    b64.append(B64[((a & 0x3) << 4) | ((b >= 0 ? b : 0) >>> 4)]);
+                    b64.append(b >= 0 ? B64[((b & 0xf) << 2) | ((c >= 0 ? c : 0) >>> 6)] : '=');
+                    b64.append(c >= 0 ? B64[c & 0x3f] : '=');
+                }
+                String s = b64.toString();
+                StringBuffer wrapped = new StringBuffer(s.length() + s.length()/64*2 + 64);
+                for (int j = 0; j < s.length(); j += 64) {
+                    int end = Math.min(j + 64, s.length());
+                    wrapped.append(s.substring(j, end)).append('\n');
+                }
+                echoCommand("-----BEGIN CERTIFICATE-----");
+                echoCommand(wrapped.toString());
+                echoCommand("-----END CERTIFICATE-----");
+                // drena resposta e fecha
+                try { while (is.read() != -1) { } } catch (Throwable ignore) {}
+                return 0;
+            }
+
+            // fallback: se não achou bytes, imprime campos conhecidos
+            try {
+                echoCommand("subject : " + cert.getSubject());
+                echoCommand("issuer  : " + cert.getIssuer());
+                echoCommand("valid   : " + new java.util.Date(cert.getNotBefore()) + " -> " + new java.util.Date(cert.getNotAfter()));
+                echoCommand("serial  : " + cert.getSerialNumber());
+                echoCommand("sigalg  : " + cert.getSigAlgName());
+                echoCommand("type/ver: " + cert.getType() + " / " + cert.getVersion());
+            } catch (Throwable t) {
+                echoCommand("cert: não foi possível ler campos (impl. limitada)");
+            }
+            try { while (is.read() != -1) { } } catch (Throwable ignore) {}
             return 0;
 
         } catch (javax.microedition.pki.CertificateException ce) {
-            // API específica — imprime razão se houver
             try { echoCommand("CertificateException: " + ce.getMessage() + " reason=" + ce.getReason()); }
             catch (Throwable t) { echoCommand("CertificateException: " + getCatch(ce)); }
             return 74;
 
         } catch (NullPointerException npe) {
-            // Captura NPE ofuscado vindo da pilha TLS
-            echoCommand("HTTPS handshake failed with NullPointerException inside TLS stack (implementation bug).");
-            echoCommand("exception: " + getCatch(npe));
-            // diagnosticar se o problema é do host ou da pilha do aparelho:
-            try {
-                String testHost = "https://example.com/"; // troque por um host que você sabe que é compatível (RSA/TLS1.0)
-                echoCommand("-> tentando conectar ao host de teste: " + testHost);
-                HttpsConnection th = (HttpsConnection) Connector.open(testHost);
-                InputStream tis = th.openInputStream();
-                SecurityInfo tsi = th.getSecurityInfo();
-                if (tsi != null && tsi.getServerCertificate() != null) {
-                    echoCommand("teste: conexão com host de teste OK -> problema possivelmente no servidor alvo (cert/chain/tls).");
-                } else {
-                    echoCommand("teste: sem SecurityInfo no host de teste -> pilha TLS do aparelho possivelmente incapaz de negociar.");
-                }
-                try { while (tis.read() != -1) { } } catch (Exception ignore) {}
-                try { if (tis != null) tis.close(); } catch (Exception ignore) {}
-                try { if (th != null) th.close(); } catch (Exception ignore) {}
-            } catch (Throwable t) {
-                echoCommand("teste: falha ao contatar host de teste: " + getCatch(t));
-                echoCommand("-> indica limitação/bug na pilha TLS do aparelho.");
-            }
+            echoCommand("HTTPS handshake failed with NullPointerException inside TLS stack (implementation bug): " + getCatch(npe));
             return 74;
 
         } catch (Exception e) {
-            // fallback genérico, mostra classe e mensagem
-            echoCommand("HTTPS handshake failed: " + e.getClass().getName() + " : " + getCatch(e));
-            // printa algumas dicas rápidas para diagnóstico
-            echoCommand("Dicas: verifique hora do dispositivo; cadeia completa; alg RSA vs ECDSA; suporte TLS versão.");
+            echoCommand("HTTPS error: " + e.getClass().getName() + " : " + getCatch(e));
             return 74;
 
         } finally {
-            try { if (is != null) is.close(); } catch (Exception ignore) {}
-            try { if (hc != null) hc.close(); } catch (Exception ignore) {}
+            try { if (is != null) is.close(); } catch (Exception ignore) { }
+            try { if (hc != null) hc.close(); } catch (Exception ignore) { }
         }
     }
 }
+
 else if (mainCommand.equals("file")) {
             if (argument.equals("")) { echoCommand("pki: file: faltou <file>"); return 2; }
             String content = getcontent(argument);
