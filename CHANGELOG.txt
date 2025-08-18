@@ -13,6 +13,7 @@ LTS Edition
 - `build [file]`: Build and run a C2ME source-code
 - `stty [max]`: Set max char range that can be wrote at **stdout**
 - `catch [command]`: run command ignoring exceptions (always exit with code: 0)
+- `lua [file]`: run a Lua script.
 
 [ _Updates_ ]
 
@@ -78,3 +79,8 @@ LTS Edition
 Usage: `x11 [ option ] [PID]`
 - `import`: load a screen referred into Virtual Process
 - `export`: save current screen in a Virtual Process
+
+[ _MIDlets_ ]
+
+- **Default Package**: Native OpenTTY MIDlet with all tools and updates of this release
+- **Lua Release**: OpenTTY MIDlet with support for Lua VM
