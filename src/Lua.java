@@ -31,7 +31,6 @@
   end
   print("fact(6)", fact(6))
 
- Author: generated for Fernanda (OpenTTY)
 */
 
 import java.io.InputStream;
