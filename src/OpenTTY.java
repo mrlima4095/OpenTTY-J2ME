@@ -556,7 +556,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { Lua lua = new Lua(stdout, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); }
+        else if (mainCommand.equals("lua")) { 
+            
+            try {
+                Lua lua = new Lua(stdout, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); 
+            } catch (Throwable t) {
+                // tenta mostrar info útil no console do OpenTTY
+                try {
+                    String msg = "Lua load error: " + t.toString();
+                    // se tiver echoCommand(String) público, use-o; se não, use aquele com StringItem
+                    echoCommand(msg);
+                    // imprime causas encadeadas (se houver)
+                    Throwable cause = t.getCause();
+                    int depth = 0;
+                    while (cause != null && depth < 5) {
+                        echoCommand(" cause: " + cause.toString());
+                        cause = cause.getCause();
+                        depth++;
+                    }
+                    // tenta detectar dependências faltando (quick check)
+                    String[] suspects = new String[] {
+                        "Environment", "FunctionValue", "TLParser", "TLLexer", "TLToken"
+                    };
+                    for (int i=0;i<suspects.length;i++){
+                        try {
+                            Class.forName(suspects[i]);
+                            echoCommand(" OK class present: " + suspects[i]);
+                        } catch (Throwable e) {
+                            echoCommand(" MISSING or failed to init: " + suspects[i] + " -> " + e.toString());
+                        }
+                    }
+                } catch (Throwable ignore) { }
+                // opcional: rethrow ou falha graciosa
+            }
+
+        }
         else if (mainCommand.equals("")) { }
 
         // API 015 - (Scripts)
