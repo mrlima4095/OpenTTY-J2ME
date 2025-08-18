@@ -2123,7 +2123,7 @@ class TLParser {
 }
 
 /* === Interpreter / Runner === */
-public class Lua {
+class Lua {
     private Environment global;
     private StringItem console;
     private boolean root;
