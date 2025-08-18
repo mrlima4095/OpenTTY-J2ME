@@ -178,9 +178,9 @@ class BinaryExpr extends Expr {
             // other ops invalid on nil => return false/0
         }
         // numbers
-        if (L instanceof Number && R instanceof Number) {
-            double a = ((Number)L).doubleValue();
-            double b = ((Number)R).doubleValue();
+        if (L instanceof Double && R instanceof Number) {
+            double a = ((Double)L).doubleValue();
+            double b = ((Double)R).doubleValue();
             if (op.equals("+")) return new Double(a+b);
             if (op.equals("-")) return new Double(a-b);
             if (op.equals("*")) return new Double(a*b);
