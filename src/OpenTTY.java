@@ -45,11 +45,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (username.equals("") || passwd(false, null).equals("")) { new Credentials(null); }
             else { runScript(read("/home/initd")); }
         }
-        
     }
     // |
     // | (Triggers)
-    public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "  ()" : "true"); }
+    public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "pauseApp()" : "true"); }
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
     // |
     // | (Main Listener)
