@@ -38,7 +38,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Vector;
 import java.util.Hashtable;
-import javax.microedition.io.lcdui.*;
+import javax.microedition.lcdui.*;
 
 /* === Lexer === */
 class TLToken {
