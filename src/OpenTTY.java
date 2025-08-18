@@ -284,7 +284,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { new Screen("list", "list.content=Monitor,Process,---,File Explorer,Start a process\nlist.button=Open\nMonitor=execute top monitor;\nProcess=execute top process;File Explorer=execute dir;\nStart a process=execute buff start;"); }
+        else if (mainCommand.equals("htop")) { new Screen("list", "list.content=Monitor,Process,---,File Explorer,Start a process\nlist.button=Open\nMonitor=execute top monitor;\nProcess=execute top process;\nFile Explorer=execute dir;\nStart a process=execute buff start;"); }
         else if (mainCommand.equals("top")) { 
             if (argument.equals("") || argument.equals("monitor") || argument.equals("process")) { new Monitor(argument, root); } 
             else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
