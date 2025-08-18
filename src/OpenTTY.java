@@ -392,12 +392,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ls")) { 
             boolean all = false, verbose = false;
 
-            for (int i = 0; i < args.length; i++) {
-                echoCommand(args[i] + " " + i);
-                if (args[i].equals("-a")) { all = true; } 
-                else if (args[i].equals("-v")) { verbose = true; } 
-                
-                argument = join(args, " ", i++).trim(); if (!args[i+1].startsWith("-")) break;
+            while (true) {
+                if (argument.startsWith("-a")) { all = true; } 
+                else if (argument.startsWith("-v")) { version = true; }
+                else { break; }
+
+                argument = argument.substring(2).trim();
             }
 
             String PWD = argument.equals("") ? path : argument; 
@@ -1121,7 +1121,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Connector
     public class Connect implements CommandListener, Runnable {
-        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5;
+        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5, DYNAMICS = 6;
 
         private int MOD, COUNT = 1;
         private boolean root = false, asked = false, keep = false;
@@ -1165,6 +1165,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable proc = genprocess(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", root, null);
 
             if (MOD == NC) {
+                if (args.startsWith("-l")) {
+
+                }
+
                 address = args;
                 try {
                     CONN = (SocketConnection) Connector.open("socket://" + address);
@@ -1367,8 +1371,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private void back() {
             if (trace.containsKey(PID) && !asked) {
-                confirm.addCommand(YES);
-                confirm.addCommand(NO);
+                confirm.addCommand(YES); confirm.addCommand(NO);
                 confirm.setCommandListener(this);
                 asked = true;
                 display.setCurrent(confirm);
