@@ -73,7 +73,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private StringItem status = new StringItem("Memory Status:", "");
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
                     OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOAD = new Command("Load Screen", Command.OK, 1), 
-                    START = new Command("Start new", Command.OK), DELETE = new Command("Delete", Command.OK, 1);
+                    VIEW = new Command("View more", Command.OK), DELETE = new Command("Delete", Command.OK, 1);
         
         public Monitor(String command, boolean root) {
             MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
@@ -284,9 +284,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { new Screen("list", "list.content=Memory,Process\nlist.button=Open\nMemory=execute top memory;\nProcess=execute top process;"); }
+        else if (mainCommand.equals("htop")) { new Screen("list", "list.content=Monitor,Process,---,File Explorer,Start a process\nlist.button=Open\nMonitor=execute top monitor;\nProcess=execute top process;File Explorer=execute dir;\nStart a process=execute buff start;"); }
         else if (mainCommand.equals("top")) { 
-            if (argument.equals("") || argument.equals("memory") || argument.equals("process")) { new Monitor(argument, root); } 
+            if (argument.equals("") || argument.equals("monitor") || argument.equals("process")) { new Monitor(argument, root); } 
             else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
             else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
             else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); }
@@ -311,7 +311,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (ITEM == null) {
                     if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
                     else { echoCommand("PID '" + argument + "' not found"); }
+                    
+                    return 127;
                 } else {
+                    if (ITEM.get("owner").equals("root") && !root) {
+                        if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "Permission denied!"); }
+                        else { echoCommand("Permission denied!"); }
+                        
+                        return 13;
+                    }
+                    
                     if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
                     else { echoCommand(renderJSON(ITEM, 0)); }
                 }
