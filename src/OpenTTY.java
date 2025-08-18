@@ -2147,6 +2147,21 @@ class Lua {
         global.set("exec", execFn);
     }
 
+    public void run(String source) {
+        try {
+            TLParser p = new TLParser(source);
+            Vector stmts = p.parseChunk();
+            for (int i=0;i<stmts.size();i++) {
+                Stmt s = (Stmt)stmts.elementAt(i);
+                Object r = s.execute(global);
+                if (r instanceof ReturnValue) {
+                    // top-level return ignored
+                }
+            }
+        } catch (Throwable t) {
+            print("Lua Runtime error: " + t.toString());
+        }
+    }
 
     private void print(String text) { console.setText(console.getText().equals("") ? text : console.getText() + "\n" + text); }
 }
