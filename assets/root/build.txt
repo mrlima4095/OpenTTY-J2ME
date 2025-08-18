@@ -119,3 +119,4 @@
 [2025-1.16-02x52]	Merge Server and RemoteConnection Threads
 [2025-1.16-02x53]	Rewrote C2ME
 [2025-1.16-02x54]	Moved history and directories stack to Virtual Process	
+[2025-1.16-02x55]	OpenTTY Lua Edition
