@@ -2159,7 +2159,7 @@ class Lua {
                 }
             }
         } catch (Throwable t) {
-            print("Lua Runtime error: " + t.toString());
+            midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
         }
     }
 
