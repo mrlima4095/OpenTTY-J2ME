@@ -1413,7 +1413,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 }
                             }
                         } 
-                        catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
+                        catch (IOException e) { echoCommand("[-] " + getCatch(e)); } 
                         finally {
                             try { if (IN != null) IN.close(); } catch (IOException e) { }
                             try { if (OUT != null) OUT.close(); } catch (IOException e) { }
@@ -1421,7 +1421,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     }
                 } 
-                catch (IOException e) { echoCommand("[-] " + getCatch(e)); } 
+                catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } COUNT++; } 
                 finally {
                     try { if (server != null) server.close(); } catch (IOException e) { }
 
