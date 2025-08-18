@@ -2127,8 +2127,8 @@ class Lua {
                     Object a = args.elementAt(i);
                     sb.append( a==null ? "nil" : a.toString() );
                 }
-                processCommand("echo " + sb.toString(), false, root);
-                return null;
+                
+                return midlet.processCommand("echo " + sb.toString(), false, root);
             }
         };
         global.set("print", printFn);
@@ -2141,7 +2141,7 @@ class Lua {
                     sb.append( a==null ? "true" : a.toString() );
                 }
                 
-                return processCommand(sb.toString(), true, root);
+                return midlet.processCommand(sb.toString(), true, root);
             }
         };
         global.set("exec", execFn);
