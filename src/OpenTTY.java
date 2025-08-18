@@ -556,36 +556,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { 
-
-            try {
-                Lua lua = new Lua(stdout, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); 
-            } catch (Throwable t) {
-                echoCommand("Lua load error: " + t.toString());
-                // detect common types
-                if (t instanceof OutOfMemoryError) {
-                    echoCommand(" -> OutOfMemoryError: possivel falta de heap no aparelho");
-                } else if (t instanceof NoClassDefFoundError) {
-                    echoCommand(" -> NoClassDefFoundError (classe encontrada no JAR? ver jar tf)");
-                } else {
-                    echoCommand(" -> Exception type: " + t.getClass().getName());
-                }
-
-                // quick check de classes dependentes (tente ajustar nomes de pacote se preciso)
-                String[] suspects = new String[] {
-                    "Lua", "Environment", "FunctionValue", "TLParser", "TLLexer", "TLToken"
-                };
-                for (int i=0;i<suspects.length;i++) {
-                    try {
-                        Class.forName(suspects[i]); // CLDC pode falhar aqui em alguns firmwares, mas tenta
-                        echoCommand(" OK class present: " + suspects[i]);
-                    } catch (Throwable e) {
-                        echoCommand(" MISSING/FAILED: " + suspects[i] + " -> " + e.toString());
-                    }
-                }
-
-            }
-        }
+        else if (mainCommand.equals("lua")) { Lua lua = new Lua(stdout, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); }
         else if (mainCommand.equals("")) { }
 
         // API 015 - (Scripts)
@@ -2181,21 +2152,6 @@ class Lua {
         // you can add more builtins here
     }
 
-    public void run(String source) {
-        try {
-            TLParser p = new TLParser(source);
-            Vector stmts = p.parseChunk();
-            for (int i=0;i<stmts.size();i++) {
-                Stmt s = (Stmt)stmts.elementAt(i);
-                Object r = s.execute(global);
-                if (r instanceof ReturnValue) {
-                    // top-level return ignored
-                }
-            }
-        } catch (Throwable t) {
-            print("Lua Runtime error: " + t.toString());
-        }
-    }
 
     private void print(String text) { console.setText(console.getText().equals("") ? text : console.getText() + "\n" + text); }
 }
