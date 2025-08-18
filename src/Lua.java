@@ -466,7 +466,7 @@ public class Lua {
                     Object a = args.elementAt(i);
                     sb.append( a==null ? "nil" : a.toString() );
                 }
-                console.setText(console.getText().equals("") ? sb.toString() : console.getText() + "\n" + sb.toString());
+                print(sb.toString());
                 return null;
             }
         };
@@ -486,19 +486,9 @@ public class Lua {
                 }
             }
         } catch (Throwable t) {
-            out.println("Lua Runtime error: " + t.toString());
+            print("Lua Runtime error: " + t.toString());
         }
     }
 
-    // helper to load a script resource
-    public String loadScriptFromResource(String path) {
-        InputStream is = null; ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            is = getClass().getResourceAsStream(path);
-            if (is == null) return null;
-            byte[] buf = new byte[256]; int r;
-            while ((r = is.read(buf)) > 0) baos.write(buf, 0, r);
-            return new String(baos.toByteArray(), "UTF-8");
-        } catch (IOException e) { return null; } finally { try { if (is!=null) is.close(); } catch (IOException x) {} }
-    }
+    private void print(String text) { console.setText(console.getText().equals("") ? sb.toString() : console.getText() + "\n" + sb.toString()); }
 }
