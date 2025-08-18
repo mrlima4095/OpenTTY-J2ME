@@ -561,29 +561,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try {
                 Lua lua = new Lua(stdout, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); 
             } catch (Throwable t) {
-        echoCommand("Lua load error: " + t.toString());
-        // detect common types
-        if (t instanceof OutOfMemoryError) {
-            echoCommand(" -> OutOfMemoryError: possivel falta de heap no aparelho");
-        } else if (t instanceof NoClassDefFoundError) {
-            echoCommand(" -> NoClassDefFoundError (classe encontrada no JAR? ver jar tf)");
-        } else {
-            echoCommand(" -> Exception type: " + t.getClass().getName());
-        }
+                echoCommand("Lua load error: " + t.toString());
+                // detect common types
+                if (t instanceof OutOfMemoryError) {
+                    echoCommand(" -> OutOfMemoryError: possivel falta de heap no aparelho");
+                } else if (t instanceof NoClassDefFoundError) {
+                    echoCommand(" -> NoClassDefFoundError (classe encontrada no JAR? ver jar tf)");
+                } else {
+                    echoCommand(" -> Exception type: " + t.getClass().getName());
+                }
 
-        // quick check de classes dependentes (tente ajustar nomes de pacote se preciso)
-        String[] suspects = new String[] {
-            "Lua", "Environment", "FunctionValue", "TLParser", "TLLexer", "TLToken"
-        };
-        for (int i=0;i<suspects.length;i++) {
-            try {
-                Class.forName(suspects[i]); // CLDC pode falhar aqui em alguns firmwares, mas tenta
-                echoCommand(" OK class present: " + suspects[i]);
-            } catch (Throwable e) {
-                echoCommand(" MISSING/FAILED: " + suspects[i] + " -> " + e.toString());
+                // quick check de classes dependentes (tente ajustar nomes de pacote se preciso)
+                String[] suspects = new String[] {
+                    "Lua", "Environment", "FunctionValue", "TLParser", "TLLexer", "TLToken"
+                };
+                for (int i=0;i<suspects.length;i++) {
+                    try {
+                        Class.forName(suspects[i]); // CLDC pode falhar aqui em alguns firmwares, mas tenta
+                        echoCommand(" OK class present: " + suspects[i]);
+                    } catch (Throwable e) {
+                        echoCommand(" MISSING/FAILED: " + suspects[i] + " -> " + e.toString());
+                    }
+                }
+
             }
-        }
-
         }
         else if (mainCommand.equals("")) { }
 
