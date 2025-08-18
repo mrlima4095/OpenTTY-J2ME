@@ -2119,7 +2119,6 @@ class Lua {
     }
 
     private void registerBuiltins() {
-        // register print
         FunctionValue printFn = new FunctionValue(new Vector(), new Vector(), global) {
             public Object invoke(Vector args) {
                 StringBuffer sb = new StringBuffer();
@@ -2128,12 +2127,24 @@ class Lua {
                     Object a = args.elementAt(i);
                     sb.append( a==null ? "nil" : a.toString() );
                 }
-                print(sb.toString());
+                processCommand("echo " + sb.toString(), false, root);
                 return null;
             }
         };
         global.set("print", printFn);
-        // you can add more builtins here
+        FunctionValue execFn = new FunctionValue(new Vector(), new Vector(), global) {
+            public Object invoke(Vector args) {
+                StringBuffer sb = new StringBuffer();
+                for (int i=0;i<args.size();i++) {
+                    if (i>0) sb.append('\t');
+                    Object a = args.elementAt(i);
+                    sb.append( a==null ? "true" : a.toString() );
+                }
+                processCommand(sb.toString()), true, root;
+                return null;
+            }
+        };
+        global.set("exec", execFn);
     }
 
 
