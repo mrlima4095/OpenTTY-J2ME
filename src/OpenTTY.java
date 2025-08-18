@@ -1371,63 +1371,58 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (trace.containsKey(PID) || getNumber(PID, 65536, false) > 65535 || getNumber(PID, 65536, false) < 4) { echoCommand("[-] Port '" + PID + "' is unavailable"); return; }
                 start(MOD == SERVER ? "server" : "bind", PID, null, root);
 
-                try {
-                    server = (ServerSocketConnection) Connector.open("socket://:" + PID);
-                    if (COUNT == 1) { echoCommand("[+] listening on port " + PID); MIDletLogs("add info Server listening on port " + PID); COUNT++; }
+                while (trace.containsKey(PID)) {
+                    try {
+                        server = (ServerSocketConnection) Connector.open("socket://:" + PID);
+                        if (COUNT == 1) { echoCommand("[+] listening on port " + PID); MIDletLogs("add info Server listening on port " + PID); COUNT++; }
 
-                    while (trace.containsKey(PID)) {
-                        try {
-                            CONN = (SocketConnection) server.acceptAndOpen();
-                            address = CONN.getAddress();
-                            echoCommand("[+] " + address + " connected");
+                        CONN = (SocketConnection) server.acceptAndOpen();
+                        address = CONN.getAddress();
+                        echoCommand("[+] " + address + " connected");
 
-                            IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
+                        IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
 
-                            if (MOD == SERVER) {
+                        if (MOD == SERVER) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead = IN.read(buffer);
+                            if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); } 
+                            else {
+                                echoCommand("[+] " + address + " -> " + env(new String(buffer, 0, bytesRead).trim()));
+                                OUT.write(getcontent(DB).getBytes());
+                                OUT.flush();
+                            }
+                        } else {
+                            sessions.put(PID, address);
+                            while (trace.containsKey(PID)) {
                                 byte[] buffer = new byte[4096];
                                 int bytesRead = IN.read(buffer);
-                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); } 
-                                else {
-                                    echoCommand("[+] " + address + " -> " + env(new String(buffer, 0, bytesRead).trim()));
-                                    OUT.write(getcontent(DB).getBytes());
-                                    OUT.flush();
-                                }
-                            } else {
-                                sessions.put(PID, address);
-                                while (trace.containsKey(PID)) {
-                                    byte[] buffer = new byte[4096];
-                                    int bytesRead = IN.read(buffer);
-                                    if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); break; }
-                                    String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                                    echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); break; }
+                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                                echoCommand("[+] " + address + " -> " + env(PAYLOAD));
 
-                                    String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
+                                String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
 
-                                    String before = stdout != null ? stdout.getText() : "";
-                                    processCommand(command, true, root);
-                                    String after = stdout != null ? stdout.getText() : "";
+                                String before = stdout != null ? stdout.getText() : "";
+                                processCommand(command, true, root);
+                                String after = stdout != null ? stdout.getText() : "";
 
-                                    String output = after.length() >= before.length() ? after.substring(before.length()).trim() + "\n" : after + "\n";
+                                String output = after.length() >= before.length() ? after.substring(before.length()).trim() + "\n" : after + "\n";
 
-                                    OUT.write(output.getBytes()); OUT.flush();
-                                }
+                                OUT.write(output.getBytes()); OUT.flush();
                             }
-                        } 
-                        catch (IOException e) { echoCommand("[-] " + getCatch(e)); } 
-                        finally {
-                            try { if (IN != null) IN.close(); } catch (IOException e) { }
-                            try { if (OUT != null) OUT.close(); } catch (IOException e) { }
-                            try { if (CONN != null) CONN.close(); } catch (IOException e) { }
                         }
-                    }
-                } 
-                catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } COUNT++; } 
-                finally {
-                    try { if (server != null) server.close(); } catch (IOException e) { }
+                    } 
+                    catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
+                    finally {
+                        try { if (IN != null) IN.close(); } catch (IOException e) { }
+                        try { if (OUT != null) OUT.close(); } catch (IOException e) { }
+                        try { if (CONN != null) CONN.close(); } catch (IOException e) { }
+                        try { if (server != null) server.close(); } catch (IOException e) { }
 
-                    sessions.remove(PID); trace.remove(PID);
-                    echoCommand("[-] Server stopped");
-                    MIDletLogs("add info Server was stopped");
+                        sessions.remove(PID); trace.remove(PID);
+                        echoCommand("[-] Server stopped");
+                        MIDletLogs("add info Server was stopped");
+                    }
                 }
             }
             
