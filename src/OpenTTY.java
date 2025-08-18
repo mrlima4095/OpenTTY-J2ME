@@ -561,7 +561,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try {
                 Lua lua = new Lua(stdout, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); 
             } catch (Throwable t) {
-    try {
         echoCommand("Lua load error: " + t.toString());
         // detect common types
         if (t instanceof OutOfMemoryError) {
