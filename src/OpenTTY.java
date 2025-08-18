@@ -73,7 +73,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private StringItem status = new StringItem("Memory Status:", "");
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
                     OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOAD = new Command("Load Screen", Command.OK, 1), 
-                    VIEW = new Command("View more", Command.OK), DELETE = new Command("Delete", Command.OK, 1);
+                    VIEW = new Command("View JSOJ", Command.OK), DELETE = new Command("Delete", Command.OK, 1);
         
         public Monitor(String command, boolean root) {
             MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
@@ -133,13 +133,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     int STATUS = 0;
 
                     if (c == KILL || c == List.SELECT_COMMAND) { STATUS = kill(PID, false, root); } 
+                    else if (c == VIEW) {
+                        processCommand("trace view " + PID, false, root);
+                    }
                     else if (c == LOAD) {
                         if (getowner(PID).equals("root") && !root) { STATUS = 13; }
 
                         Displayable screen = (Displayable) getobject(PID, "screen");
 
                         if (screen == null) { STATUS = 69; }
-                        else { display.setCurrent(screen); }
+                        else { display.setCurrent(screen); return; }
                     }
 
                     if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!"); } 
