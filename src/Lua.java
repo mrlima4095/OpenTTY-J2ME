@@ -490,5 +490,5 @@ public class Lua {
         }
     }
 
-    private void print(String text) { console.setText(console.getText().equals("") ? sb.toString() : console.getText() + "\n" + sb.toString()); }
+    private void print(String text) { console.setText(console.getText().equals("") ? text : console.getText() + "\n" + text); }
 }
