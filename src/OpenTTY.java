@@ -394,7 +394,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             while (true) {
                 if (argument.startsWith("-a")) { all = true; } 
-                else if (argument.startsWith("-v")) { version = true; }
+                else if (argument.startsWith("-v")) { verbose = true; }
                 else { break; }
 
                 argument = argument.substring(2).trim();
