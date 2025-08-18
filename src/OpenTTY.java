@@ -1115,7 +1115,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
                 
         }
-        else { echoCommand("topo: " + mainCommand + ": not found"); return 127; } 
+        else { echoCommand("top: " + mainCommand + ": not found"); return 127; } 
         
         return 0;
     }
