@@ -312,7 +312,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
                     else { echoCommand("PID '" + argument + "' not found"); }
                 } else {
-                    if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0))); }
+                    if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
                     else { echoCommand(renderJSON(ITEM, 0))); }
                 }
                 
