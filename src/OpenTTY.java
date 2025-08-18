@@ -1515,8 +1515,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String PID = argument.equals("") ? (attributes.containsKey("PORT") ? (String) attributes.get("PORT") : "31522") : argument;
             MessageConnection conn = null;
             try {
-                conn = (MessageConnection) Connector.open("sms://:" + port);
-                echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port);
+                conn = (MessageConnection) Connector.open("sms://:" + PID);
+                echoCommand("[+] listening at port " + PID); MIDletLogs("add info Server listening at port " + PID);
                 start("wireless", PID, null, false);
                 try {
                     while (trace.containsKey(PID)) {
