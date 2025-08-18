@@ -555,7 +555,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
-        else if (mainCommand.equals("build")) { if (argument.equals("")) { return 2; } else { return C2ME(argument, null, root); } }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : ""))); } }
 
         // API 014 - (OpenTTY)
