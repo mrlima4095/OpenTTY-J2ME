@@ -1464,7 +1464,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try {
                 conn = (MessageConnection) Connector.open("sms://:" + port);
                 echoCommand("[+] listening at port " + port); MIDletLogs("add info Server listening at port " + port);
-                start("wireless");
+                start("wireless", null, null, false);
                 try {
                     while (trace.containsKey("wireless")) {
                         Message msg = conn.receive();
