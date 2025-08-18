@@ -285,20 +285,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
         else if (mainCommand.equals("htop")) { new Screen("list", "list.content=Monitor,Process,---,File Explorer,Start a process\nlist.button=Open\nMonitor=execute top monitor;\nProcess=execute top process;\n---=execute htop;\nFile Explorer=execute dir;\nStart a process=execute buff start;"); }
-        else if (mainCommand.equals("top")) { 
-            if (argument.equals("") || argument.equals("monitor") || argument.equals("process")) { new Monitor(argument, root); } 
-            else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
-            else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
-            else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); }
-            else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } 
-        }
+        else if (mainCommand.equals("top") || mainCommand.equals("trace")) { return kernel(argument, root); }
         // |
         // Process 
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], genpid(), null, root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root); if (STATUS != 0) { return STATUS; } } } 
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); echoCommand(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name")); } }
-        else if (mainCommand.equals("trace")) {
-            
-        }
 
         // API 007 - (Bundle)
         // |
@@ -1091,7 +1082,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | 
     // Kernel
-    private int kernel(String command, boolean root) {command = env(command.trim());
+    private int kernel(String command, boolean root) {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 

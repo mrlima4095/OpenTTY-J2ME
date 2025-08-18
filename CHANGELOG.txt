@@ -65,6 +65,7 @@ LTS Edition
 - Command `nc`, `prscan` and `gobuster` ask if you want keep thread alive before close window
 - File Explorer don't using icons anymore
 - MIDlet Suite can adapt loading for emulations if found an environment key called as **J2EMU**
+- Commands `top` and `trace` merged
 
 [ _Notes_ ]
 
