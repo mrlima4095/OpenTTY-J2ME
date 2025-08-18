@@ -1,5 +1,5 @@
 /*
- TinyLuaInterpreter.java
+ Lua.java
  Minimal Lua subset interpreter targeted for CLDC 1.0 / MIDP 2.0
  For embedding into OpenTTY.
 
