@@ -33,11 +33,11 @@ list.title=SmartME Tools
 list.content=Nano Editor,New Project,Save Project,File Explorer,Build (from nano),Download Libraries,Documentation,Update SDK,About
 
 Nano Editor=execute nano; sdk setxback;
-New Project=execute install nano; touch; add list.title=New Project; add list.content=C2ME Application,OpenTTY Packages; add list.back=execute sdk; add C2ME Application=exec touch & add #include "OpenTTY.h" & add & add int main() { & add & add } & nano & sdk setxback; add OpenTTY Packages=exec forge gen; x11 list nano; get nano;
+New Project=execute install nano; touch; add list.title=New Project; add list.content=Lua source code,OpenTTY Packages; add list.back=execute sdk; add C2ME Application=exec touch & add print("hello world") & nano & sdk setxback; add OpenTTY Packages=exec forge gen; x11 list nano; get nano;
 Save Project=execute x11 quest /home/sdkme;
 File Explorer=execute dir; sdk setxback;
 Build (from nano)=execute time build nano;
 Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=OpenTTY.h; yang install; set RESOURCE=X11.h; yang install; warn Downloaded Standard Libraries; false; sdk & warn Yang not found
-Documentation=exec sdk setxback & view <title>SmartME Docs</title>\n\n\tC2ME is a remake of C programming language for OpenTTY Environment.
+Documentation=exec sdk setxback & view <title>SmartME Docs</title>\n\n\tLua is a programming language.
 Update SDK=execute sdk; install /home/nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install /home/sdkme; get nano; import /home/sdkme; tick; sdk; warn SmartME was installed the latest version from GitHub;
 About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
