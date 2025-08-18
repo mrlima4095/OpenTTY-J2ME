@@ -1531,7 +1531,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             echoCommand("[+] " + sender + " -> binary payload.");
                         }
                     }
-                } catch (Exception e) { echoCommand("[-] " + getCacth(e)); kill(PID, false, false); }
+                } catch (Exception e) { echoCommand("[-] " + getCatch(e)); kill(PID, false, false); }
             } catch (Exception e) { echoCommand("[-] " + getCatch(e)); MIDletLogs("add info Server crashed '" + PID + "'"); } 
             finally {
                 if (conn != null) { try { conn.close(); } catch (IOException e) { } }
