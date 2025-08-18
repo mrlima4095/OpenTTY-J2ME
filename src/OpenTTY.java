@@ -557,38 +557,49 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
         else if (mainCommand.equals("lua")) { 
-            
+
             try {
                 Lua lua = new Lua(stdout, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); 
             } catch (Throwable t) {
-                // tenta mostrar info útil no console do OpenTTY
-                try {
-                    String msg = "Lua load error: " + t.toString();
-                    // se tiver echoCommand(String) público, use-o; se não, use aquele com StringItem
-                    echoCommand(msg);
-                    // imprime causas encadeadas (se houver)
-                    Throwable cause = t.getCause();
-                    int depth = 0;
-                    while (cause != null && depth < 5) {
-                        echoCommand(" cause: " + cause.toString());
-                        cause = cause.getCause();
-                        depth++;
-                    }
-                    // tenta detectar dependências faltando (quick check)
-                    String[] suspects = new String[] {
-                        "Environment", "FunctionValue", "TLParser", "TLLexer", "TLToken"
-                    };
-                    for (int i=0;i<suspects.length;i++){
-                        try {
-                            Class.forName(suspects[i]);
-                            echoCommand(" OK class present: " + suspects[i]);
-                        } catch (Throwable e) {
-                            echoCommand(" MISSING or failed to init: " + suspects[i] + " -> " + e.toString());
-                        }
-                    }
-                } catch (Throwable ignore) { }
-                // opcional: rethrow ou falha graciosa
+    try {
+        echoCommand("Lua load error: " + t.toString());
+        // detect common types
+        if (t instanceof OutOfMemoryError) {
+            echoCommand(" -> OutOfMemoryError: possivel falta de heap no aparelho");
+        } else if (t instanceof ExceptionInInitializerError) {
+            echoCommand(" -> ExceptionInInitializerError (erro em initializer estático)");
+        } else if (t instanceof NoClassDefFoundError) {
+            echoCommand(" -> NoClassDefFoundError (classe encontrada no JAR? ver jar tf)");
+        } else {
+            echoCommand(" -> Exception type: " + t.getClass().getName());
+        }
+
+        // quick check de classes dependentes (tente ajustar nomes de pacote se preciso)
+        String[] suspects = new String[] {
+            "Lua", "Environment", "FunctionValue", "TLParser", "TLLexer", "TLToken"
+        };
+        for (int i=0;i<suspects.length;i++) {
+            try {
+                Class.forName(suspects[i]); // CLDC pode falhar aqui em alguns firmwares, mas tenta
+                echoCommand(" OK class present: " + suspects[i]);
+            } catch (Throwable e) {
+                echoCommand(" MISSING/FAILED: " + suspects[i] + " -> " + e.toString());
             }
+        }
+
+        // tentar inspecionar alguns campos internos (p/ ExceptionInInitializerError) via reflection
+        try {
+            java.lang.reflect.Field[] f = t.getClass().getDeclaredFields();
+            for (int i=0;i<f.length;i++) {
+                f[i].setAccessible(true);
+                Object val = null;
+                try { val = f[i].get(t); } catch (Throwable ex) { val = null; }
+                echoCommand(" field: " + f[i].getName() + " = " + (val==null ? "null" : val.toString()));
+            }
+        } catch (Throwable ignored) { }
+    } catch (Throwable ignore) { }
+}
+
 
         }
         else if (mainCommand.equals("")) { }
