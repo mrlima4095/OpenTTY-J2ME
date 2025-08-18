@@ -450,7 +450,7 @@ public class Lua {
     private StringItem console;
     private boolean root;
 
-    public TinyLuaInterpreter(StringItem console, boolean root) {
+    public Lua(StringItem console, boolean root) {
         this.console = console; this.root = root;
         this.global = new Environment(null);
         registerBuiltins();
