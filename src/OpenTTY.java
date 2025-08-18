@@ -73,7 +73,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private StringItem status = new StringItem("Memory Status:", "");
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
                     OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOAD = new Command("Load Screen", Command.OK, 1), 
-                    DELETE = new Command("Delete", Command.OK, 1);
+                    START = new Command("Start new", Command.OK), DELETE = new Command("Delete", Command.OK, 1);
         
         public Monitor(String command, boolean root) {
             MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
@@ -89,7 +89,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : RUN);
                 if (MOD == HISTORY) { preview.addCommand(EDIT); } 
-                else if (MOD == PROCESS) { preview.addCommand(LOAD); }
+                else if (MOD == PROCESS) { preview.addCommand(LOAD); preview.addCommand(); }
     
                 preview.setCommandListener(this); 
                 load(); display.setCurrent(preview);
