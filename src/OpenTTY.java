@@ -566,8 +566,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // detect common types
         if (t instanceof OutOfMemoryError) {
             echoCommand(" -> OutOfMemoryError: possivel falta de heap no aparelho");
-        } else if (t instanceof ExceptionInInitializerError) {
-            echoCommand(" -> ExceptionInInitializerError (erro em initializer estático)");
         } else if (t instanceof NoClassDefFoundError) {
             echoCommand(" -> NoClassDefFoundError (classe encontrada no JAR? ver jar tf)");
         } else {
