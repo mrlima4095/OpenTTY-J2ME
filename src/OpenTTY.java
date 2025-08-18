@@ -285,12 +285,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
         else if (mainCommand.equals("htop")) { new Screen("list", "list.content=Memory,Process\nlist.button=Open\nMemory=execute top memory;\nProcess=execute top process;"); }
-        else if (mainCommand.equals("top")) { if (argument.equals("") || argument.equals("memory")) { new Monitor(null, root); } else if (argument.equals("process")) { new Monitor("process", root); } else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); } else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } }
+        else if (mainCommand.equals("top")) { 
+            if (argument.equals("") || argument.equals("memory") || argument.equals("process")) { new Monitor(argument, root); } 
+            else if (argument.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
+            else if (argument.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
+            else if (argument.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); }
+            else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } 
+        }
         // |
-        // Process
+        // Process 
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], genpid(), null, root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root); if (STATUS != 0) { return STATUS; } } } 
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); echoCommand(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name")); } }
-        else if (mainCommand.equals("trace")) { if (argument.equals("")) { } else if (getCommand(argument).equals("pid")) { echoCommand(getpid(getArgument(argument))); } else if (getCommand(argument).equals("owner")) { echoCommand(getowner(getArgument(argument))); } else if (getCommand(argument).equals("check")) { echoCommand(getpid(getArgument(argument)) != null ? "true" : "false"); } else { echoCommand("trace: " + getCommand(argument) + ": not found"); return 127; } }
+        else if (mainCommand.equals("trace")) {
+            mainCommand = getCommand(argument);
+            argument = getArgument(argument);
+            
+            if (mainCommand.equals("")) { } 
+            else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) {
+                if (argument.equals("")) { } 
+                else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); }
+            } 
+            else if (mainCommand.equals("view") || mainCommand.equals("read")) {
+                Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
+                
+                if (ITEM == null) {
+                    if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
+                    else { echoCommand("PID '" + argument + "' not found"); }
+                } else {
+                    if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0))); }
+                    else { echoCommand(renderJSON(ITEM, 0))); }
+                }
+                
+            }
+            else { echoCommand("trace: " + mainCommand + ": not found"); return 127; } 
+            
+        }
 
         // API 007 - (Bundle)
         // |
@@ -397,7 +426,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String PWD = argument.equals("") ? path : argument; 
             if (!PWD.startsWith("/")) { PWD = path + PWD; } 
-            if (!PWD.endsWith("/")) { PWD += "/"; } echoCommand("> " + PWD);
+            if (!PWD.endsWith("/")) { PWD += "/"; }
 
             Vector BUFFER = new Vector();
 
@@ -558,9 +587,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("psx")) { echoCommand(renderJSON(argument.equals("") ? trace : getprocess(argument), 0)); }
-        else if (mainCommand.equals("psy")) { viewer("Process List", renderJSON(argument.equals("") ? trace : getprocess(argument), 0)); }
-        else if (mainCommand.equals("")) { }
         else if (mainCommand.equals("")) { }
         else if (mainCommand.equals("")) { }
 
