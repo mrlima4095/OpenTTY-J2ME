@@ -1092,38 +1092,39 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | 
     // Kernel
-    private int kernel(String command, boolean root) {
-        mainCommand = getCommand(argument);
-            argument = getArgument(argument);
-            
-            if (mainCommand.equals("")) { } 
-            else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) {
-                if (argument.equals("")) { } 
-                else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); }
-            } 
-            else if (mainCommand.equals("view") || mainCommand.equals("read")) {
-                Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
+    private int kernel(String command, boolean root) {command = env(command.trim());
+        command = env(command.trim());
+        String mainCommand = getCommand(command), argument = getArgument(command);
+
+        if (mainCommand.equals("")) { } 
+        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) {
+            if (argument.equals("")) { } 
+            else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); }
+        } 
+        else if (mainCommand.equals("view") || mainCommand.equals("read")) {
+            Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
                 
-                if (ITEM == null) {
-                    if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
-                    else { echoCommand("PID '" + argument + "' not found"); }
+            if (ITEM == null) {
+                if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
+                else { echoCommand("PID '" + argument + "' not found"); }
                     
-                    return 127;
-                } else {
-                    if (ITEM.get("owner").equals("root") && !root) {
-                        if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "Permission denied!"); }
-                        else { echoCommand("Permission denied!"); }
+                return 127;
+            } else {
+                if (ITEM.get("owner").equals("root") && !root) {
+                    if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "Permission denied!"); }
+                    else { echoCommand("Permission denied!"); }
                         
-                        return 13;
-                    }
-                    
-                    if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
-                    else { echoCommand(renderJSON(ITEM, 0)); }
+                    return 13;
                 }
-                
+                    
+                if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
+                else { echoCommand(renderJSON(ITEM, 0)); }
             }
-            else { echoCommand("trace: " + mainCommand + ": not found"); return 127; } 
-            
+                
+        }
+        else { echoCommand("trace: " + mainCommand + ": not found"); return 127; } 
+        
+        return 0;
     }
     // | 
     // Virtual Objects
