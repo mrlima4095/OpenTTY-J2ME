@@ -4,8 +4,8 @@
     Version: 1.0
 */
 
-int Reflect(char code) {
-    printf(code, ".c2me")
+int build(char code) {
+    printf("int main() { %code }", ".c2me")
     
-    exec("build .c2me");
+    return exec("build .c2me");
 }
