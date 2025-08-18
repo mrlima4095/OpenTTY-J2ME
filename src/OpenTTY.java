@@ -585,20 +585,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        // tentar inspecionar alguns campos internos (p/ ExceptionInInitializerError) via reflection
-        try {
-            java.lang.reflect.Field[] f = t.getClass().getDeclaredFields();
-            for (int i=0;i<f.length;i++) {
-                f[i].setAccessible(true);
-                Object val = null;
-                try { val = f[i].get(t); } catch (Throwable ex) { val = null; }
-                echoCommand(" field: " + f[i].getName() + " = " + (val==null ? "null" : val.toString()));
-            }
-        } catch (Throwable ignored) { }
-    } catch (Throwable ignore) { }
-}
-
-
         }
         else if (mainCommand.equals("")) { }
 
