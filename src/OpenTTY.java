@@ -2163,5 +2163,4 @@ class Lua {
         }
     }
 
-    private void print(String text) { console.setText(console.getText().equals("") ? text : console.getText() + "\n" + text); }
 }
