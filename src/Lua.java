@@ -40,11 +40,6 @@ import java.io.IOException;
 import java.util.Vector;
 import java.util.Hashtable;
 
-/* === Output sink: change println to OpenTTY writer === */
-public interface TinyLuaOutput {
-    void println(String s);
-}
-
 /* === Lexer === */
 class TLToken {
     public String type; // e.g. IDENT, NUMBER, STRING, SYMBOL, KEYWORD, EOF
