@@ -85,3 +85,7 @@ Usage: `x11 [ option ] [PID]`
 
 - **Default Package**: Native OpenTTY MIDlet with all tools and updates of this release
 - **Lua Release**: OpenTTY MIDlet with support for Lua VM
+
+[ _OpenTTY Lua_ ]
+
+MIDlet **Lua** is based on Lua programming language
