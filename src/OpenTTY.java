@@ -2140,8 +2140,8 @@ class Lua {
                     Object a = args.elementAt(i);
                     sb.append( a==null ? "true" : a.toString() );
                 }
-                processCommand(sb.toString()), true, root;
-                return null;
+                
+                return processCommand(sb.toString(), true, root);
             }
         };
         global.set("exec", execFn);
