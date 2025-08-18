@@ -1094,7 +1094,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
         else if (mainCommand.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
         else if (mainCommand.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); }
-        else { echoCommand("top: " + getCommand(argument) + ": not found"); return 127; } 
         else if (mainCommand.equals("view") || mainCommand.equals("read")) {
             Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
                 
@@ -1116,7 +1115,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
                 
         }
-        else { echoCommand("trace: " + mainCommand + ": not found"); return 127; } 
+        else { echoCommand("topo: " + mainCommand + ": not found"); return 127; } 
         
         return 0;
     }
