@@ -297,36 +297,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], genpid(), null, root) : mainCommand.equals("stop") ? stop(args[i], root) : kill(args[i], true, root); if (STATUS != 0) { return STATUS; } } } 
         else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); echoCommand(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name")); } }
         else if (mainCommand.equals("trace")) {
-            mainCommand = getCommand(argument);
-            argument = getArgument(argument);
-            
-            if (mainCommand.equals("")) { } 
-            else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) {
-                if (argument.equals("")) { } 
-                else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); }
-            } 
-            else if (mainCommand.equals("view") || mainCommand.equals("read")) {
-                Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
-                
-                if (ITEM == null) {
-                    if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
-                    else { echoCommand("PID '" + argument + "' not found"); }
-                    
-                    return 127;
-                } else {
-                    if (ITEM.get("owner").equals("root") && !root) {
-                        if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "Permission denied!"); }
-                        else { echoCommand("Permission denied!"); }
-                        
-                        return 13;
-                    }
-                    
-                    if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
-                    else { echoCommand(renderJSON(ITEM, 0)); }
-                }
-                
-            }
-            else { echoCommand("trace: " + mainCommand + ": not found"); return 127; } 
             
         }
 
@@ -1119,6 +1089,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         return STATUS;
+    }
+    // | 
+    // Kernel
+    private int kernel(String command, boolean root) {
+        mainCommand = getCommand(argument);
+            argument = getArgument(argument);
+            
+            if (mainCommand.equals("")) { } 
+            else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) {
+                if (argument.equals("")) { } 
+                else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); }
+            } 
+            else if (mainCommand.equals("view") || mainCommand.equals("read")) {
+                Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
+                
+                if (ITEM == null) {
+                    if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
+                    else { echoCommand("PID '" + argument + "' not found"); }
+                    
+                    return 127;
+                } else {
+                    if (ITEM.get("owner").equals("root") && !root) {
+                        if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "Permission denied!"); }
+                        else { echoCommand("Permission denied!"); }
+                        
+                        return 13;
+                    }
+                    
+                    if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
+                    else { echoCommand(renderJSON(ITEM, 0)); }
+                }
+                
+            }
+            else { echoCommand("trace: " + mainCommand + ": not found"); return 127; } 
+            
     }
     // | 
     // Virtual Objects
