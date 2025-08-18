@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable(), 
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x54"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x55"; 
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -1657,9 +1657,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private int javaClass(String argument) { try { Class.forName(argument); return 0; } catch (ClassNotFoundException e) { return 3; } } 
-    // |
-    // C2ME
-    // | (Runtime)
     // |
     // History
     private void add2History(String command) { if (command.equals("") || command.equals(getLastHistory()) || command.startsWith("!!") || command.startsWith("#")) { } else { ((Vector) getobject("1", "history")).addElement(command.trim()); } }
