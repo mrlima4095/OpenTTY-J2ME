@@ -211,9 +211,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // MIDlet Shell
-    private int processCommand(String command) { return processCommand(command, true, false); }
-    private int processCommand(String command, boolean ignore) { return processCommand(command, true, false); }
-    private int processCommand(String command, boolean ignore, boolean root) { 
+    public int processCommand(String command) { return processCommand(command, true, false); }
+    public int processCommand(String command, boolean ignore) { return processCommand(command, true, false); }
+    public int processCommand(String command, boolean ignore, boolean root) { 
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command), argument = getpattern(getArgument(command));
         String[] args = splitArgs(getArgument(command));
@@ -556,7 +556,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { Lua lua = new Lua(stdout, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); }
+        else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); }
         else if (mainCommand.equals("")) { }
 
         // API 015 - (Scripts)
@@ -1719,23 +1719,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
 
 /* === Lexer === */
-class TLToken {
-    public String type; // e.g. IDENT, NUMBER, STRING, SYMBOL, KEYWORD, EOF
-    public String text;
-    public TLToken(String type, String text) { this.type = type; this.text = text; }
-}
-
+class TLToken { public String type; public String text; public TLToken(String type, String text) { this.type = type; this.text = text; } }
 class TLLexer {
     private String src;
-    private int pos;
-    private int len;
-    private static final String[] keywords = {"function","end","if","then","else","while","do","return","true","false","nil","and","or","not"};
+    private int pos, len;
+    private static final String[] keywords = { "function", "end", "if", "then", "else", "while", "do", "return", "true", "false", "nil", "and", "or", "not" };
 
-    public TLLexer(String s) {
-        this.src = s;
-        this.pos = 0;
-        this.len = s.length();
-    }
+    public TLLexer(String s) { this.src = s; this.pos = 0; this.len = s.length(); }
 
     private char peek() { return pos < len ? src.charAt(pos) : '\0'; }
     private char next() { return pos < len ? src.charAt(pos++) : '\0'; }
@@ -1814,15 +1804,9 @@ class TLLexer {
 }
 
 /* === AST nodes === */
-abstract class Node {}
-
-abstract class Expr extends Node {
-    abstract Object eval(Environment env);
-}
-
-abstract class Stmt extends Node {
-    abstract Object execute(Environment env);
-}
+abstract class Node { }
+abstract class Expr extends Node { abstract Object eval(Environment env); }
+abstract class Stmt extends Node { abstract Object execute(Environment env); }
 
 class NumberExpr extends Expr {
     public double value;
@@ -2125,11 +2109,11 @@ class TLParser {
 /* === Interpreter / Runner === */
 class Lua {
     private Environment global;
-    private StringItem console;
+    private OpenTTY midlet;
     private boolean root;
 
-    public Lua(StringItem console, boolean root) {
-        this.console = console; this.root = root;
+    public Lua(OpenTTY midlet, boolean root) {
+        this.midlet = midlet; this.root = root;
         this.global = new Environment(null);
         registerBuiltins();
     }
