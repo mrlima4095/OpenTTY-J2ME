@@ -563,7 +563,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("")) { }
+        else if (mainCommand.equals("psx")) { echoCommand(renderJSON(trace)); }
+        else if (mainCommand.equals("psy")) { viewer("Process List", renderJSON(trace)); }
         else if (mainCommand.equals("")) { }
         else if (mainCommand.equals("")) { }
         else if (mainCommand.equals("")) { }
@@ -2087,6 +2088,50 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String[] splitBlock(String code, char separator) { Vector parts = new Vector(); int depthPar = 0, depthBrace = 0, start = 0; boolean inString = false; for (int i = 0; i < code.length(); i++) { char c = code.charAt(i); if (c == '"') { if (i == 0 || code.charAt(i - 1) != '\\') { inString = !inString; } } else if (!inString) { if (c == '(') { depthPar++; } else if (c == ')') { depthPar--; } else if (c == '{') { depthBrace++; } else if (c == '}') { depthBrace--; } else if (c == separator && depthPar == 0 && depthBrace == 0) { String part = code.substring(start, i).trim(); if (part.equals("")) { part = "' '"; } parts.addElement(part); start = i + 1; } } } String part = code.substring(start).trim(); if (part.equals("")) { part = "' '"; } parts.addElement(part); String[] result = new String[parts.size()]; parts.copyInto(result); return result; }
     private boolean isFuncChar(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; }
     private boolean startsWithAny(String text, String[] options) { for (int i = 0; i < options.length; i++) { if (text.startsWith(options[i])) { return true; } } return false; }
+    private String renderJSON(Object obj, int indent) {
+        StringBuffer json = new StringBuffer();
+        String pad = "";
+        for (int i = 0; i < indent; i++) pad += "  ";
+
+        if (obj instanceof Hashtable) {
+            Hashtable map = (Hashtable) obj;
+            json.append("{\n");
+            Enumeration keys = map.keys();
+            while (keys.hasMoreElements()) {
+                String key = (String) keys.nextElement();
+                Object val = map.get(key);
+                json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1));
+                if (keys.hasMoreElements()) { json.append(","); }
+                json.append("\n");
+            }
+
+            json.append(pad + "}");
+        }
+
+        else if (obj instanceof Vector) {
+            Vector list = (Vector) obj;
+            json.append("[\n");
+            for (int i = 0; i < list.size(); i++) {
+                json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1));
+
+                if (i < list.size() - 1) json.append(",");
+                
+                json.append("\n");
+            }
+            json.append(pad + "]");
+        }
+        else if (obj instanceof String) {
+            String s = (String) obj;
+            s = replace(s, "\n", "\\n");
+            s = replace(s, "\r", "\\r");
+            s = replace(s, "\t", "\\t");
+            json.append("\"" + s + "\"");
+        }
+
+        else { json.append(String.valueOf(obj)); }
+
+        return json.toString();
+    }
     // |
     // History
     private void add2History(String command) { if (command.equals("") || command.equals(getLastHistory()) || command.startsWith("!!") || command.startsWith("#")) { } else { ((Vector) getobject("1", "history")).addElement(command.trim()); } }
