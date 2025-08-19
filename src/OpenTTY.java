@@ -2148,32 +2148,19 @@ class Lua {
     }
 
     public void run(String source) {
-    try {
-        midlet.processCommand("echo [1] Iniciando parsing...", false, root);
-        TLParser p = new TLParser(source);
-        Vector stmts = p.parseChunk();
-        midlet.processCommand("echo [2] Parsing concluido. Total de " + stmts.size() + " comandos.", false, root);
-
-        for (int i=0; i<stmts.size(); i++) {
-            midlet.processCommand("echo [3] Executando comando " + (i+1), false, root);
-            Stmt s = (Stmt)stmts.elementAt(i);
-            Object r = s.execute(global);
-            if (r instanceof ReturnValue) {
-                // top-level return ignored
+        try {
+            TLParser p = new TLParser(source);
+            Vector stmts = p.parseChunk();
+            for (int i=0;i<stmts.size();i++) {
+                Stmt s = (Stmt)stmts.elementAt(i);
+                Object r = s.execute(global);
+                if (r instanceof ReturnValue) {
+                    // top-level return ignored
+                }
             }
+        } catch (Throwable t) {
+            midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
         }
-        midlet.processCommand("echo [4] Execucao concluida.", false, root);
-    } catch (Throwable t) {
-        // Bloco de catch melhorado que sugerimos acima
-        String className = t.getClass().getName();
-        String message = t.getMessage();
-        StringBuffer errorMsg = new StringBuffer();
-        errorMsg.append("ERRO FATAL: ");
-        errorMsg.append(className);
-        if (message != null) { errorMsg.append(" - ").append(message); }
-        midlet.processCommand("echo " + errorMsg.toString(), false, root);
-        t.printStackTrace();
     }
-}
 
 }
