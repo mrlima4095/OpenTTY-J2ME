@@ -1722,7 +1722,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
 }
 class Lua {
-
     private OpenTTY midlet;
     private boolean root;
     private Hashtable globals;
@@ -1773,8 +1772,7 @@ class Lua {
     }
 
     public Lua(OpenTTY midlet, boolean root) {
-        this.midlet = midlet;
-        this.root = root;
+        this.midlet = midlet; this.root = root;
         this.globals = new Hashtable();
         this.tokenIndex = 0;
         
@@ -2327,7 +2325,7 @@ class Lua {
     // Interface for Lua functions (built-in and user-defined)
     public interface LuaFunction { Object call(Vector args) throws Exception; }
     // Class for user-defined Lua functions
-    public class UserDefinedLuaFunction implements LuaFunction {
+    public static class UserDefinedLuaFunction implements LuaFunction {
         private Vector params;
         private Vector bodyTokens;
         private Hashtable closureScope; // The scope where the function was defined
