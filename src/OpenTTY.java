@@ -1889,7 +1889,7 @@ class Buider {
         return parsePrimary(); 
     }
     private Expr parsePrimary() {
-        if (cur.type.equals("NUMBER")) { double v = 0; try { v = Double.valueOf(cur.text).doubleValue(); } catch (Exception ex) { v = 0; } next(); return new NumberExpr(v); }
+        if (cur.type.equals("NUMBER")) { double v = 0; try { v = getNumber(cur.text).doubleValue(); } catch (Exception ex) { v = 0; } next(); return new NumberExpr(v); }
         if (cur.type.equals("STRING")) { String s = cur.text; next(); return new StringExpr(s); }
         if (cur.type.equals("KEYWORD") && cur.text.equals("true")) { next(); return new BoolExpr(true); }
         if (cur.type.equals("KEYWORD") && cur.text.equals("false")) { next(); return new BoolExpr(false); }
