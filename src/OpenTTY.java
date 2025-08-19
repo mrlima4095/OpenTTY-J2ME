@@ -1793,7 +1793,6 @@ class TLLexer {
         pos++;
         return new TLToken("SYMBOL", new String(new char[] { c }));
     }
-}
 
 /* === AST nodes === */
 abstract class Node { }
@@ -2184,4 +2183,4 @@ public class Lua {
             midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
         }
     }
-}
+} }
