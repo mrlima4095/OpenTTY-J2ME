@@ -1,5 +1,5 @@
+import java.util.*;
 import java.io.*;
-import java.lang.*;
 
 public class TLParser {
     private TLLexer lex; private TLToken cur;
