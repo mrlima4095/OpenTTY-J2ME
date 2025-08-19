@@ -2083,7 +2083,7 @@ class TLParser {
     private Expr parseMul() { Expr e = parseUnary(); while (cur.type.equals("SYMBOL") && (cur.text.equals("*")||cur.text.equals("/")||cur.text.equals("%"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseUnary()); } return e; }
     private Expr parseUnary() { if (cur.type.equals("SYMBOL") && cur.text.equals("-")) { next(); return new BinaryExpr("-", new NumberExpr(0), parseUnary()); } if (cur.type.equals("KEYWORD") && cur.text.equals("not")) { next(); return new BinaryExpr("and", new BoolExpr(false), parseUnary()); } return parsePrimary(); }
     private Expr parsePrimary() {
-        if (cur.type.equals("NUMBER")) { double v = 0; try { v = Double.parseDouble(cur.text); } catch (Exception ex) { v = 0; } next(); return new NumberExpr(v); }
+        if (cur.type.equals("NUMBER")) { double v = 0; try { v = Double.valueOf(cur.text); } catch (Exception ex) { v = 0; } next(); return new NumberExpr(v); }
         if (cur.type.equals("STRING")) { String s = cur.text; next(); return new StringExpr(s); }
         if (cur.type.equals("KEYWORD") && cur.text.equals("true")) { next(); return new BoolExpr(true); }
         if (cur.type.equals("KEYWORD") && cur.text.equals("false")) { next(); return new BoolExpr(false); }
