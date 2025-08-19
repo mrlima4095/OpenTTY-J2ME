@@ -2007,11 +2007,11 @@ public class Lua {
         this.cur = lex.nextToken();
     }
 
-    /*private void next() { cur = lex.nextToken(); }
+    private void next() { cur = lex.nextToken(); }
     private boolean accept(String type, String text) { if (cur.type.equals(type) && (text==null || cur.text.equals(text))) { next(); return true; } return false; }
     private void expect(String type, String text) {
         if (!accept(type, text)) throw new RuntimeException("Parse error expected " + type + ":" + text + " got " + cur.type + ":" + cur.text);
-    }*/
+    }
 
     /*public Vector parseChunk() {
         Vector stmts = new Vector();
