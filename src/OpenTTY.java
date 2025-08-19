@@ -1829,7 +1829,7 @@ class Lua {
                     sb.append(code.charAt(i));
                     i++;
                 }
-                
+
                 try {
                     double numValue = Double.parseDouble(sb.toString());
                     tokens.addElement(new Token(NUMBER, new Double(numValue)));
@@ -2324,12 +2324,12 @@ class Lua {
 
 
     // Interface for Lua functions (built-in and user-defined)
-    private interface LuaFunction {
+    public interface LuaFunction {
         Object call(Vector args) throws Exception;
     }
 
     // Class for user-defined Lua functions
-    private class UserDefinedLuaFunction implements LuaFunction {
+    public class UserDefinedLuaFunction implements LuaFunction {
         private Vector params;
         private Vector bodyTokens;
         private Hashtable closureScope; // The scope where the function was defined
