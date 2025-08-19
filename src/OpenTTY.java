@@ -2001,10 +2001,10 @@ public class Lua {
     }
 
     // --- Parser fields re-init for parsing
-    private void startParser(String s) {
+    /*private void startParser(String s) {
         this.lex = new TLLexer(s);
         this.cur = lex.nextToken();
-    }
+    }*/
 
     private void next() { cur = lex.nextToken(); }
     private boolean accept(String type, String text) { if (cur.type.equals(type) && (text==null || cur.text.equals(text))) { next(); return true; } return false; }
@@ -2016,14 +2016,14 @@ public class Lua {
         Vector stmts = new Vector();
         while (!cur.type.equals("EOF") ) {
             if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); continue; }
-            Stmt s = parseStatement();
+            //Stmt s = parseStatement();
             if (cur.type.equals("SYMBOL") && cur.text.equals(";")) next();
-            stmts.addElement(s);
+            //stmts.addElement(s);
         }
         return stmts;
     }
 
-    private Stmt parseStatement() {
+    /*private Stmt parseStatement() {
         if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); return new ExprStmt(new NilExpr()); }
         if (cur.type.equals("KEYWORD")) {
             if (cur.text.equals("function")) return parseFunctionDef();
@@ -2050,9 +2050,9 @@ public class Lua {
             }
         }
         Expr e = parseExpression(); return new ExprStmt(e);
-    }
+    }*/
 
-    private FunctionDefStmt parseFunctionDef() {
+    /*private FunctionDefStmt parseFunctionDef() {
         expect("KEYWORD","function");
         String name = null;
         if (cur.type.equals("IDENT")) { name = cur.text; next(); }
@@ -2069,9 +2069,9 @@ public class Lua {
         }
         expect("KEYWORD","end");
         return new FunctionDefStmt(name, params, body);
-    }
+    }*/
 
-    private IfStmt parseIf() {
+    /*private IfStmt parseIf() {
         expect("KEYWORD","if"); Expr cond = parseExpression(); expect("KEYWORD","then");
         Vector thenB = new Vector(); Vector elseB = null;
         while (!(cur.type.equals("KEYWORD") && (cur.text.equals("else")||cur.text.equals("end")))) { thenB.addElement(parseStatement()); }
@@ -2081,28 +2081,38 @@ public class Lua {
         }
         expect("KEYWORD","end");
         return new IfStmt(cond, thenB, elseB);
-    }
+    }*/
 
-    private WhileStmt parseWhile() {
+    /*private WhileStmt parseWhile() {
         expect("KEYWORD","while"); Expr cond = parseExpression(); expect("KEYWORD","do");
         Vector body = new Vector();
         while (!(cur.type.equals("KEYWORD") && cur.text.equals("end"))) body.addElement(parseStatement());
         expect("KEYWORD","end");
         return new WhileStmt(cond, body);
-    }
+    }*/
 
-    private Expr parseExpression() { return parseOr(); }
-    private Expr parseOr() {
+    /*private Expr parseExpression() { return parseOr(); }
+    /*private Expr parseOr() {
         Expr e = parseAnd();
         while (cur.type.equals("KEYWORD") && cur.text.equals("or")) { String op = cur.text; next(); e = new BinaryExpr(op, e, parseAnd()); }
         return e;
-    }
-    private Expr parseAnd() { Expr e = parseComparison(); while (cur.type.equals("KEYWORD") && cur.text.equals("and")) { String op=cur.text; next(); e=new BinaryExpr(op,e,parseComparison()); } return e; }
-    private Expr parseComparison() { Expr e = parseAdd(); while (cur.type.equals("SYMBOL") || cur.type.equals("KEYWORD")) {
-        String t = cur.text; if (t.equals("==")||t.equals("~=")||t.equals("<")||t.equals(">")||t.equals("<=")||t.equals(">=")) { next(); e = new BinaryExpr(t, e, parseAdd()); } else break; } return e; }
-    private Expr parseAdd() { Expr e = parseMul(); while (cur.type.equals("SYMBOL") && (cur.text.equals("+")||cur.text.equals("-"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseMul()); } return e; }
-    private Expr parseMul() { Expr e = parseUnary(); while (cur.type.equals("SYMBOL") && (cur.text.equals("*")||cur.text.equals("/")||cur.text.equals("%"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseUnary()); } return e; }
-    private Expr parseUnary() { 
+    }*/
+    //private Expr parseAnd() { Expr e = parseComparison(); while (cur.type.equals("KEYWORD") && cur.text.equals("and")) { String op=cur.text; next(); e=new BinaryExpr(op,e,parseComparison()); } return e; }
+    /*private Expr parseComparison() { 
+        Expr e = parseAdd(); 
+
+        while (cur.type.equals("SYMBOL") || cur.type.equals("KEYWORD")) {
+            String t = cur.text; 
+
+            if (t.equals("==")||t.equals("~=")||t.equals("<")||t.equals(">")||t.equals("<=")||t.equals(">=")) { next(); e = new BinaryExpr(t, e, parseAdd()); } 
+            else break; 
+        } 
+
+        return e; 
+    }*/
+    //private Expr parseAdd() { Expr e = parseMul(); while (cur.type.equals("SYMBOL") && (cur.text.equals("+")||cur.text.equals("-"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseMul()); } return e; }
+    //private Expr parseMul() { Expr e = parseUnary(); while (cur.type.equals("SYMBOL") && (cur.text.equals("*")||cur.text.equals("/")||cur.text.equals("%"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseUnary()); } return e; }
+    /*private Expr parseUnary() { 
         if (cur.type.equals("SYMBOL") && cur.text.equals("-")) { 
             next(); 
             return new BinaryExpr("-", new NumberExpr(0.0), parseUnary()); 
@@ -2112,8 +2122,8 @@ public class Lua {
             return new BinaryExpr("not", parseUnary(), null);
         }
         return parsePrimary(); 
-    }
-    private Expr parsePrimary() {
+    }*/
+    /*private Expr parsePrimary() {
         if (cur.type.equals("NUMBER")) {
             double v = 0.0;
             try { v = Double.valueOf(cur.text).doubleValue(); } catch (Exception ex) { v = 0.0; }
@@ -2140,7 +2150,7 @@ public class Lua {
         }
         if (accept("SYMBOL","(")) { Expr e = parseExpression(); expect("SYMBOL",")"); return e; }
         throw new RuntimeException("Unexpected token " + cur.type + ":" + cur.text);
-    }
+    }*/
 
     private void registerBuiltins() {
         FunctionValue printFn = new FunctionValue(new Vector(), new Vector(), global) {
@@ -2171,13 +2181,13 @@ public class Lua {
 
     public void run(String source) {
         try {
-            startParser(source);
+            /*startParser(source);
             Vector stmts = parseChunk();
             for (int i = 0; i < stmts.size(); i++) {
                 Stmt s = (Stmt)stmts.elementAt(i);
                 Object r = s.execute(global);
                 if (r instanceof ReturnValue) { }
-            }
+            }*/
             midlet.processCommand("echo Ok!", false, true);
         } catch (Throwable t) {
             midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
