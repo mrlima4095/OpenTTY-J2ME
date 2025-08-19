@@ -1722,7 +1722,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
 }
 class Lua {
-    private OpenTTY midlet;
+    //private OpenTTY midlet;
     private boolean root;
     private Hashtable globals;
     private Vector tokens;
@@ -1765,7 +1765,7 @@ class Lua {
     }
 
     public Lua(OpenTTY midlet, boolean root) {
-        this.midlet = midlet; this.root = root;
+        final OpenTTY this.midlet = midlet; this.root = root;
         this.globals = new Hashtable();
         this.tokenIndex = 0;
         
@@ -1773,7 +1773,7 @@ class Lua {
         globals.put("print", new LuaFunction() {
             public Object call(Vector args) {
                 if (!args.isEmpty()) {
-                    this.midlet.processCommand("echo " + args.elementAt(0).toString(), true, root);
+                    midlet.processCommand("echo " + args.elementAt(0).toString(), true, root);
                 }
                 return null; // Lua functions typically return nil if nothing else
             }
@@ -1929,7 +1929,7 @@ class Lua {
             }
 
             // If we reach here, it's an unexpected character
-            midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
+            this.midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
             i++;
         }
         
