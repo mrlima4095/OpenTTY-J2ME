@@ -1730,8 +1730,7 @@ class Lua {
 
     // Token types
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4;
-    private static final int IDENTIFIER = 5;
-    private static final int PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9;
+    private static final int IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9;
     private static final int MODULO = 10;
     private static final int EQ = 11; // ==
     private static final int NE = 12; // ~=
@@ -1739,16 +1738,10 @@ class Lua {
     private static final int GT = 14; // >
     private static final int LE = 15; // <=
     private static final int GE = 16; // >=
-    private static final int AND = 17;
-    private static final int OR = 18;
-    private static final int NOT = 19;
+    private static final int AND = 17, OR = 18, NOT = 19;
     private static final int ASSIGN = 20; // =
-    private static final int IF = 21;
-    private static final int THEN = 22;
-    private static final int ELSE = 23;
-    private static final int END = 24;
-    private static final int WHILE = 25;
-    private static final int DO = 26;
+    private static final int IF = 21, THEN = 22, ELSE = 23, END = 24;
+    private static final int WHILE = 25, DO = 26;
     private static final int RETURN = 27;
     private static final int FUNCTION = 28;
     private static final int LPAREN = 29; // (
@@ -1780,7 +1773,7 @@ class Lua {
         globals.put("print", new LuaFunction() {
             public Object call(Vector args) {
                 if (!args.isEmpty()) {
-                    midlet.processCommand("echo " + args.elementAt(0).toString(), true, root);
+                    this.midlet.processCommand("echo " + args.elementAt(0).toString(), true, root);
                 }
                 return null; // Lua functions typically return nil if nothing else
             }
@@ -1800,8 +1793,7 @@ class Lua {
             this.tokens = tokenize(code);
             parseAndExecute();
         } catch (Exception e) {
-            midlet.processCommand("echo Lua Error: " + e.toString(), true, root);
-            e.printStackTrace();
+            this.midlet.processCommand("echo Lua Error: " + e.toString(), true, root);
         }
     }
 
@@ -1832,7 +1824,7 @@ class Lua {
                     double numValue = Double.parseDouble(sb.toString());
                     tokens.addElement(new Token(NUMBER, new Double(numValue)));
                 } catch (NumberFormatException e) {
-                    midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
+                    this.midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
                     tokens.addElement(new Token(NUMBER, new Double(0))); // Valor padrão em caso de erro
                 }
 
@@ -1910,7 +1902,7 @@ class Lua {
                     tokens.addElement(new Token(NE, "~="));
                     i += 2;
                 } else {
-                    midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '~'", true, root);
+                    this.midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '~'", true, root);
                     i++;
                 }
                 continue;
