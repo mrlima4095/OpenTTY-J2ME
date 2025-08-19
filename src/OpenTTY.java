@@ -1706,8 +1706,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 
-    
-}
+
 
 
 /* === Lexer === */
@@ -1793,6 +1792,7 @@ class TLLexer {
         pos++;
         return new TLToken("SYMBOL", new String(new char[] { c }));
     }
+}
 
 /* === AST nodes === */
 abstract class Node { }
