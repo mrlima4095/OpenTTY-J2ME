@@ -1228,7 +1228,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             this.root = root;
             
             if (MOD == SERVER || MOD == BIND) {
-                if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); PID = "31522"; DB = ""; } 
+                if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); port = "31522"; DB = ""; } 
                 else { port = getCommand(args); DB = getArgument(args); DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB; }
 
                 new Thread(this, MOD == BIND ? "Bind" : "Server").start();
@@ -1240,10 +1240,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable proc = genprocess(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", root, null);
 
             if (MOD == NC) {
-                if (args.startsWith("-l")) {
-
-                }
-
                 address = args;
                 try {
                     CONN = (SocketConnection) Connector.open("socket://" + address);
