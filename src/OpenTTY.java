@@ -1765,7 +1765,7 @@ class Lua {
     }
 
     public Lua(OpenTTY midlet, boolean root) {
-        final OpenTTY this.midlet = midlet; this.root = root;
+        this.midlet = midlet; final OpenTTY app = midlet; this.root = root;
         this.globals = new Hashtable();
         this.tokenIndex = 0;
         
@@ -1773,7 +1773,7 @@ class Lua {
         globals.put("print", new LuaFunction() {
             public Object call(Vector args) {
                 if (!args.isEmpty()) {
-                    midlet.processCommand("echo " + args.elementAt(0).toString(), true, root);
+                    app.processCommand("echo " + args.elementAt(0).toString(), true, root);
                 }
                 return null; // Lua functions typically return nil if nothing else
             }
@@ -1781,7 +1781,7 @@ class Lua {
         globals.put("exec", new LuaFunction() {
             public Object call(Vector args) {
                 if (!args.isEmpty()) {
-                    return midlet.processCommand(args.elementAt(0).toString(), true, root);
+                    return app.processCommand(args.elementAt(0).toString(), true, root);
                 }
                 return null;
             }
