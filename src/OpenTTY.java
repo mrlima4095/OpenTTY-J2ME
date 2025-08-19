@@ -1984,12 +1984,20 @@ class TLParser {
     public Vector parseChunk() {
         Vector stmts = new Vector();
         while (!cur.type.equals("EOF") ) {
-            stmts.addElement(parseStatement());
+            // skip stray semicolons as empty statements
+            if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); continue; }
+            Stmt s = parseStatement();
+            // allow optional semicolon after statement
+            if (cur.type.equals("SYMBOL") && cur.text.equals(";")) next();
+            stmts.addElement(s);
         }
         return stmts;
     }
 
     private Stmt parseStatement() {
+        // handle empty semicolon
+        if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); return new ExprStmt(new NilExpr()); }
+
         if (cur.type.equals("KEYWORD")) {
             if (cur.text.equals("function")) return parseFunctionDef();
             if (cur.text.equals("if")) return parseIf();
@@ -2000,7 +2008,9 @@ class TLParser {
         if (cur.type.equals("IDENT")) {
             String name = cur.text; next();
             if (accept("SYMBOL", "=")) {
-                Expr e = parseExpression(); return new AssignStmt(name, e);
+                Expr e = parseExpression();
+                // optional semicolon will be consumed by caller
+                return new AssignStmt(name, e);
             } else {
                 // function call as statement
                 Expr func = new VarExpr(name);
@@ -2096,7 +2106,6 @@ class TLParser {
         throw new RuntimeException("Unexpected token " + cur.type + ":" + cur.text);
     }
 }
-
 /* === Interpreter / Runner === */
 class Lua {
     private Environment global;
