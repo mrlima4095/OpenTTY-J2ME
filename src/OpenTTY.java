@@ -2012,6 +2012,7 @@ public class Lua {
     private void expect(String type, String text) {
         if (!accept(type, text)) throw new RuntimeException("Parse error expected " + type + ":" + text + " got " + cur.type + ":" + cur.text);
     }
+    
     /*public Vector parseChunk() {
         Vector stmts = new Vector();
         while (!cur.type.equals("EOF") ) {
@@ -2052,7 +2053,7 @@ public class Lua {
         Expr e = parseExpression(); return new ExprStmt(e);
     }*/
 
-    /*private FunctionDefStmt parseFunctionDef() {
+    private FunctionDefStmt parseFunctionDef() {
         expect("KEYWORD","function");
         String name = null;
         if (cur.type.equals("IDENT")) { name = cur.text; next(); }
@@ -2069,7 +2070,7 @@ public class Lua {
         }
         expect("KEYWORD","end");
         return new FunctionDefStmt(name, params, body);
-    }*/
+    }
 
     /*private IfStmt parseIf() {
         expect("KEYWORD","if"); Expr cond = parseExpression(); expect("KEYWORD","then");
