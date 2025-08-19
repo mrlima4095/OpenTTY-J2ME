@@ -1819,16 +1819,16 @@ public class Lua {
         int i = 0;
         while (i < code.length()) {
             char c = code.charAt(i);
-            if (Character.isWhitespace(c)) {
+            if (isWhitespace(c)) {
                 i++;
                 continue;
             }
 
             // Numbers
-            if (Character.isDigit(c) || c == '.') {
+            if (isDigit(c) || c == '.') {
                 StringBuffer sb = new StringBuffer();
                 boolean hasDecimal = false;
-                while (i < code.length() && (Character.isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
+                while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
                     if (code.charAt(i) == '.') {
                         if (hasDecimal) break;
                         hasDecimal = true;
@@ -1856,9 +1856,9 @@ public class Lua {
             }
 
             // Identifiers and Keywords
-            if (Character.isLetter(c) || c == '_') {
+            if (isLetter(c)) {
                 StringBuffer sb = new StringBuffer();
-                while (i < code.length() && (Character.isLetterOrDigit(code.charAt(i)) || code.charAt(i) == '_')) {
+                while (i < code.length() && isLetterOrDigit(code.charAt(i))) {
                     sb.append(code.charAt(i));
                     i++;
                 }
@@ -1883,7 +1883,10 @@ public class Lua {
                 continue;
             }
 
-            // Operators and Punctuation
+            // Rest of the tokenizer remains the same...
+            // [Operators and punctuation handling as before]
+            
+            // +, -, *, /, %, etc...
             if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; continue; }
             if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; continue; }
             if (c == '*') { tokens.addElement(new Token(MULTIPLY, "*")); i++; continue; }
@@ -1908,7 +1911,6 @@ public class Lua {
                     tokens.addElement(new Token(NE, "~="));
                     i += 2;
                 } else {
-                    // Lua doesn't have a standalone '~' operator, treat as error or ignore
                     midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '~'", true, root);
                     i++;
                 }
@@ -1939,9 +1941,11 @@ public class Lua {
             midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
             i++;
         }
+        
         tokens.addElement(new Token(EOF, "EOF"));
         return tokens;
     }
+
 
     private Token peek() {
         if (tokenIndex < tokens.size()) {
