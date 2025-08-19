@@ -1800,9 +1800,15 @@ abstract class Expr extends Node { abstract Object eval(Environment env); }
 abstract class Stmt extends Node { abstract Object execute(Environment env); }
 
 class NumberExpr extends Expr {
-    public double value;
-    public NumberExpr(double v) { this.value = v; }
-    Object eval(Environment env) { return new Double(value); }
+    public float value;  // trocar double -> float
+
+    public NumberExpr(float v) {
+        this.value = v;
+    }
+
+    Object eval(Environment env) {
+        return new Float(value); // Float existe no CLDC 1.0
+    }
 }
 
 class StringExpr extends Expr {
@@ -2110,28 +2116,66 @@ class TLParser {
         return parsePrimary(); 
     }
     private Expr parsePrimary() {
-        if (cur.type.equals("NUMBER")) { double v = 0; try { v = Double.valueOf(cur.text).doubleValue(); } catch (Exception ex) { v = 0; } next(); return new NumberExpr(v); }
-        if (cur.type.equals("STRING")) { String s = cur.text; next(); return new StringExpr(s); }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("true")) { next(); return new BoolExpr(true); }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("false")) { next(); return new BoolExpr(false); }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("nil")) { next(); return new NilExpr(); }
-        if (cur.type.equals("IDENT")) {
-            String name = cur.text; next(); // possible call
-            Expr base = new VarExpr(name);
-            if (accept("SYMBOL","(")) {
-                Vector args = new Vector();
-                if (!accept("SYMBOL",")")) {
-                    args.addElement(parseExpression());
-                    while (accept("SYMBOL",",")) args.addElement(parseExpression());
-                    expect("SYMBOL",")");
-                }
-                return new CallExpr(base, args);
-            }
-            return base;
-        }
-        if (accept("SYMBOL","(")) { Expr e = parseExpression(); expect("SYMBOL",")"); return e; }
-        throw new RuntimeException("Unexpected token " + cur.type + ":" + cur.text);
+    if (cur.type.equals("NUMBER")) {
+        float v = 0;
+        try {
+            v = parseFloat(cur.text); // método próprio para converter string -> float
+        } catch (Exception ex) { v = 0; }
+        next();
+        return new NumberExpr(v); // seu NumberExpr precisa aceitar float
     }
+    if (cur.type.equals("STRING")) { 
+        String s = cur.text; next(); 
+        return new StringExpr(s); 
+    }
+    if (cur.type.equals("KEYWORD") && cur.text.equals("true")) { next(); return new BoolExpr(true); }
+    if (cur.type.equals("KEYWORD") && cur.text.equals("false")) { next(); return new BoolExpr(false); }
+    if (cur.type.equals("KEYWORD") && cur.text.equals("nil")) { next(); return new NilExpr(); }
+    if (cur.type.equals("IDENT")) {
+        String name = cur.text; next(); // possible call
+        Expr base = new VarExpr(name);
+        if (accept("SYMBOL","(")) {
+            Vector args = new Vector();
+            if (!accept("SYMBOL",")")) {
+                args.addElement(parseExpression());
+                while (accept("SYMBOL",",")) args.addElement(parseExpression());
+                expect("SYMBOL",")");
+            }
+            return new CallExpr(base, args);
+        }
+        return base;
+    }
+    if (accept("SYMBOL","(")) { Expr e = parseExpression(); expect("SYMBOL",")"); return e; }
+    throw new RuntimeException("Unexpected token " + cur.type + ":" + cur.text);
+}
+
+// método utilitário para CLDC 1.0, substituindo Double.valueOf
+private float parseFloat(String s) {
+    float result = 0;
+    boolean neg = false;
+    int i = 0;
+    if (s.charAt(0) == '-') { neg = true; i++; }
+    int intPart = 0;
+    while (i < s.length() && s.charAt(i) >= '0' && s.charAt(i) <= '9') {
+        intPart = intPart * 10 + (s.charAt(i) - '0');
+        i++;
+    }
+    result = intPart;
+    if (i < s.length() && s.charAt(i) == '.') { // decimal
+        i++;
+        float dec = 0;
+        float div = 10;
+        while (i < s.length() && s.charAt(i) >= '0' && s.charAt(i) <= '9') {
+            dec += (s.charAt(i) - '0') / div;
+            div *= 10;
+            i++;
+        }
+        result += dec;
+    }
+    if (neg) result = -result;
+    return result;
+}
+
 }
 /* === Interpreter / Runner === */
 class Lua {
