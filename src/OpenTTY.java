@@ -2190,7 +2190,6 @@ public class Lua {
     }
 
 }*/
-
 public class Lua {
     private Environment global;
     private OpenTTY midlet;
@@ -2247,146 +2246,146 @@ public class Lua {
             midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
         }
     }
-}
 
-// Classe TLParser
-public static class TLParser {
-    private Token cur;
+    // Classe TLParser movida para dentro de Lua
+    private class TLParser {
+        private Token cur;
 
-    public TLParser(String source) {
-        // Inicialização do parser com o código-fonte
-    }
-
-    public Vector parseChunk() {
-        // Implementação do método parseChunk
-        return new Vector();
-    }
-
-    private Expr parseAnd() {
-        Expr e = parseComparison();
-        while (cur.type.equals("KEYWORD") && cur.text.equals("and")) {
-            String op = cur.text;
-            next();
-            e = new BinaryExpr(op, e, parseComparison());
+        public TLParser(String source) {
+            // Inicialização do parser com o código-fonte
         }
-        return e;
-    }
 
-    private Expr parseComparison() {
-        Expr e = parseAdd();
-        while (cur.type.equals("SYMBOL") || cur.type.equals("KEYWORD")) {
-            String t = cur.text;
-            if (t.equals("==") || t.equals("~=") || t.equals("<") || t.equals(">") || t.equals("<=") || t.equals(">=")) {
+        public Vector parseChunk() {
+            // Implementação do método parseChunk
+            return new Vector();
+        }
+
+        private Expr parseAnd() {
+            Expr e = parseComparison();
+            while (cur.type.equals("KEYWORD") && cur.text.equals("and")) {
+                String op = cur.text;
                 next();
-                e = new BinaryExpr(t, e, parseAdd());
-            } else break;
-        }
-        return e;
-    }
-
-    private Expr parseAdd() {
-        Expr e = parseMul();
-        while (cur.type.equals("SYMBOL") && (cur.text.equals("+") || cur.text.equals("-"))) {
-            String t = cur.text;
-            next();
-            e = new BinaryExpr(t, e, parseMul());
-        }
-        return e;
-    }
-
-    private Expr parseMul() {
-        Expr e = parseUnary();
-        while (cur.type.equals("SYMBOL") && (cur.text.equals("*") || cur.text.equals("/") || cur.text.equals("%"))) {
-            String t = cur.text;
-            next();
-            e = new BinaryExpr(t, e, parseUnary());
-        }
-        return e;
-    }
-
-    private Expr parseUnary() {
-        if (cur.type.equals("SYMBOL") && cur.text.equals("-")) {
-            next();
-            return new BinaryExpr("-", new NumberExpr(0), parseUnary());
-        }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("not")) {
-            next();
-            return new BinaryExpr("not", parseUnary(), null);
-        }
-        return parsePrimary();
-    }
-
-    private Expr parsePrimary() {
-        if (cur.type.equals("NUMBER")) {
-            double v = 0;
-            try {
-                v = getNumber(cur.text).doubleValue();
-            } catch (Exception ex) {
-                v = 0;
+                e = new BinaryExpr(op, e, parseComparison());
             }
-            next();
-            return new NumberExpr(v);
-        }
-        if (cur.type.equals("STRING")) {
-            String s = cur.text;
-            next();
-            return new StringExpr(s);
-        }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("true")) {
-            next();
-            return new BoolExpr(true);
-        }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("false")) {
-            next();
-            return new BoolExpr(false);
-        }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("nil")) {
-            next();
-            return new NilExpr();
-        }
-        if (cur.type.equals("IDENT")) {
-            String name = cur.text;
-            next();
-            Expr base = new VarExpr(name);
-            if (accept("SYMBOL", "(")) {
-                Vector args = new Vector();
-                if (!accept("SYMBOL", ")")) {
-                    args.addElement(parseExpression());
-                    while (accept("SYMBOL", ",")) args.addElement(parseExpression());
-                    expect("SYMBOL", ")");
-                }
-                return new CallExpr(base, args);
-            }
-            return base;
-        }
-        if (accept("SYMBOL", "(")) {
-            Expr e = parseExpression();
-            expect("SYMBOL", ")");
             return e;
         }
-        throw new RuntimeException("Unexpected token " + cur.type + ":" + cur.text);
-    }
 
-    private void next() {
-        // Implementação do método next
-    }
+        private Expr parseComparison() {
+            Expr e = parseAdd();
+            while (cur.type.equals("SYMBOL") || cur.type.equals("KEYWORD")) {
+                String t = cur.text;
+                if (t.equals("==") || t.equals("~=") || t.equals("<") || t.equals(">") || t.equals("<=") || t.equals(">=")) {
+                    next();
+                    e = new BinaryExpr(t, e, parseAdd());
+                } else break;
+            }
+            return e;
+        }
 
-    private boolean accept(String type, String text) {
-        // Implementação do método accept
-        return false;
-    }
+        private Expr parseAdd() {
+            Expr e = parseMul();
+            while (cur.type.equals("SYMBOL") && (cur.text.equals("+") || cur.text.equals("-"))) {
+                String t = cur.text;
+                next();
+                e = new BinaryExpr(t, e, parseMul());
+            }
+            return e;
+        }
 
-    private void expect(String type, String text) {
-        // Implementação do método expect
-    }
+        private Expr parseMul() {
+            Expr e = parseUnary();
+            while (cur.type.equals("SYMBOL") && (cur.text.equals("*") || cur.text.equals("/") || cur.text.equals("%"))) {
+                String t = cur.text;
+                next();
+                e = new BinaryExpr(t, e, parseUnary());
+            }
+            return e;
+        }
 
-    private Number getNumber(String text) {
-        // Implementação do método getNumber
-        return 0;
-    }
+        private Expr parseUnary() {
+            if (cur.type.equals("SYMBOL") && cur.text.equals("-")) {
+                next();
+                return new BinaryExpr("-", new NumberExpr(0), parseUnary());
+            }
+            if (cur.type.equals("KEYWORD") && cur.text.equals("not")) {
+                next();
+                return new BinaryExpr("not", parseUnary(), null);
+            }
+            return parsePrimary();
+        }
 
-    private Expr parseExpression() {
-        // Implementação do método parseExpression
-        return null;
+        private Expr parsePrimary() {
+            if (cur.type.equals("NUMBER")) {
+                double v = 0;
+                try {
+                    v = getNumber(cur.text).doubleValue();
+                } catch (Exception ex) {
+                    v = 0;
+                }
+                next();
+                return new NumberExpr(v);
+            }
+            if (cur.type.equals("STRING")) {
+                String s = cur.text;
+                next();
+                return new StringExpr(s);
+            }
+            if (cur.type.equals("KEYWORD") && cur.text.equals("true")) {
+                next();
+                return new BoolExpr(true);
+            }
+            if (cur.type.equals("KEYWORD") && cur.text.equals("false")) {
+                next();
+                return new BoolExpr(false);
+            }
+            if (cur.type.equals("KEYWORD") && cur.text.equals("nil")) {
+                next();
+                return new NilExpr();
+            }
+            if (cur.type.equals("IDENT")) {
+                String name = cur.text;
+                next();
+                Expr base = new VarExpr(name);
+                if (accept("SYMBOL", "(")) {
+                    Vector args = new Vector();
+                    if (!accept("SYMBOL", ")")) {
+                        args.addElement(parseExpression());
+                        while (accept("SYMBOL", ",")) args.addElement(parseExpression());
+                        expect("SYMBOL", ")");
+                    }
+                    return new CallExpr(base, args);
+                }
+                return base;
+            }
+            if (accept("SYMBOL", "(")) {
+                Expr e = parseExpression();
+                expect("SYMBOL", ")");
+                return e;
+            }
+            throw new RuntimeException("Unexpected token " + cur.type + ":" + cur.text);
+        }
+
+        private void next() {
+            // Implementação do método next
+        }
+
+        private boolean accept(String type, String text) {
+            // Implementação do método accept
+            return false;
+        }
+
+        private void expect(String type, String text) {
+            // Implementação do método expect
+        }
+
+        private Number getNumber(String text) {
+            // Implementação do método getNumber
+            return 0;
+        }
+
+        private Expr parseExpression() {
+            // Implementação do método parseExpression
+            return null;
+        }
     }
 }
