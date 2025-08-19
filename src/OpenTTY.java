@@ -1708,281 +1708,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 }
 
 
-
-/* === Lexer === */
-class TLToken { public String type; public String text; public TLToken(String type, String text) { this.type = type; this.text = text; } }
-class TLLexer {
-    private String src;
-    private int pos, len;
-    private static final String[] keywords = { "function", "end", "if", "then", "else", "while", "do", "return", "true", "false", "nil", "and", "or", "not" };
-
-    public TLLexer(String s) { this.src = s; this.pos = 0; this.len = s.length(); }
-
-    private char peek() { return pos < len ? src.charAt(pos) : '\0'; }
-    private char next() { return pos < len ? src.charAt(pos++) : '\0'; }
-    private void skipSpace() {
-        while (pos < len) {
-            char c = peek();
-            if (c == ' ' || c == '\t' || c == '\n' || c == '\r') { pos++; continue; }
-            // comments: -- to end of line
-            if (c == '-' && pos+1 < len && src.charAt(pos+1) == '-') {
-                pos += 2;
-                while (pos < len && src.charAt(pos) != '\n') pos++;
-                continue;
-            }
-            break;
-        }
-    }
-
-    private boolean isIdentStart(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; }
-    private boolean isIdentPart(char c) { return isIdentStart(c) || (c >= '0' && c <= '9'); }
-    private boolean isDigit(char c) { return c >= '0' && c <= '9'; }
-
-    public TLToken nextToken() {
-        skipSpace();
-        if (pos >= len) return new TLToken("EOF", "");
-        char c = peek();
-        // strings
-        if (c == '"') {
-            pos++;
-            StringBuffer sb = new StringBuffer();
-            while (pos < len) {
-                char d = next();
-                if (d == '\\') {
-                    if (pos < len) {
-                        char e = next();
-                        if (e == 'n') sb.append('\n');
-                        else if (e == 't') sb.append('\t');
-                        else sb.append(e);
-                    }
-                } else if (d == '"') {
-                    break;
-                } else sb.append(d);
-            }
-            return new TLToken("STRING", sb.toString());
-        }
-        // number
-        if (isDigit(c) || (c == '.' && pos+1 < len && isDigit(src.charAt(pos+1)))) {
-            int st = pos;
-            boolean dot = false;
-            while (pos < len) {
-                char d = peek();
-                if (isDigit(d)) { pos++; continue; }
-                if (d == '.' && !dot) { dot = true; pos++; continue; }
-                break;
-            }
-            return new TLToken("NUMBER", src.substring(st, pos));
-        }
-        // identifier or keyword
-        if (isIdentStart(c)) {
-            int st = pos;
-            pos++;
-            while (pos < len && isIdentPart(peek())) pos++;
-            String t = src.substring(st, pos);
-            for (int i=0;i<keywords.length;i++) if (keywords[i].equals(t)) return new TLToken("KEYWORD", t);
-            return new TLToken("IDENT", t);
-        }
-        // symbols: handle multi-char == ~= <= >=
-        // two-char
-        if (pos+1 < len) {
-            String two = src.substring(pos, pos+2);
-            if (two.equals("==") || two.equals("~=") || two.equals("<=") || two.equals(">=") ) { pos+=2; return new TLToken("SYMBOL", two); }
-        }
-        // single char symbols
-        pos++;
-        return new TLToken("SYMBOL", new String(new char[] { c }));
-    }
-}
-
-/* === AST nodes === */
-abstract class Node { }
-abstract class Expr extends Node { abstract Object eval(Environment env); }
-abstract class Stmt extends Node { abstract Object execute(Environment env); }
-
-class NumberExpr extends Expr {
-    public double value;
-    public NumberExpr(double v) { this.value = v; }
-    Object eval(Environment env) { return new Double(value); }
-}
-class StringExpr extends Expr {
-    public String value;
-    public StringExpr(String v) { this.value = v; }
-    Object eval(Environment env) { return value; }
-}
-
-class NilExpr extends Expr { Object eval(Environment env) { return null; } }
-class BoolExpr extends Expr { public boolean v; public BoolExpr(boolean b) { v = b; } Object eval(Environment env) { return new Boolean(v); } }
-
-class VarExpr extends Expr {
-    public String name; public VarExpr(String n) { name = n; }
-    Object eval(Environment env) { return env.get(name); }
-}
-
-class BinaryExpr extends Expr {
-    public String op; public Expr left, right; public BinaryExpr(String o, Expr a, Expr b){op=o;left=a;right=b;}
-    Object eval(Environment env) {
-        if (op.equals("not")) {
-            Object L = left.eval(env);
-            return new Boolean(!truthy(L));
-        }
-
-        Object L = left.eval(env);
-        Object R = right.eval(env);
-        // handle nils
-        if (L == null || R == null) {
-            if (op.equals("==")) return new Boolean(L==R);
-            if (op.equals("~=")) return new Boolean(L!=R);
-            // other ops invalid on nil => return false/0
-        }
-        // numbers
-        if (L instanceof Double && R instanceof Double) {
-            double a = ((Double)L).doubleValue();
-            double b = ((Double)R).doubleValue();
-            if (op.equals("+")) return new Double(a+b);
-            if (op.equals("-")) return new Double(a-b);
-            if (op.equals("*")) return new Double(a*b);
-            if (op.equals("/")) return new Double(a/b);
-            if (op.equals("%")) return new Double(a % b);
-            if (op.equals("<")) return new Boolean(a < b);
-            if (op.equals(">")) return new Boolean(a > b);
-            if (op.equals("<=")) return new Boolean(a <= b);
-            if (op.equals(">=")) return new Boolean(a >= b);
-            if (op.equals("==")) return new Boolean(a == b);
-            if (op.equals("~=")) return new Boolean(a != b);
-        }
-        // equality for strings/booleans
-        //if (op.equals("==")) return new Boolean( (L==null?null:L).equals(R==null?null:R) );
-        //if (op.equals("~=")) return new Boolean( !(L==null?null:L).equals(R==null?null:R) );
-        if (op.equals("==")) {
-            if (L == null) return new Boolean(R == null);
-            return new Boolean(L.equals(R));
-        }
-        if (op.equals("~=")) {
-            if (L == null) return new Boolean(R != null);
-            return new Boolean(!L.equals(R));
-        }
-        // string concatenation with .. is not implemented
-        // logical and/or
-        if (op.equals("and")) return new Boolean( truthy(L) && truthy(R) );
-        if (op.equals("or")) return new Boolean( truthy(L) || truthy(R) );
-        return null;
-    }
-    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
-}
-
-class CallExpr extends Expr {
-    public Expr func; public Vector args;
-    public CallExpr(Expr f, Vector a){ func=f; args=a; }
-    Object eval(Environment env) {
-        Object fn = func.eval(env);
-        Vector evaluated = new Vector();
-        for (int i=0;i<args.size();i++) evaluated.addElement( ((Expr)args.elementAt(i)).eval(env) );
-        if (fn instanceof FunctionValue) {
-            FunctionValue fv = (FunctionValue)fn;
-            return fv.invoke(evaluated);
-        }
-        // builtin: allow string name referring to global function
-        if (fn instanceof String) {
-            Object g = env.get((String)fn);
-            if (g instanceof FunctionValue) return ((FunctionValue)g).invoke(evaluated);
-        }
-        return null;
-    }
-}
-
-/* === Statements === */
-class AssignStmt extends Stmt {
-    public String name; public Expr expr; public AssignStmt(String n, Expr e){name=n;expr=e;}
-    Object execute(Environment env) { Object v = expr.eval(env); env.set(name, v); return null; }
-}
-
-class ReturnStmt extends Stmt {
-    public Expr expr; public ReturnStmt(Expr e){expr=e;} Object execute(Environment env) { return new ReturnValue(expr==null?null:expr.eval(env)); }
-}
-
-class IfStmt extends Stmt {
-    public Expr cond; public Vector thenBlock; public Vector elseBlock;
-    public IfStmt(Expr c, Vector t, Vector e){cond=c;thenBlock=t;elseBlock=e;}
-    Object execute(Environment env) {
-        Object c = cond.eval(env);
-        boolean t = truthy(c);
-        Vector block = t ? thenBlock : elseBlock;
-        if (block == null) return null;
-        for (int i=0;i<block.size();i++) {
-            Object r = ((Stmt)block.elementAt(i)).execute(env);
-            if (r instanceof ReturnValue) return r;
-        }
-        return null;
-    }
-    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
-}
-
-class WhileStmt extends Stmt {
-    public Expr cond; public Vector body;
-    public WhileStmt(Expr c, Vector b){cond=c;body=b;}
-    Object execute(Environment env) {
-        while (truthy(cond.eval(env))) {
-            for (int i=0;i<body.size();i++) {
-                Object r = ((Stmt)body.elementAt(i)).execute(env);
-                if (r instanceof ReturnValue) return r;
-            }
-        }
-        return null;
-    }
-    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
-}
-
-class ExprStmt extends Stmt {
-    public Expr e; public ExprStmt(Expr ex){e=ex;} Object execute(Environment env){ e.eval(env); return null; }
-}
-
-class FunctionDefStmt extends Stmt {
-    public String name; public Vector params; public Vector body;
-    public FunctionDefStmt(String n, Vector p, Vector b){name=n;params=p;body=b;}
-    Object execute(Environment env) {
-        FunctionValue fv = new FunctionValue(params, body, env);
-        env.set(name, fv);
-        return null;
-    }
-}
-
-/* Special return carrier */
-class ReturnValue { public Object value; public ReturnValue(Object v){value=v;} }
-
-/* Function value */
-class FunctionValue {
-    public Vector params; public Vector body; public Environment closure;
-    public FunctionValue(Vector p, Vector b, Environment c) { params=p; body=b; closure=c; }
-    public Object invoke(Vector args) {
-        Environment local = new Environment(closure);
-        // bind params
-        for (int i=0;i<params.size();i++) {
-            String pname = (String)params.elementAt(i);
-            Object aval = i < args.size() ? args.elementAt(i) : null;
-            local.set(pname, aval);
-        }
-        // execute body
-        for (int i=0;i<body.size();i++) {
-            Object r = ((Stmt)body.elementAt(i)).execute(local);
-            if (r instanceof ReturnValue) return ((ReturnValue)r).value;
-        }
-        return null;
-    }
-}
-
-/* Environment (simple chain of Hashtables) */
-class Environment {
-    private Hashtable table; private Environment parent;
-    public Environment(Environment p) { this.parent = p; this.table = new Hashtable(); }
-    public Object get(String name) {
-        Object v = table.get(name);
-        if (v != null) return v;
-        if (parent != null) return parent.get(name);
-        return null;
-    }
-    public void set(String name, Object value) { table.put(name, value); }
-}
-
 public class Lua {
     // --- Parser fields
     private TLLexer lex;
@@ -2183,4 +1908,270 @@ public class Lua {
             midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
         }
     }
+
+    /* === Lexer === */
+class TLToken { public String type; public String text; public TLToken(String type, String text) { this.type = type; this.text = text; } }
+class TLLexer {
+    private String src;
+    private int pos, len;
+    private static final String[] keywords = { "function", "end", "if", "then", "else", "while", "do", "return", "true", "false", "nil", "and", "or", "not" };
+
+    public TLLexer(String s) { this.src = s; this.pos = 0; this.len = s.length(); }
+
+    private char peek() { return pos < len ? src.charAt(pos) : '\0'; }
+    private char next() { return pos < len ? src.charAt(pos++) : '\0'; }
+    private void skipSpace() {
+        while (pos < len) {
+            char c = peek();
+            if (c == ' ' || c == '\t' || c == '\n' || c == '\r') { pos++; continue; }
+            // comments: -- to end of line
+            if (c == '-' && pos+1 < len && src.charAt(pos+1) == '-') {
+                pos += 2;
+                while (pos < len && src.charAt(pos) != '\n') pos++;
+                continue;
+            }
+            break;
+        }
+    }
+
+    private boolean isIdentStart(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; }
+    private boolean isIdentPart(char c) { return isIdentStart(c) || (c >= '0' && c <= '9'); }
+    private boolean isDigit(char c) { return c >= '0' && c <= '9'; }
+
+    public TLToken nextToken() {
+        skipSpace();
+        if (pos >= len) return new TLToken("EOF", "");
+        char c = peek();
+        // strings
+        if (c == '"') {
+            pos++;
+            StringBuffer sb = new StringBuffer();
+            while (pos < len) {
+                char d = next();
+                if (d == '\\') {
+                    if (pos < len) {
+                        char e = next();
+                        if (e == 'n') sb.append('\n');
+                        else if (e == 't') sb.append('\t');
+                        else sb.append(e);
+                    }
+                } else if (d == '"') {
+                    break;
+                } else sb.append(d);
+            }
+            return new TLToken("STRING", sb.toString());
+        }
+        // number
+        if (isDigit(c) || (c == '.' && pos+1 < len && isDigit(src.charAt(pos+1)))) {
+            int st = pos;
+            boolean dot = false;
+            while (pos < len) {
+                char d = peek();
+                if (isDigit(d)) { pos++; continue; }
+                if (d == '.' && !dot) { dot = true; pos++; continue; }
+                break;
+            }
+            return new TLToken("NUMBER", src.substring(st, pos));
+        }
+        // identifier or keyword
+        if (isIdentStart(c)) {
+            int st = pos;
+            pos++;
+            while (pos < len && isIdentPart(peek())) pos++;
+            String t = src.substring(st, pos);
+            for (int i=0;i<keywords.length;i++) if (keywords[i].equals(t)) return new TLToken("KEYWORD", t);
+            return new TLToken("IDENT", t);
+        }
+        // symbols: handle multi-char == ~= <= >=
+        // two-char
+        if (pos+1 < len) {
+            String two = src.substring(pos, pos+2);
+            if (two.equals("==") || two.equals("~=") || two.equals("<=") || two.equals(">=") ) { pos+=2; return new TLToken("SYMBOL", two); }
+        }
+        // single char symbols
+        pos++;
+        return new TLToken("SYMBOL", new String(new char[] { c }));
+    }
+}
+
+/* === AST nodes === */
+abstract class Node { }
+abstract class Expr extends Node { abstract Object eval(Environment env); }
+abstract class Stmt extends Node { abstract Object execute(Environment env); }
+
+class NumberExpr extends Expr {
+    public double value;
+    public NumberExpr(double v) { this.value = v; }
+    Object eval(Environment env) { return new Double(value); }
+}
+class StringExpr extends Expr {
+    public String value;
+    public StringExpr(String v) { this.value = v; }
+    Object eval(Environment env) { return value; }
+}
+class NilExpr extends Expr { Object eval(Environment env) { return null; } }
+class BoolExpr extends Expr { public boolean v; public BoolExpr(boolean b) { v = b; } Object eval(Environment env) { return new Boolean(v); } }
+class VarExpr extends Expr {
+    public String name; public VarExpr(String n) { name = n; }
+    Object eval(Environment env) { return env.get(name); }
+}
+class BinaryExpr extends Expr {
+    public String op; public Expr left, right; public BinaryExpr(String o, Expr a, Expr b){op=o;left=a;right=b;}
+    Object eval(Environment env) {
+        if (op.equals("not")) {
+            Object L = left.eval(env);
+            return new Boolean(!truthy(L));
+        }
+
+        Object L = left.eval(env);
+        Object R = right.eval(env);
+        // handle nils
+        if (L == null || R == null) {
+            if (op.equals("==")) return new Boolean(L==R);
+            if (op.equals("~=")) return new Boolean(L!=R);
+            // other ops invalid on nil => return false/0
+        }
+        // numbers
+        if (L instanceof Double && R instanceof Double) {
+            double a = ((Double)L).doubleValue();
+            double b = ((Double)R).doubleValue();
+            if (op.equals("+")) return new Double(a+b);
+            if (op.equals("-")) return new Double(a-b);
+            if (op.equals("*")) return new Double(a*b);
+            if (op.equals("/")) return new Double(a/b);
+            if (op.equals("%")) return new Double(a % b);
+            if (op.equals("<")) return new Boolean(a < b);
+            if (op.equals(">")) return new Boolean(a > b);
+            if (op.equals("<=")) return new Boolean(a <= b);
+            if (op.equals(">=")) return new Boolean(a >= b);
+            if (op.equals("==")) return new Boolean(a == b);
+            if (op.equals("~=")) return new Boolean(a != b);
+        }
+        // equality for strings/booleans
+        //if (op.equals("==")) return new Boolean( (L==null?null:L).equals(R==null?null:R) );
+        //if (op.equals("~=")) return new Boolean( !(L==null?null:L).equals(R==null?null:R) );
+        if (op.equals("==")) {
+            if (L == null) return new Boolean(R == null);
+            return new Boolean(L.equals(R));
+        }
+        if (op.equals("~=")) {
+            if (L == null) return new Boolean(R != null);
+            return new Boolean(!L.equals(R));
+        }
+        // string concatenation with .. is not implemented
+        // logical and/or
+        if (op.equals("and")) return new Boolean( truthy(L) && truthy(R) );
+        if (op.equals("or")) return new Boolean( truthy(L) || truthy(R) );
+        return null;
+    }
+    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
+}
+class CallExpr extends Expr {
+    public Expr func; public Vector args;
+    public CallExpr(Expr f, Vector a){ func=f; args=a; }
+    Object eval(Environment env) {
+        Object fn = func.eval(env);
+        Vector evaluated = new Vector();
+        for (int i=0;i<args.size();i++) evaluated.addElement( ((Expr)args.elementAt(i)).eval(env) );
+        if (fn instanceof FunctionValue) {
+            FunctionValue fv = (FunctionValue)fn;
+            return fv.invoke(evaluated);
+        }
+        // builtin: allow string name referring to global function
+        if (fn instanceof String) {
+            Object g = env.get((String)fn);
+            if (g instanceof FunctionValue) return ((FunctionValue)g).invoke(evaluated);
+        }
+        return null;
+    }
+}
+
+/* === Statements === */
+class AssignStmt extends Stmt {
+    public String name; public Expr expr; public AssignStmt(String n, Expr e){name=n;expr=e;}
+    Object execute(Environment env) { Object v = expr.eval(env); env.set(name, v); return null; }
+}
+class ReturnStmt extends Stmt { public Expr expr; public ReturnStmt(Expr e){expr=e;} Object execute(Environment env) { return new ReturnValue(expr==null?null:expr.eval(env)); } }
+class IfStmt extends Stmt {
+    public Expr cond; public Vector thenBlock; public Vector elseBlock;
+    public IfStmt(Expr c, Vector t, Vector e){cond=c;thenBlock=t;elseBlock=e;}
+    Object execute(Environment env) {
+        Object c = cond.eval(env);
+        boolean t = truthy(c);
+        Vector block = t ? thenBlock : elseBlock;
+        if (block == null) return null;
+        for (int i=0;i<block.size();i++) {
+            Object r = ((Stmt)block.elementAt(i)).execute(env);
+            if (r instanceof ReturnValue) return r;
+        }
+        return null;
+    }
+    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
+}
+class WhileStmt extends Stmt {
+    public Expr cond; public Vector body;
+    public WhileStmt(Expr c, Vector b){cond=c;body=b;}
+    Object execute(Environment env) {
+        while (truthy(cond.eval(env))) {
+            for (int i=0;i<body.size();i++) {
+                Object r = ((Stmt)body.elementAt(i)).execute(env);
+                if (r instanceof ReturnValue) return r;
+            }
+        }
+        return null;
+    }
+    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
+}
+
+class ExprStmt extends Stmt {
+    public Expr e; public ExprStmt(Expr ex){e=ex;} Object execute(Environment env){ e.eval(env); return null; }
+}
+
+class FunctionDefStmt extends Stmt {
+    public String name; public Vector params; public Vector body;
+    public FunctionDefStmt(String n, Vector p, Vector b){name=n;params=p;body=b;}
+    Object execute(Environment env) {
+        FunctionValue fv = new FunctionValue(params, body, env);
+        env.set(name, fv);
+        return null;
+    }
+}
+
+/* Special return carrier */
+class ReturnValue { public Object value; public ReturnValue(Object v){value=v;} }
+
+/* Function value */
+class FunctionValue {
+    public Vector params; public Vector body; public Environment closure;
+    public FunctionValue(Vector p, Vector b, Environment c) { params=p; body=b; closure=c; }
+    public Object invoke(Vector args) {
+        Environment local = new Environment(closure);
+        // bind params
+        for (int i=0;i<params.size();i++) {
+            String pname = (String)params.elementAt(i);
+            Object aval = i < args.size() ? args.elementAt(i) : null;
+            local.set(pname, aval);
+        }
+        // execute body
+        for (int i=0;i<body.size();i++) {
+            Object r = ((Stmt)body.elementAt(i)).execute(local);
+            if (r instanceof ReturnValue) return ((ReturnValue)r).value;
+        }
+        return null;
+    }
+}
+
+/* Environment (simple chain of Hashtables) */
+class Environment {
+    private Hashtable table; private Environment parent;
+    public Environment(Environment p) { this.parent = p; this.table = new Hashtable(); }
+    public Object get(String name) {
+        Object v = table.get(name);
+        if (v != null) return v;
+        if (parent != null) return parent.get(name);
+        return null;
+    }
+    public void set(String name, Object value) { table.put(name, value); }
+}
+
 }
