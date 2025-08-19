@@ -1371,8 +1371,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
                 start(MOD == SERVER ? "server" : "bind", PID, null, root); sessions.put(port, "nobody");
 
-                try {
-                    while (trace.containsKey(PID)) {
+                while (trace.containsKey(PID)) {
+                    try {
                         server = (ServerSocketConnection) Connector.open("socket://:" + port);
                         if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port " + port); COUNT++; }
 
@@ -1412,18 +1412,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             }
                         }
                     } 
+                    catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
+                    finally {
+                        try { if (IN != null) IN.close(); } catch (IOException e) { }
+                        try { if (OUT != null) OUT.close(); } catch (IOException e) { }
+                        try { if (CONN != null) CONN.close(); } catch (IOException e) { }
+                        try { if (server != null) server.close(); } catch (IOException e) { }
+                        
+                        sessions.remove(port); 
+                    }
                 } 
-                catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
-                finally {
-                    try { if (IN != null) IN.close(); } catch (IOException e) { }
-                    try { if (OUT != null) OUT.close(); } catch (IOException e) { }
-                    try { if (CONN != null) CONN.close(); } catch (IOException e) { }
-                    try { if (server != null) server.close(); } catch (IOException e) { }
-
-                    sessions.remove(port); trace.remove(PID);
-                    echoCommand("[-] Server stopped");
-                    MIDletLogs("add info Server was stopped");
-                }   
+                trace.remove(PID);
+                echoCommand("[-] Server stopped");
+                MIDletLogs("add info Server was stopped");
             }
         }
 
