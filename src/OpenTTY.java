@@ -2324,10 +2324,7 @@ class Lua {
 
 
     // Interface for Lua functions (built-in and user-defined)
-    public interface LuaFunction {
-        Object call(Vector args) throws Exception;
-    }
-
+    
     // Class for user-defined Lua functions
     public class UserDefinedLuaFunction implements LuaFunction {
         private Vector params;
@@ -2390,3 +2387,8 @@ class Lua {
         }
     }
 }
+
+public interface LuaFunction {
+        Object call(Vector args) throws Exception;
+    }
+
