@@ -2158,9 +2158,29 @@ class Lua {
                     // top-level return ignored
                 }
             }
-        } catch (Throwable t) {
-            midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
-        }
+        //} catch (Throwable t) {
+            //midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
+        //}// Dentro do método run() da classe Lua
+} catch (Throwable t) {
+    // Vamos criar uma mensagem de erro muito mais detalhada
+    String className = t.getClass().getName();
+    String message = t.getMessage();
+    
+    // Constrói a mensagem de erro
+    StringBuffer errorMsg = new StringBuffer();
+    errorMsg.append("ERRO FATAL: ");
+    errorMsg.append(className);
+    if (message != null) {
+        errorMsg.append(" - Msg: ");
+        errorMsg.append(message);
+    }
+
+    // Exibe o erro
+    midlet.processCommand("echo " + errorMsg.toString(), false, root);
+
+    // Se o seu ambiente permitir, isso pode te dar a pilha de chamadas na saída de debug
+    t.printStackTrace(); 
+}
     }
 
 }
