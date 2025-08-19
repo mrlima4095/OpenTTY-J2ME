@@ -1739,7 +1739,6 @@ public class Lua {
 
     public Lua(OpenTTY midlet, boolean root) {
         this.midlet = midlet;
-        this.console = console;
         this.root = root;
         globals = new Hashtable();
         // register builtin functions as Java objects (Function object is java interface)
