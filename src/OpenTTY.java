@@ -1748,7 +1748,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     public void run(String source) {
         try {
-            Buider p = new Buider(source);
+            TLParser p = new TLParser(source);
             Vector stmts = p.parseChunk();
             for (int i = 0; i < stmts.size(); i++) {
                 Stmt s = (Stmt)stmts.elementAt(i);
@@ -1761,9 +1761,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
 
 }
-class Buider {
+public static class TLParser {
     private TLLexer lex; private TLToken cur;
-    public Buider(String s) { 
+    public TLParser(String s) { 
         this.lex = new TLLexer(s); 
         this.cur = lex.nextToken(); 
     }
