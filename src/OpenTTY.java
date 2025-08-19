@@ -1706,61 +1706,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 
-    public class Lua {
-    private Environment global;
-    private OpenTTY midlet;
-    private boolean root;
-
-    public Lua(OpenTTY midlet, boolean root) {
-        this.midlet = midlet; this.root = root;
-        this.global = new Environment(null);
-        registerBuiltins();
-    }
-
-    private void registerBuiltins() {
-        FunctionValue printFn = new FunctionValue(new Vector(), new Vector(), global) {
-            public Object invoke(Vector args) {
-                StringBuffer sb = new StringBuffer();
-                for (int i=0;i<args.size();i++) {
-                    if (i>0) sb.append('\t');
-                    Object a = args.elementAt(i);
-                    sb.append( a==null ? "nil" : a.toString() );
-                }
-                
-                return midlet.processCommand("echo " + sb.toString(), false, root);
-            }
-        };
-        global.set("print", printFn);
-        FunctionValue execFn = new FunctionValue(new Vector(), new Vector(), global) {
-            public Object invoke(Vector args) {
-                StringBuffer sb = new StringBuffer();
-                for (int i=0;i<args.size();i++) {
-                    if (i>0) sb.append('\t');
-                    Object a = args.elementAt(i);
-                    sb.append( a==null ? "true" : a.toString() );
-                }
-                
-                return midlet.processCommand(sb.toString(), true, root);
-            }
-        };
-        global.set("exec", execFn);
-    }
-
-    public void run(String source) {
-        try {
-            TLParser p = new TLParser(source);
-            Vector stmts = p.parseChunk();
-            for (int i = 0; i < stmts.size(); i++) {
-                Stmt s = (Stmt)stmts.elementAt(i);
-                Object r = s.execute(global);
-                if (r instanceof ReturnValue) { }
-            }
-        } catch (Throwable t) {
-            midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
-        }
-    }
-
-}
+    
 }
 
 
@@ -2188,4 +2134,59 @@ class TLParser {
         if (accept("SYMBOL","(")) { Expr e = parseExpression(); expect("SYMBOL",")"); return e; }
         throw new RuntimeException("Unexpected token " + cur.type + ":" + cur.text);
     }
+}
+public class Lua {
+    private Environment global;
+    private OpenTTY midlet;
+    private boolean root;
+
+    public Lua(OpenTTY midlet, boolean root) {
+        this.midlet = midlet; this.root = root;
+        this.global = new Environment(null);
+        registerBuiltins();
+    }
+
+    private void registerBuiltins() {
+        FunctionValue printFn = new FunctionValue(new Vector(), new Vector(), global) {
+            public Object invoke(Vector args) {
+                StringBuffer sb = new StringBuffer();
+                for (int i=0;i<args.size();i++) {
+                    if (i>0) sb.append('\t');
+                    Object a = args.elementAt(i);
+                    sb.append( a==null ? "nil" : a.toString() );
+                }
+                
+                return midlet.processCommand("echo " + sb.toString(), false, root);
+            }
+        };
+        global.set("print", printFn);
+        FunctionValue execFn = new FunctionValue(new Vector(), new Vector(), global) {
+            public Object invoke(Vector args) {
+                StringBuffer sb = new StringBuffer();
+                for (int i=0;i<args.size();i++) {
+                    if (i>0) sb.append('\t');
+                    Object a = args.elementAt(i);
+                    sb.append( a==null ? "true" : a.toString() );
+                }
+                
+                return midlet.processCommand(sb.toString(), true, root);
+            }
+        };
+        global.set("exec", execFn);
+    }
+
+    public void run(String source) {
+        try {
+            TLParser p = new TLParser(source);
+            Vector stmts = p.parseChunk();
+            for (int i = 0; i < stmts.size(); i++) {
+                Stmt s = (Stmt)stmts.elementAt(i);
+                Object r = s.execute(global);
+                if (r instanceof ReturnValue) { }
+            }
+        } catch (Throwable t) {
+            midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
+        }
+    }
+
 }
