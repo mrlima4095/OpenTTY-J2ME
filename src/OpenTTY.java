@@ -2126,7 +2126,6 @@ class Lua {
         return null;
     }
 
-
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
         String funcName = (String) consume(IDENTIFIER).value;
@@ -2143,7 +2142,7 @@ class Lua {
 
         // Capture the function body tokens
         Vector bodyTokens = new Vector();
-        int depth = 1; // For 'function' ... 'end' matching
+        int depth = 1; // Para correspondência de 'function' ... 'end'
         while (depth > 0) {
             Token token = consume();
             if (token.type == FUNCTION || token.type == IF || token.type == WHILE) {
@@ -2153,15 +2152,17 @@ class Lua {
             } else if (token.type == EOF) {
                 throw new Exception("Unmatched 'function' statement: Expected 'end'");
             }
-            if (depth > 0) { // Don't add the final 'end' token to the body
+            if (depth > 0) { // Não adiciona o token 'end' final ao corpo
                 bodyTokens.addElement(token);
             }
         }
 
-        LuaFunction func = new LuaFunction(params, bodyTokens, scope);
+        // Cria uma nova instância de UserDefinedLuaFunction
+        UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
         scope.put(funcName, func);
         return null;
     }
+
 
     private Object expression(Hashtable scope) throws Exception {
         return logicalOr(scope);
@@ -2324,7 +2325,7 @@ class Lua {
 
 
     // Interface for Lua functions (built-in and user-defined)
-    
+    public interface LuaFunction { Object call(Vector args) throws Exception; }
     // Class for user-defined Lua functions
     public class UserDefinedLuaFunction implements LuaFunction {
         private Vector params;
@@ -2388,5 +2389,5 @@ class Lua {
     }
 }
 
-public interface LuaFunction { Object call(Vector args) throws Exception; }
+
 
