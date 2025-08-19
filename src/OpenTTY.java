@@ -1415,7 +1415,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         try { if (CONN != null) CONN.close(); } catch (IOException e) { }
                         try { if (server != null) server.close(); } catch (IOException e) { }
                         
-                        sessions.remove(port); 
+                        sessions.put(port, "nobody"); 
                     }
                 } 
                 trace.remove(PID);
