@@ -2026,22 +2026,22 @@ public class Lua {
     private Stmt parseStatement() {
         if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); return new ExprStmt(new NilExpr()); }
         if (cur.type.equals("KEYWORD")) {
-            if (cur.text.equals("function")) return parseFunctionDef();
-            if (cur.text.equals("if")) return parseIf();
-            if (cur.text.equals("while")) return parseWhile();
-            if (cur.text.equals("return")) { next(); Expr e = null; if (!cur.type.equals("KEYWORD") || !(cur.text.equals("end") || cur.text.equals("else") )) e = parseExpression(); return new ReturnStmt(e); }
+            if (cur.text.equals("function")) {} // return parseFunctionDef();
+            if (cur.text.equals("if")) {} r// eturn parseIf();
+            if (cur.text.equals("while")) {} // return parseWhile();
+            if (cur.text.equals("return")) {} // { next(); Expr e = null; if (!cur.type.equals("KEYWORD") || !(cur.text.equals("end") || cur.text.equals("else") )) e = parseExpression(); return new ReturnStmt(e); }
         }
         if (cur.type.equals("IDENT")) {
             String name = cur.text; next();
             if (accept("SYMBOL", "=")) {
-                Expr e = parseExpression();
+                //Expr e = parseExpression();
                 return new AssignStmt(name, e);
             } else {
                 Expr func = new VarExpr(name);
                 Vector args = new Vector();
                 if (accept("SYMBOL","(")) {
                     if (!accept("SYMBOL", ")")) {
-                        args.addElement(parseExpression());
+                        //args.addElement(parseExpression());
                         while (accept("SYMBOL", ",")) args.addElement(parseExpression());
                         expect("SYMBOL", ")");
                     }
@@ -2049,7 +2049,8 @@ public class Lua {
                 return new ExprStmt(new CallExpr(func,args));
             }
         }
-        Expr e = parseExpression(); return new ExprStmt(e);
+        //Expr e = parseExpression(); 
+        return new ExprStmt(Expr);
     }
 
     /*private FunctionDefStmt parseFunctionDef() {
