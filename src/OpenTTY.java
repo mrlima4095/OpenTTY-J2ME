@@ -1730,16 +1730,9 @@ class Lua {
     private int tokenIndex;
 
     // Token types
-    private static final int EOF = 0;
-    private static final int NUMBER = 1;
-    private static final int STRING = 2;
-    private static final int BOOLEAN = 3;
-    private static final int NIL = 4;
+    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4;
     private static final int IDENTIFIER = 5;
-    private static final int PLUS = 6;
-    private static final int MINUS = 7;
-    private static final int MULTIPLY = 8;
-    private static final int DIVIDE = 9;
+    private static final int PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9;
     private static final int MODULO = 10;
     private static final int EQ = 11; // ==
     private static final int NE = 12; // ~=
