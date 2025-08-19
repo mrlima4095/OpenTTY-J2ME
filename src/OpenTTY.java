@@ -2012,7 +2012,6 @@ public class Lua {
     private void expect(String type, String text) {
         if (!accept(type, text)) throw new RuntimeException("Parse error expected " + type + ":" + text + " got " + cur.type + ":" + cur.text);
     }
-
     /*public Vector parseChunk() {
         Vector stmts = new Vector();
         while (!cur.type.equals("EOF") ) {
