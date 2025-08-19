@@ -2388,7 +2388,5 @@ class Lua {
     }
 }
 
-public interface LuaFunction {
-        Object call(Vector args) throws Exception;
-    }
+public interface LuaFunction { Object call(Vector args) throws Exception; }
 
