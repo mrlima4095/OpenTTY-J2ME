@@ -1112,8 +1112,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     
                 if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
                 else { echoCommand(renderJSON(ITEM, 0)); }
-            }
-                
+            }       
         }
         else { echoCommand("top: " + mainCommand + ": not found"); return 127; } 
         
@@ -2049,7 +2048,7 @@ public class Lua {
                 return new ExprStmt(new CallExpr(func,args));
             }
         }
-        //Expr e = parseExpression(); 
+        Expr e = parseExpression(); 
         return new ExprStmt(Expr);
     }
 
