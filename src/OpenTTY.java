@@ -1829,7 +1829,15 @@ class Lua {
                     sb.append(code.charAt(i));
                     i++;
                 }
-                tokens.addElement(new Token(NUMBER, new Double(sb.toString())));
+                
+                try {
+                    double numValue = Double.parseDouble(sb.toString());
+                    tokens.addElement(new Token(NUMBER, new Double(numValue)));
+                } catch (NumberFormatException e) {
+                    midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
+                    tokens.addElement(new Token(NUMBER, new Double(0))); // Valor padrão em caso de erro
+                }
+
                 continue;
             }
 
