@@ -1733,7 +1733,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 //   MiniLua lua = new MiniLua(openTtyInstance, stdoutStringItem, true /*root*/);
 //   lua.run("print(\"hello\", 1+2)\n");
 
-public class Lua {
+class Lua {
     private OpenTTY midlet;           // your OpenTTY class
     private boolean root;
 
