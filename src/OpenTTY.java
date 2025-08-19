@@ -1763,7 +1763,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 }
 class Buider {
     private TLLexer lex; private TLToken cur;
-    public Parser(String s) { 
+    public Buider(String s) { 
         this.lex = new TLLexer(s); 
         this.cur = lex.nextToken(); 
     }
