@@ -2312,6 +2312,12 @@ public class Lua {
         return true; // All other values are truthy in Lua
     }
 
+    private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
+    private static boolean isDigit(char c) { return c >= '0' && c <= '9'; }
+    private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
+    private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
+
+
     // Interface for Lua functions (built-in and user-defined)
     private interface LuaFunction {
         Object call(Vector args) throws Exception;
