@@ -2016,14 +2016,14 @@ public class Lua {
         Vector stmts = new Vector();
         while (!cur.type.equals("EOF") ) {
             if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); continue; }
-            //Stmt s = parseStatement();
+            Stmt s = parseStatement();
             if (cur.type.equals("SYMBOL") && cur.text.equals(";")) next();
-            //stmts.addElement(s);
+            stmts.addElement(s);
         }
         return stmts;
     }
 
-    /*private Stmt parseStatement() {
+    private Stmt parseStatement() {
         if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); return new ExprStmt(new NilExpr()); }
         if (cur.type.equals("KEYWORD")) {
             if (cur.text.equals("function")) return parseFunctionDef();
@@ -2050,7 +2050,7 @@ public class Lua {
             }
         }
         Expr e = parseExpression(); return new ExprStmt(e);
-    }*/
+    }
 
     /*private FunctionDefStmt parseFunctionDef() {
         expect("KEYWORD","function");
