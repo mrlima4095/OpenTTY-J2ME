@@ -2154,9 +2154,7 @@ class Lua {
             for (int i=0;i<stmts.size();i++) {
                 Stmt s = (Stmt)stmts.elementAt(i);
                 Object r = s.execute(global);
-                if (r instanceof ReturnValue) {
-                    // top-level return ignored
-                }
+                if (r instanceof ReturnValue) { }
             }
         } catch (Throwable t) {
             midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
