@@ -1723,489 +1723,348 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
 
 
-/* === Lexer === */
-class TLToken { public String type; public String text; public TLToken(String type, String text) { this.type = type; this.text = text; } }
-class TLLexer {
+// MiniLua.java
+// Single-file, small Lua-like interpreter for CLDC / MIDP (integers only).
+// Supports: integers, strings, variables, + - * / %, == ~= < > <= >=, and, or, not,
+// function call syntax (only builtins provided): print(...), exec(...).
+// No AST built — parser evaluates expressions directly (one-pass).
+//
+// Usage:
+//   MiniLua lua = new MiniLua(openTtyInstance, stdoutStringItem, true /*root*/);
+//   lua.run("print(\"hello\", 1+2)\n");
+
+public class Lua {
+    private OpenTTY midlet;           // your OpenTTY class
+    private boolean root;
+
+    public Lua(OpenTTY midlet, boolean root) {
+        this.midlet = midlet;
+        this.console = console;
+        this.root = root;
+        globals = new Hashtable();
+        // register builtin functions as Java objects (Function object is java interface)
+        globals.put("print", new BuiltinPrint());
+        globals.put("exec", new BuiltinExec());
+    }
+
+    // --- runtime state
+    private Hashtable globals;
+
+    // --- Lexer state
     private String src;
-    private int pos, len;
-    private static final String[] keywords = { "function", "end", "if", "then", "else", "while", "do", "return", "true", "false", "nil", "and", "or", "not" };
+    private int pos;
+    private int len;
+    private String curType; // "EOF","IDENT","NUMBER","STRING","SYMBOL","KEYWORD"
+    private String curText;
 
-    public TLLexer(String s) { this.src = s; this.pos = 0; this.len = s.length(); }
-
-    private char peek() { return pos < len ? src.charAt(pos) : '\0'; }
-    private char next() { return pos < len ? src.charAt(pos++) : '\0'; }
-    private void skipSpace() {
-        while (pos < len) {
-            char c = peek();
-            if (c == ' ' || c == '\t' || c == '\n' || c == '\r') { pos++; continue; }
-            // comments: -- to end of line
-            if (c == '-' && pos+1 < len && src.charAt(pos+1) == '-') {
-                pos += 2;
-                while (pos < len && src.charAt(pos) != '\n') pos++;
-                continue;
+    // --- public entry
+    public void run(String source) {
+        try {
+            start(source);
+            while (!curType.equals("EOF")) {
+                parseStatement();
             }
-            break;
+        } catch (Throwable t) {
+            safeEcho("MiniLua runtime error: " + t.toString());
         }
     }
 
-    private boolean isIdentStart(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; }
-    private boolean isIdentPart(char c) { return isIdentStart(c) || (c >= '0' && c <= '9'); }
-    private boolean isDigit(char c) { return c >= '0' && c <= '9'; }
+    // --- start / lex init
+    private void start(String s) {
+        this.src = s == null ? "" : s;
+        this.pos = 0;
+        this.len = src.length();
+        nextToken();
+    }
 
-    public TLToken nextToken() {
+    // --- simple lex
+    private void nextToken() {
         skipSpace();
-        if (pos >= len) return new TLToken("EOF", "");
-        char c = peek();
-        // strings
+        if (pos >= len) { curType = "EOF"; curText = ""; return; }
+        char c = src.charAt(pos);
+        // string
         if (c == '"') {
             pos++;
             StringBuffer sb = new StringBuffer();
             while (pos < len) {
-                char d = next();
-                if (d == '\\') {
-                    if (pos < len) {
-                        char e = next();
-                        if (e == 'n') sb.append('\n');
-                        else if (e == 't') sb.append('\t');
-                        else sb.append(e);
-                    }
-                } else if (d == '"') {
-                    break;
-                } else sb.append(d);
+                char d = src.charAt(pos++);
+                if (d == '\\' && pos < len) {
+                    char e = src.charAt(pos++);
+                    if (e == 'n') sb.append('\n'); else if (e == 't') sb.append('\t'); else sb.append(e);
+                } else if (d == '"') break; else sb.append(d);
             }
-            return new TLToken("STRING", sb.toString());
+            curType = "STRING"; curText = sb.toString(); return;
         }
-        // number
-        if (isDigit(c) || (c == '.' && pos+1 < len && isDigit(src.charAt(pos+1)))) {
+        // number (integers only)
+        if (isDigit(c)) {
             int st = pos;
-            boolean dot = false;
-            while (pos < len) {
-                char d = peek();
-                if (isDigit(d)) { pos++; continue; }
-                if (d == '.' && !dot) { dot = true; pos++; continue; }
-                break;
-            }
-            return new TLToken("NUMBER", src.substring(st, pos));
+            while (pos < len && isDigit(src.charAt(pos))) pos++;
+            curType = "NUMBER"; curText = src.substring(st, pos); return;
         }
-        // identifier or keyword
+        // identifier / keyword
         if (isIdentStart(c)) {
-            int st = pos;
-            pos++;
-            while (pos < len && isIdentPart(peek())) pos++;
-            String t = src.substring(st, pos);
-            for (int i=0;i<keywords.length;i++) if (keywords[i].equals(t)) return new TLToken("KEYWORD", t);
-            return new TLToken("IDENT", t);
+            int st = pos++;
+            while (pos < len && isIdentPart(src.charAt(pos))) pos++;
+            curText = src.substring(st, pos);
+            // keywords: and, or, not, true, false, nil
+            if (curText.equals("and") || curText.equals("or") || curText.equals("not") ||
+                curText.equals("true") || curText.equals("false") || curText.equals("nil") ) {
+                curType = "KEYWORD";
+            } else {
+                curType = "IDENT";
+            }
+            return;
         }
-        // symbols: handle multi-char == ~= <= >=
-        // two-char
+        // two-char symbols
         if (pos+1 < len) {
             String two = src.substring(pos, pos+2);
-            if (two.equals("==") || two.equals("~=") || two.equals("<=") || two.equals(">=") ) { pos+=2; return new TLToken("SYMBOL", two); }
+            if (two.equals("==") || two.equals("~=") || two.equals("<=") || two.equals(">=")) {
+                pos += 2; curType = "SYMBOL"; curText = two; return;
+            }
         }
-        // single char symbols
+        // single-char symbols
         pos++;
-        return new TLToken("SYMBOL", new String(new char[] { c }));
+        curType = "SYMBOL"; curText = String.valueOf(c);
     }
-}
 
-/* === AST nodes === */
-abstract class Node { }
-abstract class Expr extends Node { abstract Object eval(Environment env); }
-abstract class Stmt extends Node { abstract Object execute(Environment env); }
-
-class NumberExpr extends Expr {
-    public double value;
-    public NumberExpr(double v) { this.value = v; }
-    Object eval(Environment env) { return new Double(value); }
-}
-class StringExpr extends Expr {
-    public String value;
-    public StringExpr(String v) { this.value = v; }
-    Object eval(Environment env) { return value; }
-}
-
-class NilExpr extends Expr { Object eval(Environment env) { return null; } }
-class BoolExpr extends Expr { public boolean v; public BoolExpr(boolean b) { v = b; } Object eval(Environment env) { return new Boolean(v); } }
-
-class VarExpr extends Expr {
-    public String name; public VarExpr(String n) { name = n; }
-    Object eval(Environment env) { return env.get(name); }
-}
-
-class BinaryExpr extends Expr {
-    public String op; public Expr left, right; public BinaryExpr(String o, Expr a, Expr b){op=o;left=a;right=b;}
-    Object eval(Environment env) {
-        if (op.equals("not")) {
-            Object L = left.eval(env);
-            return new Boolean(!truthy(L));
+    private void skipSpace() {
+        while (pos < len) {
+            char c = src.charAt(pos);
+            if (c == ' ' || c == '\t' || c == '\r' || c == '\n') { pos++; continue; }
+            // comment --
+            if (c == '-' && pos+1 < len && src.charAt(pos+1) == '-') { pos += 2; while (pos < len && src.charAt(pos) != '\n') pos++; continue; }
+            break;
         }
+    }
 
-        Object L = left.eval(env);
-        Object R = right.eval(env);
-        // handle nils
-        if (L == null || R == null) {
-            if (op.equals("==")) return new Boolean(L==R);
-            if (op.equals("~=")) return new Boolean(L!=R);
-            // other ops invalid on nil => return false/0
+    private boolean isDigit(char c) { return c >= '0' && c <= '9'; }
+    private boolean isIdentStart(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; }
+    private boolean isIdentPart(char c) { return isIdentStart(c) || (c >= '0' && c <= '9'); }
+
+    // --- parsing helpers
+    private boolean accept(String type, String text) {
+        if (curType.equals(type) && (text == null || curText.equals(text))) { nextToken(); return true; }
+        return false;
+    }
+    private void expect(String type, String text) {
+        if (!accept(type, text)) throw new RuntimeException("Parse expected " + type + ":" + text + " got " + curType + ":" + curText);
+    }
+
+    // --- statements: only expression statements and assignments (a = expr) supported
+    private void parseStatement() {
+        // assignment or expression
+        if (curType.equals("IDENT")) {
+            String name = curText;
+            // peek next token: do manual advance
+            int savePos = pos; String saveType = curType; String saveText = curText;
+            nextToken();
+            if (curType.equals("SYMBOL") && curText.equals("=")) {
+                // assignment
+                nextToken();
+                Object v = parseExpression();
+                globals.put(name, v);
+                // optional semicolon
+                if (curType.equals("SYMBOL") && curText.equals(";")) nextToken();
+                return;
+            } else {
+                // revert and parse as expression stmt
+                pos = savePos; curType = saveType; curText = saveText;
+            }
         }
-        // numbers
-        if (L instanceof Double && R instanceof Double) {
-            double a = ((Double)L).doubleValue();
-            double b = ((Double)R).doubleValue();
-            if (op.equals("+")) return new Double(a+b);
-            if (op.equals("-")) return new Double(a-b);
-            if (op.equals("*")) return new Double(a*b);
-            if (op.equals("/")) return new Double(a/b);
-            if (op.equals("%")) return new Double(a % b);
-            if (op.equals("<")) return new Boolean(a < b);
-            if (op.equals(">")) return new Boolean(a > b);
-            if (op.equals("<=")) return new Boolean(a <= b);
-            if (op.equals(">=")) return new Boolean(a >= b);
-            if (op.equals("==")) return new Boolean(a == b);
-            if (op.equals("~=")) return new Boolean(a != b);
+        // expression statement
+        Object r = parseExpression();
+        // ignore result, but if it's a return-like (not implemented) could be handled
+        if (curType.equals("SYMBOL") && curText.equals(";")) nextToken();
+    }
+
+    // --- expression parsing + eval on the fly
+    private Object parseExpression() { return parseOr(); }
+    private Object parseOr() {
+        Object a = parseAnd();
+        while (curType.equals("KEYWORD") && curText.equals("or")) {
+            nextToken();
+            Object b = parseAnd();
+            a = truthy(a) ? a : b;
         }
-        // equality for strings/booleans
-        //if (op.equals("==")) return new Boolean( (L==null?null:L).equals(R==null?null:R) );
-        //if (op.equals("~=")) return new Boolean( !(L==null?null:L).equals(R==null?null:R) );
+        return a;
+    }
+    private Object parseAnd() {
+        Object a = parseComparison();
+        while (curType.equals("KEYWORD") && curText.equals("and")) {
+            nextToken();
+            Object b = parseComparison();
+            a = truthy(a) && truthy(b) ? b : a;
+        }
+        return a;
+    }
+    private Object parseComparison() {
+        Object a = parseAdd();
+        while (curType.equals("SYMBOL") || (curType.equals("KEYWORD") && (curText.equals("==")||curText.equals("~=")))) {
+            String op = curText;
+            if (curType.equals("SYMBOL") || curType.equals("KEYWORD")) {
+                nextToken();
+                Object b = parseAdd();
+                a = evalBinaryOp(op, a, b);
+            } else break;
+        }
+        return a;
+    }
+    private Object parseAdd() {
+        Object a = parseMul();
+        while (curType.equals("SYMBOL") && (curText.equals("+")||curText.equals("-"))) {
+            String op = curText; nextToken();
+            Object b = parseMul();
+            a = evalBinaryOp(op, a, b);
+        }
+        return a;
+    }
+    private Object parseMul() {
+        Object a = parseUnary();
+        while (curType.equals("SYMBOL") && (curText.equals("*")||curText.equals("/")||curText.equals("%"))) {
+            String op = curText; nextToken();
+            Object b = parseUnary();
+            a = evalBinaryOp(op, a, b);
+        }
+        return a;
+    }
+    private Object parseUnary() {
+        if (curType.equals("SYMBOL") && curText.equals("-")) {
+            nextToken();
+            Object v = parseUnary();
+            if (v instanceof Integer) return new Integer(- ((Integer)v).intValue());
+            return new Integer(0);
+        }
+        if (curType.equals("KEYWORD") && curText.equals("not")) {
+            nextToken();
+            Object v = parseUnary();
+            return new Boolean(!truthy(v));
+        }
+        return parsePrimary();
+    }
+    private Object parsePrimary() {
+        if (curType.equals("NUMBER")) {
+            int v = 0;
+            try { v = Integer.parseInt(curText); } catch (Exception ex) { v = 0; }
+            nextToken(); return new Integer(v);
+        }
+        if (curType.equals("STRING")) {
+            String s = curText; nextToken(); return s;
+        }
+        if (curType.equals("KEYWORD") && curText.equals("true")) { nextToken(); return new Boolean(true); }
+        if (curType.equals("KEYWORD") && curText.equals("false")) { nextToken(); return new Boolean(false); }
+        if (curType.equals("KEYWORD") && curText.equals("nil")) { nextToken(); return null; }
+        if (curType.equals("IDENT")) {
+            String name = curText; nextToken();
+            // function call?
+            if (curType.equals("SYMBOL") && curText.equals("(")) {
+                nextToken();
+                Vector args = new Vector();
+                if (!(curType.equals("SYMBOL") && curText.equals(")"))) {
+                    args.addElement(parseExpression());
+                    while (curType.equals("SYMBOL") && curText.equals(",")) { nextToken(); args.addElement(parseExpression()); }
+                    expect("SYMBOL", ")");
+                } else { expect("SYMBOL", ")"); }
+                // resolve function
+                Object fn = globals.get(name);
+                if (fn instanceof LuaFunction) {
+                    return ((LuaFunction)fn).invoke(args);
+                } else {
+                    // not a function → ignore
+                    return null;
+                }
+            } else {
+                // variable
+                Object v = globals.get(name);
+                return v;
+            }
+        }
+        if (curType.equals("SYMBOL") && curText.equals("(")) {
+            nextToken();
+            Object v = parseExpression();
+            expect("SYMBOL", ")");
+            return v;
+        }
+        throw new RuntimeException("Unexpected token " + curType + ":" + curText);
+    }
+
+    // --- eval helpers
+    private Object evalBinaryOp(String op, Object a, Object b) {
+        // numeric ops:
+        if (a instanceof Integer && b instanceof Integer) {
+            int ai = ((Integer)a).intValue();
+            int bi = ((Integer)b).intValue();
+            if (op.equals("+")) return new Integer(ai + bi);
+            if (op.equals("-")) return new Integer(ai - bi);
+            if (op.equals("*")) return new Integer(ai * bi);
+            if (op.equals("/")) return new Integer(bi == 0 ? 0 : ai / bi);
+            if (op.equals("%")) return new Integer(bi == 0 ? 0 : ai % bi);
+            if (op.equals("==")) return new Boolean(ai == bi);
+            if (op.equals("~=")) return new Boolean(ai != bi);
+            if (op.equals("<")) return new Boolean(ai < bi);
+            if (op.equals(">")) return new Boolean(ai > bi);
+            if (op.equals("<=")) return new Boolean(ai <= bi);
+            if (op.equals(">=")) return new Boolean(ai >= bi);
+        }
+        // string equality
         if (op.equals("==")) {
-            if (L == null) return new Boolean(R == null);
-            return new Boolean(L.equals(R));
+            if (a == null) return new Boolean(b == null);
+            return new Boolean(a.equals(b));
         }
         if (op.equals("~=")) {
-            if (L == null) return new Boolean(R != null);
-            return new Boolean(!L.equals(R));
+            if (a == null) return new Boolean(b != null);
+            return new Boolean(!a.equals(b));
         }
-        // string concatenation with .. is not implemented
-        // logical and/or
-        if (op.equals("and")) return new Boolean( truthy(L) && truthy(R) );
-        if (op.equals("or")) return new Boolean( truthy(L) || truthy(R) );
+        // logical and/or were handled earlier
         return null;
     }
-    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
-}
 
-class CallExpr extends Expr {
-    public Expr func; public Vector args;
-    public CallExpr(Expr f, Vector a){ func=f; args=a; }
-    Object eval(Environment env) {
-        Object fn = func.eval(env);
-        Vector evaluated = new Vector();
-        for (int i=0;i<args.size();i++) evaluated.addElement( ((Expr)args.elementAt(i)).eval(env) );
-        if (fn instanceof FunctionValue) {
-            FunctionValue fv = (FunctionValue)fn;
-            return fv.invoke(evaluated);
-        }
-        // builtin: allow string name referring to global function
-        if (fn instanceof String) {
-            Object g = env.get((String)fn);
-            if (g instanceof FunctionValue) return ((FunctionValue)g).invoke(evaluated);
-        }
-        return null;
-    }
-}
-
-/* === Statements === */
-class AssignStmt extends Stmt {
-    public String name; public Expr expr; public AssignStmt(String n, Expr e){name=n;expr=e;}
-    Object execute(Environment env) { Object v = expr.eval(env); env.set(name, v); return null; }
-}
-
-class ReturnStmt extends Stmt {
-    public Expr expr; public ReturnStmt(Expr e){expr=e;} Object execute(Environment env) { return new ReturnValue(expr==null?null:expr.eval(env)); }
-}
-
-class IfStmt extends Stmt {
-    public Expr cond; public Vector thenBlock; public Vector elseBlock;
-    public IfStmt(Expr c, Vector t, Vector e){cond=c;thenBlock=t;elseBlock=e;}
-    Object execute(Environment env) {
-        Object c = cond.eval(env);
-        boolean t = truthy(c);
-        Vector block = t ? thenBlock : elseBlock;
-        if (block == null) return null;
-        for (int i=0;i<block.size();i++) {
-            Object r = ((Stmt)block.elementAt(i)).execute(env);
-            if (r instanceof ReturnValue) return r;
-        }
-        return null;
-    }
-    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
-}
-
-class WhileStmt extends Stmt {
-    public Expr cond; public Vector body;
-    public WhileStmt(Expr c, Vector b){cond=c;body=b;}
-    Object execute(Environment env) {
-        while (truthy(cond.eval(env))) {
-            for (int i=0;i<body.size();i++) {
-                Object r = ((Stmt)body.elementAt(i)).execute(env);
-                if (r instanceof ReturnValue) return r;
-            }
-        }
-        return null;
-    }
-    private boolean truthy(Object o) { if (o==null) return false; if (o instanceof Boolean) return ((Boolean)o).booleanValue(); return true; }
-}
-
-class ExprStmt extends Stmt {
-    public Expr e; public ExprStmt(Expr ex){e=ex;} Object execute(Environment env){ e.eval(env); return null; }
-}
-
-class FunctionDefStmt extends Stmt {
-    public String name; public Vector params; public Vector body;
-    public FunctionDefStmt(String n, Vector p, Vector b){name=n;params=p;body=b;}
-    Object execute(Environment env) {
-        FunctionValue fv = new FunctionValue(params, body, env);
-        env.set(name, fv);
-        return null;
-    }
-}
-
-/* Special return carrier */
-class ReturnValue { public Object value; public ReturnValue(Object v){value=v;} }
-
-/* Function value */
-class FunctionValue {
-    public Vector params; public Vector body; public Environment closure;
-    public FunctionValue(Vector p, Vector b, Environment c) { params=p; body=b; closure=c; }
-    public Object invoke(Vector args) {
-        Environment local = new Environment(closure);
-        // bind params
-        for (int i=0;i<params.size();i++) {
-            String pname = (String)params.elementAt(i);
-            Object aval = i < args.size() ? args.elementAt(i) : null;
-            local.set(pname, aval);
-        }
-        // execute body
-        for (int i=0;i<body.size();i++) {
-            Object r = ((Stmt)body.elementAt(i)).execute(local);
-            if (r instanceof ReturnValue) return ((ReturnValue)r).value;
-        }
-        return null;
-    }
-}
-
-/* Environment (simple chain of Hashtables) */
-class Environment {
-    private Hashtable table; private Environment parent;
-    public Environment(Environment p) { this.parent = p; this.table = new Hashtable(); }
-    public Object get(String name) {
-        Object v = table.get(name);
-        if (v != null) return v;
-        if (parent != null) return parent.get(name);
-        return null;
-    }
-    public void set(String name, Object value) { table.put(name, value); }
-}
-
-public class Lua {
-    // --- Parser fields
-    private TLLexer lex;
-    private TLToken cur;
-
-    // --- Lua fields
-    private Environment global;
-    private OpenTTY midlet;
-    private boolean root;
-
-    // --- Lua constructor
-    public Lua(OpenTTY midlet, boolean root) {
-        this.midlet = midlet; this.root = root;
-        this.global = new Environment(null);
-        registerBuiltins();
+    private boolean truthy(Object v) {
+        if (v == null) return false;
+        if (v instanceof Boolean) return ((Boolean)v).booleanValue();
+        return true;
     }
 
-    // --- Parser fields re-init for parsing
-    private void startParser(String s) {
-        this.lex = new TLLexer(s);
-        this.cur = lex.nextToken();
-    }
-
-    private void next() { cur = lex.nextToken(); }
-    private boolean accept(String type, String text) { if (cur.type.equals(type) && (text==null || cur.text.equals(text))) { next(); return true; } return false; }
     private void expect(String type, String text) {
-        if (!accept(type, text)) throw new RuntimeException("Parse error expected " + type + ":" + text + " got " + cur.type + ":" + cur.text);
-    }
-    
-    public Vector parseChunk() {
-        Vector stmts = new Vector();
-        while (!cur.type.equals("EOF") ) {
-            if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); continue; }
-            Stmt s = parseStatement();
-            if (cur.type.equals("SYMBOL") && cur.text.equals(";")) next();
-            stmts.addElement(s);
-        }
-        return stmts;
+        if (!(curType.equals(type) && (text == null || curText.equals(text)))) throw new RuntimeException("Parse expected " + type + ":" + text + " got " + curType + ":" + curText);
+        nextToken();
     }
 
-    private Stmt parseStatement() {
-        if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); return new ExprStmt(new NilExpr()); }
-        if (cur.type.equals("KEYWORD")) {
-            if (cur.text.equals("function")) {} // return parseFunctionDef();
-            if (cur.text.equals("if")) {} // return parseIf();
-            if (cur.text.equals("while")) {} // return parseWhile();
-            if (cur.text.equals("return")) {} // { next(); Expr e = null; if (!cur.type.equals("KEYWORD") || !(cur.text.equals("end") || cur.text.equals("else") )) e = parseExpression(); return new ReturnStmt(e); }
+    // --- builtins and function interface
+    private interface LuaFunction {
+        Object invoke(Vector args);
+    }
+
+    private class BuiltinPrint implements LuaFunction {
+        public Object invoke(Vector args) {
+            StringBuffer sb = new StringBuffer();
+            for (int i=0;i<args.size();i++) {
+                if (i>0) sb.append('\t');
+                Object a = args.elementAt(i);
+                sb.append(a == null ? "nil" : a.toString());
+            }
+            safeEcho(sb.toString());
+            return null;
         }
-        if (cur.type.equals("IDENT")) {
-            String name = cur.text; next();
-            if (accept("SYMBOL", "=")) {
-                //Expr e = parseExpression();
-                return new AssignStmt(name, e);
-            } else {
-                Expr func = new VarExpr(name);
-                Vector args = new Vector();
-                if (accept("SYMBOL","(")) {
-                    if (!accept("SYMBOL", ")")) {
-                        //args.addElement(parseExpression());
-                        while (accept("SYMBOL", ",")) args.addElement(parseExpression());
-                        expect("SYMBOL", ")");
-                    }
-                }
-                return new ExprStmt(new CallExpr(func,args));
+    }
+
+    private class BuiltinExec implements LuaFunction {
+        public Object invoke(Vector args) {
+            StringBuffer sb = new StringBuffer();
+            for (int i=0;i<args.size();i++) {
+                if (i>0) sb.append(' ');
+                Object a = args.elementAt(i);
+                sb.append(a == null ? "" : a.toString());
+            }
+            try {
+                int code = midlet.processCommand(sb.toString(), true, root);
+                return new Integer(code);
+            } catch (Throwable t) {
+                safeEcho("exec error: " + t.toString());
+                return null;
             }
         }
-        Expr e = parseExpression(); 
-        return new ExprStmt(Expr);
     }
 
-    /*private FunctionDefStmt parseFunctionDef() {
-        expect("KEYWORD","function");
-        String name = null;
-        if (cur.type.equals("IDENT")) { name = cur.text; next(); }
-        expect("SYMBOL","(");
-        Vector params = new Vector();
-        if (!accept("SYMBOL",")")) {
-            if (cur.type.equals("IDENT")) { params.addElement(cur.text); next(); }
-            while (accept("SYMBOL",",")) { if (cur.type.equals("IDENT")) { params.addElement(cur.text); next(); } }
-            expect("SYMBOL",")");
-        }
-        Vector body = new Vector();
-        while (!(cur.type.equals("KEYWORD") && cur.text.equals("end"))) {
-            body.addElement(parseStatement());
-        }
-        expect("KEYWORD","end");
-        return new FunctionDefStmt(name, params, body);
-    }*/
-
-    /*private IfStmt parseIf() {
-        expect("KEYWORD","if"); Expr cond = parseExpression(); expect("KEYWORD","then");
-        Vector thenB = new Vector(); Vector elseB = null;
-        while (!(cur.type.equals("KEYWORD") && (cur.text.equals("else")||cur.text.equals("end")))) { thenB.addElement(parseStatement()); }
-        if (accept("KEYWORD","else")) {
-            elseB = new Vector();
-            while (!(cur.type.equals("KEYWORD") && cur.text.equals("end"))) { elseB.addElement(parseStatement()); }
-        }
-        expect("KEYWORD","end");
-        return new IfStmt(cond, thenB, elseB);
-    }*/
-
-    /*private WhileStmt parseWhile() {
-        expect("KEYWORD","while"); Expr cond = parseExpression(); expect("KEYWORD","do");
-        Vector body = new Vector();
-        while (!(cur.type.equals("KEYWORD") && cur.text.equals("end"))) body.addElement(parseStatement());
-        expect("KEYWORD","end");
-        return new WhileStmt(cond, body);
-    }*/
-
-    /*private Expr parseExpression() { return parseOr(); }
-    /*private Expr parseOr() {
-        Expr e = parseAnd();
-        while (cur.type.equals("KEYWORD") && cur.text.equals("or")) { String op = cur.text; next(); e = new BinaryExpr(op, e, parseAnd()); }
-        return e;
-    }*/
-    //private Expr parseAnd() { Expr e = parseComparison(); while (cur.type.equals("KEYWORD") && cur.text.equals("and")) { String op=cur.text; next(); e=new BinaryExpr(op,e,parseComparison()); } return e; }
-    /*private Expr parseComparison() { 
-        Expr e = parseAdd(); 
-
-        while (cur.type.equals("SYMBOL") || cur.type.equals("KEYWORD")) {
-            String t = cur.text; 
-
-            if (t.equals("==")||t.equals("~=")||t.equals("<")||t.equals(">")||t.equals("<=")||t.equals(">=")) { next(); e = new BinaryExpr(t, e, parseAdd()); } 
-            else break; 
-        } 
-
-        return e; 
-    }*/
-    //private Expr parseAdd() { Expr e = parseMul(); while (cur.type.equals("SYMBOL") && (cur.text.equals("+")||cur.text.equals("-"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseMul()); } return e; }
-    //private Expr parseMul() { Expr e = parseUnary(); while (cur.type.equals("SYMBOL") && (cur.text.equals("*")||cur.text.equals("/")||cur.text.equals("%"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseUnary()); } return e; }
-    /*private Expr parseUnary() { 
-        if (cur.type.equals("SYMBOL") && cur.text.equals("-")) { 
-            next(); 
-            return new BinaryExpr("-", new NumberExpr(0.0), parseUnary()); 
-        } 
-        if (cur.type.equals("KEYWORD") && cur.text.equals("not")) {
-            next();
-            return new BinaryExpr("not", parseUnary(), null);
-        }
-        return parsePrimary(); 
-    }*/
-    /*private Expr parsePrimary() {
-        if (cur.type.equals("NUMBER")) {
-            double v = 0.0;
-            try { v = Double.valueOf(cur.text).doubleValue(); } catch (Exception ex) { v = 0.0; }
-            next();
-            return new NumberExpr(v);
-        }
-        if (cur.type.equals("STRING")) { String s = cur.text; next(); return new StringExpr(s); }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("true")) { next(); return new BoolExpr(true); }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("false")) { next(); return new BoolExpr(false); }
-        if (cur.type.equals("KEYWORD") && cur.text.equals("nil")) { next(); return new NilExpr(); }
-        if (cur.type.equals("IDENT")) {
-            String name = cur.text; next();
-            Expr base = new VarExpr(name);
-            if (accept("SYMBOL","(")) {
-                Vector args = new Vector();
-                if (!accept("SYMBOL",")")) {
-                    args.addElement(parseExpression());
-                    while (accept("SYMBOL",",")) args.addElement(parseExpression());
-                    expect("SYMBOL",")");
-                }
-                return new CallExpr(base, args);
-            }
-            return base;
-        }
-        if (accept("SYMBOL","(")) { Expr e = parseExpression(); expect("SYMBOL",")"); return e; }
-        throw new RuntimeException("Unexpected token " + cur.type + ":" + cur.text);
-    }*/
-
-    private void registerBuiltins() {
-        FunctionValue printFn = new FunctionValue(new Vector(), new Vector(), global) {
-            public Object invoke(Vector args) {
-                StringBuffer sb = new StringBuffer();
-                for (int i=0;i<args.size();i++) {
-                    if (i>0) sb.append('\t');
-                    Object a = args.elementAt(i);
-                    sb.append( a==null ? "nil" : a.toString() );
-                }
-                return midlet.processCommand("echo " + sb.toString(), false, root);
-            }
-        };
-        global.set("print", printFn);
-        FunctionValue execFn = new FunctionValue(new Vector(), new Vector(), global) {
-            public Object invoke(Vector args) {
-                StringBuffer sb = new StringBuffer();
-                for (int i=0;i<args.size();i++) {
-                    if (i>0) sb.append('\t');
-                    Object a = args.elementAt(i);
-                    sb.append( a==null ? "true" : a.toString() );
-                }
-                return midlet.processCommand(sb.toString(), true, root);
-            }
-        };
-        global.set("exec", execFn);
-    }
-
-    public void run(String source) {
-        try {
-            /*startParser(source);
-            Vector stmts = parseChunk();
-            for (int i = 0; i < stmts.size(); i++) {
-                Stmt s = (Stmt)stmts.elementAt(i);
-                Object r = s.execute(global);
-                if (r instanceof ReturnValue) { }
-            }*/
-            midlet.processCommand("echo Ok!", false, true);
-        } catch (Throwable t) {
-            midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
-        }
-    }
+    // --- output helper (append into StringItem similar to echoCommand)
+    private void safeEcho(String message) { midlet.processCommand("echo " + message, false, root); }
 }
