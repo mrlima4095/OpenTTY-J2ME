@@ -2221,13 +2221,13 @@ class Lua {
     public void run(String source) {
         try {
             TLParser p = new TLParser(source);
-            /*Vector stmts = p.parseChunk();
-            for (int i=0;i<stmts.size();i++) {
+            Vector stmts = p.parseChunk();
+            for (int i = 0; i < stmts.size(); i++) {
                 Stmt s = (Stmt)stmts.elementAt(i);
                 Object r = s.execute(global);
                 if (r instanceof ReturnValue) { }
-            }*/
-        } catch (Throwable t) {
+            }
+        } catch (Exception t) {
             midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
         }
     }
