@@ -2179,7 +2179,7 @@ class Lua {
 
     public void run(String source) {
         try {
-            TLParser p = new Parser(source);
+            Parser p = new Parser(source);
             Vector stmts = p.parseChunk();
             for (int i = 0; i < stmts.size(); i++) {
                 Stmt s = (Stmt)stmts.elementAt(i);
