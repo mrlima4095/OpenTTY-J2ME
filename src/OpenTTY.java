@@ -1822,6 +1822,11 @@ class VarExpr extends Expr {
 class BinaryExpr extends Expr {
     public String op; public Expr left, right; public BinaryExpr(String o, Expr a, Expr b){op=o;left=a;right=b;}
     Object eval(Environment env) {
+        if (op.equals("not")) {
+            Object L = left.eval(env);
+            return new Boolean(!truthy(L));
+        }
+
         Object L = left.eval(env);
         Object R = right.eval(env);
         // handle nils
@@ -1847,8 +1852,16 @@ class BinaryExpr extends Expr {
             if (op.equals("~=")) return new Boolean(a != b);
         }
         // equality for strings/booleans
-        if (op.equals("==")) return new Boolean( (L==null?null:L).equals(R==null?null:R) );
-        if (op.equals("~=")) return new Boolean( !(L==null?null:L).equals(R==null?null:R) );
+        //if (op.equals("==")) return new Boolean( (L==null?null:L).equals(R==null?null:R) );
+        //if (op.equals("~=")) return new Boolean( !(L==null?null:L).equals(R==null?null:R) );
+        if (op.equals("==")) {
+            if (L == null) return new Boolean(R == null);
+            return new Boolean(L.equals(R));
+        }
+        if (op.equals("~=")) {
+            if (L == null) return new Boolean(R != null);
+            return new Boolean(!L.equals(R));
+        }
         // string concatenation with .. is not implemented
         // logical and/or
         if (op.equals("and")) return new Boolean( truthy(L) && truthy(R) );
@@ -2081,7 +2094,21 @@ class TLParser {
         String t = cur.text; if (t.equals("==")||t.equals("~=")||t.equals("<")||t.equals(">")||t.equals("<=")||t.equals(">=")) { next(); e = new BinaryExpr(t, e, parseAdd()); } else break; } return e; }
     private Expr parseAdd() { Expr e = parseMul(); while (cur.type.equals("SYMBOL") && (cur.text.equals("+")||cur.text.equals("-"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseMul()); } return e; }
     private Expr parseMul() { Expr e = parseUnary(); while (cur.type.equals("SYMBOL") && (cur.text.equals("*")||cur.text.equals("/")||cur.text.equals("%"))) { String t=cur.text; next(); e = new BinaryExpr(t,e,parseUnary()); } return e; }
-    private Expr parseUnary() { if (cur.type.equals("SYMBOL") && cur.text.equals("-")) { next(); return new BinaryExpr("-", new NumberExpr(0), parseUnary()); } if (cur.type.equals("KEYWORD") && cur.text.equals("not")) { next(); return new BinaryExpr("and", new BoolExpr(false), parseUnary()); } return parsePrimary(); }
+    private Expr parseUnary() { 
+        if (cur.type.equals("SYMBOL") && cur.text.equals("-")) { 
+            next(); 
+
+            return new BinaryExpr("-", new NumberExpr(0), parseUnary()); 
+        } 
+        // Em TLParser.java, método parseUnary()
+        if (cur.type.equals("KEYWORD") && cur.text.equals("not")) {
+            next();
+            // Use um operador unário "not", o segundo operando pode ser nulo
+            return new BinaryExpr("not", parseUnary(), null);
+        }
+
+        return parsePrimary(); 
+    }
     private Expr parsePrimary() {
         if (cur.type.equals("NUMBER")) { double v = 0; try { v = Double.valueOf(cur.text).doubleValue(); } catch (Exception ex) { v = 0; } next(); return new NumberExpr(v); }
         if (cur.type.equals("STRING")) { String s = cur.text; next(); return new StringExpr(s); }
