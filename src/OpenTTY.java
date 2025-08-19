@@ -1790,7 +1790,7 @@ class TLLexer {
         }
         // single char symbols
         pos++;
-        return new TLToken("SYMBOL", String.valueOf(c));
+        return new TLToken("SYMBOL", new String(new char[] { c }));
     }
 }
 
