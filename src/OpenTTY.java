@@ -2155,8 +2155,8 @@ class Lua {
             }
         }
 
-        // Cria uma nova instância de UserDefinedLuaFunction
-        UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
+        // Cria uma nova instância de UserDefinedLuaFunction, passando midlet
+        UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope, midlet);
         scope.put(funcName, func);
         return null;
     }
@@ -2325,15 +2325,17 @@ class Lua {
     // Interface for Lua functions (built-in and user-defined)
     public interface LuaFunction { Object call(Vector args) throws Exception; }
     // Class for user-defined Lua functions
-    public static class UserDefinedLuaFunction implements LuaFunction {
+    public class UserDefinedLuaFunction implements LuaFunction {
         private Vector params;
         private Vector bodyTokens;
-        private Hashtable closureScope; // The scope where the function was defined
+        private Hashtable closureScope; // O escopo onde a função foi definida
+        private OpenTTY midlet; // Adicione uma referência ao midlet
 
-        UserDefinedLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) {
+        UserDefinedLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope, OpenTTY midlet) {
             this.params = params;
             this.bodyTokens = bodyTokens;
             this.closureScope = closureScope;
+            this.midlet = midlet; // Armazene a referência ao midlet
         }
 
         public Object call(Vector args) throws Exception {
@@ -2385,6 +2387,7 @@ class Lua {
             return returnValue;
         }
     }
+
 }
 
 
