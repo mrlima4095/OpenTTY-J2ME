@@ -1720,14 +1720,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 
-
+}
 
 /* Lua.java
    Mini Lua interpreter for J2ME (single-file, no AST heavy)
    Usage in OpenTTY: new Lua(this, root).run(code);
 */
 
-public class Lua {
+class Lua {
     private OpenTTY midlet;
     private boolean root;
 
@@ -2383,4 +2383,4 @@ public class Lua {
         Object value;
         ReturnException(Object v) { this.value = v; }
     }
-} }
+}
