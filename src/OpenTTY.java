@@ -1721,7 +1721,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 
 }
-public class Lua {
+class Lua {
 
     private OpenTTY midlet;
     private boolean root;
