@@ -2027,7 +2027,7 @@ public class Lua {
         if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); return new ExprStmt(new NilExpr()); }
         if (cur.type.equals("KEYWORD")) {
             if (cur.text.equals("function")) {} // return parseFunctionDef();
-            if (cur.text.equals("if")) {} r// eturn parseIf();
+            if (cur.text.equals("if")) {} // return parseIf();
             if (cur.text.equals("while")) {} // return parseWhile();
             if (cur.text.equals("return")) {} // { next(); Expr e = null; if (!cur.type.equals("KEYWORD") || !(cur.text.equals("end") || cur.text.equals("else") )) e = parseExpression(); return new ReturnStmt(e); }
         }
