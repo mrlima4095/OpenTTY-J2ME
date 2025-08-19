@@ -54,6 +54,7 @@ public class Lua {
 
         // ---------- utilities ----------
         private boolean eof() { skipSpacesAndComments(); return pos >= len; }
+        private boolean isSpace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
         private void skipSpacesAndComments() {
             for (;;) {
                 // spaces
