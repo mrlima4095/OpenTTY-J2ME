@@ -57,7 +57,7 @@ public class Lua {
         private void skipSpacesAndComments() {
             for (;;) {
                 // spaces
-                while (pos < len && Character.isWhitespace(src.charAt(pos))) pos++;
+                while (pos < len && isSpace(src.charAt(pos))) pos++;
                 // single-line comment: --
                 if (pos + 1 < len && src.charAt(pos) == '-' && src.charAt(pos+1) == '-') {
                     pos += 2;
