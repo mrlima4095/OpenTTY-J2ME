@@ -1793,7 +1793,7 @@ class Lua {
             this.tokens = tokenize(code);
             parseAndExecute();
         } catch (Exception e) {
-            this.midlet.processCommand("echo Lua Error: " + e.toString(), true, root);
+            midlet.processCommand("echo Lua Error: " + e.toString(), true, root);
         }
     }
 
@@ -1824,7 +1824,7 @@ class Lua {
                     double numValue = Double.parseDouble(sb.toString());
                     tokens.addElement(new Token(NUMBER, new Double(numValue)));
                 } catch (NumberFormatException e) {
-                    this.midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
+                    midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
                     tokens.addElement(new Token(NUMBER, new Double(0))); // Valor padrão em caso de erro
                 }
 
@@ -1902,7 +1902,7 @@ class Lua {
                     tokens.addElement(new Token(NE, "~="));
                     i += 2;
                 } else {
-                    this.midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '~'", true, root);
+                    midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '~'", true, root);
                     i++;
                 }
                 continue;
@@ -1929,7 +1929,7 @@ class Lua {
             }
 
             // If we reach here, it's an unexpected character
-            this.midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
+            midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
             i++;
         }
         
@@ -2148,7 +2148,7 @@ class Lua {
         }
 
         // Cria uma nova instância de UserDefinedLuaFunction, passando midlet
-        UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope, midlet);
+        UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
         scope.put(funcName, func);
         return null;
     }
@@ -2321,13 +2321,11 @@ class Lua {
         private Vector params;
         private Vector bodyTokens;
         private Hashtable closureScope; // O escopo onde a função foi definida
-        private OpenTTY midlet; // Adicione uma referência ao midlet
 
-        UserDefinedLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope, OpenTTY midlet) {
+        UserDefinedLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) {
             this.params = params;
             this.bodyTokens = bodyTokens;
             this.closureScope = closureScope;
-            this.midlet = midlet; // Armazene a referência ao midlet
         }
 
         public Object call(Vector args) throws Exception {
