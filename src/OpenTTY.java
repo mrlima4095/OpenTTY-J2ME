@@ -2013,7 +2013,7 @@ public class Lua {
         if (!accept(type, text)) throw new RuntimeException("Parse error expected " + type + ":" + text + " got " + cur.type + ":" + cur.text);
     }
     
-    /*public Vector parseChunk() {
+    public Vector parseChunk() {
         Vector stmts = new Vector();
         while (!cur.type.equals("EOF") ) {
             if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); continue; }
@@ -2022,7 +2022,7 @@ public class Lua {
             stmts.addElement(s);
         }
         return stmts;
-    }*/
+    }
 
     private Stmt parseStatement() {
         if (cur.type.equals("SYMBOL") && cur.text.equals(";")) { next(); return new ExprStmt(new NilExpr()); }
@@ -2053,7 +2053,7 @@ public class Lua {
         Expr e = parseExpression(); return new ExprStmt(e);
     }
 
-    /*private FunctionDefStmt parseFunctionDef() {
+    private FunctionDefStmt parseFunctionDef() {
         expect("KEYWORD","function");
         String name = null;
         if (cur.type.equals("IDENT")) { name = cur.text; next(); }
@@ -2070,9 +2070,9 @@ public class Lua {
         }
         expect("KEYWORD","end");
         return new FunctionDefStmt(name, params, body);
-    }*/
+    }
 
-    /*private IfStmt parseIf() {
+    private IfStmt parseIf() {
         expect("KEYWORD","if"); Expr cond = parseExpression(); expect("KEYWORD","then");
         Vector thenB = new Vector(); Vector elseB = null;
         while (!(cur.type.equals("KEYWORD") && (cur.text.equals("else")||cur.text.equals("end")))) { thenB.addElement(parseStatement()); }
@@ -2082,15 +2082,15 @@ public class Lua {
         }
         expect("KEYWORD","end");
         return new IfStmt(cond, thenB, elseB);
-    }*/
+    }
 
-    /*private WhileStmt parseWhile() {
+    private WhileStmt parseWhile() {
         expect("KEYWORD","while"); Expr cond = parseExpression(); expect("KEYWORD","do");
         Vector body = new Vector();
         while (!(cur.type.equals("KEYWORD") && cur.text.equals("end"))) body.addElement(parseStatement());
         expect("KEYWORD","end");
         return new WhileStmt(cond, body);
-    }*/
+    }
 
     private Expr parseExpression() { return parseOr(); }
     private Expr parseOr() {
