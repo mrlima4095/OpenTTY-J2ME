@@ -2001,10 +2001,10 @@ public class Lua {
     }
 
     // --- Parser fields re-init for parsing
-    /*private void startParser(String s) {
+    private void startParser(String s) {
         this.lex = new TLLexer(s);
         this.cur = lex.nextToken();
-    }*/
+    }
 
     private void next() { cur = lex.nextToken(); }
     private boolean accept(String type, String text) { if (cur.type.equals(type) && (text==null || cur.text.equals(text))) { next(); return true; } return false; }
