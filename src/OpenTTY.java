@@ -1755,7 +1755,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Object r = s.execute(global);
                 if (r instanceof ReturnValue) { }
             }
-        } catch (Exception t) {
+        } catch (Throwable t) {
             midlet.processCommand("echo Lua Runtime error: " + t.toString(), false, root);
         }
     }
