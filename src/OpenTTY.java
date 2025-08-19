@@ -1204,7 +1204,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private SocketConnection CONN;
         private ServerSocketConnection server = null;
         private InputStream IN; private OutputStream OUT;
-        private String PID = genpid(), DB, address;
+        private String PID = genpid(), DB, address, port;
 
         private int start;
         private String[] wordlist;
@@ -1229,7 +1229,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             if (MOD == SERVER || MOD == BIND) {
                 if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); PID = "31522"; DB = ""; } 
-                else { PID = getCommand(args); DB = getArgument(args); DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB; }
+                else { port = getCommand(args); DB = getArgument(args); DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB; }
 
                 new Thread(this, MOD == BIND ? "Bind" : "Server").start();
                 return;
@@ -1368,13 +1368,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return;
             }
             else {
-                if (trace.containsKey(PID) || getNumber(PID, 65536, false) > 65535 || getNumber(PID, 65536, false) < 4) { echoCommand("[-] Port '" + PID + "' is unavailable"); return; }
-                start(MOD == SERVER ? "server" : "bind", PID, null, root);
+                if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
+                start(MOD == SERVER ? "server" : "bind", PID, null, root); sessions.put(port, "nobody");
 
-                while (trace.containsKey(PID)) {
-                    try {
-                        server = (ServerSocketConnection) Connector.open("socket://:" + PID);
-                        if (COUNT == 1) { echoCommand("[+] listening on port " + PID); MIDletLogs("add info Server listening on port " + PID); COUNT++; }
+                try {
+                    while (trace.containsKey(PID)) {
+                        server = (ServerSocketConnection) Connector.open("socket://:" + port);
+                        if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port " + port); COUNT++; }
 
                         CONN = (SocketConnection) server.acceptAndOpen();
                         address = CONN.getAddress();
@@ -1392,7 +1392,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 OUT.flush();
                             }
                         } else {
-                            sessions.put(PID, address);
+                            sessions.put(port, address);
                             while (trace.containsKey(PID)) {
                                 byte[] buffer = new byte[4096];
                                 int bytesRead = IN.read(buffer);
@@ -1412,20 +1412,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             }
                         }
                     } 
-                    catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
-                    finally {
-                        try { if (IN != null) IN.close(); } catch (IOException e) { }
-                        try { if (OUT != null) OUT.close(); } catch (IOException e) { }
-                        try { if (CONN != null) CONN.close(); } catch (IOException e) { }
-                        try { if (server != null) server.close(); } catch (IOException e) { }
+                } 
+                catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
+                finally {
+                    try { if (IN != null) IN.close(); } catch (IOException e) { }
+                    try { if (OUT != null) OUT.close(); } catch (IOException e) { }
+                    try { if (CONN != null) CONN.close(); } catch (IOException e) { }
+                    try { if (server != null) server.close(); } catch (IOException e) { }
 
-                        sessions.remove(PID); trace.remove(PID);
-                        echoCommand("[-] Server stopped");
-                        MIDletLogs("add info Server was stopped");
-                    }
-                }
+                    sessions.remove(port); trace.remove(PID);
+                    echoCommand("[-] Server stopped");
+                    MIDletLogs("add info Server was stopped");
+                }   
             }
-            
         }
 
         private int verifyHTTP(String fullUrl) throws IOException {
@@ -1688,7 +1687,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), PID, (String) PKG.get("process.exit"), root); }
         if (PKG.containsKey("process.type")) { 
             String TYPE = (String) PKG.get("process.type"), PORT = (String) PKG.get("process.port"), MOD = (String) PKG.get("process." + (TYPE.equals("bind") ? "db" : "host")); 
-            if (trace.containsKey(PORT)) { MIDletLogs("add warn Application port is unavailable."); return 68; }
+            if (sessions.containsKey(PORT)) { MIDletLogs("add warn Application port is unavailable."); return 68; }
             
             if (TYPE.equals("bind") || TYPE.equals("server")) { new Connect(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); }
             else { MIDletLogs("add error Invalid process type '" + TYPE + "'"); return 1; }            
