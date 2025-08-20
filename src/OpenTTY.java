@@ -1766,7 +1766,7 @@ class Lua {
     }
     public void run(String code) { try { this.tokens = tokenize(code); parseAndExecute(); } catch (Exception e) { midlet.processCommand("echo Lua Error: " + e.getMessage() == null ? e.getMessage() : e.getClass().getName(), true, root); } }
 
-    private Vector tokenize(String code) {
+    private Vector tokenize(String code) throws RuntimeException {
         Vector tokens = new Vector();
         int i = 0;
         while (i < code.length()) {
@@ -1917,9 +1917,25 @@ class Lua {
             if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; continue; }
             if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
             if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; continue; }
+
+            // Comentário de linha --
+            if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') {
+                i += 2;
+                // Se for bloco de comentário --[[
+                if (i + 1 < code.length() && code.charAt(i) == '[' && code.charAt(i+1) == '[') {
+                    i += 2;
+                    // Avança até ]]
+                    while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i+1) == ']')) i++;
+                    if (i + 1 < code.length()) i += 2; // pula ]]
+                } else {
+                    // É comentário de linha, avança até final da linha
+                    while (i < code.length() && code.charAt(i) != '\n') i++;
+                }
+                continue;
+            }
     
             // If we reach here, it's an unexpected character
-            midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
+            throw new RuntimeException("Unexpected character '" + c + "'");
             i++;
         }
     
