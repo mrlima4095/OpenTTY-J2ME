@@ -1760,9 +1760,7 @@ class Lua {
             this.value = value;
         }
 
-        public String toString() {
-            return "Token(type=" + type + ", value=" + value + ")";
-        }
+        public String toString() { return "Token(type=" + type + ", value=" + value + ")"; }
     }
 
     public Lua(OpenTTY midlet, boolean root) {
@@ -1775,17 +1773,13 @@ class Lua {
         // Register built-in functions
         globals.put("print", new LuaFunction() {
             public Object call(Vector args) {
-                if (!args.isEmpty()) {
-                    APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT);
-                }
-                return null; // Lua functions typically return nil if nothing else
+                if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); }
+                return null; 
             }
         });
         globals.put("exec", new LuaFunction() {
             public Object call(Vector args) {
-                if (!args.isEmpty()) {
-                    return APP.processCommand(args.elementAt(0).toString(), true, ROOT);
-                }
+                if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); }
                 return null;
             }
         });
