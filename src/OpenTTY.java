@@ -1901,61 +1901,83 @@ class Lua {
         Token current = peek();
 
         if (current.type == IDENTIFIER) {
-            // Olhe adiante: se for COMMA, é múltiplo assignment (a, b, c = ...)
+            // Lookahead de 1 token
+            Token next = (tokenIndex + 1 < tokens.size()) ? (Token) tokens.elementAt(tokenIndex + 1) : new Token(EOF, "EOF");
+
+            // Caso 1: chamada direta: foo(...)
+            if (next.type == LPAREN) {
+                String funcName = (String) consume(IDENTIFIER).value;
+                callFunction(funcName, scope); // consome os parênteses e argumentos
+                return null;
+            }
+
+            // Verifica múltipla atribuição (a, b, c = ...)
             int lookahead = 1;
             boolean isMulti = false;
-            while (tokenIndex + lookahead < tokens.size() && ((Token)tokens.elementAt(tokenIndex + lookahead)).type == COMMA) {
+            while (tokenIndex + lookahead < tokens.size() &&
+                   ((Token) tokens.elementAt(tokenIndex + lookahead)).type == COMMA) {
                 isMulti = true;
-                lookahead += 2; // pula o COMMA e o próximo IDENTIFIER
+                lookahead += 2; // COMMA + próximo IDENTIFIER
             }
             if (isMulti) {
-                // Parse lista de variáveis
+                // Parse lista de variáveis (lado esquerdo)
                 Vector varNames = new Vector();
-                varNames.addElement(((Token)consume(IDENTIFIER)).value); // consome o primeiro nome
-        
+                varNames.addElement(((Token) consume(IDENTIFIER)).value);
                 while (peek().type == COMMA) {
                     consume(COMMA);
-                    varNames.addElement(((Token)consume(IDENTIFIER)).value);
+                    varNames.addElement(((Token) consume(IDENTIFIER)).value);
                 }
-        
                 consume(ASSIGN);
-        
-                // Parse lista de expressões do lado direito
+
+                // Parse lista de expressões (lado direito)
                 Vector values = new Vector();
                 values.addElement(expression(scope));
                 while (peek().type == COMMA) {
                     consume(COMMA);
                     values.addElement(expression(scope));
                 }
-        
-                // Atribui os valores nas variáveis (nil se faltar valor)
+
                 for (int i = 0; i < varNames.size(); i++) {
-                    String v = (String)varNames.elementAt(i);
+                    String v = (String) varNames.elementAt(i);
                     Object val = i < values.size() ? values.elementAt(i) : null;
                     scope.put(v, val);
                 }
                 return null;
-            } else {
-                // Assignment com ponto ou colchete
-                String varName = (String) consume(IDENTIFIER).value;
-                if (peek().type == DOT || peek().type == LBRACKET) {
-                    Object[] pair = resolveTableAndKey(varName, scope);
-                    Object targetTable = pair[0];
-                    Object key = pair[1];
+            }
+
+            // Caso 2: identifier seguido de . ou [ -> pode ser atribuição em tabela OU chamada de função: t.a = ... OU t.a(...)
+            String varName = (String) consume(IDENTIFIER).value;
+            if (peek().type == DOT || peek().type == LBRACKET) {
+                Object[] pair = resolveTableAndKey(varName, scope);
+                Object targetTable = pair[0];
+                Object key = pair[1];
+                if (!(targetTable instanceof Hashtable))
+                    throw new Exception("Attempt to index non-table value");
+
+                if (peek().type == ASSIGN) {
+                    // t.a = expr
                     consume(ASSIGN);
                     Object value = expression(scope);
-                    if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value");
-                    ((Hashtable)targetTable).put(key, value);
+                    ((Hashtable) targetTable).put(key, value);
                     return null;
+                } else if (peek().type == LPAREN) {
+                    // t.a(...) -> chamar função armazenada em t[a]
+                    Object funcObj = ((Hashtable) targetTable).get(key);
+                    // usa callFunctionObject para consumir args e chamar
+                    return callFunctionObject(funcObj, scope);
                 } else {
-                    // Assignment normal simples
-                    consume(ASSIGN);
-                    Object value = expression(scope);
-                    scope.put(varName, value);
+                    // Apenas acesso a campo como statement: ignore/avalie se quiser
                     return null;
                 }
+            } else {
+                // Caso 3: atribuição simples: a = expr
+                consume(ASSIGN);
+                Object value = expression(scope);
+                scope.put(varName, value);
+                return null;
             }
         }
+
         else if (current.type == IF) { return ifStatement(scope); } 
         else if (current.type == WHILE) { return whileStatement(scope); } 
         else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
@@ -2118,7 +2140,7 @@ class Lua {
         consume(END); // Consume the 'end' for the while loop
         return null;
     }
-
+    
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
         String funcName = (String) consume(IDENTIFIER).value;
