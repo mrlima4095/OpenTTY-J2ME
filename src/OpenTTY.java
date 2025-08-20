@@ -1731,8 +1731,8 @@ class Lua {
 
     // Token types
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, 
-                             OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, 
-                             LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38; 
+                         OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, 
+                         LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39;
     
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
@@ -1856,6 +1856,7 @@ class Lua {
                 else if (word.equals("if")) type = IF;
                 else if (word.equals("then")) type = THEN;
                 else if (word.equals("else")) type = ELSE;
+                else if (word.equals("elseif")) type = ELSEIF;
                 else if (word.equals("end")) type = END;
                 else if (word.equals("while")) type = WHILE;
                 else if (word.equals("do")) type = DO;
@@ -2031,116 +2032,113 @@ class Lua {
 
         throw new RuntimeException("Unexpected token at statement: " + current.value);
     }
+    
     private Object ifStatement(Hashtable scope) throws Exception {
         consume(IF);
-        Object condition = expression(scope);
+        Object cond = expression(scope);
         consume(THEN);
 
         Object result = null;
-        if (isTruthy(condition)) {
-            while (peek().type != ELSE && peek().type != END) {
+        boolean taken = false;
+
+        // executa OU pula o primeiro bloco
+        if (isTruthy(cond)) {
+            taken = true;
+            while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
                 result = statement(scope);
-                if (result != null) return result; // Handle return from nested statements
+                if (result != null) return result;
             }
         } else {
-            // Skip to ELSE or END
-            int depth = 1;
-            while (depth > 0) {
-                Token token = consume();
-                if (token.type == IF || token.type == WHILE || token.type == FUNCTION) {
-                    depth++;
-                } else if (token.type == END) {
-                    depth--;
-                } else if (token.type == ELSE && depth == 1) {
-                    break; // Found the else for the current if
-                } 
-                else if (token.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end' or 'else'"); }
+            skipIfBodyUntilElsePart(); // posiciona no ELSEIF/ELSE/END correspondente deste if
+        }
+
+        // trata zero ou mais ELSEIF
+        while (peek().type == ELSEIF) {
+            consume(ELSEIF);
+            cond = expression(scope);
+            consume(THEN);
+
+            if (!taken && isTruthy(cond)) {
+                taken = true;
+                while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
+                    result = statement(scope);
+                    if (result != null) return result;
+                }
+            } else {
+                skipIfBodyUntilElsePart();
             }
         }
 
+        // trata ELSE opcional
         if (peek().type == ELSE) {
             consume(ELSE);
-            if (!isTruthy(condition)) { // Only execute else block if original condition was false
+            if (!taken) {
                 while (peek().type != END) {
                     result = statement(scope);
                     if (result != null) return result;
                 }
             } else {
-                // Skip else block
-                int depth = 1;
-                while (depth > 0) {
-                    Token token = consume();
-                    if (token.type == IF || token.type == WHILE || token.type == FUNCTION) {
-                        depth++;
-                    } else if (token.type == END) {
-                        depth--;
-                    } else if (token.type == EOF) {
-                        throw new Exception("Unmatched 'else' statement: Expected 'end'");
-                    }
-                }
+                // já executamos um ramo verdadeiro; apenas pular até o END
+                skipUntilMatchingEnd();
             }
         }
+
         consume(END);
         return result;
     }
     private Object whileStatement(Hashtable scope) throws Exception {
         consume(WHILE);
-        int conditionStartTokenIndex = tokenIndex; // Mark the start of the condition for looping
+        int conditionStartTokenIndex = tokenIndex;
 
         Object result = null;
+        boolean endAlreadyConsumed = false;
+
         while (true) {
-            // Reset token index to re-evaluate the condition
             tokenIndex = conditionStartTokenIndex;
             Object condition = expression(scope);
 
             if (!isTruthy(condition)) {
-                // Skip the 'do' block
+                // Pular o corpo até o END correspondente
                 int depth = 1;
                 while (depth > 0) {
                     Token token = consume();
-                    if (token.type == IF || token.type == WHILE || token.type == FUNCTION) {
-                        depth++;
-                    } else if (token.type == END) {
-                        depth--;
-                    } else if (token.type == EOF) {
-                        throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
-                    }
+                    if (token.type == IF || token.type == WHILE || token.type == FUNCTION) depth++;
+                    else if (token.type == END) depth--;
+                    else if (token.type == EOF) throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
                 }
-                break; // Exit while loop
+                endAlreadyConsumed = true; // já consumimos o END acima
+                break;
             }
 
             consume(DO);
-            int loopBodyStartTokenIndex = tokenIndex; // Mark the start of the loop body
 
+            // Executa corpo até o END do laço
             while (peek().type != END) {
                 result = statement(scope);
-                if (result != null) { // Handle return from nested statements
-                    // If a return is encountered, exit the while loop and propagate the return value
-                    // Need to consume 'end' for the while loop before returning
+                if (result != null) {
+                    // "return" dentro do while: consome até o END do laço e retorna
                     int depth = 1;
                     while (depth > 0) {
                         Token token = consume();
-                        if (token.type == IF || token.type == WHILE || token.type == FUNCTION) {
-                            depth++;
-                        } else if (token.type == END) {
-                            depth--;
-                        } else if (token.type == EOF) {
-                            throw new Exception("Unmatched 'while' statement: Expected 'end'");
-                        }
+                        if (token.type == IF || token.type == WHILE || token.type == FUNCTION) depth++;
+                        else if (token.type == END) depth--;
+                        else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
                     }
                     return result;
                 }
             }
-            // After executing the loop body, reset tokenIndex to re-evaluate the condition
-            // The 'end' token for the current loop body will be consumed by the next iteration's 'consume(DO)'
-            // or by the final 'consume(END)' after the loop breaks.
-            // For now, just reset to the condition start.
+            // aqui o próximo token é END do while, mas NÃO consumimos:
+            // vamos voltar para a condição; esse END ficará para o caso de a condição ficar falsa,
+            // quando o bloco de “pular até END” acima consumirá ele.
+            // Reset para reavaliar a condição:
             tokenIndex = conditionStartTokenIndex;
         }
-        consume(END); // Consume the 'end' for the while loop
+
+        if (!endAlreadyConsumed) consume(END);
         return null;
     }
-    
+
+
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
         String funcName = (String) consume(IDENTIFIER).value;
@@ -2377,6 +2375,37 @@ class Lua {
 
         if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
+    }
+
+    private void skipIfBodyUntilElsePart() throws Exception {
+        int depth = 1;
+        while (true) {
+            Token t = consume();
+            if (t.type == IF || t.type == WHILE || t.type == FUNCTION) depth++;
+            else if (t.type == END) {
+                depth--;
+                if (depth == 0) { // acabou o if inteiro sem ELSE/ELSEIF
+                    tokenIndex--; // voltamos 1 para deixar o END ser consumido pelo chamador
+                    return;
+                }
+            } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) {
+                tokenIndex--; // para o chamador ler este token
+                return;
+            } else if (t.type == EOF) {
+                throw new Exception("Unmatched 'if' statement: Expected 'end'");
+            }
+        }
+    }
+    private void skipUntilMatchingEnd() throws Exception {
+        int depth = 1;
+        while (depth > 0) {
+            Token t = consume();
+            if (t.type == IF || t.type == WHILE || t.type == FUNCTION) depth++;
+            else if (t.type == END) depth--;
+            else if (t.type == EOF) throw new Exception("Unmatched 'if' statement: Expected 'end'");
+        }
+        // aqui o END já foi consumido por 'consume()' do loop
+        tokenIndex--; // devolve o END para quem chamou consumir
     }
 
 
