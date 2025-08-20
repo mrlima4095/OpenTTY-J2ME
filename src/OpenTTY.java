@@ -2003,6 +2003,35 @@ class Lua {
                 return null;
             }
         }
+        if (current.type == IDENTIFIER) {
+            // Parse lista de variáveis
+            Vector varNames = new Vector();
+            varNames.addElement(((Token)consume(IDENTIFIER)).value); // consome o primeiro nome
+        
+            // enquanto houver ',' consome mais nomes
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                varNames.addElement(((Token)consume(IDENTIFIER)).value);
+            }
+        
+            consume(ASSIGN);
+        
+            // Parse lista de expressões do lado direito
+            Vector values = new Vector();
+            values.addElement(expression(scope));
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                values.addElement(expression(scope));
+            }
+        
+            // Atribui os valores nas variáveis (nil se faltar valor)
+            for (int i = 0; i < varNames.size(); i++) {
+                String v = (String)varNames.elementAt(i);
+                Object val = i < values.size() ? values.elementAt(i) : null;
+                scope.put(v, val);
+            }
+            return null;
+        }
         else if (current.type == IF) { return ifStatement(scope); } 
         else if (current.type == WHILE) { return whileStatement(scope); } 
         else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
