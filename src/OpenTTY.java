@@ -1985,52 +1985,60 @@ class Lua {
             }
         } 
         if (current.type == IDENTIFIER) {
-            String varName = (String) consume(IDENTIFIER).value;
-            if (peek().type == DOT || peek().type == LBRACKET) {
-                Object[] pair = resolveTableAndKey(varName, scope);
-                Object targetTable = pair[0];
-                Object key = pair[1];
+            // Olhe adiante: se for COMMA, é múltiplo assignment (a, b, c = ...)
+            int lookahead = 1;
+            boolean isMulti = false;
+            while (tokenIndex + lookahead < tokens.size() && ((Token)tokens.elementAt(tokenIndex + lookahead)).type == COMMA) {
+                isMulti = true;
+                lookahead += 2; // pula o COMMA e o próximo IDENTIFIER
+            }
+            if (isMulti) {
+                // Parse lista de variáveis
+                Vector varNames = new Vector();
+                varNames.addElement(((Token)consume(IDENTIFIER)).value); // consome o primeiro nome
+        
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    varNames.addElement(((Token)consume(IDENTIFIER)).value);
+                }
+        
                 consume(ASSIGN);
-                Object value = expression(scope);
-                if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value");
-                ((Hashtable)targetTable).put(key, value);
+        
+                // Parse lista de expressões do lado direito
+                Vector values = new Vector();
+                values.addElement(expression(scope));
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    values.addElement(expression(scope));
+                }
+        
+                // Atribui os valores nas variáveis (nil se faltar valor)
+                for (int i = 0; i < varNames.size(); i++) {
+                    String v = (String)varNames.elementAt(i);
+                    Object val = i < values.size() ? values.elementAt(i) : null;
+                    scope.put(v, val);
+                }
                 return null;
             } else {
-                // Assignment normal
-                consume(ASSIGN);
-                Object value = expression(scope);
-                scope.put(varName, value);
-                return null;
+                // Assignment com ponto ou colchete
+                String varName = (String) consume(IDENTIFIER).value;
+                if (peek().type == DOT || peek().type == LBRACKET) {
+                    Object[] pair = resolveTableAndKey(varName, scope);
+                    Object targetTable = pair[0];
+                    Object key = pair[1];
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value");
+                    ((Hashtable)targetTable).put(key, value);
+                    return null;
+                } else {
+                    // Assignment normal simples
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    scope.put(varName, value);
+                    return null;
+                }
             }
-        }
-        if (current.type == IDENTIFIER) {
-            // Parse lista de variáveis
-            Vector varNames = new Vector();
-            varNames.addElement(((Token)consume(IDENTIFIER)).value); // consome o primeiro nome
-        
-            // enquanto houver ',' consome mais nomes
-            while (peek().type == COMMA) {
-                consume(COMMA);
-                varNames.addElement(((Token)consume(IDENTIFIER)).value);
-            }
-        
-            consume(ASSIGN);
-        
-            // Parse lista de expressões do lado direito
-            Vector values = new Vector();
-            values.addElement(expression(scope));
-            while (peek().type == COMMA) {
-                consume(COMMA);
-                values.addElement(expression(scope));
-            }
-        
-            // Atribui os valores nas variáveis (nil se faltar valor)
-            for (int i = 0; i < varNames.size(); i++) {
-                String v = (String)varNames.elementAt(i);
-                Object val = i < values.size() ? values.elementAt(i) : null;
-                scope.put(v, val);
-            }
-            return null;
         }
         else if (current.type == IF) { return ifStatement(scope); } 
         else if (current.type == WHILE) { return whileStatement(scope); } 
