@@ -1750,7 +1750,8 @@ class Lua {
     private static final int COMMA = 31; // ,
     private static final int LOCAL = 32; // for local variables in functions
     private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36;
-
+    private static final int CONCAT = 37; // .. 
+    
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
     public Lua(OpenTTY midlet, boolean root) {
@@ -1771,31 +1772,39 @@ class Lua {
         while (i < code.length()) {
             char c = code.charAt(i);
             if (isWhitespace(c)) { i++; continue; }
-
-            // Numbers
+    
+            // Numbers (inclui ponto para decimais, mas NÃO para ..)
             if (isDigit(c) || c == '.') {
+                int startI = i;
                 StringBuffer sb = new StringBuffer();
                 boolean hasDecimal = false;
-                while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
-                    if (code.charAt(i) == '.') {
-                        if (hasDecimal) break;
-                        hasDecimal = true;
+                // Checa se é ".." antes de processar como número
+                if (c == '.' && i + 1 < code.length() && code.charAt(i + 1) == '.') {
+                    // Não é número, é concat
+                    // (não incrementa i aqui, será tratado abaixo)
+                } else {
+                    while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
+                        if (code.charAt(i) == '.') {
+                            if (hasDecimal) break;
+                            // Verifica se ".." logo após o ponto
+                            if (i + 1 < code.length() && code.charAt(i + 1) == '.') break;
+                            hasDecimal = true;
+                        }
+                        sb.append(code.charAt(i));
+                        i++;
                     }
-                    sb.append(code.charAt(i));
-                    i++;
+    
+                    try {
+                        double numValue = Double.parseDouble(sb.toString());
+                        tokens.addElement(new Token(NUMBER, new Double(numValue)));
+                    } catch (NumberFormatException e) {
+                        midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
+                        tokens.addElement(new Token(NUMBER, new Double(0))); // Valor padrão em caso de erro
+                    }
+                    continue;
                 }
-
-                try {
-                    double numValue = Double.parseDouble(sb.toString());
-                    tokens.addElement(new Token(NUMBER, new Double(numValue)));
-                } catch (NumberFormatException e) {
-                    midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
-                    tokens.addElement(new Token(NUMBER, new Double(0))); // Valor padrão em caso de erro
-                }
-
-                continue;
             }
-
+    
             // Strings
             if (c == '"') {
                 StringBuffer sb = new StringBuffer();
@@ -1810,7 +1819,7 @@ class Lua {
                 tokens.addElement(new Token(STRING, sb.toString()));
                 continue;
             }
-
+    
             // Identifiers and Keywords
             if (isLetter(c)) {
                 StringBuffer sb = new StringBuffer();
@@ -1838,10 +1847,21 @@ class Lua {
                 tokens.addElement(new Token(type, word));
                 continue;
             }
-
-            // Rest of the tokenizer remains the same...
-            // [Operators and punctuation handling as before]
-            
+    
+            // Operador de concatenação ..
+            if (c == '.') {
+                if (i + 1 < code.length() && code.charAt(i + 1) == '.') {
+                    tokens.addElement(new Token(CONCAT, ".."));
+                    i += 2;
+                    continue;
+                } else {
+                    // Caso queira tratar ponto isolado, pode adicionar um token para isso,
+                    // mas normalmente, ponto sozinho não é válido em Lua fora de número decimal.
+                    i++;
+                    continue;
+                }
+            }
+    
             // +, -, *, /, %, etc...
             if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; continue; }
             if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; continue; }
@@ -1851,7 +1871,7 @@ class Lua {
             if (c == '(') { tokens.addElement(new Token(LPAREN, "(")); i++; continue; }
             if (c == ')') { tokens.addElement(new Token(RPAREN, ")")); i++; continue; }
             if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; continue; }
-
+    
             if (c == '=') {
                 if (i + 1 < code.length() && code.charAt(i + 1) == '=') {
                     tokens.addElement(new Token(EQ, "=="));
@@ -1892,22 +1912,20 @@ class Lua {
                 }
                 continue;
             }
-
+    
             if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; continue; }
             if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; continue; }
             if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
             if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; continue; }
-
-
+    
             // If we reach here, it's an unexpected character
             midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
             i++;
         }
-        
+    
         tokens.addElement(new Token(EOF, "EOF"));
         return tokens;
     }
-
     private Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return new Token(EOF, "EOF"); }
     private Token consume(int expectedType) throws Exception {
         Token token = peek();
