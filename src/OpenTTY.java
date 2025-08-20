@@ -1724,6 +1724,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 class Lua {
     //private OpenTTY midlet;
     private boolean root;
+    private OpenTTY midlet;
     private Hashtable globals;
     private Vector tokens;
     private int tokenIndex;
