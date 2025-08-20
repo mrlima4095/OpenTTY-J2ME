@@ -1767,7 +1767,7 @@ class Lua {
     }
     public void run(String code) { try { this.tokens = tokenize(code); parseAndExecute(); } catch (Exception e) { midlet.processCommand("echo Lua Error: " + e.getMessage() == null ? e.getMessage() : e.getClass().getName(), true, root); } }
 
-    private Vector tokenize(String code) throws RuntimeException {
+    private Vector tokenize(String code) throws Exception {
         Vector tokens = new Vector();
         int i = 0;
         while (i < code.length()) {
