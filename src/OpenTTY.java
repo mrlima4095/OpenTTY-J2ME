@@ -1934,14 +1934,31 @@ class Lua {
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
         if (current.type == IDENTIFIER) {
-            if (tokenIndex + 1 < tokens.size() && ((Token)tokens.elementAt(tokenIndex + 1)).type == LPAREN) { expression(scope); return null; } 
-            else {
-                // Assignment
+            if (tokenIndex + 1 < tokens.size() && ((Token)tokens.elementAt(tokenIndex + 1)).type == LPAREN) {
+                expression(scope); return null;
+            } else {
                 String varName = (String) consume(IDENTIFIER).value;
-                consume(ASSIGN);
-                Object value = expression(scope);
-                scope.put(varName, value);
-                return null;
+                // *** NOVO: Atribuição dinâmica: t[expr] = valor ***
+                Object target = scope.get(varName);
+                if (target == null && globals.containsKey(varName)) target = globals.get(varName);
+            
+                if (peek().type == LBRACKET) {
+                    consume(LBRACKET);
+                    Object key = expression(scope);
+                    consume(RBRACKET);
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    if (!(target instanceof Hashtable))
+                        throw new Exception("Attempt to index non-table value: " + varName);
+                    ((Hashtable)target).put(key, value);
+                    return null;
+                } else {
+                    // Assignment normal
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    scope.put(varName, value);
+                    return null;
+                }
             }
         } 
         else if (current.type == IF) { return ifStatement(scope); } 
@@ -2257,16 +2274,24 @@ class Lua {
         } 
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
+            Object value;
             if (peek().type == LPAREN) { // Function call
                 return callFunction(name, scope);
             } else { // Variable access
-                Object value = scope.get(name);
-                if (value == null && !globals.containsKey(name)) { // Check if it's truly nil or undefined
-                    // If not in current scope, check globals
+                value = scope.get(name);
+                if (value == null && !globals.containsKey(name)) {
                     value = globals.get(name);
                 }
-                return value;
             }
+            // **SUPORTE À LEITURA COM T[EXPR]**
+            while (peek().type == LBRACKET) {
+                consume(LBRACKET);
+                Object key = expression(scope);
+                consume(RBRACKET);
+                if (!(value instanceof Hashtable)) throw new Exception("Attempt to index non-table value: " + name);
+                value = ((Hashtable)value).get(key);
+            }
+            return value;
         }
         else if (current.type == LBRACE) { // Table literal
             consume(LBRACE);
