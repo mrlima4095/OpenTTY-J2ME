@@ -1824,7 +1824,7 @@ class Lua {
                     tokens.addElement(new Token(NUMBER, new Double(numValue)));
                 } catch (NumberFormatException e) {
                     throw new RuntimeException("Invalid number format '" + sb.toString() + "'");
-                    tokens.addElement(new Token(NUMBER, new Double(0)));
+                    //tokens.addElement(new Token(NUMBER, new Double(0)));
                 }
                 continue;
             }
