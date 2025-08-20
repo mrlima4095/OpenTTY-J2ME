@@ -2213,14 +2213,14 @@ class Lua {
     }
 
     private Object comparison(Hashtable scope) throws Exception {
-        Object left = arithmetic(scope);
+        Object left = concatenation(scope); // chama concatenation antes da comparação
         while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
             Token op = consume();
-            Object right = arithmetic(scope);
+            Object right = concatenation(scope); // compara após concatenation
             if (op.type == EQ) {
-                left = new Boolean(left.equals(right));
+                left = new Boolean((left == null && right == null) || (left != null && left.equals(right)));
             } else if (op.type == NE) {
-                left = new Boolean(!left.equals(right));
+                left = new Boolean(!((left == null && right == null) || (left != null && left.equals(right))));
             } else if (op.type == LT) {
                 left = new Boolean(((Double) left).doubleValue() < ((Double) right).doubleValue());
             } else if (op.type == GT) {
@@ -2275,7 +2275,15 @@ class Lua {
         }
         return left;
     }
-
+    private Object concatenation(Hashtable scope) throws Exception {
+        Object left = arithmetic(scope);
+        while (peek().type == CONCAT) {
+            consume(CONCAT);
+            Object right = arithmetic(scope);
+            left = toLuaString(left) + toLuaString(right);
+        }
+        return left;
+    }
     private Object factor(Hashtable scope) throws Exception {
         Token current = peek();
 
