@@ -1882,29 +1882,11 @@ class Lua {
             if (c == ')') { tokens.addElement(new Token(RPAREN, ")")); i++; continue; }
             if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; continue; }
     
-            if (c == '=') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } 
-                else { tokens.addElement(new Token(ASSIGN, "=")); i++; }
+            if (c == '=') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } else { tokens.addElement(new Token(ASSIGN, "=")); i++; } continue; }
+            if (c == '~') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } else { throw new Exception("Unexpected character '~'"); } continue; }
+            if (c == '<') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(LE, "<=")); i += 2; } else { tokens.addElement(new Token(LT, "<")); i++; } continue; }
+            if (c == '>') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(GE, ">=")); i += 2; } else { tokens.addElement(new Token(GT, ">")); i++; } continue; }
 
-                continue;
-            }
-            if (c == '~') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } 
-                else { throw new Exception("Unexpected character '~'"); }
-                continue;
-            }
-            if (c == '<') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(LE, "<=")); i += 2; } 
-                else { tokens.addElement(new Token(LT, "<")); i++; }
-
-                continue;
-            }
-            if (c == '>') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(GE, ">=")); i += 2; } 
-                else { tokens.addElement(new Token(GT, ">")); i++; }
-
-                continue;
-            }
             if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; continue; }
             if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; continue; }
             if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
@@ -2074,8 +2056,6 @@ class Lua {
 
         throw new RuntimeException("Unexpected token at statement: " + current.value);
     }
-
-
     private Object ifStatement(Hashtable scope) throws Exception {
         consume(IF);
         Object condition = expression(scope);
@@ -2128,7 +2108,6 @@ class Lua {
         consume(END);
         return result;
     }
-
     private Object whileStatement(Hashtable scope) throws Exception {
         consume(WHILE);
         int conditionStartTokenIndex = tokenIndex; // Mark the start of the condition for looping
@@ -2190,6 +2169,22 @@ class Lua {
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
         String funcName = (String) consume(IDENTIFIER).value;
+
+        // Verifica se o nome é um index (ex: x.y ou x[y])
+        boolean isTableAssignment = (peek().type == DOT || peek().type == LBRACKET);
+        Object targetTable = null;
+        Object key = null;
+
+        if (isTableAssignment) {
+            // Reutilizamos resolveTableAndKey para consumir os tokens de `.y` ou `[expr]`
+            Object[] pair = resolveTableAndKey(funcName, scope);
+            targetTable = pair[0];
+            key = pair[1];
+
+            if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value in function definition");
+        }
+
+        // Agora params e corpo
         consume(LPAREN);
         Vector params = new Vector();
         if (peek().type == IDENTIFIER) {
@@ -2201,26 +2196,24 @@ class Lua {
         }
         consume(RPAREN);
 
-        // Capture the function body tokens
+        // Capture function body tokens (mesma lógica de profundidade)
         Vector bodyTokens = new Vector();
-        int depth = 1; // Para correspondência de 'function' ... 'end'
+        int depth = 1;
         while (depth > 0) {
             Token token = consume();
-            if (token.type == FUNCTION || token.type == IF || token.type == WHILE) {
-                depth++;
-            } else if (token.type == END) {
-                depth--;
-            } else if (token.type == EOF) {
-                throw new Exception("Unmatched 'function' statement: Expected 'end'");
-            }
-            if (depth > 0) { // Não adiciona o token 'end' final ao corpo
-                bodyTokens.addElement(token);
-            }
+
+            if (token.type == FUNCTION || token.type == IF || token.type == WHILE) { depth++; } 
+            else if (token.type == END) { depth--; } 
+            else if (token.type == EOF) { throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); }
+            
+            if (depth > 0) { bodyTokens.addElement(token); }
         }
 
-        // Cria uma nova instância de UserDefinedLuaFunction, passando midlet
         UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
-        scope.put(funcName, func);
+
+        if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
+        else { scope.put(funcName, func); }
+        
         return null;
     }
 
@@ -2261,8 +2254,8 @@ class Lua {
         return left;
     }
     private String toLuaString(Object obj) {
-        if (obj == null) return "nil";
-        if (obj instanceof Boolean) return ((Boolean)obj).booleanValue() ? "true" : "false";
+        if (obj == null) { return "nil"; }
+        if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; }
         if (obj instanceof Double) {
             double d = ((Double)obj).doubleValue();
             if (d == (long)d) return String.valueOf((long)d);
@@ -2276,38 +2269,29 @@ class Lua {
             Token op = consume();
             Object right = term(scope);
             if (!(left instanceof Double) || !(right instanceof Double)) {
-                throw new Exception("Arithmetic operation on non-number types.");
+                throw new ArithmeticException("Arithmetic operation on non-number types.");
             }
-            double lVal = ((Double) left).doubleValue();
-            double rVal = ((Double) right).doubleValue();
-            if (op.type == PLUS) {
-                left = new Double(lVal + rVal);
-            } else if (op.type == MINUS) {
-                left = new Double(lVal - rVal);
-            }
+
+            double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
+
+            if (op.type == PLUS) { left = new Double(lVal + rVal); } 
+            else if (op.type == MINUS) { left = new Double(lVal - rVal); }
         }
         return left;
     }
-
     private Object term(Hashtable scope) throws Exception {
         Object left = factor(scope);
         while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
             Token op = consume();
             Object right = factor(scope);
             if (!(left instanceof Double) || !(right instanceof Double)) {
-                throw new Exception("Arithmetic operation on non-number types.");
+                throw new ArithmeticException("Arithmetic operation on non-number types.");
             }
-            double lVal = ((Double) left).doubleValue();
-            double rVal = ((Double) right).doubleValue();
-            if (op.type == MULTIPLY) {
-                left = new Double(lVal * rVal);
-            } else if (op.type == DIVIDE) {
-                if (rVal == 0) throw new Exception("Division by zero.");
-                left = new Double(lVal / rVal);
-            } else if (op.type == MODULO) {
-                if (rVal == 0) throw new Exception("Modulo by zero.");
-                left = new Double(lVal % rVal);
-            }
+            double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
+
+            if (op.type == MULTIPLY) { left = new Double(lVal * rVal); } 
+            else if (op.type == DIVIDE) { if (rVal == 0) { throw new Exception("Division by zero."); } left = new Double(lVal / rVal); } 
+            else if (op.type == MODULO) { if (rVal == 0) throw new Exception("Modulo by zero."); left = new Double(lVal % rVal); }
         }
         return left;
     }
@@ -2332,9 +2316,8 @@ class Lua {
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value;
-            if (peek().type == LPAREN) { // Function call
-                return callFunction(name, scope);
-            } else {
+            if (peek().type == LPAREN) { return callFunction(name, scope); }
+            else {
                 value = scope.get(name);
                 if (value == null && globals.containsKey(name)) {
                     value = globals.get(name);
@@ -2358,6 +2341,7 @@ class Lua {
             }
             return value;
         }
+
         else if (current.type == LBRACE) { // Table literal
             consume(LBRACE);
             Hashtable table = new Hashtable();
@@ -2402,8 +2386,25 @@ class Lua {
         if (funcObj == null) { funcObj = globals.get(funcName); }
 
         if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
-        else { throw new Exception("Attempt to call a non-function value: " + funcName); }
+        else { throw new RuntimeException("Attempt to call a non-function value: " + funcName); }
     }
+    private Object callFunctionObject(Object funcObj, Hashtable scope) throws Exception {
+        consume(LPAREN);
+        Vector args = new Vector();
+        if (peek().type != RPAREN) {
+            args.addElement(expression(scope));
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                args.addElement(expression(scope));
+            }
+        }
+        consume(RPAREN);
+
+        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
+        else { throw new Exception("Attempt to call a non-function value (by object)."); }
+    }
+
+
     private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
 
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
