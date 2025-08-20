@@ -1730,14 +1730,9 @@ class Lua {
     private int tokenIndex;
 
     // Token types
-    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4;
-    private static final int IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9;
-    private static final int MODULO = 10;
-    private static final int EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16;
-    private static final int AND = 17, OR = 18, NOT = 19;
-    private static final int ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24;
-    private static final int WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32; 
-    private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38; 
+    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, 
+                             OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, 
+                             LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38; 
     
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
@@ -2213,7 +2208,7 @@ class Lua {
 
         if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
         else { scope.put(funcName, func); }
-        
+
         return null;
     }
 
