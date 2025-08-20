@@ -1897,7 +1897,7 @@ class Lua {
                     tokens.addElement(new Token(NE, "~="));
                     i += 2;
                 } else {
-                    midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '~'", true, root);
+                    throw new Exception("echo Unexpected character '~'");
                     i++;
                 }
                 continue;
