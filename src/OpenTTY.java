@@ -2328,12 +2328,7 @@ class Lua {
         else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
         else if (current.type == NIL) { consume(NIL); return null; } 
         else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
-        else if (current.type == LPAREN) {
-            consume(LPAREN);
-            Object value = expression(scope);
-            consume(RPAREN);
-            return value;
-        } 
+        else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value;
@@ -2368,8 +2363,7 @@ class Lua {
             Hashtable table = new Hashtable();
             int index = 1; // Lua tables podem usar números sequenciais
             while (peek().type != RBRACE) {
-                Object key = null;
-                Object value = null;
+                Object key = null, value = null;
                 
                 if (peek().type == LBRACKET) { // t[expr] = value
                     consume(LBRACKET);
@@ -2405,17 +2399,11 @@ class Lua {
         consume(RPAREN);
 
         Object funcObj = scope.get(funcName);
-        if (funcObj == null) { // Check globals if not in current scope
-            funcObj = globals.get(funcName);
-        }
+        if (funcObj == null) { funcObj = globals.get(funcName); }
 
-        if (funcObj instanceof LuaFunction) {
-            return ((LuaFunction) funcObj).call(args);
-        } else {
-            throw new Exception("Attempt to call a non-function value: " + funcName);
-        }
+        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
+        else { throw new Exception("Attempt to call a non-function value: " + funcName); }
     }
-
     private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
 
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
