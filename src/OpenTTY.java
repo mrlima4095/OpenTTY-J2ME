@@ -1823,7 +1823,7 @@ class Lua {
                     double numValue = Double.parseDouble(sb.toString());
                     tokens.addElement(new Token(NUMBER, new Double(numValue)));
                 } catch (NumberFormatException e) {
-                    midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
+                    throw new RuntimeException("Invalid number format '" + sb.toString() + "'");
                     tokens.addElement(new Token(NUMBER, new Double(0)));
                 }
                 continue;
@@ -2052,7 +2052,7 @@ class Lua {
 
         else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) { expression(scope); return null; }
 
-        throw new Exception("Unexpected token at statement: " + current.value);
+        throw new RuntimeException("Unexpected token at statement: " + current.value);
     }
     private Object ifStatement(Hashtable scope) throws Exception {
         consume(IF);
@@ -2076,9 +2076,8 @@ class Lua {
                     depth--;
                 } else if (token.type == ELSE && depth == 1) {
                     break; // Found the else for the current if
-                } else if (token.type == EOF) {
-                    throw new Exception("Unmatched 'if' statement: Expected 'end' or 'else'");
-                }
+                } 
+                else if (token.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end' or 'else'"); }
             }
         }
 
@@ -2128,7 +2127,7 @@ class Lua {
                     } else if (token.type == END) {
                         depth--;
                     } else if (token.type == EOF) {
-                        throw new Exception("Unmatched 'while' statement: Expected 'end'");
+                        throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
                     }
                 }
                 break; // Exit while loop
