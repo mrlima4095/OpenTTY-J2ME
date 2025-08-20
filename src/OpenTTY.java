@@ -1772,70 +1772,79 @@ class Lua {
         int i = 0;
         while (i < code.length()) {
             char c = code.charAt(i);
+    
+            // Ignora espaços em branco
             if (isWhitespace(c)) { i++; continue; }
+    
+            // Comentários
             if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') {
                 i += 2;
-                // Se for bloco de comentário --[[
-                if (i + 1 < code.length() && code.charAt(i) == '[' && code.charAt(i+1) == '[') {
+                // Comentário de bloco --[[
+                if (i + 1 < code.length() && code.charAt(i) == '[' && code.charAt(i + 1) == '[') {
                     i += 2;
                     // Avança até ]]
-                    while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i+1) == ']')) i++;
+                    while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) i++;
                     if (i + 1 < code.length()) i += 2; // pula ]]
                 } else {
-                    // É comentário de linha, avança até final da linha
+                    // Comentário de linha
                     while (i < code.length() && code.charAt(i) != '\n') i++;
                 }
                 continue;
             }
-            
-            // Numbers (inclui ponto para decimais, mas NÃO para ..)
-            if (isDigit(c) || c == '.') {
-                int startI = i;
-                StringBuffer sb = new StringBuffer();
-                boolean hasDecimal = false;
-                // Checa se é ".." antes de processar como número
-                if (c == '.' && i + 1 < code.length() && code.charAt(i + 1) == '.') {
-                    // Não é número, é concat
-                    // (não incrementa i aqui, será tratado abaixo)
-                } else {
-                    while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
-                        if (code.charAt(i) == '.') {
-                            if (hasDecimal) break;
-                            // Verifica se ".." logo após o ponto
-                            if (i + 1 < code.length() && code.charAt(i + 1) == '.') break;
-                            hasDecimal = true;
-                        }
-                        sb.append(code.charAt(i));
-                        i++;
-                    }
     
-                    try {
-                        double numValue = Double.parseDouble(sb.toString());
-                        tokens.addElement(new Token(NUMBER, new Double(numValue)));
-                    } catch (NumberFormatException e) {
-                        midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
-                        tokens.addElement(new Token(NUMBER, new Double(0))); // Valor padrão em caso de erro
-                    }
+            // Operador de concatenação (..) ou ponto isolado (.)
+            if (c == '.') {
+                if (i + 1 < code.length() && code.charAt(i + 1) == '.') {
+                    tokens.addElement(new Token(CONCAT, ".."));
+                    i += 2;
+                    continue;
+                } else {
+                    tokens.addElement(new Token(DOT, "."));
+                    i++;
                     continue;
                 }
+            }
+    
+            // Números: começa com dígito ou . seguido de dígito (ex: .5)
+            if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
+                StringBuffer sb = new StringBuffer();
+                boolean hasDecimal = false;
+                while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
+                    if (code.charAt(i) == '.') {
+                        if (hasDecimal) break;
+                        // Verifica se ".." logo após o ponto
+                        if (i + 1 < code.length() && code.charAt(i + 1) == '.') break;
+                        hasDecimal = true;
+                    }
+                    sb.append(code.charAt(i));
+                    i++;
+                }
+                try {
+                    double numValue = Double.parseDouble(sb.toString());
+                    tokens.addElement(new Token(NUMBER, new Double(numValue)));
+                } catch (NumberFormatException e) {
+                    midlet.processCommand("echo Lua Tokenizer Error: Invalid number format '" + sb.toString() + "'", true, root);
+                    tokens.addElement(new Token(NUMBER, new Double(0)));
+                }
+                continue;
             }
     
             // Strings
             if (c == '"') {
                 StringBuffer sb = new StringBuffer();
-                i++; // Skip opening quote
+                i++; // pula aspas inicial
                 while (i < code.length() && code.charAt(i) != '"') {
                     sb.append(code.charAt(i));
                     i++;
                 }
                 if (i < code.length() && code.charAt(i) == '"') {
-                    i++; // Skip closing quote
+                    i++; // pula aspas final
                 }
                 tokens.addElement(new Token(STRING, sb.toString()));
                 continue;
             }
     
-            // Identifiers and Keywords
+            // Identificadores e palavras-chave
             if (isLetter(c)) {
                 StringBuffer sb = new StringBuffer();
                 while (i < code.length() && isLetterOrDigit(code.charAt(i))) {
@@ -1862,21 +1871,8 @@ class Lua {
                 tokens.addElement(new Token(type, word));
                 continue;
             }
-
-            // Operador de concatenação ..
-            if (c == '.') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '.') {
-                    tokens.addElement(new Token(CONCAT, ".."));
-                    i += 2;
-                    continue;
-                } else {
-                    tokens.addElement(new Token(DOT, "."));
-                    i++;
-                    continue;
-                }
-            }
     
-            // +, -, *, /, %, etc...
+            // Operadores e pontuação
             if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; continue; }
             if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; continue; }
             if (c == '*') { tokens.addElement(new Token(MULTIPLY, "*")); i++; continue; }
@@ -1926,15 +1922,14 @@ class Lua {
                 }
                 continue;
             }
-
+    
             if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; continue; }
             if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; continue; }
             if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
             if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; continue; }
-
-            // If we reach here, it's an unexpected character
+    
+            // Caracter inesperado
             throw new RuntimeException("Unexpected character '" + c + "'");
-            //i++;
         }
     
         tokens.addElement(new Token(EOF, "EOF"));
