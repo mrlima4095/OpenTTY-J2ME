@@ -1751,6 +1751,7 @@ class Lua {
     private static final int RPAREN = 30; // )
     private static final int COMMA = 31; // ,
     private static final int LOCAL = 32; // for local variables in functions
+    private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36;
 
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
@@ -1893,6 +1894,12 @@ class Lua {
                 }
                 continue;
             }
+
+            if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; continue; }
+            if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; continue; }
+            if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
+            if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; continue; }
+
 
             // If we reach here, it's an unexpected character
             midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
@@ -2238,25 +2245,19 @@ class Lua {
 
     private Object factor(Hashtable scope) throws Exception {
         Token current = peek();
-        if (current.type == NUMBER) {
-            return consume(NUMBER).value;
-        } else if (current.type == STRING) {
-            return consume(STRING).value;
-        } else if (current.type == BOOLEAN) {
-            consume(BOOLEAN);
-            return new Boolean(current.value.equals("true"));
-        } else if (current.type == NIL) {
-            consume(NIL);
-            return null; // Represent nil as Java null
-        } else if (current.type == NOT) {
-            consume(NOT);
-            return new Boolean(!isTruthy(factor(scope)));
-        } else if (current.type == LPAREN) {
+
+        if (current.type == NUMBER) { return consume(NUMBER).value; } 
+        else if (current.type == STRING) { return consume(STRING).value; } 
+        else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
+        else if (current.type == NIL) { consume(NIL); return null; } 
+        else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
+        else if (current.type == LPAREN) {
             consume(LPAREN);
             Object value = expression(scope);
             consume(RPAREN);
             return value;
-        } else if (current.type == IDENTIFIER) {
+        } 
+        else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             if (peek().type == LPAREN) { // Function call
                 return callFunction(name, scope);
@@ -2269,6 +2270,33 @@ class Lua {
                 return value;
             }
         }
+        else if (current.type == LBRACE) { // Table literal
+            consume(LBRACE);
+            Hashtable table = new Hashtable();
+            int index = 1; // Lua tables podem usar números sequenciais
+            while (peek().type != RBRACE) {
+                Object key = null;
+                Object value = null;
+                
+                if (peek().type == LBRACKET) { // t[expr] = value
+                    consume(LBRACKET);
+                    key = expression(scope);
+                    consume(RBRACKET);
+                    consume(ASSIGN);
+                    value = expression(scope);
+                } else { // key-value ou array-style
+                    value = expression(scope);
+                    key = new Double(index++);
+                }
+
+                table.put(key, value);
+
+                if (peek().type == COMMA) consume(COMMA);
+            }
+            consume(RBRACE);
+            return table;
+        }
+
         throw new Exception("Unexpected token at factor: " + current.value);
     }
 
