@@ -1903,7 +1903,6 @@ class Lua {
         return tokens;
     }
 
-
     private Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return new Token(EOF, "EOF"); }
     private Token consume(int expectedType) throws Exception {
         Token token = peek();
@@ -1996,7 +1995,7 @@ class Lua {
         }
 
         else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) { expression(scope); return null; }
-        
+
         throw new Exception("Unexpected token at statement: " + current.value);
     }
     private Object ifStatement(Hashtable scope) throws Exception {
