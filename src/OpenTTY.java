@@ -1733,25 +1733,11 @@ class Lua {
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4;
     private static final int IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9;
     private static final int MODULO = 10;
-    private static final int EQ = 11; // ==
-    private static final int NE = 12; // ~=
-    private static final int LT = 13; // <
-    private static final int GT = 14; // >
-    private static final int LE = 15; // <=
-    private static final int GE = 16; // >=
+    private static final int EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16;
     private static final int AND = 17, OR = 18, NOT = 19;
-    private static final int ASSIGN = 20; // =
-    private static final int IF = 21, THEN = 22, ELSE = 23, END = 24;
-    private static final int WHILE = 25, DO = 26;
-    private static final int RETURN = 27;
-    private static final int FUNCTION = 28;
-    private static final int LPAREN = 29; // (
-    private static final int RPAREN = 30; // )
-    private static final int COMMA = 31; // ,
-    private static final int LOCAL = 32; // for local variables in functions
-    private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36;
-    private static final int CONCAT = 37; // .. 
-    private static final int DOT = 38; // .
+    private static final int ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24;
+    private static final int WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32; 
+    private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38; // .
     
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
@@ -1765,7 +1751,7 @@ class Lua {
         globals.put("print", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); } return null; } });
         globals.put("exec", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); } return null; } });
     }
-    public void run(String code) { try { this.tokens = tokenize(code); parseAndExecute(); } catch (Exception e) { midlet.processCommand("echo Lua Error: " + e.getMessage() == null ? e.getMessage() : e.getClass().getName(), true, root); } }
+    public void run(String code) { try { this.tokens = tokenize(code); parseAndExecute(); } catch (Exception e) { midlet.processCommand("echo Lua Error: " + e.toString(), true, root); } }
 
     private Vector tokenize(String code) throws Exception {
         Vector tokens = new Vector();
@@ -1981,8 +1967,8 @@ class Lua {
                     }
                     consume(ASSIGN);
                     Object value = expression(scope);
-                    if (!(target instanceof Hashtable))
-                        throw new Exception("Attempt to index non-table value: " + varName);
+                    if (!(target instanceof Hashtable)) throw new Exception("Attempt to index non-table value: " + varName);
+                    
                     ((Hashtable)target).put(key, value);
                     return null;
                 } else {
@@ -2019,16 +2005,10 @@ class Lua {
                 int depth = 1; // Para correspondência de 'function' ... 'end'
                 while (depth > 0) {
                     Token token = consume();
-                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE) {
-                        depth++;
-                    } else if (token.type == END) {
-                        depth--;
-                    } else if (token.type == EOF) {
-                        throw new Exception("Unmatched 'function' statement: Expected 'end'");
-                    }
-                    if (depth > 0) { // Não adiciona o token 'end' final ao corpo
-                        bodyTokens.addElement(token);
-                    }
+                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE) { depth++; } 
+                    else if (token.type == END) { depth--; } 
+                    else if (token.type == EOF) { throw new Exception("Unmatched 'function' statement: Expected 'end'"); }
+                    if (depth > 0) { bodyTokens.addElement(token); }
                 }
 
                 // Cria a função definida pelo usuário e salva no scope atual (local)
@@ -2053,6 +2033,8 @@ class Lua {
 
         throw new RuntimeException("Unexpected token at statement: " + current.value);
     }
+
+
     private Object ifStatement(Hashtable scope) throws Exception {
         consume(IF);
         Object condition = expression(scope);
