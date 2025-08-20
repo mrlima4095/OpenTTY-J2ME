@@ -10,8 +10,8 @@ import javax.microedition.io.*;
 import javax.bluetooh.*;
 import java.util.*;
 import java.io.*;
-
-
+// |
+// |
 public class OpenTTY extends MIDlet implements CommandListener {
     private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
@@ -1720,10 +1720,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 }
-
-
-
-
+// |
+// |
 class Lua {
     private boolean root;
     private OpenTTY midlet;
