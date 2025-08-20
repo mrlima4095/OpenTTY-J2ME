@@ -2403,9 +2403,9 @@ class Lua {
     }
 
     private boolean isTruthy(Object value) {
-        if (value == null) return false; // nil is falsey
+        if (value == null) return false;
         if (value instanceof Boolean) return ((Boolean) value).booleanValue();
-        return true; // All other values are truthy in Lua
+        return true;
     }
 
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
