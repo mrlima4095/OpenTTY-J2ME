@@ -1933,11 +1933,8 @@ class Lua {
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
         if (current.type == IDENTIFIER) {
-            // Permite chamada de função como statement isolado
-            if (tokenIndex + 1 < tokens.size() && ((Token)tokens.elementAt(tokenIndex + 1)).type == LPAREN) {
-                expression(scope);
-                return null;
-            } else {
+            if (tokenIndex + 1 < tokens.size() && ((Token)tokens.elementAt(tokenIndex + 1)).type == LPAREN) { expression(scope); return null; } 
+            else {
                 // Assignment
                 String varName = (String) consume(IDENTIFIER).value;
                 consume(ASSIGN);
@@ -1945,16 +1942,12 @@ class Lua {
                 scope.put(varName, value);
                 return null;
             }
-        } else if (current.type == IF) {
-            return ifStatement(scope);
-        } else if (current.type == WHILE) {
-            return whileStatement(scope);
-        } else if (current.type == RETURN) {
-            consume(RETURN);
-            return expression(scope); // Return value
-        } else if (current.type == FUNCTION) {
-            return functionDefinition(scope);
-        } else if (current.type == LOCAL) {
+        } 
+        else if (current.type == IF) { return ifStatement(scope); } 
+        else if (current.type == WHILE) { return whileStatement(scope); } 
+        else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
+        else if (current.type == FUNCTION) { return functionDefinition(scope); } 
+        else if (current.type == LOCAL) {
             consume(LOCAL);
             String varName = (String) consume(IDENTIFIER).value;
             if (peek().type == ASSIGN) {
@@ -1965,7 +1958,8 @@ class Lua {
                 scope.put(varName, null); // Initialize local to nil
             }
             return null;
-        } else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) {
+        } 
+        else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) {
             // Standalone expression (Lua allows this)
             expression(scope);
             return null;
