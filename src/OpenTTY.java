@@ -2233,19 +2233,13 @@ class Lua {
         while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
             Token op = consume();
             Object right = concatenation(scope); // compara após concatenation
-            if (op.type == EQ) {
-                left = new Boolean((left == null && right == null) || (left != null && left.equals(right)));
-            } else if (op.type == NE) {
-                left = new Boolean(!((left == null && right == null) || (left != null && left.equals(right))));
-            } else if (op.type == LT) {
-                left = new Boolean(((Double) left).doubleValue() < ((Double) right).doubleValue());
-            } else if (op.type == GT) {
-                left = new Boolean(((Double) left).doubleValue() > ((Double) right).doubleValue());
-            } else if (op.type == LE) {
-                left = new Boolean(((Double) left).doubleValue() <= ((Double) right).doubleValue());
-            } else if (op.type == GE) {
-                left = new Boolean(((Double) left).doubleValue() >= ((Double) right).doubleValue());
-            }
+            
+            if (op.type == EQ) { left = new Boolean((left == null && right == null) || (left != null && left.equals(right))); } 
+            else if (op.type == NE) { left = new Boolean(!((left == null && right == null) || (left != null && left.equals(right)))); } 
+            else if (op.type == LT) { left = new Boolean(((Double) left).doubleValue() < ((Double) right).doubleValue()); } 
+            else if (op.type == GT) { left = new Boolean(((Double) left).doubleValue() > ((Double) right).doubleValue()); } 
+            else if (op.type == LE) { left = new Boolean(((Double) left).doubleValue() <= ((Double) right).doubleValue()); } 
+            else if (op.type == GE) { left = new Boolean(((Double) left).doubleValue() >= ((Double) right).doubleValue()); }
         }
         return left;
     }
@@ -2419,10 +2413,8 @@ class Lua {
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
 
-
     // Interface for Lua functions (built-in and user-defined)
     public interface LuaFunction { Object call(Vector args) throws Exception; }
-    // Class for user-defined Lua functions
     public class UserDefinedLuaFunction implements LuaFunction {
         private Vector params;
         private Vector bodyTokens;
@@ -2483,7 +2475,6 @@ class Lua {
             return returnValue;
         }
     }
-
 }
 // |
 // EOF
