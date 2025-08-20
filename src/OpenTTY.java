@@ -1750,6 +1750,40 @@ class Lua {
 
         globals.put("print", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); } return null; } });
         globals.put("exec", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); } return null; } });
+        globals.put("error", new LuaFunction() {
+            public Object call(Vector args) throws Exception {
+                throw new Exception((args.size() > 0 && args.elementAt(0) != null) ? args.elementAt(0).toString() : "error");
+            }
+        });
+        globals.put("pcall", new LuaFunction() {
+            public Object call(Vector args) throws Exception {
+                Vector result = new Vector();
+                if (args.size() == 0) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
+                Object funcObj = args.elementAt(0);
+                if (!(funcObj instanceof LuaFunction)) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
+                LuaFunction func = (LuaFunction) funcObj;
+                try {
+                    // Passe só os argumentos além do primeiro
+                    Vector fnArgs = new Vector();
+                    for (int i = 1; i < args.size(); i++) fnArgs.addElement(args.elementAt(i));
+                    Object value = func.call(fnArgs);
+                    result.addElement(Boolean.TRUE);
+                    result.addElement(value);
+                } catch (Exception e) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement(e.getMessage());
+                }
+                return result;
+            }
+        });
     }
     public void run(String code) { try { this.tokens = tokenize(code); parseAndExecute(); } catch (Exception e) { midlet.processCommand("echo " + e.toString(), true, root); } }
 
