@@ -1719,8 +1719,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
-
 }
+
+
+
+
 class Lua {
     private boolean root;
     private OpenTTY midlet;
@@ -1901,13 +1904,7 @@ class Lua {
     }
 
 
-    private Token peek() {
-        if (tokenIndex < tokens.size()) {
-            return (Token) tokens.elementAt(tokenIndex);
-        }
-        return new Token(EOF, "EOF");
-    }
-
+    private Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return new Token(EOF, "EOF"); }
     private Token consume(int expectedType) throws Exception {
         Token token = peek();
         if (token.type == expectedType) {
@@ -1949,16 +1946,55 @@ class Lua {
         else if (current.type == FUNCTION) { return functionDefinition(scope); } 
         else if (current.type == LOCAL) {
             consume(LOCAL);
-            String varName = (String) consume(IDENTIFIER).value;
-            if (peek().type == ASSIGN) {
-                consume(ASSIGN);
-                Object value = expression(scope);
-                scope.put(varName, value);
+            if (peek().type == FUNCTION) {
+                consume(FUNCTION);
+                String funcName = (String) consume(IDENTIFIER).value;
+                consume(LPAREN);
+                Vector params = new Vector();
+                if (peek().type == IDENTIFIER) {
+                    params.addElement(consume(IDENTIFIER).value);
+                    while (peek().type == COMMA) {
+                        consume(COMMA);
+                        params.addElement(consume(IDENTIFIER).value);
+                    }
+                }
+                consume(RPAREN);
+
+                // Capture the function body tokens
+                Vector bodyTokens = new Vector();
+                int depth = 1; // Para correspondência de 'function' ... 'end'
+                while (depth > 0) {
+                    Token token = consume();
+                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE) {
+                        depth++;
+                    } else if (token.type == END) {
+                        depth--;
+                    } else if (token.type == EOF) {
+                        throw new Exception("Unmatched 'function' statement: Expected 'end'");
+                    }
+                    if (depth > 0) { // Não adiciona o token 'end' final ao corpo
+                        bodyTokens.addElement(token);
+                    }
+                }
+
+                // Cria a função definida pelo usuário e salva no scope atual (local)
+                UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
+                scope.put(funcName, func);
+                return null;
             } else {
-                scope.put(varName, null); // Initialize local to nil
+                // Comportamento anterior: local var [= expr]
+                String varName = (String) consume(IDENTIFIER).value;
+                if (peek().type == ASSIGN) {
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    scope.put(varName, value);
+                } else {
+                    scope.put(varName, null); // Initialize local to nil
+                }
+                return null;
             }
-            return null;
-        } 
+        }
+
         else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) {
             // Standalone expression (Lua allows this)
             expression(scope);
