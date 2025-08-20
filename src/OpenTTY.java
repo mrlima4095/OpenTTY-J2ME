@@ -1750,11 +1750,7 @@ class Lua {
 
         globals.put("print", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); } return null; } });
         globals.put("exec", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); } return null; } });
-        globals.put("error", new LuaFunction() {
-            public Object call(Vector args) throws Exception {
-                throw new Exception((args.size() > 0 && args.elementAt(0) != null) ? args.elementAt(0).toString() : "error");
-            }
-        });
+        globals.put("error", new LuaFunction() { public Object call(Vector args) throws Exception { throw new Exception((args.size() > 0 && args.elementAt(0) != null) ? args.elementAt(0).toString() : "error"); } });
         globals.put("pcall", new LuaFunction() {
             public Object call(Vector args) throws Exception {
                 Vector result = new Vector();
@@ -1802,24 +1798,15 @@ class Lua {
                     // Avança até ]]
                     while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) i++;
                     if (i + 1 < code.length()) i += 2; // pula ]]
-                } else {
-                    // Comentário de linha
-                    while (i < code.length() && code.charAt(i) != '\n') i++;
-                }
+                } 
+                else { while (i < code.length() && code.charAt(i) != '\n') i++; }
                 continue;
             }
     
             // Operador de concatenação (..) ou ponto isolado (.)
             if (c == '.') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '.') {
-                    tokens.addElement(new Token(CONCAT, ".."));
-                    i += 2;
-                    continue;
-                } else {
-                    tokens.addElement(new Token(DOT, "."));
-                    i++;
-                    continue;
-                }
+                if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } 
+                else { tokens.addElement(new Token(DOT, ".")); i++; continue; }
             }
     
             // Números: começa com dígito ou . seguido de dígito (ex: .5)
@@ -1839,24 +1826,19 @@ class Lua {
                 try {
                     double numValue = Double.parseDouble(sb.toString());
                     tokens.addElement(new Token(NUMBER, new Double(numValue)));
-                } catch (NumberFormatException e) {
-                    throw new RuntimeException("Invalid number format '" + sb.toString() + "'");
-                    //tokens.addElement(new Token(NUMBER, new Double(0)));
-                }
+                } 
+                catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
                 continue;
             }
     
             // Strings
             if (c == '"') {
-                StringBuffer sb = new StringBuffer();
-                i++; // pula aspas inicial
-                while (i < code.length() && code.charAt(i) != '"') {
-                    sb.append(code.charAt(i));
-                    i++;
-                }
-                if (i < code.length() && code.charAt(i) == '"') {
-                    i++; // pula aspas final
-                }
+                StringBuffer sb = new StringBuffer(); i++;  
+
+
+                while (i < code.length() && code.charAt(i) != '"') { sb.append(code.charAt(i)); i++; }
+                if (i < code.length() && code.charAt(i) == '"') { i++; }
+
                 tokens.addElement(new Token(STRING, sb.toString()));
                 continue;
             }
@@ -1885,6 +1867,7 @@ class Lua {
                 else if (word.equals("return")) type = RETURN;
                 else if (word.equals("function")) type = FUNCTION;
                 else if (word.equals("local")) type = LOCAL;
+
                 tokens.addElement(new Token(type, word));
                 continue;
             }
@@ -1936,10 +1919,8 @@ class Lua {
     private Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return new Token(EOF, "EOF"); }
     private Token consume(int expectedType) throws Exception {
         Token token = peek();
-        if (token.type == expectedType) {
-            tokenIndex++;
-            return token;
-        }
+        if (token.type == expectedType) { tokenIndex++; return token; }
+
         throw new Exception("Expected token type " + expectedType + " but got " + token.type + " with value " + token.value);
     }
     private Token consume() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex++); } return new Token(EOF, "EOF"); }
