@@ -2332,13 +2332,23 @@ class Lua {
                     value = globals.get(name);
                 }
             }
-            // **SUPORTE À LEITURA COM T[EXPR]**
-            while (peek().type == LBRACKET) {
-                consume(LBRACKET);
-                Object key = expression(scope);
-                consume(RBRACKET);
-                if (!(value instanceof Hashtable)) throw new Exception("Attempt to index non-table value: " + name);
-                value = ((Hashtable)value).get(key);
+            // Suporte a t[expr] e t.chave
+            while (peek().type == LBRACKET || peek().type == DOT) {
+                if (peek().type == LBRACKET) {
+                    consume(LBRACKET);
+                    Object key = expression(scope);
+                    consume(RBRACKET);
+                    if (!(value instanceof Hashtable))
+                        throw new Exception("Attempt to index non-table value: " + name);
+                    value = ((Hashtable)value).get(key);
+                } else if (peek().type == DOT) {
+                    consume(DOT);
+                    Token fieldToken = consume(IDENTIFIER);
+                    String key = (String) fieldToken.value;
+                    if (!(value instanceof Hashtable))
+                        throw new Exception("Attempt to index non-table value: " + name);
+                    value = ((Hashtable)value).get(key);
+                }
             }
             return value;
         }
