@@ -1995,11 +1995,8 @@ class Lua {
             }
         }
 
-        else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) {
-            // Standalone expression (Lua allows this)
-            expression(scope);
-            return null;
-        }
+        else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) { expression(scope); return null; }
+        
         throw new Exception("Unexpected token at statement: " + current.value);
     }
     private Object ifStatement(Hashtable scope) throws Exception {
