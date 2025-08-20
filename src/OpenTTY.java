@@ -1751,6 +1751,7 @@ class Lua {
     private static final int LOCAL = 32; // for local variables in functions
     private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36;
     private static final int CONCAT = 37; // .. 
+    private static final int DOT = 38; // .
     
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
@@ -1861,7 +1862,7 @@ class Lua {
                 tokens.addElement(new Token(type, word));
                 continue;
             }
-    
+
             // Operador de concatenação ..
             if (c == '.') {
                 if (i + 1 < code.length() && code.charAt(i + 1) == '.') {
@@ -1869,8 +1870,7 @@ class Lua {
                     i += 2;
                     continue;
                 } else {
-                    // Caso queira tratar ponto isolado, pode adicionar um token para isso,
-                    // mas normalmente, ponto sozinho não é válido em Lua fora de número decimal.
+                    tokens.addElement(new Token(DOT, "."));
                     i++;
                     continue;
                 }
