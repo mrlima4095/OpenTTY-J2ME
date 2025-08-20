@@ -1722,7 +1722,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
 }
 class Lua {
-    //private OpenTTY midlet;
     private boolean root;
     private OpenTTY midlet;
     private Hashtable globals;
@@ -1774,12 +1773,14 @@ class Lua {
         globals.put("print", new LuaFunction() {
             public Object call(Vector args) {
                 if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); }
+
                 return null; 
             }
         });
         globals.put("exec", new LuaFunction() {
             public Object call(Vector args) {
                 if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); }
+
                 return null;
             }
         });
