@@ -2204,10 +2204,7 @@ class Lua {
     }
 
 
-    private Object expression(Hashtable scope) throws Exception {
-        return logicalOr(scope);
-    }
-
+    private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
     private Object logicalOr(Hashtable scope) throws Exception {
         Object left = logicalAnd(scope);
         while (peek().type == OR) {
@@ -2217,7 +2214,6 @@ class Lua {
         }
         return left;
     }
-
     private Object logicalAnd(Hashtable scope) throws Exception {
         Object left = comparison(scope);
         while (peek().type == AND) {
