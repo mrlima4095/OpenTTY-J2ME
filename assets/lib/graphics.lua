@@ -6,8 +6,12 @@ function graphics.Alert(title, content)
 	return exec("warn " + title + " " + content)
 end
 
+-- Screen MODs
 function graphics.SetTitle(title)
 	return exec("x11 title " + title)
+end
+function graphics.SetTicker(text)
+	return exec("x11 tick " + text)
 end
 
 -- Screen Saving 
