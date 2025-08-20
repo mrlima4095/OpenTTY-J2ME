@@ -2247,16 +2247,16 @@ class Lua {
         }
         return left;
     }
-private String toLuaString(Object obj) {
-    if (obj == null) return "nil";
-    if (obj instanceof Boolean) return ((Boolean)obj).booleanValue() ? "true" : "false";
-    if (obj instanceof Double) {
-        double d = ((Double)obj).doubleValue();
-        if (d == (long)d) return String.valueOf((long)d);
-        return String.valueOf(d);
+    private String toLuaString(Object obj) {
+        if (obj == null) return "nil";
+        if (obj instanceof Boolean) return ((Boolean)obj).booleanValue() ? "true" : "false";
+        if (obj instanceof Double) {
+            double d = ((Double)obj).doubleValue();
+            if (d == (long)d) return String.valueOf((long)d);
+            return String.valueOf(d);
+        }
+        return obj.toString();
     }
-    return obj.toString();
-}
     private Object arithmetic(Hashtable scope) throws Exception {
         Object left = term(scope);
         while (peek().type == PLUS || peek().type == MINUS) {
