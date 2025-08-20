@@ -1934,7 +1934,7 @@ class Lua {
 
             // If we reach here, it's an unexpected character
             throw new RuntimeException("Unexpected character '" + c + "'");
-            i++;
+            //i++;
         }
     
         tokens.addElement(new Token(EOF, "EOF"));
