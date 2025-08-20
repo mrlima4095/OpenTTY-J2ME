@@ -1898,7 +1898,7 @@ class Lua {
                     i += 2;
                 } else {
                     throw new Exception("echo Unexpected character '~'");
-                    i++;
+                    //i++;
                 }
                 continue;
             }
