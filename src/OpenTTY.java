@@ -2416,11 +2416,7 @@ class Lua {
         }
     }
 
-    private boolean isTruthy(Object value) {
-        if (value == null) return false;
-        if (value instanceof Boolean) return ((Boolean) value).booleanValue();
-        return true;
-    }
+    private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
 
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
         Object table = scope.get(varName);
@@ -2455,9 +2451,8 @@ class Lua {
     // Interface for Lua functions (built-in and user-defined)
     public interface LuaFunction { Object call(Vector args) throws Exception; }
     public class UserDefinedLuaFunction implements LuaFunction {
-        private Vector params;
-        private Vector bodyTokens;
-        private Hashtable closureScope; // O escopo onde a função foi definida
+        private Vector params, bodyTokens;
+        private Hashtable closureScope;
 
         UserDefinedLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) {
             this.params = params;
