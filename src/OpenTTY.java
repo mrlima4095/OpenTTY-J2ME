@@ -1974,10 +1974,17 @@ class Lua {
                 Object target = scope.get(varName);
                 if (target == null && globals.containsKey(varName)) target = globals.get(varName);
             
-                if (peek().type == LBRACKET) {
-                    consume(LBRACKET);
-                    Object key = expression(scope);
-                    consume(RBRACKET);
+                if (peek().type == LBRACKET || peek().type == DOT) {
+                    Object key = null;
+                    if (peek().type == LBRACKET) {
+                        consume(LBRACKET);
+                        key = expression(scope);
+                        consume(RBRACKET);
+                    } else if (peek().type == DOT) {
+                        consume(DOT);
+                        Token fieldToken = consume(IDENTIFIER);
+                        key = (String) fieldToken.value;
+                    }
                     consume(ASSIGN);
                     Object value = expression(scope);
                     if (!(target instanceof Hashtable))
