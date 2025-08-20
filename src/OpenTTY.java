@@ -1720,14 +1720,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 }
-<<<<<<< HEAD
 // |
 // |
-=======
-
-
-
->>>>>>> 90b8c4e3 (Code wrap)
 class Lua {
     private boolean root;
     private OpenTTY midlet;
@@ -1756,13 +1750,9 @@ class Lua {
     private static final int COMMA = 31; // ,
     private static final int LOCAL = 32; // for local variables in functions
     private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36;
-<<<<<<< HEAD
     private static final int CONCAT = 37; // .. 
     private static final int DOT = 38; // .
     
-=======
-
->>>>>>> 90b8c4e3 (Code wrap)
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
     public Lua(OpenTTY midlet, boolean root) {
@@ -1932,26 +1922,13 @@ class Lua {
                 }
                 continue;
             }
-<<<<<<< HEAD
-    
-=======
-
->>>>>>> 90b8c4e3 (Code wrap)
             if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; continue; }
             if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; continue; }
             if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
             if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; continue; }
-<<<<<<< HEAD
-    
+
             // Caracter inesperado
             throw new RuntimeException("Unexpected character '" + c + "'");
-=======
-
-
-            // If we reach here, it's an unexpected character
-            midlet.processCommand("echo Lua Tokenizer Error: Unexpected character '" + c + "'", true, root);
-            i++;
->>>>>>> 90b8c4e3 (Code wrap)
         }
     
         tokens.addElement(new Token(EOF, "EOF"));
