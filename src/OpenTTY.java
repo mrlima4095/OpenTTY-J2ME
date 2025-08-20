@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable(), 
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x55"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x56"; 
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -1749,18 +1749,7 @@ class Lua {
     private static final int COMMA = 31; // ,
     private static final int LOCAL = 32; // for local variables in functions
 
-    // Token class
-    private static class Token {
-        int type;
-        Object value;
-
-        Token(int type, Object value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        public String toString() { return "Token(type=" + type + ", value=" + value + ")"; }
-    }
+    private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
     public Lua(OpenTTY midlet, boolean root) {
         this.midlet = midlet; this.root = root;
@@ -1769,41 +1758,17 @@ class Lua {
         
         final OpenTTY APP = midlet; final boolean ROOT = root;
 
-        // Register built-in functions
-        globals.put("print", new LuaFunction() {
-            public Object call(Vector args) {
-                if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); }
-
-                return null; 
-            }
-        });
-        globals.put("exec", new LuaFunction() {
-            public Object call(Vector args) {
-                if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); }
-
-                return null;
-            }
-        });
+        globals.put("print", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); } return null; } });
+        globals.put("exec", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); } return null; } });
     }
-
-    public void run(String code) {
-        try {
-            this.tokens = tokenize(code);
-            parseAndExecute();
-        } catch (Exception e) {
-            midlet.processCommand("echo Lua Error: " + e.toString(), true, root);
-        }
-    }
+    public void run(String code) { try { this.tokens = tokenize(code); parseAndExecute(); } catch (Exception e) { midlet.processCommand("echo Lua Error: " + e.getMessage() == null ? e.getMessage() : e.getClass().getName(), true, root); } }
 
     private Vector tokenize(String code) {
         Vector tokens = new Vector();
         int i = 0;
         while (i < code.length()) {
             char c = code.charAt(i);
-            if (isWhitespace(c)) {
-                i++;
-                continue;
-            }
+            if (isWhitespace(c)) { i++; continue; }
 
             // Numbers
             if (isDigit(c) || c == '.') {
@@ -1968,12 +1933,18 @@ class Lua {
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
         if (current.type == IDENTIFIER) {
-            // Assignment
-            String varName = (String) consume(IDENTIFIER).value;
-            consume(ASSIGN);
-            Object value = expression(scope);
-            scope.put(varName, value);
-            return null;
+            // Permite chamada de função como statement isolado
+            if (tokenIndex + 1 < tokens.size() && ((Token)tokens.elementAt(tokenIndex + 1)).type == LPAREN) {
+                expression(scope);
+                return null;
+            } else {
+                // Assignment
+                String varName = (String) consume(IDENTIFIER).value;
+                consume(ASSIGN);
+                Object value = expression(scope);
+                scope.put(varName, value);
+                return null;
+            }
         } else if (current.type == IF) {
             return ifStatement(scope);
         } else if (current.type == WHILE) {
@@ -1995,13 +1966,12 @@ class Lua {
             }
             return null;
         } else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) {
-            // Function call or standalone expression (Lua allows this, but we'll just evaluate)
+            // Standalone expression (Lua allows this)
             expression(scope);
             return null;
         }
         throw new Exception("Unexpected token at statement: " + current.value);
     }
-
     private Object ifStatement(Hashtable scope) throws Exception {
         consume(IF);
         Object condition = expression(scope);
