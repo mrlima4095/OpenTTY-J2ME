@@ -1737,7 +1737,7 @@ class Lua {
     private static final int AND = 17, OR = 18, NOT = 19;
     private static final int ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24;
     private static final int WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32; 
-    private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38; // .
+    private static final int LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38; 
     
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
@@ -1751,7 +1751,7 @@ class Lua {
         globals.put("print", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); } return null; } });
         globals.put("exec", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); } return null; } });
     }
-    public void run(String code) { try { this.tokens = tokenize(code); parseAndExecute(); } catch (Exception e) { midlet.processCommand("echo Lua Error: " + e.toString(), true, root); } }
+    public void run(String code) { try { this.tokens = tokenize(code); parseAndExecute(); } catch (Exception e) { midlet.processCommand("echo " + e.toString(), true, root); } }
 
     private Vector tokenize(String code) throws Exception {
         Vector tokens = new Vector();
@@ -1759,10 +1759,7 @@ class Lua {
         while (i < code.length()) {
             char c = code.charAt(i);
     
-            // Ignora espaços em branco
             if (isWhitespace(c)) { i++; continue; }
-    
-            // Comentários
             if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') {
                 i += 2;
                 // Comentário de bloco --[[
@@ -1869,43 +1866,26 @@ class Lua {
             if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; continue; }
     
             if (c == '=') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '=') {
-                    tokens.addElement(new Token(EQ, "=="));
-                    i += 2;
-                } else {
-                    tokens.addElement(new Token(ASSIGN, "="));
-                    i++;
-                }
+                if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } 
+                else { tokens.addElement(new Token(ASSIGN, "=")); i++; }
+
                 continue;
             }
             if (c == '~') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '=') {
-                    tokens.addElement(new Token(NE, "~="));
-                    i += 2;
-                } else {
-                    throw new Exception("echo Unexpected character '~'");
-                    //i++;
-                }
+                if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } 
+                else { throw new Exception("Unexpected character '~'"); }
                 continue;
             }
             if (c == '<') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '=') {
-                    tokens.addElement(new Token(LE, "<="));
-                    i += 2;
-                } else {
-                    tokens.addElement(new Token(LT, "<"));
-                    i++;
-                }
+                if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(LE, "<=")); i += 2; } 
+                else { tokens.addElement(new Token(LT, "<")); i++; }
+
                 continue;
             }
             if (c == '>') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '=') {
-                    tokens.addElement(new Token(GE, ">="));
-                    i += 2;
-                } else {
-                    tokens.addElement(new Token(GT, ">"));
-                    i++;
-                }
+                if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(GE, ">=")); i += 2; } 
+                else { tokens.addElement(new Token(GT, ">")); i++; }
+
                 continue;
             }
             if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; continue; }
@@ -1913,8 +1893,7 @@ class Lua {
             if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
             if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; continue; }
 
-            // Caracter inesperado
-            throw new RuntimeException("Unexpected character '" + c + "'");
+            throw new Exception("Unexpected character '" + c + "'");
         }
     
         tokens.addElement(new Token(EOF, "EOF"));
@@ -1929,22 +1908,13 @@ class Lua {
         }
         throw new Exception("Expected token type " + expectedType + " but got " + token.type + " with value " + token.value);
     }
-    
-    private Token consume() {
-        if (tokenIndex < tokens.size()) {
-            return (Token) tokens.elementAt(tokenIndex++);
-        }
-        return new Token(EOF, "EOF");
-    }
+    private Token consume() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex++); } return new Token(EOF, "EOF"); }
 
-    private void parseAndExecute() throws Exception {
-        while (peek().type != EOF) {
-            statement(globals);
-        }
-    }
+    private void parseAndExecute() throws Exception { while (peek().type != EOF) { statement(globals); } }
 
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
+
         if (current.type == IDENTIFIER) {
             if (tokenIndex + 1 < tokens.size() && ((Token)tokens.elementAt(tokenIndex + 1)).type == LPAREN) {
                 expression(scope); return null;
@@ -1968,7 +1938,7 @@ class Lua {
                     consume(ASSIGN);
                     Object value = expression(scope);
                     if (!(target instanceof Hashtable)) throw new Exception("Attempt to index non-table value: " + varName);
-                    
+
                     ((Hashtable)target).put(key, value);
                     return null;
                 } else {
@@ -1980,6 +1950,25 @@ class Lua {
                 }
             }
         } 
+        if (current.type == IDENTIFIER) {
+            String varName = (String) consume(IDENTIFIER).value;
+            if (peek().type == DOT || peek().type == LBRACKET) {
+                Object[] pair = resolveTableAndKey(varName, scope);
+                Object targetTable = pair[0];
+                Object key = pair[1];
+                consume(ASSIGN);
+                Object value = expression(scope);
+                if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value");
+                ((Hashtable)targetTable).put(key, value);
+                return null;
+            } else {
+                // Assignment normal
+                consume(ASSIGN);
+                Object value = expression(scope);
+                scope.put(varName, value);
+                return null;
+            }
+        }
         else if (current.type == IF) { return ifStatement(scope); } 
         else if (current.type == WHILE) { return whileStatement(scope); } 
         else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
@@ -2298,29 +2287,27 @@ class Lua {
             Object value;
             if (peek().type == LPAREN) { // Function call
                 return callFunction(name, scope);
-            } else { // Variable access
+            } else {
                 value = scope.get(name);
-                if (value == null && !globals.containsKey(name)) {
+                if (value == null && globals.containsKey(name)) {
                     value = globals.get(name);
                 }
             }
-            // Suporte a t[expr] e t.chave
+            // Suporte a t[expr] e t.chave encadeado para leitura
             while (peek().type == LBRACKET || peek().type == DOT) {
+                Object key = null;
                 if (peek().type == LBRACKET) {
                     consume(LBRACKET);
-                    Object key = expression(scope);
+                    key = expression(scope);
                     consume(RBRACKET);
-                    if (!(value instanceof Hashtable))
-                        throw new Exception("Attempt to index non-table value: " + name);
-                    value = ((Hashtable)value).get(key);
                 } else if (peek().type == DOT) {
                     consume(DOT);
                     Token fieldToken = consume(IDENTIFIER);
-                    String key = (String) fieldToken.value;
-                    if (!(value instanceof Hashtable))
-                        throw new Exception("Attempt to index non-table value: " + name);
-                    value = ((Hashtable)value).get(key);
+                    key = (String) fieldToken.value;
                 }
+                if (!(value instanceof Hashtable))
+                    throw new Exception("Attempt to index non-table value: " + name);
+                value = ((Hashtable)value).get(key);
             }
             return value;
         }
@@ -2353,7 +2340,6 @@ class Lua {
 
         throw new Exception("Unexpected token at factor: " + current.value);
     }
-
     private Object callFunction(String funcName, Hashtable scope) throws Exception {
         consume(LPAREN);
         Vector args = new Vector();
@@ -2383,6 +2369,31 @@ class Lua {
         if (value instanceof Boolean) return ((Boolean) value).booleanValue();
         return true;
     }
+
+    private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
+        Object table = scope.get(varName);
+        if (table == null && globals.containsKey(varName)) table = globals.get(varName);
+        Object key = null;
+
+        // Suporte a encadeamento t.a.b
+        while (peek().type == DOT || peek().type == LBRACKET) {
+            if (peek().type == DOT) {
+                consume(DOT);
+                Token field = consume(IDENTIFIER);
+                key = field.value;
+            } else if (peek().type == LBRACKET) {
+                consume(LBRACKET);
+                key = expression(scope);
+                consume(RBRACKET);
+            }
+            if (!(table instanceof Hashtable)) throw new Exception("Attempt to index non-table value");
+            if (peek().type == DOT || peek().type == LBRACKET) {
+                table = ((Hashtable)table).get(key);
+            }
+        }
+        return new Object[]{table, key};
+    }
+
 
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
     private static boolean isDigit(char c) { return c >= '0' && c <= '9'; }
