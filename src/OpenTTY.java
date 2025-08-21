@@ -2475,6 +2475,8 @@ class Lua {
                 }
                 return result;
             }
+
+            return null;
         }
     }
     public class GenericLuaFunction implements LuaFunction {
