@@ -1930,7 +1930,7 @@ class Lua {
                     varNames.addElement(((Token) consume(IDENTIFIER)).value);
                 }
                 consume(ASSIGN);
-
+                
                 // Parse lista de expressões (lado direito)
                 Vector values = new Vector();
                 values.addElement(expression(scope));
@@ -1938,10 +1938,23 @@ class Lua {
                     consume(COMMA);
                     values.addElement(expression(scope));
                 }
-
+                
+                // Expansão da última expressão caso seja Vector (para múltiplos retornos)
+                Vector assignValues = new Vector();
+                for (int i = 0; i < values.size(); i++) {
+                    Object v = values.elementAt(i);
+                    if (i == values.size() - 1 && v instanceof Vector) {
+                        Vector expanded = (Vector) v;
+                        for (int j = 0; j < expanded.size(); j++)
+                            assignValues.addElement(expanded.elementAt(j));
+                    } else {
+                        assignValues.addElement(v);
+                    }
+                }
+                
                 for (int i = 0; i < varNames.size(); i++) {
                     String v = (String) varNames.elementAt(i);
-                    Object val = i < values.size() ? values.elementAt(i) : null;
+                    Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
                     scope.put(v, val);
                 }
                 return null;
