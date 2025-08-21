@@ -1731,6 +1731,14 @@ class Lua {
     private Vector tokens;
     private int tokenIndex;
 
+    // SENTINELA PARA REPRESENTAR LUA NIL DENTRO DO Hashtable (Hashtable NÃO ACEITA null)
+    private static final Object LUA_NIL = new Object();
+
+    // Método auxiliar (apenas 1): transforma LUA_NIL em null ao ler
+    private Object unwrap(Object v) {
+        return v == LUA_NIL ? null : v;
+    }
+
     // Token types
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, 
                          OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, 
@@ -1743,6 +1751,7 @@ class Lua {
         this.globals = new Hashtable();
         this.tokenIndex = 0;
 
+        // Ao inicializar globals, use LUA_NIL se precisar do null explicitamente. Aqui não é necessário.
         globals.put("os", new Hashtable());
         globals.put("print", new MIDletLuaFunction(0));
         globals.put("exec", new MIDletLuaFunction(1));
@@ -1928,7 +1937,8 @@ class Lua {
                 for (int i = 0; i < varNames.size(); i++) {
                     String v = (String) varNames.elementAt(i);
                     Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
-                    scope.put(v, val);
+                    // armazenar LUA_NIL se val == null
+                    scope.put(v, val == null ? LUA_NIL : val);
                 }
                 return null;
             }
@@ -1946,11 +1956,11 @@ class Lua {
                     // t.a = expr
                     consume(ASSIGN);
                     Object value = expression(scope);
-                    ((Hashtable) targetTable).put(key, value);
+                    ((Hashtable) targetTable).put(key, value == null ? LUA_NIL : value);
                     return null;
                 } else if (peek().type == LPAREN) {
                     // t.a(...) -> chamar função armazenada em t[a]
-                    Object funcObj = ((Hashtable) targetTable).get(key);
+                    Object funcObj = unwrap(((Hashtable) targetTable).get(key));
                     // usa callFunctionObject para consumir args e chamar
                     return callFunctionObject(funcObj, scope);
                 } else {
@@ -1961,7 +1971,7 @@ class Lua {
                 // Caso 3: atribuição simples: a = expr
                 consume(ASSIGN);
                 Object value = expression(scope);
-                scope.put(varName, value);
+                scope.put(varName, value == null ? LUA_NIL : value);
                 return null;
             }
         }
@@ -1970,50 +1980,6 @@ class Lua {
         else if (current.type == WHILE) { return whileStatement(scope); } 
         else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
         else if (current.type == FUNCTION) { return functionDefinition(scope); } 
-        /*else if (current.type == LOCAL) {
-            consume(LOCAL);
-            if (peek().type == FUNCTION) {
-                consume(FUNCTION);
-                String funcName = (String) consume(IDENTIFIER).value;
-                consume(LPAREN);
-                Vector params = new Vector();
-                if (peek().type == IDENTIFIER) {
-                    params.addElement(consume(IDENTIFIER).value);
-                    while (peek().type == COMMA) {
-                        consume(COMMA);
-                        params.addElement(consume(IDENTIFIER).value);
-                    }
-                }
-                consume(RPAREN);
-
-                // Capture the function body tokens
-                Vector bodyTokens = new Vector();
-                int depth = 1; // Para correspondência de 'function' ... 'end'
-                while (depth > 0) {
-                    Token token = consume();
-                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE) { depth++; } 
-                    else if (token.type == END) { depth--; } 
-                    else if (token.type == EOF) { throw new Exception("Unmatched 'function' statement: Expected 'end'"); }
-                    if (depth > 0) { bodyTokens.addElement(token); }
-                }
-
-                // Cria a função definida pelo usuário e salva no scope atual (local)
-                GenericLuaFunction func = new GenericLuaFunction(params, bodyTokens, scope);
-                scope.put(funcName, func);
-                return null;
-            } else {
-                // Comportamento anterior: local var [= expr]
-                String varName = (String) consume(IDENTIFIER).value;
-                if (peek().type == ASSIGN) {
-                    consume(ASSIGN);
-                    Object value = expression(scope);
-                    scope.put(varName, value);
-                } else {
-                    scope.put(varName, null); // Initialize local to nil
-                }
-                return null;
-            }
-        }*/
         
         else if (current.type == LOCAL) {
             consume(LOCAL);
@@ -2084,13 +2050,13 @@ class Lua {
                     for (int i = 0; i < varNames.size(); i++) {
                         String v = (String) varNames.elementAt(i);
                         Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
-                        scope.put(v, val);
+                        scope.put(v, val == null ? LUA_NIL : val);
                     }
                 } else {
-                    // Sem '=', inicializa todos como nil (null)
+                    // Sem '=', inicializa todos como nil (LUA_NIL)
                     for (int i = 0; i < varNames.size(); i++) {
                         String v = (String) varNames.elementAt(i);
-                        scope.put(v, null);
+                        scope.put(v, LUA_NIL);
                     }
                 }
                 return null;
@@ -2354,9 +2320,12 @@ class Lua {
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
-            Object value = scope.get(name);
+            Object value = unwrap(scope.get(name));
+            if (value == null && scope == globals == false) {
+                // fallback handled below — but keep safe checks
+            }
             if (value == null && globals.containsKey(name)) {
-                value = globals.get(name);
+                value = unwrap(globals.get(name));
             }
             // Leitura de campos encadeados: t.a.b  e/ou t["x"]
             while (peek().type == LBRACKET || peek().type == DOT) {
@@ -2379,7 +2348,7 @@ class Lua {
                     // No Lua, tentar indexar não-table lança erro
                     throw new Exception("attempt to index a non-table value");
                 }
-                value = ((Hashtable)value).get(key);
+                value = unwrap(((Hashtable)value).get(key));
             }
 
             // Se o próximo token for parênteses, chamamos a função (value deve ser um LuaFunction)
@@ -2406,7 +2375,7 @@ class Lua {
                     value = expression(scope);
                     key = new Double(index++);
                 }
-                table.put(key, value);
+                table.put(key, value == null ? LUA_NIL : value);
                 if (peek().type == COMMA) consume(COMMA);
             }
             consume(RBRACE);
@@ -2427,8 +2396,8 @@ class Lua {
         }
         consume(RPAREN);
 
-        Object funcObj = scope.get(funcName);
-        if (funcObj == null) { funcObj = globals.get(funcName); }
+        Object funcObj = unwrap(scope.get(funcName));
+        if (funcObj == null && globals.containsKey(funcName)) { funcObj = unwrap(globals.get(funcName)); }
 
         if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
         else { throw new RuntimeException("Attempt to call a non-function value: " + funcName); }
@@ -2482,8 +2451,8 @@ class Lua {
 
     private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
-        Object table = scope.get(varName);
-        if (table == null && globals.containsKey(varName)) table = globals.get(varName);
+        Object table = unwrap(scope.get(varName));
+        if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
         Object key = null;
     
         // Suporte a encadeamento t.a.b
@@ -2500,7 +2469,7 @@ class Lua {
             // Se table é null, erro igual Lua
             if (table == null) throw new Exception("attempt to index a nil value");
             if (!(table instanceof Hashtable)) throw new Exception("attempt to index a non-table value");
-            if (peek().type == DOT || peek().type == LBRACKET) { table = ((Hashtable)table).get(key); }
+            if (peek().type == DOT || peek().type == LBRACKET) { table = unwrap(((Hashtable)table).get(key)); }
         }
         return new Object[]{table, key};
     }
@@ -2570,13 +2539,13 @@ class Lua {
             // Inherit from closure scope (simple lexical scoping)
             for (Enumeration e = closureScope.keys(); e.hasMoreElements();) {
                 String key = (String) e.nextElement();
-                functionScope.put(key, closureScope.get(key));
+                functionScope.put(key, unwrap(closureScope.get(key)));
             }
             // Add global scope as fallback
             for (Enumeration e = globals.keys(); e.hasMoreElements();) {
                 String key = (String) e.nextElement();
                 if (!functionScope.containsKey(key)) { // Don't override local/closure variables
-                    functionScope.put(key, globals.get(key));
+                    functionScope.put(key, unwrap(globals.get(key)));
                 }
             }
 
@@ -2584,7 +2553,7 @@ class Lua {
             for (int i = 0; i < params.size(); i++) {
                 String paramName = (String) params.elementAt(i);
                 Object argValue = (i < args.size()) ? args.elementAt(i) : null; // Default to nil if no arg
-                functionScope.put(paramName, argValue);
+                functionScope.put(paramName, argValue == null ? LUA_NIL : argValue);
             }
 
             // Save current token state
@@ -2615,5 +2584,6 @@ class Lua {
         }
     }
 }
+
 // |
 // EOF
