@@ -1970,7 +1970,7 @@ class Lua {
         else if (current.type == WHILE) { return whileStatement(scope); } 
         else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
         else if (current.type == FUNCTION) { return functionDefinition(scope); } 
-        else if (current.type == LOCAL) {
+        /*else if (current.type == LOCAL) {
             consume(LOCAL);
             if (peek().type == FUNCTION) {
                 consume(FUNCTION);
@@ -2013,7 +2013,89 @@ class Lua {
                 }
                 return null;
             }
+        }*/
+        
+        else if (current.type == LOCAL) {
+    consume(LOCAL);
+    // Caso: local function nome(...) ... end
+    if (peek().type == FUNCTION) {
+        consume(FUNCTION);
+        String funcName = (String) consume(IDENTIFIER).value;
+        consume(LPAREN);
+        Vector params = new Vector();
+        if (peek().type == IDENTIFIER) {
+            params.addElement(consume(IDENTIFIER).value);
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                params.addElement(consume(IDENTIFIER).value);
+            }
         }
+        consume(RPAREN);
+
+        // Capture the function body tokens
+        Vector bodyTokens = new Vector();
+        int depth = 1; // Para correspondência de 'function' ... 'end'
+        while (depth > 0) {
+            Token token = consume();
+            if (token.type == FUNCTION || token.type == IF || token.type == WHILE) { depth++; }
+            else if (token.type == END) { depth--; }
+            else if (token.type == EOF) { throw new Exception("Unmatched 'function' statement: Expected 'end'"); }
+            if (depth > 0) { bodyTokens.addElement(token); }
+        }
+
+        // Cria a função definida pelo usuário e salva no scope atual (local)
+        GenericLuaFunction func = new GenericLuaFunction(params, bodyTokens, scope);
+        scope.put(funcName, func);
+        return null;
+    } else {
+        // Novo: suportar múltiplas declarações locais: local a, b, c = expr1, expr2, expr3
+        Vector varNames = new Vector();
+        // deve haver ao menos um IDENTIFIER
+        varNames.addElement(((Token) consume(IDENTIFIER)).value);
+        while (peek().type == COMMA) {
+            consume(COMMA);
+            varNames.addElement(((Token) consume(IDENTIFIER)).value);
+        }
+
+        // Se houver atribuição, parsear lista de expressões
+        if (peek().type == ASSIGN) {
+            consume(ASSIGN);
+            Vector values = new Vector();
+            values.addElement(expression(scope));
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                values.addElement(expression(scope));
+            }
+
+            // Expansão da última expressão caso seja Vector (para múltiplos retornos)
+            Vector assignValues = new Vector();
+            for (int i = 0; i < values.size(); i++) {
+                Object v = values.elementAt(i);
+                if (i == values.size() - 1 && v instanceof Vector) {
+                    Vector expanded = (Vector) v;
+                    for (int j = 0; j < expanded.size(); j++)
+                        assignValues.addElement(expanded.elementAt(j));
+                } else {
+                    assignValues.addElement(v);
+                }
+            }
+
+            // Atribui aos nomes locais (se faltar valor, coloca null)
+            for (int i = 0; i < varNames.size(); i++) {
+                String v = (String) varNames.elementAt(i);
+                Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
+                scope.put(v, val);
+            }
+        } else {
+            // Sem '=', inicializa todos como nil (null)
+            for (int i = 0; i < varNames.size(); i++) {
+                String v = (String) varNames.elementAt(i);
+                scope.put(v, null);
+            }
+        }
+        return null;
+    }
+}
 
         else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) { expression(scope); return null; }
 
