@@ -11,7 +11,7 @@ import javax.bluetooh.*;
 import java.util.*;
 import java.io.*;
 // |
-// |
+// OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
     private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
@@ -1721,7 +1721,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 }
 // |
-// |
+// Lua Runtime
 class Lua {
     private boolean root;
     private OpenTTY midlet;
@@ -1744,63 +1744,62 @@ class Lua {
         final OpenTTY APP = midlet; final boolean ROOT = root;
 
         globals.put("print", new LuaFunction() {
-    public Object call(Vector args) {
-        if (!args.isEmpty()) {
-            Object val = args.elementAt(0);
-            String str = toLuaString(val); // Usa a conversão Lua
-            return APP.processCommand("echo " + str, true, ROOT);
-        }
-        return null;
-    }
-});
+            public Object call(Vector args) {
+                if (!args.isEmpty()) {
+                    Object val = args.elementAt(0);
+                    String str = toLuaString(val); 
+                    return APP.processCommand("echo " + str, true, ROOT);
+                }
+                return null;
+            }
+        });
         globals.put("exec", new LuaFunction() {
-    public Object call(Vector args) {
-        if (!args.isEmpty()) {
-            Object val = args.elementAt(0);
-            String cmd = toLuaString(val);
-            return APP.processCommand(cmd, true, ROOT);
-        }
-        return null;
-    }
-});
+            public Object call(Vector args) {
+                if (!args.isEmpty()) {
+                    Object val = args.elementAt(0);
+                    String cmd = toLuaString(val);
+                    return APP.processCommand(cmd, true, ROOT);
+                }
+                return null;
+            }
+        });
         globals.put("error", new LuaFunction() {
-    public Object call(Vector args) throws Exception {
-        Object val = (args.size() > 0) ? args.elementAt(0) : null;
-        String msg = toLuaString(val);
-        throw new Exception(msg.equals("nil") ? "error" : msg);
-    }
-});
+            public Object call(Vector args) throws Exception {
+                Object val = (args.size() > 0) ? args.elementAt(0) : null;
+                String msg = toLuaString(val);
+                throw new Exception(msg.equals("nil") ? "error" : msg);
+            }
+        });
         globals.put("pcall", new LuaFunction() {
-    public Object call(Vector args) throws Exception {
-        Vector result = new Vector();
-        if (args.size() == 0) {
-            result.addElement(Boolean.FALSE);
-            result.addElement("Function expected for pcall");
-            return result;
-        }
-        Object funcObj = args.elementAt(0);
-        if (!(funcObj instanceof LuaFunction)) {
-            result.addElement(Boolean.FALSE);
-            result.addElement("Function expected for pcall");
-            return result;
-        }
-        LuaFunction func = (LuaFunction) funcObj;
-        try {
-            // Passe só os argumentos além do primeiro
-            Vector fnArgs = new Vector();
-            for (int i = 1; i < args.size(); i++) fnArgs.addElement(args.elementAt(i));
-            Object value = func.call(fnArgs);
-            result.addElement(Boolean.TRUE);
-            // O Lua retorna nil explicitamente se a função não retorna nada!
-            result.addElement(value); // Pode ser null, mas tem que estar aqui!
-        } catch (Exception e) {
-            result.addElement(Boolean.FALSE);
-            result.addElement(e.getMessage());
-        }
-        return result;
-    }
-});
-        
+            public Object call(Vector args) throws Exception {
+                Vector result = new Vector();
+                if (args.size() == 0) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
+                Object funcObj = args.elementAt(0);
+                if (!(funcObj instanceof LuaFunction)) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
+                LuaFunction func = (LuaFunction) funcObj;
+                try {
+                    // Passe só os argumentos além do primeiro
+                    Vector fnArgs = new Vector();
+                    for (int i = 1; i < args.size(); i++) fnArgs.addElement(args.elementAt(i));
+                    Object value = func.call(fnArgs);
+                    result.addElement(Boolean.TRUE);
+                    // O Lua retorna nil explicitamente se a função não retorna nada!
+                    result.addElement(value); // Pode ser null, mas tem que estar aqui!
+                } catch (Exception e) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement(e.getMessage());
+                }
+                return result;
+            }
+        });
     }
     public void run(String code) { try { this.tokens = tokenize(code); while (peek().type != EOF) { statement(globals); } } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } }
 
@@ -2176,8 +2175,6 @@ class Lua {
         if (!endAlreadyConsumed) consume(END);
         return null;
     }
-
-
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
         String funcName = (String) consume(IDENTIFIER).value;
@@ -2228,8 +2225,7 @@ class Lua {
 
         return null;
     }
-
-
+    
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
     private Object logicalOr(Hashtable scope) throws Exception {
         Object left = logicalAnd(scope);
