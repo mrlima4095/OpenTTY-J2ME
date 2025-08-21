@@ -2438,28 +2438,62 @@ class Lua {
     private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
 
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
+        // Recupera a tabela/valor inicial do escopo ou globals
         Object table = scope.get(varName);
         if (table == null && globals.containsKey(varName)) table = globals.get(varName);
         Object key = null;
 
-        // Suporte a encadeamento t.a.b
+        // Se não há operadores de indexação após o identificador, retornamos a tabela/nome lido
+        // (chave permanecerá null — chamador saberá que só leu o identificador simples).
         while (peek().type == DOT || peek().type == LBRACKET) {
             if (peek().type == DOT) {
                 consume(DOT);
                 Token field = consume(IDENTIFIER);
-                key = field.value;
-            } else if (peek().type == LBRACKET) {
+                key = (String) field.value;
+            } else { // LBRACKET
                 consume(LBRACKET);
                 key = expression(scope);
                 consume(RBRACKET);
+
+                // Se a expressão devolveu um número (Double) que corresponde a inteiro,
+                // convertemos para Integer para padronizar o lookup das listas/tables numéricas.
+                if (key instanceof Double) {
+                    double kd = ((Double) key).doubleValue();
+                    if (kd == Math.floor(kd)) { // inteiro
+                        key = new Integer((int) kd);
+                    }
+                } else if (key instanceof Float) {
+                    float kf = ((Float) key).floatValue();
+                    if (kf == (int) kf) key = new Integer((int) kf);
+                } else if (key instanceof Long) {
+                    key = new Integer(((Long) key).intValue());
+                } else if (key instanceof Short || key instanceof Byte) {
+                    key = new Integer(((Number) key).intValue());
+                }
+                // Observação: strings e outros tipos deixam-se como estão.
             }
-            if (!(table instanceof Hashtable)) throw new Exception("Attempt to index non-table value");
-            if (peek().type == DOT || peek().type == LBRACKET) {
-                table = ((Hashtable)table).get(key);
+
+            // Se queremos continuar encadeando (t.a.b[c]...), precisamos obter o próximo objeto 'table'
+            // para aplicar a próxima etapa do encadeamento.
+            if (!(table instanceof Hashtable)) {
+                // se table for null -> tentativa de indexar nil; lance erro Lua-like
+                if (table == null) throw new Exception("Attempt to index nil value");
+                throw new Exception("Attempt to index non-table value");
             }
+
+            // Se ainda houver mais encadeamentos, atualize 'table' para o próximo nível usando a chave atual.
+            // Se não houver encadeamento adicional, devolvemos a tabela atual e a última chave.
+            // Mas precisamos atualizar table aqui para suportar encadeamentos sequenciais.
+            Object nextPossibleTable = ((Hashtable) table).get(key);
+
+            // Se houver mais operações de indexação após esta (peek indica isso), atualizamos table para nextPossibleTable
+            // e continuamos o loop. Se não houver mais, deixamos 'table' como está — chamador pode decidir fazer a leitura.
+            table = nextPossibleTable;
         }
-        return new Object[]{table, key};
+
+        return new Object[]{ table, key };
     }
+
 
 
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
