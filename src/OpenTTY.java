@@ -2314,7 +2314,6 @@ class Lua {
             }
             return value;
         }
-
         else if (current.type == LBRACE) { // Table literal
             consume(LBRACE);
             Hashtable table = new Hashtable();
@@ -2340,6 +2339,33 @@ class Lua {
             consume(RBRACE);
             return table;
         }
+        else if (current.type == LBRACKET) { // List literal: [a, b, c]
+            // IMPORTANTE: isto só é chamado quando NÃO vem após um IDENTIFIER,
+            // então não conflita com t[expr] (acesso por índice), que você já trata
+            // dentro do ramo de IDENTIFIER.
+            consume(LBRACKET);
+            Hashtable list = new Hashtable();
+            int index = 1;
+
+            // Permite lista vazia: []
+            if (peek().type != RBRACKET) {
+                // Primeiro elemento
+                Object value = expression(scope);
+                list.put(new Double(index++), value);
+
+                // Demais elementos separados por vírgula
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    // Permite vírgula final? (se quiser, cheque RBRACKET aqui e faça break)
+                    value = expression(scope);
+                    list.put(new Double(index++), value);
+                }
+            }
+
+            consume(RBRACKET);
+            return list;
+        }
+
 
         throw new Exception("Unexpected token at factor: " + current.value);
     }
