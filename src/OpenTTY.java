@@ -1748,7 +1748,7 @@ class Lua {
 
         Hashtable os = new Hashtable();
         os.put("exec", new MIDletLuaFunction(1));
-        os.put("getenv", new MIDletLuaFunction(4))
+        os.put("getenv", new MIDletLuaFunction(4));
         globals.put("os", os);
         globals.put("print", new MIDletLuaFunction(0));
         globals.put("error", new MIDletLuaFunction(2));
