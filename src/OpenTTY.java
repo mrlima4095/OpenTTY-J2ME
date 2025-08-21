@@ -1743,63 +1743,10 @@ class Lua {
         
         final OpenTTY APP = midlet; final boolean ROOT = root;
 
-        globals.put("print", new LuaFunction() {
-            public Object call(Vector args) {
-                if (!args.isEmpty()) {
-                    Object val = args.elementAt(0);
-                    String str = toLuaString(val); 
-                    return APP.processCommand("echo " + str, true, ROOT);
-                }
-                return null;
-            }
-        });
-        globals.put("exec", new LuaFunction() {
-            public Object call(Vector args) {
-                if (!args.isEmpty()) {
-                    Object val = args.elementAt(0);
-                    String cmd = toLuaString(val);
-                    return APP.processCommand(cmd, true, ROOT);
-                }
-                return null;
-            }
-        });
-        globals.put("error", new LuaFunction() {
-            public Object call(Vector args) throws Exception {
-                Object val = (args.size() > 0) ? args.elementAt(0) : null;
-                String msg = toLuaString(val);
-                throw new Exception(msg.equals("nil") ? "error" : msg);
-            }
-        });
-        globals.put("pcall", new LuaFunction() {
-            public Object call(Vector args) throws Exception {
-                Vector result = new Vector();
-                if (args.size() == 0) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement("Function expected for pcall");
-                    return result;
-                }
-                Object funcObj = args.elementAt(0);
-                if (!(funcObj instanceof LuaFunction)) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement("Function expected for pcall");
-                    return result;
-                }
-                LuaFunction func = (LuaFunction) funcObj;
-                try {
-                    // Passe só os argumentos além do primeiro
-                    Vector fnArgs = new Vector();
-                    for (int i = 1; i < args.size(); i++) fnArgs.addElement(args.elementAt(i));
-                    Object value = func.call(fnArgs);
-                    result.addElement(Boolean.TRUE);
-                    // O Lua retorna nil explicitamente se a função não retorna nada!
-                    result.addElement(value); // Pode ser null, mas tem que estar aqui!
-                } catch (Exception e) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement(e.getMessage());
-                }
-                return result;
-            }
-        });
+        globals.put("print", new MIDletLuaFunction(0));
+        globals.put("exec", new MIDletLuaFunction(1));
+        globals.put("error", new MIDletLuaFunction(2));
+        globals.put("pcall", new MIDletLuaFunction(3));
     }
     public void run(String code) { try { this.tokens = tokenize(code); while (peek().type != EOF) { statement(globals); } } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } }
 
@@ -2049,7 +1996,7 @@ class Lua {
                 }
 
                 // Cria a função definida pelo usuário e salva no scope atual (local)
-                UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
+                GenericLuaFunction func = new GenericLuaFunction(params, bodyTokens, scope);
                 scope.put(funcName, func);
                 return null;
             } else {
@@ -2218,7 +2165,7 @@ class Lua {
             if (depth > 0) { bodyTokens.addElement(token); }
         }
 
-        UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
+        GenericLuaFunction func = new GenericLuaFunction(params, bodyTokens, scope);
 
         if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
         else { scope.put(funcName, func); }
@@ -2449,7 +2396,6 @@ class Lua {
         tokenIndex--; // devolve o END para quem chamou consumir
     }
 
-
     private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
         Object table = scope.get(varName);
@@ -2470,9 +2416,7 @@ class Lua {
             // Se table é null, erro igual Lua
             if (table == null) throw new Exception("attempt to index a nil value");
             if (!(table instanceof Hashtable)) throw new Exception("attempt to index a non-table value");
-            if (peek().type == DOT || peek().type == LBRACKET) {
-                table = ((Hashtable)table).get(key);
-            }
+            if (peek().type == DOT || peek().type == LBRACKET) { table = ((Hashtable)table).get(key); }
         }
         return new Object[]{table, key};
     }
@@ -2484,11 +2428,57 @@ class Lua {
 
     // Interface for Lua functions (built-in and user-defined)
     public interface LuaFunction { Object call(Vector args) throws Exception; }
-    public class UserDefinedLuaFunction implements LuaFunction {
+    public class MIDletLuaFunction implements LuaFunction {
+        public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3;
+        private int MOD = -1;
+
+        MIDletLuaFunction(int type) { MOD = type; }
+
+        public Object call(Vector args) {
+            if (MOD == PRINT) {
+                if (args.isEmpty()) { } 
+                else { return APP.processCommand("echo " + toLuaString(args.elementAt(0)), true, ROOT); } return null; }
+            } else if (MOD == EXEC) {
+                if (args.isEmpty()) { } 
+                else { return APP.processCommand(toLuaString(args.elementAt(0)), true, ROOT); } return null; }
+            } else if (MOD == ERROR) {
+                String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null);
+                throw new Exception(msg.equals("nil") ? "error" : msg);
+            } else if (MOD == PCALL) {
+                Vector result = new Vector();
+                if (args.size() == 0) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
+                Object funcObj = args.elementAt(0);
+                if (!(funcObj instanceof LuaFunction)) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
+                LuaFunction func = (LuaFunction) funcObj;
+                try {
+                    // Passe só os argumentos além do primeiro
+                    Vector fnArgs = new Vector();
+                    for (int i = 1; i < args.size(); i++) fnArgs.addElement(args.elementAt(i));
+                    Object value = func.call(fnArgs);
+                    result.addElement(Boolean.TRUE);
+                    // O Lua retorna nil explicitamente se a função não retorna nada!
+                    result.addElement(value); // Pode ser null, mas tem que estar aqui!
+                } catch (Exception e) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement(e.getMessage());
+                }
+                return result;
+            }
+        }
+    }
+    public class GenericLuaFunction implements LuaFunction {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
 
-        UserDefinedLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) {
+        GenericLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) {
             this.params = params;
             this.bodyTokens = bodyTokens;
             this.closureScope = closureScope;
