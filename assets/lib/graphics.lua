@@ -24,5 +24,7 @@ function graphics.LoadWindow(name)
 	return exec("x11 load " .. name)
 end
 
+graphics.SetTicker("oooo")
+
 
 return graphics
