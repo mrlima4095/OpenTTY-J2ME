@@ -1740,8 +1740,6 @@ class Lua {
         this.midlet = midlet; this.root = root;
         this.globals = new Hashtable();
         this.tokenIndex = 0;
-        
-        final OpenTTY APP = midlet; final boolean ROOT = root;
 
         globals.put("print", new MIDletLuaFunction(0));
         globals.put("exec", new MIDletLuaFunction(1));
@@ -2437,12 +2435,12 @@ class Lua {
         public Object call(Vector args) throws Exception {
             if (MOD == PRINT) {
                 if (args.isEmpty()) { } 
-                else { return APP.processCommand("echo " + toLuaString(args.elementAt(0)), true, ROOT); } 
+                else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); } 
 
                 return null;
             } else if (MOD == EXEC) {
                 if (args.isEmpty()) { } 
-                else { return APP.processCommand(toLuaString(args.elementAt(0)), true, ROOT); } 
+                else { return midlet.processCommand(toLuaString(args.elementAt(0)), true, root); } 
 
                 return null;
             } else if (MOD == ERROR) {
