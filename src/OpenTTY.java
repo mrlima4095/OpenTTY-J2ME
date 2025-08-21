@@ -2434,15 +2434,20 @@ class Lua {
 
         MIDletLuaFunction(int type) { MOD = type; }
 
-        public Object call(Vector args) {
+        public Object call(Vector args) throws Exception {
             if (MOD == PRINT) {
                 if (args.isEmpty()) { } 
-                else { return APP.processCommand("echo " + toLuaString(args.elementAt(0)), true, ROOT); } return null; }
+                else { return APP.processCommand("echo " + toLuaString(args.elementAt(0)), true, ROOT); } 
+
+                return null;
             } else if (MOD == EXEC) {
                 if (args.isEmpty()) { } 
-                else { return APP.processCommand(toLuaString(args.elementAt(0)), true, ROOT); } return null; }
+                else { return APP.processCommand(toLuaString(args.elementAt(0)), true, ROOT); } 
+
+                return null;
             } else if (MOD == ERROR) {
                 String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null);
+
                 throw new Exception(msg.equals("nil") ? "error" : msg);
             } else if (MOD == PCALL) {
                 Vector result = new Vector();
