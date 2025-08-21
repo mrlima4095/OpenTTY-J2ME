@@ -1731,19 +1731,14 @@ class Lua {
     private Vector tokens;
     private int tokenIndex;
 
-    // SENTINELA PARA REPRESENTAR LUA NIL DENTRO DO Hashtable (Hashtable NÃO ACEITA null)
-    private static final Object LUA_NIL = new Object();
-
-    // Método auxiliar (apenas 1): transforma LUA_NIL em null ao ler
-    private Object unwrap(Object v) {
-        return v == LUA_NIL ? null : v;
-    }
+    private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     // Token types
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, 
                          OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, 
                          LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39;
-    
+    private static final Object LUA_NIL = new Object();
+
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
     public Lua(OpenTTY midlet, boolean root) {
@@ -1781,11 +1776,7 @@ class Lua {
                 continue;
             }
     
-            // Operador de concatenação (..) ou ponto isolado (.)
-            if (c == '.') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } 
-                else { tokens.addElement(new Token(DOT, ".")); i++; continue; }
-            }
+            if (c == '.') { if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } else { tokens.addElement(new Token(DOT, ".")); i++; continue; } }
     
             // Números: começa com dígito ou . seguido de dígito (ex: .5)
             if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
