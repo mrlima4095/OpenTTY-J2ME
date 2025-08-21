@@ -1743,9 +1743,33 @@ class Lua {
         
         final OpenTTY APP = midlet; final boolean ROOT = root;
 
-        globals.put("print", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); } return null; } });
-        globals.put("exec", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); } return null; } });
-        globals.put("error", new LuaFunction() { public Object call(Vector args) throws Exception { throw new Exception((args.size() > 0 && args.elementAt(0) != null) ? args.elementAt(0).toString() : "error"); } });
+        globals.put("print", new LuaFunction() {
+    public Object call(Vector args) {
+        if (!args.isEmpty()) {
+            Object val = args.elementAt(0);
+            String str = toLuaString(val); // Usa a conversão Lua
+            return APP.processCommand("echo " + str, true, ROOT);
+        }
+        return null;
+    }
+});
+        globals.put("exec", new LuaFunction() {
+    public Object call(Vector args) {
+        if (!args.isEmpty()) {
+            Object val = args.elementAt(0);
+            String cmd = toLuaString(val);
+            return APP.processCommand(cmd, true, ROOT);
+        }
+        return null;
+    }
+});
+        globals.put("error", new LuaFunction() {
+    public Object call(Vector args) throws Exception {
+        Object val = (args.size() > 0) ? args.elementAt(0) : null;
+        String msg = toLuaString(val);
+        throw new Exception(msg.equals("nil") ? "error" : msg);
+    }
+});
         globals.put("pcall", new LuaFunction() {
     public Object call(Vector args) throws Exception {
         Vector result = new Vector();
@@ -2449,8 +2473,6 @@ class Lua {
         return new Object[]{table, key};
     }
     
-
-
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
     private static boolean isDigit(char c) { return c >= '0' && c <= '9'; }
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
