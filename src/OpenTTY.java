@@ -1723,6 +1723,845 @@ public class OpenTTY extends MIDlet implements CommandListener {
 // |
 // |
 class Lua {
+    private boolean root;
+    private OpenTTY midlet;
+    private Hashtable globals;
+    private Vector tokens;
+    private int tokenIndex;
+
+    // Token types
+    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, 
+                         OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, 
+                         LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39;
+    
+    private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
+
+    public Lua(OpenTTY midlet, boolean root) {
+        this.midlet = midlet; this.root = root;
+        this.globals = new Hashtable();
+        this.tokenIndex = 0;
+        
+        final OpenTTY APP = midlet; final boolean ROOT = root;
+
+        globals.put("print", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); } return null; } });
+        globals.put("exec", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); } return null; } });
+        globals.put("error", new LuaFunction() { public Object call(Vector args) throws Exception { throw new Exception((args.size() > 0 && args.elementAt(0) != null) ? args.elementAt(0).toString() : "error"); } });
+        globals.put("pcall", new LuaFunction() {
+            public Object call(Vector args) throws Exception {
+                Vector result = new Vector();
+                if (args.size() == 0) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
+                Object funcObj = args.elementAt(0);
+                if (!(funcObj instanceof LuaFunction)) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
+                LuaFunction func = (LuaFunction) funcObj;
+                try {
+                    // Passe só os argumentos além do primeiro
+                    Vector fnArgs = new Vector();
+                    for (int i = 1; i < args.size(); i++) fnArgs.addElement(args.elementAt(i));
+                    Object value = func.call(fnArgs);
+                    result.addElement(Boolean.TRUE);
+                    result.addElement(value);
+                } catch (Exception e) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement(e.getMessage());
+                }
+                return result;
+            }
+        });
+    }
+    public void run(String code) { try { this.tokens = tokenize(code); while (peek().type != EOF) { statement(globals); } } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } }
+
+    private Vector tokenize(String code) throws Exception {
+        Vector tokens = new Vector();
+        int i = 0;
+        while (i < code.length()) {
+            char c = code.charAt(i);
+    
+            if (isWhitespace(c)) { i++; continue; }
+            if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') {
+                i += 2;
+                // Comentário de bloco --[[
+                if (i + 1 < code.length() && code.charAt(i) == '[' && code.charAt(i + 1) == '[') {
+                    i += 2;
+                    // Avança até ]]
+                    while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) i++;
+                    if (i + 1 < code.length()) i += 2; // pula ]]
+                } 
+                else { while (i < code.length() && code.charAt(i) != '\n') i++; }
+                continue;
+            }
+    
+            // Operador de concatenação (..) ou ponto isolado (.)
+            if (c == '.') {
+                if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } 
+                else { tokens.addElement(new Token(DOT, ".")); i++; continue; }
+            }
+    
+            // Números: começa com dígito ou . seguido de dígito (ex: .5)
+            if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
+                StringBuffer sb = new StringBuffer();
+                boolean hasDecimal = false;
+                while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
+                    if (code.charAt(i) == '.') {
+                        if (hasDecimal) break;
+                        // Verifica se ".." logo após o ponto
+                        if (i + 1 < code.length() && code.charAt(i + 1) == '.') break;
+                        hasDecimal = true;
+                    }
+                    sb.append(code.charAt(i));
+                    i++;
+                }
+                try {
+                    double numValue = Double.parseDouble(sb.toString());
+                    tokens.addElement(new Token(NUMBER, new Double(numValue)));
+                } 
+                catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
+                continue;
+            }
+    
+            // Strings
+            if (c == '"') {
+                StringBuffer sb = new StringBuffer(); i++;  
+
+
+                while (i < code.length() && code.charAt(i) != '"') { sb.append(code.charAt(i)); i++; }
+                if (i < code.length() && code.charAt(i) == '"') { i++; }
+
+                tokens.addElement(new Token(STRING, sb.toString()));
+                continue;
+            }
+    
+            // Identificadores e palavras-chave
+            if (isLetter(c)) {
+                StringBuffer sb = new StringBuffer();
+                while (i < code.length() && isLetterOrDigit(code.charAt(i))) {
+                    sb.append(code.charAt(i));
+                    i++;
+                }
+                String word = sb.toString();
+                int type = IDENTIFIER;
+                if (word.equals("true")) type = BOOLEAN;
+                else if (word.equals("false")) type = BOOLEAN;
+                else if (word.equals("nil")) type = NIL;
+                else if (word.equals("and")) type = AND;
+                else if (word.equals("or")) type = OR;
+                else if (word.equals("not")) type = NOT;
+                else if (word.equals("if")) type = IF;
+                else if (word.equals("then")) type = THEN;
+                else if (word.equals("else")) type = ELSE;
+                else if (word.equals("elseif")) type = ELSEIF;
+                else if (word.equals("end")) type = END;
+                else if (word.equals("while")) type = WHILE;
+                else if (word.equals("do")) type = DO;
+                else if (word.equals("return")) type = RETURN;
+                else if (word.equals("function")) type = FUNCTION;
+                else if (word.equals("local")) type = LOCAL;
+
+                tokens.addElement(new Token(type, word));
+                continue;
+            }
+    
+            // Operadores e pontuação
+            if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; continue; }
+            if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; continue; }
+            if (c == '*') { tokens.addElement(new Token(MULTIPLY, "*")); i++; continue; }
+            if (c == '/') { tokens.addElement(new Token(DIVIDE, "/")); i++; continue; }
+            if (c == '%') { tokens.addElement(new Token(MODULO, "%")); i++; continue; }
+            if (c == '(') { tokens.addElement(new Token(LPAREN, "(")); i++; continue; }
+            if (c == ')') { tokens.addElement(new Token(RPAREN, ")")); i++; continue; }
+            if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; continue; }
+    
+            if (c == '=') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } else { tokens.addElement(new Token(ASSIGN, "=")); i++; } continue; }
+            if (c == '~') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } else { throw new Exception("Unexpected character '~'"); } continue; }
+            if (c == '<') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(LE, "<=")); i += 2; } else { tokens.addElement(new Token(LT, "<")); i++; } continue; }
+            if (c == '>') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(GE, ">=")); i += 2; } else { tokens.addElement(new Token(GT, ">")); i++; } continue; }
+
+            if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; continue; }
+            if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; continue; }
+            if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
+            if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; continue; }
+
+            throw new Exception("Unexpected character '" + c + "'");
+        }
+    
+        tokens.addElement(new Token(EOF, "EOF"));
+        return tokens;
+    }
+    private Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return new Token(EOF, "EOF"); }
+    private Token consume() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex++); } return new Token(EOF, "EOF"); }
+    private Token consume(int expectedType) throws Exception { Token token = peek(); if (token.type == expectedType) { tokenIndex++; return token; } throw new Exception("Expected token type " + expectedType + " but got " + token.type + " with value " + token.value); }
+
+    private Object statement(Hashtable scope) throws Exception {
+        Token current = peek();
+
+        if (current.type == IDENTIFIER) {
+            // Lookahead de 1 token
+            Token next = (tokenIndex + 1 < tokens.size()) ? (Token) tokens.elementAt(tokenIndex + 1) : new Token(EOF, "EOF");
+
+            // Caso 1: chamada direta: foo(...)
+            if (next.type == LPAREN) {
+                String funcName = (String) consume(IDENTIFIER).value;
+                callFunction(funcName, scope); // consome os parênteses e argumentos
+                return null;
+            }
+
+            // Verifica múltipla atribuição (a, b, c = ...)
+            int lookahead = 1;
+            boolean isMulti = false;
+            while (tokenIndex + lookahead < tokens.size() &&
+                   ((Token) tokens.elementAt(tokenIndex + lookahead)).type == COMMA) {
+                isMulti = true;
+                lookahead += 2; // COMMA + próximo IDENTIFIER
+            }
+            if (isMulti) {
+                // Parse lista de variáveis (lado esquerdo)
+                Vector varNames = new Vector();
+                varNames.addElement(((Token) consume(IDENTIFIER)).value);
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    varNames.addElement(((Token) consume(IDENTIFIER)).value);
+                }
+                consume(ASSIGN);
+
+                // Parse lista de expressões (lado direito)
+                Vector values = new Vector();
+                values.addElement(expression(scope));
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    values.addElement(expression(scope));
+                }
+
+                for (int i = 0; i < varNames.size(); i++) {
+                    String v = (String) varNames.elementAt(i);
+                    Object val = i < values.size() ? values.elementAt(i) : null;
+                    scope.put(v, val);
+                }
+                return null;
+            }
+
+            // Caso 2: identifier seguido de . ou [ -> pode ser atribuição em tabela OU chamada de função: t.a = ... OU t.a(...)
+            String varName = (String) consume(IDENTIFIER).value;
+            if (peek().type == DOT || peek().type == LBRACKET) {
+                Object[] pair = resolveTableAndKey(varName, scope);
+                Object targetTable = pair[0];
+                Object key = pair[1];
+                if (!(targetTable instanceof Hashtable))
+                    throw new Exception("Attempt to index non-table value");
+
+                if (peek().type == ASSIGN) {
+                    // t.a = expr
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    ((Hashtable) targetTable).put(key, value);
+                    return null;
+                } else if (peek().type == LPAREN) {
+                    // t.a(...) -> chamar função armazenada em t[a]
+                    Object funcObj = ((Hashtable) targetTable).get(key);
+                    // usa callFunctionObject para consumir args e chamar
+                    return callFunctionObject(funcObj, scope);
+                } else {
+                    // Apenas acesso a campo como statement: ignore/avalie se quiser
+                    return null;
+                }
+            } else {
+                // Caso 3: atribuição simples: a = expr
+                consume(ASSIGN);
+                Object value = expression(scope);
+                scope.put(varName, value);
+                return null;
+            }
+        }
+
+        else if (current.type == IF) { return ifStatement(scope); } 
+        else if (current.type == WHILE) { return whileStatement(scope); } 
+        else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
+        else if (current.type == FUNCTION) { return functionDefinition(scope); } 
+        else if (current.type == LOCAL) {
+            consume(LOCAL);
+            if (peek().type == FUNCTION) {
+                consume(FUNCTION);
+                String funcName = (String) consume(IDENTIFIER).value;
+                consume(LPAREN);
+                Vector params = new Vector();
+                if (peek().type == IDENTIFIER) {
+                    params.addElement(consume(IDENTIFIER).value);
+                    while (peek().type == COMMA) {
+                        consume(COMMA);
+                        params.addElement(consume(IDENTIFIER).value);
+                    }
+                }
+                consume(RPAREN);
+
+                // Capture the function body tokens
+                Vector bodyTokens = new Vector();
+                int depth = 1; // Para correspondência de 'function' ... 'end'
+                while (depth > 0) {
+                    Token token = consume();
+                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE) { depth++; } 
+                    else if (token.type == END) { depth--; } 
+                    else if (token.type == EOF) { throw new Exception("Unmatched 'function' statement: Expected 'end'"); }
+                    if (depth > 0) { bodyTokens.addElement(token); }
+                }
+
+                // Cria a função definida pelo usuário e salva no scope atual (local)
+                UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
+                scope.put(funcName, func);
+                return null;
+            } else {
+                // Comportamento anterior: local var [= expr]
+                String varName = (String) consume(IDENTIFIER).value;
+                if (peek().type == ASSIGN) {
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    scope.put(varName, value);
+                } else {
+                    scope.put(varName, null); // Initialize local to nil
+                }
+                return null;
+            }
+        }
+
+        else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) { expression(scope); return null; }
+
+        throw new RuntimeException("Unexpected token at statement: " + current.value);
+    }
+    
+    private Object ifStatement(Hashtable scope) throws Exception {
+        consume(IF);
+        Object cond = expression(scope);
+        consume(THEN);
+
+        Object result = null;
+        boolean taken = false;
+
+        // executa OU pula o primeiro bloco
+        if (isTruthy(cond)) {
+            taken = true;
+            while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
+                result = statement(scope);
+                if (result != null) return result;
+            }
+        } else {
+            skipIfBodyUntilElsePart(); // posiciona no ELSEIF/ELSE/END correspondente deste if
+        }
+
+        // trata zero ou mais ELSEIF
+        while (peek().type == ELSEIF) {
+            consume(ELSEIF);
+            cond = expression(scope);
+            consume(THEN);
+
+            if (!taken && isTruthy(cond)) {
+                taken = true;
+                while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
+                    result = statement(scope);
+                    if (result != null) return result;
+                }
+            } else {
+                skipIfBodyUntilElsePart();
+            }
+        }
+
+        // trata ELSE opcional
+        if (peek().type == ELSE) {
+            consume(ELSE);
+            if (!taken) {
+                while (peek().type != END) {
+                    result = statement(scope);
+                    if (result != null) return result;
+                }
+            } else {
+                // já executamos um ramo verdadeiro; apenas pular até o END
+                skipUntilMatchingEnd();
+            }
+        }
+
+        consume(END);
+        return result;
+    }
+    private Object whileStatement(Hashtable scope) throws Exception {
+        consume(WHILE);
+        int conditionStartTokenIndex = tokenIndex;
+
+        Object result = null;
+        boolean endAlreadyConsumed = false;
+
+        while (true) {
+            tokenIndex = conditionStartTokenIndex;
+            Object condition = expression(scope);
+
+            if (!isTruthy(condition)) {
+                // Pular o corpo até o END correspondente
+                int depth = 1;
+                while (depth > 0) {
+                    Token token = consume();
+                    if (token.type == IF || token.type == WHILE || token.type == FUNCTION) depth++;
+                    else if (token.type == END) depth--;
+                    else if (token.type == EOF) throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
+                }
+                endAlreadyConsumed = true; // já consumimos o END acima
+                break;
+            }
+
+            consume(DO);
+
+            // Executa corpo até o END do laço
+            while (peek().type != END) {
+                result = statement(scope);
+                if (result != null) {
+                    // "return" dentro do while: consome até o END do laço e retorna
+                    int depth = 1;
+                    while (depth > 0) {
+                        Token token = consume();
+                        if (token.type == IF || token.type == WHILE || token.type == FUNCTION) depth++;
+                        else if (token.type == END) depth--;
+                        else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
+                    }
+                    return result;
+                }
+            }
+            // aqui o próximo token é END do while, mas NÃO consumimos:
+            // vamos voltar para a condição; esse END ficará para o caso de a condição ficar falsa,
+            // quando o bloco de “pular até END” acima consumirá ele.
+            // Reset para reavaliar a condição:
+            tokenIndex = conditionStartTokenIndex;
+        }
+
+        if (!endAlreadyConsumed) consume(END);
+        return null;
+    }
+
+
+    private Object functionDefinition(Hashtable scope) throws Exception {
+        consume(FUNCTION);
+        String funcName = (String) consume(IDENTIFIER).value;
+
+        // Verifica se o nome é um index (ex: x.y ou x[y])
+        boolean isTableAssignment = (peek().type == DOT || peek().type == LBRACKET);
+        Object targetTable = null;
+        Object key = null;
+
+        if (isTableAssignment) {
+            // Reutilizamos resolveTableAndKey para consumir os tokens de `.y` ou `[expr]`
+            Object[] pair = resolveTableAndKey(funcName, scope);
+            targetTable = pair[0];
+            key = pair[1];
+
+            if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value in function definition");
+        }
+
+        // Agora params e corpo
+        consume(LPAREN);
+        Vector params = new Vector();
+        if (peek().type == IDENTIFIER) {
+            params.addElement(consume(IDENTIFIER).value);
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                params.addElement(consume(IDENTIFIER).value);
+            }
+        }
+        consume(RPAREN);
+
+        // Capture function body tokens (mesma lógica de profundidade)
+        Vector bodyTokens = new Vector();
+        int depth = 1;
+        while (depth > 0) {
+            Token token = consume();
+
+            if (token.type == FUNCTION || token.type == IF || token.type == WHILE) { depth++; } 
+            else if (token.type == END) { depth--; } 
+            else if (token.type == EOF) { throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); }
+            
+            if (depth > 0) { bodyTokens.addElement(token); }
+        }
+
+        UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
+
+        if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
+        else { scope.put(funcName, func); }
+
+        return null;
+    }
+
+
+    private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
+    private Object logicalOr(Hashtable scope) throws Exception {
+        Object left = logicalAnd(scope);
+        while (peek().type == OR) {
+            consume(OR);
+            Object right = logicalAnd(scope);
+            left = new Boolean(isTruthy(left) || isTruthy(right));
+        }
+        return left;
+    }
+    private Object logicalAnd(Hashtable scope) throws Exception {
+        Object left = comparison(scope);
+        while (peek().type == AND) {
+            consume(AND);
+            Object right = comparison(scope);
+            left = new Boolean(isTruthy(left) && isTruthy(right));
+        }
+        return left;
+    }
+
+    private Object comparison(Hashtable scope) throws Exception {
+        Object left = concatenation(scope); // chama concatenation antes da comparação
+        while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
+            Token op = consume();
+            Object right = concatenation(scope); // compara após concatenation
+            
+            if (op.type == EQ) { left = new Boolean((left == null && right == null) || (left != null && left.equals(right))); } 
+            else if (op.type == NE) { left = new Boolean(!((left == null && right == null) || (left != null && left.equals(right)))); } 
+            else if (op.type == LT) { left = new Boolean(((Double) left).doubleValue() < ((Double) right).doubleValue()); } 
+            else if (op.type == GT) { left = new Boolean(((Double) left).doubleValue() > ((Double) right).doubleValue()); } 
+            else if (op.type == LE) { left = new Boolean(((Double) left).doubleValue() <= ((Double) right).doubleValue()); } 
+            else if (op.type == GE) { left = new Boolean(((Double) left).doubleValue() >= ((Double) right).doubleValue()); }
+        }
+        return left;
+    }
+    private String toLuaString(Object obj) {
+        if (obj == null) { return "nil"; }
+        if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; }
+        if (obj instanceof Double) {
+            double d = ((Double)obj).doubleValue();
+            if (d == (long)d) return String.valueOf((long)d);
+            return String.valueOf(d);
+        }
+        return obj.toString();
+    }
+    private Object arithmetic(Hashtable scope) throws Exception {
+        Object left = term(scope);
+        while (peek().type == PLUS || peek().type == MINUS) {
+            Token op = consume();
+            Object right = term(scope);
+            if (!(left instanceof Double) || !(right instanceof Double)) {
+                throw new ArithmeticException("Arithmetic operation on non-number types.");
+            }
+
+            double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
+
+            if (op.type == PLUS) { left = new Double(lVal + rVal); } 
+            else if (op.type == MINUS) { left = new Double(lVal - rVal); }
+        }
+        return left;
+    }
+    private Object term(Hashtable scope) throws Exception {
+        Object left = factor(scope);
+        while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
+            Token op = consume();
+            Object right = factor(scope);
+            if (!(left instanceof Double) || !(right instanceof Double)) {
+                throw new ArithmeticException("Arithmetic operation on non-number types.");
+            }
+            double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
+
+            if (op.type == MULTIPLY) { left = new Double(lVal * rVal); } 
+            else if (op.type == DIVIDE) { if (rVal == 0) { throw new Exception("Division by zero."); } left = new Double(lVal / rVal); } 
+            else if (op.type == MODULO) { if (rVal == 0) throw new Exception("Modulo by zero."); left = new Double(lVal % rVal); }
+        }
+        return left;
+    }
+    private Object concatenation(Hashtable scope) throws Exception {
+        Object left = arithmetic(scope);
+        while (peek().type == CONCAT) {
+            consume(CONCAT);
+            Object right = arithmetic(scope);
+            left = toLuaString(left) + toLuaString(right);
+        }
+        return left;
+    }
+    private Object factor(Hashtable scope) throws Exception {
+        Token current = peek();
+
+        if (current.type == NUMBER) { return consume(NUMBER).value; } 
+        else if (current.type == STRING) { return consume(STRING).value; } 
+        else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
+        else if (current.type == NIL) { consume(NIL); return null; } 
+        else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
+        else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
+        else if (current.type == IDENTIFIER) {
+            String name = (String) consume(IDENTIFIER).value;
+            Object value;
+            if (peek().type == LPAREN) { return callFunction(name, scope); }
+            else {
+                value = scope.get(name);
+                if (value == null && globals.containsKey(name)) {
+                    value = globals.get(name);
+                }
+            }
+            // Suporte a t[expr] e t.chave encadeado para leitura
+            while (peek().type == LBRACKET || peek().type == DOT) {
+                Object key = null;
+                if (peek().type == LBRACKET) {
+                    consume(LBRACKET);
+                    key = expression(scope);
+                    consume(RBRACKET);
+                } else if (peek().type == DOT) {
+                    consume(DOT);
+                    Token fieldToken = consume(IDENTIFIER);
+                    key = (String) fieldToken.value;
+                }
+                if (!(value instanceof Hashtable))
+                    throw new Exception("Attempt to index non-table value: " + name);
+                value = ((Hashtable)value).get(key);
+            }
+            return value;
+        }
+        else if (current.type == LBRACE) { // Table literal
+            consume(LBRACE);
+            Hashtable table = new Hashtable();
+            int index = 1; // Lua tables podem usar números sequenciais
+            while (peek().type != RBRACE) {
+                Object key = null, value = null;
+                
+                if (peek().type == LBRACKET) { // t[expr] = value
+                    consume(LBRACKET);
+                    key = expression(scope);
+                    consume(RBRACKET);
+                    consume(ASSIGN);
+                    value = expression(scope);
+                } else { // key-value ou array-style
+                    value = expression(scope);
+                    key = new Double(index++);
+                }
+
+                table.put(key, value);
+
+                if (peek().type == COMMA) consume(COMMA);
+            }
+            consume(RBRACE);
+            return table;
+        }
+        else if (current.type == LBRACKET) { // List literal: [a, b, c]
+            // IMPORTANTE: isto só é chamado quando NÃO vem após um IDENTIFIER,
+            // então não conflita com t[expr] (acesso por índice), que você já trata
+            // dentro do ramo de IDENTIFIER.
+            consume(LBRACKET);
+            Hashtable list = new Hashtable();
+            int index = 1;
+
+            // Permite lista vazia: []
+            if (peek().type != RBRACKET) {
+                // Primeiro elemento
+                Object value = expression(scope);
+                list.put(new Double(index++), value);
+
+                // Demais elementos separados por vírgula
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    // Permite vírgula final? (se quiser, cheque RBRACKET aqui e faça break)
+                    value = expression(scope);
+                    list.put(new Double(index++), value);
+                }
+            }
+
+            consume(RBRACKET);
+            return list;
+        }
+
+
+        throw new Exception("Unexpected token at factor: " + current.value);
+    }
+    private Object callFunction(String funcName, Hashtable scope) throws Exception {
+        consume(LPAREN);
+        Vector args = new Vector();
+        if (peek().type != RPAREN) {
+            args.addElement(expression(scope));
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                args.addElement(expression(scope));
+            }
+        }
+        consume(RPAREN);
+
+        Object funcObj = scope.get(funcName);
+        if (funcObj == null) { funcObj = globals.get(funcName); }
+
+        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
+        else { throw new RuntimeException("Attempt to call a non-function value: " + funcName); }
+    }
+    private Object callFunctionObject(Object funcObj, Hashtable scope) throws Exception {
+        consume(LPAREN);
+        Vector args = new Vector();
+        if (peek().type != RPAREN) {
+            args.addElement(expression(scope));
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                args.addElement(expression(scope));
+            }
+        }
+        consume(RPAREN);
+
+        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
+        else { throw new Exception("Attempt to call a non-function value (by object)."); }
+    }
+
+    private void skipIfBodyUntilElsePart() throws Exception {
+        int depth = 1;
+        while (true) {
+            Token t = consume();
+            if (t.type == IF || t.type == WHILE || t.type == FUNCTION) depth++;
+            else if (t.type == END) {
+                depth--;
+                if (depth == 0) { // acabou o if inteiro sem ELSE/ELSEIF
+                    tokenIndex--; // voltamos 1 para deixar o END ser consumido pelo chamador
+                    return;
+                }
+            } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) {
+                tokenIndex--; // para o chamador ler este token
+                return;
+            } else if (t.type == EOF) {
+                throw new Exception("Unmatched 'if' statement: Expected 'end'");
+            }
+        }
+    }
+    private void skipUntilMatchingEnd() throws Exception {
+        int depth = 1;
+        while (depth > 0) {
+            Token t = consume();
+            if (t.type == IF || t.type == WHILE || t.type == FUNCTION) depth++;
+            else if (t.type == END) depth--;
+            else if (t.type == EOF) throw new Exception("Unmatched 'if' statement: Expected 'end'");
+        }
+        // aqui o END já foi consumido por 'consume()' do loop
+        tokenIndex--; // devolve o END para quem chamou consumir
+    }
+
+
+    private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
+
+    private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
+        // Recupera a tabela/valor inicial do escopo ou globals
+        Object table = scope.get(varName);
+        if (table == null && globals.containsKey(varName)) table = globals.get(varName);
+        Object key = null;
+
+        // Se não há operadores de indexação após o identificador, retornamos a tabela/nome lido
+        // (chave permanecerá null — chamador saberá que só leu o identificador simples).
+        while (peek().type == DOT || peek().type == LBRACKET) {
+            if (peek().type == DOT) {
+                consume(DOT);
+                Token field = consume(IDENTIFIER);
+                key = (String) field.value;
+            } else { // LBRACKET
+                consume(LBRACKET);
+                key = expression(scope);
+                consume(RBRACKET);
+
+                // Se a expressão devolveu um número (Double) que corresponde a inteiro,
+                // convertemos para Integer para padronizar o lookup das listas/tables numéricas.
+                if (key instanceof Double) {
+                    double kd = ((Double) key).doubleValue();
+                    if (kd == Math.floor(kd)) { // inteiro
+                        key = new Integer((int) kd);
+                    }
+                } else if (key instanceof Float) {
+                    float kf = ((Float) key).floatValue();
+                    if (kf == (int) kf) key = new Integer((int) kf);
+                } else if (key instanceof Long) {
+                    key = new Integer(((Long) key).intValue());
+                } else if (key instanceof Short || key instanceof Byte) {
+                    key = new Integer(((Number) key).intValue());
+                }
+                // Observação: strings e outros tipos deixam-se como estão.
+            }
+
+            // Se queremos continuar encadeando (t.a.b[c]...), precisamos obter o próximo objeto 'table'
+            // para aplicar a próxima etapa do encadeamento.
+            if (!(table instanceof Hashtable)) {
+                // se table for null -> tentativa de indexar nil; lance erro Lua-like
+                if (table == null) throw new Exception("Attempt to index nil value");
+                throw new Exception("Attempt to index non-table value");
+            }
+
+            // Se ainda houver mais encadeamentos, atualize 'table' para o próximo nível usando a chave atual.
+            // Se não houver encadeamento adicional, devolvemos a tabela atual e a última chave.
+            // Mas precisamos atualizar table aqui para suportar encadeamentos sequenciais.
+            Object nextPossibleTable = ((Hashtable) table).get(key);
+
+            // Se houver mais operações de indexação após esta (peek indica isso), atualizamos table para nextPossibleTable
+            // e continuamos o loop. Se não houver mais, deixamos 'table' como está — chamador pode decidir fazer a leitura.
+            table = nextPossibleTable;
+        }
+
+        return new Object[]{ table, key };
+    }
+
+
+
+    private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
+    private static boolean isDigit(char c) { return c >= '0' && c <= '9'; }
+    private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
+    private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
+
+    // Interface for Lua functions (built-in and user-defined)
+    public interface LuaFunction { Object call(Vector args) throws Exception; }
+    public class UserDefinedLuaFunction implements LuaFunction {
+        private Vector params, bodyTokens;
+        private Hashtable closureScope;
+
+        UserDefinedLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) {
+            this.params = params;
+            this.bodyTokens = bodyTokens;
+            this.closureScope = closureScope;
+        }
+
+        public Object call(Vector args) throws Exception {
+            Hashtable functionScope = new Hashtable();
+            // Inherit from closure scope (simple lexical scoping)
+            for (Enumeration e = closureScope.keys(); e.hasMoreElements();) {
+                String key = (String) e.nextElement();
+                functionScope.put(key, closureScope.get(key));
+            }
+            // Add global scope as fallback
+            for (Enumeration e = globals.keys(); e.hasMoreElements();) {
+                String key = (String) e.nextElement();
+                if (!functionScope.containsKey(key)) { // Don't override local/closure variables
+                    functionScope.put(key, globals.get(key));
+                }
+            }
+
+            // Bind arguments to parameters
+            for (int i = 0; i < params.size(); i++) {
+                String paramName = (String) params.elementAt(i);
+                Object argValue = (i < args.size()) ? args.elementAt(i) : null; // Default to nil if no arg
+                functionScope.put(paramName, argValue);
+            }
+
+            // Save current token state
+            int originalTokenIndex = tokenIndex;
+            Vector originalTokens = tokens;
+
+            // Set tokens to function body
+            tokens = bodyTokens;
+            tokenIndex = 0;
+
+            Object returnValue = null;
+            while (peek().type != EOF) {
+                Object result = statement(functionScope);
+                if (peek().type == EOF && result != null) { // Last statement was a return
+                    returnValue = result;
+                    break;
+                } else if (result != null) { // A return statement was encountered
+                    returnValue = result;
+                    break;
+                }
+            }
+
+            // Restore original token state
+            tokenIndex = originalTokenIndex;
+            tokens = originalTokens;
+
+            return returnValue;
+        }
+    }
 }
 // |
 // EOF
