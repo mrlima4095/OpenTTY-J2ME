@@ -1,7 +1,6 @@
 local graphics = {}
 
 
-
 function graphics.Alert(title, content)
 	return exec("warn " + title + " " + content)
 end
