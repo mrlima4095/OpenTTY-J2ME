@@ -1949,25 +1949,30 @@ class Lua {
             // Caso 2: identifier seguido de . ou [ -> pode ser atribuição em tabela OU chamada de função: t.a = ... OU t.a(...)
             String varName = (String) consume(IDENTIFIER).value;
             if (peek().type == DOT || peek().type == LBRACKET) {
+                // resolveTableAndKey agora retorna { parentTable, lastKey }
                 Object[] pair = resolveTableAndKey(varName, scope);
-                Object targetTable = pair[0];
+                Object parentTable = pair[0];
                 Object key = pair[1];
-                if (!(targetTable instanceof Hashtable))
-                    throw new Exception("Attempt to index non-table value");
 
+                if (!(parentTable instanceof Hashtable)) {
+                    // Mensagem de erro mais Lua-like
+                    if (parentTable == null) throw new Exception("Attempt to index nil value");
+                    throw new Exception("Attempt to index non-table value");
+                }
+
+                // A partir daqui parentTable é a Hashtable que contém 'key'
                 if (peek().type == ASSIGN) {
                     // t.a = expr
                     consume(ASSIGN);
                     Object value = expression(scope);
-                    ((Hashtable) targetTable).put(key, value);
+                    ((Hashtable) parentTable).put(key, value);
                     return null;
                 } else if (peek().type == LPAREN) {
-                    // t.a(...) -> chamar função armazenada em t[a]
-                    Object funcObj = ((Hashtable) targetTable).get(key);
-                    // usa callFunctionObject para consumir args e chamar
+                    // t.a(...) -> chamar função armazenada em parentTable[key]
+                    Object funcObj = ((Hashtable) parentTable).get(key);
                     return callFunctionObject(funcObj, scope);
                 } else {
-                    // Apenas acesso a campo como statement: ignore/avalie se quiser
+                    // Apenas acesso a campo como statement — nada a fazer aqui
                     return null;
                 }
             } else {
@@ -2145,16 +2150,19 @@ class Lua {
 
         // Verifica se o nome é um index (ex: x.y ou x[y])
         boolean isTableAssignment = (peek().type == DOT || peek().type == LBRACKET);
-        Object targetTable = null;
+        Object parentTable = null;
         Object key = null;
 
         if (isTableAssignment) {
-            // Reutilizamos resolveTableAndKey para consumir os tokens de `.y` ou `[expr]`
+            // resolveTableAndKey retorna { parentTable, lastKey }
             Object[] pair = resolveTableAndKey(funcName, scope);
-            targetTable = pair[0];
+            parentTable = pair[0];
             key = pair[1];
 
-            if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value in function definition");
+            if (!(parentTable instanceof Hashtable)) {
+                if (parentTable == null) throw new Exception("Attempt to index nil value in function definition");
+                throw new Exception("Attempt to index non-table value in function definition");
+            }
         }
 
         // Agora params e corpo
@@ -2184,11 +2192,15 @@ class Lua {
 
         UserDefinedLuaFunction func = new UserDefinedLuaFunction(params, bodyTokens, scope);
 
-        if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
-        else { scope.put(funcName, func); }
+        if (isTableAssignment) {
+            ((Hashtable) parentTable).put(key, func);
+        } else {
+            scope.put(funcName, func);
+        }
 
         return null;
     }
+
 
 
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
