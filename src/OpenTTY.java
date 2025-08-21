@@ -2293,69 +2293,69 @@ class Lua {
         return left;
     }
     private Object factor(Hashtable scope) throws Exception {
-    Token current = peek();
-
-    if (current.type == NUMBER) { return consume(NUMBER).value; } 
-    else if (current.type == STRING) { return consume(STRING).value; } 
-    else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
-    else if (current.type == NIL) { consume(NIL); return null; } 
-    else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
-    else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
-    else if (current.type == IDENTIFIER) {
-        String name = (String) consume(IDENTIFIER).value;
-        Object value = scope.get(name);
-        if (value == null && globals.containsKey(name)) {
-            value = globals.get(name);
+        Token current = peek();
+    
+        if (current.type == NUMBER) { return consume(NUMBER).value; } 
+        else if (current.type == STRING) { return consume(STRING).value; } 
+        else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
+        else if (current.type == NIL) { consume(NIL); return null; } 
+        else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
+        else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
+        else if (current.type == IDENTIFIER) {
+            String name = (String) consume(IDENTIFIER).value;
+            Object value = scope.get(name);
+            if (value == null && globals.containsKey(name)) {
+                value = globals.get(name);
+            }
+            // Leitura de campos encadeados: t.a.b
+            while (peek().type == LBRACKET || peek().type == DOT) {
+                Object key = null;
+                if (peek().type == LBRACKET) {
+                    consume(LBRACKET);
+                    key = expression(scope);
+                    consume(RBRACKET);
+                } else if (peek().type == DOT) {
+                    consume(DOT);
+                    Token fieldToken = consume(IDENTIFIER);
+                    key = (String) fieldToken.value;
+                }
+                if (value == null) {
+                    // No Lua, ler campo de nil retorna nil
+                    return null;
+                }
+                if (!(value instanceof Hashtable)) {
+                    // No Lua, tentar indexar não-table lança erro
+                    throw new Exception("attempt to index a non-table value");
+                }
+                value = ((Hashtable)value).get(key);
+            }
+            return value;
         }
-        // Leitura de campos encadeados: t.a.b
-        while (peek().type == LBRACKET || peek().type == DOT) {
-            Object key = null;
-            if (peek().type == LBRACKET) {
-                consume(LBRACKET);
-                key = expression(scope);
-                consume(RBRACKET);
-            } else if (peek().type == DOT) {
-                consume(DOT);
-                Token fieldToken = consume(IDENTIFIER);
-                key = (String) fieldToken.value;
+        else if (current.type == LBRACE) { // Table literal
+            consume(LBRACE);
+            Hashtable table = new Hashtable();
+            int index = 1; // Lua tables podem usar números sequenciais
+            while (peek().type != RBRACE) {
+                Object key = null, value = null;
+                
+                if (peek().type == LBRACKET) { // t[expr] = value
+                    consume(LBRACKET);
+                    key = expression(scope);
+                    consume(RBRACKET);
+                    consume(ASSIGN);
+                    value = expression(scope);
+                } else { // key-value ou array-style
+                    value = expression(scope);
+                    key = new Double(index++);
+                }
+                table.put(key, value);
+                if (peek().type == COMMA) consume(COMMA);
             }
-            if (value == null) {
-                // No Lua, ler campo de nil retorna nil
-                return null;
-            }
-            if (!(value instanceof Hashtable)) {
-                // No Lua, tentar indexar não-table lança erro
-                throw new Exception("attempt to index a non-table value");
-            }
-            value = ((Hashtable)value).get(key);
+            consume(RBRACE);
+            return table;
         }
-        return value;
+        throw new Exception("Unexpected token at factor: " + current.value);
     }
-    else if (current.type == LBRACE) { // Table literal
-        consume(LBRACE);
-        Hashtable table = new Hashtable();
-        int index = 1; // Lua tables podem usar números sequenciais
-        while (peek().type != RBRACE) {
-            Object key = null, value = null;
-            
-            if (peek().type == LBRACKET) { // t[expr] = value
-                consume(LBRACKET);
-                key = expression(scope);
-                consume(RBRACKET);
-                consume(ASSIGN);
-                value = expression(scope);
-            } else { // key-value ou array-style
-                value = expression(scope);
-                key = new Double(index++);
-            }
-            table.put(key, value);
-            if (peek().type == COMMA) consume(COMMA);
-        }
-        consume(RBRACE);
-        return table;
-    }
-    throw new Exception("Unexpected token at factor: " + current.value);
-}
     private Object callFunction(String funcName, Hashtable scope) throws Exception {
         consume(LPAREN);
         Vector args = new Vector();
@@ -2423,12 +2423,11 @@ class Lua {
 
 
     private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
-
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
         Object table = scope.get(varName);
         if (table == null && globals.containsKey(varName)) table = globals.get(varName);
         Object key = null;
-
+    
         // Suporte a encadeamento t.a.b
         while (peek().type == DOT || peek().type == LBRACKET) {
             if (peek().type == DOT) {
@@ -2440,13 +2439,16 @@ class Lua {
                 key = expression(scope);
                 consume(RBRACKET);
             }
-            if (!(table instanceof Hashtable)) throw new Exception("Attempt to index non-table value");
+            // Se table é null, erro igual Lua
+            if (table == null) throw new Exception("attempt to index a nil value");
+            if (!(table instanceof Hashtable)) throw new Exception("attempt to index a non-table value");
             if (peek().type == DOT || peek().type == LBRACKET) {
                 table = ((Hashtable)table).get(key);
             }
         }
         return new Object[]{table, key};
     }
+    
 
 
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
