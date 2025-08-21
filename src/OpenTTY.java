@@ -1746,13 +1746,13 @@ class Lua {
         this.globals = new Hashtable();
         this.tokenIndex = 0;
 
-        // Ao inicializar globals, use LUA_NIL se precisar do null explicitamente. Aqui não é necessário.
-        globals.put("os", new Hashtable());
+        Hashtable os = new Hashtable();
+        os.put("exec", new MIDletLuaFunction(1));
+        os.put("getenv", new MIDletLuaFunction(4))
+        globals.put("os", os);
         globals.put("print", new MIDletLuaFunction(0));
-        globals.put("exec", new MIDletLuaFunction(1));
         globals.put("error", new MIDletLuaFunction(2));
         globals.put("pcall", new MIDletLuaFunction(3));
-        globals.put("getenv", new MIDletLuaFunction(4));
     }
     public void run(String code) { try { this.tokens = tokenize(code); while (peek().type != EOF) { statement(globals); } } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } }
 
