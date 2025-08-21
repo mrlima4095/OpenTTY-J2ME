@@ -2468,20 +2468,20 @@ class Lua {
                 consume(RBRACKET);
 
                 // Se a expressão devolveu um número (Double) que corresponde a inteiro,
-                // convertemos para Integer para padronizar o lookup das listas/tables numéricas.
                 if (key instanceof Double) {
                     double kd = ((Double) key).doubleValue();
-                    if (kd == Math.floor(kd)) { // inteiro
-                        key = new Integer((int) kd);
-                    }
+                    if (kd == Math.floor(kd)) key = new Integer((int) kd);
                 } else if (key instanceof Float) {
                     float kf = ((Float) key).floatValue();
                     if (kf == (int) kf) key = new Integer((int) kf);
                 } else if (key instanceof Long) {
-                    key = new Integer(((Long) key).intValue());
-                } else if (key instanceof Short || key instanceof Byte) {
-                    key = new Integer(((Number) key).intValue());
+                    key = new Integer((int) ((Long) key).longValue());
+                } else if (key instanceof Short) {
+                    key = new Integer(((Short) key).shortValue());
+                } else if (key instanceof Byte) {
+                    key = new Integer(((Byte) key).byteValue());
                 }
+
                 // Observação: strings e outros tipos deixam-se como estão.
             }
 
