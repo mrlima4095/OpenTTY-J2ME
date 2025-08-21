@@ -1745,7 +1745,8 @@ class Lua {
 
         globals.put("print", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand("echo " + args.elementAt(0).toString(), true, ROOT); } return null; } });
         globals.put("exec", new LuaFunction() { public Object call(Vector args) { if (!args.isEmpty()) { return APP.processCommand(args.elementAt(0).toString(), true, ROOT); } return null; } });
-        globals.put("error", new LuaFunction() { public Object call(Vector args) throws Exception { throw new Exception((args.size() > 0 && args.elementAt(0) != null) ? args.elementAt(0).toString() : "error"); } });globals.put("pcall", new LuaFunction() {
+        globals.put("error", new LuaFunction() { public Object call(Vector args) throws Exception { throw new Exception((args.size() > 0 && args.elementAt(0) != null) ? args.elementAt(0).toString() : "error"); } });
+        globals.put("pcall", new LuaFunction() {
     public Object call(Vector args) throws Exception {
         Vector result = new Vector();
         if (args.size() == 0) {
