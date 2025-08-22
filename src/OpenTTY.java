@@ -1766,9 +1766,7 @@ class Lua {
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF) { 
-                statement(globals); 
-            }
+            while (peek().type != EOF) { statement(globals); }
         } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
     }
 
