@@ -9,7 +9,7 @@ function graphics.Gauge(message) return os.execute("x11 gauge" .. message) end
 function graphics.SetTitle(text) return os.execute("title " .. text) end
 function graphics.WindowTitle(text) return os.execute("x11 title" .. text) end
 
-function graphics.SetTicker(message) return os.execute("x11 tick " .. text) end
+function graphics.SetTicker(message) return os.execute("x11 tick " .. message) end
 
 
 
