@@ -1766,8 +1766,13 @@ class Lua {
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF) { statement(globals); }
+            while (peek().type != EOF) { 
+                if (midlet.trace.containsKey(PID)) { statement(globals); } 
+                else { throw new RuntimeException("Process killed"); } 
+            }
         } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
+
+        midlet.trace.remove(PID);
     }
 
     private Vector tokenize(String code) throws Exception {
