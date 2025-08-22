@@ -1991,7 +1991,6 @@ class Lua {
         else if (current.type == WHILE) { return whileStatement(scope); } 
         else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
         else if (current.type == FUNCTION) { return functionDefinition(scope); } 
-        
         else if (current.type == LOCAL) {
             consume(LOCAL);
             // Caso: local function nome(...) ... end
@@ -2429,36 +2428,8 @@ class Lua {
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
 
-    private void skipIfBodyUntilElsePart() throws Exception {
-        int depth = 1;
-        while (true) {
-            Token t = consume();
-            if (t.type == IF || t.type == WHILE || t.type == FUNCTION) depth++;
-            else if (t.type == END) {
-                depth--;
-                if (depth == 0) { // acabou o if inteiro sem ELSE/ELSEIF
-                    tokenIndex--; // voltamos 1 para deixar o END ser consumido pelo chamador
-                    return;
-                }
-            } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) {
-                tokenIndex--; // para o chamador ler este token
-                return;
-            } else if (t.type == EOF) {
-                throw new Exception("Unmatched 'if' statement: Expected 'end'");
-            }
-        }
-    }
-    private void skipUntilMatchingEnd() throws Exception {
-        int depth = 1;
-        while (depth > 0) {
-            Token t = consume();
-            if (t.type == IF || t.type == WHILE || t.type == FUNCTION) depth++;
-            else if (t.type == END) depth--;
-            else if (t.type == EOF) throw new Exception("Unmatched 'if' statement: Expected 'end'");
-        }
-        // aqui o END já foi consumido por 'consume()' do loop
-        tokenIndex--; // devolve o END para quem chamou consumir
-    }
+    private void skipIfBodyUntilElsePart() throws Exception { int depth = 1; while (true) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION) depth++; else if (t.type == END) { depth--; if (depth == 0) { tokenIndex--; return; } } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) { tokenIndex--; return; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } }
+    private void skipUntilMatchingEnd() throws Exception { int depth = 1; while (depth > 0) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION) { depth++; } else if (t.type == END) { depth--; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } tokenIndex--; }
 
     private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
@@ -2605,12 +2576,8 @@ class Lua {
     public class GenericLuaFunction implements LuaFunction {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
-
-        GenericLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) {
-            this.params = params;
-            this.bodyTokens = bodyTokens;
-            this.closureScope = closureScope;
-        }
+ 
+        GenericLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
 
         public Object call(Vector args) throws Exception {
             Hashtable functionScope = new Hashtable();
