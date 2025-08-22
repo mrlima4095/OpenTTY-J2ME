@@ -1117,6 +1117,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { echoCommand(renderJSON(ITEM, 0)); }
             }       
         }
+        
         else if (mainCommand.equals("clean")) {
             if (argument.equals("")) { }
             else {
@@ -1131,6 +1132,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else { echoCommand("top: clean: " + PID + ": not found"); return 127; }
                 } else { echoCommand("Permission denied!"); return 13; }
             }
+        }
+        else if (mainCommand.equals("new")) {
+
+        }
+        else if (mainCommand.equals("drop")) {
+
+        }
+        else if (mainCommand.equals("take")) {
+
+        } 
+        else if (mainCommand.equals("run")) {
+
+        }
+        else if (mainCommand.equals("build")) {
+            
         }
         else { echoCommand("top: " + mainCommand + ": not found"); return 127; } 
         
