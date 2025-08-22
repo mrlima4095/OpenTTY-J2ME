@@ -1756,7 +1756,9 @@ class Lua {
         globals.put("pcall", new MIDletLuaFunction(PCALL));
         globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
-    public void run(String code) { 
+    public void run(String name, String code) { 
+        
+        
         try { 
             this.tokens = tokenize(code); 
             
