@@ -1766,7 +1766,7 @@ class Lua {
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF && midlet.trace.contains(PID)) { statement(globals); }
+            while (peek().type != EOF && midlet.trace.containsKey(PID)) { statement(globals); }
         } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
     }
 
@@ -2574,7 +2574,7 @@ class Lua {
                     }
 
                     // Executa até EOF ou até encontrar 'return'
-                    while (peek().type != EOF && midlet.trace.contains(PID)) {
+                    while (peek().type != EOF && midlet.trace.containsKey(PID)) {
                         Object res = statement(moduleScope);
                         if (res != null) { // capturou 'return'
                             ret = res;
