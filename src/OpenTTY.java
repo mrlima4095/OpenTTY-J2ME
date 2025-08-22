@@ -556,7 +556,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); lua.run(argument.equals("") ? nanoContent : getcontent(argument)); }
+        else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); lua.run(argument, argument.equals("") ? nanoContent : getcontent(argument)); }
         else if (mainCommand.equals("5k")) { echoCommand("1.16 Special - 5k commits at OpenTTY GitHub repository"); }
 
         // API 015 - (Scripts)
@@ -1743,16 +1743,15 @@ class Lua {
 
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
-    public Lua(OpenTTY midlet, String name, boolean root) {
+    public Lua(OpenTTY midlet, boolean root) {
         this.midlet = midlet; this.root = root;
         this.tokenIndex = 0; this.PID = midlet.genpid();
-        this.proc = midlet.genprocess(name, root, null);
+        this.proc = midlet.genprocess("lua", root, null);
 
         Hashtable os = new Hashtable();
         os.put("execute", new MIDletLuaFunction(EXEC));
         os.put("getenv", new MIDletLuaFunction(GETENV));
-        os.put("pid", PID);
-        os.put("proc", proc);
+        os.put("pid", PID); os.put("proc", proc);
 
         globals.put("os", os);
         globals.put("print", new MIDletLuaFunction(PRINT));
@@ -1760,7 +1759,8 @@ class Lua {
         globals.put("pcall", new MIDletLuaFunction(PCALL));
         globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
-    public void run(String code) { 
+    public void run(String name, String code) { 
+        proc.put("name": "lua " + name);
         midlet.trace.put(PID, proc);
         
         try { 
