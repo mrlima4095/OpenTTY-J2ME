@@ -1760,7 +1760,7 @@ class Lua {
         globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
     public void run(String name, String code) { 
-        proc.put("name": "lua " + name);
+        proc.put("name": "lua " + name.trim());
         midlet.trace.put(PID, proc);
         
         try { 
