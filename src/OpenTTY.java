@@ -1379,7 +1379,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else {
                 if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
-                start(MOD == SERVER ? "server" : "bind", PID, null, root); sessions.put(port, "nobody");
+                start(MOD == SERVER ? "server" : "bind", PID, null, root); sessions.put(port, MOD == SERVER ? "nobody" : "http-cli");
                 ((Hashtable) getprocess(PID)).put("port", port);
 
                 while (trace.containsKey(PID)) {
@@ -1430,7 +1430,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         try { if (CONN != null) CONN.close(); } catch (IOException e) { }
                         try { if (server != null) server.close(); } catch (IOException e) { }
                         
-                        sessions.put(port, "nobody"); 
+                        sessions.put(port, MOD == SERVER ? "nobody" : "http-cli");
                     }
                 } 
                 trace.remove(PID);
