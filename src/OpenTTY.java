@@ -1727,7 +1727,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 class Lua {
     private boolean root;
     private OpenTTY midlet;
-    private String PID, 
+    private String PID = null;
     private Hashtable globals = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
     private int tokenIndex;
@@ -1745,7 +1745,7 @@ class Lua {
 
     public Lua(OpenTTY midlet, boolean root) {
         this.midlet = midlet; this.root = root;
-        this.tokenIndex = 0;
+        this.tokenIndex = 0; this.PID = midlet.genpid();
 
         Hashtable os = new Hashtable();
         os.put("execute", new MIDletLuaFunction(EXEC));
@@ -1759,17 +1759,13 @@ class Lua {
     }
     public void run(String name, String code) { 
         Hashtable proc = midlet.genprocess("lua " + name, root, null);
-        midlet.trace.put()
+        midlet.trace.put(PID);
         
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF) { 
-                statement(globals); 
-            }
-        } catch (Exception e) {
-            midlet.processCommand("echo " + midlet.getCatch(e), true, root); 
-        } 
+            while (peek().type != EOF && midlet.trace.contains(PID)) { statement(globals); }
+        } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
     }
 
     private Vector tokenize(String code) throws Exception {
@@ -2576,7 +2572,7 @@ class Lua {
                     }
 
                     // Executa até EOF ou até encontrar 'return'
-                    while (peek().type != EOF) {
+                    while (peek().type != EOF && midlet.trace.contains(PID)) {
                         Object res = statement(moduleScope);
                         if (res != null) { // capturou 'return'
                             ret = res;
