@@ -1746,7 +1746,7 @@ class Lua {
     public Lua(OpenTTY midlet, boolean root) {
         this.midlet = midlet; this.root = root;
         this.tokenIndex = 0; this.PID = midlet.genpid();
-        this.proc = midlet.genprocess("lua", root, null)
+        this.proc = midlet.genprocess("lua", root, null);
         
         Hashtable os = new Hashtable();
         os.put("execute", new MIDletLuaFunction(EXEC));
