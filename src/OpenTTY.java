@@ -1757,7 +1757,7 @@ class Lua {
         globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
     public void run(String name, String code) { 
-        
+        Hashtable proc = genprocess()
         
         try { 
             this.tokens = tokenize(code); 
