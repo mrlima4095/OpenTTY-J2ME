@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable(), 
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x56"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x57"; 
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -678,9 +678,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // |
         // Interfaces
-        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument))); }
-        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, getcontent(argument)); }
-        else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : getcontent(argument)); }
+        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument), root)); }
+        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, getcontent(argument), root); }
+        else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : getcontent(argument), root); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
 
@@ -692,6 +692,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Interfaces
     public class Screen implements CommandListener { 
         private Hashtable PKG; 
+        private boolean root = false;
         private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3, EDIT = 4; 
         private Form screen = new Form(form.getTitle()); 
         private List list = new List(form.getTitle(), List.IMPLICIT); 
@@ -699,10 +700,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command BACK, USER; 
         private TextField INPUT; 
 
-        public Screen(String type, String code) { 
+        public Screen(String type, String code, boolean root) { 
             if (type == null || type.length() == 0 || code == null || code.length() == 0) { return; } 
 
-            PKG = parseProperties(code); 
+            this.PKG = parseProperties(code); 
+            this.root = root;
             if (type.equals("make")) { 
                 TYPE = SCREEN; 
 
@@ -728,7 +730,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
                             screen.append(content); 
                         }
-                        else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, code); } 
+                        else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, code, root); } 
                         else if (type.equals("spacer")) { 
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
                             screen.append(new Spacer(width, height)); 
@@ -814,28 +816,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         public void commandAction(Command c, Displayable d) { 
             if (c == BACK) { 
-                processCommand("xterm"); 
-                processCommand(getvalue((TYPE == SCREEN ? "screen" : TYPE == LIST ? "list" : TYPE == QUEST ? "quest" : "edit") + ".back", "true"));
+                processCommand("xterm", true, root); 
+                processCommand(getvalue((TYPE == SCREEN ? "screen" : TYPE == LIST ? "list" : TYPE == QUEST ? "quest" : "edit") + ".back", "true"), true, root);
             } 
             else if (c == USER || c == List.SELECT_COMMAND) { 
                 if (TYPE == QUEST) { 
                     String value = INPUT.getString().trim(); 
                     if (!value.equals("")) { 
-                        processCommand("set " + getenv("quest.key") + "=" + env(value)); 
-                        processCommand("xterm"); 
-                        processCommand(getvalue("quest.cmd", "true")); 
+                        processCommand("set " + getenv("quest.key") + "=" + env(value), false, root); 
+                        processCommand("xterm", true, root); 
+                        processCommand(getvalue("quest.cmd", "true"), true, root); 
                     } 
                 } 
                 else if (TYPE == EDIT) { 
                     String value = edit.getString().trim(); 
                     if (!value.equals("")) { 
-                        processCommand("set " + getenv("edit.key") + "=" + env(value)); 
-                        processCommand("xterm"); 
-                        processCommand(getvalue("edit.cmd", "true")); 
+                        processCommand("set " + getenv("edit.key") + "=" + env(value), false, root); 
+                        processCommand("xterm", true, root); 
+                        processCommand(getvalue("edit.cmd", "true"), true, root); 
                     } 
                 } 
-                else if (TYPE == LIST) { int index = list.getSelectedIndex(); if (index >= 0) { processCommand("xterm"); String key = env(list.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found")); } } 
-                else if (TYPE == SCREEN) { processCommand("xterm"); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found")); } 
+                else if (TYPE == LIST) { int index = list.getSelectedIndex(); if (index >= 0) { processCommand("xterm", true, root); String key = env(list.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), false, root); } } 
+                else if (TYPE == SCREEN) { processCommand("xterm", true, root); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found"), false, root); } 
             } 
         } 
         private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
@@ -850,12 +852,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command BACK, USER; 
         private Image CURSOR = null; 
         private Vector fields = new Vector(); 
+        private boolean root = false;
         private final int cursorSize = 5; 
 
         public MyCanvas(String code) { 
             if (code == null || code.length() == 0) { return; } 
 
-            PKG = parseProperties(code); 
+            this.PKG = parseProperties(code);  this.root = root;
             setTitle(getenv("canvas.title", form.getTitle())); 
 
             BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1); 
@@ -974,7 +977,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else if (type.equals("line")) { continue; } 
                         else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; } 
 
-                        if (hit) { processCommand(cmd); break; } 
+                        if (hit) { processCommand(cmd, true, root); break; } 
                     } 
                 } 
             } 
@@ -985,8 +988,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; keyPressed(-5); } 
 
         public void commandAction(Command c, Displayable d) { 
-            if (c == BACK) { processCommand("xterm"); processCommand(getvalue("canvas.back", "true")); } 
-            else if (c == USER) { processCommand("xterm"); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found")); } 
+            if (c == BACK) { processCommand("xterm", true, root); processCommand(getvalue("canvas.back", "true"), true, root); } 
+            else if (c == USER) { processCommand("xterm", true, root); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found"), true, root); } 
         } 
         private void setpallete(String node, Graphics screen, int r, int g, int b) { 
             try { 
@@ -1002,7 +1005,35 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Item MOD Loader
-    public class ItemLoader implements ItemCommandListener { private Hashtable PKG; private Command run; private StringItem s; private String node; public ItemLoader(Form screen, String prefix, String code) { if (code == null || code.length() == 0) { return; } else if (code.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } PKG = parseProperties(code); node = prefix; if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } run = new Command(env((String) PKG.get(node + ".label")), Command.ITEM, 1); s = new StringItem(null, env((String) PKG.get(node + ".label")), StringItem.BUTTON); s.setFont(Font.getDefaultFont()); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(run); s.setDefaultCommand(run); s.setItemCommandListener(this); screen.append(s); } public void commandAction(Command c, Item item) { if (c == run) { processCommand("xterm"); processCommand((String) PKG.get(node + ".cmd")); } } }
+    public class ItemLoader implements ItemCommandListener { 
+        private Hashtable PKG; 
+        private boolean root = false;
+        private Command run; 
+        private StringItem s; 
+        private String node; 
+
+        public ItemLoader(Form screen, String node, String code, boolean root) { 
+            if (code == null || code.length() == 0) { return; } 
+            else if (code.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
+
+            this.PKG = parseProperties(code); this.root = root; this.node = node; 
+
+            if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
+
+            run = new Command(env((String) PKG.get(node + ".label")), Command.ITEM, 1); 
+            s = new StringItem(null, env((String) PKG.get(node + ".label")), StringItem.BUTTON); 
+            s.setFont(Font.getDefaultFont()); 
+            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
+            s.addCommand(run); 
+            s.setDefaultCommand(run); 
+            s.setItemCommandListener(this); 
+            screen.append(s); 
+        } 
+
+        public void commandAction(Command c, Item item) { 
+            if (c == run) { processCommand("xterm", true, root); processCommand((String) PKG.get(node + ".cmd"), true, root); } 
+        } 
+    }
     // |
     // Font Generator
     private Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
@@ -1121,6 +1152,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String PID = getCommand(argument), collector = getArgument(argument);
 
                     if (PID.equals("")) { }
+                    else if (PID.equals("1")) {
+
+                    }
                     else if (trace.containsKey(PID)) {
                         if (collector.equals("")) { ((Hashtable) getprocess(PID)).remove("collector"); } 
                         else { ((Hashtable) getprocess(PID)).put("collector", collector); }
