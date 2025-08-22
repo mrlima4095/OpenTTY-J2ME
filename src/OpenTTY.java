@@ -2473,48 +2473,87 @@ class Lua {
     // Interface for Lua functions (built-in and user-defined)
     public interface LuaFunction { Object call(Vector args) throws Exception; }
     public class MIDletLuaFunction implements LuaFunction {
-        public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4;
-        private int MOD = -1;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4;
+    private int MOD = -1;
 
-        MIDletLuaFunction(int type) { MOD = type; }
+    MIDletLuaFunction(int type) { MOD = type; }
 
-        public Object call(Vector args) throws Exception {
-            if (MOD == PRINT) { if (args.isEmpty()) { } else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); } } 
-            else if (MOD == EXEC) { if (args.isEmpty()) { } else { return midlet.processCommand(toLuaString(args.elementAt(0)), true, root); } } 
-            else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
-            else if (MOD == PCALL) {
-                Vector result = new Vector();
-                if (args.size() == 0) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement("Function expected for pcall");
-                    return result;
-                }
-                Object funcObj = args.elementAt(0);
-                if (!(funcObj instanceof LuaFunction)) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement("Function expected for pcall");
-                    return result;
-                }
-                LuaFunction func = (LuaFunction) funcObj;
-                try {
-                    // Passe só os argumentos além do primeiro
-                    Vector fnArgs = new Vector();
-                    for (int i = 1; i < args.size(); i++) fnArgs.addElement(args.elementAt(i));
-                    Object value = func.call(fnArgs);
-                    result.addElement(Boolean.TRUE);
-                    // O Lua retorna nil explicitamente se a função não retorna nada!
-                    result.addElement(value); // Pode ser null, mas tem que estar aqui!
-                } catch (Exception e) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement(e.getMessage());
-                }
+    // Helper interno: converte LUA_NIL sentinel para null caso necessário
+    private Object normalizeArg(Object a) {
+        if (a == LUA_NIL) return null;
+        return a;
+    }
+
+    public Object call(Vector args) throws Exception {
+        if (MOD == PRINT) {
+            if (args.isEmpty()) { return null; }
+            else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); }
+        } 
+        else if (MOD == EXEC) {
+            if (args.isEmpty()) { return null; }
+            else { return midlet.processCommand(toLuaString(args.elementAt(0)), true, root); }
+        } 
+        else if (MOD == ERROR) {
+            String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null);
+            throw new Exception(msg.equals("nil") ? "error" : msg);
+        } 
+        else if (MOD == PCALL) {
+            Vector result = new Vector();
+
+            if (args.size() == 0) {
+                result.addElement(Boolean.FALSE);
+                result.addElement("Function expected for pcall");
                 return result;
             }
-            else if (MOD == GETENV) { if (args.isEmpty()) { } else { return midlet.env(toLuaString(args.elementAt(0))); } }
 
-            return null;
+            Object rawFunc = args.elementAt(0);
+            // Tolerância: se foi passado o nome da função (String), procurar em globals
+            Object funcObj = normalizeArg(rawFunc);
+            if (!(funcObj instanceof LuaFunction)) {
+                if (funcObj instanceof String) {
+                    String fname = (String) funcObj;
+                    // procurar em globals por esse nome (se existir)
+                    if (globals.containsKey(fname)) {
+                        funcObj = unwrap(globals.get(fname)); // unwrap (pode ser LUA_NIL internamente)
+                    }
+                }
+            }
+
+            // Ainda não é função? talvez seja uma tabela contendo função no campo (não tratado aqui).
+            if (!(funcObj instanceof LuaFunction)) {
+                result.addElement(Boolean.FALSE);
+                result.addElement("Function expected for pcall");
+                return result;
+            }
+
+            LuaFunction func = (LuaFunction) funcObj;
+
+            try {
+                // Normalize argumentos (remove sentinela LUA_NIL)
+                Vector fnArgs = new Vector();
+                for (int i = 1; i < args.size(); i++) {
+                    fnArgs.addElement(normalizeArg(args.elementAt(i)));
+                }
+
+                Object value = func.call(fnArgs);
+                result.addElement(Boolean.TRUE);
+                // Em Lua pcall retorna true + retorno da função (ou nil)
+                result.addElement(value); // Pode ser null, e deve aparecer
+            } catch (Exception e) {
+                result.addElement(Boolean.FALSE);
+                result.addElement(e.getMessage());
+            }
+            return result;
         }
+        else if (MOD == GETENV) {
+            if (args.isEmpty()) { return null; }
+            else { return midlet.env(toLuaString(args.elementAt(0))); }
+        }
+
+        return null;
     }
+}
+
     public class GenericLuaFunction implements LuaFunction {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
