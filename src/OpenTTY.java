@@ -1018,7 +1018,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 006 - (Process)
     // |
     // Process
-    private int kill(String pid, boolean print, boolean root) {
+    public int kill(String pid, boolean print, boolean root) {
         if (pid == null || pid.length() == 0) { return 2; }
 
         Hashtable proc = (Hashtable) trace.get(pid);
@@ -1034,7 +1034,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int start(String app, String pid, String collector, boolean root) {
+    public int start(String app, String pid, String collector, boolean root) {
         if (app == null || app.length() == 0) { return 2; }
 
         Hashtable proc = genprocess(app, root, collector);
@@ -1067,7 +1067,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         trace.put(pid, proc);
         return 0;
     }
-    private int stop(String app, boolean root) {
+    public int stop(String app, boolean root) {
         if (app == null || app.length() == 0) return 2;
 
         int STATUS = 0;
@@ -1756,7 +1756,17 @@ class Lua {
         globals.put("pcall", new MIDletLuaFunction(PCALL));
         globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
-    public void run(String code) { try { this.tokens = tokenize(code); while (peek().type != EOF) { statement(globals); } } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } }
+    public void run(String code) { 
+        try { 
+            this.tokens = tokenize(code); 
+            
+            while (peek().type != EOF) { 
+                statement(globals); 
+            }
+        } catch (Exception e) {
+            midlet.processCommand("echo " + midlet.getCatch(e), true, root); 
+        } 
+    }
 
     private Vector tokenize(String code) throws Exception {
         Vector tokens = new Vector();
