@@ -1728,7 +1728,7 @@ class Lua {
     private boolean root;
     private OpenTTY midlet;
     private String PID = null;
-    private Hashtable globals = new Hashtable(), requireCache = new Hashtable();
+    private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
     private int tokenIndex;
 
@@ -1743,14 +1743,16 @@ class Lua {
 
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
 
-    public Lua(OpenTTY midlet, boolean root) {
+    public Lua(OpenTTY midlet, String name, boolean root) {
         this.midlet = midlet; this.root = root;
         this.tokenIndex = 0; this.PID = midlet.genpid();
+        this.proc = midlet.genprocess(name, root, null);
 
         Hashtable os = new Hashtable();
         os.put("execute", new MIDletLuaFunction(EXEC));
         os.put("getenv", new MIDletLuaFunction(GETENV));
         os.put("pid", PID);
+        os.put("proc", proc);
 
         globals.put("os", os);
         globals.put("print", new MIDletLuaFunction(PRINT));
@@ -1758,9 +1760,8 @@ class Lua {
         globals.put("pcall", new MIDletLuaFunction(PCALL));
         globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
-    public void run(String name, String code) { 
-        Hashtable proc = midlet.genprocess("lua " + name, root, null);
-        midlet.trace.put(PID);
+    public void run(String code) { 
+        midlet.trace.put(PID, proc);
         
         try { 
             this.tokens = tokenize(code); 
