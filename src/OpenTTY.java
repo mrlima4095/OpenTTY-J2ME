@@ -1728,6 +1728,7 @@ class Lua {
     private boolean root;
     private OpenTTY midlet;
     private String PID = null;
+    private long clock = System.currentTimeMillis();
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
     private int tokenIndex;
@@ -1751,7 +1752,8 @@ class Lua {
         Hashtable os = new Hashtable();
         os.put("execute", new MIDletLuaFunction(EXEC));
         os.put("getenv", new MIDletLuaFunction(GETENV));
-        os.put("pid", PID); os.put("proc", proc);
+        os.put("clock", new MIDletLuaFunction(CLOCK));
+        os.put("pid", PID); 
         
         globals.put("os", os);
         globals.put("print", new MIDletLuaFunction(PRINT));
@@ -1760,7 +1762,7 @@ class Lua {
         globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
     public void run(String name, String code) { 
-        proc.put("name", "lua " + name.trim());
+        proc.put("name", ("lua " + name).trim());
         midlet.trace.put(PID, proc);
         
         try { 
@@ -2596,7 +2598,7 @@ class Lua {
                 requireCache.put(name, (ret == null) ? LUA_NIL : ret);
                 return ret; // pode ser null (nil) ou qualquer objeto/Vector
             }
-
+            else if (MOD == CLOCK) { return clock - System.currentTimeMillis(); }
 
             return null;
         }
