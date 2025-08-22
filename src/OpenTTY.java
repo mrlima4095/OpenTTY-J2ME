@@ -99,11 +99,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) {
             if (c == BACK) { processCommand("xterm"); return; } 
     
-            if (MOD == HISTORY) {
-                String selected = preview.getString(preview.getSelectedIndex()); 
-    
-                if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); }
-            } 
+            if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex());  if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); } } 
             else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
 
@@ -125,7 +121,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected), root); } 
                 else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected, root); } 
             } 
-            else if (MOD == MONITOR) { System.gc(); load(); } 
+            else if (MOD == MONITOR) { System.gc(); reload(); } 
             else if (MOD == PROCESS) {
                 int index = preview.getSelectedIndex(); 
                 if (index >= 0) { 
