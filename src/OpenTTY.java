@@ -1086,7 +1086,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
 
-        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new Monitor(argument, root); } 
+        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new Monitor(mainCommand, root); } 
         else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) {
             if (argument.equals("")) { } 
             else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); }
