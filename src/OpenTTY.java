@@ -1767,7 +1767,9 @@ class Lua {
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF && midlet.trace.containsKey(PID)) { statement(globals); }
+            while (peek().type != EOF && midlet.trace.containsKey(PID)) { 
+                statement(globals); 
+            }
         } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
     }
 
