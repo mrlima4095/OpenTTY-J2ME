@@ -1136,18 +1136,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | 
     // Virtual Objects
     // | (Generators)
-    private String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
-    private Hashtable genprocess(String name, boolean root, String collector) { 
+    public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
+    public Hashtable genprocess(String name, boolean root, String collector) { 
         Hashtable proc = new Hashtable(); 
         
         proc.put("name", name); 
         proc.put("owner", root ? "root" : username); 
         if (collector != null) { proc.put("collector", collector); } 
         
-        return proc; 
+        return proc;
     }
     // | (Trackers)
-    private Hashtable getprocess(String pid) { return trace.containsKey(pid) ? (Hashtable) trace.get(pid) : null; }
+    public Hashtable getprocess(String pid) { return trace.containsKey(pid) ? (Hashtable) trace.get(pid) : null; }
     private Object getobject(String pid, String item) { return (Object) getprocess(pid).get(item); }
     private String getpid(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) trace.get(PID)).get("name"))) { return PID; } } return null; } 
     private String getowner(String pid) { return trace.containsKey(pid) ? (String) ((Hashtable) trace.get(pid)).get("owner") : null; }
@@ -1757,7 +1757,8 @@ class Lua {
         globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
     public void run(String name, String code) { 
-        Hashtable proc = genprocess()
+        Hashtable proc = midlet.genprocess("lua " + name, root, null);
+        midlet.trace.put()
         
         try { 
             this.tokens = tokenize(code); 
