@@ -1746,12 +1746,11 @@ class Lua {
     public Lua(OpenTTY midlet, boolean root) {
         this.midlet = midlet; this.root = root;
         this.tokenIndex = 0; this.PID = midlet.genpid();
-        this.proc = midlet.genprocess("lua", root, null);
-
+        
         Hashtable os = new Hashtable();
         os.put("execute", new MIDletLuaFunction(EXEC));
         os.put("getenv", new MIDletLuaFunction(GETENV));
-        os.put("pid", PID); os.put("proc", proc);
+        os.put("pid", PID); 
 
         globals.put("os", os);
         globals.put("print", new MIDletLuaFunction(PRINT));
@@ -1761,6 +1760,8 @@ class Lua {
     }
     public void run(String name, String code) { 
         proc.put("name", "lua " + name.trim());
+        proc.put("owner", root == true ? "root" : midlet.username);
+        os.put("proc", proc);
         midlet.trace.put(PID, proc);
         
         try { 
