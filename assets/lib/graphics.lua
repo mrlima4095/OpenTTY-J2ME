@@ -12,5 +12,4 @@ function graphics.WindowTitle(text) return os.execute("x11 title" .. text) end
 function graphics.SetTicker(message) return os.execute("x11 tick " .. message) end
 
 
-
 return graphics
