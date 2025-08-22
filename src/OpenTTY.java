@@ -1156,24 +1156,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else { echoCommand("Permission denied!"); return 13; }
             }
         }
-        else if (mainCommand.equals("new")) {
-            // trace new 2 text "mogar"
-            if (argument.equals("") || args.length < 3) { return 2; }
-
-            String PID = args[0], TYPE = args[2].toLowerCase(), FIELD = args[1], VALUE = argument.indexOf('=') != -1 ? getpattern(argument.substring(argument.indexOf('=') + 1).trim()) : "null";
-
-            Hashtable ITEM = getprocess(PID);
-
-            if (ITEM == null) { echoCommand("top: new: " + PID + ": not found"); return 69; }
-            else {
-                if (ITEM.get("owner").equals("root") && !root) { echoCommand("Permission denied!"); return 13; }
-                if (FIELD.equals("name") || FIELD.equals("owner") || FIELD.equals("collector")) { return 3; }
-
-                if (TYPE.equals("text")) { ITEM.put(FIELD, VALUE); }
-                else { echoCommand("top: new: " + TYPE + ": not found"); return 127; }
-
-            }
-        }
         else { echoCommand("top: " + mainCommand + ": not found"); return 127; } 
         
         return 0;
