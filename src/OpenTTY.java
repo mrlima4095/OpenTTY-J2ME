@@ -855,7 +855,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private boolean root = false;
         private final int cursorSize = 5; 
 
-        public MyCanvas(String code) { 
+        public MyCanvas(String code, boolean root) { 
             if (code == null || code.length() == 0) { return; } 
 
             this.PKG = parseProperties(code);  this.root = root;
@@ -1980,7 +1980,7 @@ class Lua {
                 
                 // Expansão da última expressão caso seja Vector (para múltiplos retornos)
                 Vector assignValues = new Vector();
-                for (int i = 0; i < values.size(); i++) {
+                for (int i = 0; i < values.size(); i++) {231
                     Object v = values.elementAt(i);
                     if (i == values.size() - 1 && v instanceof Vector) {
                         Vector expanded = (Vector) v;
