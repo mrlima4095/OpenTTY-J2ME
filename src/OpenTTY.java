@@ -1753,7 +1753,6 @@ class Lua {
         os.put("execute", new MIDletLuaFunction(EXEC));
         os.put("getenv", new MIDletLuaFunction(GETENV));
         os.put("clock", new MIDletLuaFunction(CLOCK));
-        os.put("pid", PID); 
         
         globals.put("os", os);
         globals.put("print", new MIDletLuaFunction(PRINT));
