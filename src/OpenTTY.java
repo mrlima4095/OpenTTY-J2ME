@@ -15,9 +15,9 @@ import java.io.*;
 public class OpenTTY extends MIDlet implements CommandListener {
     private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
-    private Random random = new Random();
-    private Runtime runtime = Runtime.getRuntime();
-    private Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable(), 
+    public Random random = new Random();
+    public Runtime runtime = Runtime.getRuntime();
+    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable(), 
                       aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     private String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     private String logs = "", path = "/home/", build = "2025-1.16-02x56"; 
@@ -584,12 +584,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     private String read(String filename) { try { if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } } catch (IOException e) { return ""; } }
     private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
-    public String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
+    private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
     private String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } 
     public String getCatch(Exception e) { String message = e.getMessage(); return message == null || message.length() == 0 || message.equals("null") ? e.getClass().getName() : message; }
     // |
-    private String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
-    private String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
+    public String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
+    public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // |
     private String join(String[] array, String spacer, int start) { 
         if (array == null || array.length == 0 || start >= array.length) { return ""; } 
@@ -1727,13 +1727,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
 class Lua {
     private boolean root;
     private OpenTTY midlet;
-    private Hashtable globals;
+    private Hashtable globals = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
     private int tokenIndex;
 
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     // Token types
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5;
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, 
                          OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, 
                          LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39;
@@ -1743,16 +1744,17 @@ class Lua {
 
     public Lua(OpenTTY midlet, boolean root) {
         this.midlet = midlet; this.root = root;
-        this.globals = new Hashtable();
         this.tokenIndex = 0;
 
         Hashtable os = new Hashtable();
-        os.put("exec", new MIDletLuaFunction(1));
-        os.put("getenv", new MIDletLuaFunction(4));
+        os.put("execute", new MIDletLuaFunction(EXECUTE));
+        os.put("getenv", new MIDletLuaFunction(GETENV));
+
         globals.put("os", os);
-        globals.put("print", new MIDletLuaFunction(0));
-        globals.put("error", new MIDletLuaFunction(2));
-        globals.put("pcall", new MIDletLuaFunction(3));
+        globals.put("print", new MIDletLuaFunction(PRINT));
+        globals.put("error", new MIDletLuaFunction(ERROR));
+        globals.put("pcall", new MIDletLuaFunction(PCALL));
+        globals.put("require", new MIDletLuaFunction(REQUIRE));
     }
     public void run(String code) { try { this.tokens = tokenize(code); while (peek().type != EOF) { statement(globals); } } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } }
 
@@ -2470,90 +2472,118 @@ class Lua {
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
 
-    // Interface for Lua functions (built-in and user-defined)
     public interface LuaFunction { Object call(Vector args) throws Exception; }
     public class MIDletLuaFunction implements LuaFunction {
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4;
-    private int MOD = -1;
+        private int MOD = -1;
 
-    MIDletLuaFunction(int type) { MOD = type; }
+        MIDletLuaFunction(int type) { MOD = type; }
 
-    // Helper interno: converte LUA_NIL sentinel para null caso necessário
-    private Object normalizeArg(Object a) {
-        if (a == LUA_NIL) return null;
-        return a;
-    }
+        private Object normalizeArg(Object a) { if (a == LUA_NIL) return null; return a; }
 
-    public Object call(Vector args) throws Exception {
-        if (MOD == PRINT) {
-            if (args.isEmpty()) { return null; }
-            else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); }
-        } 
-        else if (MOD == EXEC) {
-            if (args.isEmpty()) { return null; }
-            else { return midlet.processCommand(toLuaString(args.elementAt(0)), true, root); }
-        } 
-        else if (MOD == ERROR) {
-            String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null);
-            throw new Exception(msg.equals("nil") ? "error" : msg);
-        } 
-        else if (MOD == PCALL) {
-            Vector result = new Vector();
+        public Object call(Vector args) throws Exception {
+            if (MOD == PRINT) { if (args.isEmpty()) { } else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); } } 
+            else if (MOD == EXEC) { if (args.isEmpty()) { } else { return midlet.processCommand(toLuaString(args.elementAt(0)), true, root); } } 
+            else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
+            else if (MOD == PCALL) {
+                Vector result = new Vector();
 
-            if (args.size() == 0) {
-                result.addElement(Boolean.FALSE);
-                result.addElement("Function expected for pcall");
-                return result;
-            }
+                if (args.size() == 0) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
+                }
 
-            Object rawFunc = args.elementAt(0);
-            // Tolerância: se foi passado o nome da função (String), procurar em globals
-            Object funcObj = normalizeArg(rawFunc);
-            if (!(funcObj instanceof LuaFunction)) {
-                if (funcObj instanceof String) {
-                    String fname = (String) funcObj;
-                    // procurar em globals por esse nome (se existir)
-                    if (globals.containsKey(fname)) {
-                        funcObj = unwrap(globals.get(fname)); // unwrap (pode ser LUA_NIL internamente)
+                Object rawFunc = args.elementAt(0);
+                // Tolerância: se foi passado o nome da função (String), procurar em globals
+                Object funcObj = normalizeArg(rawFunc);
+                if (!(funcObj instanceof LuaFunction)) {
+                    if (funcObj instanceof String) {
+                        String fname = (String) funcObj;
+                        // procurar em globals por esse nome (se existir)
+                        if (globals.containsKey(fname)) {
+                            funcObj = unwrap(globals.get(fname)); // unwrap (pode ser LUA_NIL internamente)
+                        }
                     }
                 }
-            }
 
-            // Ainda não é função? talvez seja uma tabela contendo função no campo (não tratado aqui).
-            if (!(funcObj instanceof LuaFunction)) {
-                result.addElement(Boolean.FALSE);
-                result.addElement("Function expected for pcall");
-                return result;
-            }
-
-            LuaFunction func = (LuaFunction) funcObj;
-
-            try {
-                // Normalize argumentos (remove sentinela LUA_NIL)
-                Vector fnArgs = new Vector();
-                for (int i = 1; i < args.size(); i++) {
-                    fnArgs.addElement(normalizeArg(args.elementAt(i)));
+                // Ainda não é função? talvez seja uma tabela contendo função no campo (não tratado aqui).
+                if (!(funcObj instanceof LuaFunction)) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement("Function expected for pcall");
+                    return result;
                 }
 
-                Object value = func.call(fnArgs);
-                result.addElement(Boolean.TRUE);
-                // Em Lua pcall retorna true + retorno da função (ou nil)
-                result.addElement(value); // Pode ser null, e deve aparecer
-            } catch (Exception e) {
-                result.addElement(Boolean.FALSE);
-                result.addElement(e.getMessage());
+                LuaFunction func = (LuaFunction) funcObj;
+
+                try {
+                    Vector fnArgs = new Vector();
+                    for (int i = 1; i < args.size(); i++) { fnArgs.addElement(normalizeArg(args.elementAt(i))); }
+
+                    Object value = func.call(fnArgs);
+                    result.addElement(Boolean.TRUE);
+
+                    result.addElement(value);
+                } catch (Exception e) {
+                    result.addElement(Boolean.FALSE);
+                    result.addElement(e.getMessage());
+                }
+                return result;
             }
-            return result;
-        }
-        else if (MOD == GETENV) {
-            if (args.isEmpty()) { return null; }
-            else { return midlet.env(toLuaString(args.elementAt(0))); }
-        }
+            else if (MOD == GETENV) { if (args.isEmpty()) { } else { String key = toLuaString(args.elementAt(0)); return midlet.attributes.containsKey(key) ? midlet.attributes.get(key) : null; } }
+            else if (MOD == REQUIRE) {
+                if (args.isEmpty() || args.elementAt(0) == null) { throw new Exception("require: module name expected"); }
 
-        return null;
+                String name = toLuaString(args.elementAt(0));
+                if (name == null || "nil".equals(name) || name.length() == 0) { throw new Exception("require: invalid module name"); }
+
+                // Cache simples (estilo package.loaded)
+                Object cached = requireCache.get(name);
+                if (cached != null) { return (cached == LUA_NIL) ? null : cached; }
+
+                String code = midlet.getcontent(name);
+                if (code.equals("")) { throw new Exception("module not found: " + name); }
+
+                // --- Inlining do runModule ---
+                // Salva estado atual do parser
+                int savedIndex = tokenIndex;
+                Vector savedTokens = tokens;
+
+                Object ret = null;
+                try {
+                    // Tokeniza o módulo
+                    tokens = tokenize(code);
+                    tokenIndex = 0;
+
+                    // Escopo do módulo com fallback para globals
+                    Hashtable moduleScope = new Hashtable();
+                    for (Enumeration e = globals.keys(); e.hasMoreElements();) {
+                        String k = (String) e.nextElement();
+                        moduleScope.put(k, unwrap(globals.get(k)));
+                    }
+
+                    // Executa até EOF ou até encontrar 'return'
+                    while (peek().type != EOF) {
+                        Object res = statement(moduleScope);
+                        if (res != null) { // capturou 'return'
+                            ret = res;
+                            break;
+                        }
+                    }
+                } finally {
+                    // Restaura estado do parser
+                    tokenIndex = savedIndex;
+                    tokens = savedTokens;
+                }
+
+                // Armazena no cache (nil guardado como LUA_NIL)
+                requireCache.put(name, (ret == null) ? LUA_NIL : ret);
+                return ret; // pode ser null (nil) ou qualquer objeto/Vector
+            }
+
+
+            return null;
+        }
     }
-}
-
     public class GenericLuaFunction implements LuaFunction {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
@@ -2614,6 +2644,5 @@ class Lua {
         }
     }
 }
-
 // |
 // EOF
