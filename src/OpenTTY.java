@@ -1747,7 +1747,7 @@ class Lua {
         this.tokenIndex = 0;
 
         Hashtable os = new Hashtable();
-        os.put("execute", new MIDletLuaFunction(EXECUTE));
+        os.put("execute", new MIDletLuaFunction(EXEc));
         os.put("getenv", new MIDletLuaFunction(GETENV));
 
         globals.put("os", os);
