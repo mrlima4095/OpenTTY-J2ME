@@ -280,7 +280,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { new Screen("list", "list.content=Monitor,Process,---,File Explorer,Start a process\nlist.button=Open\nMonitor=execute top monitor;\nProcess=execute top process;\n---=execute htop;\nFile Explorer=execute dir;\nStart a process=execute buff start;"); }
+        else if (mainCommand.equals("htop")) { new Screen("list", "\nlist.\=Monitor,Process\nlist.button=Open\nMonitor=execute top monitor;\nProcess=execute top process;", root); }
         else if (mainCommand.equals("top") || mainCommand.equals("trace")) { return kernel(argument, root); }
         // |
         // Process 
@@ -1117,10 +1117,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command), argument = getArgument(command);
 
         if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new Monitor(mainCommand, root); } 
-        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) {
-            if (argument.equals("")) { } 
-            else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); }
-        } 
+        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); } } 
         else if (mainCommand.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
         else if (mainCommand.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
         else if (mainCommand.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); }
@@ -1152,9 +1149,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String PID = getCommand(argument), collector = getArgument(argument);
 
                     if (PID.equals("")) { }
-                    else if (PID.equals("1")) {
-
-                    }
+                    else if (PID.equals("1")) { return 13; }
                     else if (trace.containsKey(PID)) {
                         if (collector.equals("")) { ((Hashtable) getprocess(PID)).remove("collector"); } 
                         else { ((Hashtable) getprocess(PID)).put("collector", collector); }
@@ -1164,7 +1159,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         else if (mainCommand.equals("new")) {
+            // new <PID> <field> <string|table|vector> [=value]
+            if (argument.equals("")) { return 2; }
 
+            String[] args = splitArgs(argument);
+            if (args.length < 3) { echoCommand("new: missing arguments"); return 2; }
+
+            String PID = args[0], FIELD = args[1], TYPE = args[2].toLowerCase();
+            String VALUE = argument.indexOf('=') != -1 ? getpattern(argument.substring(argument.indexOf('=') + 1).trim()) : null;
+
+            Hashtable PROC = getprocess(PID);
+            if (!existsProcessOrError(PID, PROC)) { return 127; }
+            if (!canWriteProcessOrError(PROC, root)) { return 13; }
+            if (isReservedField(FIELD)) { echoCommand("new: " + FIELD + ": read-only"); return 13; }
+
+            if (TYPE.equals("string")) { PROC.put(FIELD, VALUE == null ? "" : VALUE); }
+            else if (TYPE.equals("table") || TYPE.equals("hashtable")) { PROC.put(FIELD, new Hashtable()); }
+            else if (TYPE.equals("vector")) { PROC.put(FIELD, new Vector()); }
+            else { echoCommand("new: " + TYPE + ": unsupported"); return 127; }
+
+            echoCommand("new: " + PID + "." + FIELD + " created");
         }
         else if (mainCommand.equals("drop")) {
 
