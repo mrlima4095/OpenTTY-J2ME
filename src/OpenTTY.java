@@ -556,7 +556,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); lua.run(argument, argument.equals("") ? nanoContent : getcontent(argument)); }
+        else if (mainCommand.equals("lua")) { 
+            Lua lua = new Lua(this, root);
+            lua.run(argument, argument.equals("") ? nanoContent : getcontent(argument)); 
+        }
         else if (mainCommand.equals("5k")) { echoCommand("1.16 Special - 5k commits at OpenTTY GitHub repository"); }
 
         // API 015 - (Scripts)
@@ -1728,7 +1731,7 @@ class Lua {
     private boolean root;
     private OpenTTY midlet;
     private String PID = null;
-    private long clock = System.currentTimeMillis();
+    private long uptime = System.currentTimeMillis();
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
     private int tokenIndex;
@@ -2568,8 +2571,8 @@ class Lua {
                 requireCache.put(name, (ret == null) ? LUA_NIL : ret);
                 return ret; // pode ser null (nil) ou qualquer objeto/Vector
             }
-            else if (MOD == CLOCK) { return clock - System.currentTimeMillis(); }
-
+            else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
+        
             return null;
         }
     }
