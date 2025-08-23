@@ -726,7 +726,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
                             screen.append(content); 
                         }
-                        else if (type.equals("item")) { new Screen(screen, "screen." + field, root); } 
+                        else if (type.equals("item")) { ITEM(screen, "screen." + field); } 
                         else if (type.equals("spacer")) { 
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
                             screen.append(new Spacer(width, height)); 
@@ -815,9 +815,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (code.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
 
             this.PKG = parseProperties(code); this.root = root; this.node = node; 
-            Screen(screen, node, root);
+            ITEM(screen, node);
         }
-        public Screen(Form screen, String node, boolean root) { 
+        private ITEM(Form screen, String node) { 
             if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
 
             RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); 
