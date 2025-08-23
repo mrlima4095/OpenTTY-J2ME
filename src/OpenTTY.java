@@ -1153,8 +1153,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
                 else { echoCommand(renderJSON(ITEM, 0)); }
             }       
-        }
-        
+        }  
         else if (mainCommand.equals("clean")) {
             if (argument.equals("")) { }
             else {
@@ -1166,6 +1165,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (trace.containsKey(PID)) { if (collector.equals("")) { ((Hashtable) getprocess(PID)).remove("collector"); } else { ((Hashtable) getprocess(PID)).put("collector", collector); } }
                     else { echoCommand("top: clean: " + PID + ": not found"); return 127; }
                 } else { echoCommand("Permission denied!"); return 13; }
+            }
+        }
+        else if (mainCommand.equals("get")) {
+            if (argument.equals("") || args.length < 2) { }
+            else {
+                if (trace.containsKey(args[0])) {
+                    Object hand = getobject(args[0], args[1]);
+
+                    if (hand == null) { echoCommand("top: get: " + args[0] + "." + args[1] + ": not found"); return 127; }
+                    else { getprocess("1").put("hand", hand); }
+                } else { echoCommand("top: get: " + args[0] + ": not found"); return 127; }
+            }
+        }
+        else if (mainCommand.equals("drop")) { getprocess("1").remove("hand"); }
+        else if (mainCommand.equals("hand")) {
+            if (argument.equals("")) { }
+            else if (getobject("1", "hand") == null) { echoCommand("top: hand: no itens on hand"); return 1; }
+            else {
+                Object hand = getobject("1", "hand");
+
+                if (argument.equals("close")) {
+                    if (hand instanceof SocketConnection || hand instanceof ServerSocketConnection || hand instanceof InputStream || hand instanceof OutputStream) {
+                        try { (Connector) hand.close(); }
+                        catch (Exception e) { echoCommand(getCatch(e)); return 1; }
+                    } else { 
+
+                    }
+                } else if (argument.indexOf('=') != -1) {
+
+                }
             }
         }
         else { echoCommand("top: " + mainCommand + ": not found"); return 127; } 
@@ -1306,6 +1335,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
                 screen.setCommandListener(this);
 
+                proc.put("socket", CONN); proc.put("in-stream", IN); proc.put("out-stream", OUT);
                 proc.put("screen", screen);
                 display.setCurrent(screen);
             } else {
@@ -1419,8 +1449,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else {
                 if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
-                start(MOD == SERVER ? "server" : "bind", PID, null, root); sessions.put(port, MOD == SERVER ? "http-cli" : "nobody");
-                ((Hashtable) getprocess(PID)).put("port", port);
+
+                Hashtable proc = genprocess(MOD == SERVER ? "server" : "bind", root, null);
+                proc.put("server", server); proc.put("in-stream", IN); proc.put("out-stream", OUT);
+                trace.put(PID, proc);
+                sessions.put(port, MOD == SERVER ? "http-cli" : "nobody");
 
                 while (trace.containsKey(PID)) {
                     try {
