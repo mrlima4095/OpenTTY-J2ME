@@ -669,7 +669,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument), root)); }
         else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, getcontent(argument), root); }
-        else if (mainCommand.equals("item")) { new Screen(form, "item", argument.equals("clear") ? "clear" : getcontent(argument), root); }
+        else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : getcontent(argument), root); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
 
@@ -679,7 +679,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(env(text)); viewer.addCommand(BACK); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
     // |
     // Interfaces
-    public class Screen implements CommandListener, ItemCommandListener { 
+    public class ItemLoader implements ItemCommandListener {
+        private Hashtable PKG; 
+        private boolean root = false;
+        private Command run; 
+        private StringItem s; 
+        private String node; 
+
+        public ItemLoader(Form screen, String node, String code, boolean root) {
+            if (code == null || code.length() == 0) { return; } 
+            else if (code.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
+
+            this.PKG = parseProperties(code); this.root = root; this.node = node; 
+
+            if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
+
+            RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); 
+            s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); 
+            s.setFont(newFont(getenv(node + ".style", "default"))); 
+            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
+            s.addCommand(RUN); 
+            s.setDefaultCommand(RUN); 
+            s.setItemCommandListener(this); 
+            screen.append(s); 
+        }
+        public void commandAction(Command c, Item item) { if (c == RUN) { processCommand("xterm", true, root); processCommand((String) PKG.get(node + ".cmd"), true, root); } } 
+    }
+    public class Screen implements CommandListener { 
         private Hashtable PKG; 
         private boolean root = false;
         private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3, EDIT = 4; 
@@ -688,13 +714,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private TextBox edit = new TextBox(form.getTitle(), "", 31522, TextField.ANY); 
         private Command BACK, USER, RUN; 
         private TextField INPUT;
-
-        private Hashtable PKG; 
-        private boolean root = false;
-        private Command run; 
-        private StringItem s; 
-        private String node; 
-
 
         public Screen(String type, String code, boolean root) { 
             if (type == null || type.length() == 0 || code == null || code.length() == 0) { return; } 
@@ -726,7 +745,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
                             screen.append(content); 
                         }
-                        else if (type.equals("item")) { ITEM(screen, "screen." + field); } 
+                        else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, code, root); } 
                         else if (type.equals("spacer")) { 
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
                             screen.append(new Spacer(width, height)); 
@@ -809,27 +828,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             }
             else { return; } 
-        } 
-        public Screen(Form screen, String node, String code, boolean root) {
-            if (code == null || code.length() == 0) { return; } 
-            else if (code.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
-
-            this.PKG = parseProperties(code); this.root = root; this.node = node; 
-            ITEM(screen, node);
-        }
-        private void ITEM(Form screen, String node) { 
-            if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
-
-            RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); 
-            s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); 
-            s.setFont(newFont(getenv(node + ".style", "default"))); 
-            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
-            s.addCommand(RUN); 
-            s.setDefaultCommand(RUN); 
-            s.setItemCommandListener(this); 
-            screen.append(s); 
-        } 
-        public void commandAction(Command c, Item item) { if (c == RUN) { processCommand("xterm", true, root); processCommand((String) PKG.get(node + ".cmd"), true, root); } }  
+        }  
         public void commandAction(Command c, Displayable d) { 
             if (c == BACK) { 
                 processCommand("xterm", true, root); 
