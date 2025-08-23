@@ -1180,7 +1180,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("drop")) { getprocess("1").remove("hand"); getprocess("1").remove("hand.from"); }
         else if (mainCommand.equals("hand")) {
-            if (argument.equals("")) { }
+            if (argument.equals("")) { echoCommand(getobject("1", "hand") == null ? "hand empty" : getobject("1", "hand").toString()) }
             else if (getobject("1", "hand") == null) { echoCommand("top: hand: no itens on hand"); return 1; }
             else {
                 Object hand = getobject("1", "hand");
