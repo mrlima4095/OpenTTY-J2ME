@@ -2781,7 +2781,7 @@ class Lua {
         }
         public Object internals(Vector args) throws Exception {
             if (MOD == PRINT) { if (args.isEmpty()) { } else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); } } 
-            else if (MOD == EXEC || MOD == EXECUTE) { if (args.isEmpty()) { } else { int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, root); return MOD == EXEC ? null : STATUS; } }
+            else if (MOD == EXEC || MOD == EXECUTE) { if (args.isEmpty()) { } else { Object STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, root); return MOD == EXEC ? null : STATUS; } }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
                 Vector result = new Vector();
