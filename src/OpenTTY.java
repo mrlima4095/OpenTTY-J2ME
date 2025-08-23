@@ -1804,18 +1804,18 @@ class Lua {
         this.proc = midlet.genprocess("lua", root, null);
         
         Hashtable os = new Hashtable();
-        os.put("execute", new MIDletLuaFunction(EXEC));
-        os.put("getenv", new MIDletLuaFunction(GETENV));
-        os.put("clock", new MIDletLuaFunction(CLOCK));
-        os.put("setlocale", new MIDletLuaFunction(SETLOC));
-        os.put("exit", new MIDletLuaFunction(EXIT));
+        os.put("execute", new GenericLuaFunction(EXEC));
+        os.put("getenv", new GenericLuaFunction(GETENV));
+        os.put("clock", new GenericLuaFunction(CLOCK));
+        os.put("setlocale", new GenericLuaFunction(SETLOC));
+        os.put("exit", new GenericLuaFunction(EXIT));
         
         globals.put("os", os);
-        globals.put("print", new MIDletLuaFunction(PRINT));
-        globals.put("error", new MIDletLuaFunction(ERROR));
-        globals.put("pcall", new MIDletLuaFunction(PCALL));
-        globals.put("require", new MIDletLuaFunction(REQUIRE));
-        globals.put("pairs", new MIDletLuaFunction(PAIRS));
+        globals.put("print", new GenericLuaFunction(PRINT));
+        globals.put("error", new GenericLuaFunction(ERROR));
+        globals.put("pcall", new GenericLuaFunction(PCALL));
+        globals.put("require", new GenericLuaFunction(REQUIRE));
+        globals.put("pairs", new GenericLuaFunction(PAIRS));
     }
     public int run(String name, String code) { 
         proc.put("name", ("lua " + name).trim());
@@ -2754,13 +2754,72 @@ class Lua {
 
     public interface LuaFunction { Object call(Vector args) throws Exception; }
     public class MIDletLuaFunction implements LuaFunction {
-        private int MOD = -1;
 
         MIDletLuaFunction(int type) { MOD = type; }
 
         private Object normalizeArg(Object a) { if (a == LUA_NIL) return null; return a; }
 
+        
+    }
+    public class GenericLuaFunction implements LuaFunction {
+        private Vector params, bodyTokens;
+        private Hashtable closureScope;
+        private int MOD = -1;
+ 
+        GenericLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
+        GenericLuaFunction(int type) { MOD = type; }
+
         public Object call(Vector args) throws Exception {
+            if (MOD != -1) { return internals(args); }
+
+            Hashtable functionScope = new Hashtable();
+            // Inherit from closure scope (simple lexical scoping)
+            for (Enumeration e = closureScope.keys(); e.hasMoreElements();) {
+                String key = (String) e.nextElement();
+                functionScope.put(key, unwrap(closureScope.get(key)));
+            }
+            // Add global scope as fallback
+            for (Enumeration e = globals.keys(); e.hasMoreElements();) {
+                String key = (String) e.nextElement();
+                if (!functionScope.containsKey(key)) { // Don't override local/closure variables
+                    functionScope.put(key, unwrap(globals.get(key)));
+                }
+            }
+
+            // Bind arguments to parameters
+            for (int i = 0; i < params.size(); i++) {
+                String paramName = (String) params.elementAt(i);
+                Object argValue = (i < args.size()) ? args.elementAt(i) : null; // Default to nil if no arg
+                functionScope.put(paramName, argValue == null ? LUA_NIL : argValue);
+            }
+
+            // Save current token state
+            int originalTokenIndex = tokenIndex;
+            Vector originalTokens = tokens;
+
+            // Set tokens to function body
+            tokens = bodyTokens;
+            tokenIndex = 0;
+
+            Object returnValue = null;
+            while (peek().type != EOF) {
+                Object result = statement(functionScope);
+                if (peek().type == EOF && result != null) { // Last statement was a return
+                    returnValue = result;
+                    break;
+                } else if (result != null) { // A return statement was encountered
+                    returnValue = result;
+                    break;
+                }
+            }
+
+            // Restore original token state
+            tokenIndex = originalTokenIndex;
+            tokens = originalTokens;
+
+            return returnValue;
+        }
+        public Object internals(Vector args) throws Exception {
             if (MOD == PRINT) { if (args.isEmpty()) { } else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); } } 
             else if (MOD == EXEC) { if (args.isEmpty()) { } else { return midlet.processCommand(toLuaString(args.elementAt(0)), true, root); } } 
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
@@ -2880,61 +2939,6 @@ class Lua {
 
         
             return null;
-        }
-    }
-    public class GenericLuaFunction implements LuaFunction {
-        private Vector params, bodyTokens;
-        private Hashtable closureScope;
- 
-        GenericLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
-
-        public Object call(Vector args) throws Exception {
-            Hashtable functionScope = new Hashtable();
-            // Inherit from closure scope (simple lexical scoping)
-            for (Enumeration e = closureScope.keys(); e.hasMoreElements();) {
-                String key = (String) e.nextElement();
-                functionScope.put(key, unwrap(closureScope.get(key)));
-            }
-            // Add global scope as fallback
-            for (Enumeration e = globals.keys(); e.hasMoreElements();) {
-                String key = (String) e.nextElement();
-                if (!functionScope.containsKey(key)) { // Don't override local/closure variables
-                    functionScope.put(key, unwrap(globals.get(key)));
-                }
-            }
-
-            // Bind arguments to parameters
-            for (int i = 0; i < params.size(); i++) {
-                String paramName = (String) params.elementAt(i);
-                Object argValue = (i < args.size()) ? args.elementAt(i) : null; // Default to nil if no arg
-                functionScope.put(paramName, argValue == null ? LUA_NIL : argValue);
-            }
-
-            // Save current token state
-            int originalTokenIndex = tokenIndex;
-            Vector originalTokens = tokens;
-
-            // Set tokens to function body
-            tokens = bodyTokens;
-            tokenIndex = 0;
-
-            Object returnValue = null;
-            while (peek().type != EOF) {
-                Object result = statement(functionScope);
-                if (peek().type == EOF && result != null) { // Last statement was a return
-                    returnValue = result;
-                    break;
-                } else if (result != null) { // A return statement was encountered
-                    returnValue = result;
-                    break;
-                }
-            }
-
-            // Restore original token state
-            tokenIndex = originalTokenIndex;
-            tokens = originalTokens;
-
-            return returnValue;
         }
     }
 }
