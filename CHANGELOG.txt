@@ -10,7 +10,6 @@ LTS Edition
 - `passwd [password]`: Change password
 - `sudo [command]`: Run command with superuser permissions
 - `su [user]`: Switch user (root/ you)
-- `build [file]`: Build and run a C2ME source-code
 - `stty [max]`: Set max char range that can be wrote at **stdout**
 - `catch [command]`: run command ignoring exceptions (always exit with code: 0)
 - `lua [file]`: run a Lua script.
