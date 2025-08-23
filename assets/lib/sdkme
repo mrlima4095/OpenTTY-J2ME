@@ -36,7 +36,7 @@ New Project=execute install nano; touch; add list.title=New Project; add list.co
 Save Project=execute x11 quest /home/sdkme;
 File Explorer=execute dir; sdk setxback;
 Build (from nano)=execute time lua nano;
-Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=graphics.lua; yang install; warn Lua 
+Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=math.lua; yang install; set RESOURCE=graphics.lua; yang install; warn Lua libraries downloaded!; false & warn Yang not found
 Documentation=exec sdk setxback & view <title>SmartME Docs</title>\n\n\tLua is a programming language.
 Update SDK=execute sdk; install /home/nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install /home/sdkme; get nano; import /home/sdkme; tick; sdk; warn SmartME was installed the latest version from GitHub;
 About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
