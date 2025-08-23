@@ -2575,13 +2575,36 @@ class Lua {
         while (peek().type == POWER) {
             consume(POWER);
             Object right = factor(scope);
-            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
+            if (!(left instanceof Double) || !(right instanceof Double)) { 
+                throw new ArithmeticException("Arithmetic operation on non-number types."); 
+            }
 
-            double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
-            left = new Double(Math.pow(lVal, rVal)); // Calcula a potência
+            double base = ((Double) left).doubleValue();
+            double exponent = ((Double) right).doubleValue();
+            
+            // Implementação da potência (substitui Math.pow)
+            double result;
+            if (exponent == 0) {
+                result = 1; // Qualquer número elevado a 0 é 1
+            } else if (exponent < 0) {
+                base = 1 / base; // Inverte a base para expoentes negativos
+                exponent = -exponent; // Torna o expoente positivo
+                result = 1;
+                for (int i = 0; i < exponent; i++) {
+                    result *= base; // Multiplica a base pelo resultado
+                }
+            } else {
+                result = 1;
+                for (int i = 0; i < exponent; i++) {
+                    result *= base; // Multiplica a base pelo resultado
+                }
+            }
+            
+            left = new Double(result);
         }
         return left;
     }
+
    
     private Object concatenation(Hashtable scope) throws Exception {
         Object left = arithmetic(scope);
