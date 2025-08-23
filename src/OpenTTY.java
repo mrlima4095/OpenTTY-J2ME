@@ -1178,7 +1178,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else if (argument.indexOf('=') != -1 || args[0].equals("remove")) {
                     if (hand instanceof Hashtable) {
                         int INDEX = argument.indexOf('='); 
-                        if (INDEX == -1) { ((Hashtable) hand).remove(args[1]); }
+                        if (INDEX == -1) { if (args.length > 1) { ((Hashtable) hand).remove(args[1]); } else { return 2; } }
                         else { ((Hashtable) hand).put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } 
                     } 
                 } else { echoCommand("top: hand: item need to be a table"); return 69; }
