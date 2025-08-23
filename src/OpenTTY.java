@@ -349,13 +349,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("who")) { 
             echoCommand("PORT\tADDRESS"); 
             Hashtable sessions = (Hashtable) getobject("1", "sessions");
+            boolean all = argument.indexOf("-a") != -1;
             for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { 
                 String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); 
 
-                if (ADDR.equals("http-cli")) { }
-                else {
-                     echoCommand(PORT + "\t" + ADDR); 
-                }
+                if (!all && (ADDR.equals("http-cli") || ADDR.equals("nobody"))) { }
+                else { echoCommand(PORT + "\t" + ADDR); }
             } 
         }
         // |
