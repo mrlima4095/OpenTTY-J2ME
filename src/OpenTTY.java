@@ -2863,10 +2863,7 @@ class Lua {
                     // Executa até EOF ou até encontrar 'return'
                     while (peek().type != EOF) {
                         Object res = statement(moduleScope);
-                        if (res != null) { // capturou 'return'
-                            ret = res;
-                            break;
-                        }
+                        if (res != null) { ret = res; break; }
                     }
                 } finally {
                     // Restaura estado do parser
