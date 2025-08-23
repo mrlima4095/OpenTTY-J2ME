@@ -1174,11 +1174,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Object hand = getobject(args[0], args[1]);
 
                     if (hand == null) { echoCommand("top: get: " + args[0] + "." + args[1] + ": not found"); return 127; }
-                    else { getprocess("1").put("hand", hand); }
+                    else { getprocess("1").put("hand", hand); getprocess("1").put("hand.from", args[0]); }
                 } else { echoCommand("top: get: " + args[0] + ": not found"); return 127; }
             }
         }
-        else if (mainCommand.equals("drop")) { getprocess("1").remove("hand"); }
+        else if (mainCommand.equals("drop")) { getprocess("1").remove("hand"); getprocess("1").remove("hand.from"); }
         else if (mainCommand.equals("hand")) {
             if (argument.equals("")) { }
             else if (getobject("1", "hand") == null) { echoCommand("top: hand: no itens on hand"); return 1; }
@@ -1186,12 +1186,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Object hand = getobject("1", "hand");
 
                 if (argument.equals("close")) {
-                    if (hand instanceof SocketConnection || hand instanceof ServerSocketConnection || hand instanceof InputStream || hand instanceof OutputStream) {
-                        try { ((Connector) hand).close(); }
-                        catch (Exception e) { echoCommand(getCatch(e)); return 1; }
-                    } else { 
+                    try {
+                        if (hand instanceof StreamConnection) { ((StreamConnection) hand).close(); }
+                        else if (hand instanceof ServerSocketConnection) {
+                            ((ServerSocketConnection) hand).close();
 
-                    }
+                            String PID = (String) getobject("1", "hand.from");
+                            if (trace.containsKey(PID)) {
+                                ((InputStream) getobject(PID, "in-stream")).close();
+                                ((OutputStream) getobject(PID, "out-stream")).close();
+                            }
+                        }
+                        else if (hand instanceof InputStream) {
+                            ((InputStream) hand).close();
+                        } 
+                        else if (hand instanceof OutputStream) {
+                            ((OutputStream) hand).close();
+                        }
+                        else { echoCommand("top: hand: item cannot be closed"); return 69; }
+                    } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
                 } else if (argument.indexOf('=') != -1) {
 
                 }
