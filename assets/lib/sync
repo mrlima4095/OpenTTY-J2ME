@@ -10,11 +10,12 @@ sync=execute x11 list sync; warn Select a Mirror to Connect with GitHub!;
 [ DISPLAY ]
 
 list.title=MIDlet Updater
-list.content=OpenTTY Server,MIDlet Proxy,---,1.16 rc1,---,Download (Beta)
+list.content=OpenTTY Server,MIDlet Proxy,---,1.16 rc1,1.16 rc2,---,Download (Beta)
 
 OpenTTY Server=execute set OLD_QUERY=$QUERY; set QUERY=latest.sh; query socket://$REPO get scripts/latest.sh; run latest.sh; rm latest.sh; set QUERY=$OLD_QUERY; unset $OLD_QUERY;
 MIDlet Proxy=execute clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/latest.sh;
 ---=execute x11 list sync
 1.16 rc1=execute open http://opentty.xyz/repo/dist/1.16/rc1.jar
+1.16 rc2=execute open http://opentty.xyz/repo/dist/1.16/rc2.jar
 ---=execute x11 list sync
 Download (Beta)=execute open http://opentty.xyz/repo/dist/OpenTTY.jar
