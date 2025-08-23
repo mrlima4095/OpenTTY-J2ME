@@ -1180,7 +1180,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("drop")) { getprocess("1").remove("hand"); getprocess("1").remove("hand.from"); }
         else if (mainCommand.equals("hand")) {
-            if (argument.equals("")) { echoCommand(getobject("1", "hand") == null ? "hand empty" : getobject("1", "hand").toString()) }
+            if (argument.equals("")) { echoCommand(getobject("1", "hand") == null ? "hand empty" : getobject("1", "hand").toString()); }
             else if (getobject("1", "hand") == null) { echoCommand("top: hand: no itens on hand"); return 1; }
             else {
                 Object hand = getobject("1", "hand");
@@ -1193,10 +1193,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else if (hand instanceof OutputStream) { ((OutputStream) hand).close(); }
                         else { echoCommand("top: hand: item cannot be closed"); return 69; }
                     } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
-                } else if (argument.indexOf('=') != -1 || argument.startsWith("remove")) {
+                } else if (argument.indexOf('=') != -1 || args[0].equals("remove")) {
                     if (hand instanceof Hashtable) {
                         int INDEX = argument.indexOf('='); 
-                        if (INDEX == -1) { ((Hashtable) hand).remove(argument.substring(6)); }
+                        if (INDEX == -1) { ((Hashtable) hand).remove(args[1]); }
                         else { ((Hashtable) hand).put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } 
                 } else { echoCommand("top: hand: item need to be a table"); return 69; }
             }
