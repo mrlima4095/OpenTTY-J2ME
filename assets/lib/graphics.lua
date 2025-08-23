@@ -20,14 +20,21 @@ function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 
 function graphics.List(config)
 	local title, itens = config["title"], config["itens"]
-	local buffer = "";
+	local content = "";
 
 	os.exec("execute install .graphics-nano-bkp")
 	os.exec("add list.title=" .. title)
 
-	for k,v in pairs(config["itens"])
-		buffer = buffer .. "," .. 
+	for k,v in pairs(config["itens"]) do
+		if buffer == "" then
+			buffer = k
+		else 
+			buffer = buffer .. "," .. k
+		end
+		os.exec("add " .. k .. "=" .. v)
+	end
 
+	os.exec("add " .. buffer)
 	os.exec("execute x11 list nano; get .graphics-nano-bkp")
 
 
