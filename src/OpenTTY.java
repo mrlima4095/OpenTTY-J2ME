@@ -843,7 +843,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String value = INPUT.getString().trim(); 
                     if (value.equals("")) { } 
                     else { 
-                        processCommand("set " + getenv("quest.key") + "=" + env(value), false, root); 
+                        attributes.put(getenv("quest.key"), env(value)); 
                         processCommand("xterm", true, root); 
                         processCommand(getvalue("quest.cmd", "true"), true, root); 
                     } 
@@ -852,7 +852,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String value = edit.getString().trim(); 
                     if (value.equals("")) { }
                     else { 
-                        processCommand("set " + getenv("edit.key") + "=" + env(value), false, root); 
+                        attributes.put(getenv("edit.key"), env(value)); 
                         processCommand("xterm", true, root); 
                         processCommand(getvalue("edit.cmd", "true"), true, root); 
                     } 
