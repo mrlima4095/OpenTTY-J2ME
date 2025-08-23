@@ -704,6 +704,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.append(s); 
         }
         public void commandAction(Command c, Item item) { if (c == RUN) { processCommand("xterm", true, root); processCommand((String) PKG.get(node + ".cmd"), true, root); } } 
+
+        private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
+        private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
+        private String getenv(String key) { return env(getvalue(key, "")); } 
     }
     public class Screen implements CommandListener { 
         private Hashtable PKG; 
