@@ -7,9 +7,7 @@ function math.pow(base, exponent)
     if exponent == 0 then
         return 1
     else 
-        local range = 1
-        
-        while range <= exponent do
+        for i = 1, exponent do
             base = base * base
         end
         
