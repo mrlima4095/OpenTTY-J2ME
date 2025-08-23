@@ -2746,14 +2746,6 @@ class Lua {
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
 
     public interface LuaFunction { Object call(Vector args) throws Exception; }
-    public class MIDletLuaFunction implements LuaFunction {
-
-        MIDletLuaFunction(int type) { MOD = type; }
-
-        private Object normalizeArg(Object a) { if (a == LUA_NIL) return null; return a; }
-
-        
-    }
     public class GenericLuaFunction implements LuaFunction {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
@@ -2761,6 +2753,8 @@ class Lua {
  
         GenericLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
         GenericLuaFunction(int type) { MOD = type; }
+
+        private Object normalizeArg(Object a) { if (a == LUA_NIL) return null; return a; }
 
         public Object call(Vector args) throws Exception {
             if (MOD != -1) { return internals(args); }
