@@ -2500,9 +2500,12 @@ class Lua {
         }
         return left;
     }
-
+    // |
+    // Strings
     private String toLuaString(Object obj) { if (obj == null) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return obj.toString(); }
-
+    private Object concatenation(Hashtable scope) throws Exception { Object left = arithmetic(scope); while (peek().type == CONCAT) { consume(CONCAT); Object right = arithmetic(scope); left = toLuaString(left) + toLuaString(right); } return left; }
+    // |
+    // Arithmetic
     private Object arithmetic(Hashtable scope) throws Exception {
         Object left = term(scope); // Chama o novo método
         while (peek().type == PLUS || peek().type == MINUS) {
@@ -2528,7 +2531,7 @@ class Lua {
 
             if (op.type == MULTIPLY) { left = new Double(lVal * rVal); } 
             else if (op.type == DIVIDE) { if (rVal == 0) { throw new Exception("Division by zero."); } left = new Double(lVal / rVal); } 
-            else if (op.type == MODULO) { if (rVal == 0) throw new Exception("Modulo by zero."); left = new Double(lVal % rVal); }
+            else if (op.type == MODULO) { if (rVal == 0) { throw new Exception("Modulo by zero."); } left = new Double(lVal % rVal); }
         }
         return left;
     }
@@ -2562,12 +2565,9 @@ class Lua {
             } else if (Math.floor(exponent) == exponent) {
                 // Expoente positivo inteiro
                 result = 1;
-                for (int i = 0; i < (int) exponent; i++) {
-                    result *= base;
-                }
-            } else {
-                throw new ArithmeticException("Fractional exponent not supported: " + exponent);
-            }
+                for (int i = 0; i < (int) exponent; i++) { result *= base; }
+            } 
+            else { throw new ArithmeticException("Fractional exponent not supported: " + exponent); }
 
             left = new Double(result);
         }
@@ -2576,16 +2576,7 @@ class Lua {
 
 
    
-    private Object concatenation(Hashtable scope) throws Exception {
-        Object left = arithmetic(scope);
-        while (peek().type == CONCAT) {
-            consume(CONCAT);
-            Object right = arithmetic(scope);
-            left = toLuaString(left) + toLuaString(right);
-        }
-        return left;
-    }
-
+    
     private Object factor(Hashtable scope) throws Exception {
         Token current = peek();
         
