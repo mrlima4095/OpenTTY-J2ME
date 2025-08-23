@@ -2569,28 +2569,36 @@ class Lua {
             double base = ((Double) left).doubleValue();
             double exponent = ((Double) right).doubleValue();
             
-            // Implementação da potência (substitui Math.pow)
             double result;
             if (exponent == 0) {
                 result = 1; // Qualquer número elevado a 0 é 1
-            } else if (exponent < 0) {
-                base = 1 / base; // Inverte a base para expoentes negativos
-                exponent = -exponent; // Torna o expoente positivo
+            } else if (exponent == 0.5) {
+                // Caso especial: raiz quadrada
+                if (base < 0) { throw new ArithmeticException("Square root of negative number."); }
+                result = Math.sqrt(base);
+            } else if (exponent < 0 && Math.floor(exponent) == exponent) {
+                // Expoente negativo inteiro
+                base = 1 / base;
+                exponent = -exponent;
                 result = 1;
-                for (int i = 0; i < exponent; i++) {
-                    result *= base; // Multiplica a base pelo resultado
+                for (int i = 0; i < (int) exponent; i++) {
+                    result *= base;
+                }
+            } else if (Math.floor(exponent) == exponent) {
+                // Expoente positivo inteiro
+                result = 1;
+                for (int i = 0; i < (int) exponent; i++) {
+                    result *= base;
                 }
             } else {
-                result = 1;
-                for (int i = 0; i < exponent; i++) {
-                    result *= base; // Multiplica a base pelo resultado
-                }
+                throw new ArithmeticException("Fractional exponent not supported: " + exponent);
             }
-            
+
             left = new Double(result);
         }
         return left;
     }
+
 
    
     private Object concatenation(Hashtable scope) throws Exception {
