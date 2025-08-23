@@ -1187,7 +1187,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (argument.equals("close")) {
                     if (hand instanceof SocketConnection || hand instanceof ServerSocketConnection || hand instanceof InputStream || hand instanceof OutputStream) {
-                        try { (Connector) hand.close(); }
+                        try { ((Connector) hand).close(); }
                         catch (Exception e) { echoCommand(getCatch(e)); return 1; }
                     } else { 
 
