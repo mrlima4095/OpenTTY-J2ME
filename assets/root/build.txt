@@ -123,3 +123,4 @@
 [2025-1.16-02x56]	Lua v2 - Improved RunTime
 [2025-1.16-02x57]	Screens, Canvas and ITEM's reading process caller permissions
 [2025-1.16-02x58]	Moved Sessions Map<> into Virtual Process
+[2025-1.16-02x59]	Improved ITEM's
