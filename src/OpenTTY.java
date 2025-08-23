@@ -1197,12 +1197,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 ((OutputStream) getobject(PID, "out-stream")).close();
                             }
                         }
-                        else if (hand instanceof InputStream) {
-                            ((InputStream) hand).close();
-                        } 
-                        else if (hand instanceof OutputStream) {
-                            ((OutputStream) hand).close();
-                        }
+                        else if (hand instanceof InputStream) { ((InputStream) hand).close(); } 
+                        else if (hand instanceof OutputStream) { ((OutputStream) hand).close(); }
                         else { echoCommand("top: hand: item cannot be closed"); return 69; }
                     } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
                 } else if (argument.indexOf('=') != -1) {
