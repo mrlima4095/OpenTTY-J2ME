@@ -2,14 +2,14 @@ local graphics = {}
 
 graphics["version"] = "1.0"
 
-function graphics.Alert(message) return os.execute("warn " .. message) end
-function graphics.Gauge(message) return os.execute("x11 gauge " .. message) end
+function graphics.Alert(message) os.execute("warn " .. message) end
+function graphics.Gauge(message) os.execute("x11 gauge " .. message) end
 
 -- Screen MODs
-function graphics.SetTitle(text) return os.execute("title " .. text) end
-function graphics.WindowTitle(text) return os.execute("x11 title " .. text) end
+function graphics.SetTitle(text) os.execute("title " .. text) end
+function graphics.WindowTitle(text) os.execute("x11 title " .. text) end
 
-function graphics.SetTicker(message) return os.execute("x11 tick " .. message) end
+function graphics.SetTicker(message) os.execute("x11 tick " .. message) end
 
 -- Screen Stacking
 function graphics.SaveWindow(name) return os.execute("x11 set " + name) end
