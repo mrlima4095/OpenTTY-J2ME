@@ -682,7 +682,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public class ItemLoader implements ItemCommandListener {
         private Hashtable PKG; 
         private boolean root = false;
-        private Command run; 
+        private Command RUN; 
         private StringItem s; 
         private String node; 
 
@@ -712,7 +712,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Form screen = new Form(form.getTitle()); 
         private List list = new List(form.getTitle(), List.IMPLICIT); 
         private TextBox edit = new TextBox(form.getTitle(), "", 31522, TextField.ANY); 
-        private Command BACK, USER, RUN; 
+        private Command BACK, USER; 
         private TextField INPUT;
 
         public Screen(String type, String code, boolean root) { 
