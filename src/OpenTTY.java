@@ -1139,7 +1139,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String PID = getCommand(argument), collector = getArgument(argument);
 
                     if (PID.equals("")) { }
-                    else if (PID.equals("1")) { return 13; }
+                    else if (PID.equals("1") || PID.equals("2")) { return 13; }
                     else if (trace.containsKey(PID)) { if (collector.equals("")) { ((Hashtable) getprocess(PID)).remove("collector"); } else { ((Hashtable) getprocess(PID)).put("collector", collector); } }
                     else { echoCommand("top: clean: " + PID + ": not found"); return 127; }
                 } else { echoCommand("Permission denied!"); return 13; }
@@ -1177,7 +1177,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (hand instanceof Hashtable) {
                         int INDEX = argument.indexOf('='); 
                         if (INDEX == -1) { ((Hashtable) hand).remove(args[1]); }
-                        else { ((Hashtable) hand).put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } 
+                        else { ((Hashtable) hand).put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } 
+                    } 
                 } else { echoCommand("top: hand: item need to be a table"); return 69; }
             }
         }
@@ -1899,24 +1900,38 @@ class Lua {
 
     
             // Strings
-            if (c == '"') {
-                StringBuffer sb = new StringBuffer(); i++;  
+            if (c == '"' || c == '\'') {
+                char quoteChar = c; // Armazena o tipo de aspas
+                StringBuffer sb = new StringBuffer(); 
+                i++; // Pula a aspa inicial
 
-
-                while (i < code.length() && code.charAt(i) != '"') { sb.append(code.charAt(i)); i++; }
-                if (i < code.length() && code.charAt(i) == '"') { i++; }
+                while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; }
+                if (i < code.length() && code.charAt(i) == quoteChar) { i++; }
 
                 tokens.addElement(new Token(STRING, sb.toString()));
                 continue;
             }
-    
-            // Identificadores e palavras-chave
-            if (isLetter(c)) {
+
+            // Suporte para strings de bloco com [[ e ]]
+            if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') {
+                i += 2; // Pula [[
                 StringBuffer sb = new StringBuffer();
-                while (i < code.length() && isLetterOrDigit(code.charAt(i))) {
+                while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) {
                     sb.append(code.charAt(i));
                     i++;
                 }
+                if (i + 1 < code.length()) { 
+                    i += 2; // Pula ]]
+                }
+                tokens.addElement(new Token(STRING, sb.toString()));
+                continue;
+            }
+
+            // Identificadores e palavras-chave
+            if (isLetter(c)) {
+                StringBuffer sb = new StringBuffer();
+                while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; }
+
                 String word = sb.toString();
                 int type = IDENTIFIER;
                 if (word.equals("true")) type = BOOLEAN;
