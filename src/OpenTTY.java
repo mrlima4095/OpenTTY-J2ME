@@ -817,7 +817,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             this.PKG = parseProperties(code); this.root = root; this.node = node; 
             ITEM(screen, node);
         }
-        private ITEM(Form screen, String node) { 
+        private void ITEM(Form screen, String node) { 
             if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
 
             RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); 
