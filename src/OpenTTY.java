@@ -1787,7 +1787,7 @@ class Lua {
 
     // Token types
     public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9;
-    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41;
+    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42;
     private static final Object LUA_NIL = new Object();
 
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
@@ -1924,6 +1924,7 @@ class Lua {
             if (c == '(') { tokens.addElement(new Token(LPAREN, "(")); i++; continue; }
             if (c == ')') { tokens.addElement(new Token(RPAREN, ")")); i++; continue; }
             if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; continue; }
+            if (c == '^') { tokens.addElement(new Token(POWER, "^")); i++; continue; }
     
             if (c == '=') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } else { tokens.addElement(new Token(ASSIGN, "=")); i++; } continue; }
             if (c == '~') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } else { throw new Exception("Unexpected character '~'"); } continue; }
@@ -2516,29 +2517,25 @@ class Lua {
         return obj.toString();
     }
     private Object arithmetic(Hashtable scope) throws Exception {
-        Object left = term(scope);
+        Object left = exponentiation(scope); // Chama o novo método
         while (peek().type == PLUS || peek().type == MINUS) {
             Token op = consume();
-            Object right = term(scope);
-            if (!(left instanceof Double) || !(right instanceof Double)) {
-                throw new ArithmeticException("Arithmetic operation on non-number types.");
-            }
+            Object right = exponentiation(scope); // Chama o novo método
+            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
 
             double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
-
             if (op.type == PLUS) { left = new Double(lVal + rVal); } 
             else if (op.type == MINUS) { left = new Double(lVal - rVal); }
         }
         return left;
     }
+   
     private Object term(Hashtable scope) throws Exception {
         Object left = factor(scope);
         while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
             Token op = consume();
             Object right = factor(scope);
-            if (!(left instanceof Double) || !(right instanceof Double)) {
-                throw new ArithmeticException("Arithmetic operation on non-number types.");
-            }
+            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
             double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
 
             if (op.type == MULTIPLY) { left = new Double(lVal * rVal); } 
@@ -2547,6 +2544,19 @@ class Lua {
         }
         return left;
     }
+    private Object exponentiation(Hashtable scope) throws Exception {
+        Object left = factor(scope);
+        while (peek().type == POWER) {
+            consume(POWER);
+            Object right = factor(scope);
+            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
+
+            double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
+            left = new Double(Math.pow(lVal, rVal)); // Calcula a potência
+        }
+        return left;
+    }
+   
     private Object concatenation(Hashtable scope) throws Exception {
         Object left = arithmetic(scope);
         while (peek().type == CONCAT) {
@@ -2556,9 +2566,10 @@ class Lua {
         }
         return left;
     }
+
     private Object factor(Hashtable scope) throws Exception {
         Token current = peek();
-
+        
         if (current.type == NUMBER) { return consume(NUMBER).value; } 
         else if (current.type == STRING) { return consume(STRING).value; } 
         else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
