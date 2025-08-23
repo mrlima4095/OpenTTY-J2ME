@@ -20,10 +20,12 @@ function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 
 function graphics.List(config)
 	local title, itens = config["title"], config["itens"]
-	local content = "";
+	local content = ""
 
 	os.exec("execute install .graphics-nano-bkp")
 	os.exec("add list.title=" .. title)
+	
+	if config["label"] ~= nil then os.exec("add list.button=" .. config["label"]) end
 
 	for k,v in pairs(config["itens"]) do
 		if buffer == "" then
