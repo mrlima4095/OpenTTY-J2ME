@@ -1848,7 +1848,7 @@ class Lua {
             }
     
             if (c == '.') { if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } else { tokens.addElement(new Token(DOT, ".")); i++; continue; } }
-    
+            
             // Números: começa com dígito ou . seguido de dígito (ex: .5)
             if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
                 StringBuffer sb = new StringBuffer();
@@ -1870,6 +1870,30 @@ class Lua {
                 catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
                 continue;
             }
+            if (c == '-' && i + 1 < code.length() && (isDigit(code.charAt(i + 1)) || (code.charAt(i + 1) == '.' && i + 2 < code.length() && isDigit(code.charAt(i + 2))))) {
+                i++; // Pula o sinal negativo
+                StringBuffer sb = new StringBuffer();
+                sb.append('-'); // Adiciona o sinal negativo
+                
+                boolean hasDecimal = false;
+                while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
+                    if (code.charAt(i) == '.') {
+                        if (hasDecimal) break;
+                        // Verifica se ".." logo após o ponto
+                        if (i + 1 < code.length() && code.charAt(i + 1) == '.') break;
+                        hasDecimal = true;
+                    }
+                    sb.append(code.charAt(i));
+                    i++;
+                }
+                try {
+                    double numValue = Double.parseDouble(sb.toString());
+                    tokens.addElement(new Token(NUMBER, new Double(numValue)));
+                } 
+                catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
+                continue;
+            }
+
     
             // Strings
             if (c == '"') {
@@ -2516,6 +2540,7 @@ class Lua {
         }
         return obj.toString();
     }
+
     private Object arithmetic(Hashtable scope) throws Exception {
         Object left = exponentiation(scope); // Chama o novo método
         while (peek().type == PLUS || peek().type == MINUS) {
@@ -2529,13 +2554,14 @@ class Lua {
         }
         return left;
     }
-   
     private Object term(Hashtable scope) throws Exception {
-        Object left = factor(scope);
+        Object left = exponentiation(scope); // Agora chama exponentiation em vez de factor
         while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
             Token op = consume();
-            Object right = factor(scope);
-            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
+            Object right = exponentiation(scope); // Agora chama exponentiation em vez de factor
+            if (!(left instanceof Double) || !(right instanceof Double)) {
+                throw new ArithmeticException("Arithmetic operation on non-number types.");
+            }
             double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
 
             if (op.type == MULTIPLY) { left = new Double(lVal * rVal); } 
