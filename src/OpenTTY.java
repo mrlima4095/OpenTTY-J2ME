@@ -1936,8 +1936,7 @@ class Lua {
 
                 String word = sb.toString();
                 int type = IDENTIFIER;
-                if (word.equals("true")) type = BOOLEAN;
-                else if (word.equals("false")) type = BOOLEAN;
+                if (word.equals("true") || word.equals("false")) type = BOOLEAN;
                 else if (word.equals("nil")) type = NIL;
                 else if (word.equals("and")) type = AND;
                 else if (word.equals("or")) type = OR;
