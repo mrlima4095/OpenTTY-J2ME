@@ -2483,24 +2483,8 @@ class Lua {
     }
 
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
-    private Object logicalOr(Hashtable scope) throws Exception {
-        Object left = logicalAnd(scope);
-        while (peek().type == OR) {
-            consume(OR);
-            Object right = logicalAnd(scope);
-            left = new Boolean(isTruthy(left) || isTruthy(right));
-        }
-        return left;
-    }
-    private Object logicalAnd(Hashtable scope) throws Exception {
-        Object left = comparison(scope);
-        while (peek().type == AND) {
-            consume(AND);
-            Object right = comparison(scope);
-            left = new Boolean(isTruthy(left) && isTruthy(right));
-        }
-        return left;
-    }
+    private Object logicalOr(Hashtable scope) throws Exception { Object left = logicalAnd(scope); while (peek().type == OR) { consume(OR); Object right = logicalAnd(scope); left = new Boolean(isTruthy(left) || isTruthy(right)); } return left; }
+    private Object logicalAnd(Hashtable scope) throws Exception { Object left = comparison(scope); while (peek().type == AND) { consume(AND); Object right = comparison(scope); left = new Boolean(isTruthy(left) && isTruthy(right)); } return left; }
     private Object comparison(Hashtable scope) throws Exception {
         Object left = concatenation(scope); // chama concatenation antes da comparação
         while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
@@ -2517,16 +2501,7 @@ class Lua {
         return left;
     }
 
-    private String toLuaString(Object obj) {
-        if (obj == null) { return "nil"; }
-        if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; }
-        if (obj instanceof Double) {
-            double d = ((Double)obj).doubleValue();
-            if (d == (long)d) return String.valueOf((long)d);
-            return String.valueOf(d);
-        }
-        return obj.toString();
-    }
+    private String toLuaString(Object obj) { if (obj == null) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return obj.toString(); }
 
     private Object arithmetic(Hashtable scope) throws Exception {
         Object left = term(scope); // Chama o novo método
@@ -2815,7 +2790,7 @@ class Lua {
         }
         public Object internals(Vector args) throws Exception {
             if (MOD == PRINT) { if (args.isEmpty()) { } else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); } } 
-            else if (MOD == EXEC || MOD == EXECUTE) { if (args.isEmpty()) { } else { int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, root); return MOD == EXEC ? null : STATUS } }
+            else if (MOD == EXEC || MOD == EXECUTE) { if (args.isEmpty()) { } else { int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, root); return MOD == EXEC ? null : STATUS; } }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
                 Vector result = new Vector();
