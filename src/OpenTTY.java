@@ -346,17 +346,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster") || mainCommand.equals("bind") || mainCommand.equals("server")) { new Connect(mainCommand, argument, root); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
-        else if (mainCommand.equals("who")) { 
-            echoCommand("PORT\tADDRESS"); 
-            Hashtable sessions = (Hashtable) getobject("1", "sessions");
-            boolean all = argument.indexOf("-a") != -1;
-            for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { 
-                String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); 
-
-                if (!all && (ADDR.equals("http-cli") || ADDR.equals("nobody"))) { }
-                else { echoCommand(PORT + "\t" + ADDR); }
-            } 
-        }
+        else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); Hashtable sessions = (Hashtable) getobject("1", "sessions"); boolean all = argument.indexOf("-a") != -1; for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); if (!all && (ADDR.equals("http-cli") || ADDR.equals("nobody"))) { } else { echoCommand(PORT + "\t" + ADDR); } } }
         // |
         // IP Tools
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
