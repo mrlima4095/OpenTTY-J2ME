@@ -1900,34 +1900,9 @@ class Lua {
                 continue;
             }
 
-    
             // Strings
-            if (c == '"' || c == '\'') {
-                char quoteChar = c; // Armazena o tipo de aspas
-                StringBuffer sb = new StringBuffer(); 
-                i++; // Pula a aspa inicial
-
-                while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; }
-                if (i < code.length() && code.charAt(i) == quoteChar) { i++; }
-
-                tokens.addElement(new Token(STRING, sb.toString()));
-                continue;
-            }
-
-            // Suporte para strings de bloco com [[ e ]]
-            if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') {
-                i += 2; // Pula [[
-                StringBuffer sb = new StringBuffer();
-                while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) {
-                    sb.append(code.charAt(i));
-                    i++;
-                }
-                if (i + 1 < code.length()) { 
-                    i += 2; // Pula ]]
-                }
-                tokens.addElement(new Token(STRING, sb.toString()));
-                continue;
-            }
+            if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString())); continue; }
+            if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString())); continue; }
 
             // Identificadores e palavras-chave
             if (isLetter(c)) {
@@ -2513,7 +2488,7 @@ class Lua {
 
         return null;
     }
-    
+
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
     private Object logicalOr(Hashtable scope) throws Exception {
         Object left = logicalAnd(scope);
@@ -2533,7 +2508,6 @@ class Lua {
         }
         return left;
     }
-
     private Object comparison(Hashtable scope) throws Exception {
         Object left = concatenation(scope); // chama concatenation antes da comparação
         while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
@@ -2549,6 +2523,7 @@ class Lua {
         }
         return left;
     }
+
     private String toLuaString(Object obj) {
         if (obj == null) { return "nil"; }
         if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; }
@@ -2561,10 +2536,10 @@ class Lua {
     }
 
     private Object arithmetic(Hashtable scope) throws Exception {
-        Object left = exponentiation(scope); // Chama o novo método
+        Object left = term(scope); // Chama o novo método
         while (peek().type == PLUS || peek().type == MINUS) {
             Token op = consume();
-            Object right = exponentiation(scope); // Chama o novo método
+            Object right = term(scope); // Chama o novo método
             if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
 
             double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
