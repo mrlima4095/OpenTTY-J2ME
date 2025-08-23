@@ -1805,10 +1805,10 @@ class Lua {
         
         Hashtable os = new Hashtable();
         String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
-        for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new GenericLuaFunction(loaders[i])); } globals.put("os", os);
+        for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
         
         funcs = new String[] { "print", "error", "pcall", "require", "pairs" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS };
-        for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new GenericLuaFunction(loaders[i])); }
+        for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
     }
     public int run(String name, String code) { 
         proc.put("name", ("lua " + name).trim());
@@ -2109,7 +2109,7 @@ class Lua {
                 }
         
                 // Cria a função definida pelo usuário e salva no scope atual (local)
-                GenericLuaFunction func = new GenericLuaFunction(params, bodyTokens, scope);
+                LuaFunction func = new LuaFunction(params, bodyTokens, scope);
                 scope.put(funcName, func);
                 return null;
             } else {
@@ -2474,7 +2474,7 @@ class Lua {
             if (depth > 0) { bodyTokens.addElement(token); }
         }
 
-        GenericLuaFunction func = new GenericLuaFunction(params, bodyTokens, scope);
+        LuaFunction func = new LuaFunction(params, bodyTokens, scope);
 
         if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
         else { scope.put(funcName, func); }
@@ -2745,14 +2745,13 @@ class Lua {
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
 
-    public interface LuaFunction { Object call(Vector args) throws Exception; }
     public class LuaFunction {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
         private int MOD = -1;
  
-        GenericLuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
-        GenericLuaFunction(int type) { MOD = type; }
+        LuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
+        LuaFunction(int type) { MOD = type; }
 
         private Object normalizeArg(Object a) { if (a == LUA_NIL) return null; return a; }
 
