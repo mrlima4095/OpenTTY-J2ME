@@ -2813,7 +2813,7 @@ class Lua {
             else if (MOD == EXIT) {
                 if (args.isEmpty()) { throw new Error(); }
                 else {
-                    status = new Integer(args.elementAt(0));
+                    status = Integer.parseInt(args.elementAt(0));
                 }
             }
 
