@@ -2,7 +2,7 @@ local math = {}
 
 function math.abs(x) 
 	if x < 0 then
-		return x - x + 0-(x)
+		return 0-(x)
 	else 
 		return x
 	end
