@@ -17,10 +17,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
-    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), sessions = new Hashtable(), 
-                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
+    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
+                     aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16-02x57"; 
+    private String logs = "", path = "/home/", build = "2025-1.16-02x58"; 
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     private Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -346,7 +346,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster") || mainCommand.equals("bind") || mainCommand.equals("server")) { new Connect(mainCommand, argument, root); }
         // |
         else if (mainCommand.equals("wrl")) { return wireless(argument); }
-        else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); echoCommand(PORT + "\t" + ADDR); } }
+        else if (mainCommand.equals("who")) { 
+            echoCommand("PORT\tADDRESS"); 
+            Hashtable sessions = (Hashtable) getobject("1", "sessions");
+            for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { 
+                String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); 
+
+                if (ADDR.equals("http-cli")) { }
+                else {
+                     echoCommand(PORT + "\t" + ADDR); 
+                }
+            } 
+        }
         // |
         // IP Tools
         else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
@@ -1076,10 +1087,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (trace.containsKey(pid)) { return 68; }
             else if (app.equals("sh")) { 
+                Hashtable sessions = new Hashtable();
+                sessions.put(pid, "127.0.0.1");
+
                 proc.put("stack", new Vector());
                 proc.put("history", new Vector()); 
-                
-                sessions.put(pid, "127.0.0.1"); 
+                proc.put("sessions", sessions);
             }
             else if (app.equals("x11-wm")) { 
                 proc.put("saves", new Hashtable()); 
@@ -1246,6 +1259,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private ServerSocketConnection server = null;
         private InputStream IN; private OutputStream OUT;
         private String PID = genpid(), DB, address, port;
+        private Hashtable sessions = (Hashtable) getobject("1", "sessions");
 
         private int start;
         private String[] wordlist;
@@ -1763,10 +1777,8 @@ class Lua {
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     // Token types
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, SETLOC = 7;
-    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, 
-                         OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, 
-                         LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, WAIT, SETLOC = 8;
+    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39;
     private static final Object LUA_NIL = new Object();
 
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
@@ -1787,6 +1799,7 @@ class Lua {
         globals.put("error", new MIDletLuaFunction(ERROR));
         globals.put("pcall", new MIDletLuaFunction(PCALL));
         globals.put("require", new MIDletLuaFunction(REQUIRE));
+        globals.put("wait", new MIDletLuaFunction(WAIT));
     }
     public void run(String name, String code) { 
         proc.put("name", ("lua " + name).trim());
@@ -1922,7 +1935,7 @@ class Lua {
 
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
-        
+
         if (current.type == IDENTIFIER) {
             // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
             int la = 0;
@@ -2617,6 +2630,7 @@ class Lua {
                 return ret; // pode ser null (nil) ou qualquer objeto/Vector
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
+            else if (MOD == WAIT) { if (args.isEmpty()) { } else { Thread.sleep(Integer.parseInt(toLuaString(args.elementAt(0)))); } }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
         
             return null;
