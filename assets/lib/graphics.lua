@@ -21,9 +21,10 @@ function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 function graphics.List(config)
 	local content, buffer = "", ""
 
-	local function append(item, key, ) if config[key] ~= nil then content = content .. "\n" .. text .. "=" .. config[key] end end
+	local function append(item, key) if config[key] ~= nil then content = content .. "\n" .. text .. "=" .. config[key] end end
 
-    append("list.title", "title", )
+    append("list.title", "title")
+    append("list.button", "label")
 
 	for k,v in pairs(config["itens"]) do
 		if buffer == "" then
