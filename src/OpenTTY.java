@@ -1807,14 +1807,8 @@ class Lua {
         String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }, loaders = new String[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new GenericLuaFunction(loaders[i])); } globals.put("os", os);
         
-        funcs = new String[] { "print", "error", "pcall", "require", "pairs" }, loaders = new String[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS };
+        funcs = new String[] { "print", "error", "pcall", "require", "pairs" }; loaders = new String[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new GenericLuaFunction(loaders[i])); }
-
-        globals.put("print", new GenericLuaFunction(PRINT));
-        globals.put("error", new GenericLuaFunction(ERROR));
-        globals.put("pcall", new GenericLuaFunction(PCALL));
-        globals.put("require", new GenericLuaFunction(REQUIRE));
-        globals.put("pairs", new GenericLuaFunction(PAIRS));
     }
     public int run(String name, String code) { 
         proc.put("name", ("lua " + name).trim());
