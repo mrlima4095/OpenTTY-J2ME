@@ -1810,8 +1810,8 @@ class Lua {
             this.tokens = tokenize(code); 
             
             while (peek().type != EOF) { 
-                if (midlet.trace.containsKey(PID)) { statement(globals); } 
-                else { throw new RuntimeException("Process killed"); } 
+                statement(globals); 
+                
             }
         } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
 
@@ -1938,6 +1938,8 @@ class Lua {
 
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
+        
+        if (midlet.trace.containsKey(PID)) { } else { throw new RuntimeException("Process killed"); } 
 
         if (current.type == IDENTIFIER) {
             // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
