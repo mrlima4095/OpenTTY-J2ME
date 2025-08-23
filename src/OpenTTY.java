@@ -1781,8 +1781,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 // |
 // Lua Runtime
 class Lua {
-    private boolean root;
-    private OpenTTY midlet;
+    public boolean root;
+    public OpenTTY midlet;
     private String PID = null;
     private long uptime = System.currentTimeMillis();
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
@@ -2574,9 +2574,6 @@ class Lua {
         return left;
     }
 
-
-   
-    
     private Object factor(Hashtable scope) throws Exception {
         Token current = peek();
         
