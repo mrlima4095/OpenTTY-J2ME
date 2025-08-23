@@ -1804,13 +1804,12 @@ class Lua {
         this.proc = midlet.genprocess("lua", root, null);
         
         Hashtable os = new Hashtable();
-        os.put("execute", new GenericLuaFunction(EXEC));
-        os.put("getenv", new GenericLuaFunction(GETENV));
-        os.put("clock", new GenericLuaFunction(CLOCK));
-        os.put("setlocale", new GenericLuaFunction(SETLOC));
-        os.put("exit", new GenericLuaFunction(EXIT));
+        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }, loaders = new String[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
+        for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new GenericLuaFunction(loaders[i])); } globals.put("os", os);
         
-        globals.put("os", os);
+        funcs = new String[] { "print", "error", "pcall", "require", "pairs" }, loaders = new String[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS };
+        for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new GenericLuaFunction(loaders[i])); }
+
         globals.put("print", new GenericLuaFunction(PRINT));
         globals.put("error", new GenericLuaFunction(ERROR));
         globals.put("pcall", new GenericLuaFunction(PCALL));
