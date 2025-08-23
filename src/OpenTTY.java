@@ -1777,8 +1777,8 @@ class Lua {
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     // Token types
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, WAIT, SETLOC = 8;
-    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, WAIT, SETLOC = 8, PAIRS = 9;
+    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41;
     private static final Object LUA_NIL = new Object();
 
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
@@ -1800,6 +1800,7 @@ class Lua {
         globals.put("pcall", new MIDletLuaFunction(PCALL));
         globals.put("require", new MIDletLuaFunction(REQUIRE));
         globals.put("wait", new MIDletLuaFunction(WAIT));
+        globals.put("pairs", new MIDletLuaFunction(PAIRS));
     }
     public void run(String name, String code) { 
         proc.put("name", ("lua " + name).trim());
@@ -1898,6 +1899,8 @@ class Lua {
                 else if (word.equals("return")) type = RETURN;
                 else if (word.equals("function")) type = FUNCTION;
                 else if (word.equals("local")) type = LOCAL;
+                else if (word.equals("for")) type = FOR;
+                else if (word.equals("in")) type = IN;
 
                 tokens.addElement(new Token(type, word));
                 continue;
@@ -2049,7 +2052,8 @@ class Lua {
 
 
         else if (current.type == IF) { return ifStatement(scope); } 
-        else if (current.type == WHILE) { return whileStatement(scope); } 
+        else if (current.type == WHILE) { return whileStatement(scope); }
+        else if (current.type == FOR) { return forStatement(scope); }
         else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
         else if (current.type == FUNCTION) { return functionDefinition(scope); } 
         else if (current.type == LOCAL) {
@@ -2208,7 +2212,7 @@ class Lua {
                 int depth = 1;
                 while (depth > 0) {
                     Token token = consume();
-                    if (token.type == IF || token.type == WHILE || token.type == FUNCTION) depth++;
+                    if (token.type == IF || token.type == WHILE || token.type == FUNCTION || token.type == FOR) depth++;
                     else if (token.type == END) depth--;
                     else if (token.type == EOF) throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
                 }
@@ -2226,7 +2230,7 @@ class Lua {
                     int depth = 1;
                     while (depth > 0) {
                         Token token = consume();
-                        if (token.type == IF || token.type == WHILE || token.type == FUNCTION) depth++;
+                        if (token.type == IF || token.type == WHILE || token.type == FUNCTION || token.type == FOR) depth++;
                         else if (token.type == END) depth--;
                         else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
                     }
@@ -2242,6 +2246,165 @@ class Lua {
 
         if (!endAlreadyConsumed) consume(END);
         return null;
+    }
+    private Object forStatement(Hashtable scope) throws Exception {
+        consume(FOR);
+
+        // Lookahead simples: se tiver IDENT, '=', é for numérico
+        if (peek().type == IDENTIFIER) {
+            Token t1 = (Token) peek();
+            // salva estado
+            int save = tokenIndex;
+            String name = (String) consume(IDENTIFIER).value;
+            if (peek().type == ASSIGN) {
+                // ------ for numérico: for i = a, b [, c] do ... end
+                consume(ASSIGN);
+                Object a = expression(scope);
+                consume(COMMA);
+                Object b = expression(scope);
+                Double start = (a instanceof Double) ? (Double) a : new Double(Double.parseDouble(toLuaString(a)));
+                Double stop  = (b instanceof Double) ? (Double) b : new Double(Double.parseDouble(toLuaString(b)));
+                Double step  = new Double(1.0);
+                if (peek().type == COMMA) {
+                    consume(COMMA);
+                    Object c = expression(scope);
+                    step = (c instanceof Double) ? (Double) c : new Double(Double.parseDouble(toLuaString(c)));
+                    if (((Double)step).doubleValue() == 0.0) throw new Exception("for step must not be zero");
+                }
+                consume(DO);
+
+                // Captura corpo até END (com profundidade incluindo FOR)
+                Vector bodyTokens = new Vector();
+                int depth = 1;
+                while (depth > 0) {
+                    Token tk = consume();
+                    if (tk.type == IF || tk.type == WHILE || tk.type == FUNCTION || tk.type == FOR) depth++;
+                    else if (tk.type == END) depth--;
+                    else if (tk.type == EOF) throw new Exception("Unmatched 'for' statement: Expected 'end'");
+                    if (depth > 0) bodyTokens.addElement(tk);
+                }
+
+                double iVal = start.doubleValue();
+                double stopVal = stop.doubleValue();
+                double stepVal = step.doubleValue();
+
+                // Executa corpo reusando bodyTokens a cada iteração
+                while ( (stepVal > 0 && iVal <= stopVal) || (stepVal < 0 && iVal >= stopVal) ) {
+                    scope.put(name, new Double(iVal));
+
+                    // Salva estado atual
+                    int originalTokenIndex = tokenIndex;
+                    Vector originalTokens = tokens;
+
+                    // Usa bodyTokens como programa atual
+                    tokens = bodyTokens;
+                    tokenIndex = 0;
+
+                    Object ret = null;
+                    while (peek().type != EOF) {
+                        ret = statement(scope);
+                        if (ret != null) break; // 'return' no corpo
+                    }
+
+                    // Restaura estado
+                    tokenIndex = originalTokenIndex;
+                    tokens = originalTokens;
+
+                    if (ret != null) return ret;
+
+                    iVal += stepVal;
+                }
+                return null;
+            } else {
+                // ------ for genérico: for k, v in expr do ... end
+                // restaurar estado e parsear nomes corretamente
+                tokenIndex = save;
+                Vector names = new Vector();
+                names.addElement(((Token) consume(IDENTIFIER)).value);
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    names.addElement(((Token) consume(IDENTIFIER)).value);
+                }
+                consume(IN);
+                Object iterSrc = expression(scope);
+                consume(DO);
+
+                // Captura corpo
+                Vector bodyTokens = new Vector();
+                int depth2 = 1;
+                while (depth2 > 0) {
+                    Token tk = consume();
+                    if (tk.type == IF || tk.type == WHILE || tk.type == FUNCTION || tk.type == FOR) depth2++;
+                    else if (tk.type == END) depth2--;
+                    else if (tk.type == EOF) throw new Exception("Unmatched 'for' statement: Expected 'end'");
+                    if (depth2 > 0) bodyTokens.addElement(tk);
+                }
+
+                // Itera: se vier de pairs(t), será Hashtable; se vier Vector de pares, também aceita
+                if (iterSrc instanceof Hashtable) {
+                    Hashtable ht = (Hashtable) iterSrc;
+                    for (Enumeration e = ht.keys(); e.hasMoreElements();) {
+                        Object k = e.nextElement();
+                        Object v = unwrap(ht.get(k));
+                        // bind nomes
+                        if (names.size() >= 1) scope.put((String)names.elementAt(0), (k == null ? LUA_NIL : k));
+                        if (names.size() >= 2) scope.put((String)names.elementAt(1), (v == null ? LUA_NIL : v));
+
+                        // Executa corpo
+                        int originalTokenIndex = tokenIndex;
+                        Vector originalTokens = tokens;
+                        tokens = bodyTokens; tokenIndex = 0;
+
+                        Object ret = null;
+                        while (peek().type != EOF) {
+                            ret = statement(scope);
+                            if (ret != null) break;
+                        }
+
+                        tokenIndex = originalTokenIndex;
+                        tokens = originalTokens;
+                        if (ret != null) return ret;
+                    }
+                } else if (iterSrc instanceof Vector) {
+                    Vector vec = (Vector) iterSrc;
+                    for (int idx = 0; idx < vec.size(); idx++) {
+                        Object item = vec.elementAt(idx);
+                        Object k = null, v = null;
+                        if (item instanceof Vector) {
+                            Vector pair = (Vector) item;
+                            if (pair.size() > 0) k = pair.elementAt(0);
+                            if (pair.size() > 1) v = pair.elementAt(1);
+                        } else {
+                            k = new Double(idx + 1);
+                            v = item;
+                        }
+                        if (names.size() >= 1) scope.put((String)names.elementAt(0), (k == null ? LUA_NIL : k));
+                        if (names.size() >= 2) scope.put((String)names.elementAt(1), (v == null ? LUA_NIL : v));
+
+                        int originalTokenIndex = tokenIndex;
+                        Vector originalTokens = tokens;
+                        tokens = bodyTokens; tokenIndex = 0;
+
+                        Object ret = null;
+                        while (peek().type != EOF) {
+                            ret = statement(scope);
+                            if (ret != null) break;
+                        }
+
+                        tokenIndex = originalTokenIndex;
+                        tokens = originalTokens;
+                        if (ret != null) return ret;
+                    }
+                } else if (iterSrc == null) {
+                    // nada a iterar (nil)
+                } else {
+                    throw new Exception("generic for: unsupported iterator source");
+                }
+                return null;
+            }
+        }
+
+        throw new Exception("Malformed 'for' statement");
     }
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
@@ -2279,8 +2442,9 @@ class Lua {
         while (depth > 0) {
             Token token = consume();
 
-            if (token.type == FUNCTION || token.type == IF || token.type == WHILE) { depth++; } 
-            else if (token.type == END) { depth--; } 
+            // ... dentro do while (depth > 0) que captura bodyTokens
+            if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) { depth++; } 
+            else if (token.type == END) { depth--; }
             else if (token.type == EOF) { throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); }
             
             if (depth > 0) { bodyTokens.addElement(token); }
@@ -2489,8 +2653,8 @@ class Lua {
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
 
-    private void skipIfBodyUntilElsePart() throws Exception { int depth = 1; while (true) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION) depth++; else if (t.type == END) { depth--; if (depth == 0) { tokenIndex--; return; } } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) { tokenIndex--; return; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } }
-    private void skipUntilMatchingEnd() throws Exception { int depth = 1; while (depth > 0) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION) { depth++; } else if (t.type == END) { depth--; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } tokenIndex--; }
+    private void skipIfBodyUntilElsePart() throws Exception { int depth = 1; while (true) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; if (depth == 0) { tokenIndex--; return; } } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) { tokenIndex--; return; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } }
+    private void skipUntilMatchingEnd() throws Exception { int depth = 1; while (depth > 0) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } tokenIndex--; }
 
     private boolean isTruthy(Object value) { if (value == null) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
@@ -2632,6 +2796,17 @@ class Lua {
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == WAIT) { if (args.isEmpty()) { } else { Thread.sleep(Integer.parseInt(toLuaString(args.elementAt(0)))); } }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
+            else if (MOD == PAIRS) {
+                if (args.isEmpty()) { throw new Exception("pairs: table expected"); }
+                
+                Object t = args.elementAt(0);
+                t = (t == LUA_NIL) ? null : t;
+                if (t == null) return null;
+                if (t instanceof Hashtable) return t;            // usamos direto no for-in
+                if (t instanceof Vector) return t;              // também permitimos vetor
+                throw new Exception("pairs: table or vector expected");
+            }
+
         
             return null;
         }
