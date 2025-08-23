@@ -1464,11 +1464,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port " + port); COUNT++; }
 
                         CONN = (SocketConnection) server.acceptAndOpen();
-                        address = CONN.getAddress(); proc.put("out-stream", OUT);
-                        echoCommand("[+] " + address + " connected");
+                        address = CONN.getAddress(); echoCommand("[+] " + address + " connected");
 
                         IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
-                        proc.put("in-stream", IN); 
+                        proc.put("in-stream", IN); proc.put("out-stream", OUT);
 
                         if (MOD == SERVER) {
                             byte[] buffer = new byte[4096];
