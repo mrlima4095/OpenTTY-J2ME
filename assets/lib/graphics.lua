@@ -19,7 +19,7 @@ function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 
 
 function graphics.List(config)
-	local content, buffer = "", ""
+	local content, itens = "", ""
 
 	local function append(item, key) if config[key] ~= nil then content = content .. "\n" .. text .. "=" .. config[key] end end
 
@@ -32,10 +32,10 @@ function graphics.List(config)
 		else 
 			buffer = buffer .. "," .. k
 		end
-		os.exec("add " .. k .. "=" .. v)
+		content = content .. "\n" .. k .. "=" .. v
 	end
-
-	os.exec("add " .. buffer)
+	os.exec("execute install ..graphics-nano-bkp; touch;")
+	os.exec("add " .. content)
 	os.exec("execute x11 list nano; get .graphics-nano-bkp")
 end
 
