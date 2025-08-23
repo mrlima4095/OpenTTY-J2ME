@@ -1188,21 +1188,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (argument.equals("close")) {
                     try {
                         if (hand instanceof StreamConnection) { ((StreamConnection) hand).close(); }
-                        else if (hand instanceof ServerSocketConnection) {
-                            ((ServerSocketConnection) hand).close();
-
-                            String PID = (String) getobject("1", "hand.from");
-                            if (trace.containsKey(PID)) {
-                                ((InputStream) getobject(PID, "in-stream")).close();
-                                ((OutputStream) getobject(PID, "out-stream")).close();
-                            }
-                        }
+                        else if (hand instanceof ServerSocketConnection) { ((ServerSocketConnection) hand).close(); }
                         else if (hand instanceof InputStream) { ((InputStream) hand).close(); } 
                         else if (hand instanceof OutputStream) { ((OutputStream) hand).close(); }
                         else { echoCommand("top: hand: item cannot be closed"); return 69; }
                     } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
-                } else if (argument.indexOf('=') != -1) {
-
+                } else if (argument.indexOf('=') != -1 || argument.startsWith("remove")) {
+                    if (hand instanceof Hashtable) {
+                        int INDEX = argument.indexOf('='); 
+                        if (INDEX == -1) { ((Hashtable) hand).remove(argument.substring(6)); }
+                        else { ((Hashtable) hand).put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } 
+                    } else { echoCommand("top: hand: item need to be a table"); return 69; }
                 }
             }
         }
