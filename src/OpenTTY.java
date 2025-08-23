@@ -1772,12 +1772,12 @@ class Lua {
     private long uptime = System.currentTimeMillis();
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
-    private int tokenIndex;
+    private int tokenIndex, status;
 
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     // Token types
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, WAIT, SETLOC = 8, PAIRS = 9;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9;
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41;
     private static final Object LUA_NIL = new Object();
 
@@ -1793,16 +1793,16 @@ class Lua {
         os.put("getenv", new MIDletLuaFunction(GETENV));
         os.put("clock", new MIDletLuaFunction(CLOCK));
         os.put("setlocale", new MIDletLuaFunction(SETLOC));
+        os.put("exit", new MIDletLuaFunction(EXIT));
         
         globals.put("os", os);
         globals.put("print", new MIDletLuaFunction(PRINT));
         globals.put("error", new MIDletLuaFunction(ERROR));
         globals.put("pcall", new MIDletLuaFunction(PCALL));
         globals.put("require", new MIDletLuaFunction(REQUIRE));
-        globals.put("wait", new MIDletLuaFunction(WAIT));
         globals.put("pairs", new MIDletLuaFunction(PAIRS));
     }
-    public void run(String name, String code) { 
+    public int run(String name, String code) { 
         proc.put("name", ("lua " + name).trim());
         midlet.trace.put(PID, proc);
         
@@ -1811,11 +1811,13 @@ class Lua {
             
             while (peek().type != EOF) { 
                 statement(globals); 
-                
             }
-        } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
+        } 
+        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
+        catch (Error e) { return status; }
 
         midlet.trace.remove(PID);
+        return status;
     }
 
     private Vector tokenize(String code) throws Exception {
@@ -1940,6 +1942,7 @@ class Lua {
         Token current = peek();
         
         if (midlet.trace.containsKey(PID)) { } else { throw new RuntimeException("Process killed"); } 
+        if (status != 0) { throw new Error(); }
 
         if (current.type == IDENTIFIER) {
             // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
@@ -2796,7 +2799,6 @@ class Lua {
                 return ret; // pode ser null (nil) ou qualquer objeto/Vector
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
-            else if (MOD == WAIT) { if (args.isEmpty()) { } else { Thread.sleep(Integer.parseInt(toLuaString(args.elementAt(0)))); } }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
             else if (MOD == PAIRS) {
                 if (args.isEmpty()) { throw new Exception("pairs: table expected"); }
@@ -2807,6 +2809,12 @@ class Lua {
                 if (t instanceof Hashtable) return t;            // usamos direto no for-in
                 if (t instanceof Vector) return t;              // também permitimos vetor
                 throw new Exception("pairs: table or vector expected");
+            }
+            else if (MOD == EXIT) {
+                if (args.isEmpty()) { throw new Error(); }
+                else {
+                    status = new Integer(args.elementAt(0));
+                }
             }
 
         
