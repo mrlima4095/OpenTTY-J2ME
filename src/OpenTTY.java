@@ -1787,7 +1787,7 @@ class Lua {
     private long uptime = System.currentTimeMillis();
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
-    private int tokenIndex, status;
+    public int tokenIndex, status;
 
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
