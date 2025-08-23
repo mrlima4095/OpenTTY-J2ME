@@ -2746,7 +2746,7 @@ class Lua {
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
 
     public interface LuaFunction { Object call(Vector args) throws Exception; }
-    public class GenericLuaFunction implements LuaFunction {
+    public class LuaFunction {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
         private int MOD = -1;
