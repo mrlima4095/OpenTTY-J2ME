@@ -841,7 +841,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (c == USER || c == List.SELECT_COMMAND) { 
                 if (TYPE == QUEST) { 
                     String value = INPUT.getString().trim(); 
-                    if (!value.equals("")) { 
+                    if (value.equals("")) { } 
+                    else { 
                         processCommand("set " + getenv("quest.key") + "=" + env(value), false, root); 
                         processCommand("xterm", true, root); 
                         processCommand(getvalue("quest.cmd", "true"), true, root); 
@@ -849,7 +850,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else if (TYPE == EDIT) { 
                     String value = edit.getString().trim(); 
-                    if (!value.equals("")) { 
+                    if (value.equals("")) { }
+                    else { 
                         processCommand("set " + getenv("edit.key") + "=" + env(value), false, root); 
                         processCommand("xterm", true, root); 
                         processCommand(getvalue("edit.cmd", "true"), true, root); 
