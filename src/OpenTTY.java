@@ -2941,7 +2941,7 @@ class Lua {
         }
         public void commandAction(Command c, Displayable d) {
             if (c == sendCommand) {
-                userInput[0] = textBox.getString(); // Captura o texto digitado
+                userInput[0] = read.getString(); // Captura o texto digitado
                 isCancelled[0] = false; // Não foi cancelado
             } else if (c == backCommand) {
                 isCancelled[0] = true; // Foi cancelado
