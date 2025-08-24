@@ -2907,7 +2907,7 @@ class Lua {
                 final String[] userInput = new String[1];
                 final boolean[] isCancelled = new boolean[1];
 
-                TextBox textBox = new TextBox(midlet.form.getTitle(), 256, TextField.ANY);
+                TextBox textBox = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
             
                 // Adiciona comandos para Send e Back
                 Command sendCommand = new Command("Send", Command.OK, 1);
