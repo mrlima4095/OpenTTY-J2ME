@@ -2907,51 +2907,53 @@ class Lua {
             }
             else if (MOD == EXIT) { if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
             else if (MOD == READ) {
-                // Variáveis para capturar o input do usuário e a ação (cancelar ou enviar)
-                read = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
-                
-                // Adiciona comandos para Send e Back
-                
-                read.addCommand(sendCommand);
-                read.addCommand(backCommand);
-            
-                // Configura o listener para capturar ações do usuário
-                read.setCommandListener(this);
-                Display.getDisplay(midlet).setCurrent(read);
-                // Aguarda a interação do usuário
-                synchronized (midlet) {
-                    while (Display.getDisplay(midlet).getCurrent() == read) {
-                        try {
-                            midlet.wait(); // Aguarda o fechamento da TextBox
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException("Error while waiting for input");
-                        }
-                    }
-                }
-            
-                // Retorna o valor ou nil, dependendo da ação do usuário
-                if (isCancelled[0]) {
-                    return null; // O botão "Back" foi pressionado
-                } else {
-                    return userInput[0]; // Retorna o texto digitado pelo usuário
-                }
+read = new TextBox(
+    args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)),
+    "",
+    256,
+    TextField.ANY
+);
+read.addCommand(sendCommand);
+read.addCommand(backCommand);
+read.setCommandListener(this);
+
+Display.getDisplay(midlet).setCurrent(read);
+
+// Aguarda a interação do usuário
+synchronized (midlet) {
+    // Espera até isCancelled ou userInput serem atualizados pelo commandAction
+    while (!isCancelled[0] && userInput[0] == null) {
+        try {
+            midlet.wait();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Error while waiting for input");
+        }
+    }
+}
+
+// Retorna o valor ou nil, dependendo da ação do usuário
+if (isCancelled[0]) {
+    return null;
+} else {
+    return userInput[0];
+}
             }
         
             return null;
         }
-        public void commandAction(Command c, Displayable d) {
-            if (c == sendCommand) {
-                userInput[0] = read.getString(); // Captura o texto digitado
-                isCancelled[0] = false; // Não foi cancelado
-            } else if (c == backCommand) {
-                isCancelled[0] = true; // Foi cancelado
-            }
-            
-            midlet.processCommand("xterm", true, root);
-            synchronized (midlet) {
-                midlet.notify(); // Notifica a thread principal
-            }
-        }
+public void commandAction(Command c, Displayable d) {
+    if (c == sendCommand) {
+        userInput[0] = read.getString(); // Captura o texto digitado
+        isCancelled[0] = false;
+    } else if (c == backCommand) {
+        isCancelled[0] = true;
+        userInput[0] = null;
+    }
+
+    synchronized (midlet) {
+        midlet.notify(); // Notifica a thread principal
+    }
+}
     }
 }
 // |
