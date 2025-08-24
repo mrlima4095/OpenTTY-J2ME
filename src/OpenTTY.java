@@ -24,8 +24,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
-    private TextField stdin = new TextField("Command", "", 256, TextField.ANY);
-    private StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
+    public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
+    public StringItem stdout = new StringItem("", "Welcome to OpenTTY " + getAppProperty("MIDlet-Version") + "\nCopyright (C) 2025 - Mr. Lima\n");
     private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4),
                     BACK = new Command("Back", Command.BACK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1);
     // |
@@ -1614,11 +1614,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String readStack() { Vector stack = (Vector) getobject("1", "stack"); StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
-    private int deleteFile(String filename) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (CONN.exists()) { CONN.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); return 127; } CONN.close(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { try { filename = filename.substring(6); if (filename.equals("OpenRMS")) { echoCommand("rm: " + filename + ": permission denied"); return 13; } RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); return 127; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return deleteFile(path + filename); } return 0; }
-    private int writeRMS(String filename, byte[] data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
-    private int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { echoCommand(getCatch(e)); return 1; } return 0; }
-    private int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
-    private String loadRMS(String filename) { return read("/home/" + filename); }
+    public int deleteFile(String filename) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (CONN.exists()) { CONN.delete(); } else { echoCommand("rm: " + basename(filename) + ": not found"); return 127; } CONN.close(); } catch (SecurityException e) { echoCommand(getCatch(e)); return 13; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/home/")) { try { filename = filename.substring(6); if (filename.equals("OpenRMS")) { echoCommand("rm: " + filename + ": permission denied"); return 13; } RecordStore.deleteRecordStore(filename); } catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); return 127; } catch (Exception e) { echoCommand(getCatch(e)); return 1; } } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return deleteFile(path + filename); } return 0; }
+    public int writeRMS(String filename, byte[] data) { if (filename == null || filename.length() == 0) { return 2; } else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } else { return writeRMS(path + filename, data); } return 0; }
+    public int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { echoCommand(getCatch(e)); return 1; } return 0; }
+    public int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
+    public String loadRMS(String filename) { return read("/home/" + filename); }
     // |
     // Text Manager
     private int StringEditor(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("-2u")) { nanoContent = nanoContent.toUpperCase(); } else if (mainCommand.equals("-2l")) { nanoContent = nanoContent.toLowerCase(); } else if (mainCommand.equals("-d")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], ""); } else if (mainCommand.equals("-a")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } else if (mainCommand.equals("-r")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], split(argument, ' ')[1]); } else if (mainCommand.equals("-l")) { int i = 0; try { i = Integer.parseInt(argument); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } echoCommand(split(nanoContent, '\n')[i]); } else if (mainCommand.equals("-s")) { int i = 0; try { i = Integer.parseInt(getCommand(argument)); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } Vector lines = new Vector(); String div = getArgument(argument); int start = 0, index; while ((index = nanoContent.indexOf(div, start)) != -1) { lines.addElement(nanoContent.substring(start, index)); start = index + div.length(); } if (start < nanoContent.length()) { lines.addElement(nanoContent.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); if (i >= 0 && i < result.length) { echoCommand(result[i]); } else { echoCommand("null"); return 1; } } else if (mainCommand.equals("-p")) { String[] contentLines = split(nanoContent, '\n'); StringBuffer updatedContent = new StringBuffer(); for (int i = 0; i < contentLines.length; i++) { updatedContent.append(argument).append(contentLines[i]).append("\n"); } nanoContent = updatedContent.toString().trim(); } else if (mainCommand.equals("-v")) { String[] lines = split(nanoContent, '\n'); StringBuffer reversed = new StringBuffer(); for (int i = lines.length - 1; i >= 0; i--) { reversed.append(lines[i]).append("\n"); } nanoContent = reversed.toString().trim(); } else { return 127; } return 0; }
@@ -1786,33 +1786,33 @@ class Lua {
     private long uptime = System.currentTimeMillis();
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
-    private int tokenIndex, status;
-    private Command sendCommand = new Command("Send", Command.OK, 1), backCommand = new Command("Back", Command.BACK, 1);
-    private final String[] userInput = new String[1];
-    private final boolean[] isCancelled = new boolean[1];
-    private TextBox read;
-    
-    // Token types
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, EXECUTE = 10, READ = 11;
+    private int tokenIndex, status = 0;
+    // |
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PARTS = 9, READ = 10, WRITE = 11;
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42;
     private static final Object LUA_NIL = new Object();
-
+    // |
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
-
+    // |
+    // Main
     public Lua(OpenTTY midlet, boolean root) {
         this.midlet = midlet; this.root = root;
         this.tokenIndex = 0; this.PID = midlet.genpid();
         this.proc = midlet.genprocess("lua", root, null);
         
-        Hashtable os = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable();
         String[] funcs = new String[] { "exec", "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, EXECUTE, GETENV, CLOCK, SETLOC, EXIT };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
+
+        funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
+        for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
         
         funcs = new String[] { "print", "error", "pcall", "require", "pairs", "read" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS, READ };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
     }
-    public int run(String name, String code) { 
-        proc.put("name", ("lua " + name).trim());
+    // | (Run Source code)
+    public int run(String source, String code) { 
+        proc.put("name", ("lua " + source).trim());
         midlet.trace.put(PID, proc);
         
         try { 
@@ -1820,7 +1820,7 @@ class Lua {
             
             while (peek().type != EOF) { statement(globals); }
         } 
-        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
+        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
         catch (Error e) { status = 1; }
 
         midlet.trace.remove(PID);
@@ -2738,7 +2738,7 @@ class Lua {
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
 
-    public class LuaFunction implements CommandListener {
+    public class LuaFunction {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
         private int MOD = -1;
@@ -2799,8 +2799,7 @@ class Lua {
             return returnValue;
         }
         public Object internals(Vector args) throws Exception {
-            if (MOD == PRINT) { if (args.isEmpty()) { } else { return midlet.processCommand("echo " + toLuaString(args.elementAt(0)), true, root); } } 
-            else if (MOD == EXEC || MOD == EXECUTE) { if (args.isEmpty()) { } else { Object STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, root); return MOD == EXEC ? null : STATUS; } }
+            if (MOD == PRINT || MOD == EXEC) { if (args.isEmpty()) { } else { return midlet.processCommand((MOD == PRINT ? "echo " : "") + toLuaString(args.elementAt(0), true, root); } }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
                 Vector result = new Vector();
@@ -2896,56 +2895,21 @@ class Lua {
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
-            else if (MOD == PAIRS) {
-                if (args.isEmpty()) { throw new Exception("pairs: table expected"); }
-                
-                Object t = args.elementAt(0);
-                t = (t == LUA_NIL) ? null : t;
-                if (t == null || t instanceof Hashtable || t instanceof Vector) { return t; }
-
-                throw new Exception("pairs: table expected");
-            }
+            else if (MOD == PAIRS) { if (args.isEmpty()) { throw new Exception("pairs: table expected"); } Object t = args.elementAt(0); t = (t == LUA_NIL) ? null : t; if (t == null || t instanceof Hashtable || t instanceof Vector) { return t; } throw new Exception("pairs: table expected"); }
             else if (MOD == EXIT) { if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
-            else if (MOD == READ) {
-                read = new TextBox(
-                    args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)),
-                    "",
-                    256,
-                    TextField.ANY
-                );
-                read.addCommand(sendCommand);
-                read.addCommand(backCommand);
-                read.setCommandListener(this);
+            else if (MOD == READ) { return toLuaString(args.isEmpty() ? "stdout" : args.elementAt(0)).equals("stdout") ? midlet.stdout.getText() : args.elementAt(1) == null ? null : toLuaString(args.elementAt(0)).equals("stdin") ? midlet.stdin.getString() : midlet.getcontent(toLuaString(args.elementAt(0))); }
+            else if (MOD == WRITE) { if (args.isEmpty()) { }
+                else {
+                    String content = toLuaString(args.elementAt(0)), out = args.size() == 1 ? "stdout" : toLuaString(args.elementAt(1));
+                    boolean mode = args.size() > 1 && toLuaString(args.elementAt(2)).equals("a") ? true : false;
 
-                Display.getDisplay(midlet).setCurrent(read);
-
-                // Aguarda a interação do usuário
-                synchronized (midlet) {
-                    // Espera até isCancelled ou userInput serem atualizados pelo commandAction
-                    while (!isCancelled[0] && userInput[0] == null) {
-                        try {
-                            midlet.wait();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException("Error while waiting for input");
-                        }
-                    }
+                    if (out.equals("stdout")) { midlet.stdout.setText(mode ? midlet.stdout.getText() + content : content); }
+                    else if (out.equals("stdin")) { midlet.stdin.setString(mode ? midlet.stdin.getString() + content : content); }
+                    else { midlet.writeRMS(out, mode ? getcontent(out) + content : content); }
                 }
             }
                     
             return null;
-        }
-        public void commandAction(Command c, Displayable d) {
-            if (c == sendCommand) {
-                userInput[0] = read.getString(); // Captura o texto digitado
-                isCancelled[0] = false;
-            } else if (c == backCommand) {
-                isCancelled[0] = true;
-                userInput[0] = null;
-            }
-
-            synchronized (midlet) {
-                midlet.notify(); // Notifica a thread principal
-            } midlet.processCommand("xterm", true, root);
         }
     }
 }
