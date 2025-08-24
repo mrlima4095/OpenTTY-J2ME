@@ -2905,7 +2905,7 @@ class Lua {
 
                     if (out.equals("stdout")) { midlet.stdout.setText(mode ? midlet.stdout.getText() + content : content); }
                     else if (out.equals("stdin")) { midlet.stdin.setString(mode ? midlet.stdin.getString() + content : content); }
-                    else { midlet.writeRMS(out, mode ? getcontent(out) + content : content); }
+                    else { midlet.writeRMS(out, mode ? midlet.getcontent(out) + content : content); }
                 }
             }
                     
