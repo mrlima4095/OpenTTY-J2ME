@@ -2952,7 +2952,7 @@ public void commandAction(Command c, Displayable d) {
 
     synchronized (midlet) {
         midlet.notify(); // Notifica a thread principal
-    }
+    } midlet.processCommand("xterm", true, root)
 }
     }
 }
