@@ -2917,20 +2917,7 @@ class Lua {
             
                 // Configura o listener para capturar ações do usuário
                 textBox.setCommandListener(new CommandListener() {
-                    public void commandAction(Command c, Displayable d) {
-                        if (c == sendCommand) {
-                            userInput[0] = textBox.getString(); // Captura o texto digitado
-                            isCancelled[0] = false; // Não foi cancelado
-                        } else if (c == backCommand) {
-                            isCancelled[0] = true; // Foi cancelado
-                        }
-            
-                        // Fecha a TextBox e retorna ao fluxo principal
-                        Display.getDisplay(midlet).setCurrent(null); // Fecha a TextBox
-                        synchronized (midlet) {
-                            midlet.notify(); // Notifica a thread principal
-                        }
-                    }
+                    
                 });
             
                 // Exibe a TextBox
@@ -2956,6 +2943,19 @@ class Lua {
             }
         
             return null;
+        }
+        public void commandAction(Command c, Displayable d) {
+            if (c == sendCommand) {
+                userInput[0] = textBox.getString(); // Captura o texto digitado
+                isCancelled[0] = false; // Não foi cancelado
+            } else if (c == backCommand) {
+                isCancelled[0] = true; // Foi cancelado
+            }
+            
+            midlet.processCommand("xterm", true, root);
+            synchronized (midlet) {
+                midlet.notify(); // Notifica a thread principal
+            }
         }
     }
 }
