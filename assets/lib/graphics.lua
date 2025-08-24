@@ -18,7 +18,7 @@ function graphics.LoadWindow(name) return os.execute("x11 load " + name) end
 function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 
 
-function graphics.List(config)
+function graphics.BuildList(config)
     local file, content, buffer = "", "", ""
     local itens, internals = config["itens"], {
         ["list.title"] = "title",
@@ -45,6 +45,11 @@ function graphics.List(config)
     end
 
     return os.execute("x11 list -e " .. file .. "\n" .. "list.content=" .. buffer)
+end
+function graphics.BuildScreen(config)
+    local file, fields = "", config["fields"]
+
+    
 end
 
 return graphics 
