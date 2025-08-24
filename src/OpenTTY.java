@@ -2916,7 +2916,7 @@ class Lua {
                 textBox.addCommand(backCommand);
             
                 // Configura o listener para capturar ações do usuário
-                textBox.setCommandListener(this 
+                textBox.setCommandListener(this);
                 // Aguarda a interação do usuário
                 synchronized (midlet) {
                     while (Display.getDisplay(midlet).getCurrent() == textBox) {
