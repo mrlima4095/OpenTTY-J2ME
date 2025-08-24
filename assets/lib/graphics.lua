@@ -19,7 +19,7 @@ function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 
 
 function graphics.List(config)
-	local file, buffer = "", ""
+	local file, content, buffer = "", "", ""
 	local function append(text, key) if config[key] ~= nil then file = file .. "\n" .. text .. "=" .. config[key] end end
 
 	append("list.title", "title")
@@ -29,14 +29,25 @@ function graphics.List(config)
 
 	local itens = config.itens
 	if itens ~= nil then
+	    local 
 		for k,v in pairs(itens) do
-			if buffer == "" then buffer = k .. "=" .. v else buffer = buffer .. "\n" .. k .. "=" .. v end
+			if buffer == "" then 
+			    buffer = k .. "=" .. v 
+			else 
+			    buffer = buffer .. "\n" .. k .. "=" .. v 
+			end
+			
+			if content == "" then
+			    content = k
+			else
+			    content = content .. "," .. k
+			end
 		end
 	else
 		error("missing List itens") 
 	end
 
-	file = file .. "\n" .. buffer
+	file = file .. "\n" .. buffer .. "\n" .. "list.content=" .. content
 
 	os.exec("x11 list -e " .. file)
 end
