@@ -2623,28 +2623,45 @@ class Lua {
             return value;
         }
         else if (current.type == LBRACE) { // Table literal
-            consume(LBRACE);
-            Hashtable table = new Hashtable();
-            int index = 1; // Lua tables podem usar números sequenciais
-            while (peek().type != RBRACE) {
-                Object key = null, value = null;
-                
-                if (peek().type == LBRACKET) { // t[expr] = value
-                    consume(LBRACKET);
-                    key = expression(scope);
-                    consume(RBRACKET);
-                    consume(ASSIGN);
-                    value = expression(scope);
-                } else { // key-value ou array-style
-                    value = expression(scope);
-                    key = new Double(index++);
-                }
-                table.put(key, value == null ? LUA_NIL : value);
-                if (peek().type == COMMA) consume(COMMA);
-            }
-            consume(RBRACE);
-            return table;
+    consume(LBRACE);
+    Hashtable table = new Hashtable();
+    int index = 1; // Lua tables podem usar números sequenciais automaticamente
+
+    while (peek().type != RBRACE) {
+        Object key = null, value = null;
+
+        if (peek().type == IDENTIFIER && peekNext().type == ASSIGN) {
+            // Caso: nome = valor
+            key = consume(IDENTIFIER).value; // Consome o nome
+            consume(ASSIGN); // Consome o '='
+            value = expression(scope); // Avalia o valor
+        } else if (peek().type == LBRACKET) {
+            // Caso: [expr] = valor
+            consume(LBRACKET);
+            key = expression(scope);
+            consume(RBRACKET);
+            consume(ASSIGN);
+            value = expression(scope);
+        } else {
+            // Caso: apenas valores (modo array-style)
+            value = expression(scope);
+            key = new Double(index++); // Chave numérica automática
         }
+
+        table.put(key, value == null ? LUA_NIL : value);
+
+        if (peek().type == COMMA) {
+            consume(COMMA); // Consome a vírgula opcional
+        } else if (peek().type == RBRACE) {
+            break; // Finaliza a tabela
+        } else {
+            throw new Exception("Malformed table syntax.");
+        }
+    }
+
+    consume(RBRACE); // Consome o '}' que fecha a tabela
+    return table;
+}
         throw new Exception("Unexpected token at factor: " + current.value);
     }
 
