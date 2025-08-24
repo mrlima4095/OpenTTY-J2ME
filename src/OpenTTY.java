@@ -1779,7 +1779,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 }
 // |
 // Lua Runtime
-class Lua implements CommandListener, Runnable {
+class Lua {
     private boolean root;
     private OpenTTY midlet;
     private String PID = null;
@@ -2902,7 +2902,59 @@ class Lua implements CommandListener, Runnable {
                 throw new Exception("pairs: table or vector expected");
             }
             else if (MOD == EXIT) { if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
-
+            else if (MOD == READ) {
+                // Variáveis para capturar o input do usuário e a ação (cancelar ou enviar)
+                final String[] userInput = new String[1];
+                final boolean[] isCancelled = new boolean[1];
+            
+                // Criação da TextBox
+                TextBox textBox = new TextBox(args.isEmpty() ? midlet.form.getTitle()bbbbbbblbhkhkkl., "", 256, TextField.ANY);
+            
+                // Adiciona comandos para Send e Back
+                Command sendCommand = new Command("Send", Command.OK, 1);
+                Command backCommand = new Command("Back", Command.BACK, 1);
+                textBox.addCommand(sendCommand);
+                textBox.addCommand(backCommand);
+            
+                // Configura o listener para capturar ações do usuário
+                textBox.setCommandListener(new CommandListener() {
+                    public void commandAction(Command c, Displayable d) {
+                        if (c == sendCommand) {
+                            userInput[0] = textBox.getString(); // Captura o texto digitado
+                            isCancelled[0] = false; // Não foi cancelado
+                        } else if (c == backCommand) {
+                            isCancelled[0] = true; // Foi cancelado
+                        }
+            
+                        // Fecha a TextBox e retorna ao fluxo principal
+                        Display.getDisplay(midlet).setCurrent(null); // Fecha a TextBox
+                        synchronized (midlet) {
+                            midlet.notify(); // Notifica a thread principal
+                        }
+                    }
+                });
+            
+                // Exibe a TextBox
+                Display.getDisplay(midlet).setCurrent(textBox);
+            
+                // Aguarda a interação do usuário
+                synchronized (midlet) {
+                    while (Display.getDisplay(midlet).getCurrent() == textBox) {
+                        try {
+                            midlet.wait(); // Aguarda o fechamento da TextBox
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException("Error while waiting for input", e);
+                        }
+                    }
+                }
+            
+                // Retorna o valor ou nil, dependendo da ação do usuário
+                if (isCancelled[0]) {
+                    return null; // O botão "Back" foi pressionado
+                } else {
+                    return userInput[0]; // Retorna o texto digitado pelo usuário
+                }
+            }
         
             return null;
         }
