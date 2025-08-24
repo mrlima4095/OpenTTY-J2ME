@@ -2733,7 +2733,7 @@ class Lua {
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
 
-    public class LuaFunction {
+    public class LuaFunction implements CommandListener, Runnable  {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
         private int MOD = -1;
@@ -2906,9 +2906,8 @@ class Lua {
                 // Variáveis para capturar o input do usuário e a ação (cancelar ou enviar)
                 final String[] userInput = new String[1];
                 final boolean[] isCancelled = new boolean[1];
-            
-                // Criação da TextBox
-                TextBox textBox = new TextBox(args.isEmpty() ? midlet.form.getTitle()bbbbbbblbhkhkkl., "", 256, TextField.ANY);
+
+                TextBox textBox = new TextBox(args.isEmpty() ? midlet.form.getTitle(), "", 256, TextField.ANY);
             
                 // Adiciona comandos para Send e Back
                 Command sendCommand = new Command("Send", Command.OK, 1);
