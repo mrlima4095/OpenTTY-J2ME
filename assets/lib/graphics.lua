@@ -20,12 +20,11 @@ function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 
 function graphics.List(config)
     local file, content, buffer = "", "", ""
-    local function append(text, key) if config[key] ~= nil then file = file .. "\n" .. text .. "=" .. config[key] end end
     local itens, internals = config["itens"], {
-        "list.title" = "title",
-        "list.button" = "label",
-        "list.back" = "back",
-        "list.icon" = "icon"
+        ["list.title"] = "title",
+        ["list.button"] = "label",
+        ["list.back"] = "back",
+        ["list.icon"] = "icon"
     }
     
     if itens == nil then error("missing List itens") end
