@@ -1779,7 +1779,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 }
 // |
 // Lua Runtime
-class Lua {
+class Lua implements CommandListener, Runnable {
     private boolean root;
     private OpenTTY midlet;
     private String PID = null;
@@ -1787,7 +1787,7 @@ class Lua {
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
     private int tokenIndex, status;
-
+    
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     // Token types
