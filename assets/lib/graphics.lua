@@ -44,7 +44,7 @@ function graphics.List(config)
         file = file .. "\n" .. k .. "=" .. v
     end
 
-    return os.execute("x11 list -e " .. file .. "\n" .. buffer .. "\n" .. "list.content=" .. content)
+    return os.execute("x11 list -e " .. file .. "\n" .. "list.content=" .. buffer)
 end
 
 return graphics 
