@@ -2909,18 +2909,18 @@ class Lua {
             else if (MOD == READ) {
                 // Variáveis para capturar o input do usuário e a ação (cancelar ou enviar)
                 
-                TextBox textBox = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
+                TextBox read = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
             
                 // Adiciona comandos para Send e Back
                 
-                textBox.addCommand(sendCommand);
-                textBox.addCommand(backCommand);
+                read.addCommand(sendCommand);
+                read.addCommand(backCommand);
             
                 // Configura o listener para capturar ações do usuário
-                textBox.setCommandListener(this);
+                read.setCommandListener(this);
                 // Aguarda a interação do usuário
                 synchronized (midlet) {
-                    while (Display.getDisplay(midlet).getCurrent() == textBox) {
+                    while (Display.getDisplay(midlet).getCurrent() == read) {
                         try {
                             midlet.wait(); // Aguarda o fechamento da TextBox
                         } catch (InterruptedException e) {
