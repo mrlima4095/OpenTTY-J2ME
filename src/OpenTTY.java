@@ -1790,8 +1790,8 @@ class Lua {
     private Command sendCommand = new Command("Send", Command.OK, 1), backCommand = new Command("Back", Command.BACK, 1);
     private final String[] userInput = new String[1];
     private final boolean[] isCancelled = new boolean[1];
-    private TextBox read = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
-
+    private TextBox read;
+    
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     // Token types
@@ -2908,7 +2908,7 @@ class Lua {
             else if (MOD == EXIT) { if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
             else if (MOD == READ) {
                 // Variáveis para capturar o input do usuário e a ação (cancelar ou enviar)
-                
+                read = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
                 
                 // Adiciona comandos para Send e Back
                 
