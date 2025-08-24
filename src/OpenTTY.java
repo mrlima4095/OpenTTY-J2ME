@@ -2910,8 +2910,7 @@ class Lua {
                 TextBox textBox = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
             
                 // Adiciona comandos para Send e Back
-                Command sendCommand = new Command("Send", Command.OK, 1);
-                Command backCommand = new Command("Back", Command.BACK, 1);
+                
                 textBox.addCommand(sendCommand);
                 textBox.addCommand(backCommand);
             
