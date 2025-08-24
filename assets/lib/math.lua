@@ -7,7 +7,7 @@ function math.factorial(n) if n == 0 then return 1 else return n * math.factoria
 
 function math.random(min, max)
     if min == nil then min = 1 end
-    if max == nil then max = min; min = 1 end
+    if max == nil then max = min min = 1 end
     math.randomseed = (math.randomseed * 9301 + 49297) % 233280
     local rnd = math.randomseed / 233280.0
     return math.floor(min + rnd * (max - min + 1))
