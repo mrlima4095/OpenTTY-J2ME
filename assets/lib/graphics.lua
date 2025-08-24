@@ -19,16 +19,21 @@ function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 
 
 function graphics.List(config)
-	local file, content, buffer = "", "", ""
-	local function append(text, key) if config[key] ~= nil then file = file .. "\n" .. text .. "=" .. config[key] end end
+    local file, content, buffer = "", "", ""
+    local function append(text, key) if config[key] ~= nil then file = file .. "\n" .. text .. "=" .. config[key] end end
+    local internals = {
+        "list.title" = "title",
+        "list.button" = "label",
+        "list.back" = "back",
+        "list.icom"
+    }
+    append("list.title", "title")
+    append("list.button", "label")
+    append("list.back", "back")
+    append("list.icon", "icon")
 
-	append("list.title", "title")
-	append("list.button", "label")
-	append("list.back", "back")
-	append("list.icon", "icon")
-
-	local itens = config.itens
-	if itens ~= nil then
+    local itens = config.itens
+    if itens ~= nil then
 		for k,v in pairs(itens) do
 			if buffer == "" then 
 			    buffer = k .. "=" .. v 
