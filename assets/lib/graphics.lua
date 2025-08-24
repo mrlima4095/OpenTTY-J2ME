@@ -44,10 +44,8 @@ function graphics.List(config)
             end
         end
     else error("missing List itens") end
-
-    file = file .. "\n" .. buffer .. "\n" .. "list.content=" .. content
-
-    return os.execute("x11 list -e " .. file)
+    
+    return os.execute("x11 list -e " .. file .. "\n" .. buffer .. "\n" .. "list.content=" .. content)
 end
 
 return graphics 
