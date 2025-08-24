@@ -2628,45 +2628,46 @@ class Lua {
             return value;
         }
         else if (current.type == LBRACE) { // Table literal
-    consume(LBRACE);
-    Hashtable table = new Hashtable();
-    int index = 1; // Lua tables podem usar números sequenciais automaticamente
+            consume(LBRACE);
+            Hashtable table = new Hashtable();
+            int index = 1; // Lua tables podem usar números sequenciais automaticamente
 
-    while (peek().type != RBRACE) {
-        Object key = null, value = null;
+            while (peek().type != RBRACE) {
+                Object key = null, value = null;
 
-        if (peek().type == IDENTIFIER && peekNext().type == ASSIGN) {
-            // Caso: nome = valor
-            key = consume(IDENTIFIER).value; // Consome o nome
-            consume(ASSIGN); // Consome o '='
-            value = expression(scope); // Avalia o valor
-        } else if (peek().type == LBRACKET) {
-            // Caso: [expr] = valor
-            consume(LBRACKET);
-            key = expression(scope);
-            consume(RBRACKET);
-            consume(ASSIGN);
-            value = expression(scope);
-        } else {
-            // Caso: apenas valores (modo array-style)
-            value = expression(scope);
-            key = new Double(index++); // Chave numérica automática
+                if (peek().type == IDENTIFIER && peekNext().type == ASSIGN) {
+                    // Caso: nome = valor
+                    key = consume(IDENTIFIER).value; // Consome o nome
+                    consume(ASSIGN); // Consome o '='
+                    value = expression(scope); // Avalia o valor
+                } else if (peek().type == LBRACKET) {
+                    // Caso: [expr] = valor
+                    consume(LBRACKET);
+                    key = expression(scope);
+                    consume(RBRACKET);
+                    consume(ASSIGN);
+                    value = expression(scope);
+                } else {
+                    // Caso: apenas valores (modo array-style)
+                    value = expression(scope);
+                    key = new Double(index++); // Chave numérica automática
+                }
+
+                table.put(key, value == null ? LUA_NIL : value);
+
+                if (peek().type == COMMA) {
+                    consume(COMMA); // Consome a vírgula opcional
+                } else if (peek().type == RBRACE) {
+                    break; // Finaliza a tabela
+                } else {
+                    throw new Exception("Malformed table syntax.");
+                }
+            }
+
+            consume(RBRACE); // Consome o '}' que fecha a tabela
+            return table;
         }
 
-        table.put(key, value == null ? LUA_NIL : value);
-
-        if (peek().type == COMMA) {
-            consume(COMMA); // Consome a vírgula opcional
-        } else if (peek().type == RBRACE) {
-            break; // Finaliza a tabela
-        } else {
-            throw new Exception("Malformed table syntax.");
-        }
-    }
-
-    consume(RBRACE); // Consome o '}' que fecha a tabela
-    return table;
-}
         throw new Exception("Unexpected token at factor: " + current.value);
     }
 
@@ -2900,60 +2901,52 @@ class Lua {
                 
                 Object t = args.elementAt(0);
                 t = (t == LUA_NIL) ? null : t;
-                if (t == null) return null;
-                if (t instanceof Hashtable) return t;            // usamos direto no for-in
-                if (t instanceof Vector) return t;              // também permitimos vetor
-                throw new Exception("pairs: table or vector expected");
+                if (t == null || t instanceof Hashtable || t instanceof Vector) { return t; }
+
+                throw new Exception("pairs: table expected");
             }
             else if (MOD == EXIT) { if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
             else if (MOD == READ) {
-read = new TextBox(
-    args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)),
-    "",
-    256,
-    TextField.ANY
-);
-read.addCommand(sendCommand);
-read.addCommand(backCommand);
-read.setCommandListener(this);
+                read = new TextBox(
+                    args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)),
+                    "",
+                    256,
+                    TextField.ANY
+                );
+                read.addCommand(sendCommand);
+                read.addCommand(backCommand);
+                read.setCommandListener(this);
 
-Display.getDisplay(midlet).setCurrent(read);
+                Display.getDisplay(midlet).setCurrent(read);
 
-// Aguarda a interação do usuário
-synchronized (midlet) {
-    // Espera até isCancelled ou userInput serem atualizados pelo commandAction
-    while (!isCancelled[0] && userInput[0] == null) {
-        try {
-            midlet.wait();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Error while waiting for input");
-        }
-    }
-}
-
-// Retorna o valor ou nil, dependendo da ação do usuário
-if (isCancelled[0]) {
-    return null;
-} else {
-    return userInput[0];
-}
+                // Aguarda a interação do usuário
+                synchronized (midlet) {
+                    // Espera até isCancelled ou userInput serem atualizados pelo commandAction
+                    while (!isCancelled[0] && userInput[0] == null) {
+                        try {
+                            midlet.wait();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException("Error while waiting for input");
+                        }
+                    }
+                }
             }
-        
+                    
             return null;
         }
-public void commandAction(Command c, Displayable d) {
-    if (c == sendCommand) {
-        userInput[0] = read.getString(); // Captura o texto digitado
-        isCancelled[0] = false;
-    } else if (c == backCommand) {
-        isCancelled[0] = true;
-        userInput[0] = null;
-    }
+        public void commandAction(Command c, Displayable d) {
+            if (c == sendCommand) {
+                userInput[0] = read.getString(); // Captura o texto digitado
+                isCancelled[0] = false;
+            } else if (c == backCommand) {
+                isCancelled[0] = true;
+                userInput[0] = null;
+            }
 
-    synchronized (midlet) {
-        midlet.notify(); // Notifica a thread principal
-    } midlet.processCommand("xterm", true, root);
-}
+            synchronized (midlet) {
+                midlet.notify(); // Notifica a thread principal
+            } midlet.processCommand("xterm", true, root);
+        }
     }
 }
 // |
