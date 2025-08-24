@@ -1948,7 +1948,7 @@ class Lua {
 
             throw new Exception("Unexpected character '" + c + "'");
         }
-    
+
         tokens.addElement(new Token(EOF, "EOF"));
         return tokens;
     }
