@@ -2733,7 +2733,7 @@ class Lua {
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
 
-    public class LuaFunction implements CommandListener, Runnable  {
+    public class LuaFunction implements CommandListener {
         private Vector params, bodyTokens;
         private Hashtable closureScope;
         private int MOD = -1;
