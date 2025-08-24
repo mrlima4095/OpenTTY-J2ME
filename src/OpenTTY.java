@@ -2917,6 +2917,7 @@ class Lua {
             
                 // Configura o listener para capturar ações do usuário
                 read.setCommandListener(this);
+                Display.getDisplay(midlet).setCurrent(read);
                 // Aguarda a interação do usuário
                 synchronized (midlet) {
                     while (Display.getDisplay(midlet).getCurrent() == read) {
