@@ -25,35 +25,29 @@ function graphics.List(config)
         "list.title" = "title",
         "list.button" = "label",
         "list.back" = "back",
-        "list.icom"
+        "list.icon" = "icon"
     }
-    append("list.title", "title")
-    append("list.button", "label")
-    append("list.back", "back")
-    append("list.icon", "icon")
 
     local itens = config.itens
     if itens ~= nil then
-		for k,v in pairs(itens) do
-			if buffer == "" then 
-			    buffer = k .. "=" .. v 
-			else 
-			    buffer = buffer .. "\n" .. k .. "=" .. v 
-			end
-			
-			if content == "" then
-			    content = k
-			else
-			    content = content .. "," .. k
-			end
-		end
-	else
-		error("missing List itens") 
-	end
+        for k,v in pairs(itens) do
+            if buffer == "" then 
+                buffer = k .. "=" .. v 
+            else 
+                buffer = buffer .. "\n" .. k .. "=" .. v 
+            end
 
-	file = file .. "\n" .. buffer .. "\n" .. "list.content=" .. content
+            if content == "" then
+                content = k
+            else
+                content = content .. "," .. k
+            end
+        end
+    else error("missing List itens") end
 
-	return os.execute("x11 list -e " .. file)
+    file = file .. "\n" .. buffer .. "\n" .. "list.content=" .. content
+
+    return os.execute("x11 list -e " .. file)
 end
 
 return graphics 
