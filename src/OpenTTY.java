@@ -1790,7 +1790,8 @@ class Lua {
     private Command sendCommand = new Command("Send", Command.OK, 1), backCommand = new Command("Back", Command.BACK, 1);
     private final String[] userInput = new String[1];
     private final boolean[] isCancelled = new boolean[1];
-
+    private TextBox read = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
+            
     
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
@@ -2909,8 +2910,7 @@ class Lua {
             else if (MOD == READ) {
                 // Variáveis para capturar o input do usuário e a ação (cancelar ou enviar)
                 
-                TextBox read = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
-            
+                
                 // Adiciona comandos para Send e Back
                 
                 read.addCommand(sendCommand);
