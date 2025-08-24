@@ -1791,8 +1791,7 @@ class Lua {
     private final String[] userInput = new String[1];
     private final boolean[] isCancelled = new boolean[1];
     private TextBox read = new TextBox(args.isEmpty() ? midlet.form.getTitle() : toLuaString(args.elementAt(0)), "", 256, TextField.ANY);
-            
-    
+
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     // Token types
