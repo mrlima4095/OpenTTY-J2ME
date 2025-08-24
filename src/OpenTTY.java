@@ -1787,6 +1787,7 @@ class Lua {
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
     private int tokenIndex, status;
+    private Command sendCommand = new Command("Send", Command.OK, 1), backCommand = new Command("Back", Command.BACK, 1);
     
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
