@@ -1806,7 +1806,7 @@ class Lua implements CommandListener, Runnable {
         String[] funcs = new String[] { "exec", "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, EXECUTE, GETENV, CLOCK, SETLOC, EXIT };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
         
-        funcs = new String[] { "print", "error", "pcall", "require", "pairs" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS };
+        funcs = new String[] { "print", "error", "pcall", "require", "pairs", "read" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS, READ };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
     }
     public int run(String name, String code) { 
