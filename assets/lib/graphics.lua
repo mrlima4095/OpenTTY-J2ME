@@ -36,7 +36,13 @@ function graphics.List(config)
         end
     end
     for k,v in pairs(itens) do
+        if buffer == "" then
+            buffer = k
+        else
+            buffer = buffer .. "," .. k
+        end
         
+        file = file .. "\n" .. k .. "=" .. v
     end
 
     return os.execute("x11 list -e " .. file .. "\n" .. buffer .. "\n" .. "list.content=" .. content)
