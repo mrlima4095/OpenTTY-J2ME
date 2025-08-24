@@ -2923,7 +2923,7 @@ class Lua {
                         try {
                             midlet.wait(); // Aguarda o fechamento da TextBox
                         } catch (InterruptedException e) {
-                            throw new RuntimeException("Error while waiting for input", e);
+                            throw new RuntimeException("Error while waiting for input");
                         }
                     }
                 }
