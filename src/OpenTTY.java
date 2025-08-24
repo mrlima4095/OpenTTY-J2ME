@@ -667,8 +667,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // |
         // Interfaces
-        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument.startsWith("-e") ? argument.substring(2) : getcontent(argument)), root)); }
-        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, argument.startsWith("-e") ? argument.substring(2) : getcontent(argument), root); }
+        else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : getcontent(argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument)), root)); }
+        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
         else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : getcontent(argument), root); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
@@ -774,7 +774,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); 
                 USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2); 
                 list.addCommand(BACK); list.addCommand(USER); 
-
                 
                 String[] content = split(getenv("list.content"), ','); 
                 for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); } 
