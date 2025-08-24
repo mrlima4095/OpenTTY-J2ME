@@ -29,7 +29,6 @@ function graphics.List(config)
 
 	local itens = config.itens
 	if itens ~= nil then
-	    local 
 		for k,v in pairs(itens) do
 			if buffer == "" then 
 			    buffer = k .. "=" .. v 
