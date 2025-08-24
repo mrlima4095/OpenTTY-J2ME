@@ -2897,11 +2897,11 @@ class Lua {
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
             else if (MOD == PAIRS) { if (args.isEmpty()) { throw new Exception("pairs: table expected"); } Object t = args.elementAt(0); t = (t == LUA_NIL) ? null : t; if (t == null || t instanceof Hashtable || t instanceof Vector) { return t; } throw new Exception("pairs: table expected"); }
             else if (MOD == EXIT) { if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
-            else if (MOD == READ) { return toLuaString(args.isEmpty() ? "stdout" : args.elementAt(0)).equals("stdout") ? midlet.stdout.getText() : args.elementAt(1) == null ? null : toLuaString(args.elementAt(0)).equals("stdin") ? midlet.stdin.getString() : midlet.getcontent(toLuaString(args.elementAt(0))); }
+            else if (MOD == READ) { return toLuaString(args.isEmpty() ? "stdout" : args.elementAt(0)).equals("stdout") ? midlet.stdout.getText() : args.elementAt(0) == null ? null : toLuaString(args.elementAt(0)).equals("stdin") ? midlet.stdin.getString() : midlet.getcontent(toLuaString(args.elementAt(0))); }
             else if (MOD == WRITE) { if (args.isEmpty()) { }
                 else {
                     String content = toLuaString(args.elementAt(0)), out = args.size() == 1 ? "stdout" : toLuaString(args.elementAt(1));
-                    boolean mode = args.size() > 1 && toLuaString(args.elementAt(2)).equals("a") ? true : false;
+                    boolean mode = args.size() > 2 && toLuaString(args.elementAt(2)).equals("a") ? true : false;
 
                     if (out.equals("stdout")) { midlet.stdout.setText(mode ? midlet.stdout.getText() + content : content); }
                     else if (out.equals("stdin")) { midlet.stdin.setString(mode ? midlet.stdin.getString() + content : content); }
