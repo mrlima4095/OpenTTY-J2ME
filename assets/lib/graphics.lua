@@ -19,24 +19,26 @@ function graphics.LoadProcess(name) return os.execute("x11 import " + name) end
 
 
 function graphics.List(config)
-	local content, itens = "", ""
+	local file, buffer = "", ""
+	local function append(text, key) if config[key] ~= nil then file = file .. "\n" .. text .. "=" .. config[key] end end
 
-	local function append(item, key) if config[key] ~= nil then content = content .. "\n" .. text .. "=" .. config[key] end end
+	append("list.title", "title")
+	append("list.button", "label")
+	append("list.back", "back")
+	append("list.icon", "icon")
 
-    append("list.title", "title")
-    append("list.button", "label")
-
-	for k,v in pairs(config["itens"]) do
-		if buffer == "" then
-			buffer = k
-		else 
-			buffer = buffer .. "," .. k
+	local itens = config.itens
+	if itens ~= nil then
+		for k,v in pairs(itens) do
+			if buffer == "" then buffer = k .. "=" .. v else buffer = buffer .. "\n" .. k .. "=" .. v end
 		end
-		content = content .. "\n" .. k .. "=" .. v
+	else
+		error("missing List itens") 
 	end
-	os.exec("execute install ..graphics-nano-bkp; touch;")
-	os.exec("add " .. content)
-	os.exec("execute x11 list nano; get .graphics-nano-bkp")
+
+	file = file .. "\n" .. buffer
+
+	os.exec("x11 list -e " .. file)
 end
 
 return graphics
