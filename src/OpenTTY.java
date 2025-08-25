@@ -2969,9 +2969,9 @@ class Lua {
             else if (MOD == RAWLEN) {
                 if (args.isEmpty()) { }
                 else {
-                    Object obj = args.elementAt(0);
+                    Object obj = args.elementAt(0), ret = obj instanceof Hashtable ? ((Hashtable) obj).size() : obj instanceof String ? ((String) obj).length() : null;
 
-                    return obj instanceof Hashtable ? ((Hashtable) obj).size() : obj instanceof String ? ((String) obj).length() : null;
+                    return ret;
                 }
             }
 
