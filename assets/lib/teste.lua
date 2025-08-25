@@ -9,12 +9,9 @@ function load()
         quest()
     else 
         local text = os.getenv("TEXT_LUA")
-
-        if text == nil then
-            g.Alert("Você não digitou nada ainda!")
-        else
-            g.Alert(text)
-        end
+        local _ = os.execute("execute unset ESTADO; lua teste.lua")
+        
+        g.Alert(text or "Você não digitou nada ainda!")
     end
 end
 
@@ -29,8 +26,6 @@ function main()
 
     g.BuildList(tela)
 end
-function quest()
-    os.execute("execute install nano; add quest.title=Perguntando; add quest.label=Digite algo; quest.key=TEXT_LUA; quest.cmd=exec unset ESTADO & lua teste.lua")
-end
+function quest() os.execute("execute install nano; add quest.title=Perguntando; add quest.label=Digite algo; quest.key=TEXT_LUA; quest.cmd=exec unset ESTADO & lua teste.lua") end
 
 load()
