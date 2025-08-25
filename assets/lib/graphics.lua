@@ -64,7 +64,9 @@ function graphics.BuildScreen(config)
         end
 
         for x,y in pairs(v) do
-            local type = y["type"]
+            print(x)
+            print(v)
+            --[[local type = y["type"]
 
             if type == nil then 
                 error("missing type in field '" .. x .. "'")
@@ -92,7 +94,7 @@ function graphics.BuildScreen(config)
                 file = file .. "\nscreen." .. x .. ".type=spacer\nscreen." .. x .. ".w=" .. w or "1" .. "\nscreen." .. x .. ".h=" .. h or "10"
             else
                 error("invalid field type '" .. type .. "'")
-            end
+            end]]
         end
     end
 
