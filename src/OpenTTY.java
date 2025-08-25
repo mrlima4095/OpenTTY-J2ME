@@ -2442,147 +2442,248 @@ class Lua {
         throw new Exception("Malformed 'for' statement");
     }
     */
-private Object whileStatement(Hashtable scope) throws Exception {
-    consume(WHILE);
-    int conditionStartTokenIndex = tokenIndex;
-
-    Object result = null;
-    boolean endAlreadyConsumed = false;
-
-    loopDepth++; // Entrou em um loop
-
-    while (true) {
-        tokenIndex = conditionStartTokenIndex;
-        Object condition = expression(scope);
-
-        if (!isTruthy(condition) || breakLoop) {
-            // Pular o corpo até o END correspondente
-            int depth = 1;
-            while (depth > 0) {
-                Token token = consume();
-                if (token.type == IF || token.type == WHILE || token.type == FUNCTION || token.type == FOR) depth++;
-                else if (token.type == END) depth--;
-                else if (token.type == EOF) throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
-            }
-            endAlreadyConsumed = true; // já consumimos o END acima
-            break;
-        }
-
-        consume(DO);
-
-        // Executa corpo até o END do laço
-        while (peek().type != END) {
-            result = statement(scope);
-            if (breakLoop) {
-                breakLoop = false; // Resetar o estado do break
-                endAlreadyConsumed = true;
-                break;
-            }
-            if (result != null) {
-                // "return" dentro do while: consome até o END do laço e retorna
+    private Object whileStatement(Hashtable scope) throws Exception {
+        consume(WHILE);
+        int conditionStartTokenIndex = tokenIndex;
+    
+        Object result = null;
+        boolean endAlreadyConsumed = false;
+    
+        loopDepth++; // Entrou em um loop
+    
+        while (true) {
+            tokenIndex = conditionStartTokenIndex;
+            Object condition = expression(scope);
+    
+            if (!isTruthy(condition) || breakLoop) {
+                // Pular o corpo até o END correspondente
                 int depth = 1;
                 while (depth > 0) {
                     Token token = consume();
                     if (token.type == IF || token.type == WHILE || token.type == FUNCTION || token.type == FOR) depth++;
                     else if (token.type == END) depth--;
-                    else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
+                    else if (token.type == EOF) throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
                 }
-                loopDepth--; // Saindo do loop
-                return result;
+                endAlreadyConsumed = true; // já consumimos o END acima
+                break;
             }
-        }
-        tokenIndex = conditionStartTokenIndex;
-    }
-
-    loopDepth--; // Saindo do loop
-
-    if (!endAlreadyConsumed) consume(END);
-    return null;
-}
-private Object forStatement(Hashtable scope) throws Exception {
-    consume(FOR);
-
-    loopDepth++; // Entrou em um loop
-
-    // Lookahead simples: se tiver IDENT, '=', é for numérico
-    if (peek().type == IDENTIFIER) {
-        Token t1 = (Token) peek();
-        // salva estado
-        int save = tokenIndex;
-        String name = (String) consume(IDENTIFIER).value;
-        if (peek().type == ASSIGN) {
-            // ------ for numérico: for i = a, b [, c] do ... end
-            consume(ASSIGN);
-            Object a = expression(scope);
-            consume(COMMA);
-            Object b = expression(scope);
-            Double start = (a instanceof Double) ? (Double) a : new Double(Double.parseDouble(toLuaString(a)));
-            Double stop  = (b instanceof Double) ? (Double) b : new Double(Double.parseDouble(toLuaString(b)));
-            Double step  = new Double(1.0);
-            if (peek().type == COMMA) {
-                consume(COMMA);
-                Object c = expression(scope);
-                step = (c instanceof Double) ? (Double) c : new Double(Double.parseDouble(toLuaString(c)));
-                if (((Double)step).doubleValue() == 0.0) throw new Exception("for step must not be zero");
-            }
+    
             consume(DO);
-
-            // Captura corpo até END (com profundidade incluindo FOR)
-            Vector bodyTokens = new Vector();
-            int depth = 1;
-            while (depth > 0) {
-                Token tk = consume();
-                if (tk.type == IF || tk.type == WHILE || tk.type == FUNCTION || tk.type == FOR) depth++;
-                else if (tk.type == END) depth--;
-                else if (tk.type == EOF) throw new Exception("Unmatched 'for' statement: Expected 'end'");
-                if (depth > 0) bodyTokens.addElement(tk);
-            }
-
-            double iVal = start.doubleValue();
-            double stopVal = stop.doubleValue();
-            double stepVal = step.doubleValue();
-
-            // Executa corpo reusando bodyTokens a cada iteração
-            while ((stepVal > 0 && iVal <= stopVal) || (stepVal < 0 && iVal >= stopVal)) {
+    
+            // Executa corpo até o END do laço
+            while (peek().type != END) {
+                result = statement(scope);
                 if (breakLoop) {
                     breakLoop = false; // Resetar o estado do break
+                    endAlreadyConsumed = true;
                     break;
                 }
-
-                scope.put(name, new Double(iVal));
-
-                // Salva estado atual
-                int originalTokenIndex = tokenIndex;
-                Vector originalTokens = tokens;
-
-                // Usa bodyTokens como programa atual
-                tokens = bodyTokens;
-                tokenIndex = 0;
-
-                Object ret = null;
-                while (peek().type != EOF) {
-                    ret = statement(scope);
-                    if (ret != null) break; // 'return' no corpo
+                if (result != null) {
+                    // "return" dentro do while: consome até o END do laço e retorna
+                    int depth = 1;
+                    while (depth > 0) {
+                        Token token = consume();
+                        if (token.type == IF || token.type == WHILE || token.type == FUNCTION || token.type == FOR) depth++;
+                        else if (token.type == END) depth--;
+                        else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
+                    }
+                    loopDepth--; // Saindo do loop
+                    return result;
                 }
-
-                // Restaura estado
-                tokenIndex = originalTokenIndex;
-                tokens = originalTokens;
-
-                if (ret != null) return ret;
-
-                iVal += stepVal;
             }
-
-            loopDepth--; // Saindo do loop
-            return null;
+            tokenIndex = conditionStartTokenIndex;
         }
-    }
-
-    loopDepth--; // Saindo do loop
-    throw new Exception("Malformed 'for' statement");
-}
     
+        loopDepth--; // Saindo do loop
+    
+        if (!endAlreadyConsumed) consume(END);
+        return null;
+    }
+    private Object forStatement(Hashtable scope) throws Exception {
+        consume(FOR);
+    
+        loopDepth++; // Entrou em um loop
+    
+        // Lookahead simples: se tiver IDENT, '=', é for numérico
+        if (peek().type == IDENTIFIER) {
+            Token t1 = (Token) peek();
+            // Salva estado
+            int save = tokenIndex;
+            String name = (String) consume(IDENTIFIER).value;
+    
+            // Detecta se é um loop numérico
+            if (peek().type == ASSIGN) {
+                // ------ for numérico: for i = a, b [, c] do ... end
+                consume(ASSIGN);
+                Object a = expression(scope);
+                consume(COMMA);
+                Object b = expression(scope);
+                Double start = (a instanceof Double) ? (Double) a : new Double(Double.parseDouble(toLuaString(a)));
+                Double stop  = (b instanceof Double) ? (Double) b : new Double(Double.parseDouble(toLuaString(b)));
+                Double step  = new Double(1.0);
+                if (peek().type == COMMA) {
+                    consume(COMMA);
+                    Object c = expression(scope);
+                    step = (c instanceof Double) ? (Double) c : new Double(Double.parseDouble(toLuaString(c)));
+                    if (((Double) step).doubleValue() == 0.0) throw new Exception("for step must not be zero");
+                }
+                consume(DO);
+    
+                // Captura corpo até END (com profundidade incluindo FOR)
+                Vector bodyTokens = new Vector();
+                int depth = 1;
+                while (depth > 0) {
+                    Token tk = consume();
+                    if (tk.type == IF || tk.type == WHILE || tk.type == FUNCTION || tk.type == FOR) depth++;
+                    else if (tk.type == END) depth--;
+                    else if (tk.type == EOF) throw new Exception("Unmatched 'for' statement: Expected 'end'");
+                    if (depth > 0) bodyTokens.addElement(tk);
+                }
+    
+                double iVal = start.doubleValue();
+                double stopVal = stop.doubleValue();
+                double stepVal = step.doubleValue();
+    
+                // Executa corpo reusando bodyTokens a cada iteração
+                while ((stepVal > 0 && iVal <= stopVal) || (stepVal < 0 && iVal >= stopVal)) {
+                    if (breakLoop) {
+                        breakLoop = false; // Resetar o estado do break
+                        break;
+                    }
+    
+                    scope.put(name, new Double(iVal));
+    
+                    // Salva estado atual
+                    int originalTokenIndex = tokenIndex;
+                    Vector originalTokens = tokens;
+    
+                    // Usa bodyTokens como programa atual
+                    tokens = bodyTokens;
+                    tokenIndex = 0;
+    
+                    Object ret = null;
+                    while (peek().type != EOF) {
+                        ret = statement(scope);
+                        if (ret != null) break; // 'return' no corpo
+                    }
+    
+                    // Restaura estado
+                    tokenIndex = originalTokenIndex;
+                    tokens = originalTokens;
+    
+                    if (ret != null) return ret;
+    
+                    iVal += stepVal;
+                }
+    
+                loopDepth--; // Saindo do loop
+                return null;
+            } else {
+                // ------ for genérico: for k, v in expr do ... end
+                // Restaura estado e parseia nomes corretamente
+                tokenIndex = save;
+                Vector names = new Vector();
+                names.addElement(((Token) consume(IDENTIFIER)).value);
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    names.addElement(((Token) consume(IDENTIFIER)).value);
+                }
+                consume(IN);
+                Object iterSrc = expression(scope);
+                consume(DO);
+    
+                // Captura corpo
+                Vector bodyTokens = new Vector();
+                int depth2 = 1;
+                while (depth2 > 0) {
+                    Token tk = consume();
+                    if (tk.type == IF || tk.type == WHILE || tk.type == FUNCTION || tk.type == FOR) depth2++;
+                    else if (tk.type == END) depth2--;
+                    else if (tk.type == EOF) throw new Exception("Unmatched 'for' statement: Expected 'end'");
+                    if (depth2 > 0) bodyTokens.addElement(tk);
+                }
+    
+                // Itera: se vier de pairs(t), será Hashtable; se vier Vector de pares, também aceita
+                if (iterSrc instanceof Hashtable) {
+                    Hashtable ht = (Hashtable) iterSrc;
+                    for (Enumeration e = ht.keys(); e.hasMoreElements();) {
+                        Object k = e.nextElement();
+                        Object v = unwrap(ht.get(k));
+                        // Bind nomes
+                        if (names.size() >= 1) scope.put((String) names.elementAt(0), (k == null ? LUA_NIL : k));
+                        if (names.size() >= 2) scope.put((String) names.elementAt(1), (v == null ? LUA_NIL : v));
+    
+                        // Executa corpo
+                        int originalTokenIndex = tokenIndex;
+                        Vector originalTokens = tokens;
+                        tokens = bodyTokens;
+                        tokenIndex = 0;
+    
+                        Object ret = null;
+                        while (peek().type != EOF) {
+                            ret = statement(scope);
+                            if (ret != null) break;
+                        }
+    
+                        tokenIndex = originalTokenIndex;
+                        tokens = originalTokens;
+                        if (ret != null) return ret;
+    
+                        if (breakLoop) {
+                            breakLoop = false; // Resetar o estado do break
+                            break;
+                        }
+                    }
+                } else if (iterSrc instanceof Vector) {
+                    Vector vec = (Vector) iterSrc;
+                    for (int idx = 0; idx < vec.size(); idx++) {
+                        Object item = vec.elementAt(idx);
+                        Object k = null, v = null;
+                        if (item instanceof Vector) {
+                            Vector pair = (Vector) item;
+                            if (pair.size() > 0) k = pair.elementAt(0);
+                            if (pair.size() > 1) v = pair.elementAt(1);
+                        } else {
+                            k = new Double(idx + 1);
+                            v = item;
+                        }
+                        if (names.size() >= 1) scope.put((String) names.elementAt(0), (k == null ? LUA_NIL : k));
+                        if (names.size() >= 2) scope.put((String) names.elementAt(1), (v == null ? LUA_NIL : v));
+    
+                        int originalTokenIndex = tokenIndex;
+                        Vector originalTokens = tokens;
+                        tokens = bodyTokens;
+                        tokenIndex = 0;
+    
+                        Object ret = null;
+                        while (peek().type != EOF) {
+                            ret = statement(scope);
+                            if (ret != null) break;
+                        }
+    
+                        tokenIndex = originalTokenIndex;
+                        tokens = originalTokens;
+                        if (ret != null) return ret;
+    
+                        if (breakLoop) {
+                            breakLoop = false; // Resetar o estado do break
+                            break;
+                        }
+                    }
+                } else if (iterSrc == null) {
+                    // Nada a iterar (nil)
+                } else {
+                    throw new Exception("Generic for: unsupported iterator source");
+                }
+    
+                loopDepth--; // Saindo do loop
+                return null;
+            }
+        }
+    
+        loopDepth--; // Saindo do loop
+        throw new Exception("Malformed 'for' statement");
+    }
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
         String funcName = (String) consume(IDENTIFIER).value;
