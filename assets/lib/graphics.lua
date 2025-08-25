@@ -68,25 +68,25 @@ function graphics.BuildScreen(config)
         if type == nil then 
             error("missing type in field '" .. k .. "'")
         elseif type == "text" then
-            local text = k["value"]
+            local text = v["value"]
 
             if text == nil then error("missing value for text field '" .. k .. "'") end
             
             file = file .. "\nscreen." .. k .. ".type=tekt\nscreen." .. text .. ".value=" .. text .. "\nscreen." .. k .. ".style" .. v["style"] or "default"
         elseif type == "image" then
-            local image = k["img"]
+            local image = v["img"]
 
             if image == nil then error("missing value for tekt field '" .. k .. "'") end 
 
             file = file .. "\nscreen." .. k .. ".type=image\nscreen." .. k .. ".img=" .. image
         elseif type == "item" then
-            local label, cmd = k["label"], k["cmd"]
+            local label, cmd = v["label"], v["cmd"]
 
             if label == nil or cmd == nil then error("missing ITEM (label or cmd) config") end
 
             file = file .. "\nscreen." .. k .. ".type=item\nscreen." .. k .. ".label=" .. label .. "\nscreen." .. k .. ".cmd=" .. cmd
         elseif type == "spacer" then
-            local w, h = k["w"], k["h"]
+            local w, h = v["w"], v["h"]
 
             file = file .. "\nscreen." .. k .. ".type=spacer\nscreen." .. k .. ".w=" .. w or "1" .. "\nscreen." .. k .. ".h=" .. h or "10"
         else
