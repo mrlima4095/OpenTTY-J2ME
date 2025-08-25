@@ -16,9 +16,10 @@ command=sdk
 sdk=execute x11 list /home/sdkme; true
 
 shell.name=sdk
-shell.args=setxback
+shell.args=setxback,libget
 
 setxback=execute alias xterm=exec sdk & unalias xterm;
+libget=exec case alias (yang) execute set RESOURCE=math.lua; yang install; set RESOURCE=graphics.lua; yang install; warn Lua libraries downloaded!; false & import /java/lib/yang & sdk libget & true
 
 [ DISPLAY ]
 
@@ -36,8 +37,7 @@ New Project=execute install nano; touch; add list.title=New Project; add list.co
 Save Project=execute x11 quest /home/sdkme;
 File Explorer=execute dir; sdk setxback;
 Build (from nano)=execute time lua nano;
-Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=math.lua; yang install; set RESOURCE=graphics.lua; yang install; warn Lua libraries downloaded!; false & warn Yang not found
-Download Libraries=exec sdk & case alias (yang) execute set RESOURCE=graphics.lua; yang install; warn Lua 
+Download Libraries=execute sdk; sdk libget;
 Documentation=exec sdk setxback & view <title>SmartME Docs</title>\n\n\tLua is a lightweight, high-level programming language designed for embedded use in applications. It was created in Brazil in the early 1990s by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, and Waldemar Celes. Lua is known for its simple syntax, small size, and speed, making it ideal for use in game development, embedded systems, and applications that require a scripting language. It supports procedural programming, object-oriented programming, functional programming, and data-driven programming. One of Lua’s key features is its ability to be easily integrated with other programming languages, especially C and C++, allowing developers to extend applications with custom functionality. Lua is widely used in game engines like Roblox, World of Warcraft, and Adobe Lightroom for scripting purposes.
 Update SDK=execute sdk; install /home/nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/sdkme; install /home/sdkme; get nano; import /home/sdkme; tick; sdk; warn SmartME was installed the latest version from GitHub;
 About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
