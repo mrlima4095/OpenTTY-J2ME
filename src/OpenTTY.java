@@ -2969,7 +2969,7 @@ class Lua {
             else if (MOD == RAWGET || MOD == RAWLEN) {
                 if (args.isEmpty()) { }
                 else {
-                    Object obj = args.elementAt(0), ret = MOD == RAWGET ? closureScope.get(obj) : obj instanceof Hashtable ? ((Hashtable) obj).size() : obj instanceof String ? ((String) obj).length() : null;
+                    Object obj = args.elementAt(0), ret = MOD == RAWGET ? closureScope.get(obj) : new Integer(obj instanceof Hashtable ? new Integer() : obj instanceof String ? ((String) obj).length() : null);
 
                     return ret;
                 }
