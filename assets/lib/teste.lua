@@ -26,6 +26,6 @@ function main()
 
     g.BuildList(tela)
 end
-function quest() os.execute("execute install nano; add quest.title=Perguntando; add quest.label=Digite algo; quest.key=TEXT_LUA; quest.cmd=exec unset ESTADO & lua teste.lua") end
+function quest() os.execute("execute install nano; add quest.title=Perguntando; add quest.label=Digite algo; add quest.key=TEXT_LUA; add quest.cmd=exec unset ESTADO & lua teste.lua") end
 
 load()
