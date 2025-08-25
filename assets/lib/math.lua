@@ -27,11 +27,11 @@ function math.random(a, b)
         -- sem argumentos: número real [0,1)
         return lcg()
     elseif b == nil then
-        -- um argumento: inteiro 1..a
-        return math.floor(lcg() * a) + 1
+        local x = math.floor(lcg() * a)
+        return x + 1
     else
-        -- dois argumentos: inteiro a..b
-        return math.floor(lcg() * (b - a + 1)) + a
+        local x = math.floor(lcg() * (b - a + 1))
+        return x + a
     end
 end
 
