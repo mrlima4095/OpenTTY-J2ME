@@ -22,7 +22,7 @@ function main()
     local tela = {
         title = "Lista em Lua",
         itens = {
-            ["Ler algo"] = "execute set ESTADO = PERGUNTAR; lua teste.lua; true"
+            ["Ler algo"] = "execute set ESTADO = PERGUNTAR; lua teste.lua; true",
             ["Ver o que foi digitado"] = "execute set ESTADO = MOSTRAR; lua teste.lua; true"
         }
     }
