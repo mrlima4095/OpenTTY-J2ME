@@ -2485,8 +2485,24 @@ class Lua {
     }
 
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
-    private Object logicalOr(Hashtable scope) throws Exception { Object left = logicalAnd(scope); while (peek().type == OR) { consume(OR); Object right = logicalAnd(scope); left = new Boolean(isTruthy(left) || isTruthy(right)); } return left; }
-    private Object logicalAnd(Hashtable scope) throws Exception { Object left = comparison(scope); while (peek().type == AND) { consume(AND); Object right = comparison(scope); left = new Boolean(isTruthy(left) && isTruthy(right)); } return left; }
+    private Object logicalOr(Hashtable scope) throws Exception {
+        Object left = logicalAnd(scope);
+        while (peek().type == OR) {
+            consume(OR);
+            Object right = logicalAnd(scope);
+            left = isTruthy(left) ? left : right;
+        }
+        return left;
+    }
+    private Object logicalAnd(Hashtable scope) throws Exception {
+        Object left = comparison(scope);
+        while (peek().type == AND) {
+            consume(AND);
+            Object right = comparison(scope);
+            left = isTruthy(left) ? right : left;
+        }
+        return left;
+    }
     private Object comparison(Hashtable scope) throws Exception {
         Object left = concatenation(scope); // chama concatenation antes da comparação
         while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
