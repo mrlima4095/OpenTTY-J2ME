@@ -1,4 +1,4 @@
-local math = { pi = 3.14159, randomseed = os.clock() }
+local math = { pi = 3.14159 }
 
 function math.abs(x) if x < 0 then return 0-(x) end return x end
 function math.sqrt(x) if x < 0 then error("math.sqrt expects a non-negative number") end return x ^ 0.5 end
@@ -27,14 +27,15 @@ function math.random(a, b)
         -- sem argumentos: número real [0,1)
         return lcg()
     elseif b == nil then
-        local x = math.floor(lcg() * a)
-        return x + 1
+        -- um argumento: inteiro 1..a
+        return math.floor(lcg() * a) + 1
     else
-        local x = math.floor(lcg() * (b - a + 1))
-        return x + a
+        -- dois argumentos: inteiro a..b
+        return math.floor(lcg() * (b - a + 1)) + a
     end
 end
 
 function math.setseed(seed) if seed == nil then seed = os.clock() end math.randomseed = seed end
 
+math.setseed()
 return math
