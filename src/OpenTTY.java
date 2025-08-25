@@ -1786,7 +1786,7 @@ class Lua {
     private long uptime = System.currentTimeMillis();
     private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
     private Vector tokens;
-    private int tokenIndex, status = 0;
+    private int tokenIndex, status = 0, loopDepth = 0;;
     // |
     public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12;
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43;;
@@ -2449,6 +2449,8 @@ private Object whileStatement(Hashtable scope) throws Exception {
     Object result = null;
     boolean endAlreadyConsumed = false;
 
+    loopDepth++; // Entrou em um loop
+
     while (true) {
         tokenIndex = conditionStartTokenIndex;
         Object condition = expression(scope);
@@ -2485,21 +2487,22 @@ private Object whileStatement(Hashtable scope) throws Exception {
                     else if (token.type == END) depth--;
                     else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
                 }
+                loopDepth--; // Saindo do loop
                 return result;
             }
         }
-        // aqui o próximo token é END do while, mas NÃO consumimos:
-        // vamos voltar para a condição; esse END ficará para o caso de a condição ficar falsa,
-        // quando o bloco de “pular até END” acima consumirá ele.
-        // Reset para reavaliar a condição:
         tokenIndex = conditionStartTokenIndex;
     }
+
+    loopDepth--; // Saindo do loop
 
     if (!endAlreadyConsumed) consume(END);
     return null;
 }
 private Object forStatement(Hashtable scope) throws Exception {
     consume(FOR);
+
+    loopDepth++; // Entrou em um loop
 
     // Lookahead simples: se tiver IDENT, '=', é for numérico
     if (peek().type == IDENTIFIER) {
@@ -2570,12 +2573,16 @@ private Object forStatement(Hashtable scope) throws Exception {
 
                 iVal += stepVal;
             }
+
+            loopDepth--; // Saindo do loop
             return null;
         }
     }
 
+    loopDepth--; // Saindo do loop
     throw new Exception("Malformed 'for' statement");
 }
+    
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
         String funcName = (String) consume(IDENTIFIER).value;
