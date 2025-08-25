@@ -63,12 +63,34 @@ function graphics.BuildScreen(config)
             buffer = buffer .. "," .. k
         end
 
-        for x,y in pairs(v) do
-            print(x)
-            print(y)
-            --[[local type = y["type"]
+        local type = v["type"]
 
-            ]]
+        if type == nil then 
+            error("missing type in field '" .. x .. "'")
+        elseif type == "text" then
+            local text = v["value"]
+
+            if text == nil then error("missing value for text field '" .. x .. "'") end
+            
+            file = file .. "\nscreen." .. x .. ".type=text\nscreen." .. text .. ".value=" .. text .. "\nscreen." .. x .. ".style" .. v["style"] or "default"
+        elseif type == "image" then
+            local image = v["img"]
+
+            if image == nil then error("missing value for text field '" .. x .. "'") end 
+
+            file = file .. "\nscreen." .. x .. ".type=image\nscreen." .. x .. ".img=" .. image
+        elseif type == "item" then
+            local label, cmd = v["label"], v["cmd"]
+
+            if label == nil or cmd == nil then error("missing ITEM (label or cmd) config") end
+
+            file = file .. "\nscreen." .. x .. ".type=item\nscreen." .. x .. ".label=" .. label .. "\nscreen." .. x .. ".cmd=" .. cmd
+        elseif type == "spacer" then
+            local w, h = v["w"], v["h"]
+
+            file = file .. "\nscreen." .. x .. ".type=spacer\nscreen." .. x .. ".w=" .. w or "1" .. "\nscreen." .. x .. ".h=" .. h or "10"
+        else
+            error("invalid field type '" .. type .. "'")
         end
     end
 
