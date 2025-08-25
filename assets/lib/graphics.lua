@@ -66,13 +66,13 @@ function graphics.BuildScreen(config)
         local type = v["type"]
 
         if type == nil then 
-            error("missing type in field '" .. x .. "'")
+            error("missing type in field '" .. k .. "'")
         elseif type == "text" then
             local text = v["value"]
 
-            if text == nil then error("missing value for text field '" .. x .. "'") end
+            if text == nil then error("missing value for text field '" .. k .. "'") end
             
-            file = file .. "\nscreen." .. x .. ".type=text\nscreen." .. text .. ".value=" .. text .. "\nscreen." .. x .. ".style" .. v["style"] or "default"
+            file = file .. "\nscreen." .. k .. ".type=tekt\nscreen." .. text .. ".value=" .. text .. "\nscreen." .. k .. ".style" .. v["style"] or "default"
         elseif type == "image" then
             local image = v["img"]
 
