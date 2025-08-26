@@ -2970,7 +2970,7 @@ class Lua {
                 }
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
-            else if (MOD == TONUMBER) { return args.isEmpty() ? new Double(Double.valueOf(args.elementAt(0))) : null; }
+            else if (MOD == TONUMBER) { return args.isEmpty() ? new Double(Double.valueOf(toLuaString(args.elementAt(0)))) : null; }
             else if (MOD == LOWER || MOD == UPPER || MOD == LEN) {
                 if (args.isEmpty()) { }
                 else {
