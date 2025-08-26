@@ -1788,7 +1788,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20;
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43;;
     private static final Object LUA_NIL = new Object();
     // |
@@ -1800,12 +1800,15 @@ class Lua {
         this.tokenIndex = 0; this.PID = midlet.genpid();
         this.proc = midlet.genprocess("lua", root, null);
         
-        Hashtable os = new Hashtable(), io = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable();
         String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
         funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
+
+        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB };
+        for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
         
         funcs = new String[] { "print", "error", "pcall", "require", "pairs", "collectgarbage", "tostring", "tonumber", "rawget", "rawlen" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS, GC, TOSTRING, TONUMBER, RAWGET, RAWLEN };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
@@ -2968,6 +2971,59 @@ class Lua {
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
             else if (MOD == TONUMBER) { return new Double(Double.valueOf(args.isEmpty() ? 0 : args.elementAt(0))); }
+            else if (MOD == LOWER || MOD == UPPER || MOD == LEN) {
+                if (args.isEmpty()) { }
+                else {
+                    String text = toLuaString(args.elementAt(0));
+                    return MOD == LOWER ? text.toLowerCase() : MOD == UPPER ? text.toUpperCase() : new Double(text.length()) ;
+                }
+            }
+            else if (MOD == MATCH) {
+                if (args.isEmpty()) { }
+                else {
+                    String text = toLuaString(args.elementAt(0)), pattern = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+                
+                    if (args.elementAt(0) == null || pattern == null) { }
+                    else {
+                        int pos = text.indexOf(pattern);
+
+                        if (pos == -1) { }
+                        else { return new Double(pos + 1); }
+                    }
+                }
+            }
+            else if (MOD == REVERSE) {
+                if (args.isEmpty()) { }
+                else {
+                    StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0)));
+                    return sb.reverse().toString();
+                }
+            }
+            else if (MOD == SUB) {
+                if (args.isEmpty()) { }
+                else {
+                    String text = toLuaString(args.elementAt(0));
+
+                    if (args.elementAt(0) == null) { }
+                    else {
+                        if (args.size() == 1) { return text; }
+
+                        int len = text.length(), start = midlet.getNumber(toLuaString(args.elementAt(1)), 1, false), end = args.size() > 2 ? midlet.getNumber(toLuaString(args.elementAt(2)), len, false) : len;
+
+                        if (start < 0) { start = len + start + 1; }
+                        if (end < 0) { end = len + end + 1; }
+
+                        if (start < 1) { start = 1; }
+                        if (end > len) { end = len; }
+
+                        if (start > end || start > len) { return ""; }
+
+                        int jBegin = start - 1;
+
+                        return text.substring(jBegin < 0 ? 0 : jBegin, end)
+                    }
+                }
+            }
 
             return null;
         }
