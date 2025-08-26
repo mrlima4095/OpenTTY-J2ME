@@ -1810,7 +1810,7 @@ class Lua {
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
         
-        funcs = new String[] { "print", "error", "pcall", "require", "pairs", "collectgarbage", "tostring", "tonumber", "rawget", "rawlen" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS, GC, TOSTRING, TONUMBER, RAWGET, RAWLEN };
+        funcs = new String[] { "print", "error", "pcall", "require", "pairs", "collectgarbage", "tostring", "tonumber" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS, GC, TOSTRING, TONUMBER };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
     }
     // | (Run Source code)
@@ -2970,7 +2970,7 @@ class Lua {
                 }
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
-            else if (MOD == TONUMBER) { return new Double(Double.valueOf(args.isEmpty() ? 0 : args.elementAt(0))); }
+            else if (MOD == TONUMBER) { return args.isEmpty() ? new Double(Double.valueOf(args.elementAt(0))) : null; }
             else if (MOD == LOWER || MOD == UPPER || MOD == LEN) {
                 if (args.isEmpty()) { }
                 else {
