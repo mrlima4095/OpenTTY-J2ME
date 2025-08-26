@@ -25,6 +25,12 @@ local function load()
     local state = os.getenv("LEDIT_STATE")
     
     if state == nil then
+        local file = os.getenv("LEDIT_FILE")
+        
+        if file ~= nil then
+            os.execute("set LEDIT_TXT=" .. io.read(file))
+        end
+        
         main()
     elseif state == "SAVE" then
         save(os.getenv("LEDIT_FILE"))
@@ -42,11 +48,24 @@ end
 local function main() g.BuildEdit(edit) end
 local function save(filename)
     if filename == nil then
-        explore["label"] = "File name"
-        explore["key"]
+        explore["label"] = "(Save) File name"
+        explore["key"] = "LEDIT_FILE"
+        explore["cmd"] = "execute set LEDIT_STATE=SAVE; lua edit.lua; true"
+        explore["back"] = "execute set LEDIT_STATE=MENU; lua edit.lua; true"
         
+        g.BuildQuest(explore)
     else 
         io.write(os.getenv("LEDIT_TXT"), os.getenv("LEDIT_FILE"), "w")
         os.execute("execute unset LEDIT_STATE; lua edit.lua; true")
     end
 end
+local function open()
+    explore["label"] = "(Open) File name"
+    explore["key"] = "LEDIT_FILE"
+    explore["cmd"] = "execute unset LEDIT_STATE; lua edit.lua; true"
+    explore["back"] = "execute set LEDIT_STATE=MENU; lua edit.lua; true"
+    
+    g.BuidQuest(explore)
+end
+
+load()
