@@ -4,7 +4,7 @@ version=1.0
 description=Alternative Editor
 
 api.version=1.16
-api.error=warn LuaEdit requires OpenTTY 1.16
+api.error=execute warn LuaEdit requires OpenTTY 1.16; true
 api.match=minimum
 
 config=execute lua edit.lua
@@ -31,9 +31,7 @@ local edit, menu, explore = {
         ["Open file"] = "execute set LEDIT_STATE=OPEN; lua edit.lua; true",
         ["About"] = "execute unset LEDIT_STATE; lua edit.lua; warn LuaEdit J2ME v1; true"
     }
-}, {
-    title = "LuaEdit"
-}
+}, { title = "LuaEdit" }
 
 local function load() 
     local state = os.getenv("LEDIT_STATE")
