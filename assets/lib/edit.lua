@@ -1,3 +1,18 @@
+--[[
+name=LuaEdit
+version=1.0
+description=Alternative Editor
+
+api.version=1.16
+api.error=warn LuaEdit requires OpenTTY 1.16
+api.match=minimum
+
+config=execute lua edit.lua
+command=nano
+
+nano=execute lua edit.lua; true
+]]
+
 local g = require("graphics.lua")
 local edit, menu, explore = {
     title = "LuaEdit",
