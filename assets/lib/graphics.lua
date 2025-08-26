@@ -57,44 +57,50 @@ function graphics.BuildScreen(config)
 
     for k,v in pairs(internals) do if config[v] ~= nil then file = file .. "\n" .. k .. "=" .. config[v] end end
     for k,v in pairs(fields) do
-        if buffer == "" then
-            buffer = k
-        else
-            buffer = buffer .. "," .. k
-        end
+        if buffer == "" then buffer = k else buffer = buffer .. "," .. k end
 
-        local type = v["type"]
-
-        if type == nil then 
+        local ftype = v["type"]
+        
+        if ftype == nil then 
             error("missing type in field '" .. k .. "'")
-        elseif type == "text" then
+        elseif ftype == "text" then
             local text = v["value"]
-
             if text == nil then error("missing value for text field '" .. k .. "'") end
             
-            file = file .. "\nscreen." .. k .. ".type=tekt\nscreen." .. text .. ".value=" .. text .. "\nscreen." .. k .. ".style" .. v["style"] or "default"
-        elseif type == "image" then
+            file = file ..
+                "\nscreen." .. k .. ".type=text" ..
+                "\nscreen." .. k .. ".value=" .. text ..
+                "\nscreen." .. k .. ".style=" .. (v["style"] or "default")
+
+        elseif ftype == "image" then
             local image = v["img"]
+            if image == nil then error("missing img for image field '" .. k .. "'") end
 
-            if image == nil then error("missing value for tekt field '" .. k .. "'") end 
+            file = file ..
+                "\nscreen." .. k .. ".type=image" ..
+                "\nscreen." .. k .. ".img=" .. image
 
-            file = file .. "\nscreen." .. k .. ".type=image\nscreen." .. k .. ".img=" .. image
-        elseif type == "item" then
+        elseif ftype == "item" then
             local label, cmd = v["label"], v["cmd"]
+            if label == nil or cmd == nil then error("missing ITEM (label or cmd) config for field '" .. k .. "'") end
 
-            if label == nil or cmd == nil then error("missing ITEM (label or cmd) config") end
+            file = file ..
+                "\nscreen." .. k .. ".type=item" ..
+                "\nscreen." .. k .. ".label=" .. label ..
+                "\nscreen." .. k .. ".cmd=" .. cmd
 
-            file = file .. "\nscreen." .. k .. ".type=item\nscreen." .. k .. ".label=" .. label .. "\nscreen." .. k .. ".cmd=" .. cmd
-        elseif type == "spacer" then
+        elseif ftype == "spacer" then
             local w, h = v["w"], v["h"]
-
-            file = file .. "\nscreen." .. k .. ".type=spacer\nscreen." .. k .. ".w=" .. w or "1" .. "\nscreen." .. k .. ".h=" .. h or "10"
+            file = file ..
+                "\nscreen." .. k .. ".type=spacer" ..
+                "\nscreen." .. k .. ".w=" .. (w or "1") ..
+                "\nscreen." .. k .. ".h=" .. (h or "10")
         else
-            error("invalid field type '" .. type .. "'")
+            error("invalid field type '" .. ftype .. "'")
         end
     end
 
-    return os.execute("x11 make -e " .. file)
+    return os.execute("x11 make -e " .. file .. "\n" .. "screen.fields=" .. buffer)
 end
 
 
