@@ -2991,6 +2991,7 @@ class Lua {
                     }
                 }
             }
+            else if (MOD == RANDOM) { return random.nextDouble(args.isEmpty() ? 1 : Double.valueOf(toLuaString(args.elementAt(0)))); }
 
             return null;
         }
