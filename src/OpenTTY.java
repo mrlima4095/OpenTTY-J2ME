@@ -1924,8 +1924,7 @@ class Lua {
                 else if (word.equals("in")) type = IN;
                 else if (word.equals("break")) type = BREAK;*/
 
-                tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : world.equals("else") ? ELSE : world.equals("elseif") ? ELSEIF : world.equals("end") ? END : world.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : world.equals("in") ? IN : word.equals("break") ? BREAK : IDENTIFIER, word));
-                continue;
+                tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : world.equals("in") ? IN : word.equals("break") ? BREAK : IDENTIFIER, word));
             }
     
             else if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; }
