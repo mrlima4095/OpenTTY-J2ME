@@ -16,7 +16,6 @@ nano=execute lua edit.lua; true
 local g = require("graphics.lua")
 local edit, menu, explore = {
     title = "LuaEdit",
-    content = os.getenv("LEDIT_TXT") or "",
     key = "LEDIT_TXT",
     cmd = "execute set LEDIT_STATE=MENU; lua edit.lua; unset LEDIT_STATE; true",
     ["cmd.label"] = "Menu",
@@ -60,7 +59,7 @@ local function load()
     end
 end
 
-local function main() g.BuildEdit(edit) end
+local function main() edit["content"] = os.getenv("LEDIT_TXT") or "" g.BuildEdit(edit) end
 local function save(filename)
     if filename == nil then
         explore["label"] = "(Save) File name"
