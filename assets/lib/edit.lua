@@ -23,7 +23,7 @@ local edit, menu, explore = {
     ["back.label"] = "Back"
 }, {
     title = "Menu",
-    back = "execute unset LEDIT_STATE; lua edit.lua; true"
+    back = "execute unset LEDIT_STATE; lua edit.lua; true",
     itens = {
         ["Clear"] = "execute unset LEDIT_TXT LEDIT_TXT; lua edit.lua; true",
         ["Save"] = "execute set LEDIT_STATE=SAVE; lua edit.lua; true",
