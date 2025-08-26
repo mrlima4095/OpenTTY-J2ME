@@ -79,7 +79,7 @@ local function open()
     explore["cmd"] = "execute unset LEDIT_STATE; lua edit.lua; true"
     explore["back"] = "execute set LEDIT_STATE=MENU; lua edit.lua; true"
     
-    g.BuidQuest(explore)
+    g.BuildQuest(explore)
 end
 
 load()
