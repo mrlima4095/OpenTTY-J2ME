@@ -131,5 +131,50 @@ function graphics.BuildCanvas(config)
     return os.execute("x11 canvas -e " .. file .. "\ncanvas.fields=" .. buffer)
 end
 
+function graphics.BuildQuest(config)
+    local file = ""
+    local internals = {
+        ["quest.title"]      = "title",
+        ["quest.label"]      = "label",
+        ["quest.key"]        = "key",
+        ["quest.cmd"]        = "cmd",
+        ["quest.cmd.label"]  = "cmd.label",
+        ["quest.back"]       = "back",
+        ["quest.back.label"] = "back.label",
+        ["quest.content"]    = "content",
+        ["quest.type"]       = "type",
+    }
+
+    if config["label"] == nil then error("missing quest.label") end
+    if config["key"]   == nil then error("missing quest.key")   end
+    if config["cmd"]   == nil then error("missing quest.cmd")   end
+
+    for k, v in pairs(internals) do if config[v] ~= nil then file = file .. "\n" .. k .. "=" .. tostring(config[v]) end end
+
+    return os.execute("x11 quest -e " .. file)
+end
+function graphics.BuildEdit(config)
+    local file = ""
+
+    if config["key"] == nil then error("missing edit.key") end
+    if config["cmd"] == nil then error("missing edit.cmd") end
+
+    local internals = {
+        ["edit.title"]      = "title",
+        ["edit.content"]    = "content",
+        ["edit.key"]        = "key",
+        ["edit.cmd"]        = "cmd",
+        ["edit.cmd.label"]  = "cmd.label",
+        ["edit.back"]       = "back",
+        ["edit.back.label"] = "back.label",
+        ["edit.source"]     = "source",
+    }
+
+    for k, v in pairs(internals) do if config[v] ~= nil then file = file .. "\n" .. k .. "=" .. tostring(config[v]) end end
+
+    return os.execute("x11 edit -e " .. file)
+end
+
+
 
 return graphics 
