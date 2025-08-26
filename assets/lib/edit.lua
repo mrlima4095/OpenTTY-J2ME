@@ -62,7 +62,7 @@ end
 local function main() 
     edit["content"] = os.getenv("LEDIT_TXT") 
     if edit["content"] == nil then 
-        edit["content"] = "" 
+        edit["content"] = ""
     end
     
     g.BuildEdit(edit)
