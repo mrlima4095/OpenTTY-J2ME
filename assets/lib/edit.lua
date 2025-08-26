@@ -19,7 +19,7 @@ local edit, menu, explore = {
     key = "LEDIT_TXT",
     cmd = "execute set LEDIT_STATE=MENU; lua edit.lua; unset LEDIT_STATE; true",
     ["cmd.label"] = "Menu",
-    back = "execute unset LEDIT_STATE;",
+    back = "execute unset LEDIT_STATE; true",
     ["back.label"] = "Back"
 }, {
     title = "Menu",
@@ -53,7 +53,7 @@ local function load()
     elseif state == "OPEN" then
         open()
     elseif state == "MENU" then
-        
+        g.BuildList(menu)
     else 
         main()
     end
