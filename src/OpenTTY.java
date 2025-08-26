@@ -1788,7 +1788,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21;
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43;;
     private static final Object LUA_NIL = new Object();
     // |
@@ -1829,32 +1829,30 @@ class Lua {
         midlet.trace.remove(PID);
         return status;
     }
-
+    // |
+    // Tokenizer
     private Vector tokenize(String code) throws Exception {
         Vector tokens = new Vector();
         int i = 0;
         while (i < code.length()) {
             char c = code.charAt(i);
     
-            if (isWhitespace(c) || c == ';') { i++; continue; }
-            if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') {
+            if (isWhitespace(c) || c == ';') { i++; }
+            else if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') {
                 i += 2;
-                // Comentário de bloco --[[
                 if (i + 1 < code.length() && code.charAt(i) == '[' && code.charAt(i + 1) == '[') {
                     i += 2;
-                    // Avança até ]]
                     while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) i++;
-                    if (i + 1 < code.length()) i += 2; // pula ]]
+                    if (i + 1 < code.length()) i += 2;
                 } 
                 else { while (i < code.length() && code.charAt(i) != '\n') i++; }
-                continue;
             }
     
-            if (c == '.') { if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } else { tokens.addElement(new Token(DOT, ".")); i++; continue; } }
-            if (c == ':') { tokens.addElement(new Token(DOT, ".")); i++; continue; }
+            else if (c == '.') { if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } else { tokens.addElement(new Token(DOT, ".")); i++; continue; } }
+            else if (c == ':') { tokens.addElement(new Token(DOT, ".")); i++; }
 
             // Números: começa com dígito ou . seguido de dígito (ex: .5)
-            if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
+            else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
                 StringBuffer sb = new StringBuffer();
                 boolean hasDecimal = false;
                 while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
@@ -1874,7 +1872,7 @@ class Lua {
                 catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
                 continue;
             }
-            if (c == '-' && i + 1 < code.length() && (isDigit(code.charAt(i + 1)) || (code.charAt(i + 1) == '.' && i + 2 < code.length() && isDigit(code.charAt(i + 2))))) {
+            else if (c == '-' && i + 1 < code.length() && (isDigit(code.charAt(i + 1)) || (code.charAt(i + 1) == '.' && i + 2 < code.length() && isDigit(code.charAt(i + 2))))) {
                 i++; // Pula o sinal negativo
                 StringBuffer sb = new StringBuffer();
                 sb.append('-'); // Adiciona o sinal negativo
@@ -1895,20 +1893,18 @@ class Lua {
                     tokens.addElement(new Token(NUMBER, new Double(numValue)));
                 } 
                 catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
-                continue;
             }
 
             // Strings
-            if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString())); continue; }
-            if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString())); continue; }
+            else if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString())); }
+            else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString())); }
 
-            // Identificadores e palavras-chave
-            if (isLetter(c)) {
+            else if (isLetter(c)) {
                 StringBuffer sb = new StringBuffer();
                 while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; }
 
                 String word = sb.toString();
-                int type = IDENTIFIER;
+                /*int type = IDENTIFIER;
                 if (word.equals("true") || word.equals("false")) type = BOOLEAN;
                 else if (word.equals("nil")) type = NIL;
                 else if (word.equals("and")) type = AND;
@@ -1926,34 +1922,33 @@ class Lua {
                 else if (word.equals("local")) type = LOCAL;
                 else if (word.equals("for")) type = FOR;
                 else if (word.equals("in")) type = IN;
-                else if (word.equals("break")) type = BREAK;
+                else if (word.equals("break")) type = BREAK;*/
 
-                tokens.addElement(new Token(type, word));
+                tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : world.equals("else") ? ELSE : world.equals("elseif") ? ELSEIF : world.equals("end") ? END : world.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : world.equals("in") ? IN : word.equals("break") ? BREAK : IDENTIFIER, word));
                 continue;
             }
     
-            // Operadores e pontuação
-            if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; continue; }
-            if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; continue; }
-            if (c == '*') { tokens.addElement(new Token(MULTIPLY, "*")); i++; continue; }
-            if (c == '/') { tokens.addElement(new Token(DIVIDE, "/")); i++; continue; }
-            if (c == '%') { tokens.addElement(new Token(MODULO, "%")); i++; continue; }
-            if (c == '(') { tokens.addElement(new Token(LPAREN, "(")); i++; continue; }
-            if (c == ')') { tokens.addElement(new Token(RPAREN, ")")); i++; continue; }
-            if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; continue; }
-            if (c == '^') { tokens.addElement(new Token(POWER, "^")); i++; continue; }
+            else if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; }
+            else if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; }
+            else if (c == '*') { tokens.addElement(new Token(MULTIPLY, "*")); i++; }
+            else if (c == '/') { tokens.addElement(new Token(DIVIDE, "/")); i++; }
+            else if (c == '%') { tokens.addElement(new Token(MODULO, "%")); i++; }
+            else if (c == '(') { tokens.addElement(new Token(LPAREN, "(")); i++; }
+            else if (c == ')') { tokens.addElement(new Token(RPAREN, ")")); i++; }
+            else if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; }
+            else if (c == '^') { tokens.addElement(new Token(POWER, "^")); i++; }
     
-            if (c == '=') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } else { tokens.addElement(new Token(ASSIGN, "=")); i++; } continue; }
-            if (c == '~') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } else { throw new Exception("Unexpected character '~'"); } continue; }
-            if (c == '<') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(LE, "<=")); i += 2; } else { tokens.addElement(new Token(LT, "<")); i++; } continue; }
-            if (c == '>') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(GE, ">=")); i += 2; } else { tokens.addElement(new Token(GT, ">")); i++; } continue; }
+            else if (c == '=') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } else { tokens.addElement(new Token(ASSIGN, "=")); i++; } }
+            else if (c == '~') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } else { throw new Exception("Unexpected character '~'"); } }
+            else if (c == '<') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(LE, "<=")); i += 2; } else { tokens.addElement(new Token(LT, "<")); i++; } }
+            else if (c == '>') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(GE, ">=")); i += 2; } else { tokens.addElement(new Token(GT, ">")); i++; } }
 
-            if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; continue; }
-            if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; continue; }
-            if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; continue; }
-            if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; continue; }
+            else if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; }
+            else if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; }
+            else if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; }
+            else if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; }
 
-            throw new Exception("Unexpected character '" + c + "'");
+            else { throw new Exception("Unexpected character '" + c + "'"); }
         }
 
         tokens.addElement(new Token(EOF, "EOF"));
@@ -1963,7 +1958,8 @@ class Lua {
     private Token peekNext() { if (tokenIndex + 1 < tokens.size()) { return (Token) tokens.elementAt(tokenIndex + 1); } return new Token(EOF, "EOF"); }
     private Token consume() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex++); } return new Token(EOF, "EOF"); }
     private Token consume(int expectedType) throws Exception { Token token = peek(); if (token.type == expectedType) { tokenIndex++; return token; } throw new Exception("Expected token type " + expectedType + " but got " + token.type + " with value " + token.value); }
-
+    // |
+    // Statements
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
         
@@ -2181,7 +2177,7 @@ class Lua {
 
         throw new RuntimeException("Unexpected token at statement: " + current.value);
     }
-    
+    // |
     private Object ifStatement(Hashtable scope) throws Exception {
         consume(IF);
         Object cond = expression(scope);
@@ -2528,41 +2524,12 @@ class Lua {
 
         return null;
     }
-
+    // |
+    // Expressions
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
-    private Object logicalOr(Hashtable scope) throws Exception {
-        Object left = logicalAnd(scope);
-        while (peek().type == OR) {
-            consume(OR);
-            Object right = logicalAnd(scope);
-            left = isTruthy(left) ? left : right;
-        }
-        return left;
-    }
-    private Object logicalAnd(Hashtable scope) throws Exception {
-        Object left = comparison(scope);
-        while (peek().type == AND) {
-            consume(AND);
-            Object right = comparison(scope);
-            left = isTruthy(left) ? right : left;
-        }
-        return left;
-    }
-    private Object comparison(Hashtable scope) throws Exception {
-        Object left = concatenation(scope); // chama concatenation antes da comparação
-        while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
-            Token op = consume();
-            Object right = concatenation(scope); // compara após concatenation
-            
-            if (op.type == EQ) { left = new Boolean((left == null && right == null) || (left != null && left.equals(right))); } 
-            else if (op.type == NE) { left = new Boolean(!((left == null && right == null) || (left != null && left.equals(right)))); } 
-            else if (op.type == LT) { left = new Boolean(((Double) left).doubleValue() < ((Double) right).doubleValue()); } 
-            else if (op.type == GT) { left = new Boolean(((Double) left).doubleValue() > ((Double) right).doubleValue()); } 
-            else if (op.type == LE) { left = new Boolean(((Double) left).doubleValue() <= ((Double) right).doubleValue()); } 
-            else if (op.type == GE) { left = new Boolean(((Double) left).doubleValue() >= ((Double) right).doubleValue()); }
-        }
-        return left;
-    }
+    private Object logicalOr(Hashtable scope) throws Exception { Object left = logicalAnd(scope); while (peek().type == OR) { consume(OR); Object right = logicalAnd(scope); left = isTruthy(left) ? left : right; } return left; }
+    private Object logicalAnd(Hashtable scope) throws Exception { Object left = comparison(scope); while (peek().type == AND) { consume(AND); Object right = comparison(scope); left = isTruthy(left) ? right : left; } return left; }
+    private Object comparison(Hashtable scope) throws Exception { Object left = concatenation(scope); while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) { Token op = consume(); Object right = concatenation(scope); if (op.type == EQ) { left = new Boolean((left == null && right == null) || (left != null && left.equals(right))); } else if (op.type == NE) { left = new Boolean(!((left == null && right == null) || (left != null && left.equals(right)))); } else if (op.type == LT) { left = new Boolean(((Double) left).doubleValue() < ((Double) right).doubleValue()); } else if (op.type == GT) { left = new Boolean(((Double) left).doubleValue() > ((Double) right).doubleValue()); } else if (op.type == LE) { left = new Boolean(((Double) left).doubleValue() <= ((Double) right).doubleValue()); } else if (op.type == GE) { left = new Boolean(((Double) left).doubleValue() >= ((Double) right).doubleValue()); } } return left; }
     // |
     // Strings
     private String toLuaString(Object obj) { if (obj == null) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return obj.toString(); }
@@ -2978,12 +2945,18 @@ class Lua {
                     return MOD == LOWER ? text.toLowerCase() : text.toUpperCase();
                 }
             }
-            else if (MOD == LEN) { return args.isEmpty() || args.elementAt(0) == null ? null : toLuaString(args.elementAt(0)); }
             else if (MOD == MATCH || MOD == LEN) {
                 if (args.isEmpty()) { }
                 else {
-                    String text = toLuaString(args.elementAt(0)), pattern = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+                    Object obj = args.elementAt(0);
+                    String text = toLuaString(obj), pattern = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
                 
+                    if (MOD == LEN) {
+                        if (obj == null) { }
+                        else if (obj instanceof String) { return new Double(text.length()); } 
+                        else { throw new RuntimeException("string.len expected a string"); }
+                    }
+
                     if (args.elementAt(0) == null || pattern == null) { }
                     else {
                         int pos = text.indexOf(pattern);
@@ -2993,13 +2966,7 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == REVERSE) {
-                if (args.isEmpty()) { }
-                else {
-                    StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0)));
-                    return sb.reverse().toString();
-                }
-            }
+            else if (MOD == REVERSE) { if (args.isEmpty()) { } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); } }
             else if (MOD == SUB) {
                 if (args.isEmpty()) { }
                 else {
