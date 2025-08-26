@@ -62,9 +62,9 @@ end
 local function main() edit["content"] = os.getenv("LEDIT_TXT") or "" g.BuildEdit(edit) end
 local function save(filename)
     if filename == nil then
-        explore["label"] = "(Save) File name"
-        explore["key"] = "LEDIT_FILE"
-        explore["cmd"] = "execute set LEDIT_STATE=SAVE; lua edit.lua; true"
+        explore["label"] = "(Save) File name",
+        explore["key"] = "LEDIT_FILE",
+        explore["cmd"] = "execute set LEDIT_STATE=SAVE; lua edit.lua; true",
         explore["back"] = "execute set LEDIT_STATE=MENU; lua edit.lua; true"
         
         g.BuildQuest(explore)
@@ -74,9 +74,9 @@ local function save(filename)
     end
 end
 local function open()
-    explore["label"] = "(Open) File name"
-    explore["key"] = "LEDIT_FILE"
-    explore["cmd"] = "execute unset LEDIT_STATE; lua edit.lua; true"
+    explore["label"] = "(Open) File name",
+    explore["key"] = "LEDIT_FILE",
+    explore["cmd"] = "execute unset LEDIT_STATE; lua edit.lua; true",
     explore["back"] = "execute set LEDIT_STATE=MENU; lua edit.lua; true"
     
     g.BuidQuest(explore)
