@@ -2975,7 +2975,8 @@ class Lua {
                 if (args.isEmpty()) { }
                 else {
                     String text = toLuaString(args.elementAt(0));
-                    return MOD == LOWER ? text.toLowerCase() : MOD == UPPER ? text.toUpperCase() : text.length();
+                    Object obj = MOD == LOWER ? text.toLowerCase() : MOD == UPPER ? text.toUpperCase() : new Double(text.length());
+                    return obj;
                 }
             }
             else if (MOD == MATCH) {
