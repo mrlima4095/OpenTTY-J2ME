@@ -1,19 +1,17 @@
+local function build(state_var, config, throw)
+    if state_var == nil or config == nil then error("Build: config need to be a table") end
 
-function build(state_var, main, conf)
     local state = os.getenv(state_var)
-
+    
     if state == nil then
-        main()
-    else 
-        if conf == nil then error("config table cannot be nil") end
-
-        for k,v in pairs(conf) do
-            if state == k then
-                v()
-                
-                break
-            end
+        return config:main()
+    else
+        for k,v in pairs(config) do
+            if k == state then return v() end
         end
 
+        if throw ~= nil or throw ~= false then error("Build: invalid state at config '" .. state .. "'") end
     end
 end
+
+return build
