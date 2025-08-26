@@ -1812,6 +1812,8 @@ class Lua {
         
         funcs = new String[] { "print", "error", "pcall", "require", "pairs", "collectgarbage", "tostring", "tonumber" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS, GC, TOSTRING, TONUMBER };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
+
+        globals.put("random", new LuaFunction(RANDOM));
     }
     // | (Run Source code)
     public int run(String source, String code) { 
