@@ -2971,15 +2971,15 @@ class Lua {
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
             else if (MOD == TONUMBER) { return args.isEmpty() ? new Double(Double.valueOf(toLuaString(args.elementAt(0)))) : null; }
-            else if (MOD == LOWER || MOD == UPPER || MOD == LEN) {
+            else if (MOD == LOWER || MOD == UPPER) {
                 if (args.isEmpty()) { }
                 else {
                     String text = toLuaString(args.elementAt(0));
-                    Object obj = MOD == LOWER ? text.toLowerCase() : MOD == UPPER ? text.toUpperCase() : new Double(text.length());
-                    return obj;
+                    return MOD == LOWER ? text.toLowerCase() : text.toUpperCase();
                 }
             }
-            else if (MOD == MATCH) {
+            else if (MOD == LEN) { return args.isEmpty() || args.elementAt(0) == null ? null : toLuaString(args.elementAt(0)); }
+            else if (MOD == MATCH || MOD == LEN) {
                 if (args.isEmpty()) { }
                 else {
                     String text = toLuaString(args.elementAt(0)), pattern = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
