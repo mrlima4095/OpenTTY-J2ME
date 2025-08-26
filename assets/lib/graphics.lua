@@ -116,7 +116,6 @@ function graphics.BuildCanvas(config)
 
         file = file .. "\ncanvas." .. id .. ".type=" .. tostring(ftype)
 
-        -- opcionais comuns
         if spec["link"]  ~= nil then file = file .. "\ncanvas." .. id .. ".link="  .. tostring(spec["link"])  end
         if spec["value"] ~= nil then file = file .. "\ncanvas." .. id .. ".value=" .. tostring(spec["value"]) end
 
@@ -128,7 +127,7 @@ function graphics.BuildCanvas(config)
         if spec["w"] ~= nil then file = file .. "\ncanvas." .. id .. ".w=" .. tostring(spec["w"]) end
         if spec["h"] ~= nil then file = file .. "\ncanvas." .. id .. ".h=" .. tostring(spec["h"]) end
     end
-    
+
     return os.execute("x11 canvas -e " .. file .. "\ncanvas.fields=" .. buffer)
 end
 
