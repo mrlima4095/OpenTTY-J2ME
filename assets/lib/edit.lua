@@ -13,76 +13,74 @@ command=nano
 nano=execute lua edit.lua; true
 ]]
 
-local g = require("graphics.lua")
-local edit, menu, explore = {
+
+local g = require("graphics")
+local edit, menu, questing = {
     title = "LuaEdit",
     key = "LEDIT_TXT",
-    cmd = "execute set LEDIT_STATE=MENU; lua edit.lua; unset LEDIT_STATE; true",
+    cmd = "execute set LEDIT_STATE=MENU; lua /home/edit.lua; true",
     ["cmd.label"] = "Menu",
-    back = "execute unset LEDIT_STATE; true",
-    ["back.label"] = "Back"
+    back = "execute unset LEDIT_STATE; true"
 }, {
     title = "Menu",
-    back = "execute unset LEDIT_STATE; lua edit.lua; true",
+    back = "execute unset LEDIT_STATE; lua /home/edit.lua; true",
     itens = {
-        ["Clear"] = "execute unset LEDIT_TXT LEDIT_TXT; lua edit.lua; true",
-        ["Save"] = "execute set LEDIT_STATE=SAVE; lua edit.lua; true",
-        ["Save as"] = "execute set LEDIT_STATE=SAVEAS; lua edit.lua; true",
-        ["Open file"] = "execute set LEDIT_STATE=OPEN; lua edit.lua; true",
-        ["About"] = "execute unset LEDIT_STATE; lua edit.lua; warn LuaEdit J2ME v1; true"
+        ["Clear"] = "execute unset LEDIT_TXT LEDIT_STATE; lua /home/edit.lua; true",
+        ["Save"] = "execute set LEDIT_STATE=SAVE; lua /home/edit.lua; true",
+        ["Save as"] = "execute set LEDIT_STATE=SAVE; lua /home/edit.lua; true",
+        ["Open file"] = "execute set LEDIT_STATE=OPEN; lua /home/edit.lua; true",
+        ["View info"] = "execute unset LEDIT_STATE; warn LuaEdit v1\nAlternative Editor"
     }
 }, { title = "LuaEdit" }
 
-local function load() 
-    local state = os.getenv("LEDIT_STATE")
+local function main()
+    local txt = os.getenv("LEDIT_TXT")
+    edit["content"] = txt or ""
+
+    g.BuildEdit(edit)
     
-    if state == nil then
-        local file = os.getenv("LEDIT_FILE")
-        
-        if file ~= nil then os.execute("set LEDIT_TXT=" .. io.read(file)) end
-        
-        main()
-    elseif state == "SAVE" then
-        save(os.getenv("LEDIT_FILE"))
-    elseif state == "SAVEAS" then
-        save()
-    elseif state == "OPEN" then
-        openfile()
-    elseif state == "MENU" then
-        g.BuildList(menu)
-    else 
-        main()
-    end
+    return nil
 end
 
-local function main() 
-    edit["content"] = os.getenv("LEDIT_TXT") 
-    if edit["content"] == nil then 
-        edit["content"] = ""
+local function savefile()
+    local file = os.getenv("LEDIT_FILE")
+    if file == nil then
+        questing["key"] = "LEDIT_FILE"
+        questing["cmd"] = "execute set LEDIT_STATE=SAVE"
+        questing["label"] = "(Save as) file name"
+
+        g.BuildQuest(questing)
     end
-    
-    g.BuildEdit(edit)
-end
-local function save(filename)
-    if filename == nil then
-        explore["label"] = "(Save) File name"
-        explore["key"] = "LEDIT_FILE"
-        explore["cmd"] = "execute set LEDIT_STATE=SAVE; lua edit.lua; true"
-        explore["back"] = "execute set LEDIT_STATE=MENU; lua edit.lua; true"
-        
-        g.BuildQuest(explore)
-    else 
-        io.write(os.getenv("LEDIT_TXT"), os.getenv("LEDIT_FILE"), "w")
-        os.execute("execute unset LEDIT_STATE; lua edit.lua; true")
-    end
+
+    io.write(os.getenv("LEDIT_TXT") or "", os.getenv("LEDIT_FILE") or "nano", "w")
+    os.execute("execute unset LEDIT_STATE; lua /home/edit.lua; true")
+
+    return nil
 end
 local function openfile()
-    explore["label"] = "(Open) File name"
-    explore["key"] = "LEDIT_FILE"
-    explore["cmd"] = "execute unset LEDIT_STATE; read LEDIT_TXT $LEDIT_FILE; lua edit.lua; true"
-    explore["back"] = "execute set LEDIT_STATE=MENU; lua edit.lua; true"
+    questing["key"] = "LEDIT_FILE"
+    questing["cmd"] = "execute unset LEDIT_STATE; read LEDIT_TXT $LEDIT_FILE; lua /home/edit.lua; true"
+    questing["label"] = "(Open) file name"
+
+    g.BuildQuest(questing)
     
-    g.BuildQuest(explore)
+    return nil
 end
 
-load()
+local function build()
+    local state = os.getenv("LEDIT_STATE")
+
+    if state == nil then
+        main()
+    elseif state == "MENU" then
+        g.BuildList(menu)
+    elseif state == "SAVE" then
+        savefile()
+    elseif state == "OPEN" then
+        openfile()
+    end
+
+    return nil
+end
+
+build()
