@@ -21,7 +21,7 @@ local edit, menu, explore = {
     cmd = "execute set LEDIT_STATE=MENU; lua edit.lua; unset LEDIT_STATE; true",
     ["cmd.label"] = "Menu",
     back = "execute unset LEDIT_STATE;",
-    ["back.label"] = "Back",
+    ["back.label"] = "Back"
 }, {
     title = "Menu",
     back = "execute unset LEDIT_STATE; lua edit.lua; true"
@@ -33,7 +33,7 @@ local edit, menu, explore = {
         ["About"] = "execute unset LEDIT_STATE; lua edit.lua; warn LuaEdit J2ME v1; true"
     }
 }, {
-    title = "LuaEdit",
+    title = "LuaEdit"
 }
 
 local function load() 
