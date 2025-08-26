@@ -1833,7 +1833,7 @@ class Lua {
         while (i < code.length()) {
             char c = code.charAt(i);
     
-            if (isWhitespace(c)) { i++; continue; }
+            if (isWhitespace(c) || c == ';') { i++; continue; }
             if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') {
                 i += 2;
                 // Comentário de bloco --[[
