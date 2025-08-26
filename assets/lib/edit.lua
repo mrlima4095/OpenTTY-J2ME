@@ -83,7 +83,7 @@ end
 local function open()
     explore["label"] = "(Open) File name"
     explore["key"] = "LEDIT_FILE"
-    explore["cmd"] = "execute unset LEDIT_STATE; read LEDIT_TXT $LEDIT_FILE lua edit.lua; true"
+    explore["cmd"] = "execute unset LEDIT_STATE; read LEDIT_TXT $LEDIT_FILE; lua edit.lua; true"
     explore["back"] = "execute set LEDIT_STATE=MENU; lua edit.lua; true"
     
     g.BuildQuest(explore)
