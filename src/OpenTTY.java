@@ -3020,7 +3020,7 @@ class Lua {
 
                         int jBegin = start - 1;
 
-                        return text.substring(jBegin < 0 ? 0 : jBegin, end)
+                        return text.substring(jBegin < 0 ? 0 : jBegin, end);
                     }
                 }
             }
