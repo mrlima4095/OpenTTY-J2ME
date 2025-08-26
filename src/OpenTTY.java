@@ -1848,7 +1848,8 @@ class Lua {
             }
     
             if (c == '.') { if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } else { tokens.addElement(new Token(DOT, ".")); i++; continue; } }
-            
+            if (c == ':') { tokens.addElement(new Token(DOT, ".")); i++; continue; }
+
             // Números: começa com dígito ou . seguido de dígito (ex: .5)
             if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
                 StringBuffer sb = new StringBuffer();
