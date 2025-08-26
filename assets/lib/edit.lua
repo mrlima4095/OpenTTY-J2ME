@@ -59,7 +59,7 @@ local function load()
     end
 end
 
-local function main() edit["content"] = os.getenv("LEDIT_TXT") or "" g.BuildEdit(edit) end
+local function main() edit["content"] = os.getenv("LEDIT_TXT") if edit["content"] == nil edit["content"] = "" end  g.BuildEdit(edit) end
 local function save(filename)
     if filename == nil then
         explore["label"] = "(Save) File name",
