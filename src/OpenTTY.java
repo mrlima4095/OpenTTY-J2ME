@@ -2967,7 +2967,8 @@ class Lua {
                 }
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
-            
+            else if (MOD == TONUMBER) { return new Double(Double.valueOf(args.isEmpty() ? 0 : args.elementAt(0))); }
+
             return null;
         }
     }
