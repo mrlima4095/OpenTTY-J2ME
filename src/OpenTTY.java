@@ -1804,7 +1804,7 @@ class Lua {
         String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
-        funcs = new String[] { "loadlib", "loaded" }; loaders = new int[] { REQUIRE, };
+        funcs = new String[] { "loadlib", "loaded" }; loaders = new int[] { REQUIRE,  };
         for (int i = 0; i < funcs.length; i++ ) { package.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("package", package);
 
         funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
