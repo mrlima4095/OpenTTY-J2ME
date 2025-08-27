@@ -1829,7 +1829,7 @@ class Lua {
             while (peek().type != EOF) { statement(globals); }
         } 
         catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
-        catch (Error e) { sstatus = 1; }
+        catch (Error e) { status = 1; }
 
         midlet.trace.remove(PID);
         return status;
