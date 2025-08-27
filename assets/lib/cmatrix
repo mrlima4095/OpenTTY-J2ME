@@ -7,20 +7,26 @@ description=Matrix Effect
 ]]
 
 local function cmatrix()
-	local _, out = os.execute("execute stty 100; export CMATRIX; alias break=unset CMATRIX;"), io.read()
-
-	while os.getenv("CMATRIX") do
-		local x, buffer = random(10), ""
-
-		if x >= 5 then buffer = x .. " " else buffer = x end
-
-		io.write(buffer, "stdout", "a")
-	end
-
-	_ = os.execute("execute stty -1; clear;")
-	print(out)
-
-	return null
+    local n, out = os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 xfinit stdout; x11 item -e item.label=Stop\nitem.cmd=unset CMATRIX;"), io.read()
+    
+    while os.getenv("CMATRIX") do
+        local x = random(10)
+        
+        if x % 2 == 0 then 
+            x = x .. " "
+        elseif x == 5 then
+            x = x .. " $"
+        end
+        
+        io.write(x, "stdout", "a")
+        
+        if string.len(io.read) > 200 then
+            n = os.execute("clear")
+        end
+    end
+    
+    n = os.execute("execute x11 stop; x11 init; title $OLD_TITLE; clear;")
+    print(out)
 end
 
 cmatrix()
