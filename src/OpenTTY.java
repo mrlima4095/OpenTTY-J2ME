@@ -1800,9 +1800,12 @@ class Lua {
         this.tokenIndex = 0; this.PID = midlet.genpid();
         this.proc = midlet.genprocess("lua", root, null);
         
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), package = new Hashtable();
         String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
+
+        funcs = new String[] { "loadlib", "loaded" }; loaders = new int[] { REQUIRE, };
+        for (int i = 0; i < funcs.length; i++ ) { package.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("package", package);
 
         funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
