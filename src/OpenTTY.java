@@ -1780,7 +1780,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 // |
 // Lua Runtime
 class Lua {
-    private boolean root, breakLoop = false;
+    private boolean root, breakLoop = false, doreturn = false;
     private OpenTTY midlet;
     private String PID = null;
     private long uptime = System.currentTimeMillis();
@@ -1829,7 +1829,7 @@ class Lua {
             while (peek().type != EOF) { statement(globals); }
         } 
         catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
-        catch (Error e) { status = 1; }
+        catch (Error e) { sstatus = 1; }
 
         midlet.trace.remove(PID);
         return status;
@@ -2059,7 +2059,7 @@ class Lua {
         else if (current.type == IF) { return ifStatement(scope); } 
         else if (current.type == WHILE) { return whileStatement(scope); }
         else if (current.type == FOR) { return forStatement(scope); }
-        else if (current.type == RETURN) { consume(RETURN); return expression(scope); } 
+        else if (current.type == RETURN) { consume(RETURN); doreturn = true; return expression(scope); } 
         else if (current.type == FUNCTION) { return functionDefinition(scope); } 
         else if (current.type == LOCAL) {
             consume(LOCAL);
@@ -2169,7 +2169,7 @@ class Lua {
             taken = true;
             while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
                 result = statement(scope);
-                if (result != null) return result;
+                if (result != null && doreturn) { doreturn = false; return result; }
             }
         } else {
             skipIfBodyUntilElsePart(); // posiciona no ELSEIF/ELSE/END correspondente deste if
@@ -2185,7 +2185,7 @@ class Lua {
                 taken = true;
                 while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
                     result = statement(scope);
-                    if (result != null) return result;
+                    if (result != null && doreturn) { doreturn = false; return result; }
                 }
             } else {
                 skipIfBodyUntilElsePart();
@@ -2198,7 +2198,7 @@ class Lua {
             if (!taken) {
                 while (peek().type != END) {
                     result = statement(scope);
-                    if (result != null) return result;
+                    if (result != null && doreturn) { doreturn = false; return result; }
                 }
             } else {
                 // já executamos um ramo verdadeiro; apenas pular até o END
@@ -2240,12 +2240,8 @@ class Lua {
             // Executa corpo até o END do laço
             while (peek().type != END) {
                 result = statement(scope);
-                if (breakLoop) {
-                    breakLoop = false; // Resetar o estado do break
-                    endAlreadyConsumed = true;
-                    break;
-                }
-                if (result != null) {
+                if (breakLoop) { breakLoop = false; endAlreadyConsumed = true; break; }
+                if (result != null && doreturn) {
                     // "return" dentro do while: consome até o END do laço e retorna
                     int depth = 1;
                     while (depth > 0) {
@@ -2255,6 +2251,7 @@ class Lua {
                         else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
                     }
                     loopDepth--; // Saindo do loop
+                    doreturn = false;
                     return result;
                 }
             }
@@ -2331,7 +2328,7 @@ class Lua {
                     Object ret = null;
                     while (peek().type != EOF) {
                         ret = statement(scope);
-                        if (ret != null) break; // 'return' no corpo
+                        if (ret != null && doreturn) { doreturn = false; break; }
                     }
     
                     // Restaura estado
@@ -2389,7 +2386,7 @@ class Lua {
                         Object ret = null;
                         while (peek().type != EOF) {
                             ret = statement(scope);
-                            if (ret != null) break;
+                            if (ret != null && doreturn) { doreturn = false; return ret; }
                         }
     
                         tokenIndex = originalTokenIndex;
@@ -2425,7 +2422,7 @@ class Lua {
                         Object ret = null;
                         while (peek().type != EOF) {
                             ret = statement(scope);
-                            if (ret != null) break;
+                            if (ret != null && doreturn) { doreturn = false; return ret; }
                         }
     
                         tokenIndex = originalTokenIndex;
@@ -2787,11 +2784,13 @@ class Lua {
             Object returnValue = null;
             while (peek().type != EOF) {
                 Object result = statement(functionScope);
+
                 if (peek().type == EOF && result != null) { // Last statement was a return
                     returnValue = result;
                     break;
-                } else if (result != null) { // A return statement was encountered
+                } else if (result != null && doreturn) { // A return statement was encountered
                     returnValue = result;
+                    doreturn = false;
                     break;
                 }
             }
@@ -2961,7 +2960,7 @@ class Lua {
                     moduleScope.put(k, unwrap(globals.get(k)));
                 }
 
-                while (peek().type != EOF) { Object res = statement(moduleScope); if (res != null) { ret = res; break; } }
+                while (peek().type != EOF) { Object res = statement(moduleScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } }
             } finally { tokenIndex = savedIndex; tokens = savedTokens; }
 
             return ret; 
