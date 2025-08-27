@@ -11,7 +11,7 @@ api.match=minimum
 ]]
 
 local function cmatrix()
-    local _ = os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 xfinit stdout; x11 item -e item.label=Stop\nitem.cmd=unset CMATRIX; clear; bg cron 20 unset CMATRIX; true")
+    local _ = os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 xfinit stdout; clear; bg cron 20 unset CMATRIX; true")
 
     while os.getenv("CMATRIX") do
         local x = math.random(10)
