@@ -2993,7 +2993,7 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == RANDOM) { return midlet.random.nextDouble(args.isEmpty() ? 1.0 : Double.valueOf(toLuaString(args.elementAt(0)))); }
+            else if (MOD == RANDOM) { return midlet.random.nextDouble(args.isEmpty() ? (double) 1.0 : Double.valueOf(toLuaString(args.elementAt(0)))); }
 
             return null;
         }
