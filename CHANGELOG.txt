@@ -74,6 +74,7 @@ LTS Edition
 - Remote shells interfaces cannot be loaded with super user permissions by default.
 - X11 Screens couldn't be called with `sudo`.
 - After you change max **stdout** size, remote interfaces like `bind` can be directly damaged by **stdout** redirect.
+- OpenTTY and Lua don't have native support for regex patterns
 
 [ _X11 Virtual Screens_ ]
 
