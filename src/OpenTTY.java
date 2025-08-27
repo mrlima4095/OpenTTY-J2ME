@@ -2752,8 +2752,6 @@ class Lua {
         LuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
         LuaFunction(int type) { MOD = type; }
 
-        private Object normalizeArg(Object a) { if (a == LUA_NIL) return null; return a; }
-
         public Object call(Vector args) throws Exception {
             if (MOD != -1) { return internals(args); }
 
@@ -2818,7 +2816,7 @@ class Lua {
 
                 Object rawFunc = args.elementAt(0);
                 // Tolerância: se foi passado o nome da função (String), procurar em globals
-                Object funcObj = normalizeArg(rawFunc);
+                Object funcObj = unwrap(rawFunc);
                 if (!(funcObj instanceof LuaFunction)) {
                     if (funcObj instanceof String) {
                         String fname = (String) funcObj;
@@ -2840,7 +2838,7 @@ class Lua {
 
                 try {
                     Vector fnArgs = new Vector();
-                    for (int i = 1; i < args.size(); i++) { fnArgs.addElement(normalizeArg(args.elementAt(i))); }
+                    for (int i = 1; i < args.size(); i++) { fnArgs.addElement(unwrap(args.elementAt(i))); }
 
                     Object value = func.call(fnArgs);
                     result.addElement(Boolean.TRUE);
@@ -2866,39 +2864,11 @@ class Lua {
                 String code = midlet.getcontent(name);
                 if (code.equals("")) { throw new Exception("module not found: " + name); }
 
-                // --- Inlining do runModule ---
-                // Salva estado atual do parser
-                int savedIndex = tokenIndex;
-                Vector savedTokens = tokens;
-
-                Object ret = null;
-                try {
-                    // Tokeniza o módulo
-                    tokens = tokenize(code);
-                    tokenIndex = 0;
-
-                    // Escopo do módulo com fallback para globals
-                    Hashtable moduleScope = new Hashtable();
-                    for (Enumeration e = globals.keys(); e.hasMoreElements();) {
-                        String k = (String) e.nextElement();
-                        moduleScope.put(k, unwrap(globals.get(k)));
-                    }
-
-                    // Executa até EOF ou até encontrar 'return'
-                    while (peek().type != EOF) {
-                        Object res = statement(moduleScope);
-                        if (res != null) { ret = res; break; }
-                    }
-                } finally {
-                    // Restaura estado do parser
-                    tokenIndex = savedIndex;
-                    tokens = savedTokens;
-                }
-
-                // Armazena no cache (nil guardado como LUA_NIL)
-                requireCache.put(name, (ret == null) ? LUA_NIL : ret);
-                return ret; // pode ser null (nil) ou qualquer objeto/Vector
+                Object obj = exec(code);
+                requireCache.put(name, (obj == null) ? LUA_NIL : obj);
+                return obj;
             }
+            else if (MOD == LOADS) { if (args.isEmpty() || args.elementAt(0) == null) { } else { return exec(toLuaString(args.elementAt(0))); } }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
             else if (MOD == PAIRS) { if (args.isEmpty()) { throw new Exception("pairs: table expected"); } Object t = args.elementAt(0); t = (t == LUA_NIL) ? null : t; if (t == null || t instanceof Hashtable || t instanceof Vector) { return t; } throw new Exception("pairs: table expected"); }
@@ -2974,6 +2944,27 @@ class Lua {
             else if (MOD == RANDOM) { return new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); }
 
             return null;
+        }
+
+        private Object exec(String code) throws Exception {
+            int savedIndex = tokenIndex;
+            Vector savedTokens = tokens;
+
+            Object ret = null;
+            try {
+                tokens = tokenize(code);
+                tokenIndex = 0;
+
+                Hashtable moduleScope = new Hashtable();
+                for (Enumeration e = globals.keys(); e.hasMoreElements();) {
+                    String k = (String) e.nextElement();
+                    moduleScope.put(k, unwrap(globals.get(k)));
+                }
+
+                while (peek().type != EOF) { Object res = statement(moduleScope); if (res != null) { ret = res; break; } }
+            } finally { tokenIndex = savedIndex; tokens = savedTokens; }
+
+            return ret; 
         }
     }
 }
