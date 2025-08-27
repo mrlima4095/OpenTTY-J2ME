@@ -29,4 +29,5 @@ local function cmatrix()
     print(out)
 end
 
-cmatrix()
+local ok, msg = pcall(cmatrix)
+if ok == false then os.execute("execute x11 stop; x11 init; echo " .. msg) end
