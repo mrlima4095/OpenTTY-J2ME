@@ -1,0 +1,26 @@
+--[[
+
+name=cmatrix
+version=1.0
+description=Matrix Effect
+
+]]
+
+local function cmatrix()
+	local _, out = os.execute("execute stty 100; export CMATRIX; alias break=unset CMATRIX;"), io.read()
+
+	while os.getenv("CMATRIX") do
+		local x, buffer = random(10), ""
+
+		if x >= 5 then buffer = x .. " " else buffer = x end
+
+		io.write(buffer, "stdout", "a")
+	end
+
+	_ = os.execute("execute stty -1; clear;")
+	print(out)
+
+	return null
+end
+
+cmatrix()
