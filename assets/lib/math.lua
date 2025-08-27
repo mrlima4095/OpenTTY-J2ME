@@ -16,26 +16,5 @@ function math.floor(x)
     end
 end
 
-local function lcg()
-    math.randomseed = (math.randomseed * 9301 + 49297) % 233280
-    return math.randomseed / 233280.0
-end
 
--- replicar comportamento padrão do Lua
-function math.random(a, b)
-    if a == nil then
-        -- sem argumentos: número real [0,1)
-        return lcg()
-    elseif b == nil then
-        -- um argumento: inteiro 1..a
-        return math.floor(lcg() * a) + 1
-    else
-        -- dois argumentos: inteiro a..b
-        return math.floor(lcg() * (b - a + 1)) + a
-    end
-end
-
-function math.setseed(seed) if seed == nil then seed = os.clock() end math.randomseed = seed end
-
-math.setseed()
 return math
