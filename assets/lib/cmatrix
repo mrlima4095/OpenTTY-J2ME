@@ -12,13 +12,13 @@ local function cmatrix()
     while os.getenv("CMATRIX") do
         local x = random(10)
         
-        if x % 2 == 0 then 
-            x = x .. " "
-        elseif x == 5 then
-            x = x .. " $"
-        end
+        --if x % 2 == 0 then 
+        --    x = x .. " "
+        --elseif x == 5 then
+        --    x = x .. " $"
+        --end
         
-        io.write(x, "stdout", "a")
+        io.write(x .. " ", "stdout", "a")
         
         if string.len(io.read()) > 200 then
             n = os.execute("clear")
@@ -29,5 +29,4 @@ local function cmatrix()
     print(out)
 end
 
-local ok, msg = pcall(cmatrix)
-if ok == false then os.execute("execute x11 stop; x11 init; echo " .. msg) end
+cmatrix()
