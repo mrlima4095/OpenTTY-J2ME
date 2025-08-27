@@ -302,7 +302,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // TTY
         else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
-        else if (mainCommand.equals("stty")) { if (argument.equals("")) { } else { MAX_STDOUT_LEN = getNumber(argument, MAX_STDOUT_LEN, true); } }
+        else if (mainCommand.equals("stty")) { if (argument.equals("")) { echoCommand("" + MAX_STDOUT_LEN); } else { MAX_STDOUT_LEN = getNumber(argument, MAX_STDOUT_LEN, true); } }
         // |
         // Text related commands
         else if (mainCommand.equals("echo")) { echoCommand(argument); }
