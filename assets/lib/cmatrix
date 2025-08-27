@@ -20,7 +20,7 @@ local function cmatrix()
         
         io.write(x, "stdout", "a")
         
-        if string.len(io.read) > 200 then
+        if string.len(io.read()) > 200 then
             n = os.execute("clear")
         end
     end
