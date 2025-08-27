@@ -1901,33 +1901,7 @@ class Lua {
             else if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString())); }
             else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString())); }
 
-            else if (isLetter(c)) {
-                StringBuffer sb = new StringBuffer();
-                while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; }
-
-                String word = sb.toString();
-                /*int type = IDENTIFIER;
-                if (word.equals("true") || word.equals("false")) type = BOOLEAN;
-                else if (word.equals("nil")) type = NIL;
-                else if (word.equals("and")) type = AND;
-                else if (word.equals("or")) type = OR;
-                else if (word.equals("not")) type = NOT;
-                else if (word.equals("if")) type = IF;
-                else if (word.equals("then")) type = THEN;
-                else if (word.equals("else")) type = ELSE;
-                else if (word.equals("elseif")) type = ELSEIF;
-                else if (word.equals("end")) type = END;
-                else if (word.equals("while")) type = WHILE;
-                else if (word.equals("do")) type = DO;
-                else if (word.equals("return")) type = RETURN;
-                else if (word.equals("function")) type = FUNCTION;
-                else if (word.equals("local")) type = LOCAL;
-                else if (word.equals("for")) type = FOR;
-                else if (word.equals("in")) type = IN;
-                else if (word.equals("break")) type = BREAK;*/
-
-                tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : IDENTIFIER, word));
-            }
+            else if (isLetter(c)) { StringBuffer sb = new StringBuffer(); while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; } String word = sb.toString(); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : IDENTIFIER, word)); }
     
             else if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; }
             else if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; }
