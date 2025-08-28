@@ -1,6 +1,6 @@
 [ Config ]
 
-name=JAuth2
+name=JAuth2 [Deprecated]
 version=1.2
 description=Advanced Perms
 
@@ -8,7 +8,7 @@ api.version=1.14
 api.error=execute log add error JAuth2 requires OpenTTY API 1.14 or newer; log add warn Don't try use ViaVersion to force JAuth2 load!; echo [ JAuth2 ] Loading failed!; echo [ JAuth2 ] See logs to more info.;
 api.match=minimum
 
-config=execute if ($USERNAME == root) bg exec x11 stop & x11 title JAuth2 & x11 xfinit stdout & clear & echo [ JAuth2 ] User name may not be String 'root' & echo [ JAuth2 ] Logging out... & sleep 5 & builtin logout & builtin exit;
+config=execute if ($USERNAME == root) bg exec x11 stop & x11 title JAuth2 & x11 xfinit stdout & clear & echo [ JAuth2 ] User name may not be String 'root' & echo [ JAuth2 ] Logging out... & sleep 5 & builtin logout & builtin exit; 
 command=sudo,exit,logout,lock
 
 sudo=execute
