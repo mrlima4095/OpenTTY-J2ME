@@ -11,7 +11,7 @@ import javax.bluetooh.*;
 import java.util.*;
 import java.io.*;
 // |
-55// OpenTTY MIDlet
+// OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
     private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
