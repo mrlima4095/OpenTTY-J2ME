@@ -196,7 +196,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { warnCommand(form.getTitle(), "Wrong password"); }
             }
         } 
-        private void reload() { if (attributes.containsKey("J2EMU")) { new Monitor(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root); } else { load(); } }
+        private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root); } else { load(); } }
         private void load() {
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
             else if (MOD == EXPLORER) {
@@ -426,7 +426,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Directories Manager
         else if (mainCommand.equals("pwd")) { echoCommand(path); }
-        else if (mainCommand.equals("dir")) { new Monitor("dir", root); }
+        else if (mainCommand.equals("dir")) { new MIDletControl("dir", root); }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
@@ -624,7 +624,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // |
         // General Utilities
-        else if (mainCommand.equals("history")) { new Monitor("history", root); }
+        else if (mainCommand.equals("history")) { new MIDletControl("history", root); }
         else if (mainCommand.equals("debug")) { return runScript(read("/scripts/debug.sh")); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/java/etc/help.txt")); }
         else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; argument = replace(argument, "-v", "").trim(); if (argument.equals("")) { argument = "sh"; } String content = loadRMS("man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat", false); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
@@ -718,7 +718,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(form.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
         // |
         // Screen Manager
-        else if (mainCommand.equals("mod")) { new Monitor(argument, root); }
+        else if (mainCommand.equals("mod")) { new MIDletControl(argument, root); }
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else if (trace.containsKey("2")) { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); } else { return 69; } }
         else if (mainCommand.equals("load") || mainCommand.equals("unset")) {
             if (argument.equals("")) { }
@@ -1194,7 +1194,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command), argument = getArgument(command);
         String[] args = splitArgs(argument);
 
-        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new Monitor(mainCommand, root); } 
+        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, root); } 
         else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); } } 
         else if (mainCommand.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
         else if (mainCommand.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
