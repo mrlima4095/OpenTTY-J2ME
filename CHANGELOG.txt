@@ -24,9 +24,6 @@ LTS Edition
 - Command `return` invalid code payload changed to **2**
 - Command `server` reading port from command-line, if not args are given usages the default port from environment key
 - Runners `exec` and `execute` stop running if command exit code is different of 0 (error)
-- **JAuth2** updated to **1.3**
-- **JAuth2** lock now using password and during cross sessions
-- **JAuth2** included in MIDlet package
 - Command `false` returns code **255**
 - Fixed a bug in **Forge** enhanced application generation
 - When MIDlet is paused it triggers function `pauseApp()` if it is found
@@ -66,6 +63,7 @@ LTS Edition
 - MIDlet Suite can adapt loading for emulations if found an environment key called as **J2EMU**
 - Commands `top` and `trace` merged
 - New ITEM's attribute **item.style** 
+- If a command endswith **&** MIDlet prefer run it in background 
 
 [ _Notes_ ]
 
@@ -75,6 +73,7 @@ LTS Edition
 - X11 Screens couldn't be called with `sudo`.
 - After you change max **stdout** size, remote interfaces like `bind` can be directly damaged by **stdout** redirect.
 - OpenTTY and Lua don't have native support for regex patterns
+- **JAuth2** is deprecated, feature **MIDlet.Lock** will be added in future updates
 
 [ _X11 Virtual Screens_ ]
 
