@@ -2943,7 +2943,7 @@ class Lua {
             else if (MOD == RANDOM) { return new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); }
             else if (MOD == HASH) {
                 if (args.isEmpty()) { }
-                else { return args.elementAt(0).toString(); }
+                else { return args.elementAt(0).hashCode(); }
             }
 
             return null;
