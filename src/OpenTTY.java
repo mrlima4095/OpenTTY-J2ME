@@ -254,20 +254,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
         }
 
-        public static String passwd() { return loadRMS("OpenRMS", 2); }
-        public String loadRMS(String name, int index) {
-            try { 
-                RecordStore RMS = RecordStore.openRecordStore(name, true); 
+        public static String passwd() { try { 
+                RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); 
 
-                if (RMS.getNumRecords() >= index) { 
-                    byte[] data = RMS.getRecord(index); 
+                if (RMS.getNumRecords() >= 2) { 
+                    byte[] data = RMS.getRecord(2); 
 
                     if (data != null) { return new String(data); } 
                 } 
                 if (RMS != null) { RMS.closeRecordStore(); } 
             } 
-            catch (RecordStoreException e) { return ""; } 
-        }
+            catch (RecordStoreException e) { return ""; }  }
     }
     // |
     // MIDlet Shell
