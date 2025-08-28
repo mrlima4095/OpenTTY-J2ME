@@ -264,7 +264,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 if (RMS != null) { RMS.closeRecordStore(); } 
             } 
-            catch (RecordStoreException e) { return ""; }  }
+            catch (RecordStoreException e) { } return ""; }
     }
     // |
     // MIDlet Shell
