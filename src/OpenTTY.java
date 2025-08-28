@@ -11,7 +11,7 @@ import javax.bluetooh.*;
 import java.util.*;
 import java.io.*;
 // |
-// OpenTTY MIDlet
+55// OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
     private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
@@ -1812,8 +1812,8 @@ class Lua {
 
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
-        
-        funcs = new String[] { "print", "error", "pcall", "require", "pairs", "collectgarbage", "tostring", "tonumber" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, PAIRS, GC, TOSTRING, TONUMBER };
+
+        funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
 
         globals.put("random", new LuaFunction(RANDOM));
