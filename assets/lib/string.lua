@@ -4,7 +4,8 @@ function string.trim(text)
     for i = 1, string.len(text) do
         local char = string.sub(text, i, i)
 
-        if char ~= " " or char ~= "	" then cur = i + 1 break end
+        if char ~= " " or char ~= "	" then break end
+        cur = i + 1 
     end
 
     text = string.reverse(text)
