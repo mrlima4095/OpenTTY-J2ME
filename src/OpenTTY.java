@@ -1861,7 +1861,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, BYTE = 23;
     private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43;;
     private static final Object LUA_NIL = new Object();
     // |
@@ -1883,7 +1883,7 @@ class Lua {
         funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
 
-        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB };
+        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "byte" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, BYTE };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
         funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER };
@@ -3008,6 +3008,27 @@ class Lua {
                 }
             }
             else if (MOD == RANDOM) { return new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); }
+            else if (MOD == BYTE) {
+                if (args.isEmpty() || args.elementAt(0) == null) { }
+                else {
+                    String s = toLuaString(args.elementAt(0));
+                    int len = s.length(), start = 1, end = 1;
+                    if (args.size() >= 2) { start = midlet.getNumber(toLuaString(args.elementAt(1)), 1, false); }
+                    if (args.size() >= 3) { end = midlet.getNumber(toLuaString(args.elementAt(2)), start, false); }
+                    
+                    if (start < 0) { start = len + start + 1; }
+                    if (end < 0) { end = len + end + 1; }
+                    if (start < 1) { start = 1; }
+                    if (end > len) { end = len; } 
+                    if (start > end || start > len) { return null; }
+                    
+                    Vector result = new Vector();
+                    for (int i = start; i <= end; i++) { result.addElement(new Double((double) s.charAt(i - 1))); }
+                    if (result.size() == 1) { return result.elementAt(0); }
+                    
+                    return result;
+                }
+            }
 
             return null;
         }
