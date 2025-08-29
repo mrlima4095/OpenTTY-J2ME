@@ -1930,7 +1930,6 @@ class Lua {
             else if (c == '.') { if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } else { tokens.addElement(new Token(DOT, ".")); i++; continue; } }
             else if (c == ':') { tokens.addElement(new Token(DOT, ".")); i++; }
 
-            // Números: começa com dígito ou . seguido de dígito (ex: .5)
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
                 StringBuffer sb = new StringBuffer();
                 boolean hasDecimal = false;
@@ -1974,7 +1973,6 @@ class Lua {
                 catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
             }
 
-            // Strings
             else if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString())); }
             else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString())); }
 
