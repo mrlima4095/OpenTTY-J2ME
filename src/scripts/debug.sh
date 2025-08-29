@@ -3,32 +3,32 @@
 #
 
 echo OpenTTY Debug Script
-echo -------------------------
+echo "-------------------------"
 echo
 
 log add debug Debug script had been executed
 
-echo [ MIDlet ]
+echo "[ MIDlet ]"
 pkg MIDlet-1
 echo
 
 uname -a
 
 echo
-echo Current Thread:
+echo "Current Thread:"
 mmspt
 
 echo
-echo [ Device ]
+echo "[ Device ]"
 
 locale
 hostid
 hostname
 
 echo 
-echo [ TTY ]
+echo "[ TTY ]"
 
 tty
 ttysize
 
-echo -------------------------
+echo "-------------------------"
