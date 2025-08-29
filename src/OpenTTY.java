@@ -2520,7 +2520,7 @@ class Lua {
         loopDepth--; // Saindo do loop
         throw new Exception("Malformed 'for' statement");
     }
-    private Object functionDefinition(Hashtable scope) throws Exception {
+    /*private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
         String funcName = (String) consume(IDENTIFIER).value;
 
