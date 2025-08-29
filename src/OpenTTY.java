@@ -1883,7 +1883,7 @@ class Lua {
         funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
 
-        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB };
+        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
         funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER };
@@ -3014,10 +3014,7 @@ class Lua {
                 }
             }
             else if (MOD == RANDOM) { return new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); }
-            else if (MOD == HASH) {
-                if (args.isEmpty()) { }
-                else { return args.elementAt(0).hashCode(); }
-            }
+            else if (MOD == HASH) { if (args.isEmpty()) { } else { return args.elementAt(0).hashCode(); } }
 
             return null;
         }
