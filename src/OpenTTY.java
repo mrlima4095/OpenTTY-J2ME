@@ -255,7 +255,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
         }
 
-        public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; } }
+        public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; } 
+    }
     // |
     // MIDlet Shell
     public int processCommand(String command) { return processCommand(command, true, false); }
@@ -3021,26 +3022,7 @@ class Lua {
             return null;
         }
 
-        private Object exec(String code) throws Exception {
-            int savedIndex = tokenIndex;
-            Vector savedTokens = tokens;
-
-            Object ret = null;
-            try {
-                tokens = tokenize(code);
-                tokenIndex = 0;
-
-                Hashtable moduleScope = new Hashtable();
-                for (Enumeration e = globals.keys(); e.hasMoreElements();) {
-                    String k = (String) e.nextElement();
-                    moduleScope.put(k, unwrap(globals.get(k)));
-                }
-
-                while (peek().type != EOF) { Object res = statement(moduleScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } }
-            } finally { tokenIndex = savedIndex; tokens = savedTokens; }
-
-            return ret; 
-        }
+        private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable moduleScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); moduleScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(moduleScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
     }
 }
 // |
