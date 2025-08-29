@@ -1988,6 +1988,7 @@ class Lua {
             else if (c == ')') { tokens.addElement(new Token(RPAREN, ")")); i++; }
             else if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; }
             else if (c == '^') { tokens.addElement(new Token(POWER, "^")); i++; }
+            else if (c == '#') { tokens.addElement(new Token(LENGTH, "#")); i++; }
     
             else if (c == '=') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } else { tokens.addElement(new Token(ASSIGN, "=")); i++; } }
             else if (c == '~') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } else { throw new Exception("Unexpected character '~'"); } }
