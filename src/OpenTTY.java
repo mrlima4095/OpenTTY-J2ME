@@ -2747,11 +2747,38 @@ class Lua {
             }
 
             // Se o próximo token for parênteses, chamamos a função (value deve ser um LuaFunction)
-            if (peek().type == LPAREN) {
-                return callFunctionObject(value, scope);
-            }
+            if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
+        }
+        else if (current.type == FUNCTION) {
+            consume(FUNCTION);
+
+            // Parâmetros
+            consume(LPAREN);
+            Vector params = new Vector();
+            if (peek().type == IDENTIFIER) {
+                params.addElement(consume(IDENTIFIER).value);
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    params.addElement(consume(IDENTIFIER).value);
+                }
+            }
+            consume(RPAREN);
+
+            // Corpo da função
+            Vector bodyTokens = new Vector();
+            int depth = 1;
+            while (depth > 0) {
+                Token token = consume();
+                if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) depth++;
+                else if (token.type == END) depth--;
+                else if (token.type == EOF) throw new RuntimeException("Unmatched 'function' statement: Expected 'end'");
+                if (depth > 0) bodyTokens.addElement(token);
+            }
+
+            // Cria e retorna a função anônima
+            return new LuaFunction(params, bodyTokens, scope);
         }
         else if (current.type == LBRACE) { // Table literal
             consume(LBRACE);
