@@ -62,8 +62,7 @@ LTS Edition
 - File Explorer don't using icons anymore
 - MIDlet Suite can adapt loading for emulations if found an environment key called as **J2EMU**
 - Commands `top` and `trace` merged
-- New ITEM's attribute **item.style** 
-- If a command endswith **&** MIDlet prefer run it in background 
+- New ITEM's attribute **item.style**
 
 [ _Notes_ ]
 
