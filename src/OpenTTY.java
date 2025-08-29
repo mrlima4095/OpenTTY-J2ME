@@ -3024,7 +3024,7 @@ class Lua {
                     
                     Hashtable result = new Hashtable();
                     for (int i = start; i <= end; i++) { result.put(new Double(i), new Double((double) s.charAt(i - 1))); }
-                    if (result.size() == 1) { return result.elementAt(0); }
+                    if (result.size() == 1) { return result.get(1); }
                     
                     return result;
                 }
