@@ -3022,11 +3022,13 @@ class Lua {
                     if (end > len) { end = len; } 
                     if (start > end || start > len) { return null; }
                     
-                    Hashtable result = new Hashtable();
-                    for (int i = start; i <= end; i++) { result.put(new Double(i), new Double((double) s.charAt(i - 1))); }
+                    if (end - start + 1 == 1) { return new Double((double) s.charAt(start - 1)); } 
+                    else {
+                        Hashtable result = new Hashtable();
+                        for (int i = start; i <= end; i++) { result.put(new Double(i), new Double((double) s.charAt(i - 1))); }
 
-                    return result;
-                    
+                        return result;
+                    }
                 }
             }
 
