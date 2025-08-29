@@ -84,4 +84,5 @@ Usage: `x11 [ option ] [PID]`
 
 You can enable the **compatibility mode** of OpenTTY to **J2ME Loader** with command `export J2EMU`, read below the changes enabled with this key:
 
-- Lo
+- **Fire** button in List Screens dont works;
+- In **File Explorer** when you jump directory it rebuild screen
