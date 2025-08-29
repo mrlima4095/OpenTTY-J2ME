@@ -86,3 +86,4 @@ You can enable the **compatibility mode** of OpenTTY to **J2ME Loader** with com
 
 - **Fire** button in List Screens dont works;
 - In **File Explorer** when you jump directory it rebuild screen
+- Title of **File Explorer** is Main Window title, not current working path
