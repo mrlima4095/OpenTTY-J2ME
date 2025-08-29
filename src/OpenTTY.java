@@ -3022,11 +3022,11 @@ class Lua {
                     if (end > len) { end = len; } 
                     if (start > end || start > len) { return null; }
                     
-                    Vector result = new Vector();
-                    for (int i = start; i <= end; i++) { result.addElement(new Double((double) s.charAt(i - 1))); }
-                    if (result.size() == 1) { return result.elementAt(0); }
-                    
+                    Hashtable result = new Hashtable();
+                    for (int i = start; i <= end; i++) { result.put(new Double(i), new Double((double) s.charAt(i - 1))); }
+
                     return result;
+                    
                 }
             }
 
