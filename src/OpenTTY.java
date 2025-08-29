@@ -1886,7 +1886,7 @@ class Lua {
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "byte" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, BYTE };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
-        funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER };
+        funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber", "select" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER, SELECT };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
 
         globals.put("random", new LuaFunction(RANDOM));
@@ -3079,6 +3079,28 @@ class Lua {
                     else {
                         Hashtable result = new Hashtable();
                         for (int i = start; i <= end; i++) { result.put(new Double(i), new Double((double) s.charAt(i - 1))); }
+
+                        return result;
+                    }
+                }
+            }
+            else if (MOD == SELECT) {
+                if (args.isEmpty() || args.elementAt(0) == null) { throw new Exception("select: index expected"); }
+                else {
+                    String idx = toLuaString(args.elementAt(0));
+
+                    if (idx.equals("#")) { return new Double(args.size() - 1); }
+                    else {
+                        int index;
+
+                        try { index = Integer.parseInt(idx); }
+                        catch (NumberFormatException e) { throw new NumberFormatException("select: index must be a number of '#'"); }
+
+                        if (index < 0) { index = args.size() + index; }
+                        if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
+
+                        Hashtable result = new Hashtable();
+                        for (int i = start; i <= end; i++) { result.put(new Double(i), args.elementAt(i)); }
 
                         return result;
                     }
