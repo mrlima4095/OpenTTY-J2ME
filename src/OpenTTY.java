@@ -128,7 +128,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Displayable d) {
             if (c == BACK) { processCommand("xterm"); return; } 
     
-            if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); } } 
+            if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { processCommand("xterm"); processCommand(c == RUN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU")) ? selected : "buff " + selected); } } 
             else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
 
@@ -157,7 +157,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String PID = split(preview.getString(index), '\t')[0];
                     int STATUS = 0;
 
-                    if (c == KILL || c == List.SELECT_COMMAND) { STATUS = kill(PID, false, root); } 
+                    if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, root); } 
                     else if (c == VIEW) { processCommand("trace view " + PID, false, root); }
                     else if (c == LOAD) {
                         if (getowner(PID).equals("root") && !root) { STATUS = 13; }
