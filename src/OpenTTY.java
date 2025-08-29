@@ -115,7 +115,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 this.command = command;
 
                 PASSWD.setLabel("[sudo] password for " + loadRMS("OpenRMS")); 
-                BACK = new Command("Back", Command.SCREEN, 2)
+                BACK = new Command("Back", Command.SCREEN, 2);
                 monitor.append(PASSWD); 
                 monitor.addCommand(RUN); monitor.addCommand(BACK); 
             } 
@@ -255,18 +255,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
         }
 
-        public static String passwd() { try { 
-                RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); 
-
-                if (RMS.getNumRecords() >= 2) { 
-                    byte[] data = RMS.getRecord(2); 
-
-                    if (data != null) { return new String(data); } 
-                } 
-                if (RMS != null) { RMS.closeRecordStore(); } 
-            } 
-            catch (RecordStoreException e) { } return ""; }
-    }
+        public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; } }
     // |
     // MIDlet Shell
     public int processCommand(String command) { return processCommand(command, true, false); }
