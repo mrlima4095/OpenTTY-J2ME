@@ -22,3 +22,15 @@ function string.trim(text)
 
     return string.sub(text, start_index, end_index)
 end
+
+function string.hash(text)
+    if text == nil then error("string.hash cannot get from nil") end
+    
+    local hash = 0
+    for i = 1, string.len(text) do
+        local charCode = string.byte(text, i)
+        hash = (31 * hash + charCode) % 2 ^ 32
+        if hash >= 2 ^ 31 then hash = hash - 2 ^ 32 end
+    end
+    return hash
+end
