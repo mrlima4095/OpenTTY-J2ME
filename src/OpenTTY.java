@@ -2570,6 +2570,50 @@ class Lua {
         else { scope.put(funcName, func); }
 
         return null;
+    }*/
+    private Object functionDefinition(Hashtable scope) throws Exception {
+        consume(FUNCTION);
+        String funcName = (String) consume(IDENTIFIER).value;
+
+        // Verifica se é atribuição em tabela: x.y ou x[y]
+        boolean isTableAssignment = (peek().type == DOT || peek().type == LBRACKET);
+        Object targetTable = null, key = null;
+
+        if (isTableAssignment) {
+            Object[] pair = resolveTableAndKey(funcName, scope);
+            targetTable = pair[0];
+            key = pair[1];
+            if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value in function definition");
+        }
+
+        consume(LPAREN);
+        Vector params = new Vector();
+        if (peek().type == IDENTIFIER) {
+            params.addElement(consume(IDENTIFIER).value);
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                params.addElement(consume(IDENTIFIER).value);
+            }
+        }
+        consume(RPAREN);
+
+        // Captura corpo da função até o END correspondente
+        Vector bodyTokens = new Vector();
+        int depth = 1;
+        while (depth > 0) {
+            Token token = consume();
+            if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) depth++;
+            else if (token.type == END) depth--;
+            else if (token.type == EOF) throw new RuntimeException("Unmatched 'function' statement: Expected 'end'");
+            if (depth > 0) bodyTokens.addElement(token);
+        }
+
+        LuaFunction func = new LuaFunction(params, bodyTokens, scope);
+
+        if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
+        else { scope.put(funcName, func); }
+
+        return null;
     }
     // |
     // Expressions
