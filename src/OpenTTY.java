@@ -2959,13 +2959,7 @@ class Lua {
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
             else if (MOD == TONUMBER) { return args.isEmpty() ? null : new Double(Double.valueOf(toLuaString(args.elementAt(0)))); }
-            else if (MOD == LOWER || MOD == UPPER) {
-                if (args.isEmpty()) { }
-                else {
-                    String text = toLuaString(args.elementAt(0));
-                    return MOD == LOWER ? text.toLowerCase() : text.toUpperCase();
-                }
-            }
+            else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
             else if (MOD == MATCH || MOD == LEN) {
                 if (args.isEmpty()) { }
                 else {
