@@ -115,6 +115,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 this.command = command;
 
                 PASSWD.setLabel("[sudo] password for " + loadRMS("OpenRMS")); 
+                BACK = new Command("Back", Command.SCREEN, 2)
                 monitor.append(PASSWD); 
                 monitor.addCommand(RUN); monitor.addCommand(BACK); 
             } 
