@@ -193,7 +193,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String password = PASSWD.getString().trim();
                 
                 if (password.equals("")) { }
-                else if (String.valueOf(password.hashCode()).equals(passwd())) { processCommand(command, true, true); } 
+                else if (String.valueOf(password.hashCode()).equals(passwd())) { processCommand("xterm") processCommand(command, true, true); } 
                 else { warnCommand(form.getTitle(), "Wrong password"); }
             }
         } 
