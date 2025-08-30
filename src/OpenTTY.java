@@ -7,7 +7,7 @@ import javax.microedition.media.*;
 import javax.microedition.rms.*;
 import javax.microedition.pki.*;
 import javax.microedition.io.*;
-import javax.bluetooh.*;
+import javax.bluetooth.*;
 import java.util.*;
 import java.io.*;
 // |
