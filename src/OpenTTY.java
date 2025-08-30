@@ -650,6 +650,85 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
+    private int bluetooth(String command, boolean root) {
+    command = env(command.trim());
+    String mainCommand = getCommand(command), argument = getArgument(command);
+
+    try {
+        if (mainCommand.equals("")) { }
+
+        else if (mainCommand.equals("scan")) {
+            try {
+                LocalDevice local = LocalDevice.getLocalDevice();
+                DiscoveryAgent agent = local.getDiscoveryAgent();
+                echoCommand("Scanning...");
+                agent.startInquiry(DiscoveryAgent.GIAC, new DiscoveryListenerImpl());
+            } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
+        }
+
+        else if (mainCommand.equals("connect")) {
+            if (argument.equals("")) { echoCommand("bluetooth: missing address"); return 2; }
+            try {
+                String url = "btspp://" + argument + ":1;authenticate=false;encrypt=false;master=false";
+                StreamConnection conn = (StreamConnection) Connector.open(url);
+                InputStream in = conn.openInputStream();
+                OutputStream out = conn.openOutputStream();
+
+                Hashtable proc = genprocess("bluetooth", root, "bluetooth disconnect");
+                proc.put("conn", conn);
+                proc.put("in", in);
+                proc.put("out", out);
+                trace.put("4", proc);
+
+                echoCommand("Connected to " + argument);
+            } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
+        }
+
+        else if (mainCommand.equals("send")) {
+            if (!trace.containsKey("4")) { echoCommand("bluetooth: not connected."); return 69; }
+            try {
+                OutputStream out = (OutputStream) getprocess("4").get("out");
+                out.write(argument.getBytes());
+                out.flush();
+            } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
+        }
+
+        else if (mainCommand.equals("receive")) {
+            if (!trace.containsKey("4")) { echoCommand("bluetooth: not connected."); return 69; }
+            try {
+                InputStream in = (InputStream) getprocess("4").get("in");
+                byte[] buf = new byte[256];
+                int len = in.read(buf);
+                if (len > 0) echoCommand(new String(buf, 0, len));
+                else echoCommand("No data.");
+            } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
+        }
+
+        else if (mainCommand.equals("disconnect")) {
+            if (trace.containsKey("4")) {
+                try {
+                    StreamConnection conn = (StreamConnection) getprocess("4").get("conn");
+                    conn.close();
+                } catch (Exception e) { }
+                trace.remove("4");
+                echoCommand("Disconnected.");
+            } else { echoCommand("bluetooth: not connected."); return 69; }
+        }
+
+        else if (mainCommand.equals("status")) {
+            echoCommand(trace.containsKey("4") ? "connected" : "disconnected");
+        }
+
+        else {
+            echoCommand("bt: " + mainCommand + ": not found");
+            return 127;
+        }
+    }
+    catch (Exception e) { echoCommand(getCatch(e)); return 1; }
+
+    return 0;
+}
+
     // |
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
