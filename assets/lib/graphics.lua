@@ -27,13 +27,13 @@ function graphics.BuildList(config)
         ["list.back.label"]       = "back.label",
         ["list.icon"]             = "icon"
     }
-    
+
     if itens == nil then error("missing List itens") end
-    
+
     for k,v in pairs(internals) do if config[v] ~= nil then file = file .. "\n" .. k .. "=" .. config[v] end end
     for k,v in pairs(itens) do
         if buffer == "" then buffer = k else buffer = buffer .. "," .. k end
-        
+
         file = file .. "\n" .. k .. "=" .. v
     end
 
@@ -63,7 +63,7 @@ function graphics.BuildScreen(config)
         elseif ftype == "text" then
             local text = v["value"]
             if text == nil then error("missing value for text field '" .. k .. "'") end
-            
+
             file = file .. "\nscreen." .. k .. ".type=text" .. "\nscreen." .. k .. ".value=" .. text .. "\nscreen." .. k .. ".style=" .. (v["style"] or "default") 
         elseif ftype == "image" then
             local image = v["img"]
