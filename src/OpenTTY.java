@@ -630,7 +630,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); return lua.run(argument.equals("") ? "" : args[0].equals("-e") ? "stdin" : argument, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument)); }
         else if (mainCommand.equals("5k")) { echoCommand("1.16 Special - 5k commits at OpenTTY GitHub repository"); }
-        else if (mainCommand.equals("bt")) { return bluetooth(argument); }
+        else if (mainCommand.equals("bt")) { return bluetooth(argument, root); }
 
         // API 015 - (Scripts)
         // |
