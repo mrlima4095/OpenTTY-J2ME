@@ -1,7 +1,6 @@
 OpenTTY Java Edition 1.16
 Copyright (C) 2025 - Mr. Lima
 
-
 LTS Edition
 
 [ _Commands_ ]
