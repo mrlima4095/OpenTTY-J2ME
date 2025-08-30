@@ -3127,7 +3127,7 @@ class Lua {
                         if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
 
                         Hashtable result = new Hashtable();
-                        for (int i = start; i <= end; i++) { result.put(new Double(i), args.elementAt(i)); }
+                        for (int i = start; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i)); }
 
                         return result;
                     }
