@@ -1,3 +1,7 @@
+import javax.microedition.*;
+import javax.microedition.io.*;
+import javax.bluetooth.*;
+
 public class FTPServer implements Runnable {
     private String port;
     private SocketConnection clientSocket;
