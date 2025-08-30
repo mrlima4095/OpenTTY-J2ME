@@ -50,7 +50,6 @@ LTS Edition
 - Command `gauge` removed, usage `x11 gauge`
 - Class `OpenTTY$HTopViewer` renamed to `Monitor`
 - Command `query` now linked with an PID to stop the activities
-- If header **[ Config ]** is found in first line of script, MIDlet will treat this as an Application
 - Command `ls` hide files that has prefix **.** in all filesystems
 - Audio codec can play audio files from **JAR** Package.
 - **Nano Editor** and **History** Threads joined into Main Thread
