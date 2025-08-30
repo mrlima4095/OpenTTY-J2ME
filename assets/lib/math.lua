@@ -1,4 +1,4 @@
-local math = { pi = 3.14159 }
+local math = { pi = 3.1415926535898 }
 
 function math.abs(x) if x < 0 then return 0-(x) end return x end
 function math.sqrt(x) if x < 0 then error("math.sqrt expects a non-negative number") end return x ^ 0.5 end
