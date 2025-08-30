@@ -1926,7 +1926,21 @@ class Lua {
                 else { while (i < code.length() && code.charAt(i) != '\n') i++; }
             }
     
-            else if (c == '.') { if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; continue; } else { tokens.addElement(new Token(DOT, ".")); i++; continue; } }
+            else if (c == '.') {
+                if (i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') {
+                    tokens.addElement(new Token(VARARG, "..."));
+                    i += 3;
+                    continue;
+                } else if (i + 1 < code.length() && code.charAt(i + 1) == '.') {
+                    tokens.addElement(new Token(CONCAT, ".."));
+                    i += 2;
+                    continue;
+                } else {
+                    tokens.addElement(new Token(DOT, "."));
+                    i++;
+                    continue;
+                }
+            }
             else if (c == ':') { tokens.addElement(new Token(DOT, ".")); i++; }
 
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
@@ -2728,6 +2742,12 @@ class Lua {
 
             // Cria e retorna a função anônima
             return new LuaFunction(params, bodyTokens, scope);
+        }
+        else if (current.type == VARARG) {
+            consume(VARARG);
+            Object varargs = scope.get("...");
+            if (varargs == null) return new Hashtable();
+            return varargs;
         }
         else if (current.type == LBRACE) { // Table literal
             consume(LBRACE);
