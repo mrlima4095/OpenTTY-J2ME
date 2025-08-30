@@ -1883,7 +1883,7 @@ class Lua {
         funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
 
-        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "byte" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, BYTE };
+        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
         funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber", "select" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER, SELECT };
@@ -3127,7 +3127,7 @@ class Lua {
                         if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
 
                         Hashtable result = new Hashtable();
-                        for (int i = 1; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i)); }
+                        for (int i = start; i <= end; i++) { result.put(new Double(i), args.elementAt(i)); }
 
                         return result;
                     }
