@@ -47,7 +47,7 @@ LTS Edition
 - New X11 Screen **edit**
 - When X11 stops, it drops all saved screens
 - Command `gauge` removed, usage `x11 gauge`
-- Class `OpenTTY$HTopViewer` renamed to `Monitor`
+- Class `OpenTTY$HTopViewer` moved to `MIDletControl`
 - Command `query` now linked with an PID to stop the activities
 - Command `ls` hide files that has prefix **.** in all filesystems
 - Audio codec can play audio files from **JAR** Package.
