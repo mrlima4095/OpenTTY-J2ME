@@ -3083,26 +3083,19 @@ class Lua {
 
                     if (idx.equals("#")) { return new Double(args.size() > 1 && args.elementAt(1) instanceof Hashtable ? ((Hashtable) args.elementAt(1)).size() : args.size() - 1); }
                     else {
+                        if (args.size() > 1 && args.elementAt(1) == null) { throw new NullPointerException("select: invalid nil table"); } 
+                        else if (args.size() == 1) { throw new ArrayIndexOutOfBoundsException("selext: missing table"); }
                         int index;
 
                         try { index = Integer.parseInt(idx); }
                         catch (NumberFormatException e) { throw new NumberFormatException("select: index must be a number of '#'"); }
                         
                         Hashtable result = new Hashtable();
-                        if (args.size() > 1 && args.elementAt(1) == null) {
-                            throw new NullPointerException("select: invalid nil table");
-                        } else if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
-                            Hashtable table = (Hashtable) args.elementAt(1);
-                            if (index < 0) { index = table.size() + index; }
-                            if (index < 1 || index >= table.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
+                        Hashtable table = (Hashtable) args.elementAt(1);
+                        if (index < 0) { index = table.size() + index; }
+                        if (index < 1 || index >= table.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
 
-                            for (int i = 1; i <= table.size(); i++) { result.put(new Double(i), table.containsKey(i) ? table.get(i) : LUA_NIL); }
-                        } else {
-                            if (index < 0) { index = args.size() + index; }
-                            if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
-
-                            for (int i = 1; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i) == null ? LUA_NIL : args.elementAt(i)); }
-                        }
+                        for (Enumeration keys = table.keys(); keys.hasMoreElements();) { Object key = keys.nextElement; result.put(new Double(i), table.get(i)); }
                         
                         return result;
                     }
