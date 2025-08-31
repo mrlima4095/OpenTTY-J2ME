@@ -3142,8 +3142,8 @@ consume(RPAREN);
                                 throw new Exception("char: byte is nil");
                             }
                             double num;
-                            if (arg instanceof Number) {
-                                num = ((Number) arg).doubleValue();
+                            if (arg instanceof Double) {
+                                num = ((Double) arg).doubleValue();
                             } else {
                                 throw new Exception("char: byte must be a number");
                             }
@@ -3163,8 +3163,8 @@ consume(RPAREN);
                                 throw new Exception("char: argument is nil");
                             }
                             double num;
-                            if (arg instanceof Number) {
-                                num = ((Number) arg).doubleValue();
+                            if (arg instanceof Double) {
+                                num = ((Double) arg).doubleValue();
                             } else {
                                 try {
                                     num = Double.parseDouble(toLuaString(arg));
