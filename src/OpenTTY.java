@@ -3101,7 +3101,7 @@ consume(RPAREN);
                 else {
                     Object obj = args.elementAt(0);
                     
-                    return obj == null ? ""
+                    return obj == null ? "nil" : obj instanceof String ? "string" : obj instanceof Double ? "number" : obj instanceof Boolean ? "boolean" : obj instanceof LuaFunction ? "function" : obj instanceof Hashtable ? "table" : "userdata";
                 }
             }
             else if (MOD == BYTE) {
