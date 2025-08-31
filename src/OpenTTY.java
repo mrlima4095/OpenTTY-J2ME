@@ -3130,9 +3130,17 @@ consume(RPAREN);
             else if (MOD == CHAR) {
                 if (args.isEmpty()) { return ""; }
                 else {
+                    Object table = args.elementAt(0);
+                    
+                    if (table == null || !(table instanceof Hashtable)) {
+                        throw new Exception("char: invalid nil or non-table bytes")
+                    }
+                    table = (Hashtable) table;
+                    
+                    
                     StringBuffer sb = new StringBuffer();
-                    for (int i = 0; i < args.size(); i++) {
-                        Object arg = args.elementAt(i);
+                    for (int i = 1; i < table.size(); i++) {
+                        Object arg = table.get(new Double(i));
                         if (arg == null) { throw new Exception("char: byte is nil"); }
                         
                         double num;
