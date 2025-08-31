@@ -3090,7 +3090,7 @@ class Lua {
                             if (index < 0) { index = table.size() + index; }
                             if (index < 1 || index >= table.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
 
-                            for (int i = 1; i <= table.size(); i++) { result.put(new Double(i), table.containsKey(i) ? table.get(i)) : LUA_NIL; }
+                            for (int i = 1; i <= table.size(); i++) { result.put(new Double(i), table.containsKey(i) ? table.get(i) : LUA_NIL); }
                         } else {
                             if (index < 0) { index = args.size() + index; }
                             if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
