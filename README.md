@@ -3,9 +3,9 @@
 
 ## OpenTTY 1.16 LTS
 
-[OpenTTY 1.16 rc-1](http://opentty.xyz/repo/dist/1.16/rc1.jar)
-[OpenTTY 1.16 rc-2](http://opentty.xyz/repo/dist/1.16/rc2.jar)
+[Download here](http://opentty.xyz/repo/dist/1.16/LTS.jar)
 
+Now you can run Lua in J2ME environment!
 ---
 
 OpenTTY is an advanced Terminal Emulator designed to run on J2ME (Java 2 Micro Edition) devices, offering a Unix-like shell experience tailored for retro and low-resource environments. It combines the nostalgic style of vintage terminals with modern features such as scripting, environment variables, networking, and automation tools. OpenTTY can also be used with emulators, making it accessible across various systems for testing or development. 
