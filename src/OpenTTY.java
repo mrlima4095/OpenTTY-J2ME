@@ -2019,7 +2019,7 @@ class Lua {
         
         if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); } 
         if (status != 0) { throw new Error(); }
-    midlet.processCommand("Peek token: " + peek().type + " value: " + peek().value);
+    midlet.processCommand("echo Peek token: " + peek().type + " value: " + peek().value);
                     
         if (current.type == IDENTIFIER) {
             // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
