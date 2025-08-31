@@ -3082,18 +3082,17 @@ class Lua {
                         try { index = Integer.parseInt(idx); }
                         catch (NumberFormatException e) { throw new NumberFormatException("select: index must be a number of '#'"); }
                         
+                        Hashtable result = new Hashtable();
                         if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
                             Hashtable table = (Hashtable) args.elementAt(1);
                             if (index < 0) { index = table.size() + index; }
                             if (index < 1 || index >= table.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
-    
-                            Hashtable result = new Hashtable();
+
                             for (int i = 1; i <= table.size(); i++) { result.put(new Double(i), table.get(i)); }
                         } else {
                             if (index < 0) { index = args.size() + index; }
                             if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
-    
-                            Hashtable result = new Hashtable();
+
                             for (int i = 1; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i)); }
                         }
                         
