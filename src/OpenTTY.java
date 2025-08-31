@@ -2550,6 +2550,7 @@ class Lua {
                 params.addElement(consume(IDENTIFIER).value);
                 while (peek().type == COMMA) {
                     consume(COMMA);
+                    midlet.processCommand("echo Peek token: " + peek().type + " value: " + peek().value);
                     // Verifique se o próximo é VARARG após a vírgula
                     if (peek().type == VARARG) {
                         consume(VARARG);
