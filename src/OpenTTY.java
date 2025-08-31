@@ -3004,10 +3004,10 @@ class Lua {
             }
             else if (MOD == GETENV) { if (args.isEmpty()) { } else { String key = toLuaString(args.elementAt(0)); return midlet.attributes.containsKey(key) ? midlet.attributes.get(key) : null; } }
             else if (MOD == REQUIRE) {
-                if (args.isEmpty() || args.elementAt(0) == null) { throw new Exception("require: module name expected"); }
+                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "require", "string expected, got no value"); }
 
                 String name = toLuaString(args.elementAt(0));
-                if (name == null || name.equals("nil") || name.length() == 0) { throw new Exception("require: invalid module name"); }
+                if (name == null || name.equals("nil") || name.length() == 0) { gotbad(1, "require", "string expected, got " + type(args.elementAt(0))); }
 
                 // Cache simples (estilo package.loaded)
                 Object cached = requireCache.get(name);
@@ -3039,7 +3039,7 @@ class Lua {
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
             else if (MOD == TONUMBER) { return args.isEmpty() ? null : new Double(Double.valueOf(toLuaString(args.elementAt(0)))); }
-            else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
+            else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { gotbad(1, MOD == LOWER ? "lower", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
             else if (MOD == MATCH || MOD == LEN) {
                 if (args.isEmpty()) { }
                 else {
@@ -3089,7 +3089,7 @@ class Lua {
             }
             else if (MOD == RANDOM) { Double gen = new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); return args.isEmpty() ? new Double(gen.doubleValue() / 100) : gen; }
             else if (MOD == HASH) { return args.isEmpty() || args.elementAt(0) == null ? null : new Double(args.elementAt(0).hashCode()); }
-            else if (MOD == TYPE) { if (args.isEmpty()) { missing(1, "type", "value expected"); } else { Object obj = args.elementAt(0); return obj == null ? "nil" : obj instanceof String ? "string" : obj instanceof Double ? "number" : obj instanceof Boolean ? "boolean" : obj instanceof LuaFunction ? "function" : obj instanceof Hashtable ? "table" : "userdata"; } }
+            else if (MOD == TYPE) { if (args.isEmpty()) { missing(1, "type", "value expected"); } else { return type(args.elementAt(0)); } }
             else if (MOD == BYTE) {
                 if (args.isEmpty() || args.elementAt(0) == null) { missing(1, "byte", "string expected, got no value"); }
                 else {
@@ -3125,15 +3125,10 @@ class Lua {
                             Object arg = table.get(new Double(i + 1));
                             if (arg == null) { continue; }
                             double num;
-                            if (arg instanceof Double) {
-                                num = ((Double) arg).doubleValue();
-                            } else {
-                                throw new Exception("char: byte must be a number");
-                            }
+                            if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
+                            else { missing(1, "char", "value out of range"); }
                             int c = (int) num;
-                            if (c < 0 || c > 255) {
-                                throw new Exception("char: byte out of range (0-255)");
-                            }
+                            if (c < 0 || c > 255) { missing(1, "char", "value out of range"); }
                             sb.append((char) c);
                         }
                         return sb.toString();
@@ -3142,23 +3137,16 @@ class Lua {
                         StringBuffer sb = new StringBuffer();
                         for (int i = 0; i < args.size(); i++) {
                             Object arg = args.elementAt(i);
-                            if (arg == null) {
-                                throw new Exception("char: argument is nil");
-                            }
+                            if (arg == null) { gotbad(1, "char", "number expected, got nil"); }
                             double num;
                             if (arg instanceof Double) {
                                 num = ((Double) arg).doubleValue();
                             } else {
-                                try {
-                                    num = Double.parseDouble(toLuaString(arg));
-                                } catch (NumberFormatException e) {
-                                    throw new Exception("char: argument must be a number");
-                                }
+                                try { num = Double.parseDouble(toLuaString(arg)); } 
+                                catch (Exception e) { gotbad(1, "char", "number expected, got " + type(arg)); }
                             }
                             int c = (int) num;
-                            if (c < 0 || c > 255) {
-                                throw new Exception("char: argument out of range (0-255)");
-                            }
+                            if (c < 0 || c > 255) { missing(1, "char", "value out of range"); }
                             sb.append((char) c);
                         }
                         return sb.toString();
@@ -3166,51 +3154,36 @@ class Lua {
                 }
             }
             else if (MOD == SELECT) {
-                if (args.isEmpty() || args.elementAt(0) == null) { missing(1, "select", "number expected, got no value") } 
+                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "select", "number expected, got no value") } 
                 else {
                     String idx = toLuaString(args.elementAt(0));
                     if (idx.equals("#")) {
-                        if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
-                            Hashtable varargTable = (Hashtable) args.elementAt(1);
-                            return new Double(varargTable.size());
-                        } else {
-                            return new Double(args.size() - 1);
-                        }
+                        if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { return new Double((varargTable = (Hashtable) args.elementAt(1)).size()); } 
+                        else { return new Double(args.size() - 1); }
                     } else {
-                        if (args.size() == 1) {
-                            throw new ArrayIndexOutOfBoundsException("select: missing arguments after index");
-                        }
+                        if (args.size() == 1) { return null; }
+
                         int index;
-                        try {
-                            index = Integer.parseInt(idx);
-                        } catch (NumberFormatException e) {
-                            throw new NumberFormatException("select: index must be a number or '#'");
-                        }
+                        try { index = Integer.parseInt(idx); } 
+                        catch (NumberFormatException e) { gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); }
+                        
                         Hashtable result = new Hashtable();
                         if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
                             Hashtable varargTable = (Hashtable) args.elementAt(1);
                             int varargSize = varargTable.size();
-                            if (index < 0) {
-                                index = varargSize + index + 1;
-                            }
-                            if (index < 1 || index > varargSize) {
-                                throw new ArrayIndexOutOfBoundsException("select: index out of range");
-                            }
+                            if (index < 0) { index = varargSize + index + 1; }
+                            if (index < 1 || index > varargSize) { return null; }
+
                             int resultIndex = 1;
                             for (int i = index; i <= varargSize; i++) {
                                 Object val = varargTable.get(new Double(i));
-                                if (val != null) {
-                                    result.put(new Double(resultIndex++), val);
-                                }
+                                if (val != null) { result.put(new Double(resultIndex++), val); }
                             }
                         } else {
                             int argCount = args.size() - 1;
-                            if (index < 0) {
-                                index = argCount + index + 1;
-                            }
-                            if (index < 1 || index > argCount) {
-                                throw new ArrayIndexOutOfBoundsException("select: index out of range");
-                            }
+                            if (index < 0) { index = argCount + index + 1; }
+                            if (index < 1 || index > argCount) { return null; }
+
                             int resultIndex = 1;
                             for (int i = index; i <= argCount; i++) {
                                 Object val = args.elementAt(i);
@@ -3226,7 +3199,8 @@ class Lua {
         }
 
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
-        private Object missing(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
+        private String type(object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : "userdata" }
+        private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
     }
 }
 // |
