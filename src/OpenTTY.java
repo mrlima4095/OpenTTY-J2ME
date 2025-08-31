@@ -3157,12 +3157,12 @@ class Lua {
                 else {
                     String idx = toLuaString(args.elementAt(0));
                     if (idx.equals("#")) {
-                        if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { Hashtable t = (Hashtable) args.elementAt(1); return new Double(t.size()); } 
+                        if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { return new Double(((Hashtable) args.elementAt(1)).size()); } 
                         else { return new Double(args.size() - 1); }
                     } else {
                         if (args.size() == 1) { return null; }
 
-                        int index;
+                        int index = null;
                         try { index = Integer.parseInt(idx); } 
                         catch (NumberFormatException e) { gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); }
                         
