@@ -1883,7 +1883,7 @@ class Lua {
         funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
 
-        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE };
+        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
         funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber", "select", "type" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE };
@@ -3125,6 +3125,26 @@ consume(RPAREN);
 
                         return result;
                     }
+                }
+            }
+            else if (MOD == CHAR) {
+                if (args.isEmpty()) { return ""; }
+                else {
+                    StringBuffer sb = new StringBuffer();
+                    for (int i = 0; i < args.size(); i++) {
+                        Object arg = args.elementAt(i);
+                        if (arg == null) { throw new Exception("char: byte is nil"); }
+                        
+                        double num;
+                        if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
+                        else { throw new Exception("char: byte must be a number"); }
+                        
+                        int c = (int) num;
+                        if (c < 0 || c > 255) { throw new Exception("char: byte out of range (0-255)"); }
+                        
+                        sb.append((char) c);
+                    }
+                    return sb.toString();
                 }
             }
             else if (MOD == SELECT) {
