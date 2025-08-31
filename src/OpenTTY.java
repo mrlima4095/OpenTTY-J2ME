@@ -3114,9 +3114,8 @@ class Lua {
                 }
             }
             else if (MOD == CHAR) {
-                if (args.isEmpty()) {
-                    return "";
-                } else {
+                if (args.isEmpty()) { return ""; } 
+                else {
                     Object firstArg = args.elementAt(0);
                     // Caso 1: primeiro argumento é uma tabela (bytes)
                     if (firstArg instanceof Hashtable) {
