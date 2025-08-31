@@ -62,6 +62,7 @@ End of support scheduled for April 2026
 - MIDlet Suite can adapt loading for emulations if found an environment key called as **J2EMU**
 - Commands `top` and `trace` merged
 - New ITEM's attribute **item.style**
+- New **Yang** package **cmatrix** indexed (wrote in **Lua**)
 
 [ _Notes_ ]
 
