@@ -3138,9 +3138,7 @@ consume(RPAREN);
                         StringBuffer sb = new StringBuffer();
                         for (int i = 0; i <= table.size(); i++) {
                             Object arg = table.get(new Double(i + 1));
-                            if (arg == null) {
-                                throw new Exception("char: byte is nil");
-                            }
+                            if (arg == null) { continue; }
                             double num;
                             if (arg instanceof Double) {
                                 num = ((Double) arg).doubleValue();
