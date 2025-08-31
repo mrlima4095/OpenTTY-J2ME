@@ -3096,6 +3096,9 @@ consume(RPAREN);
             }
             else if (MOD == RANDOM) { return new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); }
             else if (MOD == HASH) { return args.isEmpty() || args.elementAt(0) == null ? null : new Double(args.elementAt(0).hashCode()); }
+            else if (MOD == TYPE) {
+                
+            }
             else if (MOD == BYTE) {
                 if (args.isEmpty() || args.elementAt(0) == null) { }
                 else {
