@@ -655,7 +655,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     // |
     private String read(String filename) { try { if (filename.startsWith("/mnt/")) { FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); InputStream is = fileConn.openInputStream(); StringBuffer content = new StringBuffer(); int ch; while ((ch = is.read()) != -1) { content.append((char) ch); } is.close(); fileConn.close(); return env(content.toString()); } else if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } else { StringBuffer content = new StringBuffer(); InputStream is = getClass().getResourceAsStream(filename); if (is == null) { return ""; } InputStreamReader isr = new InputStreamReader(is, "UTF-8"); int ch; while ((ch = isr.read()) != -1) { content.append((char) ch); } isr.close(); return env(content.toString()); } } catch (IOException e) { return ""; } }
-    private String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
+    public String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     private String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); Enumeration e = attributes.keys(); while (e.hasMoreElements()) { String key = (String) e.nextElement(); String value = (String) attributes.get(key); text = replace(text, "$" + key, value); } text = replace(text, "$.", "$"); text = replace(text, "\\.", "\\"); return text; }
     private String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } 
     public String getCatch(Exception e) { String message = e.getMessage(); return message == null || message.length() == 0 || message.equals("null") ? e.getClass().getName() : message; }
@@ -3061,9 +3061,9 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == REVERSE) { if (args.isEmpty()) { } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); } }
+            else if (MOD == REVERSE) { if (args.isEmpty()) { gotbad(1, "reverse", "string expected, got no value") } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); } }
             else if (MOD == SUB) {
-                if (args.isEmpty()) { }
+                if (args.isEmpty()) { gotbad(1, "sub", "string expected, got no value"); }
                 else {
                     String text = toLuaString(args.elementAt(0));
 
@@ -3089,7 +3089,7 @@ class Lua {
             }
             else if (MOD == RANDOM) { Double gen = new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); return args.isEmpty() ? new Double(gen.doubleValue() / 100) : gen; }
             else if (MOD == HASH) { return args.isEmpty() || args.elementAt(0) == null ? null : new Double(args.elementAt(0).hashCode()); }
-            else if (MOD == TYPE) { if (args.isEmpty()) { missing(1, "type", "value expected"); } else { return type(args.elementAt(0)); } }
+            else if (MOD == TYPE) { if (args.isEmpty()) { gotbad(1, "type", "value expected"); } else { return type(args.elementAt(0)); } }
             else if (MOD == BYTE) {
                 if (args.isEmpty() || args.elementAt(0) == null) { missing(1, "byte", "string expected, got no value"); }
                 else {
@@ -3117,7 +3117,7 @@ class Lua {
                 if (args.isEmpty()) { return ""; } 
                 else {
                     Object firstArg = args.elementAt(0);
-                    // Caso 1: primeiro argumento é uma tabela (bytes)
+                    
                     if (firstArg instanceof Hashtable) {
                         Hashtable table = (Hashtable) firstArg;
                         StringBuffer sb = new StringBuffer();
@@ -3126,14 +3126,13 @@ class Lua {
                             if (arg == null) { continue; }
                             double num;
                             if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
-                            else { missing(1, "char", "value out of range"); }
+                            else { gotbad(1, "char", "value out of range"); }
                             int c = (int) num;
-                            if (c < 0 || c > 255) { missing(1, "char", "value out of range"); }
+                            if (c < 0 || c > 255) { gotbad(1, "char", "value out of range"); }
                             sb.append((char) c);
                         }
                         return sb.toString();
                     } else {
-                        // Caso 2: argumentos são números individuais
                         StringBuffer sb = new StringBuffer();
                         for (int i = 0; i < args.size(); i++) {
                             Object arg = args.elementAt(i);
@@ -3146,7 +3145,7 @@ class Lua {
                                 catch (Exception e) { gotbad(1, "char", "number expected, got " + type(arg)); }
                             }
                             int c = (int) num;
-                            if (c < 0 || c > 255) { missing(1, "char", "value out of range"); }
+                            if (c < 0 || c > 255) { gotbad(1, "char", "value out of range"); }
                             sb.append((char) c);
                         }
                         return sb.toString();
