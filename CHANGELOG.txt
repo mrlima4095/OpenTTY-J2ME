@@ -108,3 +108,4 @@ Some libraries and features isn't available yet. You can download most Lua libra
 - [x] **require([file])** & **load([string])** to include other files
 - [x] **require** caching in `package.loaded`
 
+---
