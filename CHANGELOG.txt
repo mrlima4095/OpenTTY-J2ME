@@ -2,6 +2,7 @@ OpenTTY Java Edition 1.16
 Copyright (C) 2025 - Mr. Lima
 
 LTS Edition
+End of support scheduled for April 2026
 
 [ _Commands_ ]
 
@@ -85,3 +86,12 @@ You can enable the **compatibility mode** of OpenTTY to **J2ME Loader** with com
 - **Fire** button in List Screens dont works;
 - In **File Explorer** when you jump directory it rebuild screen
 - Title of **File Explorer** is Main Window title, not current working path
+
+[ _Lua J2ME_ ]
+
+OpenTTY now have a Mini VM of Lua programming language, you can run **lua scripts** with command `lua [filename]`.
+
+[Lua Manual](https://www.lua.org/manual/5.4/)
+
+Some libraries and features isn't available yet. You can download most Lua libraries in Yang or with **SmartME SDK**.
+
