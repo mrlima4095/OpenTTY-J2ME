@@ -3161,7 +3161,7 @@ class Lua {
                     } else {
                         if (args.size() == 1) { return null; }
 
-                        int index = null;
+                        int index = 1;
                         try { index = Integer.parseInt(idx); } 
                         catch (NumberFormatException e) { gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); return null; }
                         
