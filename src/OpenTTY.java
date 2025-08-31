@@ -3087,18 +3087,11 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == RANDOM) { return new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); }
+            else if (MOD == RANDOM) { Double gen = new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); return args.isEmpty() ? new Double(gen.doubleValue() / 100) : gen; }
             else if (MOD == HASH) { return args.isEmpty() || args.elementAt(0) == null ? null : new Double(args.elementAt(0).hashCode()); }
-            else if (MOD == TYPE) {
-                if (args.isEmpty()) { }
-                else {
-                    Object obj = args.elementAt(0);
-                    
-                    return obj == null ? "nil" : obj instanceof String ? "string" : obj instanceof Double ? "number" : obj instanceof Boolean ? "boolean" : obj instanceof LuaFunction ? "function" : obj instanceof Hashtable ? "table" : "userdata";
-                }
-            }
+            else if (MOD == TYPE) { if (args.isEmpty()) { missing(1, "type", "value expected"); } else { Object obj = args.elementAt(0); return obj == null ? "nil" : obj instanceof String ? "string" : obj instanceof Double ? "number" : obj instanceof Boolean ? "boolean" : obj instanceof LuaFunction ? "function" : obj instanceof Hashtable ? "table" : "userdata"; } }
             else if (MOD == BYTE) {
-                if (args.isEmpty() || args.elementAt(0) == null) { }
+                if (args.isEmpty() || args.elementAt(0) == null) { missing(1, "byte", "string expected, got no value"); }
                 else {
                     String s = toLuaString(args.elementAt(0));
                     int len = s.length(), start = 1, end = 1;
