@@ -2585,25 +2585,18 @@ class Lua {
 
 
         consume(LPAREN);
-Vector params = new Vector();
-while (true) {
-    int t = peek().type;
-    if (t == IDENTIFIER) {
-        params.addElement(consume(IDENTIFIER).value);
-    } else if (t == VARARG) {
-        consume(VARARG);
-        params.addElement("...");
-        break;
-    } else {
-        break;
-    }
-    if (peek().type == COMMA) {
-        consume(COMMA);
-    } else {
-        break;
-    }
-}
-consume(RPAREN);
+        Vector params = new Vector();
+        while (true) {
+            int t = peek().type;
+
+            if (t == IDENTIFIER) { params.addElement(consume(IDENTIFIER).value); } 
+            else if (t == VARARG) { consume(VARARG); params.addElement("..."); break; } 
+            else { break; } 
+
+            if (peek().type == COMMA) { consume(COMMA); } 
+            else { break; }
+        }
+        consume(RPAREN);
 
         // Captura corpo da função até o END correspondente
         Vector bodyTokens = new Vector();
