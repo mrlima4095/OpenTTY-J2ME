@@ -5,9 +5,7 @@ local app = {
 
     api = {
         version = "1.16",
-        error = function ()
-            os.execute("")
-        end,
+        error = function () os.execute("") end,
         match = "minimum"
     },
 
@@ -22,9 +20,7 @@ local app = {
     include = {},
 
     build = function () os.execute("") end,
-    commands = {
-        name = "cmd alias"
-    },
+    commands = { name = "cmd alias" },
 
     shell = {
         name = "cmd",
