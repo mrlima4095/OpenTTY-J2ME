@@ -1927,19 +1927,9 @@ class Lua {
             }
     
             else if (c == '.') {
-                if (i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') {
-                    tokens.addElement(new Token(VARARG, "..."));
-                    i += 3;
-                    continue;
-                } else if (i + 1 < code.length() && code.charAt(i + 1) == '.') {
-                    tokens.addElement(new Token(CONCAT, ".."));
-                    i += 2;
-                    continue;
-                } else {
-                    tokens.addElement(new Token(DOT, "."));
-                    i++;
-                    continue;
-                }
+                if (i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') { tokens.addElement(new Token(VARARG, "...")); i += 3; } 
+                else if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; } 
+                else { tokens.addElement(new Token(DOT, ".")); i++; }
             }
             else if (c == ':') { tokens.addElement(new Token(DOT, ".")); i++; }
 
@@ -2888,10 +2878,20 @@ class Lua {
             }
 
             // Bind arguments to parameters
-            for (int i = 0; i < params.size(); i++) {
+            int paramCount = params.size();
+            boolean hasVararg = paramCount > 0 && params.elementAt(paramCount - 1).equals("...");
+            int fixedParamCount = hasVararg ? paramCount - 1 : paramCount;
+            for (int i = 0; i < fixedParamCount; i++) {
                 String paramName = (String) params.elementAt(i);
                 Object argValue = (i < args.size()) ? args.elementAt(i) : null; // Default to nil if no arg
                 functionScope.put(paramName, argValue == null ? LUA_NIL : argValue);
+            }
+            if (hasVararg) {
+                Vector varargValues = new Vector();
+                for (int i = fixedParamCount; i < args.size(); i++) {
+                    varargValues.addElement(args.elementAt(i));
+                }
+                functionScope.put("...", varargValues);
             }
 
             // Save current token state
