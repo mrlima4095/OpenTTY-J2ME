@@ -3095,8 +3095,9 @@ class Lua {
                         Hashtable table = (Hashtable) args.elementAt(1);
                         if (index < 0) { index = table.size() + index; }
                         if (index < 1 || index >= table.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
-
-                        for (Enumeration keys = table.keys(); keys.hasMoreElements();) { Object key = keys.nextElement; result.put(new Double(i), table.get(i)); }
+                        
+                        int i = 1;
+                        for (Enumeration keys = table.keys(); keys.hasMoreElements();) { Object key = keys.nextElement(); result.put(new Double(i), table.get(key)); i++; }
                         
                         return result;
                     }
