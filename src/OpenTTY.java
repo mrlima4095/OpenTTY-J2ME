@@ -3084,7 +3084,7 @@ class Lua {
                         
                         Hashtable result = new Hashtable();
                         if (args.size() > 1 && args.elementAt(1) == null) {
-                            throw new NullPointerException("select: invalid nil table")
+                            throw new NullPointerException("select: invalid nil table");
                         } else if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
                             Hashtable table = (Hashtable) args.elementAt(1);
                             if (index < 0) { index = table.size() + index; }
