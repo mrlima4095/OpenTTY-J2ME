@@ -3157,7 +3157,7 @@ class Lua {
                 else {
                     String idx = toLuaString(args.elementAt(0));
                     if (idx.equals("#")) {
-                        if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { return new Double((varargTable = (Hashtable) args.elementAt(1)).size()); } 
+                        if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { return new Double(((Hashtable) args.elementAt(1)).size()); } 
                         else { return new Double(args.size() - 1); }
                     } else {
                         if (args.size() == 1) { return null; }
