@@ -3075,19 +3075,29 @@ class Lua {
                 else {
                     String idx = toLuaString(args.elementAt(0));
 
-                    if (idx.equals("#")) { return new Double(args.size() - 1); }
+                    if (idx.equals("#")) { return new Double(args.elementAt(1) instanceof Hashtable ? args.elementAt(1).size() : args.size() - 1); }
                     else {
                         int index;
 
                         try { index = Integer.parseInt(idx); }
                         catch (NumberFormatException e) { throw new NumberFormatException("select: index must be a number of '#'"); }
-
-                        if (index < 0) { index = args.size() + index; }
-                        if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
-
-                        Hashtable result = new Hashtable();
-                        for (int i = 1; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i)); }
-
+                        
+                        if (args.elementAt(1) instanceof Hashtable) {
+                            
+                            
+                            if (index < 0) { index = args.size() + index; }
+                            if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
+    
+                            Hashtable result = new Hashtable();
+                            for (int i = 1; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i)); }
+                        } else {
+                            if (index < 0) { index = args.size() + index; }
+                            if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
+    
+                            Hashtable result = new Hashtable();
+                            for (int i = 1; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i)); }
+                        }
+                        
                         return result;
                     }
                 }
