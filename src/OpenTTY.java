@@ -2549,13 +2549,8 @@ class Lua {
                 params.addElement(consume(IDENTIFIER).value);
                 while (peek().type == COMMA) {
                     consume(COMMA);
-                    if (peek().type == VARARG) {
-                        consume(VARARG);
-                        params.addElement("...");
-                        break; // '...' deve ser o último parâmetro
-                    } else {
-                        params.addElement(consume(IDENTIFIER).value);
-                    }
+                    if (peek().type == VARARG) { consume(VARARG); params.addElement("..."); break; } 
+                    else { params.addElement(consume(IDENTIFIER).value); }
                 }
             }
         }
