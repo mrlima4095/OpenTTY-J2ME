@@ -95,3 +95,15 @@ OpenTTY now have a Mini VM of Lua programming language, you can run **lua script
 
 Some libraries and features isn't available yet. You can download most Lua libraries in Yang or with **SmartME SDK**.
 
+**Not implemented:**  
+
+- [x] Basic types (strings, numbers, boolean, tables, nil)
+- [ ] Meta tables support
+- [ ] Advanced IO library
+- [x] Functions and normal tables creation
+- [x] Error Handling
+- [ ] Coroutines and methods (**:** token works like a normal **.**)
+- [ ] **until** & **repeat** looping extructure
+- [x] **require([file])** & **load([string])** to include other files
+- [x] **require** caching in `package.loaded`
+
