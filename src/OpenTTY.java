@@ -2019,8 +2019,7 @@ class Lua {
         
         if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); } 
         if (status != 0) { throw new Error(); }
-    midlet.processCommand("echo Peek token: " + peek().type + " value: " + peek().value);
-                    
+
         if (current.type == IDENTIFIER) {
             // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
             int la = 0;
@@ -2141,7 +2140,7 @@ class Lua {
         else if (current.type == LOCAL) {
             consume(LOCAL);
             // Caso: local function nome(...) ... end
-            if (peek().type == FUNCTION) {
+            /*if (peek().type == FUNCTION) {
                 consume(FUNCTION);
                 String funcName = (String) consume(IDENTIFIER).value;
                 consume(LPAREN);
@@ -2170,7 +2169,51 @@ class Lua {
                 LuaFunction func = new LuaFunction(params, bodyTokens, scope);
                 scope.put(funcName, func);
                 return null;
+            }*/if (peek().type == FUNCTION) {
+        consume(FUNCTION);
+        String funcName = (String) consume(IDENTIFIER).value;
+        // Leitura dos parâmetros da função, aceitando vararg
+        consume(LPAREN);
+        Vector params = new Vector();
+        while (true) {
+            int t = peek().type;
+            if (t == IDENTIFIER) {
+                params.addElement(consume(IDENTIFIER).value);
+            } else if (t == VARARG) {
+                consume(VARARG);
+                params.addElement("...");
+                break; // vararg deve ser o último parâmetro
             } else {
+                break;
+            }
+            if (peek().type == COMMA) {
+                consume(COMMA);
+            } else {
+                break;
+            }
+        }
+        consume(RPAREN);
+        // Captura o corpo da função até o END correspondente
+        Vector bodyTokens = new Vector();
+        int depth = 1;
+        while (depth > 0) {
+            Token token = consume();
+            if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) {
+                depth++;
+            } else if (token.type == END) {
+                depth--;
+            } else if (token.type == EOF) {
+                throw new Exception("Unmatched 'function' statement: Expected 'end'");
+            }
+            if (depth > 0) {
+                bodyTokens.addElement(token);
+            }
+        }
+        // Cria a função e adiciona no escopo local
+        LuaFunction func = new LuaFunction(params, bodyTokens, scope);
+        scope.put(funcName, func);
+        return null;
+    } else {
                 // Novo: suportar múltiplas declarações locais: local a, b, c = expr1, expr2, expr3
                 Vector varNames = new Vector();
                 // deve haver ao menos um IDENTIFIER
@@ -2540,28 +2583,7 @@ class Lua {
             if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value in function definition");
         }
 
-        /*consume(LPAREN);
-        Vector params = new Vector();
-        if (peek().type == IDENTIFIER || peek().type == VARARG) { // <-- Adicione peek().type == VARARG aqui
-            if (peek().type == VARARG) { // <-- Nova condição para VARARG
-                consume(VARARG);
-                params.addElement("..."); // Adiciona uma string especial para indicar vararg
-            } else {
-                params.addElement(consume(IDENTIFIER).value);
-                while (peek()..type == COMMA) {
-                    consume(COMMA);
-                    // Verifique se o próximo é VARARG após a vírgula
-                    if (peek().type == VARARG) {
-                        consume(VARARG);
-                        params.addElement("...");
-                        break; // Vararg deve ser o último parâmetro
-                    } else {
-                        params.addElement(consume(IDENTIFIER).value);
-                    }
-                }
-            }
-        }
-        consume(RPAREN);*/
+
         consume(LPAREN);
 Vector params = new Vector();
 while (true) {
