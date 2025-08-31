@@ -3130,12 +3130,12 @@ consume(RPAREN);
             else if (MOD == CHAR) {
                 if (args.isEmpty()) { return ""; }
                 else {
-                    Object table = args.elementAt(0);
+                    Object item = args.elementAt(0);
                     
-                    if (table == null || !(table instanceof Hashtable)) {
+                    if (item == null || !(item instanceof Hashtable)) {
                         throw new Exception("char: invalid nil or non-table bytes");
                     }
-                    Hashtable table = (Hashtable) table;
+                    Hashtable table = (Hashtable) item;
                     
                     
                     StringBuffer sb = new StringBuffer();
