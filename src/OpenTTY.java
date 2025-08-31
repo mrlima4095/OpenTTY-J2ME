@@ -2886,7 +2886,7 @@ class Lua {
             if (hasVararg) {
                 Hashtable varargValues = new Hashtable();
                 int index = 1;
-                for (int i = fixedParamCount; i < args.size(); i++) { varargValues.put(new Double(index++), args.elementAt(i)); }
+                for (int i = fixedParamCount; i < args.size(); i++) { String obj = args.elementAt(i); varargValues.put(new Double(index++), obj == null ? LUA_NIL : obj); }
                 functionScope.put("...", varargValues);
             }
 
