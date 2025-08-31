@@ -2019,7 +2019,8 @@ class Lua {
         
         if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); } 
         if (status != 0) { throw new Error(); }
-
+    midlet.processCommand("Peek token: " + peek().type + " value: " + peek().value);
+                    
         if (current.type == IDENTIFIER) {
             // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
             int la = 0;
@@ -2539,7 +2540,7 @@ class Lua {
             if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value in function definition");
         }
 
-        consume(LPAREN);
+        /*consume(LPAREN);
         Vector params = new Vector();
         if (peek().type == IDENTIFIER || peek().type == VARARG) { // <-- Adicione peek().type == VARARG aqui
             if (peek().type == VARARG) { // <-- Nova condição para VARARG
@@ -2547,7 +2548,7 @@ class Lua {
                 params.addElement("..."); // Adiciona uma string especial para indicar vararg
             } else {
                 params.addElement(consume(IDENTIFIER).value);
-                while (peek().type == COMMA) {
+                while (peek()..type == COMMA) {
                     consume(COMMA);
                     // Verifique se o próximo é VARARG após a vírgula
                     if (peek().type == VARARG) {
@@ -2560,7 +2561,27 @@ class Lua {
                 }
             }
         }
-        consume(RPAREN);
+        consume(RPAREN);*/
+        consume(LPAREN);
+Vector params = new Vector();
+while (true) {
+    int t = peek().type;
+    if (t == IDENTIFIER) {
+        params.addElement(consume(IDENTIFIER).value);
+    } else if (t == VARARG) {
+        consume(VARARG);
+        params.addElement("...");
+        break;
+    } else {
+        break;
+    }
+    if (peek().type == COMMA) {
+        consume(COMMA);
+    } else {
+        break;
+    }
+}
+consume(RPAREN);
 
         // Captura corpo da função até o END correspondente
         Vector bodyTokens = new Vector();
