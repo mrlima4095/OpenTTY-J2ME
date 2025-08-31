@@ -1902,7 +1902,6 @@ class Lua {
             while (peek().type != EOF) { statement(globals); }
         } 
         catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
-        catch (VirtualMachineError e) { midlet.processCommand("echo " + e.getMessage(), true, root); status = 1; }
         catch (Error e) { status = 1; }
 
         midlet.trace.remove(PID);
@@ -2018,7 +2017,7 @@ class Lua {
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
         
-        if (midlet.trace.containsKey(PID)) { } else { throw new VirtualMachineError("Process killed"); } 
+        if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); } 
         if (status != 0) { throw new Error(); }
 
         if (current.type == IDENTIFIER) {
