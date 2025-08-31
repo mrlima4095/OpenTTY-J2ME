@@ -3128,31 +3128,58 @@ consume(RPAREN);
                 }
             }
             else if (MOD == CHAR) {
-                if (args.isEmpty()) { return ""; }
-                else {
-                    Object item = args.elementAt(0);
-                    
-                    if (item == null || !(item instanceof Hashtable)) {
-                        throw new Exception("char: invalid nil or non-table bytes");
+                if (args.isEmpty()) {
+                    return "";
+                } else {
+                    Object firstArg = args.elementAt(0);
+                    // Caso 1: primeiro argumento é uma tabela (bytes)
+                    if (firstArg instanceof Hashtable) {
+                        Hashtable table = (Hashtable) firstArg;
+                        StringBuffer sb = new StringBuffer();
+                        for (int i = 1; i <= table.size(); i++) {
+                            Object arg = table.get(new Double(i));
+                            if (arg == null) {
+                                throw new Exception("char: byte is nil");
+                            }
+                            double num;
+                            if (arg instanceof Number) {
+                                num = ((Number) arg).doubleValue();
+                            } else {
+                                throw new Exception("char: byte must be a number");
+                            }
+                            int c = (int) num;
+                            if (c < 0 || c > 255) {
+                                throw new Exception("char: byte out of range (0-255)");
+                            }
+                            sb.append((char) c);
+                        }
+                        return sb.toString();
+                    } else {
+                        // Caso 2: argumentos são números individuais
+                        StringBuffer sb = new StringBuffer();
+                        for (int i = 0; i < args.size(); i++) {
+                            Object arg = args.elementAt(i);
+                            if (arg == null) {
+                                throw new Exception("char: argument is nil");
+                            }
+                            double num;
+                            if (arg instanceof Number) {
+                                num = ((Number) arg).doubleValue();
+                            } else {
+                                try {
+                                    num = Double.parseDouble(toLuaString(arg));
+                                } catch (NumberFormatException e) {
+                                    throw new Exception("char: argument must be a number");
+                                }
+                            }
+                            int c = (int) num;
+                            if (c < 0 || c > 255) {
+                                throw new Exception("char: argument out of range (0-255)");
+                            }
+                            sb.append((char) c);
+                        }
+                        return sb.toString();
                     }
-                    Hashtable table = (Hashtable) item;
-                    
-                    
-                    StringBuffer sb = new StringBuffer();
-                    for (int i = 1; i < table.size() + 1; i++) {
-                        Object arg = table.get(new Double(i));
-                        if (arg == null) { throw new Exception("char: byte is nil"); }
-                        
-                        double num;
-                        if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
-                        else { throw new Exception("char: byte must be a number"); }
-                        
-                        int c = (int) num;
-                        if (c < 0 || c > 255) { throw new Exception("char: byte out of range (0-255)"); }
-                        
-                        sb.append((char) c);
-                    }
-                    return sb.toString();
                 }
             }
             else if (MOD == SELECT) {
