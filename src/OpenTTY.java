@@ -3004,10 +3004,10 @@ class Lua {
             }
             else if (MOD == GETENV) { if (args.isEmpty()) { } else { String key = toLuaString(args.elementAt(0)); return midlet.attributes.containsKey(key) ? midlet.attributes.get(key) : null; } }
             else if (MOD == REQUIRE) {
-                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "require", "string expected, got no value"); }
+                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "require", "string expected, got no value"); }
 
                 String name = toLuaString(args.elementAt(0));
-                if (name == null || name.equals("nil") || name.length() == 0) { gotbad(1, "require", "string expected, got " + type(args.elementAt(0))); }
+                if (name == null || name.equals("nil") || name.length() == 0) { return gotbad(1, "require", "string expected, got " + type(args.elementAt(0))); }
 
                 // Cache simples (estilo package.loaded)
                 Object cached = requireCache.get(name);
@@ -3039,7 +3039,7 @@ class Lua {
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
             else if (MOD == TONUMBER) { return args.isEmpty() ? null : new Double(Double.valueOf(toLuaString(args.elementAt(0)))); }
-            else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
+            else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
             else if (MOD == MATCH || MOD == LEN) {
                 if (args.isEmpty()) { }
                 else {
@@ -3061,9 +3061,9 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == REVERSE) { if (args.isEmpty()) { gotbad(1, "reverse", "string expected, got no value"); } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); } }
+            else if (MOD == REVERSE) { if (args.isEmpty()) { return gotbad(1, "reverse", "string expected, got no value"); } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); } }
             else if (MOD == SUB) {
-                if (args.isEmpty()) { gotbad(1, "sub", "string expected, got no value"); }
+                if (args.isEmpty()) { return gotbad(1, "sub", "string expected, got no value"); }
                 else {
                     String text = toLuaString(args.elementAt(0));
 
@@ -3089,9 +3089,9 @@ class Lua {
             }
             else if (MOD == RANDOM) { Double gen = new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); return args.isEmpty() ? new Double(gen.doubleValue() / 100) : gen; }
             else if (MOD == HASH) { return args.isEmpty() || args.elementAt(0) == null ? null : new Double(args.elementAt(0).hashCode()); }
-            else if (MOD == TYPE) { if (args.isEmpty()) { gotbad(1, "type", "value expected"); } else { return type(args.elementAt(0)); } }
+            else if (MOD == TYPE) { if (args.isEmpty()) { return gotbad(1, "type", "value expected"); } else { return type(args.elementAt(0)); } }
             else if (MOD == BYTE) {
-                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "byte", "string expected, got no value"); }
+                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "byte", "string expected, got no value"); }
                 else {
                     String s = toLuaString(args.elementAt(0));
                     int len = s.length(), start = 1, end = 1;
@@ -3126,9 +3126,9 @@ class Lua {
                             if (arg == null) { continue; }
                             double num;
                             if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
-                            else { gotbad(1, "char", "value out of range"); }
+                            else { return gotbad(1, "char", "value out of range"); }
                             int c = (int) num;
-                            if (c < 0 || c > 255) { gotbad(1, "char", "value out of range"); }
+                            if (c < 0 || c > 255) { return gotbad(1, "char", "value out of range"); }
                             sb.append((char) c);
                         }
                         return sb.toString();
@@ -3136,15 +3136,15 @@ class Lua {
                         StringBuffer sb = new StringBuffer();
                         for (int i = 0; i < args.size(); i++) {
                             Object arg = args.elementAt(i);
-                            if (arg == null) { gotbad(1, "char", "number expected, got nil"); }
+                            if (arg == null) { return gotbad(1, "char", "number expected, got nil"); }
                             double num;
                             if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
                             else {
                                 try { num = Double.parseDouble(toLuaString(arg)); } 
-                                catch (Exception e) { gotbad(1, "char", "number expected, got " + type(arg)); }
+                                catch (Exception e) { return gotbad(1, "char", "number expected, got " + type(arg)); }
                             }
                             int c = (int) num;
-                            if (c < 0 || c > 255) { gotbad(1, "char", "value out of range"); }
+                            if (c < 0 || c > 255) { return gotbad(1, "char", "value out of range"); }
                             sb.append((char) c);
                         }
                         return sb.toString();
@@ -3152,7 +3152,7 @@ class Lua {
                 }
             }
             else if (MOD == SELECT) {
-                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "select", "number expected, got no value"); } 
+                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "select", "number expected, got no value"); } 
                 else {
                     String idx = toLuaString(args.elementAt(0));
                     if (idx.equals("#")) {
@@ -3163,7 +3163,7 @@ class Lua {
 
                         int index = 1;
                         try { index = Integer.parseInt(idx); } 
-                        catch (NumberFormatException e) { gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); return null; }
+                        catch (NumberFormatException e) { return gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); return null; }
                         
                         Hashtable result = new Hashtable();
                         if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
