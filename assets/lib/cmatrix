@@ -21,7 +21,7 @@ local function cmatrix()
     os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; case !key (J2EMU) title hide; x11 xfinit stdout; clear; bg cron 20 unset CMATRIX; true")
 
     while os.getenv("CMATRIX") do
-        local x = math.random(10)
+        local x = random(10)
 
         io.write(x .. " ", "stdout", "a")
 
