@@ -3089,11 +3089,14 @@ class Lua {
                             if (index < 1 || index >= table.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
 
                             for (int i = 1; i <= table.size(); i++) { result.put(new Double(i), table.get(i)); }
+                        } else if (args.size() > 1 && args.elementAt(1) == null) {
+                            throw new NullPointerException("select: invalid nil table")
+                        }
                         } else {
                             if (index < 0) { index = args.size() + index; }
                             if (index < 1 || index >= args.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
 
-                            for (int i = 1; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i)); }
+                            for (int i = 1; i <= args.size(); i++) { result.put(new Double(i), args.elementAt(i) == null ? LUA_NIL : args.elementAt(i)); }
                         }
                         
                         return result;
