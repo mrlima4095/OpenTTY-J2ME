@@ -107,5 +107,6 @@ Some libraries and features isn't available yet. You can download most Lua libra
 - [ ] **until** & **repeat** looping extructure
 - [x] **require([file])** & **load([string])** to include other files
 - [x] **require** caching in `package.loaded`
+- [x] **Global** and **local** scopes
 
 ---
