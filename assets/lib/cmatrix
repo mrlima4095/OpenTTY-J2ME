@@ -11,15 +11,14 @@ api.match=minimum
 ]]
 
 local function cmatrix()
-    local _ = os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 xfinit stdout; clear; bg cron 20 unset CMATRIX; true")
+    os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; case !key (J2EMU) title hide; x11 xfinit stdout; clear; bg cron 20 unset CMATRIX; true")
 
     while os.getenv("CMATRIX") do
         local x = math.random(10)
 
         io.write(x .. " ", "stdout", "a")
 
-        if string.len(io.read()) > 200 then _ = os.execute("clear")
-        end
+        if string.len(io.read()) > 200 then os.execute("clear") end
     end
 
     _ = os.execute("execute x11 stop; x11 init; title $OLD_TITLE; clear;")
