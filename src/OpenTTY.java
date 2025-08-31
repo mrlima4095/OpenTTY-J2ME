@@ -2870,18 +2870,9 @@ class Lua {
             if (MOD != -1) { return internals(args); }
 
             Hashtable functionScope = new Hashtable();
-            // Inherit from closure scope (simple lexical scoping)
-            for (Enumeration e = closureScope.keys(); e.hasMoreElements();) {
-                String key = (String) e.nextElement();
-                functionScope.put(key, unwrap(closureScope.get(key)));
-            }
-            // Add global scope as fallback
-            for (Enumeration e = globals.keys(); e.hasMoreElements();) {
-                String key = (String) e.nextElement();
-                if (!functionScope.containsKey(key)) { // Don't override local/closure variables
-                    functionScope.put(key, unwrap(globals.get(key)));
-                }
-            }
+            // Inherit from closure scope (simple lexical scoping) and globals
+            for (Enumeration e = closureScope.keys(); e.hasMoreElements();) { String key = (String) e.nextElement(); functionScope.put(key, unwrap(closureScope.get(key))); }
+            for (Enumeration e = globals.keys(); e.hasMoreElements();) { String key = (String) e.nextElement(); if (!functionScope.containsKey(key)) { functionScope.put(key, unwrap(globals.get(key))); } }
 
             // Bind arguments to parameters
             int paramCount = params.size();
@@ -2893,10 +2884,9 @@ class Lua {
                 functionScope.put(paramName, argValue == null ? LUA_NIL : argValue);
             }
             if (hasVararg) {
-                Vector varargValues = new Vector();
-                for (int i = fixedParamCount; i < args.size(); i++) {
-                    varargValues.addElement(args.elementAt(i));
-                }
+                Hashtable varargValues = new Hashtable();
+                int index = 1;
+                for (int i = fixedParamCount; i < args.size(); i++) { varargValues.put(new Double(index++), args.elementAt(i)); }
                 functionScope.put("...", varargValues);
             }
 
