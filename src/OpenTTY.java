@@ -2902,14 +2902,8 @@ class Lua {
             while (peek().type != EOF) {
                 Object result = statement(functionScope);
 
-                if (peek().type == EOF && result != null) { // Last statement was a return
-                    returnValue = result;
-                    break;
-                } else if (result != null && doreturn) { // A return statement was encountered
-                    returnValue = result;
-                    doreturn = false;
-                    break;
-                }
+                if (peek().type == EOF && result != null) { returnValue = result; break; } 
+                else if (result != null && doreturn) { returnValue = result; doreturn = false; break; }
             }
 
             // Restore original token state
