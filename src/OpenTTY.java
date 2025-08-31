@@ -3120,57 +3120,59 @@ consume(RPAREN);
                 }
             }
             else if (MOD == SELECT) {
-    if (args.isEmpty() || args.elementAt(0) == null) {
-        throw new Exception("select: index expected");
-    } else {
-        String idx = toLuaString(args.elementAt(0));
-        if (idx.equals("#")) {
-            if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
-                Hashtable varargTable = (Hashtable) args.elementAt(1);
-                return new Double(varargTable.size());
-            } else {
-                return new Double(args.size() - 1);
-            }
-        } else {
-            if (args.size() == 1) {
-                throw new ArrayIndexOutOfBoundsException("select: missing arguments after index");
-            }
-            int index;
-            try {
-                index = Integer.parseInt(idx);
-            } catch (NumberFormatException e) {
-                throw new NumberFormatException("select: index must be a number or '#'");
-            }
-            Hashtable result = new Hashtable();
-            if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
-                Hashtable varargTable = (Hashtable) args.elementAt(1);
-                int varargSize = varargTable.size();
-                if (index < 0) {
-                    index = varargSize + index + 1;
-                }
-                if (index < 1 || index > varargSize) {
-                    throw new ArrayIndexOutOfBoundsException("select: index out of range");
-                }
-                int resultIndex = 1;
-                for (int i = index; i <= varargSize; i++) {
-                    Object val = varargTable.get(new Double(i));
-                    result.put(new Double(resultIndex++), val);
-                }
-            } else {
-                int argCount = args.size() - 1;
-                if (index < 0) {
-                    index = argCount + index + 1;
-                }
-                if (index < 1 || index > argCount) {
-                    throw new ArrayIndexOutOfBoundsException("select: index out of range");
-                }
-                int resultIndex = 1;
-                for (int i = index; i <= argCount; i++) {
-                    Object val = args.elementAt(i);
-                    result.put(new Double(resultIndex++), val);
-                }
-            }
-            return result;
+                if (args.isEmpty() || args.elementAt(0) == null) {
+                    throw new Exception("select: index expected");
+                } else {
+                    String idx = toLuaString(args.elementAt(0));
+                    if (idx.equals("#")) {
+                        if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
+                            Hashtable varargTable = (Hashtable) args.elementAt(1);
+                            return new Double(varargTable.size());
+                        } else {
+                            return new Double(args.size() - 1);
+                        }
+                    } else {
+                        if (args.size() == 1) {
+                            throw new ArrayIndexOutOfBoundsException("select: missing arguments after index");
+                        }
+                        int index;
+                        try {
+                            index = Integer.parseInt(idx);
+                        } catch (NumberFormatException e) {
+                            throw new NumberFormatException("select: index must be a number or '#'");
+                        }
+                        Hashtable result = new Hashtable();
+                        if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
+                            Hashtable varargTable = (Hashtable) args.elementAt(1);
+                            int varargSize = varargTable.size();
+                            if (index < 0) {
+                                index = varargSize + index + 1;
+                            }
+                            if (index < 1 || index > varargSize) {
+                                throw new ArrayIndexOutOfBoundsException("select: index out of range");
+                            }
+                            int resultIndex = 1;
+                            for (int i = index; i <= varargSize; i++) {
+                                Object val = varargTable.get(new Double(i));
+                                if (val != null) {
+                                    result.put(new Double(resultIndex++), val);
+                                }
+                            }
+                        } else {
+                            int argCount = args.size() - 1;
+                            if (index < 0) {
+                                index = argCount + index + 1;
+                            }
+                            if (index < 1 || index > argCount) {
+                                throw new ArrayIndexOutOfBoundsException("select: index out of range");
+                            }
+                            int resultIndex = 1;
+                            for (int i = index; i <= argCount; i++) {
+                                Object val = args.elementAt(i);
+                                result.put(new Double(resultIndex++), val == null ? LUA_NIL : val);
+                            }
+                        }
+                        return result;
                     }
                 }
             }
