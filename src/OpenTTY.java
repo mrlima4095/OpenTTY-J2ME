@@ -2541,11 +2541,22 @@ class Lua {
 
         consume(LPAREN);
         Vector params = new Vector();
-        if (peek().type == IDENTIFIER) {
-            params.addElement(consume(IDENTIFIER).value);
-            while (peek().type == COMMA) {
-                consume(COMMA);
+        if (peek().type == IDENTIFIER || peek().type == VARARG) {
+            if (peek().type == VARARG) {
+                consume(VARARG);
+                params.addElement("...");
+            } else {
                 params.addElement(consume(IDENTIFIER).value);
+                while (peek().type == COMMA) {
+                    consume(COMMA);
+                    if (peek().type == VARARG) {
+                        consume(VARARG);
+                        params.addElement("...");
+                        break; // '...' deve ser o último parâmetro
+                    } else {
+                        params.addElement(consume(IDENTIFIER).value);
+                    }
+                }
             }
         }
         consume(RPAREN);
