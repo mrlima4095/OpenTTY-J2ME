@@ -3153,7 +3153,7 @@ class Lua {
                 }
             }
             else if (MOD == SELECT) {
-                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "select", "number expected, got no value") } 
+                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "select", "number expected, got no value"); } 
                 else {
                     String idx = toLuaString(args.elementAt(0));
                     if (idx.equals("#")) {
