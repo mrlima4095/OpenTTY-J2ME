@@ -3135,7 +3135,7 @@ consume(RPAREN);
                     if (table == null || !(table instanceof Hashtable)) {
                         throw new Exception("char: invalid nil or non-table bytes");
                     }
-                    table = (Hashtable) table;
+                    Hashtable table = (Hashtable) table;
                     
                     
                     StringBuffer sb = new StringBuffer();
