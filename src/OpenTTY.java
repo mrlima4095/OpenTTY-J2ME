@@ -3120,28 +3120,38 @@ consume(RPAREN);
                 }
             }
             else if (MOD == SELECT) {
-                if (args.isEmpty() || args.elementAt(0) == null) { throw new Exception("select: index expected"); }
-                else {
-                    String idx = toLuaString(args.elementAt(0));
-
-                    if (idx.equals("#")) { return new Double(args.size() > 1 && args.elementAt(1) instanceof Hashtable ? ((Hashtable) args.elementAt(1)).size() : args.size() - 1); }
-                    else {
-                        if (args.size() > 1 && args.elementAt(1) == null) { throw new NullPointerException("select: invalid nil table"); } 
-                        else if (args.size() == 1) { throw new ArrayIndexOutOfBoundsException("selext: missing table"); }
-                        int index;
-
-                        try { index = Integer.parseInt(idx); }
-                        catch (NumberFormatException e) { throw new NumberFormatException("select: index must be a number of '#'"); }
-                        
-                        Hashtable result = new Hashtable();
-                        Hashtable table = (Hashtable) args.elementAt(1);
-                        if (index < 0) { index = table.size() + index; }
-                        if (index < 1 || index >= table.size()) { throw new ArrayIndexOutOfBoundsException("select: index out of range"); }
-                        
-                        int i = 1;
-                        for (Enumeration keys = table.keys(); keys.hasMoreElements();) { Object key = keys.nextElement(); result.put(new Double(i), table.get(key)); i++; }
-                        
-                        return result;
+    if (args.isEmpty() || args.elementAt(0) == null) {
+        throw new Exception("select: index expected");
+    } else {
+        String idx = toLuaString(args.elementAt(0));
+        if (idx.equals("#")) {
+            // Retorna o número de argumentos após o primeiro parâmetro
+            // args.size() - 1 porque o primeiro é o índice "#"
+            return new Double(args.size() - 1);
+        } else {
+            if (args.size() == 1) {
+                throw new ArrayIndexOutOfBoundsException("select: missing arguments after index");
+            }
+            int index;
+            try {
+                index = Integer.parseInt(idx);
+            } catch (NumberFormatException e) {
+                throw new NumberFormatException("select: index must be a number or '#'");
+            }
+            // Ajusta índice negativo (Lua conta do final)
+            int argCount = args.size() - 1; // número de argumentos após o índice
+            if (index < 0) {
+                index = argCount + index + 1; // +1 porque Lua é 1-based
+            }
+            if (index < 1 || index > argCount) {
+                throw new ArrayIndexOutOfBoundsException("select: index out of range");
+            }
+            // Cria vetor com os argumentos a partir do índice solicitado
+            Vector result = new Vector();
+            for (int i = index; i <= argCount; i++) {
+                result.addElement(args.elementAt(i));
+            }
+            return result;
                     }
                 }
             }
