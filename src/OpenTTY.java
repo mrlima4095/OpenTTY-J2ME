@@ -3091,7 +3091,7 @@ class Lua {
             else if (MOD == HASH) { return args.isEmpty() || args.elementAt(0) == null ? null : new Double(args.elementAt(0).hashCode()); }
             else if (MOD == TYPE) { if (args.isEmpty()) { gotbad(1, "type", "value expected"); } else { return type(args.elementAt(0)); } }
             else if (MOD == BYTE) {
-                if (args.isEmpty() || args.elementAt(0) == null) { missing(1, "byte", "string expected, got no value"); }
+                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "byte", "string expected, got no value"); }
                 else {
                     String s = toLuaString(args.elementAt(0));
                     int len = s.length(), start = 1, end = 1;
