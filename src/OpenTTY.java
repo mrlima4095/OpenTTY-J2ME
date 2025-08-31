@@ -3061,7 +3061,7 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == REVERSE) { if (args.isEmpty()) { gotbad(1, "reverse", "string expected, got no value") } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); } }
+            else if (MOD == REVERSE) { if (args.isEmpty()) { gotbad(1, "reverse", "string expected, got no value"); } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); } }
             else if (MOD == SUB) {
                 if (args.isEmpty()) { gotbad(1, "sub", "string expected, got no value"); }
                 else {
