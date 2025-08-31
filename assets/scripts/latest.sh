@@ -1,7 +1,7 @@
 #!/java/bin/sh
 # -*- coding: utf-8 -*-
 
-set ONLINE_VERSION=1.15
+set ONLINE_VERSION=1.16
 
 
 if ($VERSION == $ONLINE_VERSION) echo already up to date.
