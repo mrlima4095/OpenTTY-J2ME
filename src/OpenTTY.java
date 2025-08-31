@@ -3163,7 +3163,7 @@ class Lua {
 
                         int index = 1;
                         try { index = Integer.parseInt(idx); } 
-                        catch (NumberFormatException e) { return gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); return null; }
+                        catch (NumberFormatException e) { return gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); }
                         
                         Hashtable result = new Hashtable();
                         if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
