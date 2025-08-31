@@ -3133,7 +3133,7 @@ consume(RPAREN);
                     Object table = args.elementAt(0);
                     
                     if (table == null || !(table instanceof Hashtable)) {
-                        throw new Exception("char: invalid nil or non-table bytes")
+                        throw new Exception("char: invalid nil or non-table bytes");
                     }
                     table = (Hashtable) table;
                     
