@@ -3136,8 +3136,8 @@ consume(RPAREN);
                     if (firstArg instanceof Hashtable) {
                         Hashtable table = (Hashtable) firstArg;
                         StringBuffer sb = new StringBuffer();
-                        for (int i = 1; i <= table.size() + 1; i++) {
-                            Object arg = table.get(new Double(i));
+                        for (int i = 0; i <= table.size(); i++) {
+                            Object arg = table.get(new Double(i + 1));
                             if (arg == null) {
                                 throw new Exception("char: byte is nil");
                             }
