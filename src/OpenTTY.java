@@ -2541,11 +2541,12 @@ class Lua {
 
         consume(LPAREN);
         Vector params = new Vector();
-        if (peek().type == IDENTIFIER || peek().type == VARARG) { // <-- Adicione peek().type == VARARG aqui
-            if (peek().type == VARARG) { // <-- Nova condição para VARARG
-                consume(VARARG);
+        if (peek().type == VARARG) { // <-- Nova condição para VARARG
+            consume(VARARG);
                 params.addElement("..."); // Adiciona uma string especial para indicar vararg
-            } else {
+        } 
+        if (peek().type == IDENTIFIER ) { // <-- Adicione peek().type == VARARG aqui
+            else {
                 params.addElement(consume(IDENTIFIER).value);
                 while (peek().type == COMMA) {
                     consume(COMMA);
