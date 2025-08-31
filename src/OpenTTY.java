@@ -3138,9 +3138,8 @@ class Lua {
                             Object arg = args.elementAt(i);
                             if (arg == null) { gotbad(1, "char", "number expected, got nil"); }
                             double num;
-                            if (arg instanceof Double) {
-                                num = ((Double) arg).doubleValue();
-                            } else {
+                            if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
+                            else {
                                 try { num = Double.parseDouble(toLuaString(arg)); } 
                                 catch (Exception e) { gotbad(1, "char", "number expected, got " + type(arg)); }
                             }
@@ -3164,7 +3163,7 @@ class Lua {
 
                         int index = null;
                         try { index = Integer.parseInt(idx); } 
-                        catch (NumberFormatException e) { gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); }
+                        catch (NumberFormatException e) { gotbad(1, "select", "number expected, got " + type(args.elementAt(0))); return null; }
                         
                         Hashtable result = new Hashtable();
                         if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) {
