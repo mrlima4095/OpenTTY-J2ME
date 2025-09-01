@@ -25,7 +25,7 @@ quest.cmd=execute find $REQUEST viaversion; if ($OUTPUT == null) exec echo [ Via
 
 
 list.title=Select API
-list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.13,1.14,1.14.1,1.14.2,1.14.3,1.14.4,1.15,1.16
+list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.13,1.14,1.14.1,1.14.2,1.14.3,1.14.4,1.15,1.16,1.16.1
 
 1.8.5=execute set REQUEST=1.8.5; set PATCH=Netman Update; axrz run;
 1.8.6=execute set REQUEST=1.8.6; set PATCH=Netman Update; axrz run;
@@ -46,3 +46,4 @@ list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.1
 1.14.4=execute set REQUEST=1.14.4; set PATCH=Renders Update; axrz run;
 1.15=execute set REQUEST=1.15; set PATCH=Hidden Void; axrz run;
 1.16=execute set REQUEST=1.16; set PATCH=Absurd Anvil; axrz run;
+1.16.1=execute set REQUEST=1.16.1; set PATCH=Absurd Anvil; axrz run;
