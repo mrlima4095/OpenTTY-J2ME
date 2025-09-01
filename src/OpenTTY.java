@@ -12,7 +12,7 @@ import java.util.*;
 import java.io.*;
 // |
 // OpenTTY MIDlet
-public class OpenTTY extends MIDlet implements CommandListener {
+public class OpenTTY extends MIDlet implemfents CommandListener {
     private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
     public Random random = new Random();
@@ -1855,8 +1855,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable PKG = (Hashtable) lua.require(script, getcontent(script));
         final String PID = genpid();
 
-    
-        
+        if (PKG.containsKey("api")) {
+            Hashtable API = (Hashtable) PKG.get("api");
+
+            if (API.containsKey("version")) {
+
+            }
+        }
+        if (PKG.containsKey("include")) {
+            Hashtable ITEM = (Hashtable) PKG.get("include");
+
+            for (Enumeration keys = ITEM.keys(); keys.hasMoreElements();) {
+                
+            }           
+        }
+        if (PKG.containsKey("process")) {
+            
+        }
+
+        if (PKG.containsKey("config")) {
+
+        }
+        if (PKG.containsKey("command")) {
+
+        }
+        if (PKG.containsKey("shell")) {
+            
+        }
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
@@ -1903,41 +1928,24 @@ class Lua {
         globals.put("random", new LuaFunction(RANDOM));
     }
     // | (Run Source code)
-    public int run(String source, String code) { 
+    public Object run(String source, String code) { 
         proc.put("name", ("lua " + source).trim());
         midlet.trace.put(PID, proc);
+
+        Object res = null;
         
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF) { statement(globals); }
-        } 
-        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
-        catch (Error e) { midlet.processCommand("echo " + e.getMessage() == null ? e.toString() : e.getMessage(), true, root); status = 1; }
-
-        midlet.trace.remove(PID);
-        return status;
-    }
-    public Object require(String source, String code) { 
-        proc.put("name", ("lua " + source).trim());
-        midlet.trace.put(PID, proc);
-
-        Object result = null;
-        
-        try { 
-            this.tokens = tokenize(code); 
-            
-            while (peek().type != EOF) { 
-                result = statement(globals);
-
-                if (result != null && doreturn) { doreturn = false; break; }
+            while (peek().type != EOF) {
+                res = statement(globals);
             }
         } 
-        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
-        catch (Error e) { midlet.processCommand("echo " + e.getMessage() == null ? e.toString() : e.getMessage(), true, root); }
+        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
+        catch (Error e) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); status = 1; }
 
         midlet.trace.remove(PID);
-        return result;
+        return res == null ? new Integer(status) : res;
     }
     // |
     // Tokenizer
