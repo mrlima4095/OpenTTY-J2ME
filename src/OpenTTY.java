@@ -1805,7 +1805,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Object obj = lua.require(script, getcontent(script));
 
             if (obj == null) { }
-            else if (obj instanceof Hashtable) { Hashtable PKG = (Hashtable) obj; } 
+            else if (obj instanceof Hashtable) { PKG = (Hashtable) obj; } 
             else { echoCommand("import: lua return need to be a table"); return 2; }
         } else { PKG = parseProperties(getcontent(script)); }
 
