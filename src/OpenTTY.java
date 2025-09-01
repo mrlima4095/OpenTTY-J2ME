@@ -628,7 +628,7 @@ public class OpenTTY extends MIDlet implemfents CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); return (int) lua.run(argument.equals("") ? "" : args[0].equals("-e") ? "stdin" : argument, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument)); }
+        else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); return (int) lua.run(argument.equals("") ? "" : args[0].equals("-e") ? "stdin" : argument, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument), false); }
         else if (mainCommand.equals("5k")) { echoCommand("1.16 Special - 5k commits at OpenTTY GitHub repository"); }
         
         // API 015 - (Scripts)
@@ -1928,7 +1928,7 @@ class Lua {
         globals.put("random", new LuaFunction(RANDOM));
     }
     // | (Run Source code)
-    public Object run(String source, String code) { 
+    public Object run(String source, String code, boolean get) { 
         proc.put("name", ("lua " + source).trim());
         midlet.trace.put(PID, proc);
 
@@ -1937,15 +1937,13 @@ class Lua {
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF) {
-                res = statement(globals);
-            }
+            while (peek().type != EOF) { res = statement(globals); if (res != null && doreturn) { ret = res; doreturn = false; break; } }
         } 
         catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
         catch (Error e) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); status = 1; }
 
         midlet.trace.remove(PID);
-        return res == null ? new Integer(status) : res;
+        return get ? res : new Integer(status);
     }
     // |
     // Tokenizer
