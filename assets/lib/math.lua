@@ -4,7 +4,7 @@ function math.abs(x) if x < 0 then return 0-(x) end return x end
 function math.sqrt(x) if x < 0 then error("math.sqrt expects a non-negative number") end return x ^ 0.5 end
 
 function math.pow(base, exponent) return base ^ exponent end
-function math.factorial(n) if n == 0 then return 1 end return n * math.factorial(n - 1) end
+function math.factorial(x) if x == 0 then return 1 end return x * math.factorial(x - 1) end
 
 function math.floor(x)
     local n = x % 1
@@ -48,6 +48,12 @@ function math.max(...)
 end
 
 function math.random(max) return random(max) end
-
+function math.tointeger(x)
+    x = tonumber(x)
+    
+    local n = x % 1
+    if n == 0 then return x
+    else return nil end
+end
 
 return math
