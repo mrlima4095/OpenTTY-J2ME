@@ -1798,17 +1798,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int importScript(String script) { return importScript(script, username.equals("root") ? true : false); }
     private int importScript(String script, boolean root) {
         if (script == null || script.length() == 0) { return 2; }
-
-        Hashtable PKG = null;
         if (script.startsWith("-l")) {
-            Lua lua = new Lua(this, root); script = script.substring(3).trim();
-            Object obj = lua.require(script, getcontent(script));
+            Lua lua = new Lua(this, root);
+            Object res = lua.require(script, getcontent(script));
+            
+            if (res instanceof Hashtable) {
+                Hashtable PKG = (Hashtable) res;
+                
+                if ()
+            } else {
+                echoCommand("import: app need to be a table");
+                return 2;
+            }
+            
+            return 0;
+        }
 
-            if (obj == null) { }
-            else if (obj instanceof Hashtable) { PKG = (Hashtable) obj; } 
-            else { echoCommand("import: lua return need to be a table"); return 2; }
-        } else { PKG = parseProperties(getcontent(script)); }
-
+        Hashtable PKG = parseProperties(getcontent(script)); }
         final String PID = genpid();
         // |
         // Verify current API version
