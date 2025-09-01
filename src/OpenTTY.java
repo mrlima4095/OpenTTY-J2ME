@@ -1798,17 +1798,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int importScript(String script) { return importScript(script, username.equals("root") ? true : false); }
     private int importScript(String script, boolean root) {
         if (script == null || script.length() == 0) { return 2; }
+        if (script.startsWith("-l")) { return importApp(script.substring(3).trim(), root); }
 
-        Hashtable PKG = null;
-        if (script.startsWith("-l")) {
-            Lua lua = new Lua(this, root); script = script.substring(3).trim();
-            Object obj = lua.require(script, getcontent(script));
-
-            if (obj == null) { }
-            else if (obj instanceof Hashtable) { PKG = (Hashtable) obj; } 
-            else { echoCommand("import: lua return need to be a table"); return 2; }
-        } else { PKG = parseProperties(getcontent(script)); }
-
+        Hashtable PKG = parseProperties(getcontent(script));
         final String PID = genpid();
         // |
         // Verify current API version
@@ -1855,6 +1847,46 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { String[] args = split((String) PKG.get("shell.args"), ','); Hashtable TABLE = new Hashtable(); for (int i = 0; i < args.length; i++) { String NAME = args[i].trim(), VALUE = (String) PKG.get(NAME); TABLE.put(NAME, (VALUE != null) ? VALUE : ""); } if (PKG.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) PKG.get("shell.unknown")); } shell.put(((String) PKG.get("shell.name")).trim(), TABLE); }
 
         return 0;
+    }
+    private int importApp(String script, boolean root) {
+        if (script == null || script.length() == 0) { return 2; }
+        
+        Lua lua = new Lua(this, root);
+        Hashtable PKG = (Hashtable) lua.require(script, root);
+
+        if (PKG.containsKey("api")) {
+            Hashtable API = (Hashtable) PKG.get("api");
+
+            if (API.containsKey("version")) {
+                String version = env("$VERSION"), apiVersion = (String) API.get("version"), mode = (String) API.get("match");
+                if (mode == null || mode.length() == 0) mode = "exact-prefix";
+
+                boolean fail = false;
+
+                if (mode.equals("exact-prefix")) { fail = !version.startsWith(apiVersion); } 
+                else if (mode.equals("minimum") || mode.equals("maximum")) {
+                    String[] currentParts = split(version, '.'), requiredParts = split(apiVersion, '.');
+                    if (mode.equals("minimum")) { if (currentParts.length < 2 || requiredParts.length < 2) { fail = true; } else { fail = getNumber(requiredParts[1]) > getNumber(currentParts[1]); } }
+                    else if (mode.equals("maximum")) { if (currentParts.length < 1 || requiredParts.length < 1) { fail = true; } else { fail = getNumber(requiredParts[0]) > getNumber(currentParts[0]); } }
+                } 
+                else if (mode.equals("exact-full")) { fail = !version.equals(apiVersion); } 
+                else { return 1; }
+
+                if (fail) { String error = (String) API.get("error"); processCommand(error != null ? error : "true", true, root); return 3; }
+            }
+        }
+        if (PKG.containsKey("include")) { 
+            Hashtable include = (Hashtable) PKG.get("include");
+            
+            
+            for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
+
+            for (Enumeration keys = include.el) { 
+                int STATUS = importScript(include[i], root); 
+                if (STATUS != 0) { return STATUS; } 
+            } 
+        }
+        
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
