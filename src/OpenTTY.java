@@ -1907,6 +1907,27 @@ class Lua {
         midlet.trace.remove(PID);
         return status;
     }
+    public Object require(String source, String code) { 
+        proc.put("name", ("lua " + source).trim());
+        midlet.trace.put(PID, proc);
+
+        Object result = null;
+        
+        try { 
+            this.tokens = tokenize(code); 
+            
+            while (peek().type != EOF) { 
+                result = statement(globals);
+
+                if (result != null && doreturn) { doreturn = false; break; }
+            }
+        } 
+        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
+        catch (Error e) { midlet.processCommand("echo " + e.getMessage() == null ? e.toString() : e.getMessage(), true, root); status = 1; }
+
+        midlet.trace.remove(PID);
+        return status;
+    }
     // |
     // Tokenizer
     private Vector tokenize(String code) throws Exception {
@@ -2129,8 +2150,6 @@ class Lua {
                 }
             }
         }
-        // --- fim do trecho substituído ---
-
 
         else if (current.type == IF) { return ifStatement(scope); } 
         else if (current.type == WHILE) { return whileStatement(scope); }
@@ -2139,81 +2158,51 @@ class Lua {
         else if (current.type == FUNCTION) { return functionDefinition(scope); } 
         else if (current.type == LOCAL) {
             consume(LOCAL);
-            // Caso: local function nome(...) ... end
-            /*if (peek().type == FUNCTION) {
+            if (peek().type == FUNCTION) {
                 consume(FUNCTION);
                 String funcName = (String) consume(IDENTIFIER).value;
+                // Leitura dos parâmetros da função, aceitando vararg
                 consume(LPAREN);
                 Vector params = new Vector();
-                if (peek().type == IDENTIFIER) {
-                    params.addElement(consume(IDENTIFIER).value);
-                    while (peek().type == COMMA) {
-                        consume(COMMA);
+                while (true) {
+                    int t = peek().type;
+                    if (t == IDENTIFIER) {
                         params.addElement(consume(IDENTIFIER).value);
+                    } else if (t == VARARG) {
+                        consume(VARARG);
+                        params.addElement("...");
+                        break; // vararg deve ser o último parâmetro
+                    } else {
+                        break;
+                    }
+                    if (peek().type == COMMA) {
+                        consume(COMMA);
+                    } else {
+                        break;
                     }
                 }
                 consume(RPAREN);
-        
-                // Capture the function body tokens
+                // Captura o corpo da função até o END correspondente
                 Vector bodyTokens = new Vector();
-                int depth = 1; // Para correspondência de 'function' ... 'end'
+                int depth = 1;
                 while (depth > 0) {
                     Token token = consume();
-                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE) { depth++; }
-                    else if (token.type == END) { depth--; }
-                    else if (token.type == EOF) { throw new Exception("Unmatched 'function' statement: Expected 'end'"); }
-                    if (depth > 0) { bodyTokens.addElement(token); }
+                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) {
+                        depth++;
+                    } else if (token.type == END) {
+                        depth--;
+                    } else if (token.type == EOF) {
+                        throw new Exception("Unmatched 'function' statement: Expected 'end'");
+                    }
+                    if (depth > 0) {
+                        bodyTokens.addElement(token);
+                    }
                 }
-        
-                // Cria a função definida pelo usuário e salva no scope atual (local)
+                // Cria a função e adiciona no escopo local
                 LuaFunction func = new LuaFunction(params, bodyTokens, scope);
                 scope.put(funcName, func);
                 return null;
-            }*/if (peek().type == FUNCTION) {
-        consume(FUNCTION);
-        String funcName = (String) consume(IDENTIFIER).value;
-        // Leitura dos parâmetros da função, aceitando vararg
-        consume(LPAREN);
-        Vector params = new Vector();
-        while (true) {
-            int t = peek().type;
-            if (t == IDENTIFIER) {
-                params.addElement(consume(IDENTIFIER).value);
-            } else if (t == VARARG) {
-                consume(VARARG);
-                params.addElement("...");
-                break; // vararg deve ser o último parâmetro
             } else {
-                break;
-            }
-            if (peek().type == COMMA) {
-                consume(COMMA);
-            } else {
-                break;
-            }
-        }
-        consume(RPAREN);
-        // Captura o corpo da função até o END correspondente
-        Vector bodyTokens = new Vector();
-        int depth = 1;
-        while (depth > 0) {
-            Token token = consume();
-            if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) {
-                depth++;
-            } else if (token.type == END) {
-                depth--;
-            } else if (token.type == EOF) {
-                throw new Exception("Unmatched 'function' statement: Expected 'end'");
-            }
-            if (depth > 0) {
-                bodyTokens.addElement(token);
-            }
-        }
-        // Cria a função e adiciona no escopo local
-        LuaFunction func = new LuaFunction(params, bodyTokens, scope);
-        scope.put(funcName, func);
-        return null;
-    } else {
                 // Novo: suportar múltiplas declarações locais: local a, b, c = expr1, expr2, expr3
                 Vector varNames = new Vector();
                 // deve haver ao menos um IDENTIFIER
