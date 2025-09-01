@@ -1799,7 +1799,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int importScript(String script, boolean root) {
         if (script == null || script.length() == 0) { return 2; }
 
-        Hashtable PKG = parseProperties(getcontent(script));
+        Hashtable PKG = null;
+        if (script.startsWith("-l")) {
+            Lua lua = new Lua(this, root); script = script.substring(3).trim();
+            Object obj = lua.require(script, getcontent(script));
+
+            if (obj == null) { }
+            else if (obj instanceof Hashtable) { Hashtable PKG = (Hashtable) obj; } 
+            else { echoCommand("import: lua return need to be a table"); return 2; }
+        } else { PKG = parseProperties(getcontent(script)); }
+
         final String PID = genpid();
         // |
         // Verify current API version
@@ -1902,7 +1911,7 @@ class Lua {
             while (peek().type != EOF) { statement(globals); }
         } 
         catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
-        catch (Error e) { status = 1; }
+        catch (Error e) { midlet.processCommand("echo " + e.getMessage() == null ? e.toString() : e.getMessage(), true, root); status = 1; }
 
         midlet.trace.remove(PID);
         return status;
@@ -1922,11 +1931,11 @@ class Lua {
                 if (result != null && doreturn) { doreturn = false; break; }
             }
         } 
-        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
-        catch (Error e) { midlet.processCommand("echo " + e.getMessage() == null ? e.toString() : e.getMessage(), true, root); status = 1; }
+        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); } 
+        catch (Error e) { midlet.processCommand("echo " + e.getMessage() == null ? e.toString() : e.getMessage(), true, root); }
 
         midlet.trace.remove(PID);
-        return status;
+        return result;
     }
     // |
     // Tokenizer
