@@ -51,7 +51,7 @@ JAuth2=execute set RESOURCE=jauth2; yang install;
 JBuntu=execute set RESOURCE=jbuntu; yang install;
 JBenchmark=execute set RESOURCE=debuggers; yang install;
 J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
-Math (Lua)=execute install math.lua; yang install
+Math (Lua)=execute set RESOURCE=math.lua; yang install;
 MobiX Loader=execute set RESOURCE=mxos; yang install; set RESOURCE=forge; yang install;
 PackJ (Update)=execute set RESOURCE=yang; yang install;
 PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install;
