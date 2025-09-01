@@ -1888,7 +1888,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (PKG.containsKey("process")) { 
             Hashtable proc = (Hashtable) PKG.get("process"); 
 
-            if (proc.containsKey(name)) {
+            if (proc.containsKey("name")) {
                 start((String) proc.get("name"), PID, (String) proc.get("exit"), root); 
 
                 if (proc.containsKey("type")) {
