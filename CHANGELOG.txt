@@ -1,112 +1,13 @@
-OpenTTY Java Edition 1.16
+OpenTTY Java Edition 1.16.1
 Copyright (C) 2025 - Mr. Lima
-
-LTS Edition
-End of support scheduled for April 2026
 
 [ _Commands_ ]
 
-- `which [command]`: Find source of **command** 
-- `passwd [password]`: Change password
-- `sudo [command]`: Run command with superuser permissions
-- `su [user]`: Switch user (root/ you)
-- `stty [max]`: Set max char range that can be wrote at **stdout**
-- `catch [command]`: run command ignoring exceptions (always exit with code: 0)
-- `lua [file]`: run a Lua script.
+- 
 
 [ _Updates_ ]
 
-- Fixed a bug in `nc` that **Back** button doesn't closes the connection
-- MIDlet login ask for a password
-- Command `logout` when you are root return to your user
-- Improved exceptions messages
-- New case condition **user** to compare user name
-- Command `return` invalid code payload changed to **2**
-- Command `server` reading port from command-line, if not args are given usages the default port from environment key
-- Runners `exec` and `execute` stop running if command exit code is different of 0 (error)
-- Command `false` returns code **255**
-- Fixed a bug in **Forge** enhanced application generation
-- When MIDlet is paused it triggers function `pauseApp()` if it is found
-- Fixed history duplicated appending bug
-- **!!** can read args and set it as prefix for last command
-- **FIRE** button in X11 lists run user button
-- Command `cat` without args prints nano content
-- **X Server** updated to **0.6.3**
-- API **@reload** clears shell functions
-- Command `chmod` default IP Address to open socket set **1.1.1.1:53**, if key `$REPO` is found use it.
-- Fixed `chmod *` granting permission `null` as last permission node
-- Command `ls` read argument to render directory content
-- MIDlet shell reading multiple args in some tools
-- Shell scripts can be called with `sh [file]`
-- Command `nc` button **Show info** changed to **View info**
-- Command `prscan` new button **Save Logs** to load recognized ports in nano
-- New X11 command `unset` to remove a saved screen
-- Command `who` show where IP Addresses is connected
-- Service `bind` and `server` process ID changed to it respective port
-- Added support for new key `process.exit` that is triggered when process `process.name` is killed
-- Load script `/java/etc/initd.sh` run with super-user permissions
-- New X11 Screen **edit**
-- When X11 stops, it drops all saved screens
-- Command `gauge` removed, usage `x11 gauge`
-- Class `OpenTTY$HTopViewer` moved to `MIDletControl`
-- Command `query` now linked with an PID to stop the activities
-- Command `ls` hide files that has prefix **.** in all filesystems
-- Audio codec can play audio files from **JAR** Package.
-- **Nano Editor** and **History** Threads joined into Main Thread
-- File Explorer Window title changed to current path
-- Command `title hide` hide MIDlet Main Window title
-- Player Object non referred in globals, traced by Process
-- X11 Support symbolic links loading and saving by Virtual Process **PID**
-- Command `nc`, `prscan` and `gobuster` ask if you want keep thread alive before close window
-- File Explorer don't using icons anymore
-- MIDlet Suite can adapt loading for emulations if found an environment key called as **J2EMU**
-- Commands `top` and `trace` merged
-- New ITEM's attribute **item.style**
-- New **Yang** package **cmatrix** indexed (wrote in **Lua**)
+- 
 
 [ _Notes_ ]
 
-- If you are logged as **root** command `logout` and `exit` will return you to normal user.
-- All jobs started with super user permissions and it sub-process get the permissions.
-- Remote shells interfaces cannot be loaded with super user permissions by default.
-- X11 Screens couldn't be called with `sudo`.
-- After you change max **stdout** size, remote interfaces like `bind` can be directly damaged by **stdout** redirect.
-- OpenTTY and Lua don't have native support for regex patterns
-- **JAuth2** is deprecated, feature **MIDlet.Lock** will be added in future updates
-
-[ _X11 Virtual Screens_ ]
-
-Usage: `x11 [ option ] [PID]`
-- `import`: load a screen referred into Virtual Process
-- `export`: save current screen in a Virtual Process
-
-[ _J2ME Loader Settings_ ]
-
-You can enable the **compatibility mode** of OpenTTY to **J2ME Loader** with command `export J2EMU`, read below the changes enabled with this key:
-
-- **Fire** button in List Screens dont works;
-- In **File Explorer** when you jump directory it rebuild screen
-- Title of **File Explorer** is Main Window title, not current working path
-
-[ _Lua J2ME_ ]
-
-OpenTTY now have a Mini VM of Lua programming language, you can run **lua scripts** with command `lua [filename]`.
-
-[Lua Manual](https://www.lua.org/manual/5.4/)
-
-Some libraries and features isn't available yet. You can download most Lua libraries in Yang or with **SmartME SDK**.
-
-**Not implemented:**  
-
-- [x] Basic types (strings, numbers, boolean, tables, nil)
-- [ ] Meta tables support
-- [ ] Advanced IO library
-- [x] Functions and normal tables creation
-- [x] Error Handling
-- [ ] Coroutines and methods (**:** token works like a normal **.**)
-- [ ] **until** & **repeat** looping extructure
-- [x] **require([file])** & **load([string])** to include other files
-- [x] **require** caching in `package.loaded`
-- [x] **Global** and **local** scopes
-
----
