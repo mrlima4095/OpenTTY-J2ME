@@ -3,6 +3,9 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
 import javax.wireless.messaging.*;
+
+import Lua.LuaFunction;
+
 import javax.microedition.media.*;
 import javax.microedition.rms.*;
 import javax.microedition.pki.*;
@@ -1885,7 +1888,67 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (STATUS != 0) { return STATUS; } 
             } 
         }
-        if (PKG.containsKey("process")) { Hashtable proc = (Hashtable) PKG.get("process"); start((String) proc.get("name"), PID, (String) proc.get("exit"), root); }
+        if (PKG.containsKey("process")) { 
+            Hashtable proc = (Hashtable) PKG.get("process"); 
+
+            if (proc.containsKey(name)) {
+                start((String) proc.get("name"), PID, (String) proc.get("exit"), root); 
+
+                if (proc.containsKey("type")) {
+                    
+                }
+                if (proc.containsKey("mod")) {
+                    final Object mod = proc.get("mod");
+
+                    if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { 
+                        final String MOD = (String) PKG.get("mod");
+                         final boolean ROOT = root; 
+                         
+                        new Thread("MIDlet-Mod") { 
+                            public void run() { 
+                                while (trace.containsKey(PID)) { 
+                                    if (MOD == null) { break; }
+                                    else if (MOD instanceof Lua.LuaFunction) {
+
+                                    }
+                                    else if (MOD instanceof String) {
+                                        int STATUS = processCommand(MOD, true, ROOT); 
+                                        if (STATUS != 0) { kill(PID, false, ROOT); }
+                                    } else {
+                                        
+                                    }
+                                } 
+                            } 
+                        }.start(); 
+                    }
+                }
+            } else {
+                echoCommand("import: process: missing name");
+                return 2; 
+            }       
+        }
+        if (PKG.containsKey("config")) {
+            Object init = PKG.get("config");
+
+            if (init == null) { }
+            else if (init instanceof Lua.LuaFunction) {
+                try { ((Lua.LuaFunction) init).call(new Vector()); } 
+                catch (Exception e) { echoCommand("import: " + getCatch(e)); return 1; }  
+            } else if (init instanceof String) { 
+                int STATUS = processCommand((String) init, true, init);
+                if (STATUS != 0) { return STATUS; }
+            }
+        }
+        if (PKG.containKey("command")) {
+            Hashtable commands = (Hashtable) PKG.get("command");
+
+            for (Enumeration keys = commands.keys(); keys.hasMoreElements();) {
+                String name = keys.nextElement();
+                
+                aliases.put(name, (String) commands.get(name));
+            }
+        }
+        
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
@@ -1902,8 +1965,8 @@ class Lua {
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
     public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27;
-    private static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45;
-    private static final Object LUA_NIL = new Object();
+    public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45;
+    public static final Object LUA_NIL = new Object();
     // |
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |

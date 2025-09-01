@@ -1,34 +1,20 @@
 local app = {
-    name = "appname",
+    name = "OpenTTY Lua Application",
     version = "1.0",
-    description = "",
+    description = ""
 
     api = {
         version = "1.16",
-        error = function () os.execute("") end,
+        error = "execute echo Invalid OpenTTY API for Application",
         match = "minimum"
     },
 
+    include = { "", "" }
+
     process = {
-        name = "pname",
-        exit = "execute echo Lua app have been killed",
-        type = "deamon",
-        host = "10141",
-        db = "luapp"
-    },
+        name = "mycoolapp",
+        exit = "execute echo Lua App have been killed",
 
-    include = {},
-
-    build = function () os.execute("") end,
-    commands = { name = "cmd alias" },
-
-    shell = {
-        name = "cmd",
-        args = { },
-        unknown = ""
-    },
-
-    file = { }
+        mod = "execute echo loop", -- or LuaFunction
+    }
 }
-
-return app
