@@ -30,5 +30,7 @@ local function cmatrix()
 
     os.execute("execute x11 stop; x11 init; title $OLD_TITLE; clear;")
 end
+x={}
+local function x.oi() return end
 
 cmatrix()
