@@ -27,7 +27,7 @@ function math.ceil(x)
 end
 
 function math.min(...)
-    local args = {...}
+    local args = ...
     local min_val = args[1]
     for i = 2, #args do
         if args[i] < min_val then
@@ -37,7 +37,7 @@ function math.min(...)
     return min_val
 end
 function math.max(...)
-    local args = {...}
+    local args = ...
     local max_val = args[1]
     for i = 2, #args do
         if args[i] > max_val then
