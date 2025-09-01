@@ -127,3 +127,4 @@
 [2025-1.16-02x60]	(1.16-rc2)
 [2025-1.16-02x61]	Debugging for LTS - Merged Credentials and Monitor, generated (OpenTTY$MIDletControl) class
 [2025-1.16-02x62]	Release 1.16 LTS 
+[2025-1.16.1-02x63] 1.16.1 Suite case
