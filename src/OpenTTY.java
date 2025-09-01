@@ -1853,6 +1853,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         Lua lua = new Lua(this, root);
         Hashtable PKG = (Hashtable) lua.require(script, getcontent(script));
+        final String PID = genpid();
 
         if (PKG.containsKey("api")) {
             Hashtable API = (Hashtable) PKG.get("api");
