@@ -3,9 +3,6 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
 import javax.wireless.messaging.*;
-
-import Lua.LuaFunction;
-
 import javax.microedition.media.*;
 import javax.microedition.rms.*;
 import javax.microedition.pki.*;
