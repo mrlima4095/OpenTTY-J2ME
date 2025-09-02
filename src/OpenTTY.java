@@ -1907,7 +1907,7 @@ class Lua {
         catch (Error e) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); status = 1; }
 
         midlet.trace.remove(PID);
-        return res;
+        return ITEM;
     }
     // |
     // Tokenizer
