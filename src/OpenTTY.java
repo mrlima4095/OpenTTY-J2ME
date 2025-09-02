@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16.1-02x63";
+    private String logs = "", path = "/home/", build = "2025-1.16.1-02x64";
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -1734,7 +1734,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     player.prefetch(); player.start(); 
 
                     Hashtable proc = genprocess("audio", root, "audio stop"); 
-                    proc.put("playe r", player);
+                    proc.put("player", player);
                     trace.put("3", proc);
                 } catch (Exception e) { 
                     echoCommand(getCatch(e)); 
@@ -1742,40 +1742,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
             }
         }
-        else if (mainCommand.equals("run")) { 
-            if (argument.startsWith("tone://")) {
-                try {
-                    if (trace.containsKey("3")) { audio("stop", root); }
-                    
-                    Player player = Manager.createPlayer(argument);
-                    player.prefetch(); player.start();
-
-                    Hashtable proc = genprocess("audio", root, "audio stop"); 
-                    proc.put("player", player);
-                    trace.put("3", proc);
-                } catch (Exception e) {
-                    echoCommand(getCatch(e)); 
-                    return 1;
-                }
-            } else { echoCommand("audio: run only supports tone://"); return 127; }
-        }
         else if (mainCommand.equals("volume")) { 
             if (trace.containsKey("3")) { 
                 VolumeControl vc = (VolumeControl) ((Player) getprocess("3").get("player")).getControl("VolumeControl"); 
-                if (argument.equals("")) { 
-                    echoCommand("" + vc.getLevel()); 
-                } else { 
-                    try { 
-                        vc.setLevel(Integer.parseInt(argument)); 
-                    } catch (Exception e) { 
-                        echoCommand(getCatch(e)); 
-                        return 2; 
-                    } 
+                
+                if (argument.equals("")) { echoCommand("" + vc.getLevel()); } 
+                else { 
+                    try { vc.setLevel(Integer.parseInt(argument)); } 
+                    catch (Exception e) { echoCommand(getCatch(e)); return 2; } 
                 } 
-            } else { 
-                echoCommand("audio: not running."); 
-                return 69; 
-            } 
+            } else { echoCommand("audio: not running."); return 69; } 
         } 
         else if (mainCommand.equals("stop") || mainCommand.equals("pause") || mainCommand.equals("resume")) { 
             try { 
@@ -1786,34 +1762,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (mainCommand.equals("resume")) { player.start(); }
                     else { player.stop(); player.close(); trace.remove("3"); }
                 } 
-                else { 
-                    echoCommand("audio: not running."); 
-                    return 69; 
-                } 
+                else { echoCommand("audio: not running."); return 69; } 
             }
-            catch (Exception e) { 
-                echoCommand(getCatch(e)); 
-                return 1; 
-            } 
+            catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
         }
-        else if (mainCommand.equals("status")) { 
-            echoCommand(trace.containsKey("3") ? "true" : "false"); 
-        } 
-        else { 
-            echoCommand("audio: " + mainCommand + ": not found"); 
-            return 127; 
-        } 
+        else if (mainCommand.equals("status")) { echoCommand(trace.containsKey("3") ? "true" : "false"); } 
+        else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } 
 
         return 0; 
     }
-
-    private String getMimeType(String filename) { 
-        filename = filename.toLowerCase(); 
-        if (filename.endsWith(".amr")) { return "audio/amr"; } 
-        else if (filename.endsWith(".wav")) { return "audio/x-wav"; } 
-        else if (filename.endsWith(".mid") || filename.endsWith(".midi")) { return "audio/midi"; } 
-        else { return "audio/mpeg"; } 
-    }
+    private String getMimeType(String filename) { filename = filename.toLowerCase(); return filename.endsWith(".amr") ? "audio/amr" : file.endsWith(".wav") ? "audio/x-wav" : filename.endsWith(".mid") || filename.endsWith(".midi") ? "audio/midi" : "audio/mpeg"; }
 
     // API 013 - (MIDlet)
     // |
@@ -1906,7 +1864,7 @@ class Lua {
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
     public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27;
-    public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45;
+    public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
@@ -2025,7 +1983,7 @@ class Lua {
             else if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString())); }
             else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString())); }
 
-            else if (isLetter(c)) { StringBuffer sb = new StringBuffer(); while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; } String word = sb.toString(); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : IDENTIFIER, word)); }
+            else if (isLetter(c)) { StringBuffer sb = new StringBuffer(); while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; } String word = sb.toString(); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : word.equals("repeat") ? REPEAT : word.equals("until") ? UNTIL : IDENTIFIER, word)); }
     
             else if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; }
             else if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; }
@@ -2177,8 +2135,9 @@ class Lua {
         }
 
         else if (current.type == IF) { return ifStatement(scope); } 
-        else if (current.type == WHILE) { return whileStatement(scope); }
         else if (current.type == FOR) { return forStatement(scope); }
+        else if (current.type == WHILE) { return whileStatement(scope); }
+        else if (current.type == REPEAT) { return repeatStatement(scope); } 
         else if (current.type == RETURN) { consume(RETURN); doreturn = true; return expression(scope); } 
         else if (current.type == FUNCTION) { return functionDefinition(scope); } 
         else if (current.type == LOCAL) {
@@ -2581,6 +2540,55 @@ class Lua {
     
         loopDepth--; // Saindo do loop
         throw new Exception("Malformed 'for' statement");
+    }
+    private Object repeatStatement(Hashtable scope) throws Exception {
+        consume(REPEAT);
+
+        int bodyStartTokenIndex = tokenIndex;
+        Object result = null;
+
+        loopDepth++; // Entrou em um loop
+
+        while (true) {
+            // Reseta o índice para o início do corpo do repeat
+            tokenIndex = bodyStartTokenIndex;
+
+            // Executa o corpo até encontrar o token UNTIL
+            while (peek().type != UNTIL) {
+                result = statement(scope);
+                if (breakLoop) {
+                    breakLoop = false;
+                    // Consome até o UNTIL para sair do loop
+                    while (peek().type != UNTIL && peek().type != EOF) {
+                        consume();
+                    }
+                    break;
+                }
+                if (result != null && doreturn) {
+                    // Consome até o UNTIL para sair do loop
+                    while (peek().type != UNTIL && peek().type != EOF) {
+                        consume();
+                    }
+                    loopDepth--;
+                    doreturn = false;
+                    return result;
+                }
+            }
+
+            // Agora o token atual deve ser UNTIL
+            consume(UNTIL);
+
+            // Avalia a condição do until
+            Object cond = expression(scope);
+
+            if (isTruthy(cond)) {
+                break; // Sai do loop se condição for verdadeira
+            }
+        }
+
+        loopDepth--; // Saiu do loop
+
+        return null;
     }
     private Object functionDefinition(Hashtable scope) throws Exception {
         consume(FUNCTION);
