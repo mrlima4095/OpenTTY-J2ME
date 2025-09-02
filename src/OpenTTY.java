@@ -1798,7 +1798,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int importScript(String script) { return importScript(script, username.equals("root") ? true : false); }
     private int importScript(String script, boolean root) {
         if (script == null || script.length() == 0) { return 2; }
-        if (script.startsWith("-l")) { return importApp(script.substring(3).trim(), root); }
 
         Hashtable PKG = parseProperties(getcontent(script));
         final String PID = genpid();
