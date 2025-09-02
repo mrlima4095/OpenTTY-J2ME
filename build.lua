@@ -1,20 +1,9 @@
-local app = {
-    name = "OpenTTY Lua Application",
-    version = "1.0",
-    description = ""
+local function build(app) 
+    if app == nil then error("bad app - got nil") end
+    if type(app) ~= "table" then error("bad app - need to be table") end
 
-    api = {
-        version = "1.16",
-        error = "execute echo Invalid OpenTTY API for Application",
-        match = "minimum"
-    },
+    
+end
 
-    include = { "", "" }
 
-    process = {
-        name = "mycoolapp",
-        exit = "execute echo Lua App have been killed",
-
-        mod = "execute echo loop", -- or LuaFunction
-    }
-}
+return build
