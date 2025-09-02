@@ -628,7 +628,7 @@ public class OpenTTY extends MIDlet implemfents CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); return (int) lua.run(argument.equals("") ? "" : args[0].equals("-e") ? "stdin" : argument, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument), false); }
+        else if (mainCommand.equals("lua")) {  Lua lua = new Lua(this, root); return (int) lua.run(argument.equals("") ? "" : args[0].equals("-e") ? "stdin" : argument, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument), false).get("status"); }
         else if (mainCommand.equals("5k")) { echoCommand("1.16 Special - 5k commits at OpenTTY GitHub repository"); }
         
         // API 015 - (Scripts)
@@ -1848,41 +1848,6 @@ public class OpenTTY extends MIDlet implemfents CommandListener {
 
         return 0;
     }
-    private int importApp(String script, boolean root) {
-        if (script == null || script.length() == 0) { return 2; }
-        
-        Lua lua = new Lua(this, root);
-        Hashtable PKG = (Hashtable) lua.require(script, getcontent(script));
-        final String PID = genpid();
-
-        if (PKG.containsKey("api")) {
-            Hashtable API = (Hashtable) PKG.get("api");
-
-            if (API.containsKey("version")) {
-
-            }
-        }
-        if (PKG.containsKey("include")) {
-            Hashtable ITEM = (Hashtable) PKG.get("include");
-
-            for (Enumeration keys = ITEM.keys(); keys.hasMoreElements();) {
-                
-            }           
-        }
-        if (PKG.containsKey("process")) {
-            
-        }
-
-        if (PKG.containsKey("config")) {
-
-        }
-        if (PKG.containsKey("command")) {
-
-        }
-        if (PKG.containsKey("shell")) {
-            
-        }
-    }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 }
@@ -1928,22 +1893,22 @@ class Lua {
         globals.put("random", new LuaFunction(RANDOM));
     }
     // | (Run Source code)
-    public Object run(String source, String code, boolean get) { 
+    public Hashtable run(String source, String code) { 
         proc.put("name", ("lua " + source).trim());
         midlet.trace.put(PID, proc);
 
-        Object res = null;
+        Hashtable ITEM = new Hashtable(); ITEM.put("status", status);
         
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF) { res = statement(globals); if (res != null && doreturn) { ret = res; doreturn = false; break; } }
+            while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if () {  } doreturn = false; break; } }
         } 
         catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
         catch (Error e) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); status = 1; }
 
         midlet.trace.remove(PID);
-        return get ? res : new Integer(status);
+        return res;
     }
     // |
     // Tokenizer
