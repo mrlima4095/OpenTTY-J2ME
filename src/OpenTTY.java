@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16.1-02x64";
+    private String logs = "", path = "/home/", build = "2025-1.16.1-02x65";
     private Display display = Display.getDisplay(this);
     private TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -2550,44 +2550,33 @@ class Lua {
         loopDepth++; // Entrou em um loop
 
         while (true) {
-            // Reseta o índice para o início do corpo do repeat
             tokenIndex = bodyStartTokenIndex;
 
-            // Executa o corpo até encontrar o token UNTIL
             while (peek().type != UNTIL) {
                 result = statement(scope);
+
                 if (breakLoop) {
                     breakLoop = false;
-                    // Consome até o UNTIL para sair do loop
                     while (peek().type != UNTIL && peek().type != EOF) {
                         consume();
                     }
                     break;
                 }
                 if (result != null && doreturn) {
-                    // Consome até o UNTIL para sair do loop
-                    while (peek().type != UNTIL && peek().type != EOF) {
-                        consume();
-                    }
+                    while (peek().type != UNTIL && peek().type != EOF) { consume(); }
                     loopDepth--;
                     doreturn = false;
                     return result;
                 }
             }
 
-            // Agora o token atual deve ser UNTIL
             consume(UNTIL);
-
-            // Avalia a condição do until
             Object cond = expression(scope);
 
-            if (isTruthy(cond)) {
-                break; // Sai do loop se condição for verdadeira
-            }
+            if (isTruthy(cond)) { break; }
         }
 
-        loopDepth--; // Saiu do loop
-
+        loopDepth--; 
         return null;
     }
     private Object functionDefinition(Hashtable scope) throws Exception {
