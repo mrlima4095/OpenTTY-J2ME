@@ -8,7 +8,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - **Audio API** added support to play **.midi** files
-
+- **Lua** added support for `repeat until [expr]` loops
 
 [ _Notes_ ]
 
