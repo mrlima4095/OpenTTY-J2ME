@@ -29,21 +29,17 @@ end
 function math.min(...)
     local args = ...
     local min_val = args[1]
-    for i = 2, #args do
-        if args[i] < min_val then
-            min_val = args[i]
-        end
-    end
+
+    for i = 2, #args do if args[i] < min_val then min_val = args[i] end end
+    
     return min_val
 end
 function math.max(...)
     local args = ...
     local max_val = args[1]
-    for i = 2, #args do
-        if args[i] > max_val then
-            max_val = args[i]
-        end
-    end
+
+    for i = 2, #args do if args[i] > max_val then max_val = args[i] end end
+    
     return max_val
 end
 
@@ -52,8 +48,7 @@ function math.tointeger(x)
     x = tonumber(x)
     
     local n = x % 1
-    if n == 0 then return x
-    else return nil end
+    if n == 0 then return x else return nil end
 end
 
 return math
