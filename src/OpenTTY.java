@@ -1718,7 +1718,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 try {
                     InputStream IN = null;
                     
-                    if (argument.startsWith("/mnt/")) { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ); IN = CONN.exists() ? CONN.openInputStream() : null; CONN.close(); } 
+                    if (argument.startsWith("/mnt/")) { 
+                        FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ); 
+                        IN = CONN.exists() ? CONN.openInputStream() : null; 
+                        CONN.close(); 
+                    } 
                     else if (argument.startsWith("/home/")) { echoCommand("audio: invalid source."); return 1; } 
                     else if (argument.startsWith("/")) { IN = getClass().getResourceAsStream(argument); }
                     else { return audio("play " + path + argument, root); }
@@ -1729,23 +1733,50 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Player player = Manager.createPlayer(IN, getMimeType(argument)); 
                     player.prefetch(); player.start(); 
 
-                    Hashtable proc = genprocess("audio", root, "audio stop"); proc.put("player", player);
+                    Hashtable proc = genprocess("audio", root, "audio stop"); 
+                    proc.put("playe r", player);
                     trace.put("3", proc);
-                } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } 
+                } catch (Exception e) { 
+                    echoCommand(getCatch(e)); 
+                    return (e instanceof SecurityException) ? 13 : 1; 
+                } 
             }
+        }
+        else if (mainCommand.equals("run")) { 
+            if (argument.startsWith("tone://")) {
+                try {
+                    if (trace.containsKey("3")) { audio("stop", root); }
+                    
+                    Player player = Manager.createPlayer(argument);
+                    player.prefetch(); player.start();
+
+                    Hashtable proc = genprocess("audio", root, "audio stop"); 
+                    proc.put("player", player);
+                    trace.put("3", proc);
+                } catch (Exception e) {
+                    echoCommand(getCatch(e)); 
+                    return 1;
+                }
+            } else { echoCommand("audio: run only supports tone://"); return 127; }
         }
         else if (mainCommand.equals("volume")) { 
             if (trace.containsKey("3")) { 
                 VolumeControl vc = (VolumeControl) ((Player) getprocess("3").get("player")).getControl("VolumeControl"); 
-                if (argument.equals("")) { echoCommand("" + vc.getLevel()); } 
-                else { 
-                    try { vc.setLevel(Integer.parseInt(argument)); } 
-                    catch (Exception e) { echoCommand(getCatch(e)); return 2; } 
+                if (argument.equals("")) { 
+                    echoCommand("" + vc.getLevel()); 
+                } else { 
+                    try { 
+                        vc.setLevel(Integer.parseInt(argument)); 
+                    } catch (Exception e) { 
+                        echoCommand(getCatch(e)); 
+                        return 2; 
+                    } 
                 } 
+            } else { 
+                echoCommand("audio: not running."); 
+                return 69; 
             } 
-            else { echoCommand("audio: not running."); return 69; } 
         } 
-        
         else if (mainCommand.equals("stop") || mainCommand.equals("pause") || mainCommand.equals("resume")) { 
             try { 
                 if (trace.containsKey("3")) { 
@@ -1755,22 +1786,35 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (mainCommand.equals("resume")) { player.start(); }
                     else { player.stop(); player.close(); trace.remove("3"); }
                 } 
-                else { echoCommand("audio: not running."); return 69; } 
+                else { 
+                    echoCommand("audio: not running."); 
+                    return 69; 
+                } 
             }
-            catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
+            catch (Exception e) { 
+                echoCommand(getCatch(e)); 
+                return 1; 
+            } 
         }
-        else if (mainCommand.equals("status")) { echoCommand(trace.containsKey("3") ? "true" : "false"); } 
-        else { echoCommand("audio: " + mainCommand + ": not found"); return 127; } 
+        else if (mainCommand.equals("status")) { 
+            echoCommand(trace.containsKey("3") ? "true" : "false"); 
+        } 
+        else { 
+            echoCommand("audio: " + mainCommand + ": not found"); 
+            return 127; 
+        } 
 
         return 0; 
     }
+
     private String getMimeType(String filename) { 
         filename = filename.toLowerCase(); 
         if (filename.endsWith(".amr")) { return "audio/amr"; } 
         else if (filename.endsWith(".wav")) { return "audio/x-wav"; } 
+        else if (filename.endsWith(".mid") || filename.endsWith(".midi")) { return "audio/midi"; } 
         else { return "audio/mpeg"; } 
     }
-    
+
     // API 013 - (MIDlet)
     // |
     // Java Machine
