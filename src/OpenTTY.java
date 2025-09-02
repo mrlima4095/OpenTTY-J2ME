@@ -12,7 +12,7 @@ import java.util.*;
 import java.io.*;
 // |
 // OpenTTY MIDlet
-public class OpenTTY extends MIDlet implemfents CommandListener {
+public class OpenTTY extends MIDlet implements CommandListener {
     private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
     public Random random = new Random();
