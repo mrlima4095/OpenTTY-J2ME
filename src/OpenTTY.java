@@ -1850,7 +1850,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
-}
+}   
 // |
 // Lua Runtime
 class Lua {
@@ -1902,7 +1902,7 @@ class Lua {
         try { 
             this.tokens = tokenize(code); 
             
-            while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res) } doreturn = false; break; } }
+            while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
         catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); status = 1; } 
         catch (Error e) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); status = 1; }
