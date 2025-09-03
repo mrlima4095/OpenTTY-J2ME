@@ -33,15 +33,10 @@ end
 function app.api_match(required, matching)
     local version = os.getenv("VERSION")
     if required == nil then return true end
-    if matching == nil or matching == "" then
-        matching = "exact-prefix"
-    end
+    if matching == nil or matching == "" then matching = "exact-prefix" end
 
-    if matching == "exact-prefix" then
-        return string.sub(version, 1, string.len(required)) == required
-
-    elseif matching == "exact-full" then
-        return version == required
+    if matching == "exact-prefix" then return string.sub(version, 1, string.len(required)) == required
+    elseif matching == "exact-full" then return version == required
 
     elseif matching == "minimum" then
         local cur_parts = split(version, ".")
