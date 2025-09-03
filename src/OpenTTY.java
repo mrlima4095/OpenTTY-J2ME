@@ -3204,11 +3204,8 @@ class Lua {
                 }
             }
             else if (MOD == DECODEINI) {
-                if (args.isEmpty()) {
-                    
-                } else {
-                    String
-                }
+                if (args.isEmpty()) { } 
+                else { return midlet.parseProperties((String) args.elementAt(0)); }
             }
 
             return null;
