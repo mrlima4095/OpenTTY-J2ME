@@ -1771,7 +1771,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0; 
     }
-    private String getMimeType(String filename) { filename = filename.toLowerCase(); return filename.endsWith(".amr") ? "audio/amr" : file.endsWith(".wav") ? "audio/x-wav" : filename.endsWith(".mid") || filename.endsWith(".midi") ? "audio/midi" : "audio/mpeg"; }
+    private String getMimeType(String filename) { filename = filename.toLowerCase(); return filename.endsWith(".amr") ? "audio/amr" : filename.endsWith(".wav") ? "audio/x-wav" : filename.endsWith(".mid") || filename.endsWith(".midi") ? "audio/midi" : "audio/mpeg"; }
 
     // API 013 - (MIDlet)
     // |
