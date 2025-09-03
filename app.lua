@@ -46,4 +46,10 @@ function app.match(required, mode)
     else error("bad argument #2 to 'match' (invalid mode)") end
 end 
 
+function app.run(pkg)
+    if pkg == nil then error("bad argument #1 to 'run' (table expected, got nil)") end
+
+end
+
+
 return app
