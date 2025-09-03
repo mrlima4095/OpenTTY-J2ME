@@ -1760,7 +1760,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     if (mainCommand.equals("pause")) { player.stop(); }
                     else if (mainCommand.equals("resume")) { player.start(); }
-                    else { player.stop(); player.close(); trace.remove("3"); }
+                    else { if (player != null) { player.stop(); player.close(); } trace.remove("3"); }
                 } 
                 else { echoCommand("audio: not running."); return 69; } 
             }
