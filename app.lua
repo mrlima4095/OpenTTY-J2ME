@@ -21,12 +21,7 @@ local function split(str, sep)
 
     return parts
 end
-
-function getNumber(s)
-    local n = tonumber(s)
-    if n == nil then return 0 end
-    return n
-end
+local function getNumber(s) return tonumber(s) or 0 end
 
 function app.match(required, mode)
     local version = os.getenv("VERSION") or ""
