@@ -9,10 +9,9 @@ local app = { }
 function app.main(conf) 
     
 end
-function split(str, sep)
+local function split(str, sep)
     local result = {}
-    local start = 1
-    local i = 1
+    local start, i = 1, 1
     while true do
         local idx = string.find(str, sep, start, true)
         if idx == nil then
@@ -26,7 +25,7 @@ function split(str, sep)
     return result
 end
 
-function tonumber_safe(s)
+local function tonumber_safe(s)
     local n = tonumber(s)
     if n == nil then return 0 else return n end
 end
@@ -56,10 +55,7 @@ function app.api_match(required, matching)
         if cur_parts[1] == nil or req_parts[1] == nil then return false end
         return tonumber_safe(cur_parts[1]) <= tonumber_safe(req_parts[1])
 
-    else
-        error("bad argument #2 to 'api_match' (invalid matching type)")
-    end
-
-    return false
+    else error("bad argument #2 to 'api_match' (invalid matching type)") end
 end
 
+return app
