@@ -31,7 +31,7 @@ local function tonumber_safe(s)
 end
 
 function app.api_match(required, matching)
-    local version = os.getenv("VERSION")
+    local version = tostring(os.getenv("VERSION"))
     if required == nil then return true end
     if matching == nil or matching == "" then matching = "exact-prefix" end
 
@@ -39,14 +39,14 @@ function app.api_match(required, matching)
     elseif matching == "exact-full" then return version == required
 
     elseif matching == "minimum" then
-        local cur_parts = split(version, ".")
-        local req_parts = split(required, ".")
+        local cur_parts, req_parts = split(version, "."), split(required, ".")
+
         if cur_parts[2] == nil or req_parts[2] == nil then return false end
         return tonumber_safe(cur_parts[2]) >= tonumber_safe(req_parts[2])
 
     elseif matching == "maximum" then
-        local cur_parts = split(version, ".")
-        local req_parts = split(required, ".")
+        local cur_parts, req_parts = split(version, "."), split(required, ".")
+
         if cur_parts[1] == nil or req_parts[1] == nil then return false end
         return tonumber_safe(cur_parts[1]) <= tonumber_safe(req_parts[1])
 
