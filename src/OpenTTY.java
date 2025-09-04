@@ -3305,7 +3305,7 @@ private Object request(String method, String url, String data) throws Exception 
             byte[] postBytes = data == null ? new byte[0] : data.getBytes("UTF-8");
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             conn.setRequestProperty("Content-Length", Integer.toString(postBytes.length));
-            conn.setDoOutput(true);
+            
             OutputStream os = null;
             try {
                 os = conn.openOutputStream();
