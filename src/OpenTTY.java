@@ -3287,12 +3287,10 @@ class Lua {
         private Object request(String method, String url, String data) throws Exception {
             if (url == null || url.length() == 0) { return ""; }
             if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
-
-
+            
             HttpConnection conn = null;
             InputStream is = null;
             ByteArrayOutputStream baos = null;
-
 
             try {
                 conn = (HttpConnection) Connector.open(url);
