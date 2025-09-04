@@ -3083,7 +3083,7 @@ class Lua {
                 }
             }
             else if (MOD == CLOSE) {
-                if (args.isEmpty()) { gotbad(1, "close", "strem expected, got no value") }
+                if (args.isEmpty()) { }
                 else {
                     for (int i = 0; i < args.size(); i++) {
                         Object arg = args.elementAt(i);
