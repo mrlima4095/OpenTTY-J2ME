@@ -3275,18 +3275,8 @@ class Lua {
 
                 return result;
             }
-            else if (MOD == HTTP_GET) {
-                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "get", "string expected, got no value"); }
-                String urlStr = toLuaString(args.elementAt(0));
-                return request("GET", urlStr, null);
-            }
-            else if (MOD == HTTP_POST) {
-                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "post", "string expected, got no value"); }
-
-                String urlStr = toLuaString(args.elementAt(0));
-                String postData = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
-                return request("POST", urlStr, postData);
-            }
+            else if (MOD == HTTP_GET) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "get", "string expected, got no value") : request("GET", toLuaString(args.elementAt(0)), null); }
+            else if (MOD == HTTP_POST) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "post", "string expected, got no value") : request("POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : ""); }
 
             return null;
         }
