@@ -3070,7 +3070,7 @@ class Lua {
                     String content = toLuaString(args.elementAt(0)), out = args.size() == 1 ? "stdout" : toLuaString(args.elementAt(1));
                     boolean mode = args.size() > 2 && toLuaString(args.elementAt(2)).equals("a") ? true : false;
 
-                    if (args.size() > 1 && args.elementAt(1) instanceof java.io.OutputStream) {
+                    if (args.size() > 1 && args.elementAt(1) instanceof OutputStream) {
                         OutputStream out = (OutputStream) args.elementAt(1);
 
                         out.write(content.getBytes("UTF-8")); out.flush();
