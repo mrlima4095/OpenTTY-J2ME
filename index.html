@@ -216,36 +216,6 @@
                                 </tr>
                             </thead>
                             <tbody id="dl-body">
-                                <tr>
-                                    <td>J2ME</td>
-                                    <td><a href="/repo/versions/OpenTTY-1.16.jar" class="btn">OpenTTY-1.16.jar</a> <span class="badge">latest</span></td>
-                                    <td>83 KB</td>
-                                </tr>
-                                <tr>
-                                    <td>J2ME</td>
-                                    <td><a href="/repo/dist/1.16/rc2.jar" class="btn">1.16-rc2.jar</a> <span class="badge">pre</span></td>
-                                    <td>80 KB</td>
-                                </tr>
-                                <tr>
-                                    <td>J2ME</td>
-                                    <td><a href="/repo/dist/1.16/rc1.jar" class="btn">1.16-rc1.jar</a> <span class="badge">pre</span></td>
-                                    <td>69 KB</td>
-                                </tr>
-                                <tr>
-                                    <td>J2ME</td>
-                                    <td><a href="/repo/versions/OpenTTY-1.15.jar" class="btn">OpenTTY-1.15.jar</a></td>
-                                    <td>66 KB</td>
-                                </tr>
-                                <tr>
-                                    <td>J2ME</td>
-                                    <td><a href="/repo/versions/OpenTTY-1.14.4.jar" class="btn">OpenTTY-1.14.4.jar</a></td>
-                                    <td>64 KB</td>
-                                </tr>
-                                <tr>
-                                    <td>J2ME</td>
-                                    <td><a href="/repo/versions/OpenTTY-1.14.jar" class="btn">OpenTTY-1.14.jar</a></td>
-                                    <td>65 KB</td>
-                                </tr>
                             </tbody>
                         </table>
                         <p id="checksums" class="note">All releases available at <strong><a href="https://github.com/mrlima4095/OpenTTY-J2ME/releases">GitHub</a></strong>. Checksums and signed releases are recommended.</p>
@@ -322,51 +292,49 @@ Nokia S60 (OpenTTY 1.16) main/stable
         <div>© <span id="y"></span> OpenTTY — J2ME Today.</div>
     </footer>
 
-<script>
-(async function(){
-    try {
-        // Busca o JSON do servidor
-        const res = await fetch('/api/versions');
-        const data = await res.json();
+    <script>
+    (async function(){
+        try {
+            // Busca o JSON do servidor
+            const res = await fetch('/api/versions');
+            const data = await res.json();
 
-        // ===== Atualiza Downloads =====
-        const dlBody = document.getElementById('dl-body');
-        if(dlBody && data.downloads){
-            dlBody.innerHTML = ''; // limpa tabela
-            data.downloads.forEach(dl => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${dl.platform}</td>
-                    <td>
-                        <a href="${dl.url}" class="btn">${dl.file}</a>
-                        ${dl.type ? `<span class="badge">${dl.type}</span>` : ''}
-                    </td>
-                    <td>${dl.size}</td>
-                `;
-                dlBody.appendChild(tr);
-            });
-        }
+            // ===== Atualiza Downloads =====
+            const dlBody = document.getElementById('dl-body');
+            if(dlBody && data.downloads){
+                dlBody.innerHTML = ''; // limpa tabela
+                data.downloads.forEach(dl => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${dl.platform}</td>
+                        <td>
+                            <a href="${dl.url}" class="btn">${dl.file}</a>
+                            ${dl.type ? `<span class="badge">${dl.type}</span>` : ''}
+                        </td>
+                        <td>${dl.size}</td>
+                    `;
+                    dlBody.appendChild(tr);
+                });
+            }
 
-        // ===== Atualiza Notícias =====
-        const newsContainer = document.querySelector('#news .body');
-        if(newsContainer && data.news){
-            // remove as ul antigas
-            newsContainer.querySelectorAll('ul').forEach(ul => ul.remove());
-            
-            const ul = document.createElement('ul');
-            data.news.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>[${item.date}]</strong> ${item.title}`;
-                ul.appendChild(li);
-            });
-            newsContainer.appendChild(ul);
-        }
+            // ===== Atualiza Notícias =====
+            const newsContainer = document.querySelector('#news .body');
+            if(newsContainer && data.news){
+                // remove as ul antigas
+                newsContainer.querySelectorAll('ul').forEach(ul => ul.remove());
+                
+                const ul = document.createElement('ul');
+                data.news.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>[${item.date}]</strong> ${item.title}`;
+                    ul.appendChild(li);
+                });
+                newsContainer.appendChild(ul);
+            }
 
-    } catch(e) {
-        console.error('Erro ao carregar versões:', e);
-    }
-})();
-</script>
+        } catch(e) { console.error('Erro ao carregar versões:', e); }
+    })();
+    </script>
 
 </body>
 </html>
