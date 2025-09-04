@@ -49,6 +49,21 @@ end
 function app.run(pkg)
     if pkg == nil then error("bad argument #1 to 'run' (table expected, got no value)") end
 
+    local api, process = pkg["api"], pkg["process"]
+
+    if type(api) == "table" then
+        local required, mode, err = api["version"], api["match"], api["error"]
+        local status = app.match(required, mode)
+
+        if not status then
+            return os.execute(err)
+        end
+    end
+    if type(process) == "table" then
+
+    end
+
+
 end
 
 
