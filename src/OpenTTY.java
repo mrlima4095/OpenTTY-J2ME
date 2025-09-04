@@ -3206,10 +3206,7 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == TB_DECODE) {
-                if (args.isEmpty()) { } 
-                else { return midlet.parseProperties((String) args.elementAt(0)); }
-            }
+            else if (MOD == TB_DECODE) { return args.isEmpty() ? null : midlet.parseProperties((String) args.elementAt(0)); }
             else if (MOD == TB_PACK) {
                 Hashtable packed = new Hashtable();
                 for (int i = 0; i < args.size(); i++) {
