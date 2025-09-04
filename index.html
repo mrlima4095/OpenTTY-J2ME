@@ -322,52 +322,51 @@ Nokia S60 (OpenTTY 1.16) main/stable
         <div>© <span id="y"></span> OpenTTY — J2ME Today.</div>
     </footer>
 
-    <script>
-        // Small inline JS to power the responsive menu and dynamic dates
-        (function(){
-            var menuBtn = document.getElementById('menuToggle');
-            var nav = document.getElementById('primary-nav');
-            menuBtn.addEventListener('click', function(){
-                var expanded = this.getAttribute('aria-expanded') === 'true';
-                this.setAttribute('aria-expanded', String(!expanded));
-                nav.classList.toggle('show');
+<script>
+(async function(){
+    try {
+        // Busca o JSON do servidor
+        const res = await fetch('/api/versions');
+        const data = await res.json();
+
+        // ===== Atualiza Downloads =====
+        const dlBody = document.getElementById('dl-body');
+        if(dlBody && data.downloads){
+            dlBody.innerHTML = ''; // limpa tabela
+            data.downloads.forEach(dl => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${dl.platform}</td>
+                    <td>
+                        <a href="${dl.url}" class="btn">${dl.file}</a>
+                        ${dl.type ? `<span class="badge">${dl.type}</span>` : ''}
+                    </td>
+                    <td>${dl.size}</td>
+                `;
+                dlBody.appendChild(tr);
             });
+        }
 
-            // Close menu when clicking outside (mobile)
-            document.addEventListener('click', function(e){
-                if(!menuBtn.contains(e.target) && !nav.contains(e.target) && nav.classList.contains('show')){
-                    nav.classList.remove('show');
-                    menuBtn.setAttribute('aria-expanded','false');
-                }
+        // ===== Atualiza Notícias =====
+        const newsContainer = document.querySelector('#news .body');
+        if(newsContainer && data.news){
+            // remove as ul antigas
+            newsContainer.querySelectorAll('ul').forEach(ul => ul.remove());
+            
+            const ul = document.createElement('ul');
+            data.news.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>[${item.date}]</strong> ${item.title}`;
+                ul.appendChild(li);
             });
+            newsContainer.appendChild(ul);
+        }
 
-            // Fill last update and current year
-            var last = document.getElementById('lastUpdate');
-            if(last){
-                // Set a sensible default — adjust on server-side when generating pages
-                var d = new Date('2025-08-09');
-                last.textContent = d.toISOString().slice(0,10);
-                last.setAttribute('datetime', d.toISOString());
-            }
-            var y = document.getElementById('y'); if(y) y.textContent = new Date().getFullYear();
+    } catch(e) {
+        console.error('Erro ao carregar versões:', e);
+    }
+})();
+</script>
 
-            // Simple search filter for in-page sections
-            var q = document.getElementById('q');
-            if(q){
-                q.addEventListener('keydown', function(e){
-                    if(e.key === 'Enter'){
-                        var v = this.value.trim().toLowerCase();
-                        if(!v) return;
-                        // Basic visibility filter for sections
-                        var sections = document.querySelectorAll('main section, main .card');
-                        sections.forEach(function(s){
-                            var text = s.textContent.toLowerCase();
-                            s.style.display = text.indexOf(v) !== -1 ? '' : 'none';
-                        });
-                    }
-                });
-            }
-        })();
-    </script>
 </body>
 </html>
