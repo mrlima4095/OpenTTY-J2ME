@@ -1863,7 +1863,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, CLOSE = 31;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, CLOSE = 31, HTTP_GET = 32, HTTP_POST = 33;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1875,7 +1875,7 @@ class Lua {
         this.tokenIndex = 0; this.PID = midlet.genpid();
         this.proc = midlet.genprocess("lua", root, null);
         
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), socket = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), socket = new Hashtable(), http = new Hashtable();
         String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
@@ -1887,6 +1887,9 @@ class Lua {
 
         funcs = new String[] { "pack", "decode" }; loaders = new int[] { TB_PACK, TB_DECODE };
         for (int i = 0; i < funcs.length; i++) { table.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("table", table);
+
+        funcs = new String[] { "get", "post" }; loaders = new int[] { HTTP_GET, HTTP_POST };
+        for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
         funcs = new String[] { "connect" }; loaders = new int[] { CONNECT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
@@ -3261,7 +3264,7 @@ class Lua {
                 return packed;
             }
             else if (MOD == CONNECT) {
-                if (args.isEmpty() || args.elementAt(0) == null) { gotbad(1, "connect", "string expected, got no value"); }
+                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "connect", "string expected, got no value"); }
                 Vector result = new Vector();
 
                 StreamConnection conn = (StreamConnection) Connector.open(toLuaString(args.elementAt(0)));
@@ -3272,6 +3275,18 @@ class Lua {
 
                 return result;
             }
+            else if (MOD == HTTP_GET) {
+                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "get", "string expected, got no value"); }
+                String urlStr = toLuaString(args.elementAt(0));
+                return httpRequest("GET", urlStr, null);
+            }
+            else if (MOD == HTTP_POST) {
+                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "post", "string expected, got no value"); }
+
+                String urlStr = toLuaString(args.elementAt(0));
+                String postData = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
+                return httpRequest("POST", urlStr, postData);
+            }
 
             return null;
         }
@@ -3279,6 +3294,41 @@ class Lua {
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
         private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof StreamConnection || item instanceof InputStream || item instanceof OutputStream ? "stream" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
+        private Object request(String method, String url, String data) throws Exception {
+            if (url == null || url.length() == 0) { return ""; }
+            if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
+
+            HttpConnection conn = null;
+            InputStream is = null;
+            ByteArrayOutputStream baos = null;
+
+            try {
+                conn = (HttpConnection) Connector.open(url);
+                conn.setRequestMethod(method.toUpperCase());
+
+                if ("POST".equalsIgnoreCase(method)) {
+                    byte[] postBytes = data == null ? new byte[0] : data.getBytes("UTF-8");
+                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                    conn.setRequestProperty("Content-Length", Integer.toString(postBytes.length));
+                    conn.setDoOutput(true);
+                    OutputStream os = conn.openOutputStream();
+                    os.write(postBytes);
+                    os.flush(); os.close();
+                }
+
+                is = conn.openInputStream();
+                baos = new ByteArrayOutputStream();
+
+                int ch;
+                while ((ch = is.read()) != -1) { baos.write(ch); }
+
+                return new String(baos.toByteArray(), "UTF-8");
+            } finally {
+                if (is != null) { try { is.close(); } catch (Exception e) { } }
+                if (conn != null) { try { conn.close(); } catch (Exception e) { } }
+                if (baos != null) { try { baos.close(); } catch (Exception e) { } }
+            }
+        }
     }
 }
 // |
