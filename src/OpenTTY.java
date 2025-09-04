@@ -3249,7 +3249,6 @@ class Lua {
             }
             else if (MOD == CONNECT) {
                 if (args.isEmpty() || args.elementAt(0) == null) { throw new Exception("connect: string expected"); }
-                String address = ;
                 Vector result = new Vector();
 
                 StreamConnection conn = (StreamConnection) Connector.open(toLuaString(args.elementAt(0)));
