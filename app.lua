@@ -21,6 +21,7 @@ local function split(str, sep)
 
     return parts
 end
+
 local function getNumber(s) return tonumber(s) or 0 end
 
 function app.match(required, mode)
@@ -36,14 +37,19 @@ function app.match(required, mode)
         local currentParts, requiredParts = split(version, "."), split(required, ".")
 
         if mode == "minimum" then
-            if currentParts[2] == nil or requiredParts[2] == nil then return false 
-            else return getNumber(currentParts[2]) >= getNumber(requiredParts[2]) end
-        elseif mode == "maximum" then
-            if currentParts[1] == nil or requiredParts[1] == nil then return false
-            else return getNumber(currentParts[1]) <= getNumber(requiredParts[1]) end
+            if currentParts[2] == nil or requiredParts[2] == nil then return false end
+            return getNumber(currentParts[2]) >= getNumber(requiredParts[2])
         end
-    elseif mode == "exact-full" then return version == required 
-    else error("bad argument #2 to 'match' (invalid mode)") end
+
+        if mode == "maximum" then
+            if currentParts[1] == nil or requiredParts[1] == nil then return false end
+            return getNumber(currentParts[1]) <= getNumber(requiredParts[1])
+        end
+    elseif mode == "exact-full" then
+        return version == required 
+    else
+        error("bad argument #2 to 'match' (invalid mode)")
+    end
 end 
 
 function app.run(pkg)
