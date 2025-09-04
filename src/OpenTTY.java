@@ -3082,23 +3082,6 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == WRITE) {
-                if (args.isEmpty()) {
-                    return null;
-                }
-                String content = toLuaString(args.elementAt(0));
-                else {
-                    String out = args.size() == 1 ? "stdout" : toLuaString(args.elementAt(1));
-                    boolean append = args.size() > 2 && toLuaString(args.elementAt(2)).equals("a");
-                    if (out.equals("stdout")) {
-                        midlet.stdout.setText(append ? midlet.stdout.getText() + content : content);
-                    } else if (out.equals("stdin")) {
-                        midlet.stdin.setString(append ? midlet.stdin.getString() + content : content);
-                    } else {
-                        midlet.writeRMS(out, append ? midlet.getcontent(out) + content : content);
-                    }
-                }
-            }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
             else if (MOD == TONUMBER) { return args.isEmpty() ? null : new Double(Double.valueOf(toLuaString(args.elementAt(0)))); }
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
