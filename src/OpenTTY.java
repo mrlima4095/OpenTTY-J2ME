@@ -3284,41 +3284,58 @@ class Lua {
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
         private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof StreamConnection || item instanceof InputStream || item instanceof OutputStream ? "stream" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
-        private Object request(String method, String url, String data) throws Exception {
-            if (url == null || url.length() == 0) { return ""; }
-            if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
+private Object request(String method, String url, String data) throws Exception {
+    if (url == null || url.length() == 0) {
+        return "";
+    }
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "http://" + url;
+    }
 
-            HttpConnection conn = null;
-            InputStream is = null;
-            ByteArrayOutputStream baos = null;
+    HttpConnection conn = null;
+    InputStream is = null;
+    ByteArrayOutputStream baos = null;
+    String response = "";
 
+    try {
+        conn = (HttpConnection) Connector.open(url);
+        conn.setRequestMethod(method.toUpperCase());
+
+        if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method)) {
+            byte[] postBytes = data == null ? new byte[0] : data.getBytes("UTF-8");
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            conn.setRequestProperty("Content-Length", Integer.toString(postBytes.length));
+            conn.setDoOutput(true);
+            OutputStream os = null;
             try {
-                conn = (HttpConnection) Connector.open(url);
-                conn.setRequestMethod(method.toUpperCase());
-
-                if ("POST".equalsIgnoreCase(method)) {
-                    byte[] postBytes = data == null ? new byte[0] : data.getBytes("UTF-8");
-                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                    conn.setRequestProperty("Content-Length", Integer.toString(postBytes.length));
-                    //conn.setDoOutput(true);
-                    OutputStream os = conn.openOutputStream();
-                    os.write(postBytes);
-                    os.flush(); os.close();
-                }
-
-                is = conn.openInputStream();
-                baos = new ByteArrayOutputStream();
-
-                int ch;
-                while ((ch = is.read()) != -1) { baos.write(ch); }
-
-                return new String(baos.toByteArray(), "UTF-8");
+                os = conn.openOutputStream();
+                os.write(postBytes);
+                os.flush();
             } finally {
-                if (is != null) { try { is.close(); } catch (Exception e) { } }
-                if (conn != null) { try { conn.close(); } catch (Exception e) { } }
-                if (baos != null) { try { baos.close(); } catch (Exception e) { } }
+                if (os != null) try { os.close(); } catch (Exception e) {}
             }
         }
+
+        is = conn.openInputStream();
+        baos = new ByteArrayOutputStream();
+
+        int ch;
+        while ((ch = is.read()) != -1) {
+            baos.write(ch);
+        }
+
+        response = new String(baos.toByteArray(), "UTF-8");
+    } catch (IOException e) {
+        // Se quiser, trate a exceção aqui ou relance
+        throw e;
+    } finally {
+        if (baos != null) try { baos.close(); } catch (Exception e) {}
+        if (is != null) try { is.close(); } catch (Exception e) {}
+        if (conn != null) try { conn.close(); } catch (Exception e) {}
+    }
+
+    return response;
+}
     }
 }
 // |
