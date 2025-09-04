@@ -3317,7 +3317,7 @@ class Lua {
 
                 return new String(baos.toByteArray(), "UTF-8");
 
-            } finally {
+            } catch (Exception e) { throw e; } finally {
                 if (is != null) { try { is.close(); } catch (Exception e) { } }
                 if (conn != null) { try { conn.close(); } catch (Exception e) { } }
                 if (baos != null) { try { baos.close(); } catch (Exception e) { } }
