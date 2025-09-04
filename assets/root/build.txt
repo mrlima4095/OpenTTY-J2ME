@@ -130,3 +130,4 @@
 [2025-1.16.1-02x63] 1.16.1 Suite case
 [2025-1.16.1-02x64] Added support for MIDI playing
 [2025-1.16.1-02x65] Added Lua support for REPEAT, UNTIL tokens
+[2025-1.16.1-02x66] Added Lua default library 'socket' 
