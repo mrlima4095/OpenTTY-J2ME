@@ -9,7 +9,8 @@ Copyright (C) 2025 - Mr. Lima
 
 - **Audio API** added support to play **.midi** files
 - **Lua** added support for `repeat until [expr]` loops
-- **Lua** added default library **socket** with network interfaces
+- **Lua** added default library `socket` with network interfaces
+- **Lua** `io` library added new function `close(stream)` to close interfaces
 
 [ _Notes_ ]
 
