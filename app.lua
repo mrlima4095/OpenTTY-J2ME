@@ -47,7 +47,7 @@ function app.match(required, mode)
 end 
 
 function app.run(pkg)
-    if pkg == nil then error("bad argument #1 to 'run' (table expected, got nil)") end
+    if pkg == nil then error("bad argument #1 to 'run' (table expected, got no value)") end
 
 end
 
