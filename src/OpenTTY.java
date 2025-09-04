@@ -3278,14 +3278,14 @@ class Lua {
             else if (MOD == HTTP_GET) {
                 if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "get", "string expected, got no value"); }
                 String urlStr = toLuaString(args.elementAt(0));
-                return httpRequest("GET", urlStr, null);
+                return request("GET", urlStr, null);
             }
             else if (MOD == HTTP_POST) {
                 if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "post", "string expected, got no value"); }
 
                 String urlStr = toLuaString(args.elementAt(0));
                 String postData = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
-                return httpRequest("POST", urlStr, postData);
+                return request("POST", urlStr, postData);
             }
 
             return null;
