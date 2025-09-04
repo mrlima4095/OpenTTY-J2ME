@@ -1863,7 +1863,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, CLOSE = 31;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1882,7 +1882,7 @@ class Lua {
         funcs = new String[] { "loadlib" }; loaders = new int[] { REQUIRE };
         for (int i = 0; i < funcs.length; i++ ) { pkg.put(funcs[i], new LuaFunction(loaders[i])); } pkg.put("loaded", requireCache); globals.put("package", pkg);
 
-        funcs = new String[] { "read", "write" }; loaders = new int[] { READ, WRITE };
+        funcs = new String[] { "read", "write", "close" }; loaders = new int[] { READ, WRITE, CLOSE };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
 
         funcs = new String[] { "pack", "decode" }; loaders = new int[] { TB_PACK, TB_DECODE };
@@ -3082,6 +3082,19 @@ class Lua {
                     }
                 }
             }
+            else if (MOD == CLOSE) {
+                if (args.isEmpty()) { gotbad(1, "close", "strem expected, got no value") }
+                else {
+                    for (int i = 0; i < args.size(); i++) {
+                        Object arg = args.elementAt(i);
+
+                        if (arg instanceof StreamConnection) { ((StreamConnection) arg).close(); }
+                        else if (arg instanceof InputStream) { ((InputStream) arg).close(); }
+                        else if (arg instanceof OutputStream) { ((OutputStream) arg).close(); }
+                        else { gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
+                    }
+                } 
+            }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? null : args.elementAt(0)); }
             else if (MOD == TONUMBER) { return args.isEmpty() ? null : new Double(Double.valueOf(toLuaString(args.elementAt(0)))); }
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
@@ -3264,7 +3277,7 @@ class Lua {
         }
 
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
-        private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : "userdata"; }
+        private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof StreamConnection || item instanceof InputStream || item instanceof OutputStream ? "stream" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
     }
 }
