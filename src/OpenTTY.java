@@ -3039,7 +3039,7 @@ class Lua {
                     }
                 }
             }
-            else if (MOD == WRITE) { 
+            else if (MOD == WRITE) {
                 if (args.isEmpty()) { }
                 else {
                     String content = toLuaString(args.elementAt(0)), out = args.size() == 1 ? "stdout" : toLuaString(args.elementAt(1));
@@ -3297,7 +3297,7 @@ class Lua {
             if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
 
             HttpConnection conn = null;
-            Hashtable headers = (Hashtable) (item instanceof Hashtable ?  item : gotbad("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item)););
+            Hashtable headers = (Hashtable) (item instanceof Hashtable ? item : gotbad("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item)));
             InputStream is = null;
             ByteArrayOutputStream baos = null;
 
