@@ -3346,20 +3346,20 @@ class Lua {
                 conn = (HttpConnection) Connector.open(url);
                 conn.setRequestMethod(method.toUpperCase());
 
-                if (headers != null) {
+                /*if (headers != null) {
                     Enumeration keys = headers.keys();
                     while (keys.hasMoreElements()) {
                         String key = (String) keys.nextElement();
-                        conn.setRequestProperty(key, headers.get(key));
+                        conn.setRequestProperty(key, (String) headers.get(key));
                     }
-                }
+                }*/
 
                 // Se for POST, envia os dados
                 if ("POST".equalsIgnoreCase(method)) {
                     byte[] postBytes = (data == null) ? new byte[0] : data.getBytes("UTF-8");
 
-                    if (headers == null || headers.get("Content-Type") == null) { conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded"); }
-                    if (headers == null || headers.get("Content-Length") == null) { conn.setRequestProperty("Content-Length", Integer.toString(postBytes.length)); }
+                    //if (headers == null || headers.get("Content-Type") == null) { conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded"); }
+                    //if (headers == null || headers.get("Content-Length") == null) { conn.setRequestProperty("Content-Length", Integer.toString(postBytes.length)); }
 
                     OutputStream os = conn.openOutputStream();
                     os.write(postBytes);
