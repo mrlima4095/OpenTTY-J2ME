@@ -3310,7 +3310,7 @@ class Lua {
                         MOD == HTTP_GET ? "GET" : "POST", 
                         toLuaString(args.elementAt(0)), 
                         MOD == HTTP_GET ? null : args.size() > 1 ? toLuaString(args.elementAt(1)) : "", 
-                        args.size() > (MOD == HTTP_GET ? 1 : 2) ? args.elementAt(MOD == HTTP_GET ? 1 : 2) : null
+                        args.size() > (MOD == HTTP_GET ? 1 : 2) ? (Hashtable) args.elementAt(MOD == HTTP_GET ? 1 : 2) : null
                     ); 
             }
 
@@ -3333,15 +3333,11 @@ class Lua {
                 conn.setRequestMethod(method.toUpperCase());
 
                 if (headers != null) {
-                    if (headers instanceof Hashtable) {
-                        Enumeration keys = headers.keys();
-                        while (keys.hasMoreElements()) {
-                            String key = (String) keys.nextElement();
-                            conn.setRequestProperty(key, headers.get(key));
-                        }
-                    } else {
-                        gotbad
-                    }                    
+                    Enumeration keys = headers.keys();
+                    while (keys.hasMoreElements()) {
+                        String key = (String) keys.nextElement();
+                        conn.setRequestProperty(key, headers.get(key));
+                    }                  
                 }
 
                 // Se for POST, envia os dados
