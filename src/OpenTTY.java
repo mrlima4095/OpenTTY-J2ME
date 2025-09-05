@@ -3350,7 +3350,6 @@ class Lua {
                     } 
                 }
 
-                // Se for POST, envia os dados
                 if ("POST".equalsIgnoreCase(method)) {
                     byte[] postBytes = (data == null) ? new byte[0] : data.getBytes("UTF-8");
 
