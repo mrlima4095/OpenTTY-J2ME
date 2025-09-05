@@ -3015,7 +3015,7 @@ class Lua {
             else if (MOD == LOADS) { if (args.isEmpty() || args.elementAt(0) == null) { } else { return exec(toLuaString(args.elementAt(0))); } }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
-            else if (MOD == PAIRS) { if (args.isEmpty()) { return gotbad(1, "pairs", "table expected, got no value") } Object t = args.elementAt(0); t = (t == LUA_NIL) ? null : t; if (t == null || t instanceof Hashtable || t instanceof Vector) { return t; } return gotbad(1, "pairs", "table expected, got " + type(t)); }
+            else if (MOD == PAIRS) { if (args.isEmpty()) { return gotbad(1, "pairs", "table expected, got no value"); } Object t = args.elementAt(0); t = (t == LUA_NIL) ? null : t; if (t == null || t instanceof Hashtable || t instanceof Vector) { return t; } return gotbad(1, "pairs", "table expected, got " + type(t)); }
             else if (MOD == EXIT) { if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
             else if (MOD == READ) {
                 if (args.isEmpty()) { return midlet.stdout.getText(); }
