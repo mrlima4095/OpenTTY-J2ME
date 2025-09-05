@@ -3313,7 +3313,7 @@ class Lua {
                         args.size() > 1 ? args.elementAt(1) : null
                     ); 
             }
-            else if () { 
+            else if (MOD == HTTP_POST) { 
                 return args.isEmpty() || args.elementAt(0) == null ? 
                     gotbad(1, "post", "string expected, got no value") : 
                     http(
