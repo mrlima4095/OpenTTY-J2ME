@@ -3304,13 +3304,14 @@ class Lua {
                 return result;
             }
             else if (MOD == HTTP_GET || MOD == HTTP_POST) { 
+                int index = MOD == HTTP_GET ? 1 : 2;
                 return args.isEmpty() || args.elementAt(0) == null ? 
                     gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : 
                     request(
                         MOD == HTTP_GET ? "GET" : "POST", 
                         toLuaString(args.elementAt(0)), 
                         MOD == HTTP_GET ? null : args.size() > 1 ? toLuaString(args.elementAt(1)) : "", 
-                        args.size() > (MOD == HTTP_GET ? 1 : 2) ? args.elementAt(MOD == HTTP_GET ? 1 : 2) : null
+                        args.size() > index ? args.elementAt(index) : null
                     ); 
             }
 
