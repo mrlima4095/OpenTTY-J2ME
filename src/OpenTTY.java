@@ -3352,7 +3352,7 @@ class Lua {
                         Enumeration keys = headers.keys();
                         while (keys.hasMoreElements()) {
                             String key = (String) keys.nextElement();
-                            conn.setRequestProperty(key, headers.get(key));
+                            conn.setRequestProperty(key, toLuaString(headers.get(key)));
                         }
                     } else {
                         throw new Exception("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item));
