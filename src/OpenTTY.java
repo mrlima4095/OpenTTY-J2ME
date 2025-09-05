@@ -3355,7 +3355,7 @@ class Lua {
                             conn.setRequestProperty(key, headers.get(key));
                         }
                     } else {
-                        throw new Exception("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item))
+                        throw new Exception("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item));
                     } 
                 }
 
