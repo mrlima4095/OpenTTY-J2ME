@@ -3330,15 +3330,11 @@ class Lua {
         private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof StreamConnection || item instanceof InputStream || item instanceof OutputStream ? "stream" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object http(String method, String url, String data, Object item) throws Exception {
-            if (url == null || url.length() == 0) { 
-                return ""; 
-            }
-            if (!url.startsWith("http://") && !url.startsWith("https://")) { 
-                url = "http://" + url; 
-            }
-        
+            if (url == null || url.length() == 0) { return ""; }
+            if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
+
             HttpConnection conn = null;
-            Hashtable headers = (Hashtable) item;
+            Hashtable headers = (Hashtable) (item instanceof Hashtable ?  item : gotbad("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item)););
             InputStream is = null;
             ByteArrayOutputStream baos = null;
 
@@ -3347,14 +3343,10 @@ class Lua {
                 conn.setRequestMethod(method.toUpperCase());
 
                 if (headers != null) {
-                    if (headers instanceof Hashtable) {
-                        Enumeration keys = headers.keys();
-                        while (keys.hasMoreElements()) {
-                            String key = (String) keys.nextElement();
-                            conn.setRequestProperty(key, toLuaString(headers.get(key)));
-                        }
-                    } else {
-                        return gotbad("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item));
+                    Enumeration keys = headers.keys();
+                    while (keys.hasMoreElements()) {
+                        String key = (String) keys.nextElement();
+                        conn.setRequestProperty(key, toLuaString(headers.get(key)));
                     } 
                 }
 
