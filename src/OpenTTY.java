@@ -2980,33 +2980,9 @@ class Lua {
             else if (MOD == PCALL) {
                 Vector result = new Vector();
 
-                if (args.size() == 0) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement("Function expected for pcall");
-                    return result;
-                }
+                if (args.size() == 0 || !(args.elementAt(0) instanceof LuaFunction)) { result.addElement(Boolean.FALSE); result.addElement("Function expected for pcall"); return result; }
 
-                Object rawFunc = args.elementAt(0);
-                // Tolerância: se foi passado o nome da função (String), procurar em globals
-                Object funcObj = unwrap(rawFunc);
-                if (!(funcObj instanceof LuaFunction)) {
-                    if (funcObj instanceof String) {
-                        String fname = (String) funcObj;
-                        // procurar em globals por esse nome (se existir)
-                        if (globals.containsKey(fname)) {
-                            funcObj = unwrap(globals.get(fname)); // unwrap (pode ser LUA_NIL internamente)
-                        }
-                    }
-                }
-
-                // Ainda não é função? talvez seja uma tabela contendo função no campo (não tratado aqui).
-                if (!(funcObj instanceof LuaFunction)) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement("Function expected for pcall");
-                    return result;
-                }
-
-                LuaFunction func = (LuaFunction) funcObj;
+                LuaFunction func = (LuaFunction) unwrap(args.elementAt(0));
 
                 try {
                     Vector fnArgs = new Vector();
@@ -3014,12 +2990,9 @@ class Lua {
 
                     Object value = func.call(fnArgs);
                     result.addElement(Boolean.TRUE);
-
                     result.addElement(value);
-                } catch (Exception e) {
-                    result.addElement(Boolean.FALSE);
-                    result.addElement(e.getMessage());
-                }
+                } 
+                catch (Exception e) { result.addElement(Boolean.FALSE); result.addElement(e.getMessage()); }
                 return result;
             }
             else if (MOD == GETENV) { if (args.isEmpty()) { return gotbad(1, "getenv", "string expected, got no value"); } else { String key = toLuaString(args.elementAt(0)); return midlet.attributes.containsKey(key) ? midlet.attributes.get(key) : null; } }
