@@ -3319,7 +3319,7 @@ class Lua {
                     http(
                         "POST", 
                         toLuaString(args.elementAt(0)), 
-                        args.size() > 1 ? toLuaString(args.elementAt(1)) : "",
+                        args.size() > 1 ? toLuaString(args.elementAt(1)) : ""
                         //args.size() > 2 ? (Hashtable) args.elementAt(2) : null
                     ); 
             }
