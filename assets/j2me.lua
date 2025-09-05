@@ -1,10 +1,4 @@
--- lua_j2me_api.lua
--- Módulo de definição da API do Lua J2ME para IDEs
-
-local lua_j2me = {}
-
--- Tabela os
-lua_j2me.os = {
+os = {
     execute = function(command) end, -- Executa comando no sistema
     getenv = function(varname) end, -- Retorna variável de ambiente
     clock = function() end,          -- Retorna tempo em ms desde o início
@@ -12,27 +6,23 @@ lua_j2me.os = {
     exit = function(code) end        -- Encerra o programa com código
 }
 
--- Tabela package
-lua_j2me.package = {
+package = {
     loadlib = function(libname) end, -- Carrega biblioteca externa
     loaded = {}                      -- Cache de módulos carregados
 }
 
--- Tabela io
-lua_j2me.io = {
+io = {
     read = function(target) end,    -- Lê dados de arquivo ou stream
     write = function(data, target, mode) end, -- Escreve dados em arquivo ou stream
     close = function(stream) end    -- Fecha stream ou conexão
 }
 
--- Tabela table
-lua_j2me.table = {
+table = {
     pack = function(...) end,       -- Empacota argumentos em tabela
     decode = function(str) end      -- Decodifica string em tabela
 }
 
--- Tabela socket
-lua_j2me.socket = {
+socket = {
     connect = function(address) end,-- Abre conexão de socket
     http = {
         get = function(url) end,    -- Requisição HTTP GET
@@ -40,8 +30,7 @@ lua_j2me.socket = {
     }
 }
 
--- Tabela string
-lua_j2me.string = {
+string = {
     upper = function(str) end,
     lower = function(str) end,
     len = function(str) end,
@@ -53,53 +42,14 @@ lua_j2me.string = {
     char = function(...) end
 }
 
--- Funções globais
-function lua_j2me.print(...)
-    -- Imprime argumentos
-end
-
-function lua_j2me.error(msg)
-    -- Lança erro com mensagem
-end
-
-function lua_j2me.pcall(func, ...)
-    -- Chama função protegida
-end
-
-function lua_j2me.require(modname)
-    -- Carrega módulo
-end
-
-function lua_j2me.load(str)
-    -- Carrega código Lua de string
-end
-
-function lua_j2me.pairs(t)
-    -- Iterador para tabelas
-end
-
-function lua_j2me.collectgarbage()
-    -- Coleta lixo
-end
-
-function lua_j2me.tostring(val)
-    -- Converte valor para string
-end
-
-function lua_j2me.tonumber(val)
-    -- Converte valor para número
-end
-
-function lua_j2me.select(index, ...)
-    -- Seleciona argumentos
-end
-
-function lua_j2me.type(val)
-    -- Retorna tipo do valor
-end
-
-function lua_j2me.random(max)
-    -- Gera número aleatório
-end
-
-return lua_j2me
+function print(...) end
+function error(msg) end
+function pcall(func, ...) end
+function require(modname) end
+function load(str) end
+function pairs(t) end
+function collectgarbage() end
+function tostring(val) end
+function tonumber(val) end
+function select(index, ...) end
+function type(val) end
