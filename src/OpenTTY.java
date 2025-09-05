@@ -3303,26 +3303,25 @@ class Lua {
                 
                 return result;
             }
-            else if (MOD == HTTP_GET) { 
-                return args.isEmpty() || args.elementAt(0) == null ? 
-                    gotbad(1, "get", "string expected, got no value") : 
-                    http(
-                        "GET", 
-                        toLuaString(args.elementAt(0)), 
-                        null,
-                        args.size() > 1 ? (Hashtable) args.elementAt(1) : null
-                    ); 
-            }
-            else if (MOD == HTTP_POST) { 
-                return args.isEmpty() || args.elementAt(0) == null ? 
-                    gotbad(1, "post", "string expected, got no value") : 
-                    http(
-                        "POST", 
-                        toLuaString(args.elementAt(0)), 
-                        args.size() > 1 ? toLuaString(args.elementAt(1)) : "",
-                        args.size() > 2 ? args.elementAt(2) : null
-                    ); 
-            }
+            else if (MOD == HTTP_GET || MOD == HTTP_POST) {
+                return (args.isEmpty() || args.elementAt(0) == null ?
+                    gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : 
+                    (MOD == HTTP_GET ? 
+                        http(
+                            "GET", 
+                            toLuaString(args.elementAt(0)), 
+                            null, 
+                            args.size() > 1 ? (Hashtable) args.elementAt(1) : null
+                        ) : 
+                        http(
+                            "POST", 
+                            toLuaString(args.elementAt(0)), 
+                            args.size() > 1 ? toLuaString(args.elementAt(1)) : "", 
+                            args.size() > 2 ? args.elementAt(2) : null
+                        )
+                    )
+                );
+            }            
 
             return null;
         }
@@ -3355,7 +3354,7 @@ class Lua {
                             conn.setRequestProperty(key, toLuaString(headers.get(key)));
                         }
                     } else {
-                        return (String) gotbad("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item));
+                        return gotbad("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item));
                     } 
                 }
 
