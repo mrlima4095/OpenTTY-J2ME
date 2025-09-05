@@ -1,55 +1,57 @@
 os = {
-    execute = function(command) end, -- Executa comando no sistema
-    getenv = function(varname) end, -- Retorna variável de ambiente
-    clock = function() end,          -- Retorna tempo em ms desde o início
-    setlocale = function(locale) end,-- Define localidade
-    exit = function(code) end        -- Encerra o programa com código
+    execute = function (command) end,
+    getenv = function (key) end,
+    clock = function () end,
+    setlocale = function (locale) end,
+    exit = function (status) end
 }
 
 package = {
-    loadlib = function(libname) end, -- Carrega biblioteca externa
-    loaded = {}                      -- Cache de módulos carregados
+    loadlib = function (file) end,
+    loaded = {}
 }
 
 io = {
-    read = function(target) end,    -- Lê dados de arquivo ou stream
-    write = function(data, target, mode) end, -- Escreve dados em arquivo ou stream
-    close = function(stream) end    -- Fecha stream ou conexão
+    read = function (file) end,
+    write = function (text, file, mode) end,
+    close = function (...) end
 }
 
 table = {
-    pack = function(...) end,       -- Empacota argumentos em tabela
-    decode = function(str) end      -- Decodifica string em tabela
+    pack = function (...) end,
+    decode = function (text) end
 }
 
 socket = {
-    connect = function(address) end,-- Abre conexão de socket
+    connect = function (address) end,
+    server = function (port) end,
+    accept = function (server) end,
     http = {
-        get = function(url) end,    -- Requisição HTTP GET
-        post = function(url, data) end -- Requisição HTTP POST
+        get = function (url, headers) end,
+        post = function (url, data, headers) end
     }
 }
 
 string = {
-    upper = function(str) end,
-    lower = function(str) end,
-    len = function(str) end,
-    match = function(str, pattern) end,
-    reverse = function(str) end,
-    sub = function(str, start, end_) end,
-    hash = function(str) end,
-    byte = function(str, start, end_) end,
-    char = function(...) end
+    upper = function (text) end,
+    lower = function (text) end,
+    len = function (text) end,
+    match = function (text, pattern) end,
+    reverse = function (text) end,
+    sub = function (text, x, y) end,
+    hash = function (text) end,
+    byte = function (text, x, y) end,
+    char = function (...) end
 }
 
-function print(...) end
-function error(msg) end
-function pcall(func, ...) end
-function require(modname) end
-function load(str) end
-function pairs(t) end
-function collectgarbage() end
-function tostring(val) end
-function tonumber(val) end
-function select(index, ...) end
-function type(val) end
+print = function (text) end
+error = function (message) end
+pcall = function (func, ...) end
+require = function (file) end
+load = function (text) end
+pairs = function (tb) end
+collectgarbage = function () end
+tostring = function (item) end
+tonumber = function (item) end
+select = function (index, ...) end
+type = function (item) end
