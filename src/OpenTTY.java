@@ -3306,7 +3306,7 @@ class Lua {
             else if (MOD == HTTP_GET) { 
                 return args.isEmpty() || args.elementAt(0) == null ? 
                     gotbad(1, "get", "string expected, got no value") : 
-                    request(
+                    http(
                         "GET", 
                         toLuaString(args.elementAt(0)), 
                         null, 
