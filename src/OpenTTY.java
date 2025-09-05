@@ -3329,6 +3329,7 @@ class Lua {
 
                     conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                     conn.setRequestProperty("Content-Length", Integer.toString(postBytes.length));
+                    conn.setRequestProperty("Connection", "close");
 
                     OutputStream os = conn.openOutputStream();
                     os.write(postBytes);
