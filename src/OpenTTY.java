@@ -3310,7 +3310,7 @@ class Lua {
                         "GET", 
                         toLuaString(args.elementAt(0)), 
                         null, 
-                        args.size() > 1 ? args.elementAt(1) : null
+                        args.size() > 1 ? (Hashtable) args.elementAt(1) : null
                     ); 
             }
             else if (MOD == HTTP_POST) { 
@@ -3320,7 +3320,7 @@ class Lua {
                         "POST", 
                         toLuaString(args.elementAt(0)), 
                         args.size() > 1 ? toLuaString(args.elementAt(1)) : "",
-                        args.size() > 2 ? args.elementAt(2) : null
+                        args.size() > 2 ? (Hashtable) args.elementAt(2) : null
                     ); 
             }
 
