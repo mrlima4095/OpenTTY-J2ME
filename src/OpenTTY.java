@@ -3303,15 +3303,15 @@ class Lua {
                 
                 return result;
             }
-            else if (MOD == HTTP_GET) { 
+            else if (MOD == HTTP_GET || MOD == HTTP_POST) { 
                 return args.isEmpty() || args.elementAt(0) == null ? 
-                    gotbad(1, "get", "string expected, got no value") : 
-                    request("GET", toLuaString(args.elementAt(0)), null, null); 
-            }
-            else if () { 
-                return args.isEmpty() || args.elementAt(0) == null ? 
-                    gotbad(1, "post", "string expected, got no value") : 
-                    request("POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : ""); 
+                    gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : 
+                    request(
+                        MOD == HTTP_GET ? "GET" : "POST", 
+                        toLuaString(args.elementAt(0)), 
+                        MOD == HTTP_GET ? null : args.size() > 1 ? toLuaString(args.elementAt(1)) : "", 
+                        args.size() > (MOD == HTTP_GET ? 1 : 2) ? args.elementAt(MOD == HTTP_GET ? 1 : 2)
+                    ); 
             }
 
             return null;
@@ -3321,12 +3321,8 @@ class Lua {
         private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof StreamConnection || item instanceof InputStream || item instanceof OutputStream ? "stream" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private String request(String method, String url, String data, Hashtable headers) throws Exception {
-            if (url == null || url.length() == 0) { 
-                return ""; 
-            }
-            if (!url.startsWith("http://") && !url.startsWith("https://")) { 
-                url = "http://" + url; 
-            }
+            if (url == null || url.length() == 0) { return ""; }
+            if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
         
             HttpConnection conn = null;
             InputStream is = null;
