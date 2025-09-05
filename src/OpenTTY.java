@@ -3056,10 +3056,8 @@ class Lua {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         byte[] buffer = new byte[1024];
                         int read;
-                        while ((read = IN.read(buffer)) != -1) {
-                            baos.write(buffer, 0, read);
-                            if (IN.available() == 0) { break; }
-                        }
+                        while ((read = IN.read(buffer)) != -1) { baos.write(buffer, 0, read); if (IN.available() == 0) { break; } }
+                        
                         return new String(baos.toByteArray(), "UTF-8");
                     } 
                     else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
@@ -3084,6 +3082,7 @@ class Lua {
                     else {
                         if (out.equals("stdout")) { midlet.stdout.setText(mode ? midlet.stdout.getText() + content : content); }
                         else if (out.equals("stdin")) { midlet.stdin.setString(mode ? midlet.stdin.getString() + content : content); }
+                        else if (out.equals("nano")) { midlet.nanoContent = mode ? midlet.nanoContent + content : content; }
                         else { return midlet.writeRMS(out, mode ? midlet.getcontent(out) + content : content); }
                     }
                 }
