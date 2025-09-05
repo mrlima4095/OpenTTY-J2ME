@@ -3061,7 +3061,9 @@ class Lua {
                             if (IN.available() == 0) { break; }
                         }
                         return new String(baos.toByteArray(), "UTF-8");
-                    } else {
+                    } 
+                    else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
+                    else {
                         String target = toLuaString(arg);
                         return target.equals("stdout") ? midlet.stdout.getText() : target.equals("stdin") ? midlet.stdin.getString() : midlet.getcontent(target);
                     }
@@ -3077,7 +3079,8 @@ class Lua {
                         OutputStream out = (OutputStream) args.elementAt(1);
 
                         out.write(content.getBytes("UTF-8")); out.flush();
-                    } 
+                    }
+                    else if (args.size() > 1 && args.elementAt(1) instanceof InputStream) { return gotbad(2, "write", "output stream expected, got input"); }  
                     else {
                         if (out.equals("stdout")) { midlet.stdout.setText(mode ? midlet.stdout.getText() + content : content); }
                         else if (out.equals("stdin")) { midlet.stdin.setString(mode ? midlet.stdin.getString() + content : content); }
