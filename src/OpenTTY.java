@@ -3316,7 +3316,7 @@ class Lua {
             else if () { 
                 return args.isEmpty() || args.elementAt(0) == null ? 
                     gotbad(1, "post", "string expected, got no value") : 
-                    request(
+                    http(
                         "POST", 
                         toLuaString(args.elementAt(0)), 
                         args.size() > 1 ? toLuaString(args.elementAt(1)) : "",
@@ -3330,7 +3330,7 @@ class Lua {
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
         private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof StreamConnection || item instanceof InputStream || item instanceof OutputStream ? "stream" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
-        private String request(String method, String url, String data, Hashtable headers) throws Exception {
+        private String http(String method, String url, String data, Hashtable headers) throws Exception {
             if (url == null || url.length() == 0) { 
                 return ""; 
             }
