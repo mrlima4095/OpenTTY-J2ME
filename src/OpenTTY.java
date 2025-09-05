@@ -3310,7 +3310,7 @@ class Lua {
                         MOD == HTTP_GET ? "GET" : "POST", 
                         toLuaString(args.elementAt(0)), 
                         MOD == HTTP_GET ? null : args.size() > 1 ? toLuaString(args.elementAt(1)) : "", 
-                        args.size() > (MOD == HTTP_GET ? 1 : 2) ? args.elementAt(MOD == HTTP_GET ? 1 : 2)
+                        args.size() > (MOD == HTTP_GET ? 1 : 2) ? args.elementAt(MOD == HTTP_GET ? 1 : 2) : null
                     ); 
             }
 
