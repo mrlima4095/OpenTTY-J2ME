@@ -3288,7 +3288,7 @@ class Lua {
                 ServerSocketConnection server = (ServerSocketConnection) Connector.open("socket://:" + port);
                 return server;
             }
-            else if (MOD == SOCKET_ACCEPT) {
+            else if (MOD == ACCEPT) {
                 if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "accept", "server expected, got no value"); }
 
                 Object serverObj = args.elementAt(0);
