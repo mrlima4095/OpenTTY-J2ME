@@ -3336,7 +3336,7 @@ class Lua {
                     Enumeration keys = headers.keys();
                     while (keys.hasMoreElements()) {
                         String key = (String) keys.nextElement();
-                        conn.setRequestProperty(key, headers.get(key));
+                        conn.setRequestProperty(key, toLuaString(headers.get(key)));
                     }                  
                 }
 
