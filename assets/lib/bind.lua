@@ -20,10 +20,10 @@ while true do
                 authed = true
             else
                 print("[-] " .. addr .. " -- auth failed")
-                io.write("Bad credentials!", o) break
+                io.write("Bad credentials!\n", o) break
             end
         elseif payload == "/exit" then break
-        elseif payload == "/addr" then io.write(addr, o)
+        elseif payload == "/addr" then io.write(addr .. "\n", o)
         elseif payload == "/close" then io.close(server, client, i, o)
         else
             print("[+] " .. addr .. " -> " .. payload)
@@ -31,7 +31,7 @@ while true do
             os.execute(payload)
             local after = io.read()
 
-            io.write(string.sub(after, #before + 2, #after), o)
+            io.write(string.sub(after, #before + 2, #after) .. "\n", o)
         end
     end
     print("[-] " .. addr .. " disconnected")
