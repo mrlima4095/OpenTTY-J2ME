@@ -5,7 +5,8 @@ function audio.play(file)
 
     local status = os.execute("audio play " .. file)
 
-    if status == 13 then error("Permission denied!") end
+    if status == 13 then error("Permission denied!")
+    elseif status == 1 then error("Generic error") end
 
     return status
 end
