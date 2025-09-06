@@ -1,7 +1,7 @@
 local count = 1
 local authed = false
 local password = "123"
-local port = os.getenv("PORT") or 31522
+local port = os.getenv("PORT") or 22
 
 while true do
     local server = socket.server(port)
