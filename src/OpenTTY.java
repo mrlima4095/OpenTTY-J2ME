@@ -673,15 +673,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return escape(text);
     }
-    public String escape(String text) {
-        text = replace(text, "\\n", "\n"); 
-        text = replace(text, "\\r", "\r"); 
-        text = replace(text, "\\t", "\t"); 
-        text = replace(text, "\\b", "\b"); 
-        text = replace(text, "\\\\", "\\");
-        text = replace(text, "\\.", "\\"); 
-        return text;
-    }
+    public String escape(String text) { text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); text = replace(text, "\\b", "\b"); text = replace(text, "\\\\", "\\"); text = replace(text, "\\.", "\\"); return text; }
     private String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } 
     public String getCatch(Exception e) { String message = e.getMessage(); return message == null || message.length() == 0 || message.equals("null") ? e.getClass().getName() : message; }
     // |
@@ -1889,7 +1881,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, SERVER = 31, ACCEPT = 32, CLOSE = 33, HTTP_GET = 34, HTTP_POST = 35, TRIM = 36;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, SERVER = 31, ACCEPT = 32, CLOSE = 33, HTTP_GET = 34, HTTP_POST = 35, TRIM = 36, RUNNING = 37, GETPROC = 38;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1902,7 +1894,7 @@ class Lua {
         this.proc = midlet.genprocess("lua", root, null);
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), socket = new Hashtable(), http = new Hashtable();
-        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
+    String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "running", "getproc" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, RUNNING, GETPROC };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
         funcs = new String[] { "loadlib" }; loaders = new int[] { REQUIRE };
@@ -3314,6 +3306,13 @@ class Lua {
                     else {
                         if (args.size() > 1) {
                             Vector result = new Vector();
+
+                            for (int i = 1; i < args.size(); i++) {
+                                String key = (String) args.elementAt(i);
+
+                                if (key.equals("name") || key.equals("owner") || key.equals("collector")) { }
+                                else { result.put(key, proc.get(key)); }
+                            }
                         } else {
                             Hashtable result = new Hashtable();
                             
@@ -3321,9 +3320,7 @@ class Lua {
                                 String key = (String) keys.nextElement();
                                 
                                 if (key.equals("name") || key.equals("owner") || key.equals("collector")) { }
-                                else {
-                                    result.put(key, )
-                                }
+                                else { result.put(key, proc.get(key)); }
                             }
                         }
                     }
