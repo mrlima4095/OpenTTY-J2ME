@@ -28,12 +28,6 @@ table = {
 
 socket = {
     connect = function (address) end,
-    server = function (port) end,
-    accept = function (server) end,
-
-    peer = function (conn) end,
-    device = function (conn) end,
-    port = function (server) end,
 
     http = {
         get = function (url, headers) end,
