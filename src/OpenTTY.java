@@ -1169,6 +1169,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 proc.put("stack", new Vector());
                 proc.put("history", new Vector()); 
                 proc.put("sessions", sessions);
+                proc.put("servers", new Hashtable())
             }
             else if (app.equals("x11-wm")) { 
                 proc.put("saves", new Hashtable()); 
