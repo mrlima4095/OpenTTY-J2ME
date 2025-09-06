@@ -3,7 +3,9 @@ os = {
     getenv = function (key) end,
     clock = function () end,
     setlocale = function (locale) end,
-    exit = function (status) end
+    exit = function (status) end,
+    running = function (pid) end,
+    getproc = function (pid, ...) end
 }
 
 package = {
@@ -29,6 +31,7 @@ socket = {
 
     peer = function (conn) end,
     device = function (conn) end,
+    port = function (server) end,
 
     http = {
         get = function (url, headers) end,
