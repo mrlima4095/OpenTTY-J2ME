@@ -35,7 +35,7 @@ MIDlet Builtins:
   unalias  unset  warn  
 
 Others API: 
-  audio  java  prg  wrl  x11
+  audio  java  lua prg  wrl  x11
 
 
 [ Manual ]
