@@ -3308,7 +3308,10 @@ class Lua {
             else if (MOD == GETPROC) {
                 if (args.isEmpty()) { }
                 else {
-                    Object arg1 = args.elementAt(0), arg2 = args.size() > 1 ? args.elementAt(1)
+                    String PID = toLuaString(args.elementAt(0))
+                    Hashtable proc = midlet.
+                    
+                    if (args1)
                 }
             }
 
