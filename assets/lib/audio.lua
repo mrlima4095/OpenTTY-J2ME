@@ -5,9 +5,10 @@ function audio.play(file)
 
     local status = os.execute("audio play " .. file)
 
-    if status ~= 0 then
-
-    end
+    if status == 13 then error("Permission denied!") end
 
     return status
 end
+
+
+return audio
