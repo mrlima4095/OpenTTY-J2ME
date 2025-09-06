@@ -3317,7 +3317,7 @@ class Lua {
                 else {
                     Hashtable proc = midlet.getprocess(toLuaString(args.elementAt(0)));
 
-                    if (proc == null) { return gotbad() } 
+                    if (proc == null) { return gotbad(1, "putproc", "no process to pid"); } 
                     else {
                         String key = toLuaString(args.elementAt(1));
 
