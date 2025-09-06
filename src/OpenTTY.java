@@ -3306,7 +3306,10 @@ class Lua {
             else if (MOD == TRIM) { return args.isEmpty() ? null : toLuaString(args.elementAt(0)).trim(); }
             else if (MOD == RUNNING) { return args.isEmpty() ? gotbad(1, "running", "string expected, got no value") : midlet.trace.containsKey(toLuaString(args.elementAt(0))); }
             else if (MOD == GETPROC) {
-                if (args.isEmpty())
+                if (args.isEmpty()) { }
+                else {
+                    
+                }
             }
 
             return null;
