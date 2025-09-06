@@ -677,10 +677,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         text = replace(text, "\\n", "\n"); 
         text = replace(text, "\\r", "\r"); 
         text = replace(text, "\\t", "\t"); 
-        text = replace(text, "\\v", "\v"); 
-        text = replace(text, "\\f", "\f"); 
         text = replace(text, "\\b", "\b"); 
-        text = replace(text, "\\a", "\a"); 
         text = replace(text, "\\\\", "\\");
         text = replace(text, "\\.", "\\"); 
         return text;
