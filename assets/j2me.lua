@@ -46,15 +46,3 @@ string = {
     byte = function (text, x, y) end,
     char = function (...) end
 }
-
-print = function (text) end
-error = function (message) end
-pcall = function (func, ...) end
-require = function (file) end
-load = function (text) end
-pairs = function (tb) end
-collectgarbage = function () end
-tostring = function (item) end
-tonumber = function (item) end
-select = function (index, ...) end
-type = function (item) end
