@@ -6,6 +6,7 @@ os = {
     exit = function (status) end,
     getproc = function (pid, ...) end,
     getpid = function (name) end,
+    putproc = function (pid, key, item) end,
     running = function (pid) end
 }
 
