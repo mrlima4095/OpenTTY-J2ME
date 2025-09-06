@@ -1881,7 +1881,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, SERVER = 31, ACCEPT = 32, CLOSE = 33, HTTP_GET = 34, HTTP_POST = 35, TRIM = 36, RUNNING = 37, GETPROC = 38;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, SERVER = 31, ACCEPT = 32, CLOSE = 33, HTTP_GET = 34, HTTP_POST = 35, TRIM = 36, RUNNING = 37, GETPROC = 38, PEER = 39, DEVICE = 40, PORT = 41;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1909,7 +1909,7 @@ class Lua {
         funcs = new String[] { "get", "post" }; loaders = new int[] { HTTP_GET, HTTP_POST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "connect", "server", "accept" }; loaders = new int[] { CONNECT, SERVER, ACCEPT };
+        funcs = new String[] { "connect", "server", "accept", "peer", "device", "port" }; loaders = new int[] { CONNECT, SERVER, ACCEPT, PEER, DEVICE, PORT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
@@ -3261,7 +3261,7 @@ class Lua {
                 if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "connect", "string expected, got no value"); }
                 Vector result = new Vector();
 
-                StreamConnection conn = (StreamConnection) Connector.open(toLuaString(args.elementAt(0)));
+                SocketConnection conn = (SocketConnection) Connector.open(toLuaString(args.elementAt(0)));
                     
                 result.addElement(conn);
                 result.addElement(conn.openInputStream());
@@ -3326,12 +3326,28 @@ class Lua {
                     }
                 }
             }
+            else if (MOD == PEER || MOD == DEVICE) {
+                if (args.isEmpty()) { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got no value"); }
+                else {
+                    if (args.elementAt(0) instanceof SocketConnection) {
+                        SocketConnection conn = (SocketConnection) args.elementAt(0);
+
+                        Vector result = new Vector();
+                        result.addElement(MOD == PEER ? conn.getAddress() : conn.getLocalAddress());
+                        result.addElement(new Double(MOD == PEER ? conn.getPort() : conn.getLocalPort()));
+                    } else { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got " + type(args.elementAt(0))); }
+                }
+            }
+            else if (MOD == PORT) {
+                if (args.isEmpty()) { return gotbad(1, "port", "server expected, got no value"); }
+                else { return args.elementAt(0) instanceof ServerSocketConnection ? new Double(((ServerSocketConnection) args.elementAt(0).getLocalPort())) : gotbad(1, "port", "server expected, got " + type(args.elementAt(0))); }
+            }
 
             return null;
         }
 
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
-        private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof StreamConnection || item instanceof SocketConnection || item instanceof ServerSocketConnection || item instanceof InputStream || item instanceof OutputStream ? "stream" : "userdata"; }
+        private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream ? "stream" : item instanceof SocketConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object http(String method, String url, String data, Object item) throws Exception {
             if (url == null || url.length() == 0) { return ""; }
