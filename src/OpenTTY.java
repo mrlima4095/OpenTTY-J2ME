@@ -3290,7 +3290,7 @@ class Lua {
             if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
 
             HttpConnection conn = null;
-            Hashtable headers = (Hashtable) (item instanceof Hashtable ? item : gotbad("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item)));
+            Hashtable headers = (Hashtable) (item instanceof Hashtable ? item : item == null ? new Hashtable() : gotbad("POST".equalsIgnoreCase(method) ? 3 : 2, "POST".equalsIgnoreCase(method) ? "post" : "get", "table expected, got " + type(item)));
             InputStream is = null;
             ByteArrayOutputStream baos = null;
 
