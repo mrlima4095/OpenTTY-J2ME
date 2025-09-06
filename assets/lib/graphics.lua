@@ -119,7 +119,7 @@ function graphics.BuildCanvas(config)
         if spec["link"]  ~= nil then file = file .. "\ncanvas." .. id .. ".link="  .. tostring(spec["link"])  end
         if spec["value"] ~= nil then file = file .. "\ncanvas." .. id .. ".value=" .. tostring(spec["value"]) end
 
-        if spec["style"] ~= nil then file = file .. "\ncanvas." .. id .. ".style=" .. tostring(spec["style"]) 
+        if spec["style"] ~= nil then file = file .. "\ncanvas." .. id .. ".style=" .. tostring(spec["style"])
         elseif ftype == "text" then file = file .. "\ncanvas." .. id .. ".style=default" end
 
         if spec["x"] ~= nil then file = file .. "\ncanvas." .. id .. ".x=" .. tostring(spec["x"]) end

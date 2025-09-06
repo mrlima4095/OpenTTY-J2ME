@@ -3340,7 +3340,7 @@ class Lua {
             }
             else if (MOD == PORT) {
                 if (args.isEmpty()) { return gotbad(1, "port", "server expected, got no value"); }
-                else { return args.elementAt(0) instanceof ServerSocketConnection ? new Double(((ServerSocketConnection) args.elementAt(0).getLocalPort())) : gotbad(1, "port", "server expected, got " + type(args.elementAt(0))); }
+                else { return args.elementAt(0) instanceof ServerSocketConnection ? new Double(((ServerSocketConnection) args.elementAt(0)).getLocalPort()) : gotbad(1, "port", "server expected, got " + type(args.elementAt(0))); }
             }
 
             return null;
