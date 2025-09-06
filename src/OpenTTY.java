@@ -1117,10 +1117,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable proc = (Hashtable) trace.get(pid);
         if (proc == null) { if (print) { echoCommand("PID '" + pid + "' not found"); } return 127; }
 
-        String owner = (String) proc.get("owner"), collector = (String) proc.get("collector");
+        String owner = (String) proc.get("owner");
+        Object collector = (String) proc.get("collector")
 
         if (owner.equals("root") && !root) { if (print) { echoCommand("Permission denied!"); } return 13; }
-        if (collector != null && !collector.equals("")) { processCommand(collector, true, root); }
+        if (collector != null && collector instanceof String) { processCommand((String) collector, true, root); }
 
         trace.remove(pid);
         if (print) { echoCommand("Process with PID " + pid + " terminated"); }
@@ -1277,9 +1278,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | (Trackers)
     public Hashtable getprocess(String pid) { return trace.containsKey(pid) ? (Hashtable) trace.get(pid) : null; }
-    private Object getobject(String pid, String item) { return (Object) getprocess(pid).get(item); }
-    private String getpid(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) trace.get(PID)).get("name"))) { return PID; } } return null; } 
-    private String getowner(String pid) { return trace.containsKey(pid) ? (String) ((Hashtable) trace.get(pid)).get("owner") : null; }
+    public Object getobject(String pid, String item) { return (Object) getprocess(pid).get(item); }
+    public String getpid(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) trace.get(PID)).get("name"))) { return PID; } } return null; } 
+    public String getowner(String pid) { return trace.containsKey(pid) ? (String) ((Hashtable) trace.get(pid)).get("owner") : null; }
     // | (Viewer)
     private String renderJSON(Object obj, int indent) {
         StringBuffer json = new StringBuffer();
@@ -1865,7 +1866,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, SERVER = 31, ACCEPT = 32, CLOSE = 33, HTTP_GET = 34, HTTP_POST = 35, TRIM = 36, RUNNING = 37, GETPROC = 38, PEER = 39, DEVICE = 40, PORT = 41;
+    public static final int PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, SERVER = 31, ACCEPT = 32, CLOSE = 33, HTTP_GET = 34, HTTP_POST = 35, TRIM = 36, RUNNING = 37, GETPROC = 38, PEER = 39, DEVICE = 40, PORT = 41, PUTPROC = 42, GETPID = 43;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1878,7 +1879,7 @@ class Lua {
         this.proc = midlet.genprocess("lua", root, null);
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), socket = new Hashtable(), http = new Hashtable();
-        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "running", "getproc" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, RUNNING, GETPROC };
+        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "running", "getproc", "putproc", "getpid" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, RUNNING, GETPROC, PUTPROC, GETPID };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
         funcs = new String[] { "loadlib" }; loaders = new int[] { REQUIRE };
@@ -3311,6 +3312,20 @@ class Lua {
                     }
                 }
             }
+            else if (MOD == PUTPROC) {
+                if (args.size() < 3) { } 
+                else {
+                    Hashtable proc = midlet.getprocess(toLuaString(args.elementAt(0)));
+
+                    if (proc == null) { return gotbad() } 
+                    else {
+                        String key = toLuaString(args.elementAt(1));
+
+                        if (key.equals("name") || key.equals("root") || key.equals("collector")) { return gotbad(2, "putproc", "field block"); } 
+                        else { proc.put(key, args.elementAt(2)); }
+                    }
+                }
+            }
             else if (MOD == PEER || MOD == DEVICE) {
                 if (args.isEmpty()) { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got no value"); }
                 else {
@@ -3323,10 +3338,8 @@ class Lua {
                     } else { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got " + type(args.elementAt(0))); }
                 }
             }
-            else if (MOD == PORT) {
-                if (args.isEmpty()) { return gotbad(1, "port", "server expected, got no value"); }
-                else { return args.elementAt(0) instanceof ServerSocketConnection ? new Double(((ServerSocketConnection) args.elementAt(0)).getLocalPort()) : gotbad(1, "port", "server expected, got " + type(args.elementAt(0))); }
-            }
+            else if (MOD == PORT) { if (args.isEmpty()) { return gotbad(1, "port", "server expected, got no value"); } else { return args.elementAt(0) instanceof ServerSocketConnection ? new Double(((ServerSocketConnection) args.elementAt(0)).getLocalPort()) : gotbad(1, "port", "server expected, got " + type(args.elementAt(0))); } }
+            else if (MOD == GETPID) { return args.isEmpty() ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
 
             return null;
         }
