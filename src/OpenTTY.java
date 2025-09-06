@@ -3308,10 +3308,25 @@ class Lua {
             else if (MOD == GETPROC) {
                 if (args.isEmpty()) { }
                 else {
-                    String PID = toLuaString(args.elementAt(0))
-                    Hashtable proc = midlet.
-                    
-                    if (args1)
+                    Hashtable proc = midlet.getprocess(toLuaString(args.elementAt(0)));
+
+                    if (proc == null) { return null; }
+                    else {
+                        if (args.size() > 1) {
+                            Vector result = new Vector();
+                        } else {
+                            Hashtable result = new Hashtable();
+                            
+                            for (Enumeration keys = proc.keys(); keys.hasMoreElements();) {
+                                String key = (String) keys.nextElement();
+                                
+                                if (key.equals("name") || key.equals("owner") || key.equals("collector")) { }
+                                else {
+                                    result.put(key, )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
