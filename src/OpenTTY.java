@@ -3311,7 +3311,7 @@ class Lua {
                                 String key = (String) args.elementAt(i);
 
                                 if (key.equals("name") || key.equals("owner") || key.equals("collector")) { }
-                                else { result.put(key, proc.get(key)); }
+                                else { result.addElement(proc.get(key)); }
                             }
                         } else {
                             Hashtable result = new Hashtable();
