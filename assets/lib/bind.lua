@@ -5,14 +5,12 @@ local port = tonumber(os.getenv("PORT") or 22)
 
 while true do
     local server = socket.server(port)
-    if count == 1 then print("[+] listening at port " .. port) count = count + 1 end
+    if count == 1 then print("[+] listening at port " .. port) count = count + 1 os.putproc(1, "server", server) end
 
     local client, i, o = socket.accept(server)
-    local addr = socket.peer(client)
+    local addr, _ = socket.peer(client)
     print("[+] " .. addr .. " connected")
     io.write("Password: ", o)
-
-    local function close() io.close(server) io.close(client) io.close(i) io.close(o) end
 
     while true do
         local payload = string.trim(io.read(i))
@@ -26,7 +24,7 @@ while true do
             end
         elseif payload == "/exit" then break
         elseif payload == "/addr" then io.write(addr, o)
-        elseif payload == "/close" then close()
+        elseif payload == "/close" then io.close(server, client, i, o)
         else
             print("[+] " .. addr .. " -> " .. payload)
             local before = io.read()
@@ -37,5 +35,6 @@ while true do
         end
     end
     print("[-] " .. addr .. " disconnected")
-    close()
+    io.close(server, client, i, o)
+    authed = false
 end
