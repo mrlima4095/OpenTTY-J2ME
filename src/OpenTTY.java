@@ -1917,7 +1917,7 @@ class Lua {
         this.proc = midlet.genprocess("lua", root, null);
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), socket = new Hashtable(), http = new Hashtable();
-        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "running", "getproc", "putproc", "getpid" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, RUNNING, GETPROC, PUTPROC, GETPID };
+        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
         funcs = new String[] { "loadlib" }; loaders = new int[] { REQUIRE };
