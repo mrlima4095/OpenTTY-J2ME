@@ -1,3 +1,5 @@
+--[[
+
 [ Config ]
 
 name=Android
@@ -8,15 +10,17 @@ api.version=1.16
 api.error=execute log add error Android API requires OpenTTY 1.16; echo [ Android ] Required 1.16 OpenTTY API;
 api.match=minimum
 
-process.name=android
-process.exit=execute kill 10542; stop android;
-process.port=10542
-process.db=droid
-
 include=/java/bin/yang,/java/bin/jauth2,forge
 
 config=execute set DROID_VERSION=1.0; log add info Running Android API $DROID_VERSION; echo [ Android ] Running Android API $DROID_VERSION; x11 item android;
 command=droid
+
+process.name=android
+process.exit=execute stop android;
+process.port=10542
+process.db=droid
+
+
 
 droid=droid menu
 
@@ -26,22 +30,12 @@ shell.args=help,menu
 help=open https://github.com/mrlima4095/OpenTTY-J2ME/blob/main/assets/root/android.md
 menu=execute x11 list android;
 
+]]
 
-[ COMMAND ]
+local version = os.getenv("DROID_VERSION")
 
-item.label=Android
-item.cmd=execute droid menu
+local function Android()
+    if version == nil then return os.execute("import android") end
+end
 
-[ DISPLAY ]
-
-list.title=Android API
-list.content=Yang Repository,Stop Android API,Online README
-list.button=Select
-
-
-Yang Repository=execute yang;
-
-
-Stop Android API=execute droid stop
-Online README=execute droid help
- 
+Android()
