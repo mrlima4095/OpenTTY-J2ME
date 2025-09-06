@@ -4,8 +4,9 @@ os = {
     clock = function () end,
     setlocale = function (locale) end,
     exit = function (status) end,
-    running = function (pid) end,
-    getproc = function (pid, ...) end
+    getproc = function (pid, ...) end,
+    getpid = function (name) end,
+    running = function (pid) end
 }
 
 package = {
