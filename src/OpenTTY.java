@@ -3304,10 +3304,10 @@ class Lua {
             }
             else if (MOD == HTTP_GET || MOD == HTTP_POST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : (MOD == HTTP_GET ? http("GET", toLuaString(args.elementAt(0)), null, args.size() > 1 ? (Hashtable) args.elementAt(1) : null) : http("POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null))); }            
             else if (MOD == TRIM) { return args.isEmpty() ? null : toLuaString(args.elementAt(0)).trim(); }
-            else if (MOD == RUNNING) {
-                return args.isEmpty() ? gotbad(1, "running", "string expected, got no value") : midlet.trace.containsKey(toLuaString(args.elementAt(0)));
+            else if (MOD == RUNNING) { return args.isEmpty() ? gotbad(1, "running", "string expected, got no value") : midlet.trace.containsKey(toLuaString(args.elementAt(0))); }
+            else if (MOD == GETPROC) {
+                if (args.isEmpty())
             }
-
 
             return null;
         }
