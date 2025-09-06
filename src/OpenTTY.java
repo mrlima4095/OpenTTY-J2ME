@@ -3286,9 +3286,9 @@ class Lua {
             else if (MOD == GETPROC) {
                 if (args.isEmpty()) { }
                 else {
-                    Hashtable proc = midlet.getprocess(toLuaString(args.elementAt(0)));
+                    Hashtable proc = midlet.trace.get(toLuaString(args.elementAt(0)));
 
-                    if (proc == null) { return null; }
+                    if (proc == null) { return gotbad(1, "getproc", "no process to pid"); }
                     else {
                         if (args.size() > 1) {
                             Vector result = new Vector();
