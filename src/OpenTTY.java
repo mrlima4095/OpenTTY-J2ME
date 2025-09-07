@@ -1939,7 +1939,7 @@ class Lua {
         funcs = new String[] { "connect", "peer", "device" }; loaders = new int[] { CONNECT, PEER, DEVICE };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
-        funcs = new String[] { "screen", "list", "quest"," edit", "show" }; loaders = new int[] { SCREEN, LIST, QUEST, EDIT };
+        funcs = new String[] { "screen", "list", "quest","edit", "show" }; loaders = new int[] { SCREEN, LIST, QUEST, EDIT, SHOW };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
