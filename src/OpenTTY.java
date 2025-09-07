@@ -3506,7 +3506,6 @@ class Lua {
                 }
 
                 this.screen = box;
-                this.INPUT = box; // TextBox tem getString()
             }
 
             kill = false;
