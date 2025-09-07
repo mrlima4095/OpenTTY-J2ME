@@ -3458,8 +3458,7 @@ class Lua {
                     if (fieldsObj instanceof Hashtable) {
                         Hashtable fields = (Hashtable) fieldsObj;
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                            Object item = keys.nextElement();
-                            list.append(toLuaString(getenv(fields, toLuaString(fields.get(item)), "")), null);
+                            list.append(toLuaString(getenv(fields, toLuaString(fields.get(keys.nextElement())), "")), null);
                         }
                     } else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
