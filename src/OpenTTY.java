@@ -3437,7 +3437,7 @@ class Lua {
 
                 this.screen = screen;
             } else if (MOD == LIST) {
-                List list = new List(getenv(PKG, "title", "List"), List.IMPLICIT);
+                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), List.IMPLICIT);
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
@@ -3459,7 +3459,7 @@ class Lua {
                         Hashtable fields = (Hashtable) fieldsObj;
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
                             Object item = keys.nextElement();
-                            list.append(toLuaString(getenv(fields, toLuaString(item), "")), null);
+                            list.append(toLuaString(getenv(fields, toLuaString(fields.get(item)), "")), null);
                         }
                     } else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
@@ -3468,12 +3468,12 @@ class Lua {
 
                 this.screen = list;
             } else if (MOD == QUEST) {
-                String title = getenv(PKG, "title", "Quest");
+                String title = getenv(PKG, "title", midlet.form.getTitle());
                 String label = getenv(PKG, "label", "");
                 String key = getenv(PKG, "key", "");
 
                 Form form = new Form(title);
-                TextField textField = new TextField(label, "", 1024, TextField.ANY);
+                TextField textField = new TextField(label, "", 256, TextField.ANY);
                 form.append(textField);
 
                 Object backObj = PKG.get("back");
@@ -3493,10 +3493,10 @@ class Lua {
                 this.screen = form;
                 this.INPUT = textField;
             } else if (MOD == EDIT) {
-                String title = getenv(PKG, "title", "Edit");
+                String title = getenv(PKG, "title", midlet.form.getTitle());
                 String key = getenv(PKG, "key", "");
 
-                TextBox box = new TextBox(title, "", 1024, TextField.ANY);
+                TextBox box = new TextBox(title, "", 31522, TextField.ANY);
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
