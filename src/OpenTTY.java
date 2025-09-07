@@ -3390,7 +3390,7 @@ class Lua {
                                     int h = Integer.parseInt(getenv(field, "height", "10"));
                                     screen.append(new Spacer(w, h));
                                 }
-                            } else { screen.append(toLuaString(fields.get(name))); }
+                            } else { screen.append(midlet.env(toLuaString(fields.get(name)))); }
                         }
                     } else { throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(PKG.get("fields")) +")"); }
                 } 
