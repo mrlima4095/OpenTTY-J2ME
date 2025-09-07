@@ -74,7 +74,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Form monitor = new Form(form.getTitle());
         private List preview = new List(form.getTitle(), List.IMPLICIT);
         private StringItem status = new StringItem("Memory Status:", "");
-        private TextBox box = new TextBox("Process Filter", 31522, TextField.ANY);
+        private TextBox box = new TextBox("Process Filter", "", 31522, TextField.ANY);
         private TextField USER = new TextField("Username", "", 256, TextField.ANY), 
                           PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); 
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
