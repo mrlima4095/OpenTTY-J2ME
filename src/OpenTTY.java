@@ -3355,8 +3355,8 @@ class Lua {
                 if (baos != null) { try { baos.close(); } catch (Exception e) { } }
             }
         }
-        private String getvalue(Hashtable table, Object key, Object fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
-        private String getenv(Hashtable table, Object key, Object fallback) { return midlet.env(getvalue(table, key, fallback)); }
+        private String getvalue(Hashtable table, String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
+        private String getenv(Hashtable table, String key, String fallback) { return midlet.env(getvalue(table, key, fallback)); }
 
         private Object BuildScreen() {
             if (MOD == SCREEN) {
