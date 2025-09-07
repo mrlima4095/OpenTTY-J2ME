@@ -3445,7 +3445,7 @@ class Lua {
                         Hashtable fields = (Hashtable) fieldsObj;
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
                             Object key = keys.nextElement();
-                            list.append(getenv(fields, toLuaString(fields.get(key)), ""), null);
+                            list.append(toLuaString(fields.get(key)), null);
                         }
                     } else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
