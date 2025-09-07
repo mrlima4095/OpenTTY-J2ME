@@ -46,3 +46,11 @@ string = {
     byte = function (text, x, y) end,
     char = function (...) end
 }
+
+graphics = {
+    display = function (screen) end,
+    screen = function (config) end,
+    list = function (config) end,
+    quest = function (config) end,
+    edit = function (config) end
+}
