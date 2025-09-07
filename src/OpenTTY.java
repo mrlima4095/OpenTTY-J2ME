@@ -3372,7 +3372,8 @@ class Lua {
                         Hashtable fields = (Hashtable) PKG.get("fields");
 
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                            Hashtable field = (Hashtable) keys.nextElement();
+                            String name = (String) keys.nextElement()
+                            Hashtable field = (Hashtable) fields.get(name);
                             String type = ((String) getenv(field, "type", "text")).trim(), data = getenv(field, type.equals("image") ? "image" : "value", "");
 
                             if (type.equals("image") && !data.equals("")) { screen.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
