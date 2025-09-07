@@ -161,7 +161,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, root); } 
                     else if (c == VIEW) { processCommand("trace view " + PID, false, root); }
-                    else if (c == FILTER) { box.addCommand() }
+                    else if (c == FILTER) { box.addCommand(BACK); box.addCommand(RUN); box.setCommandListener(this); display.setCurrent(box); }
                     else if (c == LOAD) {
                         if (getowner(PID).equals("root") && !root) { STATUS = 13; }
 
