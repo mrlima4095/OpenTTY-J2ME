@@ -3399,7 +3399,7 @@ class Lua {
             return screen;
         }
 
-        public void commandAction(Command c, Displayable d) {
+        public void commandAction(Command c, Displayable d) throws Exception {
             if (c == BACK) { 
                 processCommand("xterm", true, root); 
 
