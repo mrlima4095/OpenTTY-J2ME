@@ -3398,24 +3398,6 @@ class Lua {
                                         si.setFont(midlet.newFont(style));
                                         screen.append(si);
                                     }
-                                } else if (type.equals("item")) {
-                                    String label = getenv(field, "label", "");
-                                    String cmdStr = getenv(field, "cmd", "");
-                                    if (!label.equals("")) {
-                                        StringItem si = new StringItem(label, null);
-                                        Command itemCmd = new Command(label, Command.ITEM, 3);
-                                        screen.addCommand(itemCmd);
-                                        Object itemCmdsObj = PKG.get("_itemCmds");
-                                        Hashtable itemCmds;
-                                        if (itemCmdsObj instanceof Hashtable) {
-                                            itemCmds = (Hashtable) itemCmdsObj;
-                                        } else {
-                                            itemCmds = new Hashtable();
-                                            PKG.put("_itemCmds", itemCmds);
-                                        }
-                                        itemCmds.put(label, cmdStr);
-                                        screen.append(si);
-                                    }
                                 } else if (type.equals("spacer")) {
                                     int w = 1, h = 10;
                                     try {
@@ -3526,12 +3508,8 @@ class Lua {
                 Hashtable backTable = (Hashtable) PKG.get("back");
                 if (backTable != null) {
                     Object backRoot = backTable.get("root");
-                    if (backRoot instanceof LuaFunction) {
-                        ((LuaFunction) backRoot).call(new Vector());
-                    } 
-                    else if (backRoot != null) {
-                        midlet.processCommand(toLuaString(backRoot), true, root);
-                    }
+                    if (backRoot instanceof LuaFunction) { ((LuaFunction) backRoot).call(new Vector()); } 
+                    else if (backRoot != null) { midlet.processCommand(toLuaString(backRoot), true, root); }
                 }
             } else if (c == USER || c == List.SELECT_COMMAND) {
                 Object fire = PKG.get("button") != null ? ((Hashtable) PKG.get("button")).get("root") : "true";
@@ -3567,7 +3545,7 @@ class Lua {
                     if (index >= 0) {
                         midlet.processCommand("xterm", true, root);
                         String key = ((List) screen).getString(index);
-                        // Executar função root do botão passando o item selecionado
+                        
                         if (fire instanceof LuaFunction) {
                             Vector args = new Vector();
                             args.addElement(midlet.env(key));
@@ -3577,23 +3555,9 @@ class Lua {
                         }
                     }
                 } else if (MOD == SCREEN) {
-                    // Verificar se o comando é de um item com cmd
-                    if (c.getCommandType() == Command.ITEM) {
-                        String label = c.getLabel();
-                        Hashtable itemCmds = (Hashtable) PKG.get("_itemCmds");
-                        if (itemCmds != null && itemCmds.containsKey(label)) {
-                            String cmdStr = (String) itemCmds.get(label);
-                            midlet.processCommand(cmdStr, true, root);
-                            return;
-                        }
-                    }
-
                     midlet.processCommand("xterm", true, root);
-                    if (fire instanceof LuaFunction) {
-                        ((LuaFunction) fire).call(new Vector());
-                    } else {
-                        midlet.processCommand(toLuaString(fire), true, root);
-                    }
+                    if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
+                    else { midlet.processCommand(toLuaString(fire), true, root); }
                 }
             }
         }
