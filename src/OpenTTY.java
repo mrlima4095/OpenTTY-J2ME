@@ -1908,7 +1908,7 @@ class Lua {
         LIST = 38,
         QUEST = 39,
         EDIT = 40,
-        SHOW = 41;
+        DISPLAY = 41;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1939,7 +1939,7 @@ class Lua {
         funcs = new String[] { "connect", "peer", "device" }; loaders = new int[] { CONNECT, PEER, DEVICE };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
-        funcs = new String[] { "screen", "list", "quest","edit", "show" }; loaders = new int[] { SCREEN, LIST, QUEST, EDIT, SHOW };
+        funcs = new String[] { "display", "screen", "list", "quest", "edit" }; loaders = new int[] { DISPLAY, SCREEN, LIST, QUEST, EDIT };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
@@ -3286,19 +3286,19 @@ class Lua {
             else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == EDIT) {
                 if (args.isEmpty()) { }
                 else {
-                    Object builder = args.elementAt(0);
+                    Object table = args.elementAt(0);
 
-                    if (builder instanceof Hashtable) { return ((LuaFunction) new LuaFunction(MOD, (Hashtable) builder)).BuildScreen(); }
-                    else { return gotbad(1, MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit", "table expected, got " + type(builder)); }
+                    if (table instanceof Hashtable) { return ((LuaFunction) new LuaFunction(MOD, (Hashtable) table)).BuildScreen(); }
+                    else { return gotbad(1, MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit", "table expected, got " + type(table)); }
                 }
             }
-            else if (MOD == SHOW) {
+            else if (MOD == DISPLAY) {
                 if (args.isEmpty()) { }
                 else {
-                    Object builder = args.elementAt(0);
+                    Object screen = args.elementAt(0);
 
-                    if (builder instanceof Displayable) { midlet.display.setCurrent((Displayable) builder); }
-                    else { return gotbad(1, "show", "screen expected, got " + type(builder)); }
+                    if (screen instanceof Displayable) { midlet.display.setCurrent((Displayable) screen); }
+                    else { return gotbad(1, "show", "screen expected, got " + type(screen)); }
                 }
             }
 
@@ -3362,8 +3362,8 @@ class Lua {
             if (MOD == SCREEN) {
                 Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle())); 
 
-                BACK = new Command(getenv(PKG, "label", "Back"), Command.OK, 1); 
-                USER = new Command(getenv(PKG, "button", "Menu"), Command.SCREEN, 2); 
+                BACK = new Command(getenv(PKG, "back.label", "Back"), Command.OK, 1); 
+                USER = new Command(getenv(PKG, "button.label", "Menu"), Command.SCREEN, 2); 
                 screen.addCommand(BACK); 
                 if (PKG.containsKey("button")) { screen.addCommand(USER); }
 
@@ -3373,6 +3373,7 @@ class Lua {
 
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
                             Object name = keys.nextElement();
+                            
                             if (fields.get(name) instanceof Hashtable) {
                                 Hashtable field = (Hashtable) fields.get(name);
                                 String type = getenv(field, "type", "text").trim(), data = getenv(field, type.equals("image") ? "image" : "value", "");
@@ -3389,9 +3390,7 @@ class Lua {
                                     int h = Integer.parseInt(getenv(field, "height", "10"));
                                     screen.append(new Spacer(w, h));
                                 }
-                            } else {
-                                midlet.display.vibrate(1000);
-                            }
+                            } else { screen.append(toLuaString(fields.get(name))); }
                         }
                     } else { throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(PKG.get("fields")) +")"); }
                 } 
