@@ -2777,7 +2777,7 @@ class Lua {
                     key = (String) fieldToken.value;
                 }
 
-                if (value == null) {
+                if (value == null) {p
                     // No Lua, ler campo de nil retorna nil
                     return null;
                 }
@@ -3451,7 +3451,7 @@ class Lua {
                     } 
                 } 
                 else if (TYPE == LIST) { 
-                    int index = ((List) screen).getSelectedIndex(); 
+                    int index = ((List) screen).getSelectedIndex(0); 
                     if (index >= 0) { 
                         midlet.processCommand("xterm", true, root); 
                         String key = midlet.env(((List) screen).getString(index)); 
