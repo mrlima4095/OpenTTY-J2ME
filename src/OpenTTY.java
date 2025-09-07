@@ -260,7 +260,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { 
                     String PID = (String) keys.nextElement(), name = (String) ((Hashtable) trace.get(PID)).get("name"); 
-                    if (processFilter.equals("") || name.indexOf(processFilter) != -1) { 
+                    if (pfilter.equals("") || name.indexOf(pfilter) != -1) { 
                         preview.append(PID + "\t" + name, null); 
                     }
                 }  
