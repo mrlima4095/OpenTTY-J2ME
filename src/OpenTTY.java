@@ -3459,10 +3459,34 @@ class Lua {
                 }
 
                 this.screen = list;
-            } else if (MOD == QUEST || MOD == EDIT) {
-                // Criar TextBox para QUEST e EDIT
-                String title = getenv(PKG, "title", MOD == QUEST ? "Quest" : "Edit");
+            } else if (MOD == QUEST) {
+                String title = getenv(PKG, "title", "Quest");
                 String label = getenv(PKG, "label", "");
+                String key = getenv(PKG, "key", "");
+
+                Form form = new Form(title);
+                TextField textField = new TextField(label, "", 1024, TextField.ANY);
+                form.append(textField);
+
+                // Comando Back
+                Hashtable backTable = (Hashtable) PKG.get("back");
+                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
+                BACK = new Command(backLabel, Command.BACK, 1);
+                form.addCommand(BACK);
+
+                // Comando User (botão)
+                Hashtable buttonTable = (Hashtable) PKG.get("button");
+                if (buttonTable != null) {
+                    String buttonLabel = getenv(buttonTable, "label", "Menu");
+                    USER = new Command(buttonLabel, Command.SCREEN, 2);
+                    form.addCommand(USER);
+                }
+
+                this.screen = form;
+                this.INPUT = textField;
+            }
+            else if (MOD == EDIT) {
+                String title = getenv(PKG, "title", "Edit");
                 String key = getenv(PKG, "key", "");
 
                 TextBox box = new TextBox(title, "", 1024, TextField.ANY);
@@ -3482,7 +3506,7 @@ class Lua {
                 }
 
                 this.screen = box;
-                INPUT = box;
+                this.INPUT = box; // TextBox tem getString()
             }
 
             kill = false;
@@ -3499,7 +3523,8 @@ class Lua {
                     Object backRoot = backTable.get("root");
                     if (backRoot instanceof LuaFunction) {
                         ((LuaFunction) backRoot).call(new Vector());
-                    } else if (backRoot != null) {
+                    } 
+                    else if (backRoot != null) {
                         midlet.processCommand(toLuaString(backRoot), true, root);
                     }
                 }
