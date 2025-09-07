@@ -3379,7 +3379,7 @@ class Lua {
                 if (fieldsObj != null) {
                     if (fieldsObj instanceof Hashtable) {
                         Hashtable fields = (Hashtable) fieldsObj;
-                        for (Enumeration keys = fields.keys(); keys.hasMoreElements()) {
+                        for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
                             Object fieldObj = fields.get(keys.nextElement());
                             if (fieldObj instanceof Hashtable) {
                                 Hashtable field = (Hashtable) fieldObj;
