@@ -3442,7 +3442,7 @@ class Lua {
                         midlet.processCommand("xterm", true, root); 
                         String key = midlet.env(((List) screen).getString(index)); 
                         
-                        midlet.processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, root); 
+                        
                     } 
                 } 
                 else if (TYPE == SCREEN) { 
