@@ -3397,7 +3397,7 @@ class Lua {
                 this.screen = screen;
             }
 
-            kill = false; return this.screen;
+           kill = false; return this.screen;
         }
 
         public void commandAction(Command c, Displayable d) throws Exception {
