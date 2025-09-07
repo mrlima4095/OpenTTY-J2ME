@@ -3376,7 +3376,7 @@ class Lua {
                             String type = ((String) getenv(field, "type", "text")).trim(), data = getenv(field, type.equals("image") ? "image" : "value", "");
 
                             if (type.equals("image") && !data.equals("")) { screen.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
-                            else if (type.equals("text"), !data.equals("")) {
+                            else if (type.equals("text") && !data.equals("")) {
                                 StringItem content = new StringItem(getenv(field, "label", ""), data); 
                                 content.setFont(newFont(getenv(field, "style", "default"))); 
 
