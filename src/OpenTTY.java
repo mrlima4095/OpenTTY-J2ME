@@ -3397,8 +3397,7 @@ class Lua {
                 this.screen = screen;
             }
 
-            kill = false; if (this.screen != null) { this.screen.setCommandListener(this); midlet.display.setCurrent(this.screen); }
-            return this.screen;
+            kill = false; return this.screen;
         }
 
         public void commandAction(Command c, Displayable d) throws Exception {
@@ -3431,11 +3430,13 @@ class Lua {
                     String value = ((TextBox) screen).getString().trim(); 
                     if (value.equals("")) { }
                     else { 
-                        midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
                         midlet.processCommand("xterm", true, root); 
 
                         if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); }
-                        else { midlet.processCommand(toLuaString(fire), true, root); }
+                        else { 
+                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
+                            midlet.processCommand(toLuaString(fire), true, root); 
+                        }
                     } 
                 } 
                 else if (TYPE == LIST) { 
