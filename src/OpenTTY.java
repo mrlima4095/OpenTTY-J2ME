@@ -3395,11 +3395,10 @@ class Lua {
                         }
                     } else { throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(PKG.get("fields")) +")"); }
                 } 
-
-                
+                this.screen = screen;
             }
 
-            kill = false; this.screen = screen; if (screen != null) { screen.setCommandListener(this); midlet.display.setCurrent(screen); }
+            kill = false; if (this.screen != null) { this.screen.setCommandListener(this); midlet.display.setCurrent(this.screen); }
             return screen;
         }
 
