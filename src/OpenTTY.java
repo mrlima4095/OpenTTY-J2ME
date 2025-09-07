@@ -3419,11 +3419,18 @@ class Lua {
 
                     if (value.equals("")) { } 
                     else { 
-                        midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
                         midlet.processCommand("xterm", true, root); 
+
+                        if (fire instanceof LuaFunction) { 
+                            Vector result = new Vector();
+                            result.addElement(midlet.env(value));
+                            ((LuaFunction) fire).call(result); 
+                        }
+                        else { 
+                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
+                            midlet.processCommand(toLuaString(fire), true, root); 
+                        }
                         
-                        if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); }
-                        else { midlet.processCommand(toLuaString(fire), true, root); }
                     } 
                 } 
                 else if (TYPE == EDIT) { 
@@ -3446,7 +3453,8 @@ class Lua {
                 else if (TYPE == LIST) { 
                     int index = ((List) screen).getSelectedIndex(); 
                     if (index >= 0) { 
-                        midlet.processCommand("xterm", true, root); 
+                        mi
+                        dlet.processCommand("xterm", true, root); 
                         String key = midlet.env(((List) screen).getString(index)); 
                         
                         
