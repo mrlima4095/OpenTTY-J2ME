@@ -3429,7 +3429,7 @@ class Lua {
                     String value = edit.getString().trim(); 
                     if (value.equals("")) { }
                     else { 
-                        midlet.attributes.put(getenv(PKG, "key", ""), env(value)); 
+                        midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
                         midlet.processCommand("xterm", true, root); 
 
                         if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); }
