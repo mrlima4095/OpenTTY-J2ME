@@ -3377,10 +3377,10 @@ class Lua {
 
                 Object fieldsObj = PKG.get("fields");
                 if (fieldsObj != null) {
-                    if (fieldsObj instanceof Vector) {
-                        Vector fields = (Vector) fieldsObj;
-                        for (int i = 0; i < fields.size(); i++) {
-                            Object fieldObj = fields.elementAt(i);
+                    if (fieldsObj instanceof Hashtable) {
+                        Hashtable fields = (Hashtable) fieldsObj;
+                        for (Enumeration keys = fields.keys(); keys.hasMoreElements()) {
+                            Object fieldObj = fields.get(keys.nextElement());
                             if (fieldObj instanceof Hashtable) {
                                 Hashtable field = (Hashtable) fieldObj;
                                 String type = getenv(field, "type", "text").trim();
