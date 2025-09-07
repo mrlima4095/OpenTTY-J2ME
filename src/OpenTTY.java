@@ -3383,10 +3383,11 @@ class Lua {
 
                                 screen.append(content);
                             }
-                            else if (type.equals("spacer")) {
-                                Object w = getenv(field, "width", "1"), h = getenv(field, "height", "10");
-                                if (w instanceof Double && h instanceof Double) { screen.append(new Spacer(((Double) w).intValue(), ((Double) h).intValue())); }
-                                else { throw new RuntimeException("bad argument for 'spacer' (number expected, got " + type(w instanceof Double ? h : w) + ")"); }
+                            else if (type.equals("spacer")) {int w = Integer.parseInt(getenv(field, "width", "1"));
+int h = Integer.parseInt(getenv(field, "height", "10"));
+screen.append(new Spacer(w, h));
+
+                                
                             }
                              
                         }
@@ -3396,7 +3397,7 @@ class Lua {
                 
             }
 
-            kill = false; this.screen = screen; screen.setCommandListener(this); midlet.display.setCurrent(screen);
+            kill = false; this.screen = screen; if (screen != null) { screen.setCommandListener(this); midlet.display.setCurrent(screen); }
             return screen;
         }
 
