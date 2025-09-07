@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16.1-02x67";
+    private String logs = "", path = "/home/", build = "2025-1.16.1-02x68";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -69,16 +69,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8;
         private int MOD = 0;
         private boolean root = false, asking_user = username.equals(""), asking_passwd = passwd().equals(""); 
-        private String command = null;
+        private String command = null, pfilter = "";
         private Vector history = (Vector) getobject("1", "history");
         private Form monitor = new Form(form.getTitle());
         private List preview = new List(form.getTitle(), List.IMPLICIT);
         private StringItem status = new StringItem("Memory Status:", "");
+        private TextBox box = new TextBox("Process Filter", 31522, TextField.ANY);
         private TextField USER = new TextField("Username", "", 256, TextField.ANY), 
                           PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); 
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
                     OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOAD = new Command("Load Screen", Command.OK, 1), 
-                    VIEW = new Command("View info", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 1), LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2);
+                    VIEW = new Command("View info", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 1), LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2), FILTER = new Command("Filter", Command.OK, 1);
         
         public MIDletControl(String command, boolean root) {
             MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
@@ -94,7 +95,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : RUN);
                 if (MOD == HISTORY) { preview.addCommand(EDIT); } 
-                else if (MOD == PROCESS) { preview.addCommand(LOAD); preview.addCommand(VIEW); }
+                else if (MOD == PROCESS) { preview.addCommand(LOAD); preview.addCommand(VIEW); preview.addCommand(FILTER); }
     
                 preview.setCommandListener(this); 
                 load(); display.setCurrent(preview);
@@ -126,7 +127,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         
         public void commandAction(Command c, Displayable d) {
-            if (c == BACK) { processCommand("xterm"); return; } 
+            if (c == BACK) { if (d == box) { display.setCurrent(preview); } else { processCommand("xterm"); } return; } 
+            if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); }
     
             if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { processCommand("xterm"); processCommand(c == RUN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU")) ? selected : "buff " + selected); } } 
             else if (MOD == EXPLORER) {
@@ -159,6 +161,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, root); } 
                     else if (c == VIEW) { processCommand("trace view " + PID, false, root); }
+                    else if (c == FILTER) { box.addCommand() }
                     else if (c == LOAD) {
                         if (getowner(PID).equals("root") && !root) { STATUS = 13; }
 
@@ -252,7 +255,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
             } 
             else if (MOD == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
-            else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(); preview.append(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name"), null); } }
+            else if (MOD == PROCESS) { 
+                preview.deleteAll(); 
+                
+                for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { 
+                    String PID = (String) keys.nextElement(), name = (String) ((Hashtable) trace.get(PID)).get("name"); 
+                    if (processFilter.equals("") || name.indexOf(processFilter) != -1) { 
+                        preview.append(PID + "\t" + name, null); 
+                    }
+                }  
+            }
         }
 
         public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; } 
