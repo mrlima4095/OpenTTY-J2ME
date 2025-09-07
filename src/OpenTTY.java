@@ -3453,8 +3453,7 @@ class Lua {
                 else if (TYPE == LIST) { 
                     int index = ((List) screen).getSelectedIndex(); 
                     if (index >= 0) { 
-                        mi
-                        dlet.processCommand("xterm", true, root); 
+                        midlet.processCommand("xterm", true, root); 
                         String key = midlet.env(((List) screen).getString(index)); 
                         
                         
