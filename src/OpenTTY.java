@@ -3456,7 +3456,15 @@ class Lua {
                         midlet.processCommand("xterm", true, root); 
                         String key = midlet.env(((List) screen).getString(index)); 
                         
-                        
+                        if (fire instanceof LuaFunction) { 
+                            Vector result = new Vector();
+                            result.addElement(key);
+                            ((LuaFunction) fire).call(result); 
+                        }
+                        else { 
+                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
+                            midlet.processCommand(toLuaString(fire), true, root); 
+                        }
                     } 
                 } 
                 else if (TYPE == SCREEN) { 
