@@ -3456,7 +3456,7 @@ class Lua {
                 Object fieldsObj = PKG.get("fields");
                 if (fieldsObj != null) {
                     if (fieldsObj instanceof Hashtable) {
-                        Hashtable fields = (Hashtable) fieldObj;
+                        Hashtable fields = (Hashtable) fieldsObj;
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
                             Object item = keys.nextElement();
                             list.append(toLuaString(getenv(fields, toLuaString(item), "")), null);
