@@ -3401,13 +3401,13 @@ class Lua {
 
         public void commandAction(Command c, Displayable d) throws Exception {
             if (c == BACK) { 
-                processCommand("xterm", true, root); 
+                midlet.processCommand("xterm", true, root); 
 
                 if (PKG.containsKey("back")) {
                     Object back = PKG.get("back");
 
                     if (back instanceof LuaFunction) { ((LuaFunction) back).call(new Vector()); }
-                    else { processCommand(toLuaString(back), true, root); }
+                    else { midlet.processCommand(toLuaString(back), true, root); }
                 }
             } 
             else if (c == USER || c == List.SELECT_COMMAND) { 
@@ -3419,10 +3419,10 @@ class Lua {
                     if (value.equals("")) { } 
                     else { 
                         attributes.put(getenv("quest.key"), env(value)); 
-                        processCommand("xterm", true, root); 
+                        midlet.processCommand("xterm", true, root); 
                         
                         if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); }
-                        else { processCommand(toLuaString(fire), true, root); }
+                        else { midlet.processCommand(toLuaString(fire), true, root); }
                     } 
                 } 
                 else if (TYPE == EDIT) { 
@@ -3430,26 +3430,26 @@ class Lua {
                     if (value.equals("")) { }
                     else { 
                         attributes.put(getenv("edit.key"), env(value)); 
-                        processCommand("xterm", true, root); 
+                        midlet.processCommand("xterm", true, root); 
 
                         if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); }
-                        else { processCommand(toLuaString(fire), true, root); }
+                        else { midlet.processCommand(toLuaString(fire), true, root); }
                     } 
                 } 
                 else if (TYPE == LIST) { 
                     int index = list.getSelectedIndex(); 
                     if (index >= 0) { 
-                        processCommand("xterm", true, root); 
+                        midlet.processCommand("xterm", true, root); 
                         String key = env(list.getString(index)); 
                         
-                        processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, root); 
+                        midlet.processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, root); 
                     } 
                 } 
                 else if (TYPE == SCREEN) { 
-                    processCommand("xterm", true, root); 
+                    midlet.processCommand("xterm", true, root); 
 
                     if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); }
-                    else { processCommand(toLuaString(fire), true, root); }
+                    else { midlet.processCommand(toLuaString(fire), true, root); }
                 } 
             } 
         }
