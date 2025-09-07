@@ -3360,11 +3360,11 @@ class Lua {
 
         private Object BuildScreen() {
             if (MOD == SCREEN) {
-                Form tela = new Form(getenv(PKG, "title", form.getTitle())); 
+                Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle())); 
 
                 BACK = new Command(getenv(PKG, "label", "Back"), Command.OK, 1); 
                 USER = new Command(getenv(PKG, "button", "Menu"), Command.SCREEN, 2); 
-                tela.addCommand(BACK); 
+                screen.addCommand(BACK); 
                 if (PKG.containsKey("button")) { screen.addCommand(USER); }
 
                 if (PKG.containsKey("fields")) { 
@@ -3375,16 +3375,16 @@ class Lua {
                             Hashtable field = (Hashtable) keys.nextElement();
                             String type = ((String) getenv(field, "type", "text")).trim(), data = getenv(field, type.equals("image") ? "image" : "value", "");
 
-                            if (type.equals("image") && !data.equals("")) { tela.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
+                            if (type.equals("image") && !data.equals("")) { screen.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
                             else if (type.equals("text") && !data.equals("")) {
                                 StringItem content = new StringItem(getenv(field, "label", ""), data); 
                                 content.setFont(newFont(getenv(field, "style", "default"))); 
 
-                                tela.append(content);
+                                screen.append(content);
                             }
                             else if (type.equals("spacer")) {
                                 Object w = getenv(field, "width", new Double(1)), h = getenv(field, "height", new Double(10));
-                                if (w instanceof Double && h instanceof Double) { tela.append(new Spacer(((Double) w).intValue(), ((Double) h).intValue())); }
+                                if (w instanceof Double && h instanceof Double) { screen.append(new Spacer(((Double) w).intValue(), ((Double) h).intValue())); }
                                 else { throw new RuntimeException("bad argument for 'spacer' (number expected, got " + type(w instanceof Double ? h : w) + ")"); }
                             }
                              
@@ -3395,7 +3395,7 @@ class Lua {
                 
             }
 
-            this.screen = tela; tela.setCommandListener(this); display.setCurrent(tela);
+            this.screen = screen; screen.setCommandListener(this); display.setCurrent(screen);
             return screen;
         }
 
