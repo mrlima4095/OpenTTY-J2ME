@@ -3395,7 +3395,7 @@ class Lua {
                 
             }
 
-            this.screen = screen; screen.setCommandListener(this); display.setCurrent(screen);
+            this.screen = screen; screen.setCommandListener(this); midlet.display.setCurrent(screen);
             return screen;
         }
 
