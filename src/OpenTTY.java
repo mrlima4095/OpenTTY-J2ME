@@ -3358,7 +3358,7 @@ class Lua {
         private String getvalue(Hashtable table, String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
         private String getenv(Hashtable table, String key, String fallback) { return midlet.env(getvalue(table, key, fallback)); }
 
-        private Object BuildScreen() {
+        private Object BuildScreen() throws Exception {
             if (MOD == SCREEN) {
                 Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle())); 
 
