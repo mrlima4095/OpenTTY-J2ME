@@ -3399,7 +3399,7 @@ class Lua {
             }
 
             kill = false; if (this.screen != null) { this.screen.setCommandListener(this); midlet.display.setCurrent(this.screen); }
-            return screen;
+            return this.screen;
         }
 
         public void commandAction(Command c, Displayable d) throws Exception {
