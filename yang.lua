@@ -46,6 +46,6 @@ local repo = {
 
 local function install(pkg)
     if string.match(pkg, "MIDlet") then
-        
+        os.execute("") os.exit
     end
 end
