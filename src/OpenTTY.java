@@ -3376,8 +3376,8 @@ class Lua {
                             
                             if (fields.get(name) instanceof Hashtable) {
                                 Hashtable field = (Hashtable) fields.get(name);
-                                String type = getenv(field, "type", "text").trim(), data = getenv(field, type.equals("image") ? "image" : "value", "");
-    
+                                String type = getenv(field, "type", "text").trim(), data = getenv(field, type.equals("image") ? "img" : "value", "");
+
                                 if (type.equals("image") && !data.equals("")) { screen.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
                                 else if (type.equals("text") && !data.equals("")) {
                                     StringItem content = new StringItem(getenv(field, "label", ""), data); 
