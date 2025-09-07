@@ -3412,7 +3412,7 @@ class Lua {
                 }
             } 
             else if (c == USER || c == List.SELECT_COMMAND) { 
-                Object fire = PKG.get("fire");
+                Object fire = PKG.containsKey("fire") ? PKG.get("fire") : "true";
 
                 if (TYPE == QUEST) { 
                     String value = INPUT.getString().trim(); 
