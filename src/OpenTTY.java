@@ -3397,8 +3397,8 @@ class Lua {
                                         screen.append(si);
                                     }
                                 } else if (type.equals("spacer")) {
-                                    int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : gotbad(1, "width", "number expected, got " + type(field.get("width"))) : 1;
-                                    int h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : gotbad(1, "heigth", "number expected, got " + type(field.get("heigth"))) : 10;
+                                    int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : (int) gotbad(1, "width", "number expected, got " + type(field.get("width"))) : 1;
+                                    int h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : (int) gotbad(1, "heigth", "number expected, got " + type(field.get("heigth"))) : 10;
                                     screen.append(new Spacer(w, h));
                                 }
                             } else if (fieldObj instanceof String) {
