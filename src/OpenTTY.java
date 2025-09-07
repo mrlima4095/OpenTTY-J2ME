@@ -2080,7 +2080,7 @@ class Lua {
         Token current = peek();
         
         if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); } 
-        if (status != 0) { throw new Error(); }
+        if (status != 0) { midlet.trace.remove(PID); throw new Error(); }
 
         if (current.type == IDENTIFIER) {
             // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
@@ -3362,12 +3362,14 @@ class Lua {
             if (MOD == SCREEN) {
                 Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle()));
 
-                Hashtable backTable = (Hashtable) PKG.get("back");
+                Object backObj = PKG.get("back");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
                 BACK = new Command(backLabel, Command.OK, 1);
                 screen.addCommand(BACK);
 
-                Hashtable buttonTable = (Hashtable) PKG.get("button");
+                Object buttonObj = PKG.get("button");
+                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
                     USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
                     screen.addCommand(USER);
@@ -3401,24 +3403,32 @@ class Lua {
                                     String cmdStr = getenv(field, "cmd", "");
                                     if (!label.equals("")) {
                                         StringItem si = new StringItem(label, null);
-                                        // Adicionar Command para executar cmdStr ao selecionar
                                         Command itemCmd = new Command(label, Command.ITEM, 3);
                                         screen.addCommand(itemCmd);
-                                        // Armazenar cmdStr para uso no commandAction (ex: em PKG)
-                                        // Pode-se criar um mapa para associar comandos a labels
-                                        // Exemplo simplificado:
-                                        if (PKG.get("_itemCmds") == null) {
-                                            PKG.put("_itemCmds", new Hashtable());
+                                        Object itemCmdsObj = PKG.get("_itemCmds");
+                                        Hashtable itemCmds;
+                                        if (itemCmdsObj instanceof Hashtable) {
+                                            itemCmds = (Hashtable) itemCmdsObj;
+                                        } else {
+                                            itemCmds = new Hashtable();
+                                            PKG.put("_itemCmds", itemCmds);
                                         }
-                                        ((Hashtable) PKG.get("_itemCmds")).put(label, cmdStr);
+                                        itemCmds.put(label, cmdStr);
                                         screen.append(si);
                                     }
                                 } else if (type.equals("spacer")) {
-                                    int w = Integer.parseInt(getenv(field, "w", "1"));
-                                    int h = Integer.parseInt(getenv(field, "h", "10"));
+                                    int w = 1, h = 10;
+                                    try {
+                                        w = Integer.parseInt(getenv(field, "w", "1"));
+                                    } catch (NumberFormatException e) { /* manter w=1 */ }
+                                    try {
+                                        h = Integer.parseInt(getenv(field, "h", "10"));
+                                    } catch (NumberFormatException e) { /* manter h=10 */ }
                                     screen.append(new Spacer(w, h));
                                 }
-                            } else if (fieldObj instanceof String) { screen.append((String) fieldObj); }
+                            } else if (fieldObj instanceof String) {
+                                screen.append((String) fieldObj);
+                            }
                         }
                     } else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
@@ -3427,24 +3437,22 @@ class Lua {
 
                 this.screen = screen;
             } else if (MOD == LIST) {
-                // Criar List para LIST
                 List list = new List(getenv(PKG, "title", "List"), List.IMPLICIT);
 
-                // Comando Back
-                Hashtable backTable = (Hashtable) PKG.get("back");
+                Object backObj = PKG.get("back");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
                 BACK = new Command(backLabel, Command.BACK, 1);
                 list.addCommand(BACK);
 
-                // Comando User (botão)
-                Hashtable buttonTable = (Hashtable) PKG.get("button");
+                Object buttonObj = PKG.get("button");
+                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
                     String buttonLabel = getenv(buttonTable, "label", "Menu");
                     USER = new Command(buttonLabel, Command.SCREEN, 2);
                     list.addCommand(USER);
                 }
 
-                // Campos (fields) - lista de strings
                 Object fieldsObj = PKG.get("fields");
                 if (fieldsObj != null) {
                     if (fieldsObj instanceof Vector) {
@@ -3468,14 +3476,14 @@ class Lua {
                 TextField textField = new TextField(label, "", 1024, TextField.ANY);
                 form.append(textField);
 
-                // Comando Back
-                Hashtable backTable = (Hashtable) PKG.get("back");
+                Object backObj = PKG.get("back");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
                 BACK = new Command(backLabel, Command.BACK, 1);
                 form.addCommand(BACK);
 
-                // Comando User (botão)
-                Hashtable buttonTable = (Hashtable) PKG.get("button");
+                Object buttonObj = PKG.get("button");
+                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
                     String buttonLabel = getenv(buttonTable, "label", "Menu");
                     USER = new Command(buttonLabel, Command.SCREEN, 2);
@@ -3484,21 +3492,20 @@ class Lua {
 
                 this.screen = form;
                 this.INPUT = textField;
-            }
-            else if (MOD == EDIT) {
+            } else if (MOD == EDIT) {
                 String title = getenv(PKG, "title", "Edit");
                 String key = getenv(PKG, "key", "");
 
                 TextBox box = new TextBox(title, "", 1024, TextField.ANY);
 
-                // Comando Back
-                Hashtable backTable = (Hashtable) PKG.get("back");
+                Object backObj = PKG.get("back");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
                 BACK = new Command(backLabel, Command.BACK, 1);
                 box.addCommand(BACK);
 
-                // Comando User (botão)
-                Hashtable buttonTable = (Hashtable) PKG.get("button");
+                Object buttonObj = PKG.get("button");
+                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
                     String buttonLabel = getenv(buttonTable, "label", "Menu");
                     USER = new Command(buttonLabel, Command.SCREEN, 2);
