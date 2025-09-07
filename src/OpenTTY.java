@@ -3391,11 +3391,9 @@ class Lua {
                                     }
                                 } else if (type.equals("text")) {
                                     String value = getenv(field, "value", "");
-                                    String label = getenv(field, "label", "");
-                                    String style = getenv(field, "style", "default");
                                     if (!value.equals("")) {
-                                        StringItem si = new StringItem(label, value);
-                                        si.setFont(midlet.newFont(style));
+                                        StringItem si = new StringItem(getenv(field, "label", ""), value);
+                                        si.setFont(midlet.newFont(getenv(field, "style", "default")));
                                         screen.append(si);
                                     }
                                 } else if (type.equals("spacer")) {
@@ -3435,7 +3433,8 @@ class Lua {
                     if (fieldsObj instanceof Hashtable) {
                         Hashtable fields = (Hashtable) fieldsObj;
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                            list.append(toLuaString(getenv(fields, toLuaString(fields.get(keys.nextElement())), "")), null);
+                            Object key = keys.nextElement();
+                            list.append(getenv(fields, toLuaString(fields.get(key), "")), null);
                         }
                     } else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
