@@ -95,7 +95,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : RUN);
                 if (MOD == HISTORY) { preview.addCommand(EDIT); } 
-                else if (MOD == PROCESS) { preview.addCommand(LOAD); preview.addCommand(VIEW); preview.addCommand(FILTER); }
+                else if (MOD == PROCESS) { preview.addCommand(LOAD); preview.addCommand(VIEW); if (attributes.containsKey("J2EMU")) { preview.addCommand(FILTER); } }
     
                 preview.setCommandListener(this); 
                 load(); display.setCurrent(preview);
@@ -128,7 +128,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         public void commandAction(Command c, Displayable d) {
             if (c == BACK) { if (d == box) { display.setCurrent(preview); } else { processCommand("xterm"); } return; } 
-            if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); }
+            if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
     
             if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { processCommand("xterm"); processCommand(c == RUN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU")) ? selected : "buff " + selected); } } 
             else if (MOD == EXPLORER) {
@@ -154,6 +154,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (MOD == MONITOR) { System.gc(); reload(); } 
             else if (MOD == PROCESS) {
+                if (c == FILTER) { box.addCommand(BACK); box.addCommand(RUN); box.setCommandListener(this); display.setCurrent(box); return; }
+                
                 int index = preview.getSelectedIndex(); 
                 if (index >= 0) { 
                     String PID = split(preview.getString(index), '\t')[0];
@@ -161,7 +163,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, root); } 
                     else if (c == VIEW) { processCommand("trace view " + PID, false, root); }
-                    else if (c == FILTER) { box.addCommand(BACK); box.addCommand(RUN); box.setCommandListener(this); display.setCurrent(box); }
                     else if (c == LOAD) {
                         if (getowner(PID).equals("root") && !root) { STATUS = 13; }
 
