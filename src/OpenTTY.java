@@ -3432,7 +3432,11 @@ class Lua {
                     else { 
                         midlet.processCommand("xterm", true, root); 
 
-                        if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); }
+                        if (fire instanceof LuaFunction) { 
+                            Vector result = new Vector();
+                            result.addElement(midlet.env(value));
+                            ((LuaFunction) fire).call(result); 
+                        }
                         else { 
                             midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
                             midlet.processCommand(toLuaString(fire), true, root); 
