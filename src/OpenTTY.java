@@ -3455,11 +3455,11 @@ class Lua {
 
                 Object fieldsObj = PKG.get("fields");
                 if (fieldsObj != null) {
-                    if (fieldsObj instanceof Vector) {
-                        Vector fields = (Vector) fieldsObj;
-                        for (int i = 0; i < fields.size(); i++) {
-                            Object item = fields.elementAt(i);
-                            list.append(toLuaString(item), null);
+                    if (fieldsObj instanceof Hashtable) {
+                        Hashtable fields = (Hashtable) fieldObj;
+                        for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
+                            Object item = keys.nextElement();
+                            list.append(toLuaString(getenv(fields, toLuaString(item), "")), null);
                         }
                     } else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
@@ -3567,14 +3567,14 @@ class Lua {
                     int index = ((List) screen).getSelectedIndex();
                     if (index >= 0) {
                         midlet.processCommand("xterm", true, root);
-                        String key = midlet.env(((List) screen).getString(index));
+                        String key = ((List) screen).getString(index);
                         // Executar função root do botão passando o item selecionado
                         if (fire instanceof LuaFunction) {
                             Vector args = new Vector();
-                            args.addElement(key);
+                            args.addElement(midlet.env(key));
                             ((LuaFunction) fire).call(args);
                         } else {
-                            midlet.processCommand(toLuaString(fire), true, root);
+                            midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root);
                         }
                     }
                 } else if (MOD == SCREEN) {
