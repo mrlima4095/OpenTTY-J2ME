@@ -2777,7 +2777,7 @@ class Lua {
                     key = (String) fieldToken.value;
                 }
 
-                if (value == null) {p
+                if (value == null) {
                     // No Lua, ler campo de nil retorna nil
                     return null;
                 }
