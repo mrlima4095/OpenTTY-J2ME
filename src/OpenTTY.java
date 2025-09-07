@@ -3372,24 +3372,26 @@ class Lua {
                         Hashtable fields = (Hashtable) PKG.get("fields");
 
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                            String name = (String) keys.nextElement();
-                            Hashtable field = (Hashtable) fields.get(name);
-                            String type = ((String) getenv(field, "type", "text")).trim(), data = getenv(field, type.equals("image") ? "image" : "value", "");
-
-                            if (type.equals("image") && !data.equals("")) { screen.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
-                            else if (type.equals("text") && !data.equals("")) {
-                                StringItem content = new StringItem(getenv(field, "label", ""), data); 
-                                content.setFont(midlet.newFont(getenv(field, "style", "default"))); 
-
-                                screen.append(content);
+                            Object name = keys.nextElement();
+                            if (fields.get(name) instanceof Hashtable) {
+                                Hashtable field = (Hashtable) fields.get(name);
+                                String type = getenv(field, "type", "text").trim(), data = getenv(field, type.equals("image") ? "image" : "value", "");
+    
+                                if (type.equals("image") && !data.equals("")) { screen.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
+                                else if (type.equals("text") && !data.equals("")) {
+                                    StringItem content = new StringItem(getenv(field, "label", ""), data); 
+                                    content.setFont(midlet.newFont(getenv(field, "style", "default"))); 
+    
+                                    screen.append(content);
+                                }
+                                else if (type.equals("spacer")) {
+                                    int w = Integer.parseInt(getenv(field, "width", "1"));
+                                    int h = Integer.parseInt(getenv(field, "height", "10"));
+                                    screen.append(new Spacer(w, h));
+                                }
+                            } else {
+                                midlet.display.vibrate(1000);
                             }
-                            else if (type.equals("spacer")) {int w = Integer.parseInt(getenv(field, "width", "1"));
-int h = Integer.parseInt(getenv(field, "height", "10"));
-screen.append(new Spacer(w, h));
-
-                                
-                            }
-                             
                         }
                     } else { throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(PKG.get("fields")) +")"); }
                 } 
