@@ -3360,112 +3360,212 @@ class Lua {
 
         private Object BuildScreen() throws Exception {
             if (MOD == SCREEN) {
-                Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle())); 
+                Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle()));
 
-                BACK = new Command(getenv(PKG, "back.label", "Back"), Command.OK, 1); 
-                USER = new Command(getenv(PKG, "button.label", "Menu"), Command.SCREEN, 2); 
-                screen.addCommand(BACK); 
-                if (PKG.containsKey("button")) { screen.addCommand(USER); }
+                Hashtable backTable = (Hashtable) PKG.get("back");
+                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
+                BACK = new Command(backLabel, Command.OK, 1);
+                screen.addCommand(BACK);
 
-                if (PKG.containsKey("fields")) { 
-                    if (PKG.get("fields") instanceof Hashtable) {
-                        Hashtable fields = (Hashtable) PKG.get("fields");
+                Hashtable buttonTable = (Hashtable) PKG.get("button");
+                if (buttonTable != null) {
+                    USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
+                    screen.addCommand(USER);
+                }
 
-                        for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                            Object name = keys.nextElement();
-                            
-                            if (fields.get(name) instanceof Hashtable) {
-                                Hashtable field = (Hashtable) fields.get(name);
-                                String type = getenv(field, "type", "text").trim(), data = getenv(field, type.equals("image") ? "img" : "value", "");
-
-                                if (type.equals("image") && !data.equals("")) { screen.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
-                                else if (type.equals("text") && !data.equals("")) {
-                                    StringItem content = new StringItem(getenv(field, "label", ""), data); 
-                                    content.setFont(midlet.newFont(getenv(field, "style", "default"))); 
-    
-                                    screen.append(content);
-                                }
-                                else if (type.equals("spacer")) {
-                                    int w = Integer.parseInt(getenv(field, "width", "1"));
-                                    int h = Integer.parseInt(getenv(field, "height", "10"));
+                Object fieldsObj = PKG.get("fields");
+                if (fieldsObj != null) {
+                    if (fieldsObj instanceof Vector) {
+                        Vector fields = (Vector) fieldsObj;
+                        for (int i = 0; i < fields.size(); i++) {
+                            Object fieldObj = fields.elementAt(i);
+                            if (fieldObj instanceof Hashtable) {
+                                Hashtable field = (Hashtable) fieldObj;
+                                String type = getenv(field, "type", "text").trim();
+                                if (type.equals("image")) {
+                                    String imgPath = getenv(field, "img", "");
+                                    if (!imgPath.equals("")) {
+                                        screen.append(Image.createImage(imgPath));
+                                    }
+                                } else if (type.equals("text")) {
+                                    String value = getenv(field, "value", "");
+                                    String label = getenv(field, "label", "");
+                                    String style = getenv(field, "style", "default");
+                                    if (!value.equals("")) {
+                                        StringItem si = new StringItem(label, value);
+                                        si.setFont(midlet.newFont(style));
+                                        screen.append(si);
+                                    }
+                                } else if (type.equals("item")) {
+                                    String label = getenv(field, "label", "");
+                                    String cmdStr = getenv(field, "cmd", "");
+                                    if (!label.equals("")) {
+                                        StringItem si = new StringItem(label, null);
+                                        // Adicionar Command para executar cmdStr ao selecionar
+                                        Command itemCmd = new Command(label, Command.ITEM, 3);
+                                        screen.addCommand(itemCmd);
+                                        // Armazenar cmdStr para uso no commandAction (ex: em PKG)
+                                        // Pode-se criar um mapa para associar comandos a labels
+                                        // Exemplo simplificado:
+                                        if (PKG.get("_itemCmds") == null) {
+                                            PKG.put("_itemCmds", new Hashtable());
+                                        }
+                                        ((Hashtable) PKG.get("_itemCmds")).put(label, cmdStr);
+                                        screen.append(si);
+                                    }
+                                } else if (type.equals("spacer")) {
+                                    int w = Integer.parseInt(getenv(field, "w", "1"));
+                                    int h = Integer.parseInt(getenv(field, "h", "10"));
                                     screen.append(new Spacer(w, h));
                                 }
-                            } else { screen.append(midlet.env(toLuaString(fields.get(name)))); }
+                            } else if (fieldObj instanceof String) { screen.append((String) fieldObj); }
                         }
-                    } else { throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(PKG.get("fields")) +")"); }
-                } 
+                    } else {
+                        throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
+                    }
+                }
+
                 this.screen = screen;
+            } else if (MOD == LIST) {
+                // Criar List para LIST
+                List list = new List(getenv(PKG, "title", "List"), List.IMPLICIT);
+
+                // Comando Back
+                Hashtable backTable = (Hashtable) PKG.get("back");
+                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
+                BACK = new Command(backLabel, Command.BACK, 1);
+                list.addCommand(BACK);
+
+                // Comando User (botão)
+                Hashtable buttonTable = (Hashtable) PKG.get("button");
+                if (buttonTable != null) {
+                    String buttonLabel = getenv(buttonTable, "label", "Menu");
+                    USER = new Command(buttonLabel, Command.SCREEN, 2);
+                    list.addCommand(USER);
+                }
+
+                // Campos (fields) - lista de strings
+                Object fieldsObj = PKG.get("fields");
+                if (fieldsObj != null) {
+                    if (fieldsObj instanceof Vector) {
+                        Vector fields = (Vector) fieldsObj;
+                        for (int i = 0; i < fields.size(); i++) {
+                            Object item = fields.elementAt(i);
+                            list.append(toLuaString(item), null);
+                        }
+                    } else {
+                        throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
+                    }
+                }
+
+                this.screen = list;
+            } else if (MOD == QUEST || MOD == EDIT) {
+                // Criar TextBox para QUEST e EDIT
+                String title = getenv(PKG, "title", MOD == QUEST ? "Quest" : "Edit");
+                String label = getenv(PKG, "label", "");
+                String key = getenv(PKG, "key", "");
+
+                TextBox box = new TextBox(title, "", 1024, TextField.ANY);
+
+                // Comando Back
+                Hashtable backTable = (Hashtable) PKG.get("back");
+                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
+                BACK = new Command(backLabel, Command.BACK, 1);
+                box.addCommand(BACK);
+
+                // Comando User (botão)
+                Hashtable buttonTable = (Hashtable) PKG.get("button");
+                if (buttonTable != null) {
+                    String buttonLabel = getenv(buttonTable, "label", "Menu");
+                    USER = new Command(buttonLabel, Command.SCREEN, 2);
+                    box.addCommand(USER);
+                }
+
+                this.screen = box;
+                INPUT = box;
             }
 
-           kill = false; this.screen.setCommandListener(this); return this.screen;
+            kill = false;
+            this.screen.setCommandListener(this);
+            return this.screen;
         }
 
         public void commandAction(Command c, Displayable d) throws Exception {
-            if (c == BACK) { 
-                midlet.processCommand("xterm", true, root); 
+            if (c == BACK) {
+                midlet.processCommand("xterm", true, root);
 
-                if (PKG.containsKey("back")) {
-                    Object back = PKG.get("back");
-
-                    if (back instanceof LuaFunction) { ((LuaFunction) back).call(new Vector()); }
-                    else { midlet.processCommand(toLuaString(back), true, root); }
+                Hashtable backTable = (Hashtable) PKG.get("back");
+                if (backTable != null) {
+                    Object backRoot = backTable.get("root");
+                    if (backRoot instanceof LuaFunction) {
+                        ((LuaFunction) backRoot).call(new Vector());
+                    } else if (backRoot != null) {
+                        midlet.processCommand(toLuaString(backRoot), true, root);
+                    }
                 }
-            } 
-            else if (c == USER || c == List.SELECT_COMMAND) { 
-                Object fire = PKG.containsKey("fire") ? PKG.get("fire") : "true";
+            } else if (c == USER || c == List.SELECT_COMMAND) {
+                Object fire = PKG.get("button") != null ? ((Hashtable) PKG.get("button")).get("root") : "true";
 
-                if (TYPE == QUEST) { 
-                    String value = INPUT.getString().trim(); 
-
-                    if (value.equals("")) { } 
-                    else { 
-                        midlet.processCommand("xterm", true, root); 
-
-                        if (fire instanceof LuaFunction) { 
+                if (MOD == QUEST) {
+                    String value = INPUT.getString().trim();
+                    if (!value.equals("")) {
+                        midlet.processCommand("xterm", true, root);
+                        if (fire instanceof LuaFunction) {
                             Vector result = new Vector();
                             result.addElement(midlet.env(value));
-                            ((LuaFunction) fire).call(result); 
+                            ((LuaFunction) fire).call(result);
+                        } else {
+                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
+                            midlet.processCommand(toLuaString(fire), true, root);
                         }
-                        else { 
-                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
-                            midlet.processCommand(toLuaString(fire), true, root); 
-                        }
-                        
-                    } 
-                } 
-                else if (TYPE == EDIT) { 
-                    String value = ((TextBox) screen).getString().trim(); 
-                    if (value.equals("")) { }
-                    else { 
-                        midlet.processCommand("xterm", true, root); 
-
-                        if (fire instanceof LuaFunction) { 
+                    }
+                } else if (MOD == EDIT) {
+                    String value = ((TextBox) screen).getString().trim();
+                    if (!value.equals("")) {
+                        midlet.processCommand("xterm", true, root);
+                        if (fire instanceof LuaFunction) {
                             Vector result = new Vector();
                             result.addElement(midlet.env(value));
-                            ((LuaFunction) fire).call(result); 
+                            ((LuaFunction) fire).call(result);
+                        } else {
+                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
+                            midlet.processCommand(toLuaString(fire), true, root);
                         }
-                        else { 
-                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value)); 
-                            midlet.processCommand(toLuaString(fire), true, root); 
+                    }
+                } else if (MOD == LIST) {
+                    int index = ((List) screen).getSelectedIndex();
+                    if (index >= 0) {
+                        midlet.processCommand("xterm", true, root);
+                        String key = midlet.env(((List) screen).getString(index));
+                        // Executar função root do botão passando o item selecionado
+                        if (fire instanceof LuaFunction) {
+                            Vector args = new Vector();
+                            args.addElement(key);
+                            ((LuaFunction) fire).call(args);
+                        } else {
+                            midlet.processCommand(toLuaString(fire), true, root);
                         }
-                    } 
-                } 
-                else if (TYPE == LIST) { 
-                    int index = ((List) screen).getSelectedIndex(); 
-                    if (index >= 0) { 
-                        midlet.processCommand("xterm", true, root); 
-                        String key = midlet.env(((List) screen).getString(index)); 
-                        
-                        
-                    } 
-                } 
-                else if (TYPE == SCREEN) { 
-                    midlet.processCommand("xterm", true, root); 
+                    }
+                } else if (MOD == SCREEN) {
+                    // Verificar se o comando é de um item com cmd
+                    if (c.getCommandType() == Command.ITEM) {
+                        String label = c.getLabel();
+                        Hashtable itemCmds = (Hashtable) PKG.get("_itemCmds");
+                        if (itemCmds != null && itemCmds.containsKey(label)) {
+                            String cmdStr = (String) itemCmds.get(label);
+                            midlet.processCommand(cmdStr, true, root);
+                            return;
+                        }
+                    }
 
-                    if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); }
-                    else { midlet.processCommand(toLuaString(fire), true, root); }
-                } 
-            } 
+                    midlet.processCommand("xterm", true, root);
+                    if (fire instanceof LuaFunction) {
+                        ((LuaFunction) fire).call(new Vector());
+                    } else {
+                        midlet.processCommand(toLuaString(fire), true, root);
+                    }
+                }
+            }
         }
     }
 }
