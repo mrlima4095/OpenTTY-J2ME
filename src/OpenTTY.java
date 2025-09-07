@@ -1099,7 +1099,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Font Generator
-    private Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
+    public Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
 
     // API 005 - (Operators)
     // |
@@ -3378,7 +3378,7 @@ class Lua {
                             if (type.equals("image") && !data.equals("")) { screen.append(new ImageItem(null, Image.createImage(data), ImageItem.LAYOUT_CENTER, null)); }
                             else if (type.equals("text") && !data.equals("")) {
                                 StringItem content = new StringItem(getenv(field, "label", ""), data); 
-                                content.setFont(newFont(getenv(field, "style", "default"))); 
+                                content.setFont(midlet.newFont(getenv(field, "style", "default"))); 
 
                                 screen.append(content);
                             }
