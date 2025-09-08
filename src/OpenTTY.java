@@ -3309,7 +3309,7 @@ class Lua {
                 else {
                     Object screen = args.elementAt(0);
 
-                    if (screen instanceof Displayable) { midlet.display.setCurrent((Displayable) screen); }
+                    if (screen instanceof Displayable) { kill = false; midlet.display.setCurrent((Displayable) screen); }
                     else { return gotbad(1, "show", "screen expected, got " + type(screen)); }
                 }
             }
@@ -3379,7 +3379,6 @@ class Lua {
                 // indicador opcional
                 Object indicatorObj = PKG.get("indicator");
                 if (indicatorObj != null) {
-                    
                     Gauge gauge = new Gauge(null, false, Gauge.INDEFINITE,  Gauge.CONTINUOUS_RUNNING);
                     alert.setIndicator(gauge);
                 }
