@@ -3357,8 +3357,10 @@ class Lua {
                 int ch;
                 while ((ch = is.read()) != -1) { baos.write(ch); }
 
-                return new String(baos.toByteArray(), "UTF-8");
-
+                Vector result = new Vector();
+                result.addElement(new String(baos.toByteArray(), "UTF-8"));
+                result.addElement(new Double(conn.getResponseCode()));
+                return ;
             } 
             catch (Exception e) { throw e; } 
             finally {
