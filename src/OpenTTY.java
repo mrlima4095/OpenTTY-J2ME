@@ -1915,11 +1915,12 @@ class Lua {
         TRIM = 34, 
         PEER = 35, 
         DEVICE = 36,
-        SCREEN = 37, 
-        LIST = 38,
-        QUEST = 39,
-        EDIT = 40,
-        DISPLAY = 41;
+        ALERT= 37
+        SCREEN = 38, 
+        LIST = 39,
+        QUEST = 40,
+        EDIT = 41,
+        DISPLAY = 42;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1950,7 +1951,7 @@ class Lua {
         funcs = new String[] { "connect", "peer", "device" }; loaders = new int[] { CONNECT, PEER, DEVICE };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
-        funcs = new String[] { "display", "screen", "list", "quest", "edit" }; loaders = new int[] { DISPLAY, SCREEN, LIST, QUEST, EDIT };
+        funcs = new String[] { "Alert", "BuildScreen", "BuildList", "BuildQuest", "BuildEdit", "display" }; loaders = new int[] { ALERT, SCREEN, LIST, QUEST, EDIT, DISPLAY };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
