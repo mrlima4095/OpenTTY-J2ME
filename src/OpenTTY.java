@@ -3382,7 +3382,7 @@ class Lua {
                     Hashtable indicatorTable = (Hashtable) indicatorObj;
                     String type = getenv(indicatorTable, "type", "gauge"), style = getenv(indicatorTable, "style", "continuous");
                     
-                    Gauge gauge = new Gauge(null, false, Gauge.INDEFINITE, style.equals("incremental") ? Gauge.INCREMENTAL : style.equals("noninteractive") ? Gauge.NON_INTERACTIVE : Gauge.CONTINUOUS_RUNNING);
+                    Gauge gauge = new Gauge(null, false, Gauge.INDEFINITE, style.equals("noninteractive") ? Gauge.NON_INTERACTIVE : Gauge.CONTINUOUS_RUNNING);
                     alert.setIndicator(gauge);
                 }
             
