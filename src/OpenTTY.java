@@ -3378,11 +3378,9 @@ class Lua {
             
                 // indicador opcional
                 Object indicatorObj = PKG.get("indicator");
-                if (indicatorObj instanceof Hashtable) {
-                    Hashtable indicatorTable = (Hashtable) indicatorObj;
-                    String type = getenv(indicatorTable, "type", "gauge"), style = getenv(indicatorTable, "style", "continuous");
+                if (indicatorObj != null) {
                     
-                    Gauge gauge = new Gauge(null, false, Gauge.INDEFINITE, style.equals("noninteractive") ? Gauge.NON_INTERACTIVE : Gauge.CONTINUOUS_RUNNING);
+                    Gauge gauge = new Gauge(null, false, Gauge.INDEFINITE,  Gauge.CONTINUOUS_RUNNING);
                     alert.setIndicator(gauge);
                 }
             
