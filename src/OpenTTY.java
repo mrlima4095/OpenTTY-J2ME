@@ -3505,7 +3505,6 @@ class Lua {
             this.screen.setCommandListener(this);
             return this.screen;
         }
-
         public void commandAction(Command c, Displayable d) throws Exception {
             if (c == BACK) {
                 midlet.processCommand("xterm", true, root);
