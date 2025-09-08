@@ -1,21 +1,13 @@
 --[[
 
 config=execute touch /home/.yang-lock; case !key (REPO) set REPO=opentty.xyz:31522; 
-command=yang,setrepo
+command=yang
 
-yang=execute x11 list /java/lib/yang;
-setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; cfg run;
-
-shell.name=yang
-shell.args=install,update,query,setrepo,info
-
-install=execute case file (.yang-lock) exec rm /home/.yang-lock & set OLD_QUERY=$QUERY & set QUERY=/home/$RESOURCE & tick Installing... & query socket://$REPO get lib/$RESOURCE & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & unset RESOURCE & touch /home/.yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
-update=execute case file (.yang-lock) exec rm /home/.yang-lock & set OLD_QUERY=$QUERY & set QUERY=/home/yang & tick Updating... & query socket://$REPO get lib/yang & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & touch /home/.yang-lock & cd & import /home/yang; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
-query=execute x11 quest /java/lib/yang;
-
-info=execute echo PackJ 1.4 (Default);
+yang=execute lua /home/yang.lua;
 
 ]]
+
+local mirror = os.getenv("REPO") or "opentty.xyz:31522"
 
 local repo = {
     ["Android ME"] = "android",
@@ -25,9 +17,9 @@ local repo = {
     ["Back Previous"] = "bprevious",
     ["BoxME"] = "boxme",
     ["CMatrix"] = "cmatrix",
-    ["Discord (MIDlet)"] = "http://146.59.80.3/discord_midp2_beta.jar",
+    ["Discord (MIDlet)"] = { url = "http://146.59.80.3/discord_midp2_beta.jar", author = "gtrxac" },
     ["Forge"] = "forge",
-    ["Github (MIDlet)"] = "http://nnp.nnchan.ru/dl/GH2ME.jar",
+    ["Github (MIDlet)"] = { url = "http://nnp.nnchan.ru/dl/GH2ME.jar", author = "shinovon" },
     ["GoBuster (Word list)"] = "gobuster",
     ["Graphics (Lua)"] = "graphics.lua",
     ["ImmersiveShell"] = "sh2me",
@@ -46,6 +38,42 @@ local repo = {
 
 local function install(pkg)
     if string.match(pkg, "MIDlet") then
-        os.execute("") os.exit
+        local MIDlet = repo[pkg]
+        
+        os.execute("execute warn This is a 3rd MIDlet from '" .. MIDlet.author .. "'; bg exec sleep 3 & open " .. MIDlet.url) os.exit()
     end
+
+    local filename = repo[pkg]
+    local conn, i, o = socket.connect("socket://" .. mirror)
+
+    io.write("get lib/" .. filename, o)
+    local content = io.read(i)
+
+    if content == "File 'lib/" .. filename .. "' not found." then
+        os.execute("warn Error while installing package!") os.exit(1)
+    end
+
+    io.write(content, filename)
 end
+
+local function menu()
+    local m = {
+        title = "Repository",
+
+        back = { label = "Back", root = function () os.exit() end },
+        button = { label = "Install", root = install },
+
+        fields = {}
+    }
+
+    local index = 1
+    for k, v in pairs(repo) do
+        m.fields[index] = v
+
+        index = index + 1
+    end
+
+    graphics.display(graphics.list(m))
+end
+
+menu()
