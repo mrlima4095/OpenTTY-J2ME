@@ -3387,36 +3387,31 @@ class Lua {
             }
             return true;
         }
-        private Vector toVector(Hashtable table) {
-            Vector vec = new Vector();
-            if (table == null) { return vec; }
-            for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); }
-            return vec;
-        }
-        private void AppendScreen(Object fieldObj) {
+        private Vector toVector(Hashtable table) { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
 
-            if (fieldObj instanceof Hashtable) {
-                Hashtable field = (Hashtable) fieldObj;
+        private void AppendScreen(Form f, Object obj) {
+            if (obj instanceof Hashtable) {
+                Hashtable field = (Hashtable) obj;
                 String type = getenv(field, "type", "text").trim();
                 if (type.equals("image")) {
                     String imgPath = getenv(field, "img", "");
                     if (!imgPath.equals("")) {
-                        screen.append(Image.createImage(imgPath));
+                        f.append(Image.createImage(imgPath));
                     }
                 } else if (type.equals("text")) {
                     String value = getenv(field, "value", "");
                     if (!value.equals("")) {
                         StringItem si = new StringItem(getenv(field, "label", ""), value);
                         si.setFont(midlet.newFont(getenv(field, "style", "default")));
-                        screen.append(si);
+                        f.append(si);
                     }
                 } else if (type.equals("spacer")) {
                     int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1;
                     int h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10;
-                    screen.append(new Spacer(w, h));
+                    f.append(new Spacer(w, h));
                 }
             } 
-            else if (fieldObj instanceof String) { screen.append((String) fieldObj); }
+            else if (obj instanceof String) { f.append((String) obj); }
         }
 
         private String getvalue(Hashtable table, String key, String fallback) { return table.containsKey(key) ? toLuaString(table.get(key)) : fallback; } 
@@ -3468,10 +3463,17 @@ class Lua {
                     if (fieldsObj instanceof Hashtable) {
                         Hashtable fields = (Hashtable) fieldsObj;
 
-                        for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                            Object fieldObj = fields.get(keys.nextElement());
+                        if (isListTable(fields)) {
+                            Vector fv = toVector(fields);
+
+                            for (int i = 1; i < fields.size(); i++) { AppendScreen(fv.elementAt(i)); }
+                        } else {
+                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
+                                AppendScreen(fields.get(keys.nextElement()));
+                            }
                         }
-                    } else {
+                    } 
+                    else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
                     }
                 }
@@ -3496,11 +3498,23 @@ class Lua {
 
                 Object fieldsObj = PKG.get("fields");
                 if (fieldsObj != null) {
+                    Image IMG = null;
+                    if (PKG.containsKey("icon")) {
+                        try { IMG = Image.createImage(getenv(PKG, "icon", "")); } 
+                        catch (Exception e) { MIDletLogs("add warn Malformed Image '" + getenv(PKG, "icon", "") + "'"); } 
+                    }
+
                     if (fieldsObj instanceof Hashtable) {
                         Hashtable fields = (Hashtable) fieldsObj;
-                        for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                            Object key = keys.nextElement();
-                            list.append(toLuaString(fields.get(key)), null);
+
+                        if (isListTable(fields)) {
+                            Vector fv = toVector(fields);
+
+                            for (int i = 1; i < fields.size(); i++) { list.append(toLuaString(fv.elementAt(i)), null); }
+                        } else {
+                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
+                                list.append(toLuaString(fields.get(keys.nextElement())), null);
+                            }
                         }
                     } else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
