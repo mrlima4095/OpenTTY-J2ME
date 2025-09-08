@@ -68,7 +68,7 @@ local function menu()
 
     local index = 1
     for k, v in pairs(repo) do
-        m.fields[index] = v
+        m.fields[index] = k
 
         index = index + 1
     end
