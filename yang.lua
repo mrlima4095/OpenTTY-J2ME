@@ -61,7 +61,7 @@ local function menu()
         title = "Repository",
 
         back = { label = "Back", root = function () os.exit() end },
-        button = { label = "Install", root = install },
+        button = { label = "Install", root = function (pkg) install(pkg) os.exit() end },
 
         fields = {}
     }
