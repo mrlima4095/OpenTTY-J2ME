@@ -3360,7 +3360,7 @@ class Lua {
                 Vector result = new Vector();
                 result.addElement(new String(baos.toByteArray(), "UTF-8"));
                 result.addElement(new Double(conn.getResponseCode()));
-                return ;
+                return result;
             } 
             catch (Exception e) { throw e; } 
             finally {
