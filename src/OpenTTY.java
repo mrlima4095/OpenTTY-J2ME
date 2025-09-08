@@ -95,7 +95,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : RUN);
                 if (MOD == HISTORY) { preview.addCommand(EDIT); } 
-                else if (MOD == PROCESS) { preview.addCommand(LOAD); preview.addCommand(VIEW); if (attributes.containsKey("J2EMU")) { } else { preview.addCommand(FILTER); } }
+                else if (MOD == PROCESS) { preview.addCommand(LOAD); preview.addCommand(VIEW); preview.addCommand(FILTER); }
     
                 preview.setCommandListener(this); 
                 load(); display.setCurrent(preview);
@@ -130,7 +130,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { if (d == box) { display.setCurrent(preview); } else { processCommand("xterm"); } return; } 
             if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
     
-            if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { processCommand("xterm"); processCommand(c == RUN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU")) ? selected : "buff " + selected); } } 
+            if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); } } 
             else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex()); 
 
