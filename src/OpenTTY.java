@@ -3295,13 +3295,13 @@ class Lua {
                     } else { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got " + type(args.elementAt(0))); }
                 }
             }
-            else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == EDIT) {
+            else if (MOD == ALERT || MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == EDIT) {
                 if (args.isEmpty()) { }
                 else {
                     Object table = args.elementAt(0);
 
                     if (table instanceof Hashtable) { return ((LuaFunction) new LuaFunction(MOD, (Hashtable) table)).BuildScreen(); }
-                    else { return gotbad(1, MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit", "table expected, got " + type(table)); }
+                    else { return gotbad(1, MOD == ALERT ? "alert" : MOD == SCREEN ? "BuildScreen" : MOD == LIST ? "BuildList" : MOD == QUEST ? "BuildQuest" : "BuildEdit", "table expected, got " + type(table)); }
                 }
             }
             else if (MOD == DISPLAY) {
@@ -3371,7 +3371,37 @@ class Lua {
         private String getenv(Hashtable table, String key, String fallback) { return midlet.env(getvalue(table, key, fallback)); }
 
         private Object BuildScreen() throws Exception {
-            if (MOD == SCREEN) {
+            if (MOD == ALERT) {
+                String title = getenv(PKG, "title", midlet.form.getTitle());
+                String message = getenv(PKG, "message", "");
+                Alert alert = new Alert(title, message, null, null);
+            
+                // indicador opcional
+                Object indicatorObj = PKG.get("indicator");
+                if (indicatorObj instanceof Hashtable) {
+                    Hashtable indicatorTable = (Hashtable) indicatorObj;
+                    String type = getenv(indicatorTable, "type", "gauge"), style = getenv(indicatorTable, "style", "continuous");
+                    
+                    Gauge gauge = new Gauge(null, false, Gauge.INDEFINITE, style.equals("incremental") ? Gauge.INCREMENTAL : style.equals("noninteractive") ? Gauge.NON_INTERACTIVE : Gauge.CONTINUOUS_RUNNING);
+                    alert.setIndicator(gauge);
+                }
+            
+                Object backObj = PKG.get("back");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
+                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
+                BACK = new Command(backLabel, Command.BACK, 1);
+                alert.addCommand(BACK);
+            
+                Object buttonObj = PKG.get("button");
+                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
+                if (buttonTable != null) {
+                    String buttonLabel = getenv(buttonTable, "label", "OK");
+                    USER = new Command(buttonLabel, Command.SCREEN, 2);
+                    alert.addCommand(USER);
+                }
+            
+                this.screen = alert;
+            }else if (MOD == SCREEN) {
                 Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle()));
 
                 Object backObj = PKG.get("back");
@@ -3502,7 +3532,6 @@ class Lua {
                 this.screen = box;
             }
 
-            kill = false;
             this.screen.setCommandListener(this);
             return this.screen;
         }
@@ -3519,7 +3548,12 @@ class Lua {
             } else if (c == USER || c == List.SELECT_COMMAND) {
                 Object fire = PKG.get("button") != null ? ((Hashtable) PKG.get("button")).get("root") : "true";
 
-                if (MOD == QUEST) {
+                if (MOD == ALERT) {
+                    midlet.processCommand("xterm", true, root);
+
+                    if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
+                    else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
+                } else if (MOD == QUEST) {
                     String value = INPUT.getString().trim();
                     if (!value.equals("")) {
                         midlet.processCommand("xterm", true, root);
@@ -3527,7 +3561,7 @@ class Lua {
                             Vector result = new Vector();
                             result.addElement(midlet.env(value));
                             ((LuaFunction) fire).call(result);
-                        } else {
+                        } else if (fire != null) {
                             midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
                             midlet.processCommand(toLuaString(fire), true, root);
                         }
@@ -3540,7 +3574,7 @@ class Lua {
                             Vector result = new Vector();
                             result.addElement(midlet.env(value));
                             ((LuaFunction) fire).call(result);
-                        } else {
+                        } else if (fire != null) {
                             midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
                             midlet.processCommand(toLuaString(fire), true, root);
                         }
@@ -3555,14 +3589,14 @@ class Lua {
                             Vector args = new Vector();
                             args.addElement(midlet.env(key));
                             ((LuaFunction) fire).call(args);
-                        } else {
+                        } else if (fire != null) {
                             midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root);
                         }
                     }
                 } else if (MOD == SCREEN) {
                     midlet.processCommand("xterm", true, root);
                     if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
-                    else { midlet.processCommand(toLuaString(fire), true, root); }
+                    else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
                 }
             }
         }
