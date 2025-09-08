@@ -1915,7 +1915,7 @@ class Lua {
         TRIM = 34, 
         PEER = 35, 
         DEVICE = 36,
-        ALERT= 37
+        ALERT= 37,
         SCREEN = 38, 
         LIST = 39,
         QUEST = 40,
