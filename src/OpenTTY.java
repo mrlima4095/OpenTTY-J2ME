@@ -12,7 +12,7 @@ import java.util.*;
 import java.io.*;
 // |
 // OpenTTY MIDlet
-public class OpenTTY extends MIDlet implements CommandListener {
+public class OpenTTY extends MIDlet implem5ents CommandListener {
     private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
     public Random random = new Random();
@@ -2947,25 +2947,27 @@ class Lua {
         }
         return new Object[]{table, key};
     }
-    
+    // |
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
     private static boolean isDigit(char c) { return c >= '0' && c <= '9'; }
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
-
+    // |
+    // Lua Object
     public class LuaFunction implements CommandListener {
         private Vector params, bodyTokens;
         private Hashtable closureScope, PKG; 
         private int MOD = -1;
-
+        // | (Screen)
         private Displayable screen; 
         private Command BACK, USER; 
         private TextField INPUT;
- 
+        // | 
+        // Config.
         LuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
         LuaFunction(int type, Hashtable PKG) { this.MOD = type; this.PKG = PKG; }
         LuaFunction(int type) { this.MOD = type; }
-
+        // | (Main)
         public Object call(Vector args) throws Exception {
             if (MOD != -1) { return internals(args); }
 
@@ -3316,7 +3318,7 @@ class Lua {
 
             return null;
         }
-
+        // |
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
         private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof Displayable ? "screen" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
@@ -3369,6 +3371,54 @@ class Lua {
                 if (baos != null) { try { baos.close(); } catch (Exception e) { } }
             }
         }
+        // |
+        private boolean isListTable(Hashtable table) {
+            if (table == null || table.isEmpty()) { return false; }
+
+            int size = table.size();
+            for (int i = 1; i <= size; i++) {
+                if (!table.containsKey(new Double(i))) { return false; }
+            }
+            for (Enumeration e = table.keys(); e.hasMoreElements();) {
+                Object key = e.nextElement();
+                if (!(key instanceof Double)) { return false; }
+                double d = ((Double) key).doubleValue();
+                if (d != Math.floor(d) || d < 1 || d > size) { return false; }
+            }
+            return true;
+        }
+        private Vector toVector(Hashtable table) {
+            Vector vec = new Vector();
+            if (table == null) { return vec; }
+            for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); }
+            return vec;
+        }
+        private void AppendScreen(Object fieldObj) {
+
+            if (fieldObj instanceof Hashtable) {
+                Hashtable field = (Hashtable) fieldObj;
+                String type = getenv(field, "type", "text").trim();
+                if (type.equals("image")) {
+                    String imgPath = getenv(field, "img", "");
+                    if (!imgPath.equals("")) {
+                        screen.append(Image.createImage(imgPath));
+                    }
+                } else if (type.equals("text")) {
+                    String value = getenv(field, "value", "");
+                    if (!value.equals("")) {
+                        StringItem si = new StringItem(getenv(field, "label", ""), value);
+                        si.setFont(midlet.newFont(getenv(field, "style", "default")));
+                        screen.append(si);
+                    }
+                } else if (type.equals("spacer")) {
+                    int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1;
+                    int h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10;
+                    screen.append(new Spacer(w, h));
+                }
+            } 
+            else if (fieldObj instanceof String) { screen.append((String) fieldObj); }
+        }
+
         private String getvalue(Hashtable table, String key, String fallback) { return table.containsKey(key) ? toLuaString(table.get(key)) : fallback; } 
         private String getenv(Hashtable table, String key, String fallback) { return midlet.env(getvalue(table, key, fallback)); }
 
@@ -3377,9 +3427,10 @@ class Lua {
                 String title = getenv(PKG, "title", midlet.form.getTitle());
                 String message = getenv(PKG, "message", "");
                 Alert alert = new Alert(title, message, null, null);
+                PKG.containsKey("title") ? (PKG.get("title") == null ? null : toLuaString(PKG.get("title"))) : 
             
                 Object indicatorObj = PKG.get("indicator");
-                if (indicatorObj != null) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE,  Gauge.CONTINUOUS_RUNNING)); }
+                if (indicatorObj != null) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
             
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
@@ -3396,7 +3447,7 @@ class Lua {
                 }
             
                 this.screen = alert;
-            }else if (MOD == SCREEN) {
+            } else if (MOD == SCREEN) {
                 Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle()));
 
                 Object backObj = PKG.get("back");
@@ -3416,31 +3467,9 @@ class Lua {
                 if (fieldsObj != null) {
                     if (fieldsObj instanceof Hashtable) {
                         Hashtable fields = (Hashtable) fieldsObj;
+
                         for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
                             Object fieldObj = fields.get(keys.nextElement());
-                            if (fieldObj instanceof Hashtable) {
-                                Hashtable field = (Hashtable) fieldObj;
-                                String type = getenv(field, "type", "text").trim();
-                                if (type.equals("image")) {
-                                    String imgPath = getenv(field, "img", "");
-                                    if (!imgPath.equals("")) {
-                                        screen.append(Image.createImage(imgPath));
-                                    }
-                                } else if (type.equals("text")) {
-                                    String value = getenv(field, "value", "");
-                                    if (!value.equals("")) {
-                                        StringItem si = new StringItem(getenv(field, "label", ""), value);
-                                        si.setFont(midlet.newFont(getenv(field, "style", "default")));
-                                        screen.append(si);
-                                    }
-                                } else if (type.equals("spacer")) {
-                                    int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1;
-                                    int h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10;
-                                    screen.append(new Spacer(w, h));
-                                }
-                            } else if (fieldObj instanceof String) {
-                                screen.append((String) fieldObj);
-                            }
                         }
                     } else {
                         throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
@@ -3449,7 +3478,7 @@ class Lua {
 
                 this.screen = screen;
             } else if (MOD == LIST) {
-                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), List.IMPLICIT);
+                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), List.MULTIPLY);
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
@@ -3596,6 +3625,7 @@ class Lua {
             }
         }
     }
-}
+} 
+// |
 // |
 // EOF
