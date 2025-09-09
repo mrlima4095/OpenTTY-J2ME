@@ -73,7 +73,7 @@ local function menu()
         index = index + 1
     end
 
-    graphics.display(graphics.list(m))
+    graphics.display(graphics.BuildList(m))
 end
 
 menu()
