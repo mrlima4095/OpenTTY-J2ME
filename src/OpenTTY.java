@@ -3387,9 +3387,9 @@ class Lua {
             }
             return true;
         }
-        private Vector toVector(Hashtable table) { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
+        private Vector toVector(Hashtable table) throws Exception { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
 
-        private void AppendScreen(Form f, Object obj) {
+        private void AppendScreen(Form f, Object obj) throws Exception {
             if (obj instanceof Hashtable) {
                 Hashtable field = (Hashtable) obj;
                 String type = getenv(field, "type", "text").trim();
