@@ -39,7 +39,7 @@ local repo = {
 local function install(pkg)
     if string.match(pkg, "MIDlet") then
         local MIDlet = repo[pkg]
-        
+
         os.execute("execute warn This is a 3rd MIDlet from '" .. MIDlet.author .. "'; bg exec sleep 3 & open " .. MIDlet.url) os.exit()
     end
 
