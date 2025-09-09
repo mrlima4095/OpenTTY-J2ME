@@ -73,7 +73,7 @@ function app.GetPaste()
         back = { root = app.PasteType },
         button = {
             label = "Create",
-            root = app.paste
+            root = function(c) app.paste(c) end
         }
     }))
 end
@@ -81,7 +81,7 @@ function app.GetFile()
     graphics.display(graphics.BuildQuest({
         title = "PasteBin",
         label = "File to Send",
-        back = { root = function() app.PasteType end },
+        back = { root = function() app.PasteType() end },
         button = {
             label = "Create",
             root = function (file)
