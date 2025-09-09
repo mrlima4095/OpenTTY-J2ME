@@ -81,7 +81,7 @@ function app.GetFile()
     graphics.display(graphics.BuildQuest({
         title = "PasteBin",
         label = "File to Send",
-        back = { root = app.PasteType },
+        back = { root = function() app.PasteType end },
         button = {
             label = "Create",
             root = function (file)
@@ -91,7 +91,7 @@ function app.GetFile()
                     graphics.display(graphics.Alert({
                         title = "PasteBin",
                         message = "File '" .. file .. "' is empty!",
-                        back = { label = "Back", root = app.GetFile }
+                        back = { label = "Back", root = function() app.GetFile() end }
                     }))
                 else
                     app.paste(content)
