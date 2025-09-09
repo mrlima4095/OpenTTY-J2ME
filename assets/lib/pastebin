@@ -44,9 +44,9 @@ function app.QuestAPI()
 
         button = {
             label = "Confirm",
-            root = function (input)
-                os.execute("set PASTEBIN_API=" .. input)
-                PASTEBIN_API = input
+            root = function (key)
+                os.execute("set PASTEBIN_API=" .. key)
+                PASTEBIN_API = key
 
                 app.main()
             end
