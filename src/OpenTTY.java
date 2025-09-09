@@ -3466,7 +3466,7 @@ class Lua {
                         if (isListTable(fields)) {
                             Vector fv = toVector(fields);
 
-                            for (int i = 1; i < fields.size(); i++) { AppendScreen(screen, fv.elementAt(i)); }
+                            for (int i = 0; i < fields.size(); i++) { AppendScreen(screen, fv.elementAt(i)); }
                         } else {
                             for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
                                 AppendScreen(screen, fields.get(keys.nextElement()));
@@ -3510,7 +3510,7 @@ class Lua {
                         if (isListTable(fields)) {
                             Vector fv = toVector(fields);
 
-                            for (int i = 1; i < fields.size(); i++) { list.append(toLuaString(fv.elementAt(i)), IMG); }
+                            for (int i = 0; i < fields.size(); i++) { list.append(toLuaString(fv.elementAt(i)), IMG); }
                         } else {
                             for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
                                 list.append(toLuaString(fields.get(keys.nextElement())), IMG);
