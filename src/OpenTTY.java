@@ -3466,10 +3466,10 @@ class Lua {
                         if (isListTable(fields)) {
                             Vector fv = toVector(fields);
 
-                            for (int i = 1; i < fields.size(); i++) { AppendScreen(f, fv.elementAt(i)); }
+                            for (int i = 1; i < fields.size(); i++) { AppendScreen(screen, fv.elementAt(i)); }
                         } else {
                             for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                                AppendScreen(f, fields.get(keys.nextElement()));
+                                AppendScreen(screen, fields.get(keys.nextElement()));
                             }
                         }
                     } 
