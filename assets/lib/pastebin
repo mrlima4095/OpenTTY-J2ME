@@ -48,7 +48,7 @@ function app.QuestAPI()
                 os.execute("set PASTEBIN_API=" .. input)
                 PASTEBIN_API = input
 
-                app.main() os.exit()
+                app.main()
             end
         }
     }))
@@ -57,7 +57,7 @@ function app.PasteType()
     graphics.display(graphics.BuildList({
         title = "Paste Source",
         back = { root = os.exit },
-        button = { 
+        button = {
             label = "Select",
             root = function (sel)
                 if sel == "Editor" then app.GetPaste() else app.GetFile() end
@@ -91,9 +91,8 @@ function app.GetFile()
                     graphics.display(graphics.Alert({
                         title = "PasteBin",
                         message = "File '" .. file .. "' is empty!",
-                        back = { root = app.GetFile }
+                        back = { label = "Back", root = app.GetFile }
                     }))
-                    os.exit()
                 end
 
                 app.paste(content)
@@ -111,6 +110,7 @@ function app.paste(content)
         title = "PasteBin",
         message = res,
         back = {
+            label = "Back",
             root = os.exit
         }
     }))
