@@ -41,13 +41,13 @@ function app.QuestAPI()
             label = "Back",
             root = os.exit
         },
-        
+
         button = {
             label = "Confirm",
             root = function (input)
                 os.execute("set PASTEBIN_API=" .. input)
                 PASTEBIN_API = input
-                
+
                 app.main() os.exit()
             end
         }
@@ -63,7 +63,7 @@ function app.PasteType()
                 if sel == "Editor" then app.GetPaste() else app.GetFile() end
             end
         },
-        
+
         fields = { "Open File", "Editor" }
     }))
 end
@@ -73,9 +73,7 @@ function app.GetPaste()
         back = { root = app.PasteType },
         button = {
             label = "Create",
-            root = function (paste)
-                
-            end
+            root = app.paste
         }
     }))
 end
@@ -113,11 +111,12 @@ function app.paste(content)
         title = "PasteBin",
         message = res,
         back = {
-            root = os.exit()
+            root = os.exit
         }
     }))
 
-    io.close(conn, i, o)
+    io.close(conn)
+    io.close(i) io.close(o)
 end
 function app.main()
     if PASTEBIN_API == nil then app.QuestAPI() return os.exit() end
