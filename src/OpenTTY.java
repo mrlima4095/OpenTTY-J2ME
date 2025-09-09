@@ -3501,7 +3501,7 @@ class Lua {
                     Image IMG = null;
                     if (PKG.containsKey("icon")) {
                         try { IMG = Image.createImage(getenv(PKG, "icon", "")); } 
-                        catch (Exception e) { midletmMIDletLogs("add warn Malformed Image '" + getenv(PKG, "icon", "") + "'"); } 
+                        catch (Exception e) { midlet.MIDletLogs("add warn Malformed Image '" + getenv(PKG, "icon", "") + "'"); } 
                     }
 
                     if (fieldsObj instanceof Hashtable) {
