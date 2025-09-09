@@ -3442,13 +3442,7 @@ class Lua {
                 }
                 
                 Object timeoutObj = PKG.get("timeout");
-                if (timeoutObj instanceof Double) {
-                    alert.setTimeout(((Double) timeoutObj).intValue());
-                } else if (timeoutObj instanceof Boolean) {
-                    if (((Boolean) timeoutObj).booleanValue()) {
-                        alert.setTimeout(Alert.FOREVER);
-                    } 
-                } 
+                alert.setTimeout(timeoutObj instanceof Double ? ((Double) timeoutObj).intValue() : Alert.FOREVER);
             
                 this.screen = alert;
             } else if (MOD == SCREEN) {
