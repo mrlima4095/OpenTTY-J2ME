@@ -2677,7 +2677,7 @@ class Lua {
     private Object comparison(Hashtable scope) throws Exception { Object left = concatenation(scope); while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) { Token op = consume(); Object right = concatenation(scope); if (op.type == EQ) { left = new Boolean((left == null && right == null) || (left != null && left.equals(right))); } else if (op.type == NE) { left = new Boolean(!((left == null && right == null) || (left != null && left.equals(right)))); } else if (op.type == LT) { left = new Boolean(((Double) left).doubleValue() < ((Double) right).doubleValue()); } else if (op.type == GT) { left = new Boolean(((Double) left).doubleValue() > ((Double) right).doubleValue()); } else if (op.type == LE) { left = new Boolean(((Double) left).doubleValue() <= ((Double) right).doubleValue()); } else if (op.type == GE) { left = new Boolean(((Double) left).doubleValue() >= ((Double) right).doubleValue()); } } return left; }
     // |
     // Strings
-    private String toLuaString(Object obj) { if (obj == null) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return midlet.escape(obj.toString()); }
+    private String toLuaString(Object obj) { if (obj == null || obj == LUA_NIL) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return midlet.escape(obj.toString()); }
     private Object concatenation(Hashtable scope) throws Exception { Object left = arithmetic(scope); while (peek().type == CONCAT) { consume(CONCAT); Object right = arithmetic(scope); left = toLuaString(left) + toLuaString(right); } return left; }
     // |
     // Arithmetic
@@ -3013,7 +3013,6 @@ class Lua {
             tokens = originalTokens;
 
             return returnValue;
-        }
         public Object internals(Vector args) throws Exception {
             if (MOD == PRINT || MOD == EXEC || MOD == GC) { if (args.isEmpty()) { } else { return midlet.processCommand(MOD == GC ? "gc" : (MOD == PRINT ? "echo " : "") + toLuaString(args.elementAt(0)), true, root); } }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
@@ -3322,6 +3321,7 @@ class Lua {
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
         private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof Displayable ? "screen" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
+        private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
         private Object http(String method, String url, String data, Object item) throws Exception {
             if (url == null || url.length() == 0) { return ""; }
             if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; }
@@ -3419,9 +3419,7 @@ class Lua {
 
         private Object BuildScreen() throws Exception {
             if (MOD == ALERT) {
-                String title = getenv(PKG, "title", midlet.form.getTitle());
-                String message = getenv(PKG, "message", "");
-                Alert alert = new Alert(title, message, null, null);
+                Alert alert = new Alert(getenv(PKG, "title", midlet.form.getTitle()), getenv(PKG, "message", ""), null, null);
 
                 Object indicatorObj = PKG.get("indicator");
                 if (indicatorObj != null) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
@@ -3445,13 +3443,13 @@ class Lua {
             
                 this.screen = alert;
             } else if (MOD == SCREEN) {
-                Form screen = new Form(getenv(PKG, "title", midlet.form.getTitle()));
+                Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
                 BACK = new Command(backLabel, Command.OK, 1);
-                screen.addCommand(BACK);
+                form.addCommand(BACK);
 
                 Object buttonObj = PKG.get("button");
                 Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
@@ -3523,22 +3521,17 @@ class Lua {
 
                 this.screen = list;
             } else if (MOD == QUEST) {
-                String title = getenv(PKG, "title", midlet.form.getTitle());
-                String label = getenv(PKG, "label", "");
-                String key = getenv(PKG, "key", "");
+                Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
+                this.INPUT = new TextField(getenv(PKG, "label", gotbad("BuildQuest", "label", "string expected, got no value")), "", 256, TextField.ANY);
+                form.append(this.INPUT);
 
-                Form form = new Form(title);
-                TextField textField = new TextField(label, "", 256, TextField.ANY);
-                form.append(textField);
+                Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : gotbad("BuildQuest", "button", "table expected, got " + type(buttonObj));
 
-                Object backObj = PKG.get("back");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
-                BACK = new Command(backLabel, Command.BACK, 1);
+                BACK = new Command(backLabel, Command.SCREEN, 2);
                 form.addCommand(BACK);
 
-                Object buttonObj = PKG.get("button");
-                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
                     String buttonLabel = getenv(buttonTable, "label", "Menu");
                     USER = new Command(buttonLabel, Command.SCREEN, 2);
@@ -3546,7 +3539,6 @@ class Lua {
                 }
 
                 this.screen = form;
-                this.INPUT = textField;
             } else if (MOD == EDIT) {
                 String title = getenv(PKG, "title", midlet.form.getTitle());
                 String key = getenv(PKG, "key", "");
