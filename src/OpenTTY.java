@@ -3419,10 +3419,10 @@ class Lua {
 
         private Object BuildScreen() throws Exception {
             if (MOD == ALERT) {
-                String title = getenv(PKG, "title", midlet.form.getTitle());
+                String title = PKG.containsKey("title") ? (PKG.get("title") == null ? null : toLuaString(PKG.get("title"))) : midlet.form.getTitle();
                 String message = getenv(PKG, "message", "");
                 Alert alert = new Alert(title, message, null, null);
-                PKG.containsKey("title") ? (PKG.get("title") == null ? null : toLuaString(PKG.get("title"))) : 
+                
             
                 Object indicatorObj = PKG.get("indicator");
                 if (indicatorObj != null) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
