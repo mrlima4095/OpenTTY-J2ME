@@ -32,7 +32,7 @@ quest.cmd=execute pastebin create; unset CONTENT;
 local PASTEBIN_API = os.getenv("PASTEBIN_API")
 local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
 
-local app = {}
+app = {}
 function app.QuestAPI()
     graphics.display(graphics.BuildEdit({
         title = "Insert your PasteBin API Key",
