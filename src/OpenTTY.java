@@ -3455,7 +3455,7 @@ class Lua {
                 Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
                     USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
-                    screen.addCommand(USER);
+                    form.addCommand(USER);
                 }
 
                 Object fieldsObj = PKG.get("fields");
@@ -3471,26 +3471,22 @@ class Lua {
                             for (Enumeration keys = fields.keys(); keys.hasMoreElements();) { AppendScreen(screen, fields.get(keys.nextElement())); }
                         }
                     } 
-                    else {
-                        throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
-                    }
+                    else { return gotbad("BuildScreen", "fields", "table expected, got " + type(fieldsObj)); }
                 }
 
-                this.screen = screen;
+                this.screen = form;
             } else if (MOD == LIST) {
                 List list = new List(getenv(PKG, "title", midlet.form.getTitle()), List.IMPLICIT);
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
-                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
-                BACK = new Command(backLabel, Command.BACK, 1);
+                BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1);
                 list.addCommand(BACK);
 
                 Object buttonObj = PKG.get("button");
                 Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
-                    String buttonLabel = getenv(buttonTable, "label", "Menu");
-                    USER = new Command(buttonLabel, Command.SCREEN, 2);
+                    USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
                     list.addCommand(USER);
                 }
 
@@ -3514,9 +3510,7 @@ class Lua {
                                 list.append(toLuaString(fields.get(keys.nextElement())), IMG);
                             }
                         }
-                    } else {
-                        throw new RuntimeException("bad argument for 'fields' (table expected, got " + type(fieldsObj) + ")");
-                    }
+                    } else { return gotbad("BuildList", "fields", "table expected, got " + type(fieldsObj)); }
                 }
 
                 this.screen = list;
@@ -3533,22 +3527,17 @@ class Lua {
                 form.addCommand(BACK);
 
                 if (buttonTable != null) {
-                    String buttonLabel = getenv(buttonTable, "label", "Menu");
-                    USER = new Command(buttonLabel, Command.SCREEN, 2);
+                    USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
                     form.addCommand(USER);
                 }
 
                 this.screen = form;
             } else if (MOD == EDIT) {
-                String title = getenv(PKG, "title", midlet.form.getTitle());
-                String key = getenv(PKG, "key", "");
-
-                TextBox box = new TextBox(title, "", 31522, TextField.ANY);
+                TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), "", 31522, TextField.ANY);
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
-                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
-                BACK = new Command(backLabel, Command.BACK, 1);
+                BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1);
                 box.addCommand(BACK);
 
                 Object buttonObj = PKG.get("button");
@@ -3610,17 +3599,34 @@ class Lua {
                         }
                     }
                 } else if (MOD == LIST) {
-                    int index = ((List) screen).getSelectedIndex();
-                    if (index >= 0) {
-                        midlet.processCommand("xterm", true, root);
-                        String key = ((List) screen).getString(index);
-                        
-                        if (fire instanceof LuaFunction) {
-                            Vector args = new Vector();
-                            args.addElement(midlet.env(key));
-                            ((LuaFunction) fire).call(args);
-                        } else if (fire != null) {
-                            midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root);
+                    List list = (List) screen;
+                    int listMode = list.getListType();
+
+                    if (listMode == List.MULTIPLE) {
+                        Vector args = new Vector();
+                        for (int i = 0; i < list.size(); i++) { if (list.isSelected(i)) { args.addElement(midlet.env(list.getString(i))); } }
+
+                        if (args.size() > 0) {
+                            midlet.processCommand("xterm", true, root);
+                            if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(args); } 
+                            else {
+                                for (int i = 0; i < args.size(); i++) {
+                                    String key = args.elementAt(i).toString();
+                                    midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root);
+                                }
+                            }
+                        }
+                    } else {
+                        int index = list.getSelectedIndex();
+                        if (index >= 0) {
+                            midlet.processCommand("xterm", true, root);
+                            String key = list.getString(index);
+
+                            if (fire instanceof LuaFunction) {
+                                Vector args = new Vector();
+                                args.addElement(midlet.env(key));
+                                ((LuaFunction) fire).call(args);
+                            } else if (fire != null) { midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root); }
                         }
                     }
                 } else if (MOD == SCREEN) {
