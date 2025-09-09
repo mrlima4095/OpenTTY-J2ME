@@ -39,7 +39,7 @@ function app.QuestAPI()
 
         back = {
             label = "Back",
-            root = function () os.exit() end
+            root = os.exit
         },
         
         button = {
@@ -60,9 +60,7 @@ function app.PasteType()
         button = { 
             label = "Select", 
             root = function (sel)
-                if sel == "Editor" then app.GetPaste() else 
-
-                end
+                if sel == "Editor" then app.GetPaste() else app.GetFile() end
             end 
         },
         
@@ -70,7 +68,16 @@ function app.PasteType()
     }))
 end
 function app.GetPaste()
-    
+    graphics.display(graphics.BuildEdit({
+        title = "Paste Content",
+        back = { root = app.PasteType }
+        button = {
+            label = "Create",
+            root = function (paste)
+                
+            end
+        }
+    }))
 end
 function app.GetFile()
     
