@@ -106,9 +106,18 @@ end
 function app.paste(content)
     local conn, i, o = socket.connect("socket://" .. PROXY)
 
-    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. "&api_option=paste&api_paste_code=$CONTENT")
+    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. content, o)
+    local res = io.read(i)
 
+    graphics.display(graphics.Alert({
+        title = "PasteBin",
+        message = res,
+        back = {
+            root = os.exit()
+        }
+    }))
 
+    io.close(conn, i, o)
 end
 function app.main()
     if PASTEBIN_API == nil then app.QuestAPI() return os.exit() end
