@@ -39,7 +39,7 @@ function app.QuestAPI()
 
         back = {
             label = "Back",
-            root = os.exit
+            root = function () os.exit() end
         },
 
         button = {
@@ -56,7 +56,7 @@ end
 function app.PasteType()
     graphics.display(graphics.BuildList({
         title = "Paste Source",
-        back = { root = os.exit },
+        back = { root = function () os.exit() end },
         button = {
             label = "Select",
             root = function (sel)
@@ -110,7 +110,7 @@ function app.paste(content)
         title = "PasteBin",
         message = res,
         back = {
-            root = os.exit
+            root = function () os.exit() end
         }
     }))
 
