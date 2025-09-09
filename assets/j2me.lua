@@ -3,11 +3,7 @@ os = {
     getenv = function (key) end,
     clock = function () end,
     setlocale = function (locale) end,
-    exit = function (status) end,
-    getproc = function (pid) end,
-    getpid = function (name) end,
-    putproc = function (pid, key, item) end,
-    running = function (pid) end
+    exit = function (status) end
 }
 
 package = {
