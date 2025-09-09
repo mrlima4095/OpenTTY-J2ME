@@ -1,3 +1,5 @@
+--[[
+    
 [ Config ]
 
 name=PasteBin
@@ -25,3 +27,60 @@ quest.label=Paste Content
 quest.key=CONTENT
 quest.cmd=execute pastebin create; unset CONTENT;
 
+]]
+
+local PASTEBIN_API = os.getenv("PASTEBIN_API")
+local content = ""
+
+local app = {}
+function app.QuestAPI()
+    graphics.display(graphics.BuildEdit({
+        title = "Insert your PasteBin API Key",
+
+        back = {
+            label = "Back",
+            root = function () os.exit() end
+        },
+        
+        button = {
+            label = "Confirm",
+            root = function (input)
+                os.execute("set PASTEBIN_API=" .. input)
+                PASTEBIN_API = input
+                
+                app.main() os.exit()
+            end
+        }
+    }))
+end
+function app.PasteType()
+    graphics.display(graphics.BuildList({
+        title = "Paste Source",
+        back = { root = os.exit },
+        button = { 
+            label = "Select", 
+            root = function (sel)
+                if sel == "Editor" then app.GetPaste() else 
+
+                end
+            end 
+        },
+        
+        fields = { "Open File", "Editor" }
+    }))
+end
+function app.GetPaste()
+    
+end
+function app.GetFile()
+    
+end
+function app.main()
+    if PASTEBIN_API == nil then return app.QuestAPI() end
+
+
+
+    
+end
+
+app.main()
