@@ -3422,17 +3422,16 @@ class Lua {
                 String title = getenv(PKG, "title", midlet.form.getTitle());
                 String message = getenv(PKG, "message", "");
                 Alert alert = new Alert(title, message, null, null);
-                
-            
+
                 Object indicatorObj = PKG.get("indicator");
                 if (indicatorObj != null) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
-            
+
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
                 BACK = new Command(backLabel, Command.BACK, 1);
                 alert.addCommand(BACK);
-            
+
                 Object buttonObj = PKG.get("button");
                 Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
