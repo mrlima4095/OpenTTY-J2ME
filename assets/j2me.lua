@@ -55,4 +55,3 @@ graphics = {
     BuildQuest = function (config) end,
     BuildEdit = function (config) end
 }
-
