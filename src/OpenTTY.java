@@ -3480,7 +3480,7 @@ class Lua {
 
                 this.screen = screen;
             } else if (MOD == LIST) {
-                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), List.MULTIPLE);
+                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), List.IMPLICIT);
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
