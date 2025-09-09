@@ -30,7 +30,7 @@ quest.cmd=execute pastebin create; unset CONTENT;
 ]]
 
 local PASTEBIN_API = os.getenv("PASTEBIN_API")
-local content = ""
+local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
 
 local app = {}
 function app.QuestAPI()
@@ -58,10 +58,10 @@ function app.PasteType()
         title = "Paste Source",
         back = { root = os.exit },
         button = { 
-            label = "Select", 
+            label = "Select",
             root = function (sel)
                 if sel == "Editor" then app.GetPaste() else app.GetFile() end
-            end 
+            end
         },
         
         fields = { "Open File", "Editor" }
@@ -70,7 +70,7 @@ end
 function app.GetPaste()
     graphics.display(graphics.BuildEdit({
         title = "Paste Content",
-        back = { root = app.PasteType }
+        back = { root = app.PasteType },
         button = {
             label = "Create",
             root = function (paste)
@@ -87,17 +87,33 @@ function app.GetFile()
         button = {
             label = "Create",
             root = function (file)
-                content 
+                local content = io.read(file)
+
+                if content == "" then
+                    graphics.display(graphics.Alert({
+                        title = "PasteBin",
+                        message = "File '" .. file .. "' is empty!",
+                        back = { root = app.GetFile }
+                    }))
+                    os.exit()
+                end
+
+                app.paste(content)
             end
         }
     }))
 end
+function app.paste(content)
+    local conn, i, o = socket.connect("socket://" .. PROXY)
+
+    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. "&api_option=paste&api_paste_code=$CONTENT")
+
+
+end
 function app.main()
-    if PASTEBIN_API == nil then return app.QuestAPI() os.exit() end
-        
+    if PASTEBIN_API == nil then app.QuestAPI() return os.exit() end
 
-
-    
+    app.PasteType()
 end
 
 app.main()

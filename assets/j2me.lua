@@ -49,6 +49,7 @@ string = {
 
 graphics = {
     display = function (screen) end,
+    Alert = function (config) end,
     BuildScreen = function (config) end,
     BuildList = function (config) end,
     BuildQuest = function (config) end,
