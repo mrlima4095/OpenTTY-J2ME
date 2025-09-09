@@ -89,6 +89,7 @@ function app.GetFile()
 
                 if content == "" then
                     graphics.display(graphics.Alert({
+                        timeout = false,
                         title = "PasteBin",
                         message = "File '" .. file .. "' is empty!",
                         back = { label = "Back", root = app.GetFile }
@@ -110,6 +111,7 @@ function app.paste(content)
         title = "PasteBin",
         message = res,
         back = {
+            timeout = false,
             label = "Back",
             root = os.exit
         }
