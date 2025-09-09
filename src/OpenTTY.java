@@ -3303,7 +3303,7 @@ class Lua {
                     Object table = args.elementAt(0);
 
                     if (table instanceof Hashtable) { return ((LuaFunction) new LuaFunction(MOD, (Hashtable) table)).BuildScreen(); }
-                    else { return gotbad(1, MOD == ALERT ? "alert" : MOD == SCREEN ? "BuildScreen" : MOD == LIST ? "BuildList" : MOD == QUEST ? "BuildQuest" : "BuildEdit", "table expected, got " + type(table)); }
+                    else { return gotbad(1, MOD == ALERT ? "Alert" : MOD == SCREEN ? "BuildScreen" : MOD == LIST ? "BuildList" : MOD == QUEST ? "BuildQuest" : "BuildEdit", "table expected, got " + type(table)); }
                 }
             }
             else if (MOD == DISPLAY) {
@@ -3312,7 +3312,7 @@ class Lua {
                     Object screen = args.elementAt(0);
 
                     if (screen instanceof Displayable) { kill = false; midlet.display.setCurrent((Displayable) screen); }
-                    else { return gotbad(1, "show", "screen expected, got " + type(screen)); }
+                    else { return gotbad(1, "display", "screen expected, got " + type(screen)); }
                 }
             }
 
@@ -3440,6 +3440,15 @@ class Lua {
                     USER = new Command(buttonLabel, Command.SCREEN, 2);
                     alert.addCommand(USER);
                 }
+                
+                Object timeoutObj = PKG.get("timeout");
+                if (timeoutObj instanceof Double) {
+                    alert.setTimeout(((Double) timeoutObj))
+                } else if (timeoutObj instanceof Boolean) {
+                    
+                }
+                
+                alert.setTimeout(Alert.FOREVER); 
             
                 this.screen = alert;
             } else if (MOD == SCREEN) {
