@@ -80,11 +80,21 @@ function app.GetPaste()
     }))
 end
 function app.GetFile()
-    
+    graphics.display(graphics.BuildQuest({
+        title = "PasteBin",
+        label = "File to Send",
+        back = { root = app.PasteType },
+        button = {
+            label = "Create",
+            root = function (file)
+                content 
+            end
+        }
+    }))
 end
 function app.main()
-    if PASTEBIN_API == nil then return app.QuestAPI() end
-
+    if PASTEBIN_API == nil then return app.QuestAPI() os.exit() end
+        
 
 
     
