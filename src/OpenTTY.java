@@ -3443,12 +3443,12 @@ class Lua {
                 
                 Object timeoutObj = PKG.get("timeout");
                 if (timeoutObj instanceof Double) {
-                    alert.setTimeout(((Double) timeoutObj))
+                    alert.setTimeout(((Double) timeoutObj).intValue());
                 } else if (timeoutObj instanceof Boolean) {
-                    
-                }
-                
-                alert.setTimeout(Alert.FOREVER); 
+                    if (((Boolean) timeoutObj).booleanValue()) {
+                        alert.setTimeout(Alert.FOREVER);
+                    } 
+                } 
             
                 this.screen = alert;
             } else if (MOD == SCREEN) {
