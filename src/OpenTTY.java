@@ -3477,9 +3477,7 @@ class Lua {
 
                             for (int i = 0; i < fields.size(); i++) { AppendScreen(screen, fv.elementAt(i)); }
                         } else {
-                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                                AppendScreen(screen, fields.get(keys.nextElement()));
-                            }
+                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) { AppendScreen(screen, fields.get(keys.nextElement())); }
                         }
                     } 
                     else {
