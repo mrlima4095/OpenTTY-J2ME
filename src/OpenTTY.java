@@ -3419,7 +3419,7 @@ class Lua {
 
         private Object BuildScreen() throws Exception {
             if (MOD == ALERT) {
-                String title = PKG.containsKey("title") ? (PKG.get("title") == null ? "" : toLuaString(PKG.get("title"))) : midlet.form.getTitle();
+                String title = getenv(PKG, "title", midlet.form.getTitle());
                 String message = getenv(PKG, "message", "");
                 Alert alert = new Alert(title, message, null, null);
                 
