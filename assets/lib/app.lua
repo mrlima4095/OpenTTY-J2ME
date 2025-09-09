@@ -1,7 +1,8 @@
-graphics.display(graphics.Alert({
-    title = "PasteBin",
-    message = "gg",
-    back = {
-        root = os.exit
+graphics.display(graphics.BuildEdit({
+    title = "Paste Content",
+    back = { root = app.PasteType },
+    button = {
+        label = "Create",
+        root = app.paste
     }
 }))
