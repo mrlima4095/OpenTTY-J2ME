@@ -3577,6 +3577,8 @@ class Lua {
                 BACK = new Command(backLabel, Command.SCREEN, 2);
                 form.addCommand(BACK);
 
+                Object buttonObj = PKG.get("button");
+                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 if (buttonTable != null) {
                     USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
                     form.addCommand(USER);
