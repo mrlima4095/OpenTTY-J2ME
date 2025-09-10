@@ -3505,7 +3505,9 @@ class Lua {
 
                 this.screen = form;
             } else if (MOD == LIST) {
-                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), List.IMPLICIT);
+                String ListType = getenv(PKG, "type", "implict");
+                TYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT
+                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), TYPE);
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
@@ -3629,9 +3631,8 @@ class Lua {
                     }
                 } else if (MOD == LIST) {
                     List list = (List) screen;
-                    int listMode = list.getListType();
-
-                    if (listMode == List.MULTIPLE) {
+                    
+                    if (TYPE == List.MULTIPLE) {
                         Vector args = new Vector();
                         for (int i = 0; i < list.size(); i++) { if (list.isSelected(i)) { args.addElement(midlet.env(list.getString(i))); } }
 
