@@ -3495,9 +3495,9 @@ class Lua {
                         if (isListTable(fields)) {
                             Vector fv = toVector(fields);
 
-                            for (int i = 0; i < fields.size(); i++) { AppendScreen(screen, fv.elementAt(i)); }
+                            for (int i = 0; i < fields.size(); i++) { AppendScreen(form, fv.elementAt(i)); }
                         } else {
-                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) { AppendScreen(screen, fields.get(keys.nextElement())); }
+                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) { AppendScreen(form, fields.get(keys.nextElement())); }
                         }
                     } 
                     else { return gotbad("BuildScreen", "fields", "table expected, got " + type(fieldsObj)); }
