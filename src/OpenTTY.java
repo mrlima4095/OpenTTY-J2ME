@@ -3592,8 +3592,7 @@ class Lua {
                 box.addCommand(BACK);
 
                 if (buttonTable != null) {
-                    String buttonLabel = getenv(buttonTable, "label", "Menu");
-                    USER = new Command(buttonLabel, Command.SCREEN, 2);
+                    USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
                     box.addCommand(USER);
                 }
 
