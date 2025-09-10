@@ -3322,7 +3322,7 @@ class Lua {
             else if (MOD == SETPROC) {
                 if (args.isEmpty() || args.size() < 2) { }
                 else {
-                    String attribute = toLuaString(args.elementAt(0)).toLuaString();
+                    String attribute = toLuaString(args.elementAt(0)).trim().toLowerCase();
                     Object value = args.elementAt(1);
 
                     if (attribute.equals("root")) { } 
