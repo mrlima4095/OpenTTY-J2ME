@@ -35,11 +35,11 @@ local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
 local app = {}
 function app.QuestAPI()
     graphics.display(graphics.BuildEdit({
-        title = "Insert your PasteBin API Key",
+        title = "PasteBin API Key",
 
         back = {
             label = "Back",
-            root = function () os.exit() end
+            root = os.exit
         },
 
         button = {
@@ -55,8 +55,8 @@ function app.QuestAPI()
 end
 function app.PasteType()
     graphics.display(graphics.BuildList({
-        title = "Paste Source",
-        back = { root = function () os.exit() end },
+        title = "PasteBin",
+        back = { root = os.exit },
         button = {
             label = "Select",
             root = function (sel)
