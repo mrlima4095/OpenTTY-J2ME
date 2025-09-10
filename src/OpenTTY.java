@@ -3370,6 +3370,11 @@ class Lua {
 
                             for (Enumeration keys = origin.keys(); keys.hasMoreElements();) {
                                 Object key = keys.nextElement();
+
+                                if (key instanceof String) {
+                                    if (key.equals("name") || key.equals("root") || key.equals("collector")) { continue; }
+                                }
+                                
                                 result.put(key, origin.get(key));
                             }
                         }
