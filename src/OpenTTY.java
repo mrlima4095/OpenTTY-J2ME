@@ -3318,7 +3318,7 @@ class Lua {
                 }
             }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
-            else if (MOD == GETPID) { return this.PID; }
+            else if (MOD == GETPID) { return PID; }
             else if (MOD == SETPROC) {
                 if (args.isEmpty() || args.size() < 2) { }
                 else {
