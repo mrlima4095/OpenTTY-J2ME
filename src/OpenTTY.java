@@ -3549,7 +3549,7 @@ class Lua {
                 form.append(this.INPUT);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : gotbad("BuildQuest", "button", "table expected, got " + type(buttonObj));
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildQuest", "button", "table expected, got " + type(buttonObj));
 
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
                 BACK = new Command(backLabel, Command.SCREEN, 2);
