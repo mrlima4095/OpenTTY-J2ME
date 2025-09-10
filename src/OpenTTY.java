@@ -3364,7 +3364,7 @@ class Lua {
                     String process = toLuaString(args.elementAt(0)).trim();
 
                     if (midlet.trace.containsKey(process)) {
-                        if (args.size() > 1) { return midlet.getobject(toLuaString(args.elementAt(1)).trim()); } 
+                        if (args.size() > 1) { return (midlet.getprocess(process)).get(toLuaString(args.elementAt(1)).trim()); } 
                         else {
                             Hashtable result = new Hashtable(), origin = midlet.getprocess(process);
 
