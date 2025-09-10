@@ -256,13 +256,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     
             } 
             else if (MOD == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
-            else if (MOD == PROCESS) { 
-                preview.deleteAll(); 
-                
-                for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { 
-                    String PID = (String) keys.nextElement(), name = (String) ((Hashtable) trace.get(PID)).get("name"); 
-                    if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); }
-                }  
+            else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) ((Hashtable) trace.get(PID)).get("name"); if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); } }  
             }
         }
 
@@ -1924,7 +1918,8 @@ class Lua {
         DISPLAY = 42,
         DATE = 43,
         GETPID = 44,
-        SETPROC = 45;
+        SETPROC = 45,
+        GETPROC = 46;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1937,7 +1932,7 @@ class Lua {
         this.proc = midlet.genprocess("lua", root, null);
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable();
-        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "date", "getpid", "setproc" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC };
+        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
         funcs = new String[] { "read", "write", "close" }; loaders = new int[] { READ, WRITE, CLOSE };
@@ -3329,9 +3324,9 @@ class Lua {
                 }
             }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
-            else if (MOD == GETPID) { return PID; }
+            else if (MOD == GETPID) { return args.isEmpty() ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
             else if (MOD == SETPROC) {
-                if (args.isEmpty() || args.size() < 2) { }
+                if (args.isEmpty()) { }
                 else {
                     if (args.elementAt(0) instanceof Boolean) {
                         kill = ((Boolean) args.elementAt(0)).booleanValue();
@@ -3339,7 +3334,7 @@ class Lua {
                     }
                     
                     String attribute = toLuaString(args.elementAt(0)).trim().toLowerCase();
-                    Object value = args.elementAt(1);
+                    Object value = args.size() < 2 ? null : args.elementAt(1);
 
                     if (attribute.equals("root")) { } 
                     else if (attribute.equals("name") || attribute.equals("collector")) {
@@ -3362,6 +3357,25 @@ class Lua {
                         else { proc.put(attribute, value); }
                     }
                 } 
+            }
+            else if (MOD == GETPROC) {
+                if (args.isEmpty()) { }
+                else {
+                    String process = toLuaString(args.elementAt(0)).trim();
+
+                    if (midlet.trace.containsKey(process)) {
+                        if (args.size() > 1) { return midlet.getobject(toLuaString(args.elementAt(1)).trim()); } 
+                        else {
+                            Hashtable result = new Hashtable(), origin = midlet.getprocess(process);
+
+                            for (Enumeration keys = origin.keys(); keys.hasMoreElements();) {
+                                Object key = keys.nextElement();
+                                result.put(key, origin.get(key));
+                            }
+                        }
+
+                    } 
+                }
             }
 
             return null;
