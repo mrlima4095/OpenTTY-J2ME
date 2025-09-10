@@ -1869,7 +1869,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 // |
 // Lua Runtime
 class Lua {
-    private boolean root, breakLoop = false, doreturn = false, kill = true,;
+    private boolean root, breakLoop = false, doreturn = false, kill = true;
+    private boolean[] attrchanges = new boolean[] { false, false };
     private OpenTTY midlet;
     private String PID = null;
     private long uptime = System.currentTimeMillis();
@@ -3317,6 +3318,19 @@ class Lua {
             }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
             else if (MOD == GETPID) { return this.PID; }
+            else if (MOD == SETPROC) {
+                if (args.isEmpty() || args.size() < 2) { }
+                else {
+                    String attribute = toLuaString(args.elementAt(0)).toLuaString();
+                    Object value = args.elementAt(1);
+
+                    if (attribute.equals("root")) { } 
+                    else if (attribute.equals("name") || attribute.equals("collector")) {
+                        if (value == null) { return gotbad(2, "setproc", "value expected, got nil"); }
+                        else { proc.put(attribute, toLuaString(value));  }
+                    }
+                } 
+            }
 
             return null;
         }
