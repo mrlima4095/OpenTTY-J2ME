@@ -2806,18 +2806,29 @@ class Lua {
             if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
-        }
-        else if (current.type == FUNCTION) {
+        }else if (current.type == FUNCTION) {
             consume(FUNCTION);
 
             // Parâmetros
             consume(LPAREN);
             Vector params = new Vector();
-            if (peek().type == IDENTIFIER) {
-                params.addElement(consume(IDENTIFIER).value);
-                while (peek().type == COMMA) {
-                    consume(COMMA);
+            while (true) {
+                int t = peek().type;
+
+                if (t == IDENTIFIER) {
                     params.addElement(consume(IDENTIFIER).value);
+                } else if (t == VARARG) {
+                    consume(VARARG);
+                    params.addElement("...");
+                    break; // vararg deve ser o último parâmetro
+                } else {
+                    break;
+                }
+
+                if (peek().type == COMMA) {
+                    consume(COMMA);
+                } else {
+                    break;
                 }
             }
             consume(RPAREN);
@@ -3322,6 +3333,11 @@ class Lua {
             else if (MOD == SETPROC) {
                 if (args.isEmpty() || args.size() < 2) { }
                 else {
+                    if (args.elementAt(0) instanceof Boolean) {
+                        kill = ((Boolean) args.elementAt(0)).booleanValue();
+                        return null;
+                    }
+                    
                     String attribute = toLuaString(args.elementAt(0)).trim().toLowerCase();
                     Object value = args.elementAt(1);
 
@@ -3329,12 +3345,16 @@ class Lua {
                     else if (attribute.equals("name") || attribute.equals("collector")) {
                         if (value == null) { return gotbad(2, "setproc", "value expected, got nil"); }
                         else {
-                            if (attribute.equals("name") && attrchanges[0]) {
-                                proc.put(attribute, toLuaString(value)); 
-                                attrchanges[0] = false;
+                            if (attribute.equals("name")) {
+                                if (attrchanges[0]) {
+                                    proc.put("name", toLuaString(value)); 
+                                    attrchanges[0] = false;
+                                }
                             } else {
-                                proc.put(attribute, toLuaString(value)); 
-                                attrchanges[1] = false;
+                                if (attrchanges[1]) {
+                                    proc.put("collector", toLuaString(value)); 
+                                    attrchanges[1] = false;
+                                }
                             }
                         }
                     } else {
