@@ -3506,7 +3506,7 @@ class Lua {
                 this.screen = form;
             } else if (MOD == LIST) {
                 String ListType = getenv(PKG, "type", "implict");
-                TYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT
+                TYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT;
                 List list = new List(getenv(PKG, "title", midlet.form.getTitle()), TYPE);
 
                 Object backObj = PKG.get("back");
