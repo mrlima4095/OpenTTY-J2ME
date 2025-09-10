@@ -3586,8 +3586,8 @@ class Lua {
             } else if (MOD == EDIT) {
                 TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), "", 31522, TextField.ANY);
 
-                Object backObj = PKG.get("back");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
+                Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildQuest", "button", "table expected, got " + type(buttonObj));
                 BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1);
                 box.addCommand(BACK);
 
