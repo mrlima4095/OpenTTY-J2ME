@@ -3545,7 +3545,7 @@ class Lua {
                 this.screen = list;
             } else if (MOD == QUEST) {
                 Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
-                this.INPUT = new TextField(getenv(PKG, "label", gotbad("BuildQuest", "label", "string expected, got no value")), "", 256, TextField.ANY);
+                this.INPUT = new TextField(getenv(PKG, "label", (String) gotbad("BuildQuest", "label", "string expected, got no value")), "", 256, TextField.ANY);
                 form.append(this.INPUT);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
