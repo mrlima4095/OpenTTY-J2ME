@@ -109,16 +109,17 @@ function app.paste(content)
     graphics.display(graphics.Alert({
         title = "PasteBin",
         message = res,
-        back = {
-            root = function () os.exit() end
-        }
+        back = { root = os.exit },
+        button = { label = "Copy", root = function() print(res) os.exit() end
     }))
 
     io.close(conn)
     io.close(i) io.close(o)
 end
 function app.main()
-    if PASTEBIN_API == nil then app.QuestAPI() return os.exit() end
+    os.setproc("name", "pastebin")
+    
+    if PASTEBIN_API == nil then app.QuestAPI() return end
 
     app.PasteType()
 end
