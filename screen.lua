@@ -1,5 +1,1 @@
-graphics.display(graphics.BuildList({
-    back = { root = os.exit }
-
-    
-}))
+graphics.display(graphics.BuildQuest({ title = "Lua Quest", label = tostring("Type anything..."), button = { label = "Read", root = function (input) print(input) os.exit() end }, back = { label = "Back", root = os.exit } }))

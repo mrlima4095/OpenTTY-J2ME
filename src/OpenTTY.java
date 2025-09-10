@@ -3567,8 +3567,8 @@ class Lua {
                 this.screen = list;
             } else if (MOD == QUEST) {
                 Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
-                this.INPUT = new TextField(getenv(PKG, "label", (String) gotbad("BuildQuest", "label", "string expected, got no value")), "", 256, TextField.ANY);
-                form.append(this.INPUT);
+                TextField field = new TextField(getenv(PKG, "label", (String) gotbad("BuildQuest", "label", "string expected, got no value")), "", 256, TextField.ANY);
+                form.append(field);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildQuest", "button", "table expected, got " + type(buttonObj));
@@ -3582,12 +3582,13 @@ class Lua {
                     form.addCommand(USER);
                 }
 
+                this.INPUT = field;
                 this.screen = form;
             } else if (MOD == EDIT) {
                 TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), "", 31522, TextField.ANY);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildQuest", "button", "table expected, got " + type(buttonObj));
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildEdit", "button", "table expected, got " + type(buttonObj));
                 BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1);
                 box.addCommand(BACK);
 
