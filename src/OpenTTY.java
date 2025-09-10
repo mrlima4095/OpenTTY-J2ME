@@ -1921,7 +1921,9 @@ class Lua {
         QUEST = 40,
         EDIT = 41,
         DISPLAY = 42,
-        DATE = 43;
+        DATE = 43,
+        GETPID = 44,
+        SETPROC = 45;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1934,7 +1936,7 @@ class Lua {
         this.proc = midlet.genprocess("lua", root, null);
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable();
-        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "date" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, DATE };
+        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "date", "getpid", "setproc" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
         funcs = new String[] { "read", "write", "close" }; loaders = new int[] { READ, WRITE, CLOSE };
@@ -3313,38 +3315,8 @@ class Lua {
                     else { return gotbad(1, "display", "screen expected, got " + type(screen)); }
                 }
             }
-            else if (MOD == DATE) {
-                String format = args.isEmpty() ? "" : toLuaString(args.elementAt(0));
-                Date now = new java.util.Date();
-
-                if (format.equals("*t")) {
-                    Hashtable tbl = new Hashtable();
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(now);
-
-                    tbl.put("year", new Double(cal.get(Calendar.YEAR)));
-                    tbl.put("month", new Double(cal.get(Calendar.MONTH) + 1));
-                    tbl.put("day", new Double(cal.get(Calendar.DAY_OF_MONTH)));
-                    tbl.put("hour", new Double(cal.get(Calendar.HOUR_OF_DAY)));
-                    tbl.put("min", new Double(cal.get(Calendar.MINUTE)));
-                    tbl.put("sec", new Double(cal.get(Calendar.SECOND)));
-                    tbl.put("wday", new Double(cal.get(Calendar.DAY_OF_WEEK)));
-                    tbl.put("yday", new Double(cal.get(Calendar.DAY_OF_YEAR)));
-                    tbl.put("isdst", new Boolean(cal.getTimeZone().inDaylightTime(now)));
-                    return tbl;
-                } else if (format.equals("") || format == null) { return now.toString(); } else {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(now);
-                    String result = format;
-                    result = midlet.replace(result, "%Y", "" + cal.get(Calendar.YEAR));
-                    result = midlet.replace(result, "%m", "" + (cal.get(Calendar.MONTH) + 1));
-                    result = midlet.replace(result, "%d", "" + cal.get(Calendar.DAY_OF_MONTH));
-                    result = midlet.replace(result, "%H", "" + cal.get(Calendar.HOUR_OF_DAY));
-                    result = midlet.replace(result, "%M", "" + cal.get(Calendar.MINUTE));
-                    result = midlet.replace(result, "%S", "" + cal.get(Calendar.SECOND));
-                    return result;
-                }
-            }
+            else if (MOD == DATE) { return new java.util.Date().toString(); }
+            else if (MOD == GETPID) { return this.PID; }
 
             return null;
         }
