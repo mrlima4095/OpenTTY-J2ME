@@ -2959,7 +2959,7 @@ class Lua {
     public class LuaFunction implements CommandListener {
         private Vector params, bodyTokens;
         private Hashtable closureScope, PKG; 
-        private int MOD = -1;
+        private int MOD = -1, TYPE = -1;
         // | (Screen)
         private Displayable screen; 
         private Command BACK, USER; 
