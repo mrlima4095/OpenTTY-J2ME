@@ -110,7 +110,7 @@ function app.paste(content)
         title = "PasteBin",
         message = res,
         back = { root = os.exit },
-        button = { label = "Copy", root = function() print(res) os.exit() end
+        button = { label = "Copy", root = function() print(res) os.exit() end }
     }))
 
     io.close(conn)
