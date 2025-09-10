@@ -59,9 +59,9 @@ end
 local function menu()
     local m = {
         title = "Repository",
-
+        type = "multiple",
         back = { label = "Back", root = function () os.exit() end },
-        button = { label = "Install", root = function (pkg) install(pkg) os.exit() end },
+        button = { label = "Install", root = function (...) for k, v in pairs(...) do install(v) end os.exit() end },
 
         fields = {}
     }
