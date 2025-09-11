@@ -1,1 +1,0 @@
-graphics.display(graphics.BuildQuest({ title = "Lua Quest", label = "Type anything...", button = { label = "Read", root = function (input) print(input) os.exit() end }, back = { label = "Back", root = os.exit } }))
