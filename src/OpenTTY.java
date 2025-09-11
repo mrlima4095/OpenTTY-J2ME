@@ -65,203 +65,611 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Control Thread
-    public class MIDletControl implements CommandListener {
+    public class MIDletControl implements CommandListener, Runnable {
+        // MOD constants
         private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8;
+        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5, DYNAMICS = 6;
+
+        // MIDletControl fields
         private int MOD = 0;
-        private boolean root = false, asking_user = username.equals(""), asking_passwd = passwd().equals(""); 
+        private boolean root = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
         private String command = null, pfilter = "";
         private Vector history = (Vector) getobject("1", "history");
         private Form monitor = new Form(form.getTitle());
         private List preview = new List(form.getTitle(), List.IMPLICIT);
         private StringItem status = new StringItem("Memory Status:", "");
         private TextBox box = new TextBox("Process Filter", "", 31522, TextField.ANY);
-        private TextField USER = new TextField("Username", "", 256, TextField.ANY), 
-                          PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD); 
+        private TextField USER = new TextField("Username", "", 256, TextField.ANY),
+                PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD);
         private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
-                    OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOAD = new Command("Load Screen", Command.OK, 1), 
-                    VIEW = new Command("View info", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 1), LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2), FILTER = new Command("Filter", Command.OK, 1);
-        
+                OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOAD = new Command("Load Screen", Command.OK, 1),
+                VIEW = new Command("View info", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 1), LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2), FILTER = new Command("Filter", Command.OK, 1);
+
+        // Connect fields
+        private int COUNT = 1;
+        private boolean asked = false, keep = false;
+
+        private SocketConnection CONN;
+        private ServerSocketConnection server = null;
+        private InputStream IN;
+        private OutputStream OUT;
+        private String PID = genpid(), DB, address, port;
+        private Hashtable sessions = (Hashtable) getobject("1", "sessions");
+
+        private int start;
+        private String[] wordlist;
+
+        private Alert confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING);
+        private Form screen;
+        private List list;
+        private TextField inputField = new TextField("Command", "", 256, TextField.ANY);
+        private StringItem console = new StringItem("", "");
+
+        private Command EXECUTE = new Command("Send", Command.OK, 1),
+                CONNECT_CMD = new Command("Connect", Command.BACK, 1),
+                CLEAR = new Command("Clear", Command.SCREEN, 2),
+                VIEW2 = new Command("View info", Command.SCREEN, 2),
+                SAVE = new Command("Save Logs", Command.SCREEN, 2),
+                YES = new Command("Yes", Command.OK, 1),
+                NO = new Command("No", Command.BACK, 1);
+
+        // Constructors for MIDletControl modes (monitor, process, explorer, history)
         public MIDletControl(String command, boolean root) {
             MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
             this.root = root;
-            
+
             if (MOD == MONITOR) {
                 monitor.append(status);
-                monitor.addCommand(BACK); monitor.addCommand(REFRESH);
+                monitor.addCommand(BACK);
+                monitor.addCommand(REFRESH);
                 monitor.setCommandListener(this);
-                load(); display.setCurrent(monitor);
+                load();
+                display.setCurrent(monitor);
             } else {
-                preview.addCommand(BACK); 
-                
+                preview.addCommand(BACK);
+
                 preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : RUN);
-                if (MOD == HISTORY) { preview.addCommand(EDIT); } 
-                else if (MOD == PROCESS) { preview.addCommand(LOAD); preview.addCommand(VIEW); preview.addCommand(FILTER); }
-    
-                preview.setCommandListener(this); 
-                load(); display.setCurrent(preview);
+                if (MOD == HISTORY) {
+                    preview.addCommand(EDIT);
+                } else if (MOD == PROCESS) {
+                    preview.addCommand(LOAD);
+                    preview.addCommand(VIEW);
+                    preview.addCommand(FILTER);
+                }
+
+                preview.setCommandListener(this);
+                load();
+                display.setCurrent(preview);
             }
         }
+
+        // Constructor for SIGNUP and REQUEST modes
         public MIDletControl(String command) {
             MOD = command == null || command.length() == 0 || command.equals("login") ? SIGNUP : REQUEST;
 
-            if (MOD == SIGNUP) { 
-                monitor.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); 
+            if (MOD == SIGNUP) {
+                monitor.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim());
 
-                if (asking_user) { asking_user = true; monitor.append(USER); } 
-                if (asking_passwd) { monitor.append(PASSWD); } 
+                if (asking_user) {
+                    asking_user = true;
+                    monitor.append(USER);
+                }
+                if (asking_passwd) {
+                    monitor.append(PASSWD);
+                }
 
-                monitor.addCommand(LOGIN); monitor.addCommand(EXIT); 
-            } else { 
-                if (asking_passwd) { new MIDletControl(null); return; } 
+                monitor.addCommand(LOGIN);
+                monitor.addCommand(EXIT);
+            } else {
+                if (asking_passwd) {
+                    new MIDletControl(null);
+                    return;
+                }
                 this.command = command;
 
-                PASSWD.setLabel("[sudo] password for " + loadRMS("OpenRMS")); 
+                PASSWD.setLabel("[sudo] password for " + loadRMS("OpenRMS"));
                 BACK = new Command("Back", Command.SCREEN, 2);
-                monitor.append(PASSWD); 
-                monitor.addCommand(RUN); monitor.addCommand(BACK); 
-            } 
+                monitor.append(PASSWD);
+                monitor.addCommand(RUN);
+                monitor.addCommand(BACK);
+            }
 
-            
-            monitor.setCommandListener(this); 
-            display.setCurrent(monitor); 
+            monitor.setCommandListener(this);
+            display.setCurrent(monitor);
         }
-        
-        public void commandAction(Command c, Displayable d) {
-            if (c == BACK) { if (d == box) { display.setCurrent(preview); } else { processCommand("xterm"); } return; } 
-            if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
-    
-            if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); } } 
-            else if (MOD == EXPLORER) {
-                String selected = preview.getString(preview.getSelectedIndex()); 
 
-                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { 
-                    if (selected != null) { 
+        // Constructor for Connect modes (nc, prscan, gobuster, server, bind)
+        public MIDletControl(String mode, String args, boolean root) {
+            MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : mode.equals("bind") ? BIND : -1;
+            this.root = root;
+
+            if (MOD == SERVER || MOD == BIND) {
+                if (args == null || args.length() == 0 || args.equals("$PORT")) {
+                    processCommand("set PORT=31522", false);
+                    port = "31522";
+                    DB = "";
+                } else {
+                    port = getCommand(args);
+                    DB = getArgument(args);
+                    DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB;
+                }
+
+                new Thread(this, MOD == BIND ? "Bind" : "Server").start();
+                return;
+            } else if (MOD == -1) {
+                return;
+            }
+
+            if (args == null || args.length() == 0) {
+                return;
+            }
+
+            Hashtable proc = genprocess(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", root, null);
+
+            if (MOD == NC) {
+                address = args;
+                try {
+                    CONN = (SocketConnection) Connector.open("socket://" + address);
+                    IN = CONN.openInputStream();
+                    OUT = CONN.openOutputStream();
+                } catch (Exception e) {
+                    echoCommand(getCatch(e));
+                    return;
+                }
+
+                screen = new Form(form.getTitle());
+                inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
+                screen.append(console);
+                screen.append(inputField);
+                screen.addCommand(EXECUTE);
+                screen.addCommand(BACK);
+                screen.addCommand(CLEAR);
+                screen.addCommand(VIEW2);
+                screen.setCommandListener(this);
+
+                proc.put("socket", CONN);
+                proc.put("in-stream", IN);
+                proc.put("out-stream", OUT);
+                proc.put("screen", screen);
+                display.setCurrent(screen);
+            } else {
+                address = getCommand(args);
+                list = new List(MOD == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
+
+                if (MOD == PRSCAN) {
+                    start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true);
+                } else {
+                    wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
+                    if (wordlist == null || wordlist.length == 0) {
+                        echoCommand("gobuster: blank word list");
+                        return;
+                    }
+                }
+
+                list.addCommand(BACK);
+                list.addCommand(CONNECT_CMD);
+                list.addCommand(SAVE);
+                list.setCommandListener(this);
+
+                proc.put("screen", list);
+                display.setCurrent(list);
+            }
+
+            trace.put(PID, proc);
+            new Thread(this, "NET").start();
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            // Handle BACK command for filter box
+            if (c == BACK) {
+                if (d == box) {
+                    display.setCurrent(preview);
+                } else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER || MOD == SERVER || MOD == BIND) {
+                    back();
+                } else {
+                    processCommand("xterm");
+                }
+                return;
+            }
+
+            // Filter box input
+            if (d == box) {
+                pfilter = box.getString().trim();
+                load();
+                display.setCurrent(preview);
+                return;
+            }
+
+            // MIDletControl modes handling
+            if (MOD == HISTORY) {
+                String selected = preview.getString(preview.getSelectedIndex());
+                if (selected != null) {
+                    processCommand("xterm");
+                    processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected);
+                }
+            } else if (MOD == EXPLORER) {
+                String selected = preview.getString(preview.getSelectedIndex());
+
+                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) {
+                    if (selected != null) {
                         processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
 
-                        if (display.getCurrent() == preview) { reload(); }
+                        if (display.getCurrent() == preview) {
+                            reload();
+                        }
 
-                        stdin.setLabel(username + " " + path + " $"); 
-                    } 
-                } 
-                else if (c == DELETE) { 
-                    int STATUS = deleteFile(path + selected); 
-                    if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
-    
-                    reload(); 
-                } 
-                else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected), root); } 
-                else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected, root); } 
-            } 
-            else if (MOD == MONITOR) { System.gc(); reload(); } 
-            else if (MOD == PROCESS) {
-                if (c == FILTER) { box.addCommand(BACK); box.addCommand(RUN); box.setCommandListener(this); display.setCurrent(box); return; }
-                
-                int index = preview.getSelectedIndex(); 
-                if (index >= 0) { 
+                        stdin.setLabel(username + " " + path + " $");
+                    }
+                } else if (c == DELETE) {
+                    int STATUS = deleteFile(path + selected);
+                    if (STATUS != 0) {
+                        warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException");
+                    }
+
+                    reload();
+                } else if (c == RUNS) {
+                    processCommand("xterm");
+                    runScript(getcontent(path + selected), root);
+                } else if (c == IMPORT) {
+                    processCommand("xterm");
+                    importScript(path + selected, root);
+                }
+            } else if (MOD == MONITOR) {
+                System.gc();
+                reload();
+            } else if (MOD == PROCESS) {
+                if (c == FILTER) {
+                    box.addCommand(BACK);
+                    box.addCommand(RUN);
+                    box.setCommandListener(this);
+                    display.setCurrent(box);
+                    return;
+                }
+
+                int index = preview.getSelectedIndex();
+                if (index >= 0) {
                     String PID = split(preview.getString(index), '\t')[0];
                     int STATUS = 0;
 
-                    if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, root); } 
-                    else if (c == VIEW) { processCommand("trace view " + PID, false, root); }
-                    else if (c == LOAD) {
-                        if (getowner(PID).equals("root") && !root) { STATUS = 13; }
+                    if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) {
+                        STATUS = kill(PID, false, root);
+                    } else if (c == VIEW) {
+                        processCommand("trace view " + PID, false, root);
+                    } else if (c == LOAD) {
+                        if (getowner(PID).equals("root") && !root) {
+                            STATUS = 13;
+                        }
 
                         Displayable screen = (Displayable) getobject(PID, "screen");
 
-                        if (screen == null) { STATUS = 69; }
-                        else { display.setCurrent(screen); return; }
+                        if (screen == null) {
+                            STATUS = 69;
+                        } else {
+                            display.setCurrent(screen);
+                            return;
+                        }
                     }
 
-                    if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!"); } 
-                            
+                    if (STATUS != 0) {
+                        warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!");
+                    }
+
                     reload();
                 }
-            }
-            else if (MOD == SIGNUP) {
+            } else if (MOD == SIGNUP) {
                 if (c == LOGIN) {
                     String password = PASSWD.getString().trim();
 
-                    if (asking_user) { username = USER.getString().trim(); }
-                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); }
-                    else if (username.equals("root")) { warnCommand(form.getTitle(), "Invalid username!"); USER.setString(""); }
-                    else {
-                        if (asking_user) { writeRMS("/home/OpenRMS", username); }
-                        if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
+                    if (asking_user) {
+                        username = USER.getString().trim();
+                    }
+                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) {
+                        warnCommand(form.getTitle(), "Missing credentials!");
+                    } else if (username.equals("root")) {
+                        warnCommand(form.getTitle(), "Invalid username!");
+                        USER.setString("");
+                    } else {
+                        if (asking_user) {
+                            writeRMS("/home/OpenRMS", username);
+                        }
+                        if (asking_passwd) {
+                            writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2);
+                        }
 
-                        display.setCurrent(form); runScript(loadRMS("initd")); stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); 
+                        display.setCurrent(form);
+                        runScript(loadRMS("initd"));
+                        stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
+                    }
+                } else if (c == EXIT) {
+                    processCommand("exit", false);
+                }
+            } else if (MOD == REQUEST) {
+                String password = PASSWD.getString().trim();
+
+                if (password.equals("")) {
+                    // Do nothing
+                } else if (String.valueOf(password.hashCode()).equals(passwd())) {
+                    processCommand("xterm");
+                    processCommand(command, true, true);
+                } else {
+                    PASSWD.setString("");
+                    warnCommand(form.getTitle(), "Wrong password");
+                }
+            }
+
+            // Connect modes handling
+            if (MOD == NC) {
+                if (d == screen) {
+                    if (c == EXECUTE) {
+                        String PAYLOAD = inputField.getString().trim();
+                        inputField.setString("");
+
+                        try {
+                            OUT.write((PAYLOAD + "\n").getBytes());
+                            OUT.flush();
+                        } catch (Exception e) {
+                            warnCommand(form.getTitle(), getCatch(e));
+                            if (!keep) {
+                                trace.remove(PID);
+                            }
+                        }
+                    } else if (c == BACK) {
+                        writeRMS("/home/remote", console.getText());
+                        back();
+                    } else if (c == CLEAR) {
+                        console.setText("");
+                    } else if (c == VIEW2) {
+                        try {
+                            warnCommand("Information",
+                                    "Host: " + split(address, ':')[0] + "\n" +
+                                            "Port: " + split(address, ':')[1] + "\n\n" +
+                                            "Local Address: " + CONN.getLocalAddress() + "\n" +
+                                            "Local Port: " + CONN.getLocalPort());
+                        } catch (Exception e) {
+                            warnCommand(form.getTitle(), "Couldn't read connection information!");
+                        }
                     }
                 }
-                else if (c == EXIT) { processCommand("exit", false); }
+            } else if (MOD == PRSCAN || MOD == GOBUSTER) {
+                if (d == list) {
+                    if (c == BACK) {
+                        back();
+                    } else if (c == CONNECT_CMD || c == List.SELECT_COMMAND) {
+                        String ITEM = list.getString(list.getSelectedIndex());
+                        if (MOD == PRSCAN) {
+                            processCommand("nc " + address + ":" + ITEM);
+                        } else {
+                            processCommand("execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true");
+                        }
+                    } else if (c == SAVE) {
+                        StringBuffer BUFFER = new StringBuffer();
+                        for (int i = 0; i < list.size(); i++) {
+                            BUFFER.append(MOD == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n");
+                        }
+
+                        nanoContent = BUFFER.toString().trim();
+                        processCommand("nano", false);
+                    }
+                }
             }
-            else if (MOD == REQUEST) {
-                String password = PASSWD.getString().trim();
-                
-                if (password.equals("")) { }
-                else if (String.valueOf(password.hashCode()).equals(passwd())) { processCommand("xterm"); processCommand(command, true, true); } 
-                else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password"); }
+        }
+
+        public void run() {
+            if (MOD == NC) {
+                while (trace.containsKey(PID)) {
+                    try {
+                        if (IN.available() > 0) {
+                            byte[] BUFFER = new byte[IN.available()];
+                            int LENGTH = IN.read(BUFFER);
+                            if (LENGTH > 0) echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console);
+                        }
+                    } catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (!keep) { trace.remove(PID); } }
+                }
+
+                try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
+                return;
             }
-        } 
-        private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root); } else { load(); } }
-        private void load() {
+            else if (MOD == PRSCAN) {
+                for (int port = start; port <= 65535; port++) {
+                    try {
+                        list.setTicker(new Ticker("Scanning port " + port + "..."));
+                        if (!trace.containsKey(PID)) { break; }
+                        Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
+                        list.append("" + port, null);
+                    } catch (IOException e) { }
+                }
+                list.setTicker(null);
+                if (!keep) { trace.remove(PID); }
+                return;
+            }
+            else if (MOD == GOBUSTER) {
+                list.setTicker(new Ticker("Searching..."));
+                for (int i = 0; i < wordlist.length; i++) {
+                    String path = wordlist[i].trim();
+                    if (!trace.containsKey(PID)) { break; }
+                    if (!path.equals("") && !path.startsWith("#")) {
+                        try {
+                            int code = verifyHTTP(address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path);
+                            if (code != 404) list.append(code + " /" + path, null);
+                        } catch (IOException e) { }
+                    }
+                }
+                list.setTicker(null);
+                if (!keep) { trace.remove(PID); }
+                return;
+            }
+            else {
+                if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
+
+                Hashtable proc = genprocess(MOD == SERVER ? "server" : "bind", root, null);
+                proc.put("port", port); trace.put(PID, proc); sessions.put(port, MOD == SERVER ? "http-cli" : "nobody");
+
+                while (trace.containsKey(PID)) {
+                    try {
+                        server = (ServerSocketConnection) Connector.open("socket://:" + port); proc.put("server", server); 
+                        if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port " + port); COUNT++; }
+
+                        CONN = (SocketConnection) server.acceptAndOpen();
+                        address = CONN.getAddress(); echoCommand("[+] " + address + " connected");
+
+                        IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
+                        proc.put("in-stream", IN); proc.put("out-stream", OUT);
+
+                        if (MOD == SERVER) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead = IN.read(buffer);
+                            if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); } 
+                            else {
+                                echoCommand("[+] " + address + " -> " + env(new String(buffer, 0, bytesRead).trim()));
+                                OUT.write(getcontent(DB).getBytes()); OUT.flush();
+                            }
+                        } else {
+                            sessions.put(port, address);
+                            while (trace.containsKey(PID)) {
+                                byte[] buffer = new byte[4096];
+                                int bytesRead = IN.read(buffer);
+                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); break; }
+                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                                echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+
+                                String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
+
+                                String before = stdout != null ? stdout.getText() : "";
+                                processCommand(command, true, root);
+                                String after = stdout != null ? stdout.getText() : "";
+
+                                String output = after.length() >= before.length() ? after.substring(before.length()).trim() + "\n" : after + "\n";
+
+                                OUT.write(output.getBytes()); OUT.flush();
+                            }
+                        }
+                    } 
+                    catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
+                    finally {
+                        try { if (IN != null) IN.close(); } catch (IOException e) { }
+                        try { if (OUT != null) OUT.close(); } catch (IOException e) { }
+                        try { if (CONN != null) CONN.close(); } catch (IOException e) { }
+                        try { if (server != null) server.close(); } catch (IOException e) { }
+                        
+                        sessions.put(port, MOD == SERVER ? "http-cli" : "nobody");
+                    }
+                } 
+                trace.remove(PID); sessions.remove(port);
+                echoCommand("[-] Server stopped");
+                MIDletLogs("add info Server was stopped");
+            }
+        }
+
+        private void reload() {
+            if (attributes.containsKey("J2EMU")) {
+                new MIDletControl(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root);
+            } else {
+                load();
+            }
+        }
+
+    private void load() {
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
             else if (MOD == EXPLORER) {
                 if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); }
                 else { preview.removeCommand(DELETE); }
-    
+
                 if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); }
                 else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
-    
+
                 if (attributes.containsKey("J2EMU")) { }
                 else { preview.setTitle(path); }
-    
+
                 preview.deleteAll();
                 if (path.equals("/")) { }
                 else { preview.append("..", null); }
-    
+
                 try {
                     if (path.equals("/mnt/")) {
                         for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); }
                     } else if (path.startsWith("/mnt/")) {
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
                         Vector dirs = new Vector(), files = new Vector();
-    
+
                         for (Enumeration content = CONN.list(); content.hasMoreElements();) {
                             String name = (String) content.nextElement();
-    
+
                             if (name.endsWith("/")) { dirs.addElement(name); }
                             else { files.addElement(name); }
                         }
-    
+
                         while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), null); }
                         while (!files.isEmpty()) { preview.append(getFirstString(files), null); }
-    
+
                         CONN.close();
                     } else if (path.startsWith("/home/")) {
                         String[] recordStores = RecordStore.listRecordStores();
-    
+
                         for (int i = 0; i < recordStores.length; i++) {
                             if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); }
                         }
                     }
-    
+
                     String[] files = (String[]) paths.get(path);
                     if (files != null) {
                         for (int i = 0; i < files.length; i++) {
                             String f = files[i];
-    
+
                             if (f != null && !f.equals("..") && !f.equals("/")) { preview.append(f, null); }
                         }
                     }
                 } catch (IOException e) { }
-    
+
             } 
             else if (MOD == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) ((Hashtable) trace.get(PID)).get("name"); if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); } }  
             }
         }
 
-        public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; } 
+        private void back() {
+            if (trace.containsKey(PID) && !asked) {
+                confirm.addCommand(YES);
+                confirm.addCommand(NO);
+                confirm.setCommandListener(this);
+                asked = true;
+                display.setCurrent(confirm);
+            } else {
+                processCommand("xterm");
+            }
+        }
+
+        private int verifyHTTP(String fullUrl) throws IOException {
+            HttpConnection H = null;
+            try {
+                H = (HttpConnection) Connector.open(fullUrl);
+                H.setRequestMethod(HttpConnection.GET);
+                return H.getResponseCode();
+            } finally {
+                try {
+                    if (H != null) H.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+
+        public static String passwd() {
+            try {
+                RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true);
+                if (RMS.getNumRecords() >= 2) {
+                    byte[] data = RMS.getRecord(2);
+                    if (data != null) {
+                        return new String(data);
+                    }
+                }
+                if (RMS != null) {
+                    RMS.closeRecordStore();
+                }
+            } catch (RecordStoreException e) {
+            }
+            return "";
+        }
     }
+
     // |
     // MIDlet Shell
     public int processCommand(String command) { return processCommand(command, true, false); }
@@ -1342,260 +1750,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String generateUUID() { String chars = "0123456789abcdef"; StringBuffer uuid = new StringBuffer(); for (int i = 0; i < 36; i++) { if (i == 8 || i == 13 || i == 18 || i == 23) { uuid.append('-'); } else if (i == 14) { uuid.append('4'); } else if (i == 19) { uuid.append(chars.charAt(8 + random.nextInt(4))); } else { uuid.append(chars.charAt(random.nextInt(16))); } } return uuid.toString(); }
 
     // API 011 - (Network)
-    // |
-    // Connector
-    public class Connect implements CommandListener, Runnable {
-        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5, DYNAMICS = 6;
-
-        private int MOD, COUNT = 1;
-        private boolean root = false, asked = false, keep = false;
-
-        private SocketConnection CONN;
-        private ServerSocketConnection server = null;
-        private InputStream IN; private OutputStream OUT;
-        private String PID = genpid(), DB, address, port;
-        private Hashtable sessions = (Hashtable) getobject("1", "sessions");
-
-        private int start;
-        private String[] wordlist;
-
-        private Alert confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING);
-        private Form screen; private List list;
-        private TextField inputField = new TextField("Command", "", 256, TextField.ANY);
-        private StringItem console = new StringItem("", "");
-
-        private Command BACK = new Command("Back", Command.SCREEN, 2),
-                        EXECUTE = new Command("Send", Command.OK, 1),
-                        CONNECT_CMD = new Command("Connect", Command.BACK, 1),
-                        CLEAR = new Command("Clear", Command.SCREEN, 2),
-                        VIEW = new Command("View info", Command.SCREEN, 2),
-                        SAVE = new Command("Save Logs", Command.SCREEN, 2),
-                        YES = new Command("Yes", Command.OK, 1),
-                        NO = new Command("No", Command.BACK, 1);
-
-        public Connect(String mode, String args, boolean root) {
-            MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : mode.equals("bind") ? BIND : -1;
-            this.root = root;
-            
-            if (MOD == SERVER || MOD == BIND) {
-                if (args == null || args.length() == 0 || args.equals("$PORT")) { processCommand("set PORT=31522", false); port = "31522"; DB = ""; } 
-                else { port = getCommand(args); DB = getArgument(args); DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB; }
-
-                new Thread(this, MOD == BIND ? "Bind" : "Server").start();
-                return;
-            } else if (MOD == -1) { return; } 
-
-            if (args == null || args.length() == 0) { return; }
-
-            Hashtable proc = genprocess(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", root, null);
-
-            if (MOD == NC) {
-                address = args;
-                try {
-                    CONN = (SocketConnection) Connector.open("socket://" + address);
-                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
-                } catch (Exception e) { echoCommand(getCatch(e)); return; }
-
-                screen = new Form(form.getTitle());
-                inputField.setLabel("Remote (" + split(address, ':')[0] + ")");
-                screen.append(console); screen.append(inputField);
-                screen.addCommand(EXECUTE); screen.addCommand(BACK); screen.addCommand(CLEAR); screen.addCommand(VIEW);
-                screen.setCommandListener(this);
-
-                proc.put("socket", CONN); proc.put("in-stream", IN); proc.put("out-stream", OUT);
-                proc.put("screen", screen);
-                display.setCurrent(screen);
-            } else {
-                address = getCommand(args);
-                list = new List(MOD == PRSCAN ? address + " Ports" : "GoBuster (" + address + ")", List.IMPLICIT);
-
-                if (MOD == PRSCAN) { start = getNumber(getArgument(args).equals("") ? "1" : getArgument(args), 1, true); } 
-                else { 
-                    wordlist = split(getArgument(args).equals("") ? loadRMS("gobuster") : getcontent(getArgument(args)), '\n');
-                    if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
-                }
-
-                list.addCommand(BACK); list.addCommand(CONNECT_CMD); list.addCommand(SAVE); 
-                list.setCommandListener(this);
-                
-                proc.put("screen", list);
-                display.setCurrent(list);
-            }
-
-            trace.put(PID, proc);
-            new Thread(this, "NET").start();
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            if (d == confirm) {
-                processCommand("xterm");
-                if (c == NO) { stop(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", root); } 
-                else { keep = true; }
-                return;
-            }
-
-            if (MOD == NC) {
-                if (c == EXECUTE) {
-                    String PAYLOAD = inputField.getString().trim();
-                    inputField.setString("");
-
-                    try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); } 
-                    catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (!keep) { trace.remove(PID); } }
-                } 
-                else if (c == BACK) { writeRMS("/home/remote", console.getText()); back(); } 
-                else if (c == CLEAR) { console.setText(""); } 
-                else if (c == VIEW) { 
-                    try { warnCommand("Information", 
-                            "Host: " + split(address, ':')[0] + "\n" +
-                            "Port: " + split(address, ':')[1] + "\n\n" +
-                            "Local Address: " + CONN.getLocalAddress() + "\n" +
-                            "Local Port: " + CONN.getLocalPort());
-                    } 
-                    catch (Exception e) { warnCommand(form.getTitle(), "Couldn't read connection information!"); }
-                }
-            } else if (MOD == PRSCAN || MOD == GOBUSTER) {
-                if (c == BACK) { back(); } 
-                else if (c == CONNECT_CMD || c == List.SELECT_COMMAND) {
-                    String ITEM = list.getString(list.getSelectedIndex());
-                    if (MOD == PRSCAN) { processCommand("nc " + address + ":" + ITEM); } 
-                    else { processCommand("execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true"); }
-                } 
-                else if (c == SAVE) {
-                    StringBuffer BUFFER = new StringBuffer();
-                    for (int i = 0; i < list.size(); i++) { BUFFER.append(MOD == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
-
-                    nanoContent = BUFFER.toString().trim();
-                    processCommand("nano", false);
-                }
-            }
-        }
-
-        public void run() {
-            if (MOD == NC) {
-                while (trace.containsKey(PID)) {
-                    try {
-                        if (IN.available() > 0) {
-                            byte[] BUFFER = new byte[IN.available()];
-                            int LENGTH = IN.read(BUFFER);
-                            if (LENGTH > 0) echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console);
-                        }
-                    } catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (!keep) { trace.remove(PID); } }
-                }
-
-                try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
-                return;
-            }
-            else if (MOD == PRSCAN) {
-                for (int port = start; port <= 65535; port++) {
-                    try {
-                        list.setTicker(new Ticker("Scanning port " + port + "..."));
-                        if (!trace.containsKey(PID)) { break; }
-                        Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
-                        list.append("" + port, null);
-                    } catch (IOException e) { }
-                }
-                list.setTicker(null);
-                if (!keep) { trace.remove(PID); }
-                return;
-            }
-            else if (MOD == GOBUSTER) {
-                list.setTicker(new Ticker("Searching..."));
-                for (int i = 0; i < wordlist.length; i++) {
-                    String path = wordlist[i].trim();
-                    if (!trace.containsKey(PID)) { break; }
-                    if (!path.equals("") && !path.startsWith("#")) {
-                        try {
-                            int code = verifyHTTP(address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path);
-                            if (code != 404) list.append(code + " /" + path, null);
-                        } catch (IOException e) { }
-                    }
-                }
-                list.setTicker(null);
-                if (!keep) { trace.remove(PID); }
-                return;
-            }
-            else {
-                if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
-
-                Hashtable proc = genprocess(MOD == SERVER ? "server" : "bind", root, null);
-                proc.put("port", port); trace.put(PID, proc); sessions.put(port, MOD == SERVER ? "http-cli" : "nobody");
-
-                while (trace.containsKey(PID)) {
-                    try {
-                        server = (ServerSocketConnection) Connector.open("socket://:" + port); proc.put("server", server); 
-                        if (COUNT == 1) { echoCommand("[+] listening on port " + port); MIDletLogs("add info Server listening on port " + port); COUNT++; }
-
-                        CONN = (SocketConnection) server.acceptAndOpen();
-                        address = CONN.getAddress(); echoCommand("[+] " + address + " connected");
-
-                        IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
-                        proc.put("in-stream", IN); proc.put("out-stream", OUT);
-
-                        if (MOD == SERVER) {
-                            byte[] buffer = new byte[4096];
-                            int bytesRead = IN.read(buffer);
-                            if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); } 
-                            else {
-                                echoCommand("[+] " + address + " -> " + env(new String(buffer, 0, bytesRead).trim()));
-                                OUT.write(getcontent(DB).getBytes()); OUT.flush();
-                            }
-                        } else {
-                            sessions.put(port, address);
-                            while (trace.containsKey(PID)) {
-                                byte[] buffer = new byte[4096];
-                                int bytesRead = IN.read(buffer);
-                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); break; }
-                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                                echoCommand("[+] " + address + " -> " + env(PAYLOAD));
-
-                                String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
-
-                                String before = stdout != null ? stdout.getText() : "";
-                                processCommand(command, true, root);
-                                String after = stdout != null ? stdout.getText() : "";
-
-                                String output = after.length() >= before.length() ? after.substring(before.length()).trim() + "\n" : after + "\n";
-
-                                OUT.write(output.getBytes()); OUT.flush();
-                            }
-                        }
-                    } 
-                    catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
-                    finally {
-                        try { if (IN != null) IN.close(); } catch (IOException e) { }
-                        try { if (OUT != null) OUT.close(); } catch (IOException e) { }
-                        try { if (CONN != null) CONN.close(); } catch (IOException e) { }
-                        try { if (server != null) server.close(); } catch (IOException e) { }
-                        
-                        sessions.put(port, MOD == SERVER ? "http-cli" : "nobody");
-                    }
-                } 
-                trace.remove(PID); sessions.remove(port);
-                echoCommand("[-] Server stopped");
-                MIDletLogs("add info Server was stopped");
-            }
-        }
-
-        private int verifyHTTP(String fullUrl) throws IOException {
-            HttpConnection H = null;
-            try {
-                H = (HttpConnection) Connector.open(fullUrl);
-                H.setRequestMethod(HttpConnection.GET);
-                return H.getResponseCode();
-            } finally {
-                try { if (H != null) H.close(); } catch (IOException ignored) {}
-            }
-        }
-
-        private void back() {
-            if (trace.containsKey(PID) && !asked) {
-                confirm.addCommand(YES); confirm.addCommand(NO);
-                confirm.setCommandListener(this);
-                asked = true;
-                display.setCurrent(confirm);
-            } else { processCommand("xterm"); }
-        }
-    }
     // |
     // HTTP Interfaces
     private String request(String url, Hashtable headers) { if (url == null || url.length() == 0) { return ""; } if (!url.startsWith("http://") && !url.startsWith("https://")) { url = "http://" + url; } try { HttpConnection conn = (HttpConnection) Connector.open(url); conn.setRequestMethod(HttpConnection.GET); if (headers != null) { Enumeration keys = headers.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) headers.get(key); conn.setRequestProperty(key, value); } } InputStream is = conn.openInputStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream(); int ch; while ((ch = is.read()) != -1) { baos.write(ch); } is.close(); conn.close(); return new String(baos.toByteArray(), "UTF-8"); } catch (IOException e) { return getCatch(e); } }
