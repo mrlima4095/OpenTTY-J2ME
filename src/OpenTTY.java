@@ -82,7 +82,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private TextBox box = new TextBox("Process Filter", "", 31522, TextField.ANY);
         private TextField USER = new TextField("Username", "", 256, TextField.ANY),
                 PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD),
-                stdin = new TextField("Command", "", 256, TextField.ANY);
+                inputField = new TextField("Command", "", 256, TextField.ANY);
         private Command BACK = new Command("Back", Command.BACK, 1), 
         RUN = new Command("Run", Command.OK, 1), 
         RUNS = new Command("Run Script", Command.OK, 1), 
