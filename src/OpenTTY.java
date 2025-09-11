@@ -78,7 +78,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List preview;
         private StringItem console;
         private TextBox box;
-        private TextField USER, PASSWD, stdin;
+        private TextField USER, PASSWD, remotein;
         private Command BACK = new Command("Back", Command.BACK, 1), RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO;
 
         private SocketConnection CONN;
@@ -160,7 +160,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 monitor = new Form(form.getTitle());
                 monitor.append(console = new StringItem("", ""));
-                monitor.append(stdin = new TextField("Remote (" + split(address, ':')[0] + ")", "", 256, TextField.ANY));
+                monitor.append(remotein = new TextField("Remote (" + split(address, ':')[0] + ")", "", 256, TextField.ANY));
                 monitor.addCommand(EXECUTE);
                 monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2));
                 monitor.addCommand(CLEAR);
@@ -205,7 +205,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex());
 
-                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { if (selected != null) { processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false); if (display.getCurrent() == preview) { reload(); } super().stdin.setLabel(username + " " + path + " $"); } } 
+                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { if (selected != null) { processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false); if (display.getCurrent() == preview) { reload(); } stdin.setLabel(username + " " + path + " $"); } } 
                 else if (c == DELETE) { int STATUS = deleteFile(path + selected); if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } reload(); } 
                 else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected), root); } 
                 else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected, root); }
@@ -277,7 +277,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             else if (MOD == NC) {
                 if (c == EXECUTE) {
-                    String PAYLOAD = stdin.getString().trim(); stdin.setString("");
+                    String PAYLOAD = remotein.getString().trim(); remotein.setString("");
 
                     try { OUT.write((PAYLOAD + "\n").getBytes()); OUT.flush(); } 
                     catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (keep) { } else { trace.remove(PID); } }
