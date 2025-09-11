@@ -12,6 +12,6 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** added default library `socket` with network interfaces
 - **Lua** `io` library added new function `close(stream)` to close interfaces
 - **Lua** removed bug that pcall recognizes string function name to call
+- Classes **MIDletControl** and **Connect** have been merged
 
 [ _Notes_ ]
-
