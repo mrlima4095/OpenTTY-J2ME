@@ -74,6 +74,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private boolean root = false, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
         private String command = null, pfilter = "", PID = genpid(), DB, address, port;
         private Vector history = (Vector) getobject("1", "history");
+        private Hashtable sessions = (Hashtable) getobject("1", "sessions");
         private Alert confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING);
         private Form monitor = new Form(form.getTitle());
         private List preview = new List(form.getTitle(), List.IMPLICIT);
