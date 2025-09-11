@@ -479,19 +479,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private void back() { if (trace.containsKey(PID) && !asked) { confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING); confirm.addCommand(YES = new Command("Yes", Command.OK, 1)); confirm.addCommand(NO = new Command("No", Command.BACK, 1)); confirm.setCommandListener(this); asked = true; display.setCurrent(confirm); } else { processCommand("xterm"); } }
 
-        private int verifyHTTP(String fullUrl) throws IOException {
-            HttpConnection H = null;
-            try {
-                H = (HttpConnection) Connector.open(fullUrl);
-                H.setRequestMethod(HttpConnection.GET);
-                return H.getResponseCode();
-            } finally {
-                try {
-                    if (H != null) H.close();
-                } catch (IOException ignored) {
-                }
-            }
-        }
+        private int verifyHTTP(String fullUrl) throws IOException { HttpConnection H = null; try { H = (HttpConnection) Connector.open(fullUrl); H.setRequestMethod(HttpConnection.GET); return H.getResponseCode(); } finally { try { if (H != null) H.close(); } catch (IOException x) { } } }
         public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     }
     // |
