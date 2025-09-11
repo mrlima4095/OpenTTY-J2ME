@@ -78,26 +78,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Alert confirm;
         private Form monitor;
         private List preview;
-        private StringItem status = new StringItem("Memory Status:", ""),
-                           console = new StringItem("", "");
+        private StringItem console;
         private TextBox box = new TextBox("Process Filter", "", 31522, TextField.ANY);
         private TextField USER = new TextField("Username", "", 256, TextField.ANY),
                 PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD), stdin;
-        private Command BACK = new Command("Back", Command.BACK, 1), 
-        RUN = new Command("Run", Command.OK, 1), 
-        RUNS = new Command("Run Script", Command.OK, 1), 
-        IMPORT = new Command("Import File", Command.OK, 1),
-        OPEN = new Command("Open", Command.OK, 1), 
-        EDIT = new Command("Edit", Command.OK, 1), 
-        REFRESH, 
-        KILL = new Command("Kill", Command.OK, 1), 
-        LOAD = new Command("Load Screen", Command.OK, 1),
-        DELETE = new Command("Delete", Command.OK, 1), 
-        LOGIN, EXIT, 
-        FILTER = new Command("Filter", Command.OK, 1),
-        CONNECT, VIEW,
-        SAVE = new Command("Save Logs", Command.SCREEN, 2),
-        YES, NO;
+        private Command BACK = new Command("Back", Command.BACK, 1), RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO;
 
         private SocketConnection CONN;
         private ServerSocketConnection server = null;
@@ -112,7 +97,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (MOD == MONITOR) {
                 monitor = new Form(form.getTitle());
-                monitor.append(status);
+                monitor.append(console = new StringItem("Memory Status:", ""));
                 monitor.addCommand(BACK);
                 monitor.addCommand(REFRESH = new Command("Refresh", Command.SCREEN, 2));
                 monitor.setCommandListener(this);
@@ -123,18 +108,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 preview = new List(form.getTitle(), List.IMPLICIT);
                 preview.addCommand(BACK);
 
-                preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : RUN);
-                if (MOD == HISTORY) {
-                    preview.addCommand(EDIT);
-                } else if (MOD == PROCESS) {
-                    preview.addCommand(LOAD);
-                    preview.addCommand(VIEW);
-                    preview.addCommand(FILTER);
+                preview.addCommand(MOD == EXPLORER ? OPEN = new Command("Open", Command.OK, 1) : MOD == PROCESS ? KILL = new Command("Kill", Command.OK, 1) : RUN = new Command("Run", Command.OK, 1));
+                if (MOD == HISTORY) { preview.addCommand(EDIT = new Command("Edit", Command.OK, 1)); } 
+                else if (MOD == PROCESS) {
+                    preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1));
+                    preview.addCommand(VIEW = new Command("View info", Command.OK, 1));
+                    preview.addCommand(FILTER = new Command("Filter", Command.OK, 1));
                 }
 
                 preview.setCommandListener(this);
-                load();
-                display.setCurrent(preview);
+                load(); display.setCurrent(preview);
             }
         }
         public MIDletControl(String command) {
@@ -186,8 +169,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 catch (Exception e) { echoCommand(getCatch(e)); return; }
 
                 monitor = new Form(form.getTitle());
-                monitor.append(console);
-                monitor.append(stdin = new TextField("Username", "", 256, TextField.ANY));
+                monitor.append(console = new StringItem("", ""));
+                monitor.append(stdin = new TextField("Remote (" + split(address, ':')[0] + ")", "", 256, TextField.ANY));
                 monitor.addCommand(EXECUTE);
                 monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2));
                 monitor.addCommand(CLEAR);
@@ -210,9 +193,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (wordlist == null || wordlist.length == 0) { echoCommand("gobuster: blank word list"); return; }
                 }
 
-                preview.addCommand(BACK);
+                preview.addCommand(BACK = new Command("Back", Command.SCREEN, 2));
                 preview.addCommand(CONNECT = new Command("Connect", Command.BACK, 1));
-                preview.addCommand(SAVE);
+                preview.addCommand(SAVE = new Command("Save Logs", Command.SCREEN, 2));
                 preview.setCommandListener(this);
 
                 proc.put("screen", preview);
@@ -480,11 +463,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void load() {
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
             else if (MOD == EXPLORER) {
-                if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE); }
+                if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); }
                 else { preview.removeCommand(DELETE); }
 
                 if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); }
-                else { preview.addCommand(RUNS); preview.addCommand(IMPORT); }
+                else { preview.addCommand(RUNS = new Command("Run Script", Command.OK, 1)); preview.addCommand(IMPORT = new Command("Import File", Command.OK, 1)); }
 
                 if (attributes.containsKey("J2EMU")) { }
                 else { preview.setTitle(path); }
@@ -530,7 +513,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (IOException e) { }
 
             } 
-            else if (MOD == MONITOR) { status.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
+            else if (MOD == MONITOR) { console.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) ((Hashtable) trace.get(PID)).get("name"); if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); } }  
             }
         }
