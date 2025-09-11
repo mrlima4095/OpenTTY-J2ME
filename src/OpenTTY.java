@@ -232,14 +232,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return;
             }
             if (d == confirm) {
-                if (c == YES) {
-                    keep = true;
-                    processCommand("xterm");
-                } else {
-                    keep = false;
-                    trace.remove(PID);
-                    processCommand("xterm");
-                }
+                if (c == YES) { keep = true; processCommand("xterm"); } 
+                else { keep = false; trace.remove(PID); processCommand("xterm"); }
             }
             if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
 
