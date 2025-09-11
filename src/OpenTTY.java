@@ -79,7 +79,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Form monitor;
         private List preview;
         private StringItem console;
-        private TextBox box = new TextBox("Process Filter", "", 31522, TextField.ANY);
+        private TextBox box;
         private TextField USER, PASSWD, stdin;
         private Command BACK = new Command("Back", Command.BACK, 1), RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO;
 
@@ -109,11 +109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 preview.addCommand(MOD == EXPLORER ? (OPEN = new Command("Open", Command.OK, 1)) : MOD == PROCESS ? (KILL = new Command("Kill", Command.OK, 1)) : (RUN = new Command("Run", Command.OK, 1)));
                 if (MOD == HISTORY) { preview.addCommand(EDIT = new Command("Edit", Command.OK, 1)); } 
-                else if (MOD == PROCESS) {
-                    preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1));
-                    preview.addCommand(VIEW = new Command("View info", Command.OK, 1));
-                    preview.addCommand(FILTER = new Command("Filter", Command.OK, 1));
-                }
+                else if (MOD == PROCESS) { preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1)); preview.addCommand(VIEW = new Command("View info", Command.OK, 1)); preview.addCommand(FILTER = new Command("Filter", Command.OK, 1)); }
 
                 preview.setCommandListener(this);
                 load(); display.setCurrent(preview);
@@ -211,17 +207,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex());
 
-                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) {
-                    if (selected != null) {
-                        processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false);
-
-                        if (display.getCurrent() == preview) {
-                            reload();
-                        }
-
-                        super.stdin.setLabel(username + " " + path + " $");
-                    }
-                } 
+                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { if (selected != null) { processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false); if (display.getCurrent() == preview) { reload(); } super.stdin.setLabel(username + " " + path + " $"); } } 
                 else if (c == DELETE) { int STATUS = deleteFile(path + selected); if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } reload(); } 
                 else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected), root); } 
                 else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected, root); }
@@ -229,8 +215,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == MONITOR) { System.gc(); reload(); } 
             else if (MOD == PROCESS) {
                 if (c == FILTER) {
+                    if (box == null) { box = new TextBox("Process Filter", "", 31522, TextField.ANY); }
+
                     box.addCommand(BACK);
-                    box.addCommand(RUN);
+                    box.addCommand(RUN = new Command("Run", Command.OK, 1));
                     box.setCommandListener(this);
                     display.setCurrent(box);
                     return;
@@ -489,17 +477,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
-        private void back() {
-            if (trace.containsKey(PID) && !asked) {
-                confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING);
-                confirm.addCommand(YES = new Command("Yes", Command.OK, 1));
-                confirm.addCommand(NO = new Command("No", Command.BACK, 1));
-                confirm.setCommandListener(this);
-                asked = true;
-                display.setCurrent(confirm);
-            } 
-            else { processCommand("xterm"); }
-        }
+        private void back() { if (trace.containsKey(PID) && !asked) { confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING); confirm.addCommand(YES = new Command("Yes", Command.OK, 1)); confirm.addCommand(NO = new Command("No", Command.BACK, 1)); confirm.setCommandListener(this); asked = true; display.setCurrent(confirm); } else { processCommand("xterm"); } }
 
         private int verifyHTTP(String fullUrl) throws IOException {
             HttpConnection H = null;
