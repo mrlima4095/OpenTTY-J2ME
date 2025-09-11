@@ -267,6 +267,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 return;
             }
+            if (d == confirm) {
+                asked = true; 
+                
+                if (c == YES) {
+                    keep = true;
+                    processCommand("xterm");
+                } else {
+                    keep = false;
+                    trace.remove(PID);
+                    processCommand("xterm");
+                }
+            }
             if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
 
             if (MOD == HISTORY) {
@@ -275,7 +287,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     processCommand("xterm");
                     processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected);
                 }
-            } else if (MOD == EXPLORER) {
+            } 
+            else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex());
 
                 if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) {
