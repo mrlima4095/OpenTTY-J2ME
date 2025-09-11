@@ -339,7 +339,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     reload();
                 }
-            } else if (MOD == SIGNUP) {
+            } 
+            else if (MOD == SIGNUP) {
                 if (c == LOGIN) {
                     String password = PASSWD.getString().trim();
 
@@ -356,7 +357,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 } 
                 else if (c == EXIT) { processCommand("exit", false); }
-            } else if (MOD == REQUEST) {
+            } 
+            else if (MOD == REQUEST) {
                 String password = PASSWD.getString().trim();
 
                 if (password.equals("")) { } 
@@ -368,48 +370,45 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             // Connect modes handling
-            if (MOD == NC) {
-                if (d == screen) {
-                    if (c == EXECUTE) {
-                        String PAYLOAD = inputField.getString().trim();
-                        inputField.setString("");
+            else if (MOD == NC) {
+                if (c == EXECUTE) {
+                    String PAYLOAD = inputField.getString().trim();
+                    inputField.setString("");
 
-                        try {
-                            OUT.write((PAYLOAD + "\n").getBytes());
-                            OUT.flush();
-                        } catch (Exception e) {
-                            warnCommand(form.getTitle(), getCatch(e));
-                            if (!keep) { trace.remove(PID); }
-                        }
-                    } 
-                    else if (c == BACK) { writeRMS("/home/remote", console.getText()); back(); } 
-                    else if (c == CLEAR) { console.setText(""); }
-                    else if (c == VIEW2) {
-                        try {
-                            warnCommand("Information",
-                                    "Host: " + split(address, ':')[0] + "\n" +
-                                            "Port: " + split(address, ':')[1] + "\n\n" +
-                                            "Local Address: " + CONN.getLocalAddress() + "\n" +
-                                            "Local Port: " + CONN.getLocalPort());
-                        } catch (Exception e) {
-                            warnCommand(form.getTitle(), "Couldn't read connection information!");
-                        }
+                    try {
+                        OUT.write((PAYLOAD + "\n").getBytes());
+                        OUT.flush();
+                    } catch (Exception e) {
+                        warnCommand(form.getTitle(), getCatch(e));
+                        if (!keep) { trace.remove(PID); }
+                    }
+                } 
+                else if (c == BACK) { writeRMS("/home/remote", console.getText()); back(); } 
+                else if (c == CLEAR) { console.setText(""); }
+                else if (c == VIEW2) {
+                    try {
+                        warnCommand("Information",
+                                "Host: " + split(address, ':')[0] + "\n" +
+                                "Port: " + split(address, ':')[1] + "\n\n" +
+                                "Local Address: " + CONN.getLocalAddress() + "\n" +
+                                "Local Port: " + CONN.getLocalPort());
+                    } catch (Exception e) {
+                        warnCommand(form.getTitle(), "Couldn't read connection information!");
                     }
                 }
-            } else if (MOD == PRSCAN || MOD == GOBUSTER) {
-                if (d == list) {
-                    if (c == BACK) { back(); } 
-                    else if (c == CONNECT_CMD || c == List.SELECT_COMMAND) {
-                        String ITEM = list.getString(list.getSelectedIndex());
-                        processCommand(MOD == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true");
-                    } else if (c == SAVE) {
-                        StringBuffer BUFFER = new StringBuffer();
-                        for (int i = 0; i < list.size(); i++) { BUFFER.append(MOD == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
+            } 
+            else if (MOD == PRSCAN || MOD == GOBUSTER) {
+                if (c == CONNECT_CMD || c == List.SELECT_COMMAND) {
+                    String ITEM = list.getString(list.getSelectedIndex());
+                    processCommand(MOD == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true");
+                } else if (c == SAVE) {
+                    StringBuffer BUFFER = new StringBuffer();
+                    for (int i = 0; i < list.size(); i++) { BUFFER.append(MOD == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
 
-                        nanoContent = BUFFER.toString().trim();
-                        processCommand("nano", false);
-                    }
+                    nanoContent = BUFFER.toString().trim();
+                    processCommand("nano", false);
                 }
+                
             }
         }
 
