@@ -120,7 +120,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(monitor);
             } 
             else {
-                preview = new List(form.getTitle(), List.IMPLICIT)
+                preview = new List(form.getTitle(), List.IMPLICIT);
                 preview.addCommand(BACK);
 
                 preview.addCommand(MOD == EXPLORER ? OPEN : MOD == PROCESS ? KILL : RUN);
