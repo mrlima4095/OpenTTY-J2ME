@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16.1-02x69";
+    private String logs = "", path = "/home/", build = "2025-1.16.1-02x70";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -66,10 +66,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Control Thread
     public class MIDletControl implements CommandListener, Runnable {
-        // MOD constants
         private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, SERVER = 12, BIND = 13;
 
-        // MIDletControl fields
         private int MOD = -1, COUNT = 1, start;
         private boolean root = false, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
         private String command = null, pfilter = "", PID = genpid(), DB, address, port;
@@ -852,7 +850,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { Lua lua = new Lua(this, root); return (Integer) lua.run(argument.equals("") ? "" : args[0].equals("-e") ? "stdin" : argument, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument)).get("status"); }
+        else if (mainCommand.equals("lua")) { if (javaClass("Lua")) { Lua lua = new Lua(this, root); return (Integer) lua.run(argument.equals("") ? "" : args[0].equals("-e") ? "stdin" : argument, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument)).get("status"); } else { echoCommand("This MIDlet Build don't have Lua") return 3; } }
         else if (mainCommand.equals("5k")) { echoCommand("1.16 Special - 5k commits at OpenTTY GitHub repository"); }
         
         // API 015 - (Scripts)
@@ -2930,7 +2928,7 @@ class Lua {
     public class LuaFunction implements CommandListener {
         private Vector params, bodyTokens;
         private Hashtable closureScope, PKG; 
-        private int MOD = -1, TYPE = -1;
+        private int MOD = -1, LTYPE = -1;
         // | (Screen)
         private Displayable screen; 
         private Command BACK, USER; 
@@ -3428,21 +3426,14 @@ class Lua {
                 String type = getenv(field, "type", "text").trim();
                 if (type.equals("image")) {
                     String imgPath = getenv(field, "img", "");
-                    if (!imgPath.equals("")) {
-                        f.append(Image.createImage(imgPath));
-                    }
-                } else if (type.equals("text")) {
+                    if (imgPath.equals("")) { } else { f.append(Image.createImage(imgPath)); }
+                } 
+                else if (type.equals("text")) {
                     String value = getenv(field, "value", "");
-                    if (!value.equals("")) {
-                        StringItem si = new StringItem(getenv(field, "label", ""), value);
-                        si.setFont(midlet.newFont(getenv(field, "style", "default")));
-                        f.append(si);
-                    }
-                } else if (type.equals("spacer")) {
-                    int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1;
-                    int h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10;
-                    f.append(new Spacer(w, h));
-                }
+                    if (value.equals("")) { }
+                    else { StringItem si = new StringItem(getenv(field, "label", ""), value); si.setFont(midlet.newFont(getenv(field, "style", "default"))); f.append(si); }
+                } 
+                else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
             } 
             else if (obj instanceof String) { f.append((String) obj); }
         }
@@ -3453,77 +3444,54 @@ class Lua {
         private Object BuildScreen() throws Exception {
             if (MOD == ALERT) {
                 Alert alert = new Alert(getenv(PKG, "title", midlet.form.getTitle()), getenv(PKG, "message", ""), null, null);
-
-                Object indicatorObj = PKG.get("indicator");
-                if (indicatorObj != null) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
+                if (PKG.containsKey("indicator") != null) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
-                BACK = new Command(backLabel, Command.BACK, 1);
-                alert.addCommand(BACK);
+                alert.addCommand(BACK = new Command(backLabel, Command.BACK, 1));
 
                 Object buttonObj = PKG.get("button");
                 Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
-                if (buttonTable != null) {
-                    String buttonLabel = getenv(buttonTable, "label", "OK");
-                    USER = new Command(buttonLabel, Command.SCREEN, 2);
-                    alert.addCommand(USER);
-                }
+                if (buttonTable != null) { alert.addCommand(USER = new Command(getenv(buttonTable, "label", "OK"), Command.SCREEN, 2)); }
                 
                 Object timeoutObj = PKG.get("timeout");
                 alert.setTimeout(timeoutObj instanceof Double ? ((Double) timeoutObj).intValue() : Alert.FOREVER);
             
                 this.screen = alert;
-            } else if (MOD == SCREEN) {
+            } 
+            else if (MOD == SCREEN) {
                 Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
 
-                Object backObj = PKG.get("back");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
+                Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
                 String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
-                BACK = new Command(backLabel, Command.OK, 1);
-                form.addCommand(BACK);
+                form.addCommand(BACK = new Command(backLabel, Command.OK, 1));
 
-                Object buttonObj = PKG.get("button");
-                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
-                if (buttonTable != null) {
-                    USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
-                    form.addCommand(USER);
-                }
+                if (buttonTable != null) { form.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
 
                 Object fieldsObj = PKG.get("fields");
                 if (fieldsObj != null) {
                     if (fieldsObj instanceof Hashtable) {
                         Hashtable fields = (Hashtable) fieldsObj;
 
-                        if (isListTable(fields)) {
-                            Vector fv = toVector(fields);
-
-                            for (int i = 0; i < fields.size(); i++) { AppendScreen(form, fv.elementAt(i)); }
-                        } else {
-                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) { AppendScreen(form, fields.get(keys.nextElement())); }
-                        }
+                        if (isListTable(fields)) { Vector fv = toVector(fields); for (int i = 0; i < fields.size(); i++) { AppendScreen(form, fv.elementAt(i)); } } 
+                        else { for (Enumeration keys = fields.keys(); keys.hasMoreElements();) { AppendScreen(form, fields.get(keys.nextElement())); } }
                     } 
                     else { return gotbad("BuildScreen", "fields", "table expected, got " + type(fieldsObj)); }
                 }
 
                 this.screen = form;
-            } else if (MOD == LIST) {
+            } 
+            else if (MOD == LIST) {
                 String ListType = getenv(PKG, "type", "implict");
-                TYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT;
-                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), TYPE);
+                LTYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT;
+                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), LTYPE);
 
-                Object backObj = PKG.get("back");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
-                BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1);
-                list.addCommand(BACK);
-
-                Object buttonObj = PKG.get("button");
-                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
-                if (buttonTable != null) {
-                    USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
-                    list.addCommand(USER);
-                }
+                Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
+                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
+                list.addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1));
+                if (buttonTable != null) { list.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
 
                 Object fieldsObj = PKG.get("fields");
                 if (fieldsObj != null) {
@@ -3549,37 +3517,29 @@ class Lua {
                 }
 
                 this.screen = list;
-            } else if (MOD == QUEST) {
+            } 
+            else if (MOD == QUEST) {
                 Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
-                TextField field = new TextField(getenv(PKG, "label", (String) gotbad("BuildQuest", "label", "string expected, got no value")), "", 256, TextField.ANY);
+                TextField field = new TextField(getenv(PKG, "label", stdin.getLabel(), "", 256, TextField.ANY));
                 form.append(field);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildQuest", "button", "table expected, got " + type(buttonObj));
+                form.addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.SCREEN, 2));
 
-                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
-                BACK = new Command(backLabel, Command.SCREEN, 2);
-                form.addCommand(BACK);
-
-                if (buttonTable != null) {
-                    USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
-                    form.addCommand(USER);
-                }
+                if (buttonTable != null) { form.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
 
                 this.INPUT = field;
                 this.screen = form;
-            } else if (MOD == EDIT) {
+            } 
+            else if (MOD == EDIT) {
                 TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), "", 31522, TextField.ANY);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildEdit", "button", "table expected, got " + type(buttonObj));
-                BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1);
-                box.addCommand(BACK);
+                box.addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1));
 
-                if (buttonTable != null) {
-                    USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2);
-                    box.addCommand(USER);
-                }
+                if (buttonTable != null) { box.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
 
                 this.screen = box;
             }
@@ -3593,19 +3553,21 @@ class Lua {
 
                 Hashtable backTable = (Hashtable) PKG.get("back");
                 if (backTable != null) {
-                    Object backRoot = backTable.get("root");
-                    if (backRoot instanceof LuaFunction) { ((LuaFunction) backRoot).call(new Vector()); } 
-                    else if (backRoot != null) { midlet.processCommand(toLuaString(backRoot), true, root); }
+                    Object root = backTable.get("root");
+                    if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } 
+                    else if (root != null) { midlet.processCommand(toLuaString(root), true, root); }
                 }
-            } else if (c == USER || c == List.SELECT_COMMAND) {
-                Object fire = PKG.get("button") != null ? ((Hashtable) PKG.get("button")).get("root") : "true";
+            } 
+            else if (c == USER || c == List.SELECT_COMMAND) {
+                Object fire = PKG.get("button") == null ? null : ((Hashtable) PKG.get("button")).get("root");
 
                 if (MOD == ALERT) {
                     midlet.processCommand("xterm", true, root);
 
                     if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
                     else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
-                } else if (MOD == QUEST) {
+                } 
+                else if (MOD == QUEST) {
                     String value = INPUT.getString().trim();
                     if (!value.equals("")) {
                         midlet.processCommand("xterm", true, root);
@@ -3618,7 +3580,8 @@ class Lua {
                             midlet.processCommand(toLuaString(fire), true, root);
                         }
                     }
-                } else if (MOD == EDIT) {
+                } 
+                else if (MOD == EDIT) {
                     String value = ((TextBox) screen).getString().trim();
                     if (!value.equals("")) {
                         midlet.processCommand("xterm", true, root);
@@ -3631,10 +3594,11 @@ class Lua {
                             midlet.processCommand(toLuaString(fire), true, root);
                         }
                     }
-                } else if (MOD == LIST) {
+                } 
+                else if (MOD == LIST) {
                     List list = (List) screen;
                     
-                    if (TYPE == List.MULTIPLE) {
+                    if (LTYPE == List.MULTIPLE) {
                         Vector args = new Vector();
                         for (int i = 0; i < list.size(); i++) { if (list.isSelected(i)) { args.addElement(midlet.env(list.getString(i))); } }
 
@@ -3661,7 +3625,8 @@ class Lua {
                             } else if (fire != null) { midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root); }
                         }
                     }
-                } else if (MOD == SCREEN) {
+                } 
+                else if (MOD == SCREEN) {
                     midlet.processCommand("xterm", true, root);
                     if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
                     else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }

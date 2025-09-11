@@ -134,3 +134,4 @@
 [2025-1.16.1-02x67] Added Lua default library 'graphics'
 [2025-1.16.1-02x68] Process Monitor added new tool - Process filter
 [2025-1.16.1-02x69] Connect and MIDletControl Threads merged
+[2025-1.16.1-02x70] Warn when package dont contains Lua Class
