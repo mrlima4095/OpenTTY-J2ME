@@ -207,13 +207,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (d == confirm) { if (c == YES) { keep = true; processCommand("xterm"); } else { trace.remove(PID); processCommand("xterm"); } }
             if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
 
-            if (MOD == HISTORY) {
-                String selected = preview.getString(preview.getSelectedIndex());
-                if (selected != null) {
-                    processCommand("xterm");
-                    processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected);
-                }
-            } 
+            if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { processCommand("xterm"); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected); } } 
             else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex());
 
@@ -225,22 +219,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             reload();
                         }
 
-                        stdin.setLabel(username + " " + path + " $");
+                        super.stdin.setLabel(username + " " + path + " $");
                     }
-                } else if (c == DELETE) {
-                    int STATUS = deleteFile(path + selected);
-                    if (STATUS != 0) {
-                        warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException");
-                    }
-
-                    reload();
-                } else if (c == RUNS) {
-                    processCommand("xterm");
-                    runScript(getcontent(path + selected), root);
-                } else if (c == IMPORT) {
-                    processCommand("xterm");
-                    importScript(path + selected, root);
-                }
+                } 
+                else if (c == DELETE) { int STATUS = deleteFile(path + selected); if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } reload(); } 
+                else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected), root); } 
+                else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected, root); }
             } 
             else if (MOD == MONITOR) { System.gc(); reload(); } 
             else if (MOD == PROCESS) {
