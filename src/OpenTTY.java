@@ -379,16 +379,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             OUT.flush();
                         } catch (Exception e) {
                             warnCommand(form.getTitle(), getCatch(e));
-                            if (!keep) {
-                                trace.remove(PID);
-                            }
+                            if (!keep) { trace.remove(PID); }
                         }
-                    } else if (c == BACK) {
-                        writeRMS("/home/remote", console.getText());
-                        back();
-                    } else if (c == CLEAR) {
-                        console.setText("");
-                    } else if (c == VIEW2) {
+                    } 
+                    else if (c == BACK) { writeRMS("/home/remote", console.getText()); back(); } 
+                    else if (c == CLEAR) { console.setText(""); }
+                    else if (c == VIEW2) {
                         try {
                             warnCommand("Information",
                                     "Host: " + split(address, ':')[0] + "\n" +
@@ -402,20 +398,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             } else if (MOD == PRSCAN || MOD == GOBUSTER) {
                 if (d == list) {
-                    if (c == BACK) {
-                        back();
-                    } else if (c == CONNECT_CMD || c == List.SELECT_COMMAND) {
+                    if (c == BACK) { back(); } 
+                    else if (c == CONNECT_CMD || c == List.SELECT_COMMAND) {
                         String ITEM = list.getString(list.getSelectedIndex());
-                        if (MOD == PRSCAN) {
-                            processCommand("nc " + address + ":" + ITEM);
-                        } else {
-                            processCommand("execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true");
-                        }
+                        processCommand(MOD == PRSCAN ? "nc " + address + ":" + ITEM : "execute tick Downloading...; wget " + address + "/" + getArgument(ITEM) + "; tick; nano; true");
                     } else if (c == SAVE) {
                         StringBuffer BUFFER = new StringBuffer();
-                        for (int i = 0; i < list.size(); i++) {
-                            BUFFER.append(MOD == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n");
-                        }
+                        for (int i = 0; i < list.size(); i++) { BUFFER.append(MOD == PRSCAN ? list.getString(i) : getArgument(list.getString(i))).append("\n"); }
 
                         nanoContent = BUFFER.toString().trim();
                         processCommand("nano", false);
