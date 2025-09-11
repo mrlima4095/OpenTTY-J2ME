@@ -80,8 +80,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private List preview;
         private StringItem console;
         private TextBox box = new TextBox("Process Filter", "", 31522, TextField.ANY);
-        private TextField USER = new TextField("Username", "", 256, TextField.ANY),
-                PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD), stdin;
+        private TextField USER, PASSWD, stdin;
         private Command BACK = new Command("Back", Command.BACK, 1), RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO;
 
         private SocketConnection CONN;
@@ -127,8 +126,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (MOD == SIGNUP) {
                 monitor.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim());
 
-                if (asking_user) { monitor.append(USER); }
-                if (asking_passwd) { monitor.append(PASSWD); }
+                if (asking_user) { monitor.append(USER = new TextField("Username", "", 256, TextField.ANY)); }
+                if (asking_passwd) { monitor.append(PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); }
 
                 monitor.addCommand(LOGIN = new Command("Login", Command.OK, 1)); monitor.addCommand(EXIT = new Command("Exit", Command.SCREEN, 2));
             } 
@@ -136,11 +135,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (asking_passwd) { new MIDletControl(null); return; }
                 this.command = command;
 
-                PASSWD.setLabel("[sudo] password for " + loadRMS("OpenRMS"));
-                ;
-                monitor.append(PASSWD);
-                monitor.addCommand(RUN);
-                monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2));
+                monitor.append(PASSWD = new TextField("[sudo] password for " + loadRMS("OpenRMS"), "", 256, TextField.ANY | TextField.PASSWORD));
+                monitor.addCommand(EXECUTE); monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2));
             }
 
             monitor.setCommandListener(this);
