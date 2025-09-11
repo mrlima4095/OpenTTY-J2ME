@@ -516,7 +516,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private void back() {
             if (trace.containsKey(PID) && !asked) {
-                confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING)
+                confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING);
                 confirm.addCommand(YES = new Command("Yes", Command.OK, 1));
                 confirm.addCommand(NO = new Command("No", Command.BACK, 1));
                 confirm.setCommandListener(this);
