@@ -1994,7 +1994,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String TYPE = (String) PKG.get("process.type"), PORT = (String) PKG.get("process.port"), MOD = (String) PKG.get("process." + (TYPE.equals("bind") ? "db" : "host")); 
             if (((Hashtable) getobject("1", "sessions")).containsKey(PORT)) { MIDletLogs("add warn Application port is unavailable."); return 68; }
             
-            if (TYPE.equals("bind") || TYPE.equals("server")) { new Connect(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); }
+            if (TYPE.equals("bind") || TYPE.equals("server")) { new MIDletControl(TYPE, env(PORT + " " + (MOD == null ? "" : MOD)), root); }
             else { MIDletLogs("add error Invalid process type '" + TYPE + "'"); return 1; }            
         }
         // |
