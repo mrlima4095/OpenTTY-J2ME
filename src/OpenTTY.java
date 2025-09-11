@@ -268,8 +268,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return;
             }
             if (d == confirm) {
-                asked = true; 
-                
                 if (c == YES) {
                     keep = true;
                     processCommand("xterm");
