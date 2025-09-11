@@ -67,53 +67,53 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Control Thread
     public class MIDletControl implements CommandListener, Runnable {
         // MOD constants
-        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8;
-        private static final int NC = 1, PRSCAN = 2, GOBUSTER = 3, SERVER = 4, BIND = 5, DYNAMICS = 6;
+        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, SERVER = 12, BIND = 13;
 
         // MIDletControl fields
-        private int MOD = 0;
-        private boolean root = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
-        private String command = null, pfilter = "";
+        private int MOD = -1, COUNT = 1, start;
+        private boolean root = false, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
+        private String command = null, pfilter = "", PID = genpid(), DB, address, port;
         private Vector history = (Vector) getobject("1", "history");
+        private Alert confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING);
         private Form monitor = new Form(form.getTitle());
         private List preview = new List(form.getTitle(), List.IMPLICIT);
-        private StringItem status = new StringItem("Memory Status:", "");
+        private StringItem status = new StringItem("Memory Status:", ""),
+                           console = new StringItem("", "");
         private TextBox box = new TextBox("Process Filter", "", 31522, TextField.ANY);
         private TextField USER = new TextField("Username", "", 256, TextField.ANY),
-                PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD);
-        private Command BACK = new Command("Back", Command.BACK, 1), RUN = new Command("Run", Command.OK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1),
-                OPEN = new Command("Open", Command.OK, 1), EDIT = new Command("Edit", Command.OK, 1), REFRESH = new Command("Refresh", Command.SCREEN, 2), KILL = new Command("Kill", Command.OK, 1), LOAD = new Command("Load Screen", Command.OK, 1),
-                VIEW = new Command("View info", Command.OK, 1), DELETE = new Command("Delete", Command.OK, 1), LOGIN = new Command("Login", Command.OK, 1), EXIT = new Command("Exit", Command.SCREEN, 2), FILTER = new Command("Filter", Command.OK, 1);
-
-        // Connect fields
-        private int COUNT = 1;
-        private boolean asked = false, keep = false;
+                PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD),
+                stdin = new TextField("Command", "", 256, TextField.ANY);
+        private Command BACK = new Command("Back", Command.BACK, 1), 
+        RUN = new Command("Run", Command.OK, 1), 
+        RUNS = new Command("Run Script", Command.OK, 1), 
+        IMPORT = new Command("Import File", Command.OK, 1),
+        OPEN = new Command("Open", Command.OK, 1), 
+        EDIT = new Command("Edit", Command.OK, 1), 
+        REFRESH = new Command("Refresh", Command.SCREEN, 2), 
+        KILL = new Command("Kill", Command.OK, 1), 
+        LOAD = new Command("Load Screen", Command.OK, 1),
+        VIEW = new Command("View info", Command.OK, 1), 
+        DELETE = new Command("Delete", Command.OK, 1), 
+        LOGIN, EXIT, 
+        FILTER = new Command("Filter", Command.OK, 1),
+        EXECUTE = new Command("Send", Command.OK, 1),
+        CONNECT_CMD = new Command("Connect", Command.BACK, 1),
+        CLEAR = new Command("Clear", Command.SCREEN, 2),
+        VIEW2 = new Command("View info", Command.SCREEN, 2),
+        SAVE = new Command("Save Logs", Command.SCREEN, 2),
+        YES = new Command("Yes", Command.OK, 1),
+        NO = new Command("No", Command.BACK, 1);
 
         private SocketConnection CONN;
         private ServerSocketConnection server = null;
         private InputStream IN;
         private OutputStream OUT;
-        private String PID = genpid(), DB, address, port;
-        private Hashtable sessions = (Hashtable) getobject("1", "sessions");
 
-        private int start;
         private String[] wordlist;
 
-        private Alert confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING);
         private Form screen;
         private List list;
-        private TextField inputField = new TextField("Command", "", 256, TextField.ANY);
-        private StringItem console = new StringItem("", "");
 
-        private Command EXECUTE = new Command("Send", Command.OK, 1),
-                CONNECT_CMD = new Command("Connect", Command.BACK, 1),
-                CLEAR = new Command("Clear", Command.SCREEN, 2),
-                VIEW2 = new Command("View info", Command.SCREEN, 2),
-                SAVE = new Command("Save Logs", Command.SCREEN, 2),
-                YES = new Command("Yes", Command.OK, 1),
-                NO = new Command("No", Command.BACK, 1);
-
-        // Constructors for MIDletControl modes (monitor, process, explorer, history)
         public MIDletControl(String command, boolean root) {
             MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
             this.root = root;
@@ -142,29 +142,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(preview);
             }
         }
-
-        // Constructor for SIGNUP and REQUEST modes
         public MIDletControl(String command) {
             MOD = command == null || command.length() == 0 || command.equals("login") ? SIGNUP : REQUEST;
 
             if (MOD == SIGNUP) {
                 monitor.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim());
 
-                if (asking_user) {
-                    asking_user = true;
-                    monitor.append(USER);
-                }
-                if (asking_passwd) {
-                    monitor.append(PASSWD);
-                }
+                if (asking_user) { monitor.append(USER); }
+                if (asking_passwd) { monitor.append(PASSWD); }
 
-                monitor.addCommand(LOGIN);
-                monitor.addCommand(EXIT);
+                monitor.addCommand(LOGIN = new Command("Login", Command.OK, 1)); monitor.addCommand(EXIT = new Command("Exit", Command.SCREEN, 2));
             } else {
-                if (asking_passwd) {
-                    new MIDletControl(null);
-                    return;
-                }
+                if (asking_passwd) { new MIDletControl(null); return; }
                 this.command = command;
 
                 PASSWD.setLabel("[sudo] password for " + loadRMS("OpenRMS"));
@@ -177,32 +166,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
             monitor.setCommandListener(this);
             display.setCurrent(monitor);
         }
-
-        // Constructor for Connect modes (nc, prscan, gobuster, server, bind)
         public MIDletControl(String mode, String args, boolean root) {
             MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : mode.equals("bind") ? BIND : -1;
             this.root = root;
 
             if (MOD == SERVER || MOD == BIND) {
-                if (args == null || args.length() == 0 || args.equals("$PORT")) {
-                    processCommand("set PORT=31522", false);
-                    port = "31522";
-                    DB = "";
-                } else {
-                    port = getCommand(args);
-                    DB = getArgument(args);
-                    DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB;
-                }
+                if (args == null || args.length() == 0 || args.equals("$PORT")) { attribute.put("PORT", "31522"); port = "31522"; DB = ""; } 
+                else { port = getCommand(args); DB = getArgument(args); DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB; }
 
                 new Thread(this, MOD == BIND ? "Bind" : "Server").start();
                 return;
-            } else if (MOD == -1) {
-                return;
-            }
+            } 
+            else if (MOD == -1) { return; }
 
-            if (args == null || args.length() == 0) {
-                return;
-            }
+            if (args == null || args.length() == 0) { return; }
 
             Hashtable proc = genprocess(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", root, null);
 
