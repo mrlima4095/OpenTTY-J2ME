@@ -260,27 +260,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void commandAction(Command c, Displayable d) {
-            // Handle BACK command for filter box
             if (c == BACK) {
-                if (d == box) {
-                    display.setCurrent(preview);
-                } else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER || MOD == SERVER || MOD == BIND) {
-                    back();
-                } else {
-                    processCommand("xterm");
-                }
+                if (d == box) { display.setCurrent(preview); } 
+                else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER || MOD == SERVER || MOD == BIND) { back(); } 
+                else { processCommand("xterm"); }
+
                 return;
             }
+            if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
 
-            // Filter box input
-            if (d == box) {
-                pfilter = box.getString().trim();
-                load();
-                display.setCurrent(preview);
-                return;
-            }
-
-            // MIDletControl modes handling
             if (MOD == HISTORY) {
                 String selected = preview.getString(preview.getSelectedIndex());
                 if (selected != null) {
@@ -314,10 +302,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     processCommand("xterm");
                     importScript(path + selected, root);
                 }
-            } else if (MOD == MONITOR) {
-                System.gc();
-                reload();
-            } else if (MOD == PROCESS) {
+            } 
+            else if (MOD == MONITOR) { System.gc(); reload(); } 
+            else if (MOD == PROCESS) {
                 if (c == FILTER) {
                     box.addCommand(BACK);
                     box.addCommand(RUN);
@@ -331,11 +318,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String PID = split(preview.getString(index), '\t')[0];
                     int STATUS = 0;
 
-                    if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) {
-                        STATUS = kill(PID, false, root);
-                    } else if (c == VIEW) {
-                        processCommand("trace view " + PID, false, root);
-                    } else if (c == LOAD) {
+                    if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, root); } 
+                    else if (c == VIEW) { processCommand("trace view " + PID, false, root); } 
+                    else if (c == LOAD) {
                         if (getowner(PID).equals("root") && !root) {
                             STATUS = 13;
                         }
@@ -350,9 +335,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     }
 
-                    if (STATUS != 0) {
-                        warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!");
-                    }
+                    if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!"); }
 
                     reload();
                 }
@@ -360,41 +343,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (c == LOGIN) {
                     String password = PASSWD.getString().trim();
 
-                    if (asking_user) {
-                        username = USER.getString().trim();
-                    }
-                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) {
-                        warnCommand(form.getTitle(), "Missing credentials!");
-                    } else if (username.equals("root")) {
-                        warnCommand(form.getTitle(), "Invalid username!");
-                        USER.setString("");
-                    } else {
-                        if (asking_user) {
-                            writeRMS("/home/OpenRMS", username);
-                        }
-                        if (asking_passwd) {
-                            writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2);
-                        }
+                    if (asking_user) { username = USER.getString().trim(); }
+                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
+                    else if (username.equals("root")) { USER.setString(""); warnCommand(form.getTitle(), "Invalid username!"); } 
+                    else {
+                        if (asking_user) { writeRMS("/home/OpenRMS", username); }
+                        if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
 
                         display.setCurrent(form);
                         runScript(loadRMS("initd"));
                         stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$"));
                     }
-                } else if (c == EXIT) {
-                    processCommand("exit", false);
-                }
+                } 
+                else if (c == EXIT) { processCommand("exit", false); }
             } else if (MOD == REQUEST) {
                 String password = PASSWD.getString().trim();
 
-                if (password.equals("")) {
-                    // Do nothing
-                } else if (String.valueOf(password.hashCode()).equals(passwd())) {
+                if (password.equals("")) { } 
+                else if (String.valueOf(password.hashCode()).equals(passwd())) {
                     processCommand("xterm");
                     processCommand(command, true, true);
-                } else {
-                    PASSWD.setString("");
-                    warnCommand(form.getTitle(), "Wrong password");
-                }
+                } 
+                else { PASSWD.setString(""); warnCommand(form.getTitle(), "Wrong password"); }
             }
 
             // Connect modes handling
