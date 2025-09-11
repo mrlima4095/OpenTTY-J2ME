@@ -205,7 +205,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == EXPLORER) {
                 String selected = preview.getString(preview.getSelectedIndex());
 
-                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { if (selected != null) { processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false); if (display.getCurrent() == preview) { reload(); } super.stdin.setLabel(username + " " + path + " $"); } } 
+                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { if (selected != null) { processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false); if (display.getCurrent() == preview) { reload(); } super().stdin.setLabel(username + " " + path + " $"); } } 
                 else if (c == DELETE) { int STATUS = deleteFile(path + selected); if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } reload(); } 
                 else if (c == RUNS) { processCommand("xterm"); runScript(getcontent(path + selected), root); } 
                 else if (c == IMPORT) { processCommand("xterm"); importScript(path + selected, root); }
