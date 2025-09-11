@@ -3433,6 +3433,9 @@ class Lua {
                     if (value.equals("")) { }
                     else { StringItem si = new StringItem(getenv(field, "label", ""), value); si.setFont(midlet.newFont(getenv(field, "style", "default"))); f.append(si); }
                 } 
+                else if (type.equals("item")) {
+                    new midlet.ItemLoader(f, "item", "item.label=" + (field.containsKey("label") ? toLuaString(field.get("label")) : (String) gotbad("BuildScreen", "item", "missing label")) + "\nitem.cmd=" + (cmd = field.containsKey("root") ? toLuaString(field.get("root")) : (String) gotbad("BuildScreen", "item", "missing root")) + "\nitem.style=" + (field.containsKey("style") ? field.get("style") : "default"), root);
+                }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
             } 
             else if (obj instanceof String) { f.append((String) obj); }
