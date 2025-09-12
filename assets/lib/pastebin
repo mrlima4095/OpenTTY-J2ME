@@ -86,7 +86,7 @@ function app.SavePaste(content, screen)
     graphics.display(graphics.BuildQuest({
         title = "PasteBin",
         label = "File to Save",
-        back = { root = function() graphics.display(graphics.BuildScreen(screen)) end }
+        back = { root = function() graphics.display(graphics.BuildScreen(screen)) end },
         button = {
             label = "Save",
             root = function(file) io.write(content, file) end
@@ -94,7 +94,6 @@ function app.SavePaste(content, screen)
     }))
 end
 function app.Download(id)
-    -- https://pastebin.com/raw/kTDNzLKj
     local content, status = socket.http.get(PROXY_HTTP .. "pastebin.com/raw/" .. id)
     
     if status == 404 then
