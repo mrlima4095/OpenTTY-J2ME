@@ -3414,16 +3414,19 @@ class Lua {
                     String label = field.containsKey("label") ? toLuaString(field.get("label")) : (String) gotbad("BuildScreen", "item", "missing label");
                     Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("BuildScreen", "item", "missing root"); 
 
-                    StringItem si = new StringItem(label, "");
-                    si.setFont(midlet.newFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
-                    Command cmd = new Command(label, Command.ITEM, 1);
-                    si.setDefaultCommand(cmd);
-                    si.setItemCommandListener(this);
+                    USER = new Command(getenv(node + ".label"), Command.ITEM, 1); 
+                    StringItem s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); 
+                    s.setFont(midlet.newFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
+                    s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
+                    s.addCommand(USER); 
+                    s.setDefaultCommand(USER); 
+                    s.setItemCommandListener(this); 
+                    f.append(s);
 
                     if (ITEM == null) { ITEM = new Hashtable(); }
                     ITEM.put(si, rootObj);
 
-                    f.append(si);
+
                 }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
             } 
@@ -3630,7 +3633,7 @@ class Lua {
         }
         public void commandAction(Command c, Item item) {
             try {
-                Object rootObj = ITEM.get("root");
+                Object rootObj = ITEM.get(item);
 
                 if (rootObj instanceof LuaFunction) {
                     ((LuaFunction) rootObj).call(new Vector()); 
