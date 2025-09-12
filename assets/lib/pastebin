@@ -31,6 +31,7 @@ quest.cmd=execute pastebin create; unset CONTENT;
 
 local PASTEBIN_API = os.getenv("PASTEBIN_API")
 local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
+local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
 
 local app = {}
 function app.QuestAPI()
@@ -81,8 +82,37 @@ function app.GetURL()
         }
     }))
 end
+function app.SavePaste(content, screen)
+    graphics.display(graphics.BuildQuest({
+        title = "PasteBin",
+        label = "File to Save",
+        back = { root = function() graphics.display(graphics.BuildScreen(screen)) end }
+        button = {
+            label = "Save",
+            root = function(file) io.write(content, file) end
+        }
+    }))
+end
 function app.Download(id)
+    -- https://pastebin.com/raw/kTDNzLKj
+    local content, status = socket.http.get(PROXY_HTTP .. "pastebin.com/raw/" .. id)
     
+    if status == 404 then
+        graphics.display(graphics.Alert({
+            title = "PasteBin",
+            message = "No Pastes found!",
+            back = { root = function() app.GetURL() end }
+        }))
+    else 
+        local screen = {
+            title = "Paste - " .. id,
+            back = { root = app.PasteType },
+            button = { label = "Save" },
+            fields = { content }
+        }
+        screen.button.root = function() app.SavePaste(content, screen) end
+        graphics.display(graphics.BuildScreen(screen))
+    end
 end
 
 function app.GetPaste()
