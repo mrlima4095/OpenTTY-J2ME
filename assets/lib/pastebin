@@ -75,7 +75,9 @@ function app.GetURL()
         back = { root = function() app.PasteType() end }
         button = {
             label = "Send",
-            root = function()
+            root = function(id)
+                app.Download(id)
+            end
         }
     }))
 end
