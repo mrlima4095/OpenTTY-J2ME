@@ -2877,7 +2877,7 @@ class Lua {
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
     // |
     // Lua Object
-    public class LuaFunction implements CommandListener {
+    public class LuaFunction implements CommandListener, ItemCommandListener {
         private Vector params, bodyTokens;
         private Hashtable closureScope, PKG; 
         private int MOD = -1, LTYPE = -1;
@@ -3470,8 +3470,7 @@ class Lua {
             } 
             else if (MOD == LIST) {
                 String ListType = getenv(PKG, "type", "implict");
-                LTYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT;
-                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), LTYPE);
+                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), (LTYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT));
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;

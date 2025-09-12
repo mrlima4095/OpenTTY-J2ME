@@ -1,0 +1,1 @@
+graphics.display(graphics.BuildScreen({ title = "Lua Example Screen", back = { root = os.exit }, button = { label = "", root = function () os.execute("@alert") os.exit() end }, fields = { "Message 1", "Message 2", { type = "img", img = "/java/etc/icons/file.png" }, { type = "item", label = "Button", root = "echo ITEM button have been pressed!" } } }))
