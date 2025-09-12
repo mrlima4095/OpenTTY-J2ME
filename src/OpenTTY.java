@@ -3557,91 +3557,94 @@ class Lua {
             return this.screen;
         }
         public void commandAction(Command c, Displayable d) throws Exception {
-            if (c == BACK) {
-                midlet.processCommand("xterm", true, root);
-
-                Hashtable backTable = (Hashtable) PKG.get("back");
-                if (backTable != null) {
-                    Object back = backTable.get("root");
-                    if (back instanceof LuaFunction) { ((LuaFunction) back).call(new Vector()); } 
-                    else if (back != null) { midlet.processCommand(toLuaString(back), true, root); }
-                }
-            } 
-            else if (c == USER || c == List.SELECT_COMMAND) {
-                Object fire = PKG.get("button") == null ? null : ((Hashtable) PKG.get("button")).get("root");
-
-                if (MOD == ALERT) {
+            try {
+                if (c == BACK) {
                     midlet.processCommand("xterm", true, root);
-
-                    if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
-                    else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
-                } 
-                else if (MOD == QUEST) {
-                    String value = INPUT.getString().trim();
-                    if (!value.equals("")) {
-                        midlet.processCommand("xterm", true, root);
-                        if (fire instanceof LuaFunction) {
-                            Vector result = new Vector();
-                            result.addElement(midlet.env(value));
-                            ((LuaFunction) fire).call(result);
-                        } else if (fire != null) {
-                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
-                            midlet.processCommand(toLuaString(fire), true, root);
-                        }
+    
+                    Hashtable backTable = (Hashtable) PKG.get("back");
+                    if (backTable != null) {
+                        Object back = backTable.get("root");
+                        if (back instanceof LuaFunction) { ((LuaFunction) back).call(new Vector()); } 
+                        else if (back != null) { midlet.processCommand(toLuaString(back), true, root); }
                     }
                 } 
-                else if (MOD == EDIT) {
-                    String value = ((TextBox) screen).getString().trim();
-                    if (!value.equals("")) {
+                else if (c == USER || c == List.SELECT_COMMAND) {
+                    Object fire = PKG.get("button") == null ? null : ((Hashtable) PKG.get("button")).get("root");
+    
+                    if (MOD == ALERT) {
                         midlet.processCommand("xterm", true, root);
-                        if (fire instanceof LuaFunction) {
-                            Vector result = new Vector();
-                            result.addElement(midlet.env(value));
-                            ((LuaFunction) fire).call(result);
-                        } else if (fire != null) {
-                            midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
-                            midlet.processCommand(toLuaString(fire), true, root);
-                        }
-                    }
-                } 
-                else if (MOD == LIST) {
-                    List list = (List) screen;
-                    
-                    if (LTYPE == List.MULTIPLE) {
-                        Vector args = new Vector();
-                        for (int i = 0; i < list.size(); i++) { if (list.isSelected(i)) { args.addElement(midlet.env(list.getString(i))); } }
-
-                        if (args.size() > 0) {
+    
+                        if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
+                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
+                    } 
+                    else if (MOD == QUEST) {
+                        String value = INPUT.getString().trim();
+                        if (!value.equals("")) {
                             midlet.processCommand("xterm", true, root);
-                            if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(args); } 
-                            else {
-                                for (int i = 0; i < args.size(); i++) {
-                                    String key = args.elementAt(i).toString();
-                                    midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root);
-                                }
+                            if (fire instanceof LuaFunction) {
+                                Vector result = new Vector();
+                                result.addElement(midlet.env(value));
+                                ((LuaFunction) fire).call(result);
+                            } else if (fire != null) {
+                                midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
+                                midlet.processCommand(toLuaString(fire), true, root);
                             }
                         }
-                    } else {
-                        int index = list.getSelectedIndex();
-                        if (index >= 0) {
+                    } 
+                    else if (MOD == EDIT) {
+                        String value = ((TextBox) screen).getString().trim();
+                        if (!value.equals("")) {
                             midlet.processCommand("xterm", true, root);
-                            String key = list.getString(index);
-
                             if (fire instanceof LuaFunction) {
-                                Vector args = new Vector();
-                                args.addElement(midlet.env(key));
-                                ((LuaFunction) fire).call(args);
-                            } else if (fire != null) { midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root); }
+                                Vector result = new Vector();
+                                result.addElement(midlet.env(value));
+                                ((LuaFunction) fire).call(result);
+                            } else if (fire != null) {
+                                midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
+                                midlet.processCommand(toLuaString(fire), true, root);
+                            }
                         }
+                    } 
+                    else if (MOD == LIST) {
+                        List list = (List) screen;
+                        
+                        if (LTYPE == List.MULTIPLE) {
+                            Vector args = new Vector();
+                            for (int i = 0; i < list.size(); i++) { if (list.isSelected(i)) { args.addElement(midlet.env(list.getString(i))); } }
+    
+                            if (args.size() > 0) {
+                                midlet.processCommand("xterm", true, root);
+                                if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(args); } 
+                                else {
+                                    for (int i = 0; i < args.size(); i++) {
+                                        String key = args.elementAt(i).toString();
+                                        midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root);
+                                    }
+                                }
+                            }
+                        } else {
+                            int index = list.getSelectedIndex();
+                            if (index >= 0) {
+                                midlet.processCommand("xterm", true, root);
+                                String key = list.getString(index);
+    
+                                if (fire instanceof LuaFunction) {
+                                    Vector args = new Vector();
+                                    args.addElement(midlet.env(key));
+                                    ((LuaFunction) fire).call(args);
+                                } else if (fire != null) { midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root); }
+                            }
+                        }
+                    } 
+                    else if (MOD == SCREEN) {
+                        midlet.processCommand("xterm", true, root);
+                        if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
+                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
                     }
-                } 
-                else if (MOD == SCREEN) {
-                    midlet.processCommand("xterm", true, root);
-                    if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
-                    else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
                 }
             }
-        }
+            catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); midlet.trace.remove(PID); } 
+            catch (Error e) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); midlet.trace.remove(PID);}
     }
 } 
 // |
