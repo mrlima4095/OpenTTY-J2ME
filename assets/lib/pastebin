@@ -161,7 +161,7 @@ function app.paste(content)
         local result = ""
         local i = 1
         while i <= #str do
-            local c = str:sub(i,i)
+            local c = string.sub(str, i,i)
             if c == find then
                 result = result .. repl
             else
