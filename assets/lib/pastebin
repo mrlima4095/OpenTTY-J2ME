@@ -102,8 +102,14 @@ function app.GetFile()
 end
 function app.paste(content)
     local conn, i, o = socket.connect("socket://" .. PROXY)
+    local function urlencode(str)
+        str = string.gsub(str, "\n", "%%0A")  -- converte quebras de linha
+        str = string.gsub(str, " ", "%%20")   -- converte espaços
+        str = string.gsub(str, "%%", "%%%%")  -- escapa %
+        return str
+    end
 
-    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. content, o)
+    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. urlencode(content), o)
     local res = io.read(i)
 
     graphics.display(graphics.Alert({
