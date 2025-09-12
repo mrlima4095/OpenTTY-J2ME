@@ -87,7 +87,7 @@ class Server:
                 with open(filename, "rt") as f:
                     return f.read()
             except Exception as e:
-                return e
+                return f"{e}"
 
     def fetch_url(self, url):
         if not url:
@@ -96,7 +96,7 @@ class Server:
             with urllib.request.urlopen(url if url.startswith("http://") or url.startswith("https://") else "http://" + url) as response:
                 return response.read().decode('utf-8')
         except Exception as e:
-            return e
+            return f"{e}"
 
     def post_request(self, post_command):
         try:
@@ -122,7 +122,7 @@ class Server:
             return response_data
 
         except Exception as e:
-            return e
+            return f"{e}"
 
 if __name__ == '__main__':
     Server().start()
