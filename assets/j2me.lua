@@ -5,7 +5,8 @@ os = {
     setlocale = function (locale) end,
     exit = function (status) end,
     date = function () end,
-    getpid = function () end,
+    getpid = function (proc) end,
+    getproc = function (pid, field) end,
     setproc = function (field, value) end
 }
 
