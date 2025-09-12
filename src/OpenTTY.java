@@ -65,6 +65,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Control Thread
+    public OpenTTY getInstance() { return this; }
     public class MIDletControl implements CommandListener, Runnable {
         private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, SERVER = 12, BIND = 13;
 
@@ -1015,7 +1016,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
                             screen.append(content); 
                         }
-                        else if (type.equals("item")) { new ItemLoader(screen, super(), "screen." + field, code, root); } 
+                        else if (type.equals("item")) { new ItemLoader(screen, getInstance(), "screen." + field, code, root); } 
                         else if (type.equals("spacer")) { 
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
                             screen.append(new Spacer(width, height)); 
