@@ -1806,9 +1806,9 @@ class ItemLoader implements ItemCommandListener {
 
     public ItemLoader(Form screen, OpenTTY midlet, String node, String code, boolean root) {
         if (code == null || code.length() == 0) { return; } 
-        else if (code.equals("clear")) { midlet.form.deleteAll(); midlet.form.append(stdout); midlet.form.append(stdin); return; } 
+        else if (code.equals("clear")) { midlet.form.deleteAll(); midlet.form.append(midlet.stdout); midlet.form.append(midlet.stdin); return; } 
 
-        this.PKG = parseProperties(code); this.midlet = midlet; this.root = root; this.node = node; 
+        this.PKG = midlet.parseProperties(code); this.midlet = midlet; this.root = root; this.node = node; 
 
         if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { midlet.MIDletLogs("add error Malformed ITEM, missing params"); return; } 
 
