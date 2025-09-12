@@ -118,6 +118,7 @@ class Server:
             response_data = response.read().decode('utf-8')
             connection.close()
 
+            print(response_data)
             return response_data
 
         except Exception as e:
