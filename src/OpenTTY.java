@@ -3556,7 +3556,7 @@ class Lua {
             this.screen.setCommandListener(this);
             return this.screen;
         }
-        public void commandAction(Command c, Displayable d) throws Exception {
+        public void commandAction(Command c, Displayable d) {
             try {
                 if (c == BACK) {
                     midlet.processCommand("xterm", true, root);
@@ -3643,8 +3643,8 @@ class Lua {
                     }
                 }
             }
-            catch (Exception ex) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); midlet.trace.remove(PID); } 
-            catch (Error er) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); midlet.trace.remove(PID); }
+            catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); midlet.trace.remove(PID); } 
+            catch (Error e) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); midlet.trace.remove(PID); }
         }
     }
 } 
