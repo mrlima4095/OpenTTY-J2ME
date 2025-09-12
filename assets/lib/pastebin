@@ -64,9 +64,25 @@ function app.PasteType()
             end
         },
 
-        fields = { "Open File", "Editor" }
+        fields = { "Upload File", "Editor", "---", "View" }
     }))
 end
+
+function app.GetURL()
+    graphics.display(graphics.BuildQuest({
+        title = "PasteBin",
+        label = "Paste ID",
+        back = { root = function() app.PasteType() end }
+        button = {
+            label = "Send",
+            root = function()
+        }
+    }))
+end
+function app.Download(id)
+    
+end
+
 function app.GetPaste()
     graphics.display(graphics.BuildEdit({
         title = "Paste Content",
@@ -100,6 +116,7 @@ function app.GetFile()
         }
     }))
 end
+
 function app.paste(content)
     local conn, i, o = socket.connect("socket://" .. PROXY)
     local function replace(str, find, repl)
