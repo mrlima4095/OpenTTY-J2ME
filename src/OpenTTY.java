@@ -1827,7 +1827,7 @@ class ItemLoader implements ItemCommandListener {
 // |
 // Lua Runtime
 class Lua {
-    private boolean root, breakLoop = false, doreturn = false, kill = tru, gc = true;
+    private boolean root, breakLoop = false, doreturn = false, kill = true, gc = true;
     private boolean[] attrchanges = new boolean[] { true, true };
     private OpenTTY midlet;
     private String PID = null;
