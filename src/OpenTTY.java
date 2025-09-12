@@ -2879,7 +2879,7 @@ class Lua {
     // Lua Object
     public class LuaFunction implements CommandListener, ItemCommandListener {
         private Vector params, bodyTokens;
-        private Hashtable closureScope, PKG; 
+        private Hashtable closureScope, PKG, ITEM = null; 
         private int MOD = -1, LTYPE = -1;
         // | (Screen)
         private Displayable screen; 
@@ -3411,30 +3411,17 @@ class Lua {
                     else { StringItem si = new StringItem(getenv(field, "label", ""), value); si.setFont(midlet.newFont(getenv(field, "style", "default"))); f.append(si); }
                 } 
                 else if (type.equals("item")) {
-                    // Verifica label
-                    String label = field.containsKey("label")
-                        ? toLuaString(field.get("label"))
-                        : (String) gotbad("BuildScreen", "item", "missing label");
+                    String label = field.containsKey("label") ? toLuaString(field.get("label")) : (String) gotbad("BuildScreen", "item", "missing label");
+                    Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("BuildScreen", "item", "missing root"); 
 
-                    // Recupera root (pode ser função ou string)
-                    Object rootObj = field.containsKey("root")
-                        ? field.get("root")
-                        : gotbad("BuildScreen", "item", "missing root");
-
-                    // Estilo opcional
-                    String style = field.containsKey("style") ? toLuaString(field.get("style")) : "default";
-
-                    // Cria o item no formulário
                     StringItem si = new StringItem(label, "");
-                    si.setFont(midlet.newFont(style));
-
-                    // Registra o comando e listener
+                    si.setFont(midlet.newFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
                     Command cmd = new Command(label, Command.ITEM, 1);
                     si.setDefaultCommand(cmd);
                     si.setItemCommandListener(this);
 
-                    // Guarda o "root" no campo (pra usar no listener)
-                    si.setAttribute("root", rootObj);
+                    if (ITEM == null) { ITEM = new Hashtable(); }
+                    ITEM.put(si, rootObj)
 
                     f.append(si);
                 }
@@ -3642,24 +3629,20 @@ class Lua {
             catch (Error e) { midlet.trace.remove(PID); }
         }
         public void commandAction(Command c, Item item) {
-    try {
-        Object rootObj = item.getAttribute("root");
+            try {
+                Object rootObj = ITEM.get("root");
 
-        if (rootObj instanceof LuaFunction) {
-            // Executa LuaFunction diretamente
-            LuaFunction fn = (LuaFunction) rootObj;
-            fn.call(new Vector()); // pode passar args se precisar
+                if (rootObj instanceof LuaFunction) {
+                    ((LuaFunction) rootObj).call(new Vector()); 
+                }
+                else if (rootObj instanceof String) {
+                    String cmd = (String) rootObj;
+                    midlet.processCommand(cmd, true, root); 
+                }
+            } 
+            catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); midlet.trace.remove(PID); } 
+            catch (Error e) { midlet.trace.remove(PID); }
         }
-        else if (rootObj instanceof String) {
-            // Executa no shell
-            String cmd = (String) rootObj;
-            midlet.processCommand(cmd, true, root); 
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-
     }
 } 
 // |
