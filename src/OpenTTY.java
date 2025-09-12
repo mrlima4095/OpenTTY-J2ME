@@ -214,11 +214,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == MONITOR) { System.gc(); reload(); } 
             else if (MOD == PROCESS) {
                 if (c == FILTER) {
-                    if (box == null) { box = new TextBox("Process Filter", "", 31522, TextField.ANY); }
+                    if (box == null) { box = new TextBox("Process Filter", "", 31522, TextField.ANY); box.addCommand(BACK); box.addCommand(RUN = new Command("Run", Command.OK, 1)); box.setCommandListener(this); }
 
-                    box.addCommand(BACK);
-                    box.addCommand(RUN = new Command("Run", Command.OK, 1));
-                    box.setCommandListener(this);
+                    
                     display.setCurrent(box);
                     return;
                 }
