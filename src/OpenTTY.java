@@ -965,7 +965,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root)); }
         else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
-        else if (mainCommand.equals("item")) { new ItemLoader(form, "item", argument.equals("clear") ? "clear" : argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
+        else if (mainCommand.equals("item")) { new ItemLoader(form, this, "item", argument.equals("clear") ? "clear" : argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
 
@@ -975,36 +975,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(env(text)); viewer.addCommand(BACK); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
     // |
     // Interfaces
-    public static class ItemLoader implements ItemCommandListener {
-        private Hashtable PKG; 
-        private boolean root = false;
-        private Command RUN; 
-        private StringItem s; 
-        private String node; 
-
-        public ItemLoader(Form screen, String node, String code, boolean root) {
-            if (code == null || code.length() == 0) { return; } 
-            else if (code.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); return; } 
-
-            this.PKG = parseProperties(code); this.root = root; this.node = node; 
-
-            if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
-
-            RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); 
-            s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); 
-            s.setFont(newFont(getenv(node + ".style", "default"))); 
-            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
-            s.addCommand(RUN); 
-            s.setDefaultCommand(RUN); 
-            s.setItemCommandListener(this); 
-            screen.append(s); 
-        }
-        public void commandAction(Command c, Item item) { if (c == RUN) { processCommand("xterm", true, root); processCommand((String) PKG.get(node + ".cmd"), true, root); } } 
-
-        private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
-        private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
-        private String getenv(String key) { return env(getvalue(key, "")); } 
-    }
     public class Screen implements CommandListener { 
         private Hashtable PKG; 
         private boolean root = false;
@@ -1045,7 +1015,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
                             screen.append(content); 
                         }
-                        else if (type.equals("item")) { new ItemLoader(screen, "screen." + field, code, root); } 
+                        else if (type.equals("item")) { new ItemLoader(screen, this, "screen." + field, code, root); } 
                         else if (type.equals("spacer")) { 
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
                             screen.append(new Spacer(width, height)); 
@@ -1822,7 +1792,39 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
-}   
+}
+// |
+class ItemLoader implements ItemCommandListener {
+    private Hashtable PKG; 
+    private OpenTTY midlet;
+    private boolean root = false;
+    private Command RUN; 
+    private StringItem s; 
+    private String node; 
+
+    public ItemLoader(Form screen, OpenTTY midlet, String node, String code, boolean root) {
+        if (code == null || code.length() == 0) { return; } 
+        else if (code.equals("clear")) { midlet.form.deleteAll(); midlet.form.append(stdout); midlet.form.append(stdin); return; } 
+
+        this.PKG = parseProperties(code); this.midlet = midlet; this.root = root; this.node = node; 
+
+        if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { midlet.MIDletLogs("add error Malformed ITEM, missing params"); return; } 
+
+        RUN = new Command(midlet.getenv(node + ".label"), Command.ITEM, 1); 
+        s = new StringItem(null, midlet.getenv(node + ".label"), StringItem.BUTTON); 
+        s.setFont(midlet.newFont(midlet.getenv(node + ".style", "default"))); 
+        s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
+        s.addCommand(RUN); 
+        s.setDefaultCommand(RUN); 
+        s.setItemCommandListener(this); 
+        screen.append(s); 
+    }
+    public void commandAction(Command c, Item item) { if (c == RUN) { midlet.processCommand("xterm", true, root); midlet.processCommand((String) PKG.get(node + ".cmd"), true, root); } } 
+
+    private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
+    private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); } 
+    private String getenv(String key) { return midlet.env(getvalue(key, "")); } 
+}
 // |
 // Lua Runtime
 class Lua {
@@ -3439,7 +3441,7 @@ class Lua {
                     code.append("item.cmd=").append(field.containsKey("root") ? toLuaString(field.get("root")) : (String) gotbad("BuildScreen", "item", "missing root")).append("\n");
                     code.append("item.style=").append(field.containsKey("style") ? field.get("style") : "default");
 
-                    new midlet.ItemLoader(f, "item", code.toString(), root);
+                    new ItemLoader(f, midlet, "item", code.toString(), root);
                 }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
             } 
