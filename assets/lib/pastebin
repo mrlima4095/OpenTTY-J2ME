@@ -65,7 +65,7 @@ function app.PasteType()
                     app.GetFile()
                 elseif sel == "Edit" then
                     app.GetPaste()
-                else if sel == "---" then
+                elseif sel == "---" then
                     app.PasteType()
                 else
                     app.GetURL()
@@ -182,8 +182,6 @@ function app.paste(content)
         return str
     end
 
-
-    
     io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. urlencode(content), o)
     local res = io.read(i)
 
