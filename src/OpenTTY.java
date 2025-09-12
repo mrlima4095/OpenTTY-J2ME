@@ -1794,6 +1794,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
 }
 // |
+// Global ITEM Loader
 class ItemLoader implements ItemCommandListener {
     private Hashtable PKG; 
     private OpenTTY midlet;
