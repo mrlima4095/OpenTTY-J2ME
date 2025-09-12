@@ -63,7 +63,7 @@ function app.PasteType()
             root = function (sel)
                 if sel == "Upload File" then
                     app.GetFile()
-                elseif sel == "Edit" then
+                elseif sel == "Editor" then
                     app.GetPaste()
                 elseif sel == "---" then
                     app.PasteType()
@@ -72,7 +72,6 @@ function app.PasteType()
                 end
             end
         },
-
         fields = { "Upload File", "Editor", "---", "View" }
     }))
 end
@@ -81,7 +80,7 @@ function app.GetURL()
     graphics.display(graphics.BuildQuest({
         title = "PasteBin",
         label = "Paste ID",
-        back = { root = function() app.PasteType() end }
+        back = { root = function() app.PasteType() end },
         button = {
             label = "Send",
             root = function(id)
