@@ -3421,7 +3421,7 @@ class Lua {
                     si.setItemCommandListener(this);
 
                     if (ITEM == null) { ITEM = new Hashtable(); }
-                    ITEM.put(si, rootObj)
+                    ITEM.put(si, rootObj);
 
                     f.append(si);
                 }
