@@ -3280,7 +3280,7 @@ class Lua {
 
                     if (midlet.trace.containsKey(process)) {
                         if (((String) midlet.getobject(process, "owner")).equals("root") && !root) {
-                            return gotbad(1, "getproc", "permissiond denied")
+                            return gotbad(1, "getproc", "permissiond denied");
                         }
 
                         if (args.size() > 1) { return (midlet.getprocess(process)).get(toLuaString(args.elementAt(1)).trim()); } 
