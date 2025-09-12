@@ -2901,20 +2901,12 @@ class Lua {
         if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
         Object key = null;
     
-        // Suporte a encadeamento t.a.b
         while (peek().type == DOT || peek().type == LBRACKET) {
-            if (peek().type == DOT) {
-                consume(DOT);
-                Token field = consume(IDENTIFIER);
-                key = field.value;
-            } else if (peek().type == LBRACKET) {
-                consume(LBRACKET);
-                key = expression(scope);
-                consume(RBRACKET);
-            }
-            // Se table é null, erro igual Lua
-            if (table == null) throw new Exception("attempt to index a nil value");
-            if (!(table instanceof Hashtable)) throw new Exception("attempt to index a non-table value");
+            if (peek().type == DOT) { consume(DOT); Token field = consume(IDENTIFIER); key = field.value; } 
+            else if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); }
+
+            if (table == null) { throw new Exception("attempt to index a nil value"); }
+            if (!(table instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
             if (peek().type == DOT || peek().type == LBRACKET) { table = unwrap(((Hashtable)table).get(key)); }
         }
         return new Object[]{table, key};
