@@ -3565,9 +3565,9 @@ class Lua {
 
                 Hashtable backTable = (Hashtable) PKG.get("back");
                 if (backTable != null) {
-                    Object root = backTable.get("root");
-                    if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } 
-                    else if (root != null) { midlet.processCommand(toLuaString(root), true, root); }
+                    Object back = backTable.get("root");
+                    if (back instanceof LuaFunction) { ((LuaFunction) back).call(new Vector()); } 
+                    else if (back != null) { midlet.processCommand(toLuaString(back), true, root); }
                 }
             } 
             else if (c == USER || c == List.SELECT_COMMAND) {
