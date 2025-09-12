@@ -105,7 +105,7 @@ class Server:
                 return "URL or data is missing.\n"
 
             url, data = parts
-            data_dict = dict(param.split('=') for param in data.split('&'))
+            data_dict = dict(param.split('=', 1) for param in data.split('&') if '=' in param)
             encoded_data = urllib.parse.urlencode(data_dict).encode('utf-8')
 
             parsed_url = urllib.parse.urlparse(url)
