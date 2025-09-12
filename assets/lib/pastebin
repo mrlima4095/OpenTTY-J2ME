@@ -61,7 +61,15 @@ function app.PasteType()
         button = {
             label = "Select",
             root = function (sel)
-                if sel == "Editor" then app.GetPaste() else app.GetFile() end
+                if sel == "Upload File" then
+                    app.GetFile()
+                elseif sel == "Edit" then
+                    app.GetPaste()
+                else if sel == "---" then
+                    app.PasteType()
+                else
+                    app.GetURL()
+                end
             end
         },
 
