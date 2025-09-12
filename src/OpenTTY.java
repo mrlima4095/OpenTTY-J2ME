@@ -975,7 +975,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(env(text)); viewer.addCommand(BACK); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
     // |
     // Interfaces
-    public class ItemLoader implements ItemCommandListener {
+    public static class ItemLoader implements ItemCommandListener {
         private Hashtable PKG; 
         private boolean root = false;
         private Command RUN; 
