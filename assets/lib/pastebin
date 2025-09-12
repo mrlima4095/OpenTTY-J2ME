@@ -181,7 +181,7 @@ function app.paste(content)
         return str
     end
 
-    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. urlencode(content), o)
+    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. content, o)
     local res = io.read(i)
 
     graphics.display(graphics.Alert({
