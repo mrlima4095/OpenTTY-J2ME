@@ -3643,8 +3643,8 @@ class Lua {
                     }
                 }
             }
-            catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); midlet.trace.remove(PID); } 
-            catch (Error e) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); midlet.trace.remove(PID); }
+            catch (Exception ex) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); midlet.trace.remove(PID); } 
+            catch (Error er) { midlet.processCommand("echo " + (e.getMessage() == null ? e.toString() : e.getMessage()), true, root); midlet.trace.remove(PID); }
         }
     }
 } 
