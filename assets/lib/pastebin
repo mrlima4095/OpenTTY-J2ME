@@ -35,21 +35,16 @@ local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
 
 local app = {}
 function app.QuestAPI()
-    graphics.display(graphics.BuildEdit({
-        title = "PasteBin API Key",
-
-        back = {
-            label = "Back",
-            root = os.exit
-        },
-
+    graphics.display(graphics.BuildQuest({
+        title = "PasteBin",
+        label = "API Key",
+        back = { root = os.exit },
         button = {
-            label = "Confirm",
-            root = function (key)
-                os.execute("set PASTEBIN_API=" .. key)
+            label = "Save",
+            root = function(key)
                 PASTEBIN_API = key
-
-                app.main()
+                os.execute("set PASTEBIN_API=" .. PASTEBIN_API)
+                app.PasteType()
             end
         }
     }))
@@ -61,15 +56,10 @@ function app.PasteType()
         button = {
             label = "Select",
             root = function (sel)
-                if sel == "Upload File" then
-                    app.GetFile()
-                elseif sel == "Editor" then
-                    app.GetPaste()
-                elseif sel == "---" then
-                    app.PasteType()
-                else
-                    app.GetURL()
-                end
+                if sel == "Upload File" then app.GetFile()
+                elseif sel == "Editor" then app.GetPaste()
+                elseif sel == "---" then app.PasteType()
+                else app.GetURL() end
             end
         },
         fields = { "Upload File", "Editor", "---", "View" }
@@ -83,9 +73,7 @@ function app.GetURL()
         back = { root = function() app.PasteType() end },
         button = {
             label = "Send",
-            root = function(id)
-                app.Download(id)
-            end
+            root = function(id) app.Download(id) end
         }
     }))
 end
@@ -102,14 +90,9 @@ function app.SavePaste(content, screen)
 end
 function app.Download(id)
     local content, status = socket.http.get(PROXY_HTTP .. "pastebin.com/raw/" .. id)
-    
-    if status == 404 then
-        graphics.display(graphics.Alert({
-            title = "PasteBin",
-            message = "No Pastes found!",
-            back = { root = function() app.GetURL() end }
-        }))
-    else 
+
+    if status == 404 then graphics.display(graphics.Alert({ title = "PasteBin", message = "No Pastes found!", back = { root = function() app.GetURL() end } }))
+    else
         local screen = {
             title = "Paste - " .. id,
             back = { root = app.PasteType },
@@ -124,7 +107,7 @@ end
 function app.GetPaste()
     graphics.display(graphics.BuildEdit({
         title = "Paste Content",
-        back = { root = fapp.PasteType },
+        back = { root = app.PasteType },
         button = {
             label = "Create",
             root = function(c) app.paste(c) end
@@ -173,7 +156,7 @@ function app.paste(content)
 end
 function app.main()
     os.setproc("name", "pastebin")
-    
+
     if PASTEBIN_API == nil then app.QuestAPI() return end
 
     app.PasteType()
