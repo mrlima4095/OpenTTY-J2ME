@@ -3532,7 +3532,7 @@ class Lua {
             } 
             else if (MOD == QUEST) {
                 Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
-                TextField field = new TextField(getenv(PKG, "label", stdin.getLabel(), "", 256, TextField.ANY));
+                TextField field = new TextField(getenv(PKG, "label", midlet.stdin.getLabel(), "", 256, TextField.ANY));
                 form.append(field);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
