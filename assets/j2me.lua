@@ -52,5 +52,8 @@ graphics = {
     BuildScreen = function (config) end,
     BuildList = function (config) end,
     BuildQuest = function (config) end,
-    BuildEdit = function (config) end
+    BuildEdit = function (config) end,
+    SetTitle = function (title) end,
+    WindowTitle = function (title) end,
+    SetTicker = function (text) end
 }
