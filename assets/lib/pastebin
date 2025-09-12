@@ -102,8 +102,33 @@ function app.GetFile()
 end
 function app.paste(content)
     local conn, i, o = socket.connect("socket://" .. PROXY)
+    local function replace(str, find, repl)
+        local result = ""
+        local i = 1
+        while i <= #str do
+            local c = str:sub(i,i)
+            if c == find then
+                result = result .. repl
+            else
+                result = result .. c
+            end
+            i = i + 1
+        end
+        return result
+    end
+    local function urlencode(str)
+        if str == nil then return "" end
+        str = replace(str, "%", "%%")   -- primeiro %
+        str = replace(str, "\n", "%0A")
+        str = replace(str, " ", "%20")
+        str = replace(str, "&", "%26")
+        str = replace(str, "=", "%3D")
+        return str
+    end
+
+
     
-    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. content, o)
+    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. urlencode(content), o)
     local res = io.read(i)
 
     graphics.display(graphics.Alert({
