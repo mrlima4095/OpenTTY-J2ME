@@ -3456,7 +3456,7 @@ class Lua {
         private Object BuildScreen() throws Exception {
             if (MOD == ALERT) {
                 Alert alert = new Alert(getenv(PKG, "title", midlet.form.getTitle()), getenv(PKG, "message", ""), null, null);
-                if (PKG.containsKey("indicator") != null) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
+                if (PKG.containsKey("indicator")) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
 
                 Object backObj = PKG.get("back");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
