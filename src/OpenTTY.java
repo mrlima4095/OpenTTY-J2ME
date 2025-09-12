@@ -3411,12 +3411,32 @@ class Lua {
                     else { StringItem si = new StringItem(getenv(field, "label", ""), value); si.setFont(midlet.newFont(getenv(field, "style", "default"))); f.append(si); }
                 } 
                 else if (type.equals("item")) {
-                    StringBuffer code = new StringBuffer();
-                    code.append("item.label=").append(field.containsKey("label") ? toLuaString(field.get("label")) : (String) gotbad("BuildScreen", "item", "missing label")).append("\n");
-                    code.append("item.cmd=").append(field.containsKey("root") ? toLuaString(field.get("root")) : (String) gotbad("BuildScreen", "item", "missing root")).append("\n");
-                    code.append("item.style=").append(field.containsKey("style") ? field.get("style") : "default");
+                    // Verifica label
+                    String label = field.containsKey("label")
+                        ? toLuaString(field.get("label"))
+                        : (String) gotbad("BuildScreen", "item", "missing label");
 
-                    new ItemLoader(f, midlet, "item", code.toString(), root);
+                    // Recupera root (pode ser função ou string)
+                    Object rootObj = field.containsKey("root")
+                        ? field.get("root")
+                        : gotbad("BuildScreen", "item", "missing root");
+
+                    // Estilo opcional
+                    String style = field.containsKey("style") ? toLuaString(field.get("style")) : "default";
+
+                    // Cria o item no formulário
+                    StringItem si = new StringItem(label, "");
+                    si.setFont(midlet.newFont(style));
+
+                    // Registra o comando e listener
+                    Command cmd = new Command(label, Command.ITEM, 1);
+                    si.setDefaultCommand(cmd);
+                    si.setItemCommandListener(this);
+
+                    // Guarda o "root" no campo (pra usar no listener)
+                    si.setAttribute("root", rootObj);
+
+                    f.append(si);
                 }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
             } 
@@ -3621,6 +3641,25 @@ class Lua {
             catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); midlet.trace.remove(PID); } 
             catch (Error e) { midlet.trace.remove(PID); }
         }
+        public void commandAction(Command c, Item item) {
+    try {
+        Object rootObj = item.getAttribute("root");
+
+        if (rootObj instanceof LuaFunction) {
+            // Executa LuaFunction diretamente
+            LuaFunction fn = (LuaFunction) rootObj;
+            fn.call(new Vector()); // pode passar args se precisar
+        }
+        else if (rootObj instanceof String) {
+            // Executa no shell
+            String cmd = (String) rootObj;
+            midlet.processCommand(cmd, true, root); 
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
     }
 } 
 // |
