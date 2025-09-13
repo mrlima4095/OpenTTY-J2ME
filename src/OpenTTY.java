@@ -34,7 +34,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (trace.containsKey("1")) { }
         else {
             attributes.put("PATCH", "Absurd Anvil"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "mod"); attributes.put("XVERSION", "0.6.3");
-            attributes.put("PWD", path); attributes.put("USER", username)
+            attributes.put("PWD", path); attributes.put("USER", username);
             // |
             String[] KEYS = { "TYPE", "CONFIG", "PROFILE", "LOCALE" }, SYS = { "platform", "configuration", "profiles", "locale" };
             for (int i = 0; i < KEYS.length; i++) { attributes.put(KEYS[i], System.getProperty("microedition." + SYS[i])); }
