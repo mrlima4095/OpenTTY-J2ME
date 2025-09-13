@@ -34,3 +34,23 @@ function app.load()
 
     app.tasks = split(content, "\n")
 end
+
+
+function app.main()
+    graphics.display(graphics.BuildList({
+        title = "To Do",
+        back = { root = os.exit },
+        button = { label = "Menu", root = app.handler },
+        type = "multiple",
+
+        fields = app.tasks
+    }))
+end
+
+function app.handler(...)
+
+end
+
+os.setproc("name", "tasks")
+app.load()
+app.main()
