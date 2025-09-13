@@ -8,7 +8,7 @@ description=Paste Client
 
 include=/java/lib/settings
 
-config=echo case !key (PASTEBIN_API) [ PasteBin ] To setup your API Key use 'pastebin api'
+config=execute case !key (PASTEBIN_API) echo [ PasteBin ] To setup your API Key use 'pastebin api'
 command=pastebin
 
 pastebin=execute x11 quest pastebin;
@@ -18,7 +18,6 @@ shell.args=api,create
 
 api=execute set VALUE=PASTEBIN_API; set LABEL=PasteBin API Key; cfg run; 
 create=execute tick Creating Paste...; set OLD_QUERY=$QUERY; set QUERY=show; query socket://$REPO post https://pastebin.com/api/api_post.php api_dev_key=$PASTEBIN_API&api_option=paste&api_paste_code=$CONTENT; set OLD_TITLE=$TITLE; title Paste URL; tick; warn $OUTPUT; title $OLD_TITLE; set QUERY=$OLD_QUERY; unset OLD_TITLE; unset OLD_QUERY;
-
 
 [ DISPLAY ]
 
@@ -34,36 +33,31 @@ local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
 local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
 
 local app = {}
-function app.QuestAPI()
-    graphics.display(graphics.BuildQuest({
-        title = "PasteBin",
-        label = "API Key",
-        back = { root = os.exit },
-        button = {
-            label = "Save",
-            root = function(key)
-                PASTEBIN_API = key
-                os.execute("set PASTEBIN_API=" .. PASTEBIN_API)
-                app.PasteType()
-            end
-        }
-    }))
-end
-function app.PasteType()
-    graphics.display(graphics.BuildList({
-        title = "PasteBin",
-        back = { root = os.exit },
-        button = {
-            label = "Select",
-            root = function (sel)
-                if sel == "Upload File" then app.GetFile()
-                elseif sel == "Editor" then app.GetPaste()
-                elseif sel == "---" then app.PasteType()
-                else app.GetURL() end
-            end
+local menu_cfg, menu = {
+    title = "PasteBin",
+    back = { root = os.exit },
+    button = {
+        label = "Select",
+        root = function (sel)
+            if sel == "Config. PasteBin API Key" then os.execute("")
+            elseif sel == "Upload File" then app.GetFile()
+            elseif sel == "Editor" then app.GetPaste()
+            elseif sel == "---" then app.PasteType()
+            else app.GetURL() end
+        end
         },
-        fields = { "Upload File", "Editor", "---", "View" }
-    }))
+    fields = { }
+}, nil
+
+function app.PasteType()
+    if menu == nil then
+        if PASTEBIN_API == nil then menu_cfg.fields = { "Config. PasteBin API Key", "---", "View" }
+        else menu_cfg.fields = { "Upload File", "Editor", "---", "View" } end
+        
+        menu = graphics.BuildList(menu)
+    end
+    
+    graphics.display(menu)
 end
 
 function app.GetURL()
@@ -154,12 +148,6 @@ function app.paste(content)
     io.close(conn)
     io.close(i) io.close(o)
 end
-function app.main()
-    os.setproc("name", "pastebin")
 
-    if PASTEBIN_API == nil then app.QuestAPI() return end
-
-    app.PasteType()
-end
-
-app.main()
+os.setproc("name", "pastebin")
+app.PasteType()
