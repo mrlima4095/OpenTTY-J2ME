@@ -6,9 +6,12 @@ name=MobiX
 version=1.0
 description=Java Mobile
 
-api.version=1.14
-api.error=execute log add error MobiX requires OpenTTY API 1.14; echo [ MobiX ] Loading failed!; echo [ MobiX ] See logs to more info.;
+api.version=1.16
+api.error=execute log add error MobiX requires OpenTTY API 1.16; echo [ MobiX ] Loading failed!; echo [ MobiX ] See logs to more info.;
 api.match=minimum
 
 ]]
 
+local proc = os.getpid()
+
+os.setproc("name", "mxos")
