@@ -8,7 +8,7 @@ api.version=1.16
 api.error=execute echo [ Matrix Effect ] This program requires OpenTTY 1.16 (Lua Runtime)
 api.match=minimum 
 
-config=execute bg lua /home/cmatrix
+config=execute alias cmatrix=bg lua /home/cmatrix; cmatrix
 
 ]]
 
