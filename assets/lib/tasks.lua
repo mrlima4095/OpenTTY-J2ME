@@ -8,8 +8,14 @@ local function split(text, sep)
             result[cur] = buffer
             cur = cur + 1
             buffer = ""
-        else buffer = buffer .. char end
+        else
+            buffer = buffer .. char
+        end
     end
+    
+    -- adiciona o último pedaço
+    result[cur] = buffer
+    
     return result
 end
 
