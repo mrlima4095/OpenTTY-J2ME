@@ -45,16 +45,15 @@ local menu_cfg, menu = {
             elseif sel == "---" then app.PasteType()
             else app.GetURL() end
         end
-        },
-    fields = { }
+    },
+    fields = { "Upload File", "Editor", "---", "View" } 
 }, nil
 
 function app.PasteType()
     if menu == nil then
-        if PASTEBIN_API == nil then menu_cfg.fields = { "Config. PasteBin API Key", "---", "View" }
-        else menu_cfg.fields = { "Upload File", "Editor", "---", "View" } end
+        if PASTEBIN_API == nil then menu_cfg.fields = { "Config. PasteBin API Key", "---", "View" } end
         
-        menu = graphics.BuildList(menu)
+        menu = graphics.BuildList(menu_cfg)
     end
     
     graphics.display(menu)
