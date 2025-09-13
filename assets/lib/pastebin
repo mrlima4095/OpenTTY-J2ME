@@ -27,18 +27,17 @@ quest.key=CONTENT
 quest.cmd=execute pastebin create; unset CONTENT;
 
 ]]
-
 local PASTEBIN_API = os.getenv("PASTEBIN_API")
 local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
 local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
 
 local app = {}
-local menu_cfg, menu = {
+local menu, menu_cfg = nil, {
     title = "PasteBin",
     back = { root = os.exit },
     button = {
         label = "Select",
-        root = function (sel)
+        root = function(sel)
             if sel == "Config. PasteBin API Key" then os.execute("pastebin api") os.exit()
             elseif sel == "Upload File" then app.GetFile()
             elseif sel == "Editor" then app.GetPaste()
@@ -46,106 +45,119 @@ local menu_cfg, menu = {
             else app.GetURL() end
         end
     },
-    fields = { "Upload File", "Editor", "---", "View" } 
-}, nil
+    fields = { "Upload File", "Editor", "---", "View" }
+}
 
+-- Helpers
+local function showAlert(title, message, back, button)
+    graphics.display(graphics.Alert({
+        title = title, message = message, back = back, button = button
+    }))
+end
+
+local function showQuest(cfg)
+    graphics.display(graphics.BuildQuest(cfg))
+end
+
+-- Menu principal
 function app.PasteType()
-    if menu == nil then
-        if PASTEBIN_API == nil then menu_cfg.fields = { "Config. PasteBin API Key", "---", "View" } end
-
+    if not menu then
+        if not PASTEBIN_API then
+            menu_cfg.fields = { "Config. PasteBin API Key", "---", "View" }
+        end
         menu = graphics.BuildList(menu_cfg)
     end
-
     graphics.display(menu)
 end
 
+-- Download paste
+function app.Download(id)
+    local content, status = socket.http.get(PROXY_HTTP .. "pastebin.com/raw/" .. id)
+    if status == 404 then
+        showAlert("PasteBin", "No Pastes found!",
+            { root = function() app.GetURL() end })
+    else
+        local screen
+        
+        screen = {
+            title = "Paste - " .. id,
+            back = { root = app.PasteType },
+            button = {
+                label = "Save",
+                root = function() app.SavePaste(content, screen) end
+            },
+            fields = { content }
+        }
+        graphics.display(graphics.BuildScreen(screen))
+    end
+end
+
 function app.GetURL()
-    graphics.display(graphics.BuildQuest({
+    showQuest({
         title = "PasteBin",
         label = "Paste ID",
-        back = { root = function() app.PasteType() end },
-        button = {
-            label = "Send",
-            root = function(id) app.Download(id) end
-        }
-    }))
+        back = { root = app.PasteType },
+        button = { label = "Send", root = app.Download }
+    })
 end
+
 function app.SavePaste(content, screen)
-    graphics.display(graphics.BuildQuest({
+    showQuest({
         title = "PasteBin",
         label = "File to Save",
         back = { root = function() graphics.display(graphics.BuildScreen(screen)) end },
-        button = {
-            label = "Save",
-            root = function(file) io.write(content, file) end
-        }
-    }))
+        button = { label = "Save", root = function(file) io.write(content, file) end }
+    })
 end
-function app.Download(id)
-    local content, status = socket.http.get(PROXY_HTTP .. "pastebin.com/raw/" .. id)
 
-    if status == 404 then graphics.display(graphics.Alert({ title = "PasteBin", message = "No Pastes found!", back = { root = function() app.GetURL() end } }))
-    else
-        local screen = {
-            title = "Paste - " .. id,
-            back = { root = app.PasteType },
-            button = { label = "Save" },
-            fields = { content }
-        }
-        screen.button.root = function() app.SavePaste(content, screen) end
-        graphics.display(graphics.BuildScreen(screen))
+-- Criar paste
+local function doPaste(content)
+    if not PASTEBIN_API then
+        showAlert("PasteBin", "API Key not configured!",
+            { root = app.PasteType })
+        return
     end
+
+    local conn, i, o = socket.connect("socket://" .. PROXY)
+    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" ..
+        PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. content, o)
+    local res = io.read(i)
+
+    showAlert("PasteBin", res,
+        { root = os.exit },
+        { label = "Copy", root = function() print(res) os.exit() end })
+
+    pcall(io.close, conn)
+    pcall(io.close, i)
+    pcall(io.close, o)
 end
 
 function app.GetPaste()
     graphics.display(graphics.BuildEdit({
         title = "Paste Content",
         back = { root = app.PasteType },
-        button = {
-            label = "Create",
-            root = function(c) app.paste(c) end
-        }
+        button = { label = "Create", root = doPaste }
     }))
 end
+
 function app.GetFile()
-    graphics.display(graphics.BuildQuest({
+    showQuest({
         title = "PasteBin",
         label = "File to Send",
-        back = { label = "Back", root = function() app.PasteType() end },
+        back = { root = app.PasteType },
         button = {
             label = "Create",
-            root = function (file)
+            root = function(file)
                 local content = io.read(file)
-
                 if content == "" then
-                    graphics.display(graphics.Alert({
-                        title = "PasteBin",
-                        message = "File '" .. file .. "' is empty!",
-                        back = { label = "Back", root = function() app.GetFile() end }
-                    }))
+                    showAlert("PasteBin", "File '" .. file .. "' is empty!",
+                        { root = app.GetFile })
                 else
-                    app.paste(content)
+                    doPaste(content)
                 end
             end
         }
-    }))
-end
-
-function app.paste(content)
-    local conn, i, o = socket.connect("socket://" .. PROXY)
-
-    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. content, o)
-    local res = io.read(i)
-
-    graphics.display(graphics.Alert({
-        title = "PasteBin",
-        message = res,
-        back = { root = os.exit },
-        button = { label = "Copy", root = function() print(res) os.exit() end }
-    }))
-
-    io.close(conn)
-    io.close(i) io.close(o)
+    })
 end
 
 os.setproc("name", "pastebin")
