@@ -13,5 +13,11 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** `io` library added new function `close(stream)` to close interfaces
 - **Lua** removed bug that pcall recognizes string function name to call
 - Classes **MIDletControl** and **Connect** have been merged
+- New Package field `api.require` to check MIDlet dependencies, if false run `api.error`
 
 [ _Notes_ ]
+
+
+[ _API Nodes_ ]
+
+- `lua`: check if current MIDlet build has Lua
