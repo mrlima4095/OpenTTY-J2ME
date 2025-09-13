@@ -1,3 +1,5 @@
+--[[
+
 [ Config ]
 
 name=MobiX
@@ -8,49 +10,5 @@ api.version=1.14
 api.error=execute log add error MobiX requires OpenTTY API 1.14; echo [ MobiX ] Loading failed!; echo [ MobiX ] See logs to more info.;
 api.match=minimum
 
-process.name=mxos
-
-config=execute
-command=mxos
-
-mxos=execute mxos ;
-
-shell.name=mxos
-shell.args=load
-
-load=execute if 
-
-
-[ COMMAND ]
-
-item.label=MobiX
-item.cmd=execute mxos
-
-[ DISPLAY ]
-
-canvas.title=$TITLE
-canvas.content=
-canvas.content.type=
-canvas.content.link=
-canvas.content.style=
-canvas.button=
-canvas.button.cmd=
-canvas.back.label=
-canvas.back=
-canvas.mouse=
-canvas.background=
-canvas.background.type=
-
-quest.title=$TITLE
-quest.label=$LABEL
-quest.key=
-quest.cmd=
-quest.back=
-quest.back.label=
-
-list.title=
-list.content=
-list.back.label=
-list.back=
-list.button=
+]]
 
