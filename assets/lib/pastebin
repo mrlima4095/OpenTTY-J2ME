@@ -52,10 +52,10 @@ local menu_cfg, menu = {
 function app.PasteType()
     if menu == nil then
         if PASTEBIN_API == nil then menu_cfg.fields = { "Config. PasteBin API Key", "---", "View" } end
-        
+
         menu = graphics.BuildList(menu_cfg)
     end
-    
+
     graphics.display(menu)
 end
 
