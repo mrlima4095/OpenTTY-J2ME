@@ -39,7 +39,7 @@ Armitage=execute set RESOURCE=armitage; yang install;
 Auto Clean=execute set RESOURCE=autogc; yang install;
 Auto Syntax=execute set RESOURCE=tab; yang install; 
 Back Previous=execute set RESOURCE=bprevious; yang install;
-BoxME=execute set RESOURCE=bprevious; yang install; install nano; proxy raw.githubusercontent.com/mrlima4095/BoxME/refs/heads/main/install.sh; install .boxme-installer; get nano; run .boxme-installer; 
+BoxME=execute set RESOURCE=boxme; yang install;
 CMatrix=execute set RESOURCE=cmatrix; yang install;
 Discord (MIDlet)=execute warn This is a 3rd MIDlet from 'gtrxac'; bg exec sleep 3 & open http://146.59.80.3/discord_midp2_beta.jar;
 Forge=execute set RESOURCE=forge; yang install;
