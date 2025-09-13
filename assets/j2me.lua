@@ -55,3 +55,5 @@ graphics = {
     WindowTitle = function (title) end,
     SetTicker = function (text) end
 }
+
+random = function (max) end
