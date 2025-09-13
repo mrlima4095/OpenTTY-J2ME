@@ -3414,12 +3414,12 @@ class Lua {
                     String label = field.containsKey("label") ? toLuaString(field.get("label")) : (String) gotbad("BuildScreen", "item", "missing label");
                     Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("BuildScreen", "item", "missing root"); 
 
-                    USER = new Command(label, Command.ITEM, 1); 
+                    Command RUN = new Command(label, Command.ITEM, 1); 
                     StringItem s = new StringItem(null, label, StringItem.BUTTON); 
                     s.setFont(midlet.newFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
                     s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
-                    s.addCommand(USER); 
-                    s.setDefaultCommand(USER); 
+                    s.addCommand(RUN); 
+                    s.setDefaultCommand(RUN); 
                     s.setItemCommandListener(this); 
                     f.append(s);
 
