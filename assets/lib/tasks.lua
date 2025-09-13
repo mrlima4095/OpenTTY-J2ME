@@ -20,3 +20,7 @@ local app = {}
 app.db = "/home/.tasks"
 
 function app.load()
+    local content = io.read(app.db)
+    
+    local app.tasks = split(content, "\n")
+end
