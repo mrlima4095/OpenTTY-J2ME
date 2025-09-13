@@ -3635,15 +3635,10 @@ class Lua {
         }
         public void commandAction(Command c, Item item) {
             try {
-                Object rootObj = ITEM.get(item);
-
-                if (rootObj instanceof LuaFunction) {
-                    ((LuaFunction) rootObj).call(new Vector()); 
-                }
-                else if (rootObj instanceof String) {
-                    String cmd = (String) rootObj;
-                    midlet.processCommand(cmd, true, root); 
-                }
+                Object fire = ITEM.get(item);
+                
+                if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
+                else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
             } 
             catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, root); midlet.trace.remove(PID); } 
             catch (Error e) { midlet.trace.remove(PID); }
