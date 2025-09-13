@@ -13,7 +13,6 @@ local function split(text, sep)
         end
     end
     
-    -- adiciona o último pedaço
     result[cur] = buffer
     
     return result
