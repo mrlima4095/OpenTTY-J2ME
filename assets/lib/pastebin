@@ -27,138 +27,43 @@ quest.key=CONTENT
 quest.cmd=execute pastebin create; unset CONTENT;
 
 ]]
+
 local PASTEBIN_API = os.getenv("PASTEBIN_API")
 local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
 local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
 
 local app = {}
-local menu, menu_cfg = nil, {
-    title = "PasteBin",
-    back = { root = os.exit },
-    button = {
-        label = "Select",
-        root = function(sel)
-            if sel == "Config. PasteBin API Key" then os.execute("pastebin api") os.exit()
-            elseif sel == "Upload File" then app.GetFile()
-            elseif sel == "Editor" then app.GetPaste()
-            elseif sel == "---" then app.PasteType()
-            else app.GetURL() end
-        end
-    },
-    fields = { "Upload File", "Editor", "---", "View" }
-}
 
--- Helpers
-local function showAlert(title, message, back, button)
-    graphics.display(graphics.Alert({
-        title = title, message = message, back = back, button = button
-    }))
-end
 
-local function showQuest(cfg)
-    graphics.display(graphics.BuildQuest(cfg))
-end
 
--- Menu principal
-function app.PasteType()
-    if not menu then
-        if not PASTEBIN_API then
-            menu_cfg.fields = { "Config. PasteBin API Key", "---", "View" }
-        end
-        menu = graphics.BuildList(menu_cfg)
-    end
-    graphics.display(menu)
-end
 
--- Download paste
-function app.Download(id)
-    local content, status = socket.http.get(PROXY_HTTP .. "pastebin.com/raw/" .. id)
-    if status == 404 then
-        showAlert("PasteBin", "No Pastes found!",
-            { root = function() app.GetURL() end })
-    else
-        local screen
-        
-        screen = {
-            title = "Paste - " .. id,
-            back = { root = app.PasteType },
-            button = {
-                label = "Save",
-                root = function() app.SavePaste(content, screen) end
-            },
-            fields = { content }
-        }
-        graphics.display(graphics.BuildScreen(screen))
-    end
-end
-
-function app.GetURL()
-    showQuest({
+function app.main()
+    local menu = {
         title = "PasteBin",
-        label = "Paste ID",
-        back = { root = app.PasteType },
-        button = { label = "Send", root = app.Download }
-    })
-end
-
-function app.SavePaste(content, screen)
-    showQuest({
-        title = "PasteBin",
-        label = "File to Save",
-        back = { root = function() graphics.display(graphics.BuildScreen(screen)) end },
-        button = { label = "Save", root = function(file) io.write(content, file) end }
-    })
-end
-
--- Criar paste
-local function doPaste(content)
-    if not PASTEBIN_API then
-        showAlert("PasteBin", "API Key not configured!",
-            { root = app.PasteType })
-        return
-    end
-
-    local conn, i, o = socket.connect("socket://" .. PROXY)
-    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" ..
-        PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. content, o)
-    local res = io.read(i)
-
-    showAlert("PasteBin", res,
-        { root = os.exit },
-        { label = "Copy", root = function() print(res) os.exit() end })
-
-    pcall(io.close, conn)
-    pcall(io.close, i)
-    pcall(io.close, o)
-end
-
-function app.GetPaste()
-    graphics.display(graphics.BuildEdit({
-        title = "Paste Content",
-        back = { root = app.PasteType },
-        button = { label = "Create", root = doPaste }
-    }))
-end
-
-function app.GetFile()
-    showQuest({
-        title = "PasteBin",
-        label = "File to Send",
-        back = { root = app.PasteType },
+        back = { root = os.exit },
         button = {
-            label = "Create",
-            root = function(file)
-                local content = io.read(file)
-                if content == "" then
-                    showAlert("PasteBin", "File '" .. file .. "' is empty!",
-                        { root = app.GetFile })
+            label = "Select",
+            root = function (opt)
+                if opt == "Config. PasteBin API Key" then
+
+                elseif opt == "Upload File" then
+
+                elseif opt == "Editor" then
+
+                elseif opt == "---" then
+
                 else
-                    doPaste(content)
+
                 end
             end
-        }
-    })
+        },
+
+        fields = { "Upload File", "Editor", "---", "View" }
+    }
+
+
+    graphics.display(graphics.BuildList(menu))
 end
 
 os.setproc("name", "pastebin")
-app.PasteType()
+app.main()
