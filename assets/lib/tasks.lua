@@ -27,20 +27,19 @@ local app = {}
 app.db = "/home/.tasks"
 app.tasks = {}
 
--- Salvar para disco
+-- salvar
 function app.save()
     io.write(join(app.tasks, "\n"), app.db, "w")
 end
 
--- Carregar banco
+-- carregar
 function app.load()
     local content = io.read(app.db) or ""
-    if content == "" then return {} end
-    app.tasks = split(content, "\n")
+    if content == "" then app.tasks = {} else app.tasks = split(content, "\n") end
     return app.tasks
 end
 
--- Normalizar tarefas: [ ] texto
+-- normalizar
 local function normalize(task)
     if string.sub(task, 1, 3) ~= "[ ]" and string.sub(task, 1, 3) ~= "[x]" then
         return "[ ] " .. task
@@ -48,20 +47,21 @@ local function normalize(task)
     return task
 end
 
--- Alternar status
-function app.toggle(index)
-    local task = app.tasks[index]
-    if not task then return end
-    if string.sub(task, 1, 3) == "[ ]" then
-        app.tasks[index] = "[x]" .. string.sub(task, 4)
-    else
-        app.tasks[index] = "[ ]" .. string.sub(task, 4)
+-- alternar status
+function app.toggle(value)
+    for i = 1, #app.tasks do
+        if app.tasks[i] == value then
+            if string.sub(value, 1, 3) == "[ ]" then
+                app.tasks[i] = "[x]" .. string.sub(value, 4)
+            else
+                app.tasks[i] = "[ ]" .. string.sub(value, 4)
+            end
+        end
     end
     app.save()
-    app.main()
 end
 
--- Adicionar nova tarefa
+-- adicionar
 function app.add()
     graphics.display(graphics.BuildQuest({
         title = "Nova tarefa",
@@ -71,7 +71,8 @@ function app.add()
         button = { label = "Salvar", root = function(args)
             local txt = args and args[1] or ""
             if txt ~= "" then
-                table.insert(app.tasks, normalize(txt))
+                local n = #app.tasks + 1
+                app.tasks[n] = normalize(txt)
                 app.save()
             end
             app.main()
@@ -79,12 +80,12 @@ function app.add()
     }))
 end
 
--- Exportar / importar
+-- exportar / importar
 function app.export()
     graphics.display(graphics.BuildEdit({
         title = "Export tasks",
         back = { root = app.main },
-        button = { label = "OK", root = function() app.main() end }
+        button = { label = "OK", root = app.main }
     }))
 end
 
@@ -106,16 +107,12 @@ function app.import()
     }))
 end
 
--- Menu principal
+-- menu
 function app.menu()
     graphics.display(graphics.BuildList({
         title = "Menu",
         back = { root = app.main },
-        fields = {
-            "Nova tarefa",
-            "Exportar",
-            "Importar"
-        },
+        fields = { "Nova tarefa", "Exportar", "Importar" },
         button = { label = "Selecionar", root = function(args)
             local choice = args and args[1]
             if choice == "Nova tarefa" then app.add()
@@ -126,7 +123,16 @@ function app.menu()
     }))
 end
 
--- Listagem principal
+-- handler do clique (LIST retorna os textos)
+function app.handler(args)
+    if not args then return end
+    for i = 1, #args do
+        app.toggle(args[i])
+    end
+    app.main()
+end
+
+-- listagem principal
 function app.main()
     app.load()
     graphics.display(graphics.BuildList({
@@ -138,18 +144,5 @@ function app.main()
     }))
 end
 
--- Handler de seleção da lista principal (toggle status)
-function app.handler(args)
-    if not args then return end
-    for i = 1, #args do
-        for j = 1, #app.tasks do
-            if app.tasks[j] == args[i] then
-                app.toggle(j)
-            end
-        end
-    end
-end
-
--- Processo
 os.setproc("name", "tasks")
 app.main()
