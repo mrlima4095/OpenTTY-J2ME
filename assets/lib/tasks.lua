@@ -8,7 +8,7 @@ local function split(text, sep)
             result[cur] = buffer
             cur = cur + 1
             buffer = ""
-        else buffer = buffer + char end
+        else buffer = buffer .. char end
     end
     return result
 end
