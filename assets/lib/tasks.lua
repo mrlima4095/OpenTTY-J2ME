@@ -80,7 +80,6 @@ function app.refresh()
         title = "To Do",
         back = { root = os.exit },
         button = { label = "Menu", root = app.handler },
-        type = "multiple",
         fields = app.getFields()
     }))
 end
