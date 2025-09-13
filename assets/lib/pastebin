@@ -46,9 +46,7 @@ function app.main()
                 elseif opt == "Upload File" then app.GetFile()
                 elseif opt == "Editor" then app.GetPaste()
                 elseif opt == "---" then app.main()
-                else
-
-                end
+                else app.GetURL() end
             end
         },
 
