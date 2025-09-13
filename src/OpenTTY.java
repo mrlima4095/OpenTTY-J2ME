@@ -3305,7 +3305,7 @@ class Lua {
                     if (opt.equals("collect")) { System.gc(); }
                     else if (opt.equals("stop")) { gc = false; }
                     else if (opt.equals("restart")) {  }
-                    else if (opt.equals("count")) {  }
+                    else if (opt.equals("count")) { return new Double((midlet.runtime.totalMemory() - midlet.runtime.freeMemory()) / 1024); }
                     else if (opt.equals("step")) {  }
                     else if (opt.equals("isrunning")) { return new Boolean(gc); }
                     else if (opt.equals("incremental")) {  }
