@@ -8,9 +8,7 @@ local function split(text, sep)
             result[cur] = buffer
             cur = cur + 1
             buffer = ""
-        else
-            buffer = buffer .. char
-        end
+        else buffer = buffer .. char end
     end
     
     result[cur] = buffer
@@ -18,4 +16,7 @@ local function split(text, sep)
     return result
 end
 
-print(split("gg ez", " "))
+local app = {}
+app.db = "/home/.tasks"
+
+function app.load()
