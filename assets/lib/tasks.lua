@@ -1,148 +1,137 @@
+-- Task manager (uso sem modificar OpenTTY.java)
 local function split(text, sep)
-    local result, buffer, cur = {}, "", 1
-    for i = 1, string.len(text) do
-        local char = string.sub(text, i, i)
-        if char == sep then
-            result[cur] = buffer
+    if not text then return {} end
+    sep = sep or "\n"
+    local res = {}
+    local cur = 1
+    local buf = ""
+    for i = 1, #text do
+        local c = text:sub(i,i)
+        if c == sep then
+            res[cur] = buf
             cur = cur + 1
-            buffer = ""
-        else
-            buffer = buffer .. char
-        end
+            buf = ""
+        else buf = buf .. c end
     end
-    result[cur] = buffer
-    return result
+    -- último buffer (pode ser vazio)
+    res[cur] = buf
+    return res
 end
 
+local function trim(s) return (s or ""):gsub("^%s*(.-)%s*$", "%1") end
 local function join(tbl, sep)
-    local buf = ""
-    for i = 1, #tbl do
-        buf = buf .. tbl[i]
-        if i < #tbl then buf = buf .. sep end
+    sep = sep or "\n"
+    local out = ""
+    for i = 1, (#tbl or 0) do
+        if i > 1 then out = out .. sep end
+        out = out .. (tbl[i] or "")
     end
-    return buf
+    return out
 end
 
 local app = {}
-app.db = "/home/.tasks"
-app.tasks = {}
+app.db = "/home/.tasks"   -- arquivo: linhas "0|Comprar pão"
 
--- salvar
-function app.save()
-    io.write(join(app.tasks, "\n"), app.db, "w")
+-- Parse/serialização de linha
+function app.parse_line(line)
+    if not line then return {status = 0, text = ""} end
+    local parts = split(line, "|")
+    local status = tonumber(parts[1]) or 0
+    local text = parts[2] or ""
+    for i = 3, #parts do text = text .. "|" .. parts[i] end
+    return { status = status, text = text }
+end
+function app.line_of(task)
+    return tostring(task.status) .. "|" .. task.text
 end
 
--- carregar
 function app.load()
     local content = io.read(app.db) or ""
-    if content == "" then app.tasks = {} else app.tasks = split(content, "\n") end
+    local lines = split(content, "\n")
+    app.tasks = {}
+    for i = 1, #lines do
+        local l = lines[i]
+        if l and l ~= "" then app.tasks[#app.tasks + 1] = app.parse_line(l) end
+    end
     return app.tasks
 end
 
--- normalizar
-local function normalize(task)
-    if string.sub(task, 1, 3) ~= "[ ]" and string.sub(task, 1, 3) ~= "[x]" then
-        return "[ ] " .. task
-    end
-    return task
+function app.save()
+    local out = {}
+    for i = 1, #app.tasks do out[#out + 1] = app.line_of(app.tasks[i]) end
+    io.write(join(out, "\n"), app.db)
 end
 
--- alternar status
-function app.toggle(value)
+-- Constrói tabela de "fields" para BuildList.
+-- Cada label mostrado é bonito ("[x] texto"), mas concatenamos "\tINDEX" no final
+-- para que o handler consiga extrair o índice (solução sem mexer em Java).
+function app.getFields()
+    local fields = {}
     for i = 1, #app.tasks do
-        if app.tasks[i] == value then
-            if string.sub(value, 1, 3) == "[ ]" then
-                app.tasks[i] = "[x]" .. string.sub(value, 4)
-            else
-                app.tasks[i] = "[ ]" .. string.sub(value, 4)
-            end
-        end
+        local t = app.tasks[i]
+        local label = (t.status == 1 and "[x] " or "[ ] ") .. t.text .. "\t" .. tostring(i)
+        fields[#fields + 1] = label
     end
-    app.save()
+    return fields
 end
 
--- adicionar
-function app.add()
-    graphics.display(graphics.BuildQuest({
-        title = "Nova tarefa",
-        label = "Digite:",
-        key = "newtask",
-        back = { root = app.main },
-        button = { label = "Salvar", root = function(args)
-            local txt = args and args[1] or ""
-            if txt ~= "" then
-                local n = #app.tasks + 1
-                app.tasks[n] = normalize(txt)
-                app.save()
-            end
-            app.main()
-        end }
-    }))
-end
-
--- exportar / importar
-function app.export()
-    graphics.display(graphics.BuildEdit({
-        title = "Export tasks",
-        back = { root = app.main },
-        button = { label = "OK", root = app.main }
-    }))
-end
-
-function app.import()
-    graphics.display(graphics.BuildEdit({
-        title = "Import tasks",
-        back = { root = app.main },
-        button = { label = "Importar", root = function(args)
-            local txt = args and args[1] or ""
-            if txt ~= "" then
-                app.tasks = split(txt, "\n")
-                for i = 1, #app.tasks do
-                    app.tasks[i] = normalize(app.tasks[i])
-                end
-                app.save()
-            end
-            app.main()
-        end }
-    }))
-end
-
--- menu
-function app.menu()
-    graphics.display(graphics.BuildList({
-        title = "Menu",
-        back = { root = app.main },
-        fields = { "Nova tarefa", "Exportar", "Importar" },
-        button = { label = "Selecionar", root = function(args)
-            local choice = args and args[1]
-            if choice == "Nova tarefa" then app.add()
-            elseif choice == "Exportar" then app.export()
-            elseif choice == "Importar" then app.import()
-            end
-        end }
-    }))
-end
-
--- handler do clique (LIST retorna os textos)
-function app.handler(args)
-    if not args then return end
-    for i = 1, #args do
-        app.toggle(args[i])
-    end
-    app.main()
-end
-
--- listagem principal
-function app.main()
-    app.load()
+function app.refresh()
     graphics.display(graphics.BuildList({
         title = "To Do",
         back = { root = os.exit },
+        button = { label = "Menu", root = app.handler },
         type = "multiple",
-        fields = app.tasks,
-        button = { label = "Menu", root = app.menu }
+        fields = app.getFields()
     }))
 end
 
-os.setproc("name", "tasks")
-app.main()
+function app.toggle_by_index(idx)
+    if not app.tasks[idx] then return end
+    app.tasks[idx].status = (app.tasks[idx].status == 1) and 0 or 1
+end
+
+-- Handler: recebe um ou vários valores (strings). cada valor tem formato "<label>\t<INDEX>"
+-- extraímos o INDEX e alternamos status
+function app.handler(...)
+    local args = {...}
+    if #args == 0 then return end
+    for i = 1, #args do
+        local v = args[i] or ""
+        local parts = split(v, "\t")
+        local rawIndex = parts[#parts] or ""
+        local idx = tonumber(trim(rawIndex))
+        if idx then app.toggle_by_index(idx) end
+    end
+    app.save()
+    app.refresh()
+end
+
+-- util: adicionar tarefa (pode chamar app.add("texto"))
+function app.add(text)
+    text = trim(text or "")
+    if text == "" then return end
+    app.tasks[#app.tasks + 1] = { status = 0, text = text }
+    app.save()
+    app.refresh()
+end
+
+-- import/export simples
+function app.export(path)
+    local out = {}
+    for i = 1, #app.tasks do out[#out + 1] = app.line_of(app.tasks[i]) end
+    io.write(join(out, "\n"), path)
+end
+function app.import(path)
+    local content = io.read(path) or ""
+    local lines = split(content, "\n")
+    for i = 1, #lines do
+        local l = lines[i]
+        if l and l ~= "" then app.tasks[#app.tasks + 1] = app.parse_line(l) end
+    end
+    app.save()
+    app.refresh()
+end
+
+-- bootstrap
+app.load()
+app.refresh()
