@@ -122,7 +122,7 @@ function app.install(...)
     for k,pkg in pairs(...) do
         local content, status = socket.http.get(app.proxy .. app.mirror .. "lib/" .. pkg)
 
-        if status == 200 then io.write(content, pkg) 
+        if status == 200 then io.write(content, pkg)
         else
             graphics.display(graphics.Alert({
                 title = "SmartME",
