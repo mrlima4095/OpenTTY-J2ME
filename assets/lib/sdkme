@@ -26,8 +26,8 @@ setxback=execute alias xterm=exec sdk & unalias xterm;
 
 local app = {
     version = "1.2",
-    mirror = os.getenv("REPO") or "opentty.xyz:31522",
-
+    proxy = "http://opentty.xyz/proxy.php?"
+    
     xcfg = {
         title = "SmartME SDK",
         back = { root = os.exit },
@@ -71,12 +71,9 @@ function app.new()
                             button = {
                                 label = "Install",
                                 root = function()
-                                    local conn, i, o = socket.connect("socket://" .. app.mirror)
-                                    
-                                    io.write("get lib/forge", o)
-                                    local forge = io.read(i)
+                                    local forge, status == socket.http.get(app.mirror .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/forge")
 
-                                    if string.hash(forge) == -1512329552 then
+                                    if string.hash(forge) == -1512329552 and status == 200 then
                                         io.write(forge, "/home/forge")
                                         os.execute("execute import forge; forge gen; true")
                                         os.exit()
@@ -127,14 +124,9 @@ function app.handler(option)
             button = {
                 label = "Update",
                 root = function()
-                    local conn, i, o = socket.connect("socket://" .. app.mirror)
+                    local sdkme, status == socket.http.get(app.mirror .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/forge")
 
-                    io.write("get lib/sdkme", o)
-                    local sdkme = io.read(i)
-
-                    io.close(conn) io.close(i) io.close(o)
-
-                    if string.hash(io.read("/home/sdkme")) == string.hash(sdkme) then
+                    if string.hash(io.read("/home/sdkme")) == string.hash(sdkme) and status == 200 then
                         graphics.display(graphics.Alert({
                             title = "SmartME",
                             message = "SmartME is already updated!",
