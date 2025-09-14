@@ -26,7 +26,7 @@ setxback=execute alias xterm=exec sdk & unalias xterm;
 
 local app = {
     version = "1.2",
-    proxy = "http://opentty.xyz/proxy.php?"
+    proxy = "http://opentty.xyz/proxy.php?",
     
     xcfg = {
         title = "SmartME SDK",
