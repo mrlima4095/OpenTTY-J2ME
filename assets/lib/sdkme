@@ -27,7 +27,22 @@ setxback=execute alias xterm=exec sdk & unalias xterm;
 local app = {
     version = "1.2",
     proxy = "http://opentty.xyz/proxy.php?",
-    
+    mirror = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/",
+
+    xwget = {
+        title = "SmartME",
+        message = "Downloading...",
+        back = { root = function ()
+            graphics.display(graphics.Alert(app.xwget))
+        end },
+        indicator = true,
+    },
+    xpkg = {
+        title = "SmartME - Packages",
+        back = { root = app.main },
+        button = { label = "Install", root = app.install },
+        fields = { "audio.lua", "math.lua", "string.lua" }
+    },
     xcfg = {
         title = "SmartME SDK",
         back = { root = os.exit },
@@ -71,7 +86,7 @@ function app.new()
                             button = {
                                 label = "Install",
                                 root = function()
-                                    local forge, status == socket.http.get(app.mirror .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/forge")
+                                    local forge, status = socket.http.get(app.proxy .. app.mirror .. "lib/forge")
 
                                     if string.hash(forge) == -1512329552 and status == 200 then
                                         io.write(forge, "/home/forge")
@@ -84,8 +99,6 @@ function app.new()
                                             back = { root = app.new }
                                         }))
                                     end
-
-                                    io.close(conn) io.close(i) io close(o)
                                 end
                             }
                         }))
@@ -98,7 +111,35 @@ function app.new()
     }))
 end
 function app.save() end
-function app.pkg() end
+function app.dpkg()
+    if app.pkg == nil then app.pkg = graphics.BuildList(app.xpkg) end
+
+    graphics.display(app.pkg)
+end
+function app.install(...)
+    graphics.display(graphics.Alert(app.xwget))
+
+    for k,pkg in pairs(...) do
+        local content, status = socket.http.get(app.proxy .. app.mirror .. "lib/" .. pkg)
+
+        if status == 200 then io.write(content, pkg) 
+        else
+            graphics.display(graphics.Alert({
+                title = "SmartME",
+                message = "Download failed!",
+                back = { root = app.main }
+            }))
+
+            return
+        end
+    end
+    
+    graphics.display(graphics.Alert({
+        title = "SmartME",
+        message = "Download complete!",
+        back = { root = app.main }
+    }))
+end
 
 function app.handler(option)
     if option == "Nano Editor" then os.execute("nano") os.exit()
@@ -107,8 +148,8 @@ function app.handler(option)
     elseif option == "Save" then app.save()
     elseif option == "File Explorer" then os.execute("dir") os.exit()
     elseif option == "Build Project" then os.execute("lua") os.exit()
-    elseif option == "Download Libraries" then app.pkg()
-    elseif option == "Documentation" then 
+    elseif option == "Download Libraries" then app.dpkg()
+    elseif option == "Documentation" then
         graphics.display(graphics.BuildScreen({
             title = "SmartME Docs",
             back = { root = app.main },
@@ -124,25 +165,22 @@ function app.handler(option)
             button = {
                 label = "Update",
                 root = function()
-                    local sdkme, status == socket.http.get(app.mirror .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/forge")
+                    local sdkme, status = socket.http.get(app.proxy .. app.mirror .. "lib/forge")
 
-                    if string.hash(io.read("/home/sdkme")) == string.hash(sdkme) and status == 200 then
+                    if string.hash(sdkme) == string.hash(io.read("/home/sdkme")) and status == 200 then
                         graphics.display(graphics.Alert({
                             title = "SmartME",
                             message = "SmartME is already updated!",
                             back = { root = function() app.handler("About") end }
                         }))
-                    else 
+                    else
                         io.write(sdkme, "/home/sdkme")
                         graphics.display(graphics.Alert({
                             title = "SmartME",
                             message = "SmartME have been updated!",
                             back = {
                                 label = "Reload",
-                                root = function()
-                                    os.execute("lua /home/sdkme")
-                                    os.exit()
-                                end
+                                root = function() os.execute("lua /home/sdkme") os.exit() end
                             }
                         }))
                     end
