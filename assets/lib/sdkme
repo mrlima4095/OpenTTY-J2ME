@@ -87,7 +87,7 @@ function app.new()
                                     
                                     io.write("get lib/forge", o)
                                     local forge = io.read(i)
-                                    
+
                                     if string.hash(forge) == -1512329552 then
                                         io.write(forge, "/home/forge")
                                         os.execute("execute import forge; forge gen; true")
@@ -99,6 +99,8 @@ function app.new()
                                             back = { root = app.new }
                                         }))
                                     end
+
+                                    io.close(conn) io.close(i) io close(o)
                                 end
                             }
                         }))
@@ -130,8 +132,33 @@ function app.handler(option)
             button = {
                 label = "Update",
                 root = function()
-                    
-                    
+                    local conn, i, o = socket.connect("socket://" .. app.mirror)
+
+                    io.write("get lib/sdkme", o)
+                    local sdkme = io.read(i)
+
+                    io.close(conn) io.close(i) io close(o)
+
+                    if string.hash(io.read("/home/sdkme")) == string.hash(sdkme) then
+                        graphics.display(graphics.Alert({
+                            title = "SmartME",
+                            message = "SmartME is already updated!",
+                            back = { root = function() app.handler("About") end }
+                        }))
+                    else 
+                        io.write(sdkme, "/home/sdkme")
+                        graphics.display(graphics.Alert({
+                            title = "SmartME",
+                            message = "SmartME have been updated!",
+                            back = {
+                                label = "Reload",
+                                root = function()
+                                    os.execute("lua /home/sdkme")
+                                    os.exit()
+                                end
+                            }
+                        }))
+                    end
                 end
             }
         }))
