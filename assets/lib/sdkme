@@ -36,8 +36,104 @@ About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
 
 ]]
 
-local app = { version = "1.2" }
+local function bkp_xterm()
+    local before = io.read()
+    os.execute("alias xterm")
+    local between = string.sub(io.read(), #before, #io.read() + 2)
 
+    if between == "alias: xterm: not found" then os.execute("alias xterm=execute lua sdkme; unset xterm")
+    else os.execute("alias xterm=exec lua sdkme & " .. between) end
+
+    io.write(before) os.exit()
+end
+local app = {
+    version = "1.2",
+
+    xcfg = {
+        title = "SmartME SDK",
+        back = { root = os.exit },
+        button = {
+            label = "Select",
+            root = nil
+        },
+
+        fields = {
+            "Nano Editor",
+            "---",
+            "New",
+            "Save",
+            "File Explorer",
+            "Build Project",
+            "---",
+            "Download Libraries",
+            "Documentation",
+            "About"
+        }
+    }
+}
+
+function app.new()
+    graphics.display(graphics.BuildList({
+        title = "SmartME - New",
+        back = { root = app.main },
+        button = {
+            label = "Create",
+            root = function (option)
+                if option == "Lua source code" then
+                    os.execute("execute install nano; touch; add -- Lua J2ME\n\nprint(\"Hello, world!\")")
+                    os.execute("nano") bkp_xterm()
+                else
+                    if string.hash(io.read()) == -1512329552 then os.execute("execute import forge; forge gen; true") os.exit()
+                    else
+                        graphics.display(graphics.Alert({
+                            title = "SmartME",
+                            message = "To Generate an OpenTTY Package Project requires Forge 1.2 installed!",
+                            back = app.new,
+                            button = {
+                                label = "Install",
+                                root = true
+                            }
+                        }))
+                    end
+                end
+            end
+        },
+
+        fields = { "Lua source code", "OpenTTY Package" }
+    }))
+end
+function app.save() end
+function app.pkg() end
+
+function app.handler(option)
+    if option == "Nano Editor" then os.execute("nano") bkp_xterm()
+    elseif option == "---" then app.main()
+    elseif option == "New" then app.new()
+    elseif option == "Save" then app.save()
+    elseif option == "File Explorer" then os.execute("dir") bkp_xterm()
+    elseif option == "Build Project" then os.execute("lua") os.exit()
+    elseif option == "Download Libraries" then app.pkg()
+    elseif option == "Documentation" then
+    elseif option == "About" then
+        graphics.display(graphics.Alert({
+            title = "SmartME SDK",
+            message = "",
+            back = { root = app.main },
+            button = {
+                label = "Update",
+                root = true
+            }
+        }))
+    end
+end
+
+
+function app.main()
+    if app.menu == nil then app.menu = graphics.BuildList(app.xcfg) end
+
+    graphics.display(app.menu)
+end
 
 
 os.setproc("name", "sdkme")
+app.main()
