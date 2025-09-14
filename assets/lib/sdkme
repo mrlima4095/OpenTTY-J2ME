@@ -54,7 +54,7 @@ local app = {
         back = { root = os.exit },
         button = {
             label = "Select",
-            root = app.handler
+            root = function() app.handler() end
         },
 
         fields = {
@@ -113,7 +113,7 @@ function app.handler(option)
     elseif option == "File Explorer" then os.execute("dir") bkp_xterm()
     elseif option == "Build Project" then os.execute("lua") os.exit()
     elseif option == "Download Libraries" then app.pkg()
-    elseif option == "Documentation" then
+    elseif option == "Documentation" then os.exit()
     elseif option == "About" then
         graphics.display(graphics.Alert({
             title = "SmartME SDK",
@@ -121,7 +121,7 @@ function app.handler(option)
             back = { root = app.main },
             button = {
                 label = "Update",
-                root = true
+                root = function() end
             }
         }))
     end
