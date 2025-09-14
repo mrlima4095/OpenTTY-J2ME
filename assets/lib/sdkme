@@ -137,7 +137,7 @@ function app.handler(option)
                     io.write("get lib/sdkme", o)
                     local sdkme = io.read(i)
 
-                    io.close(conn) io.close(i) io close(o)
+                    io.close(conn) io.close(i) io.close(o)
 
                     if string.hash(io.read("/home/sdkme")) == string.hash(sdkme) then
                         graphics.display(graphics.Alert({
