@@ -7,7 +7,7 @@ version=1.1
 description=OpenTTY Toolkit
 
 api.version=1.16
-api.error=execute log add error SmartME requires OpenTTY 1.16 or newer!; echo [ SmartME ] Required OpenTTY 1.16 or newer;
+api.error=execute log add error SmartME requires OpenTTY 1.16 or newer; echo [ SmartME ] Required OpenTTY 1.16 or newer;
 api.match=minimum
 
 include=forge
@@ -80,7 +80,7 @@ function app.new()
             label = "Create",
             root = function (option)
                 if option == "Lua source code" then
-                    os.execute("execute install nano; touch; add -- Lua J2ME\n\nprint(\"Hello, world!\")")
+                    os.execute('execute install nano; touch; add -- Lua J2ME\n\nprint(Hello, world!)')
                     os.execute("nano") bkp_xterm()
                 else
                     if string.hash(io.read()) == -1512329552 then os.execute("execute import forge; forge gen; true") os.exit()
