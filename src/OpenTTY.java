@@ -3441,7 +3441,7 @@ class Lua {
                 }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
             } 
-            else if (obj instanceof String) { f.append((String) obj); }
+            else if (obj instanceof String) { f.append(toLuaString(obj)); }
         }
 
         private String getvalue(Hashtable table, String key, String fallback) { return table.containsKey(key) ? toLuaString(table.get(key)) : fallback; } 
