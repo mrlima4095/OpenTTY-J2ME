@@ -15,7 +15,7 @@ include=forge
 config=execute set SDK=1.1;
 command=sdk
 
-sdk=execute x11 list /home/sdkme; true
+sdk=execute lua sdkme; #x11 list /home/sdkme; true
 
 shell.name=sdk
 shell.args=setxback,libget
