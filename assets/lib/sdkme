@@ -54,7 +54,7 @@ local app = {
         back = { root = os.exit },
         button = {
             label = "Select",
-            root = nil
+            root = app.handler
         },
 
         fields = {
