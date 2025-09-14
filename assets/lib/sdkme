@@ -38,7 +38,7 @@ About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
 
 local app = {
     version = "1.2",
-    mirror = os.getenv("$REPO") or "opentty.xyz:31523",
+    mirror = os.getenv("REPO") or "opentty.xyz:31523",
 
     xcfg = {
         title = "SmartME SDK",
@@ -71,7 +71,7 @@ function app.new()
             label = "Create",
             root = function (option)
                 if option == "Lua source code" then
-                    os.execute('execute install nano; touch; add -- Lua J2ME\n\nprint(Hello, world!)')
+                    os.execute('execute install nano; touch; add -- Lua J2ME\n\nprint("Hello, world!")')
                     os.execute("nano") os.exit()
                 else
                     if string.hash(io.read()) == -1512329552 then os.execute("execute import forge; forge gen; true") os.exit()
