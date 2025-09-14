@@ -45,7 +45,7 @@ local app = {
         back = { root = os.exit },
         button = {
             label = "Select",
-            root = app.handler
+            root = function(opt) app.handler(opt) end
         },
 
         fields = {
