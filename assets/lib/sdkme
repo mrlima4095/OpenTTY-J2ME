@@ -36,25 +36,16 @@ About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
 
 ]]
 
-local function bkp_xterm()
-    local before = io.read()
-    os.execute("alias xterm")
-    local between = string.sub(io.read(), #before, #io.read() + 2)
-
-    if between == "alias: xterm: not found" then os.execute("alias xterm=execute lua sdkme; unset xterm")
-    else os.execute("alias xterm=exec lua sdkme & " .. between) end
-
-    io.write(before) os.exit()
-end
 local app = {
     version = "1.2",
+    mirror = os.getenv("$REPO") or "opentty.xyz:31523"
 
     xcfg = {
         title = "SmartME SDK",
         back = { root = os.exit },
         button = {
             label = "Select",
-            root = function() app.handler() end
+            root = app.handler
         },
 
         fields = {
@@ -81,7 +72,7 @@ function app.new()
             root = function (option)
                 if option == "Lua source code" then
                     os.execute('execute install nano; touch; add -- Lua J2ME\n\nprint(Hello, world!)')
-                    os.execute("nano") bkp_xterm()
+                    os.execute("nano") os.exit()
                 else
                     if string.hash(io.read()) == -1512329552 then os.execute("execute import forge; forge gen; true") os.exit()
                     else
@@ -91,7 +82,24 @@ function app.new()
                             back = app.new,
                             button = {
                                 label = "Install",
-                                root = true
+                                root = function()
+                                    local conn, i, o = socket.connect("socket://" .. app.mirror)
+                                    
+                                    io.write("get lib/forge", o)
+                                    local forge = io.read(i)
+                                    
+                                    if string.hash(forge) == -1512329552 then
+                                        io.write(forge, "/home/forge")
+                                        os.execute("execute import forge; forge gen; true")
+                                        os.exit()
+                                    else
+                                        graphics.display(graphics.Alert({
+                                            title = "SmartME",
+                                            message = "Forge installation failed!",
+                                            back = { root = app.new }
+                                        }))
+                                    end
+                                end
                             }
                         }))
                     end
@@ -106,22 +114,25 @@ function app.save() end
 function app.pkg() end
 
 function app.handler(option)
-    if option == "Nano Editor" then os.execute("nano") bkp_xterm()
+    if option == "Nano Editor" then os.execute("nano") os.exit()
     elseif option == "---" then app.main()
     elseif option == "New" then app.new()
     elseif option == "Save" then app.save()
-    elseif option == "File Explorer" then os.execute("dir") bkp_xterm()
+    elseif option == "File Explorer" then os.execute("dir") os.exit()
     elseif option == "Build Project" then os.execute("lua") os.exit()
     elseif option == "Download Libraries" then app.pkg()
     elseif option == "Documentation" then os.exit()
     elseif option == "About" then
         graphics.display(graphics.Alert({
             title = "SmartME SDK",
-            message = "",
+            message = "SmartME " .. app.version,
             back = { root = app.main },
             button = {
                 label = "Update",
-                root = function() end
+                root = function()
+                    
+                    
+                end
             }
         }))
     end
