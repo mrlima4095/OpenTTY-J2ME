@@ -74,7 +74,7 @@ function app.new()
                     os.execute('execute install nano; touch; add -- Lua J2ME\n\nprint("Hello, world!")')
                     os.execute("nano") os.exit()
                 else
-                    if string.hash(io.read()) == -1512329552 then os.execute("execute import forge; forge gen; true") os.exit()
+                    if string.hash(io.read("forge")) == -1512329552 then os.execute("execute import forge; forge gen; true") os.exit()
                     else
                         graphics.display(graphics.Alert({
                             title = "SmartME",
