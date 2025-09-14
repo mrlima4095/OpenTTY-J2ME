@@ -68,7 +68,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Control Thread
     public OpenTTY getInstance() { return this; }
     public class MIDletControl implements CommandListener, Runnable {
-        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, SERVER = 12, BIND = 13;
+        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12;
 
         private int MOD = -1, COUNT = 1, start;
         private boolean root = false, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
@@ -142,11 +142,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : mode.equals("bind") ? BIND : -1;
             this.root = root;
 
-            if (MOD == SERVER || MOD == BIND) {
+            if (MOD == BIND) {
                 if (args == null || args.length() == 0 || args.equals("$PORT")) { attributes.put("PORT", "31522"); port = "31522"; DB = ""; } 
-                else { port = getCommand(args); DB = getArgument(args); DB = DB.equals("") && MOD == SERVER ? env("$RESPONSE") : DB; }
+                else { port = getCommand(args); DB = getArgument(args); }
 
-                new Thread(this, MOD == BIND ? "Bind" : "Server").start();
+                new Thread("Bind").start();
                 return;
             } 
             else if (MOD == -1) { return; }
@@ -356,7 +356,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else {
                 if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
 
-                Hashtable proc = genprocess(MOD == SERVER ? "server" : "bind", root, null);
+                Hashtable proc = genprocess("bind", root, null);
                 proc.put("port", port); trace.put(PID, proc); sessions.put(port, MOD == SERVER ? "http-cli" : "nobody");
 
                 while (trace.containsKey(PID)) {
@@ -370,33 +370,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
                         proc.put("in-stream", IN); proc.put("out-stream", OUT);
 
-                        if (MOD == SERVER) {
+                        sessions.put(port, address);
+                        while (trace.containsKey(PID)) {
                             byte[] buffer = new byte[4096];
                             int bytesRead = IN.read(buffer);
-                            if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); } 
-                            else {
-                                echoCommand("[+] " + address + " -> " + env(new String(buffer, 0, bytesRead).trim()));
-                                OUT.write(getcontent(DB).getBytes()); OUT.flush();
-                            }
-                        } else {
-                            sessions.put(port, address);
-                            while (trace.containsKey(PID)) {
-                                byte[] buffer = new byte[4096];
-                                int bytesRead = IN.read(buffer);
-                                if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); break; }
-                                String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                                echoCommand("[+] " + address + " -> " + env(PAYLOAD));
+                            if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); break; }
+                            String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                            echoCommand("[+] " + address + " -> " + env(PAYLOAD));
 
-                                String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
+                            String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
 
-                                String before = stdout != null ? stdout.getText() : "";
-                                processCommand(command, true, root);
-                                String after = stdout != null ? stdout.getText() : "";
+                            String before = stdout != null ? stdout.getText() : "";
+                            processCommand(command, true, root);
+                            String after = stdout != null ? stdout.getText() : "";
 
-                                String output = after.length() >= before.length() ? after.substring(before.length()).trim() + "\n" : after + "\n";
+                            String output = after.length() >= before.length() ? after.substring(before.length()).trim() + "\n" : after + "\n";
 
-                                OUT.write(output.getBytes()); OUT.flush();
-                            }
+                            OUT.write(output.getBytes()); OUT.flush();
                         }
                     } 
                     catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
