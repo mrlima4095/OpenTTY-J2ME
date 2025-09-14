@@ -347,7 +347,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 if (code != 404) { preview.append(code + " /" + path, null); }
                             } catch (IOException e) { }
                         }
-                    } else { break; }                    
+                    } else { break; }
                 }
                 preview.setTicker(null);
                 if (keep) { } else { trace.remove(PID); }
@@ -396,7 +396,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         try { if (CONN != null) CONN.close(); } catch (IOException e) { }
                         try { if (server != null) server.close(); } catch (IOException e) { }
                         
-                        sessions.put(port, MOD == SERVER ? "http-cli" : "nobody");
+                        sessions.put(port, "nobody");
                     }
                 } 
                 trace.remove(PID); sessions.remove(port);
