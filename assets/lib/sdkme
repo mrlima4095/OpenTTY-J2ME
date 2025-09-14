@@ -38,7 +38,7 @@ About=execute sdk; warn SmartME $SDK\nOpenTTY Toolkit;
 
 local app = {
     version = "1.2",
-    mirror = os.getenv("$REPO") or "opentty.xyz:31523"
+    mirror = os.getenv("$REPO") or "opentty.xyz:31523",
 
     xcfg = {
         title = "SmartME SDK",
