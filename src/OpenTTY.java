@@ -3245,6 +3245,7 @@ class Lua {
                 else {
                     Object screen = args.elementAt(0);
 
+                    if (screen instanceof Alert) { kill = false; }
                     if (screen instanceof Displayable) { kill = false; midlet.display.setCurrent((Displayable) screen); }
                     else { return gotbad(1, "display", "screen expected, got " + type(screen)); }
                 }
