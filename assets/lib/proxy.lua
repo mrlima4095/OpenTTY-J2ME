@@ -7,7 +7,8 @@ function app.proxy(passwd)
     local conn, i, o = socket.connect("socket://" .. app.instance)
 
     io.write(passwd, o)
-    local id = string.sub(io.read(i), 21)
+    local response = io.read(i)
+    local id = string.sub(response, 22) -- Connected. Your ID 
 
     graphics.display(graphics.Alert({
         title = "WebProxy",
