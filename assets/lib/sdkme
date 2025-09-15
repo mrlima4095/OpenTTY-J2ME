@@ -165,7 +165,7 @@ function app.handler(option)
             button = {
                 label = "Update",
                 root = function()
-                    local sdkme, status = socket.http.get(app.proxy .. app.mirror .. "lib/forge")
+                    local sdkme, status = socket.http.get(app.proxy .. app.mirror .. "lib/sdkme")
 
                     if string.hash(sdkme) == string.hash(io.read("/home/sdkme")) and status == 200 then
                         graphics.display(graphics.Alert({
