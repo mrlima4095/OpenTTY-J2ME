@@ -42,7 +42,7 @@ def handle_client(conn, addr):
                 del connections[k]
         conn.close()
 
-def start_tcp_server(host='0.0.0.0', port=31521):
+def start_tcp_server(host='0.0.0.0', port=8081):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((host, port))
     server.listen(5)
