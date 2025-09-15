@@ -14,6 +14,7 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** removed bug that pcall recognizes string function name to call
 - Classes **MIDletControl** and **Connect** have been merged
 - New Package field `api.require` to check MIDlet dependencies, if false run `api.error`
+- Removed Command `server`
 
 [ _Notes_ ]
 
