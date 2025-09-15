@@ -8,8 +8,9 @@ app = Flask(__name__)
 app.secret_key = 'segredo_super_seguro'
 CORS(app)
 
-# Armazena conexões ativas
-connections = {}  # {conn_id: {'conn': socket, 'addr': (ip, port), 'password': str, 'buffer': str, 'in_use': bool, 'disconnected': bool}}
+# Conexões ativas
+connections = {}  
+# {conn_id: {'conn': socket, 'addr': (ip, port), 'password': str, 'buffer': str, 'in_use': bool, 'disconnected': bool}}
 
 def handle_client(conn, addr):
     try:
@@ -31,12 +32,18 @@ def handle_client(conn, addr):
         print(f'[TCP] Cliente autenticado. ID: {conn_id} | IP: {addr} | Senha: {password}')
         conn.sendall(f'Connected. Your ID is {conn_id}\n'.encode())
 
+        conn.settimeout(0.5)  # evita bloqueio eterno no recv()
+
         while True:
-            data = conn.recv(1024)
-            if not data:
-                break
-            # Armazena a resposta no buffer
-            connections[conn_id]['buffer'] += data.decode()
+            try:
+                data = conn.recv(1024)
+                if not data:
+                    break
+                msg = data.decode()
+                print(f'[TCP] Recebido de {conn_id}: {msg.strip()}')
+                connections[conn_id]['buffer'] += msg
+            except socket.timeout:
+                continue  # não trava, volta pro loop
     except Exception as e:
         print(f'[TCP] Erro com {addr}: {e}')
     finally:
@@ -60,7 +67,7 @@ def start_tcp_server(host='0.0.0.0', port=4096):
 
 # --- Flask endpoints ---
 
-@app.route('/cli/', methods=['GET'])
+@app.route('/cli/')
 def index():
     return render_template('login.html')
 
@@ -69,33 +76,21 @@ def login():
     conn_id = request.form['conn_id']
     password = request.form['password']
 
-    print(f'[FLASK] Tentativa de login: conn_id={conn_id} | senha={password}')
-    print(f'[FLASK] Conexões ativas: {list(connections.keys())}')
-
     conn_data = connections.get(conn_id)
 
     if not conn_data:
-        print('[FLASK] ID inválido')
         return 'ID inválido', 403
-
     if conn_data['password'] != password:
-        print('[FLASK] Senha incorreta')
         return 'Senha incorreta', 403
-
     if conn_data['in_use']:
-        print('[FLASK] Sessão já está em uso')
-        return 'Essa sessão já está em uso', 403
-
+        return 'Sessão já está em uso', 403
     if conn_data.get('disconnected', False):
-        print('[FLASK] Conexão já foi encerrada')
         return 'Conexão encerrada', 403
 
     conn_data['in_use'] = True
     session['conn_id'] = conn_id
 
-    print(f'[FLASK] Login bem-sucedido: {conn_id}')
     return redirect(url_for('terminal'))
-
 
 @app.route('/cli/terminal')
 def terminal():
@@ -115,7 +110,6 @@ def send_command():
     conn_data = connections.get(conn_id)
     if not conn_data:
         return 'Sessão inválida', 400
-
     if conn_data.get('disconnected', False):
         return 'Conexão encerrada', 400
 
@@ -141,7 +135,6 @@ def receive_data():
     output = conn_data['buffer']
     conn_data['buffer'] = ''
     return jsonify({'output': output})
-
 
 if __name__ == '__main__':
     threading.Thread(target=start_tcp_server, daemon=True).start()
