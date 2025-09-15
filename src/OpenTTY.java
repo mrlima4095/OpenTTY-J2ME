@@ -3438,6 +3438,7 @@ class Lua {
 
         private String getvalue(Hashtable table, String key, String fallback) { return table.containsKey(key) ? toLuaString(table.get(key)) : fallback; } 
         private String getenv(Hashtable table, String key, String fallback) { return midlet.env(getvalue(table, key, fallback)); }
+        private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
 
         private Object BuildScreen() throws Exception {
             if (MOD == ALERT) {
@@ -3517,7 +3518,7 @@ class Lua {
             } 
             else if (MOD == QUEST) {
                 Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
-                TextField field = new TextField(getenv(PKG, "label", midlet.stdin.getLabel()), "", 256, TextField.ANY);
+                TextField field = new TextField(getenv(PKG, "label", midlet.stdin.getLabel()), "", 256, getQuest(getenv(PKG, "type", "default")));
                 form.append(field);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
@@ -3530,7 +3531,7 @@ class Lua {
                 this.screen = form;
             } 
             else if (MOD == EDIT) {
-                TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), "", 31522, TextField.ANY);
+                TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), "", 31522, getQuest(getenv(PKG, "type", "default")));
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildEdit", "button", "table expected, got " + type(buttonObj));
