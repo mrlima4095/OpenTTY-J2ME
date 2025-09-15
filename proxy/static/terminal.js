@@ -1,0 +1,24 @@
+function sendCommand() {
+    const cmd = document.getElementById('cmd').value;
+    fetch('/send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({command: cmd})
+    }).then(() => {
+        document.getElementById('cmd').value = '';
+    });
+}
+
+function pollOutput() {
+    fetch('/receive')
+        .then(res => res.json())
+        .then(data => {
+            if (data.output) {
+                const outputDiv = document.getElementById('output');
+                outputDiv.innerText += data.output;
+                outputDiv.scrollTop = outputDiv.scrollHeight;
+            }
+        });
+}
+
+setInterval(pollOutput, 1000);
