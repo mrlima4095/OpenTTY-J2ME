@@ -3536,7 +3536,6 @@ class Lua {
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildEdit", "button", "table expected, got " + type(buttonObj));
                 box.addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1));
-
                 if (buttonTable != null) { box.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
 
                 this.screen = box;
