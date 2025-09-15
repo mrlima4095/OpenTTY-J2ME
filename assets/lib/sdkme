@@ -154,7 +154,12 @@ function app.handler(option)
             title = "SmartME Docs",
             back = { root = app.main },
             fields = {
-                "\tLua is a lightweight, high-level programming language designed for embedded use in applications. It was created in Brazil in the early 1990s by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, and Waldemar Celes. Lua is known for its simple syntax, small size, and speed, making it ideal for use in game development, embedded systems, and applications that require a scripting language. It supports procedural programming, object-oriented programming, functional programming, and data-driven programming. One of Lua’s key features is its ability to be easily integrated with other programming languages, especially C and C++, allowing developers to extend applications with custom functionality. Lua is widely used in game engines like Roblox, World of Warcraft, and Adobe Lightroom for scripting purposes."
+                "\tLua is a lightweight, high-level programming language designed for embedded use in applications. It was created in Brazil in the early 1990s by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, and Waldemar Celes. Lua is known for its simple syntax, small size, and speed, making it ideal for use in game development, embedded systems, and applications that require a scripting language. It supports procedural programming, object-oriented programming, functional programming, and data-driven programming. One of Lua’s key features is its ability to be easily integrated with other programming languages, especially C and C++, allowing developers to extend applications with custom functionality. Lua is widely used in game engines like Roblox, World of Warcraft, and Adobe Lightroom for scripting purposes.",
+                {
+                    type = "item",
+                    label = "Lua docs",
+                    root = "open https://www.lua.org/manual/5.4/"
+                }
             }
         }))
     elseif option == "About" then
