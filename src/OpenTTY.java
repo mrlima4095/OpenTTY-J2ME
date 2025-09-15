@@ -3324,7 +3324,7 @@ class Lua {
                 else if (MOD == WTITLE) { midlet.display.getCurrent().setTitle(label); }
                 else { midlet.display.getCurrent().setTicker(label == null ? null : new Ticker(label)); }
             }
-            else if (MOD == GETPROPERTY) { if (args.isEmpty()) { } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : getAppProperty(query); } }
+            else if (MOD == GETPROPERTY) { if (args.isEmpty()) { } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : midlet.getAppProperty(query); } }
 
             return null;
         }
