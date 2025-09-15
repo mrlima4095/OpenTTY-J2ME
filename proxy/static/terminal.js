@@ -15,7 +15,7 @@ function pollOutput() {
         .then(data => {
             if (data.output) {
                 const outputDiv = document.getElementById('output');
-                outputDiv.innerText += data.output;
+                outputDiv.textContent += data.output + "\n";
                 outputDiv.scrollTop = outputDiv.scrollHeight;
             }
         });
