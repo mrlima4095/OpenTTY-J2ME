@@ -77,8 +77,7 @@ def login():
 
 @app.route('/cli/terminal')
 def terminal():
-    if 'conn_id' not in session:
-        return redirect('/')
+    if 'conn_id' not in session: return redirect('/cli/')
     return render_template('terminal.html')
 
 @app.route('/cli/send', methods=['POST'])
