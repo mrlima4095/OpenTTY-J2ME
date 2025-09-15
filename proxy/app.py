@@ -55,7 +55,7 @@ def start_tcp_server(host='0.0.0.0', port=8081):
 
 # --- Flask endpoints ---
 
-@app.route('/api/')
+@app.route('/api/', methods=['GET'])
 def index():
     return render_template('login.html')
 
