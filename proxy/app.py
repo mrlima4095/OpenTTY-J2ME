@@ -9,12 +9,14 @@ app.secret_key = 'segredo_super_seguro'
 CORS(app)
 
 # Armazena conexões ativas
-connections = {}  # {conn_id: {'conn': socket, 'addr': (ip, port), 'password': str, 'buffer': str, 'in_use': bool}}
+connections = {}  # {conn_id: {'conn': socket, 'addr': (ip, port), 'password': str, 'buffer': str, 'in_use': bool, 'disconnected': bool}}
 
 def handle_client(conn, addr):
     try:
+        print(f'[TCP] Nova conexão de {addr}')
         conn.sendall(b'Password: ')
         password = conn.recv(1024).decode().strip()
+
         conn_id = str(uuid.uuid4())[:8]
 
         connections[conn_id] = {
@@ -22,9 +24,11 @@ def handle_client(conn, addr):
             'addr': addr,
             'password': password,
             'buffer': '',
-            'in_use': False
+            'in_use': False,
+            'disconnected': False
         }
 
+        print(f'[TCP] Cliente autenticado. ID: {conn_id} | IP: {addr} | Senha: {password}')
         conn.sendall(f'Connected. Your ID is {conn_id}\n'.encode())
 
         while True:
@@ -34,50 +38,68 @@ def handle_client(conn, addr):
             # Armazena a resposta no buffer
             connections[conn_id]['buffer'] += data.decode()
     except Exception as e:
-        print(f'Erro com {addr}: {e}')
+        print(f'[TCP] Erro com {addr}: {e}')
     finally:
-        print(f'Conexão encerrada com {addr}')
-        for k, v in list(connections.items()):
+        print(f'[TCP] Conexão encerrada com {addr}')
+        for k, v in connections.items():
             if v['conn'] == conn:
-                del connections[k]
+                print(f'[TCP] Marcando conexão {k} como desconectada')
+                v['disconnected'] = True
         conn.close()
 
 def start_tcp_server(host='0.0.0.0', port=4096):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((host, port))
-    server.listen(31522)
+    server.listen(50)
     print(f'[TCP] Servidor escutando em {host}:{port}')
 
     while True:
         conn, addr = server.accept()
-        print(f'[TCP] Nova conexão de {addr}')
         threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
 
 # --- Flask endpoints ---
 
 @app.route('/cli/', methods=['GET'])
-def index(): return render_template('login.html')
+def index():
+    return render_template('login.html')
 
 @app.route('/cli/login', methods=['POST'])
 def login():
     conn_id = request.form['conn_id']
     password = request.form['password']
 
+    print(f'[FLASK] Tentativa de login: conn_id={conn_id} | senha={password}')
+    print(f'[FLASK] Conexões ativas: {list(connections.keys())}')
+
     conn_data = connections.get(conn_id)
+
     if not conn_data:
+        print('[FLASK] ID inválido')
         return 'ID inválido', 403
+
     if conn_data['password'] != password:
+        print('[FLASK] Senha incorreta')
         return 'Senha incorreta', 403
+
     if conn_data['in_use']:
+        print('[FLASK] Sessão já está em uso')
         return 'Essa sessão já está em uso', 403
+
+    if conn_data.get('disconnected', False):
+        print('[FLASK] Conexão já foi encerrada')
+        return 'Conexão encerrada', 403
 
     conn_data['in_use'] = True
     session['conn_id'] = conn_id
+
+    print(f'[FLASK] Login bem-sucedido: {conn_id}')
     return redirect(url_for('terminal'))
 
 @app.route('/cli/terminal')
 def terminal():
-    if 'conn_id' not in session: return redirect('/cli/')
+    if 'conn_id' not in session:
+        return redirect('/cli/')
     return render_template('terminal.html')
 
 @app.route('/cli/send', methods=['POST'])
@@ -93,10 +115,15 @@ def send_command():
     if not conn_data:
         return 'Sessão inválida', 400
 
+    if conn_data.get('disconnected', False):
+        return 'Conexão encerrada', 400
+
     try:
         conn_data['conn'].sendall((command + '\n').encode())
+        print(f'[FLASK] Comando enviado para {conn_id}: {command}')
         return 'Enviado', 200
     except Exception as e:
+        print(f'[FLASK] Erro ao enviar comando: {e}')
         return f'Erro: {e}', 500
 
 @app.route('/cli/receive')
@@ -106,6 +133,7 @@ def receive_data():
 
     conn_id = session['conn_id']
     conn_data = connections.get(conn_id)
+
     if not conn_data:
         return 'Sessão inválida', 400
 
