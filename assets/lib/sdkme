@@ -159,7 +159,7 @@ function app.handler(option)
                 {
                     type = "item",
                     label = "Lua docs",
-                    root = "open https://www.lua.org/manual/5.4/"
+                    root = "open " .. app.mirror .. "www.lua.org/manual/5.4/"
                 }
             }
         }))
