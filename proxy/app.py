@@ -96,6 +96,7 @@ def login():
     print(f'[FLASK] Login bem-sucedido: {conn_id}')
     return redirect(url_for('terminal'))
 
+
 @app.route('/cli/terminal')
 def terminal():
     if 'conn_id' not in session:
