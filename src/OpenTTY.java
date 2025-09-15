@@ -199,7 +199,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         public void commandAction(Command c, Displayable d) {
-            if (c == BACK) { if (d == box) { display.setCurrent(preview); } else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER || MOD == SERVER || MOD == BIND) { back(); } else { processCommand("xterm"); } return; }
+            if (c == BACK) { if (d == box) { display.setCurrent(preview); } else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER || MOD == BIND) { back(); } else { processCommand("xterm"); } return; }
             if (d == confirm) { if (c == YES) { keep = true; processCommand("xterm"); } else { trace.remove(PID); processCommand("xterm"); } }
             if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
 
