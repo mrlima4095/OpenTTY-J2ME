@@ -42,7 +42,7 @@ def handle_client(conn, addr):
                 del connections[k]
         conn.close()
 
-def start_tcp_server(host='0.0.0.0', port=8081):
+def start_tcp_server(host='0.0.0.0', port=4096):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((host, port))
     server.listen(31522)
@@ -55,11 +55,10 @@ def start_tcp_server(host='0.0.0.0', port=8081):
 
 # --- Flask endpoints ---
 
-@app.route('/api/', methods=['GET'])
-def index():
-    return render_template('login.html')
+@app.route('/cli/', methods=['GET'])
+def index(): return render_template('login.html')
 
-@app.route('/api/login', methods=['POST'])
+@app.route('/cli/login', methods=['POST'])
 def login():
     conn_id = request.form['conn_id']
     password = request.form['password']
@@ -76,13 +75,13 @@ def login():
     session['conn_id'] = conn_id
     return redirect(url_for('terminal'))
 
-@app.route('/api/terminal')
+@app.route('/cli/terminal')
 def terminal():
     if 'conn_id' not in session:
         return redirect('/')
     return render_template('terminal.html')
 
-@app.route('/api/send', methods=['POST'])
+@app.route('/cli/send', methods=['POST'])
 def send_command():
     if 'conn_id' not in session:
         return 'Não autorizado', 401
@@ -101,7 +100,7 @@ def send_command():
     except Exception as e:
         return f'Erro: {e}', 500
 
-@app.route('/api/receive')
+@app.route('/cli/receive')
 def receive_data():
     if 'conn_id' not in session:
         return 'Não autorizado', 401
