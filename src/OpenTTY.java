@@ -1843,7 +1843,7 @@ class Lua {
         LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, 
         TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, CLOSE = 31, HTTP_GET = 32, HTTP_POST = 33, 
         TRIM = 34, PEER = 35, DEVICE = 36, ALERT= 37, SCREEN = 38, LIST = 39, QUEST = 40, EDIT = 41, DISPLAY = 42,
-        DATE = 43, GETPID = 44, SETPROC = 45, GETPROC = 46, TITLE = 47, WTITLE = 48, TICKER = 49;
+        DATE = 43, GETPID = 44, SETPROC = 45, GETPROC = 46, TITLE = 47, WTITLE = 48, TICKER = 49, GETPROPERTY = 50;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1877,7 +1877,7 @@ class Lua {
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
-        funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber", "select", "type" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE };
+        funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
@@ -3324,6 +3324,7 @@ class Lua {
                 else if (MOD == WTITLE) { midlet.display.getCurrent().setTitle(label); }
                 else { midlet.display.getCurrent().setTicker(label == null ? null : new Ticker(label)); }
             }
+            else if (MOD == GETPROPERTY) { if (args.isEmpty()) { } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : getAppProperty(query); } }
 
             return null;
         }

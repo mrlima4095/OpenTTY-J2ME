@@ -56,4 +56,5 @@ graphics = {
     SetTicker = function (text) end
 }
 
+getAppProperty = function (field) end
 random = function (max) end
