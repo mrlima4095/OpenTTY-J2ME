@@ -139,7 +139,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             display.setCurrent(monitor);
         }
         public MIDletControl(String mode, String args, boolean root) {
-            MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("server") ? SERVER : mode.equals("bind") ? BIND : -1;
+            MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("bind") ? BIND : -1;
             this.root = root;
 
             if (MOD == BIND) {
