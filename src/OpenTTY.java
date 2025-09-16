@@ -242,7 +242,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
                             monitor.append(content); 
                         }
-                        else if (type.equals("item")) { new MIDletControl(monitor, "screen." + field, PKG, root); } 
+                        else if (type.equals("item")) { new MIDletControl(monitor, "screen." + field, code, root); } 
                         else if (type.equals("spacer")) { 
                             int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
                             monitor.append(new Spacer(width, height)); 
