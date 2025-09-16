@@ -294,7 +294,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (MOD == QUEST) {                 
                 if (!PKG.containsKey("quest.label") || !PKG.containsKey("quest.cmd") || !PKG.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } 
-                monitor = new Form(getenv("quest.title")); 
+                monitor = new Form(getenv("quest.title", form.getTitle())); 
 
                 INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); 
                 BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); 
@@ -306,7 +306,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == EDIT) {
                 if (!PKG.containsKey("edit.cmd") || !PKG.containsKey("edit.key")) { MIDletLogs("add error Editor crashed while init, malformed settings"); return; } 
                 
-                box = new TextBox(getenv("quest.title")); 
+                box = new TextBox(getenv("quest.title", form.getTitle())); 
                 box.setString(PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? getcontent(getenv("edit.source")) : "");
 
                 BACK = new Command(getenv("edit.back.label", "Back"), Command.OK, 1);
