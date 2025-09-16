@@ -33,7 +33,7 @@ function app.proxy(passwd)
             os.execute(cmd)
             local before = io.read()
 
-            io.write(string.sub(before, #after + 2))
+            io.write(string.sub(before, #after + 2) + "\n")
         end
     end
 
