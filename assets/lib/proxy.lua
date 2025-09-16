@@ -36,7 +36,7 @@ function app.proxy(passwd)
             local after = io.read()
 
             io.write(string.sub(after, #before + 2, #after) .. "\n")
-        end
+        else os.execute("sleep 2") end
     end
 
     io.close(i) io.close(o) io.close(conn)
