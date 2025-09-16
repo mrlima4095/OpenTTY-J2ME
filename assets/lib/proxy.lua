@@ -23,7 +23,8 @@ function app.proxy(passwd)
     os.setproc("id", id)
 
     while true do
-        local cmd = string.trim(io.read(i))
+        local cmd = io.read(i)
+        cmd = string.trim(cmd)
 
         if cmd then
             print("WebProxy -> " .. cmd)
