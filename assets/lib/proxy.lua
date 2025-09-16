@@ -9,7 +9,7 @@ function app.proxy(passwd)
     io.read(i)
     io.write(passwd .. "\n", o)
     local response = io.read(i)
-    local id = string.sub(response, 22)
+    local id = string.trim(string.sub(response, 22))
 
     graphics.display(graphics.Alert({
         title = "WebProxy",
@@ -20,7 +20,7 @@ function app.proxy(passwd)
         }
     }))
 
-    --[[os.setproc("id", id)
+    os.setproc("id", id)
 
     while true do
         local cmd = string.trim(io.read(i))
@@ -36,7 +36,7 @@ function app.proxy(passwd)
 
             io.write(string.sub(before, #after + 2) .. "\n")
         end
-    end]]
+    end
 
     io.close(i) io.close(o) io.close(conn)
 end
