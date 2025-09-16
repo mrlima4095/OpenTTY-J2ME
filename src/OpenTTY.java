@@ -3002,7 +3002,7 @@ class Lua {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         byte[] buffer = new byte[1024];
                         int read;
-                        while ((read = IN.read(buffer)) != -1) { baos.write(buffer, 0, read); }
+                        while (IN.available() > 0 && (read = IN.read(buffer)) != -1) { baos.write(buffer, 0, read); }
 
                         return new String(baos.toByteArray(), "UTF-8");
                     } 
