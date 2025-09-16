@@ -197,10 +197,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             trace.put(PID, proc);
             new Thread(this, "NET").start();
         }
-        public MIDletControl(Form screen, String node, Hashtable PKG, boolean root) {
+        public MIDletControl(Form screen, String node, STRING code, boolean root) {
             if (PKG == null || PKG.isEmpty()) { return; } 
 
-            this.PKG = PKG; this.node = node; this.root = root; 
+            this.PKG = parseProperties(code); this.node = node; this.root = root; 
 
             if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } 
 
@@ -213,8 +213,110 @@ public class OpenTTY extends MIDlet implements CommandListener {
             s.setItemCommandListener(this); 
             screen.append(s); 
         }
-        public MIDletControl(boolean root) {
+        public MIDletControl(int MOD, String code, boolean root) {
+            if (type == null || type.length() == 0 || code == null || code.length() == 0) { return; } 
 
+            this.PKG = parseProperties(code); 
+            this.MOD = MOD; this.root = root;
+
+            if (MOD == SCREEN) { 
+                monitor = new Form(getenv("screen.title", form.getTitle()));
+                BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); 
+                RUN = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); 
+                monitor.addCommand(BACK); 
+                if (PKG.containsKey("screen.button")) { monitor.addCommand(RUN); } 
+                if (PKG.containsKey("screen.fields")) { 
+                    String[] fields = split(getenv("screen.fields"), ','); 
+
+                    for (int i = 0; i < fields.length; i++) { 
+                        String field = fields[i].trim(); 
+                        String type = getenv("screen." + field + ".type"); 
+
+                        if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) { 
+                            try { monitor.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
+                            catch (Exception e) { MIDletLogs("add warn Malformed Image '" + getenv("screen." + field + ".img") + "'"); } 
+                        } 
+                        else if (type.equals("text") && !getenv("screen." + field + ".value").equals("")) { 
+                            StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".value")); 
+
+                            content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
+                            monitor.append(content); 
+                        }
+                        else if (type.equals("item")) { new MIDletControl(monitor, "screen." + field, PKG, root); } 
+                        else if (type.equals("spacer")) { 
+                            int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
+                            monitor.append(new Spacer(width, height)); 
+                        }
+                    } 
+                } 
+
+                monitor.setCommandListener(this); display.setCurrent(monitor); 
+            } 
+            else if (MOD == LIST) {
+                Image IMG = null; 
+
+                if (!PKG.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } 
+
+                preview = new List(getenv("list.title", form.getTitle())); 
+                if (PKG.containsKey("list.icon")) { 
+                    try { IMG = Image.createImage(getenv("list.icon")); } 
+                    catch (Exception e) { MIDletLogs("add warn Malformed Image '" + getenv("list.icon") + "'"); } 
+                } 
+
+                BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); 
+                RUN = new Command(getenv("list.button", "Select"), Command.SCREEN, 2); 
+                preview.addCommand(BACK); preview.addCommand(RUN); 
+                
+                String[] content = split(getenv("list.content"), ','); 
+                for (int i = 0; i < content.length; i++) { preview.append(content[i], IMG); } 
+
+                if (PKG.containsKey("list.source")) {
+                    String source = getcontent(getenv("list.source"));
+                    
+                    if (source.equals("")) { } 
+                    else {
+                        String[] content = split(source, '\n'); 
+                        for (int i = 0; i < content.length; i++) {
+                            String key = content[i], value = "true";
+                            
+                            int index = content[i].indexOf("=");
+                            if (index == -1) { }
+                            else { value = key.substring(index + 1); key = key.substring(0, index); }
+                            
+                            preview.append(key, IMG); 
+                            PKG.put(key, value);
+                        } 
+
+                    }
+                }
+
+                preview.setCommandListener(this); display.setCurrent(preview); 
+            } 
+            else if (MOD == QUEST) {                 
+                if (!PKG.containsKey("quest.label") || !PKG.containsKey("quest.cmd") || !PKG.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } 
+                monitor = new Form(getenv("quest.title")); 
+
+                INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); 
+                BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); 
+                RUN = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); 
+                monitor.append(INPUT); monitor.addCommand(BACK); monitor.addCommand(RUN); 
+
+                monitor.setCommandListener(this); display.setCurrent(monitor); 
+            } 
+            else if (MOD == EDIT) {
+                if (!PKG.containsKey("edit.cmd") || !PKG.containsKey("edit.key")) { MIDletLogs("add error Editor crashed while init, malformed settings"); return; } 
+                
+                box = new TextBox(getenv("quest.title")); 
+                box.setString(PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? getcontent(getenv("edit.source")) : "");
+
+                BACK = new Command(getenv("edit.back.label", "Back"), Command.OK, 1);
+                RUN = new Command(getenv("edit.cmd.label", "Run"), Command.SCREEN, 2);
+                box.addCommand(BACK); box.addCommand(RUN);
+
+                box.setCommandListener(this); display.setCurrent(box);
+
+            }
+            else { return; } 
         }
 
         public void commandAction(Command c, Displayable d) {
@@ -329,7 +431,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     nanoContent = BUFFER.toString().trim();
                     processCommand("nano", false);
                 }
-                
             }
 
             else {
@@ -538,125 +639,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Command BACK, USER; 
         private TextField INPUT;
 
-        public Screen(String type, String code, boolean root) { 
-            if (type == null || type.length() == 0 || code == null || code.length() == 0) { return; } 
-
-            this.PKG = parseProperties(code); 
-            this.root = root;
-            if (type.equals("make")) { 
-                TYPE = SCREEN; 
-
-                if (PKG.containsKey("screen.title")) { screen.setTitle(getenv("screen.title")); } 
-                BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1); 
-                USER = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2); 
-                screen.addCommand(BACK); 
-                if (PKG.containsKey("screen.button")) { screen.addCommand(USER); } 
-                if (PKG.containsKey("screen.fields")) { 
-                    String[] fields = split(getenv("screen.fields"), ','); 
-
-                    for (int i = 0; i < fields.length; i++) { 
-                        String field = fields[i].trim(); 
-                        String type = getenv("screen." + field + ".type"); 
-
-                        if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) { 
-                            try { screen.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
-                            catch (Exception e) { MIDletLogs("add warn Malformed Image '" + getenv("screen." + field + ".img") + "'"); } 
-                        } 
-                        else if (type.equals("text") && !getenv("screen." + field + ".value").equals("")) { 
-                            StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".value")); 
-
-                            content.setFont(newFont(getenv("screen." + field + ".style", "default"))); 
-                            screen.append(content); 
-                        }
-                        else if (type.equals("item")) { new ItemLoader(screen, getInstance(), "screen." + field, code, root); } 
-                        else if (type.equals("spacer")) { 
-                            int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10")); 
-                            screen.append(new Spacer(width, height)); 
-                        }
-                    } 
-                } 
-
-                screen.setCommandListener(this); display.setCurrent(screen); 
-            } 
-            else if (type.equals("list")) { 
-                TYPE = LIST; 
-                Image IMG = null; 
-
-                if (!PKG.containsKey("list.content")) { MIDletLogs("add error List crashed while init, malformed settings"); return; } 
-
-                if (PKG.containsKey("list.title")) { list.setTitle(getenv("list.title")); } 
-                if (PKG.containsKey("list.icon")) { 
-                    try { IMG = Image.createImage(getenv("list.icon")); } 
-                    catch (Exception e) { MIDletLogs("add warn Malformed Image '" + getenv("list.icon") + "'"); } 
-                } 
-
-                BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1); 
-                USER = new Command(getenv("list.button", "Select"), Command.SCREEN, 2); 
-                list.addCommand(BACK); list.addCommand(USER); 
-                
-                String[] content = split(getenv("list.content"), ','); 
-                for (int i = 0; i < content.length; i++) { list.append(content[i], IMG); } 
-
-                if (PKG.containsKey("list.source")) {
-                    String source = getcontent(getenv("list.source"));
-                    
-                    if (source.equals("")) { } 
-                    else {
-                        String[] content = split(source, '\n'); 
-                        for (int i = 0; i < content.length; i++) {
-                            String key = content[i], value = "true";
-                            
-                            int index = content[i].indexOf("=");
-                            if (index == -1) { }
-                            else {
-                                value = key.substring(index + 1);
-                                key = key.substring(0, index);
-                            }
-                            
-                            list.append(key, IMG); 
-                            PKG.put(key, value);
-                        } 
-
-                    }
-                }
-
-                list.setCommandListener(this); display.setCurrent(list); 
-            } 
-            else if (type.equals("quest")) { 
-                TYPE = QUEST; 
-                
-                if (!PKG.containsKey("quest.label") || !PKG.containsKey("quest.cmd") || !PKG.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } 
-                if (PKG.containsKey("quest.title")) { screen.setTitle(getenv("quest.title")); } 
-
-                INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); 
-                BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); 
-                USER = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); 
-                screen.append(INPUT); screen.addCommand(BACK); screen.addCommand(USER); 
-
-                screen.setCommandListener(this); display.setCurrent(screen); 
-            } 
-            else if (type.equals("edit")) {
-                TYPE = EDIT;
-
-                if (!PKG.containsKey("edit.cmd") || !PKG.containsKey("edit.key")) { MIDletLogs("add error Editor crashed while init, malformed settings"); return; } 
-                if (PKG.containsKey("edit.title")) { edit.setTitle(getenv("edit.title")); }
-                edit.setString(PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? getcontent(getenv("edit.source")) : "");
-
-                BACK = new Command(getenv("edit.back.label", "Back"), Command.OK, 1);
-                USER = new Command(getenv("edit.cmd.label", "Run"), Command.SCREEN, 2);
-                edit.addCommand(BACK); edit.addCommand(USER);
-
-                edit.setCommandListener(this); display.setCurrent(edit);
-
-            }
-            else { return; } 
-        }  
-        public void commandAction(Command c, Displayable d) { 
-            if (c == BACK) { 
-                
-            } 
-            
-        } 
 
     }
     // |
@@ -1154,7 +1136,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root)); }
-        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
+        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand.equals("make") ? MIDletControl.SCREEN : mainCommand.equals("list") ? MIDletControl.LIST : mainCommand.equals("quest") ? MIDletControl.QUEST : MIDletControl.EDIT, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
         else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); } else { new ItemLoader(form, this, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); } }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
