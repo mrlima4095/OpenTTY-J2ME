@@ -48,10 +48,7 @@ function app.main()
         label = "Password",
         type = "password",
         back = { root = os.exit },
-        button = {
-            label = "Connect",
-            root = app.proxy
-        }
+        button = { label = "Connect", root = app.proxy }
     }))
 end
 
