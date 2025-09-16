@@ -323,10 +323,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { 
                 if (d == box) { display.setCurrent(preview); } 
                 else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER) { back(); } 
-                else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == EDIT) {
-                    processCommand("xterm", true, root); 
-                    processCommand(getvalue((MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit") + ".back", "true"), true, root);
-                }
+                else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == EDIT) { processCommand("xterm", true, root); processCommand(getvalue((MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit") + ".back", "true"), true, root); }
                 else { processCommand("xterm", true, root); } 
                 
                 return; 
@@ -624,7 +621,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private int verifyHTTP(String fullUrl) throws IOException { HttpConnection H = null; try { H = (HttpConnection) Connector.open(fullUrl); H.setRequestMethod(HttpConnection.GET); return H.getResponseCode(); } finally { try { if (H != null) H.close(); } catch (IOException x) { } } }
         public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
 
-        private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
+        public static int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
         private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
         private String getenv(String key) { return env(getvalue(key, "")); } 
