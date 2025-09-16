@@ -3001,7 +3001,7 @@ class Lua {
                         InputStream IN = (InputStream) arg;
 
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        byte[] buffer = new byte[1024];
+                        byte[] buffer = new byte[128];
                         int read;
                         while (IN.available() > 0 && (read = IN.read(buffer)) != -1) { baos.write(buffer, 0, read); }
 
