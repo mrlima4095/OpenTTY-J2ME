@@ -78,8 +78,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private Alert confirm;
         private Form monitor;
         private List preview;
-        private StringItem console;
         private TextBox box;
+        private StringItem console, s;
         private TextField USER, PASSWD, remotein;
         private Command BACK = new Command("Back", Command.BACK, 1), RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO;
 
