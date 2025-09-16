@@ -68,7 +68,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Control Thread
     public OpenTTY getInstance() { return this; }
     public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
-        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, EDIT = 16;
+        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16;
 
         private int MOD = -1, COUNT = 1, start;
         private boolean root = false, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
@@ -106,8 +106,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else {
                 preview = new List(form.getTitle(), List.IMPLICIT);
                 preview.addCommand(BACK);
-
                 preview.addCommand(MOD == EXPLORER ? (OPEN = new Command("Open", Command.OK, 1)) : MOD == PROCESS ? (KILL = new Command("Kill", Command.OK, 1)) : (RUN = new Command("Run", Command.OK, 1)));
+
                 if (MOD == HISTORY) { preview.addCommand(EDIT = new Command("Edit", Command.OK, 1)); } 
                 else if (MOD == PROCESS) { preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1)); preview.addCommand(VIEW = new Command("View info", Command.OK, 1)); preview.addCommand(FILTER = new Command("Filter", Command.OK, 1)); }
 
@@ -303,7 +303,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 monitor.setCommandListener(this); display.setCurrent(monitor); 
             } 
-            else if (MOD == EDIT) {
+            else if (MOD == WEDIT) {
                 if (!PKG.containsKey("edit.cmd") || !PKG.containsKey("edit.key")) { MIDletLogs("add error Editor crashed while init, malformed settings"); return; } 
                 
                 box = new TextBox(getenv("quest.title", form.getTitle())); 
@@ -441,7 +441,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             processCommand(getvalue("quest.cmd", "true"), true, root); 
                         } 
                     } 
-                    else if (MOD == EDIT) { 
+                    else if (MOD == WEDIT) { 
                         String value = box.getString().trim(); 
                         if (value.equals("")) { }
                         else { 
@@ -1121,7 +1121,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root)); }
-        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new MIDletControl(mainCommand.equals("make") ? MIDletControl.SCREEN : mainCommand.equals("list") ? MIDletControl.LIST : mainCommand.equals("quest") ? MIDletControl.QUEST : MIDletControl.EDIT, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
+        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new MIDletControl(mainCommand.equals("make") ? MIDletControl.SCREEN : mainCommand.equals("list") ? MIDletControl.LIST : mainCommand.equals("quest") ? MIDletControl.QUEST : MIDletControl.WEDIT, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
         else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); } else { new MIDletControl(form, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); } }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
