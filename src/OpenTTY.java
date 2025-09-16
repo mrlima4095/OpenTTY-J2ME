@@ -845,7 +845,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cx")) {
             if (argument.equals("")) { }
             else {
-                try { return processCommand(argument, builtin, root); }
+                try { return processCommand(argument, ignore, root); }
                 catch (Throwable e) {
                     echoCommand(getCatch(e));
                 }
