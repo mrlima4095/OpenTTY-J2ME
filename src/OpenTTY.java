@@ -197,7 +197,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             trace.put(PID, proc);
             new Thread(this, "NET").start();
         }
-        public MIDletControl(Form screen, String node, STRING code, boolean root) {
+        public MIDletControl(Form screen, String node, String code, boolean root) {
             if (PKG == null || PKG.isEmpty()) { return; } 
 
             this.PKG = parseProperties(code); this.node = node; this.root = root; 
