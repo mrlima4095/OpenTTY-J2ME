@@ -39,6 +39,8 @@ function app.proxy(passwd)
     end
 
     io.close(i) io.close(o) io.close(conn)
+    print("WebProxy -> disconnected")
+    os.exit()
 end
 
 function app.main()
