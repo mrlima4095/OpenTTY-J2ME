@@ -206,7 +206,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); 
             s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); 
-            s.setFont(midlet.newFont(getenv(node + ".style", "default"))); 
+            s.setFont(newFont(getenv(node + ".style", "default"))); 
             s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
             s.addCommand(RUN); 
             s.setDefaultCommand(RUN); 
