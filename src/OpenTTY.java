@@ -3528,7 +3528,7 @@ class Lua {
             } 
             else if (MOD == QUEST) {
                 Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
-                TextField field = new TextField(getenv(PKG, "label", midlet.stdin.getLabel()), "", 256, getQuest(getenv(PKG, "type", "default")));
+                TextField field = new TextField(getenv(PKG, "label", midlet.stdin.getLabel()), getenv(PKG, "content", ""), 256, getQuest(getenv(PKG, "type", "default")));
                 form.append(field);
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
@@ -3541,7 +3541,7 @@ class Lua {
                 this.screen = form;
             } 
             else if (MOD == EDIT) {
-                TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), "", 31522, getQuest(getenv(PKG, "type", "default")));
+                TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), getenv(PKG, "content", ""), 31522, getQuest(getenv(PKG, "type", "default")));
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildEdit", "button", "table expected, got " + type(buttonObj));
