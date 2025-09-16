@@ -701,7 +701,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { new Screen("list", "list.content=Monitor,Process\nlist.button=Open\nMonitor=execute top;\nProcess=execute top process;", root); }
+        else if (mainCommand.equals("htop")) { new MIDletControl("list", "list.content=Monitor,Process\nlist.button=Open\nMonitor=execute top;\nProcess=execute top process;", root); }
         else if (mainCommand.equals("top") || mainCommand.equals("trace")) { return kernel(argument, root); }
         // |
         // Process 
@@ -1121,7 +1121,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Interfaces
         else if (mainCommand.equals("canvas")) { display.setCurrent(new MyCanvas(argument.equals("") ? "Canvas" : argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root)); }
-        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new Screen(mainCommand.equals("make") ? MIDletControl.SCREEN : mainCommand.equals("list") ? MIDletControl.LIST : mainCommand.equals("quest") ? MIDletControl.QUEST : MIDletControl.EDIT, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
+        else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new MIDletControl(mainCommand.equals("make") ? MIDletControl.SCREEN : mainCommand.equals("list") ? MIDletControl.LIST : mainCommand.equals("quest") ? MIDletControl.QUEST : MIDletControl.EDIT, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
         else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); } else { new ItemLoader(form, this, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); } }
 
         else { echoCommand("x11: " + mainCommand + ": not found"); return 127; }
