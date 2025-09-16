@@ -4,7 +4,10 @@ local browser = {
     xback = os.exit,
     xmenucfg = {
         title = "Browser",
-        back = {  }
+        back = { root = os.exit },
+        button = function (opt)
+
+        end
     },
 
     headers = {}
