@@ -7,7 +7,7 @@ function app.proxy(passwd)
     local conn, i, o = socket.connect("socket://" .. app.instance)
     
     io.read(i)
-    io.write(passwd .. "\n", o)
+    io.write(passwd, o)
     local response = io.read(i)
     local id = string.trim(string.sub(response, 22))
 
@@ -20,8 +20,7 @@ function app.proxy(passwd)
         }
     }))
 
-    --os.setproc("id", id)
-    os.execute("sleep 2")
+    os.setproc("id", id)
     while true do
         local cmd = io.read(i)
         cmd = string.trim(cmd)
