@@ -137,3 +137,4 @@
 [2025-1.16.1-02x70] Warn when package dont contains Lua Class
 [2025-1.16.1-02x71] Support for 'api.require'
 [2025-1.16.1-02x72] Removed native Server
+[2025-1.16.1-02x73] ItemLoader and MIDletControl Threads merged

@@ -17,6 +17,7 @@ Copyright (C) 2025 - Mr. Lima
 - Removed Command `server`
 - Removed file `/java/etc/index.html`
 - Removed default environment key **RESPONSE**
+- Command `x11 item` remove all personalized itens from default screen
 
 [ _Notes_ ]
 
