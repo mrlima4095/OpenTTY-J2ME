@@ -2735,7 +2735,8 @@ class Lua {
             if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
-        }else if (current.type == FUNCTION) {
+        }
+        else if (current.type == FUNCTION) {
             consume(FUNCTION);
 
             // Parâmetros
