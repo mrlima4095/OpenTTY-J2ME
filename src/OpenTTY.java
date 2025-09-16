@@ -3004,9 +3004,6 @@ class Lua {
                         int read;
                         while ((read = IN.read(buffer)) != -1) {
                             baos.write(buffer, 0, read);
-                            if (IN.available() == 0) {
-                                break;
-                            }
                         }
 
                         return new String(baos.toByteArray(), "UTF-8");
