@@ -6,7 +6,7 @@ local app = {
 function app.proxy(passwd)
     local conn, i, o = socket.connect("socket://" .. app.instance)
 
-    io.write(passwd, o)
+    io.write(passwd + "\n", o)
     local response = io.read(i)
     local id = string.sub(response, 22)
 
