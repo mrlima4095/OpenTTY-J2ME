@@ -2973,16 +2973,17 @@ class Lua {
                 else {
                     Object arg = args.elementAt(0);
 
-                    if (arg instanceof InputStream) {
+                    else if (arg instanceof InputStream) {
                         InputStream IN = (InputStream) arg;
 
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        byte[] buffer = new byte[128];
-                        int read;
-                        while (IN.available() > 0 && (read = IN.read(buffer)) != -1) { baos.write(buffer, 0, read); }
+                        int chunkSize = args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024;
 
-                        return new String(baos.toByteArray(), "UTF-8");
-                    } 
+                        byte[] buffer = new byte[chunkSize];
+                        int bytesRead = IN.read(buffer, 0, chunkSize);
+                        if (bytesRead == -1) { return null; }
+
+                        return new String(buffer, 0, bytesRead, "UTF-8");
+                    }
                     else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
                     else {
                         String target = toLuaString(arg);
