@@ -214,7 +214,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.append(s); 
         }
         public MIDletControl(int MOD, String code, boolean root) {
-            if (type == null || type.length() == 0 || code == null || code.length() == 0) { return; } 
+            if (code == null || code.length() == 0) { return; } 
 
             this.PKG = parseProperties(code); 
             this.MOD = MOD; this.root = root;
