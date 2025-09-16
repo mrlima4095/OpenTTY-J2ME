@@ -4,7 +4,7 @@ local app = {
 
 
 function app.proxy(passwd)
-    --[[local conn, i, o = socket.connect("socket://" .. app.instance)
+    local conn, i, o = socket.connect("socket://" .. app.instance)
     
     io.read(i)
     io.write(passwd, o)
@@ -38,7 +38,7 @@ function app.proxy(passwd)
         end
     end
 
-    io.close(i) io.close(o) io.close(conn)]]
+    io.close(i) io.close(o) io.close(conn)
     print("WebProxy -> disconnected")
     os.exit()
 end
