@@ -68,7 +68,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Control Thread
     public OpenTTY getInstance() { return this; }
     public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
-        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12;
+        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, EDIT = 16;
 
         private int MOD = -1, COUNT = 1, start;
         private boolean root = false, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
@@ -213,9 +213,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
             s.setItemCommandListener(this); 
             screen.append(s); 
         }
+        public MIDletControl(boolean root) {
+
+        }
 
         public void commandAction(Command c, Displayable d) {
-            if (c == BACK) { if (d == box) { display.setCurrent(preview); } else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER) { back(); } else { processCommand("xterm"); } return; }
+            if (c == BACK) { 
+                if (d == box) { display.setCurrent(preview); } 
+                else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER) { back(); } 
+                else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == EDIT) {
+                    processCommand("xterm", true, root); 
+                    processCommand(getvalue((MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit") + ".back", "true"), true, root);
+                }
+                else { processCommand("xterm", true, root); } 
+                
+                return; 
+            }
             if (d == confirm) { if (c == YES) { keep = true; processCommand("xterm"); } else { trace.remove(PID); processCommand("xterm"); } }
             if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
 
@@ -317,6 +330,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     processCommand("nano", false);
                 }
                 
+            }
+
+            else {
+                if (c == RUN || c == List.SELECT_COMMAND) { 
+                    if (MOD == QUEST) { 
+                        String value = USER.getString().trim(); 
+                        if (value.equals("")) { } 
+                        else { 
+                            attributes.put(getenv("quest.key"), env(value)); 
+                            processCommand("xterm", true, root); 
+                            processCommand(getvalue("quest.cmd", "true"), true, root); 
+                        } 
+                    } 
+                    else if (MOD == EDIT) { 
+                        String value = box.getString().trim(); 
+                        if (value.equals("")) { }
+                        else { 
+                            attributes.put(getenv("edit.key"), env(value)); 
+                            processCommand("xterm", true, root); 
+                            processCommand(getvalue("edit.cmd", "true"), true, root); 
+                        } 
+                    } 
+                    else if (TYPE == LIST) { int index = preview.getSelectedIndex(); if (index >= 0) { processCommand("xterm", true, root); String key = env(preview.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, root); } } 
+                    else if (TYPE == SCREEN) { processCommand("xterm", true, root); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found"), true, root); } 
+                } 
             }
         }
         public void commandAction(Command c, Item item) { if (c == RUN) { processCommand("xterm", true, root); processCommand((String) PKG.get(node + ".cmd"), true, root); } }
@@ -485,14 +523,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private int verifyHTTP(String fullUrl) throws IOException { HttpConnection H = null; try { H = (HttpConnection) Connector.open(fullUrl); H.setRequestMethod(HttpConnection.GET); return H.getResponseCode(); } finally { try { if (H != null) H.close(); } catch (IOException x) { } } }
         public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
 
+        private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
         private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
-        private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); } 
-        private String getenv(String key) { return midlet.env(getvalue(key, "")); } 
+        private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
+        private String getenv(String key) { return env(getvalue(key, "")); } 
     }
     public class Screen implements CommandListener { 
         private Hashtable PKG; 
         private boolean root = false;
-        private int TYPE = 0, SCREEN = 1, LIST = 2, QUEST = 3, EDIT = 4; 
+        private int TYPE = 0, ; 
         private Form screen = new Form(form.getTitle()); 
         private List list = new List(form.getTitle(), List.IMPLICIT); 
         private TextBox edit = new TextBox(form.getTitle(), "", 31522, TextField.ANY); 
@@ -614,37 +653,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }  
         public void commandAction(Command c, Displayable d) { 
             if (c == BACK) { 
-                processCommand("xterm", true, root); 
-                processCommand(getvalue((TYPE == SCREEN ? "screen" : TYPE == LIST ? "list" : TYPE == QUEST ? "quest" : "edit") + ".back", "true"), true, root);
+                
             } 
-            else if (c == USER || c == List.SELECT_COMMAND) { 
-                if (TYPE == QUEST) { 
-                    String value = INPUT.getString().trim(); 
-                    if (value.equals("")) { } 
-                    else { 
-                        attributes.put(getenv("quest.key"), env(value)); 
-                        processCommand("xterm", true, root); 
-                        processCommand(getvalue("quest.cmd", "true"), true, root); 
-                    } 
-                } 
-                else if (TYPE == EDIT) { 
-                    String value = edit.getString().trim(); 
-                    if (value.equals("")) { }
-                    else { 
-                        attributes.put(getenv("edit.key"), env(value)); 
-                        processCommand("xterm", true, root); 
-                        processCommand(getvalue("edit.cmd", "true"), true, root); 
-                    } 
-                } 
-                else if (TYPE == LIST) { int index = list.getSelectedIndex(); if (index >= 0) { processCommand("xterm", true, root); String key = env(list.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, root); } } 
-                else if (TYPE == SCREEN) { processCommand("xterm", true, root); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found"), true, root); } 
-            } 
+            
         } 
-        private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
-        private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
-        private String getenv(String key) { return env(getvalue(key, "")); } 
 
-        private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
     }
     // |
     // MIDlet Shell
