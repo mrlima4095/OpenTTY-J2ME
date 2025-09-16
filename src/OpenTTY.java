@@ -2973,7 +2973,7 @@ class Lua {
                 else {
                     Object arg = args.elementAt(0);
 
-                    else if (arg instanceof InputStream) {
+                    if (arg instanceof InputStream) {
                         InputStream IN = (InputStream) arg;
 
                         int chunkSize = args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024;
