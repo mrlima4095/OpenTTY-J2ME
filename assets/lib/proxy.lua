@@ -19,7 +19,7 @@ function app.proxy(passwd)
         }
     }))
 
-    os.setproc("id", id)
+    --[[os.setproc("id", id)
 
     while true do
         local cmd = string.trim(io.read(i))
@@ -35,7 +35,7 @@ function app.proxy(passwd)
 
             io.write(string.sub(before, #after + 2) .. "\n")
         end
-    end
+    end]]
 
     io.close(i) io.close(o) io.close(conn)
 end
