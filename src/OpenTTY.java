@@ -450,8 +450,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             processCommand(getvalue("edit.cmd", "true"), true, root); 
                         } 
                     } 
-                    else if (TYPE == LIST) { int index = preview.getSelectedIndex(); if (index >= 0) { processCommand("xterm", true, root); String key = env(preview.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, root); } } 
-                    else if (TYPE == SCREEN) { processCommand("xterm", true, root); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found"), true, root); } 
+                    else if (MOD == LIST) { int index = preview.getSelectedIndex(); if (index >= 0) { processCommand("xterm", true, root); String key = env(preview.getString(index)); processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, root); } } 
+                    else if (MOD == SCREEN) { processCommand("xterm", true, root); processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found"), true, root); } 
                 } 
             }
         }
