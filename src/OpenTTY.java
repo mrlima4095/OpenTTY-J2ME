@@ -146,7 +146,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (args == null || args.length() == 0 || args.equals("$PORT")) { attributes.put("PORT", "31522"); port = "31522"; DB = ""; } 
                 else { port = getCommand(args); DB = getArgument(args); }
 
-                new Thread("Bind").start();
+                new Thread(this, "Bind").start();
                 return;
             } 
             else if (MOD == -1) { return; }
