@@ -296,10 +296,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (!PKG.containsKey("quest.label") || !PKG.containsKey("quest.cmd") || !PKG.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } 
                 monitor = new Form(getenv("quest.title", form.getTitle())); 
 
-                INPUT = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); 
+                USER = new TextField(getenv("quest.label"), getenv("quest.content"), 256, getQuest(getenv("quest.type"))); 
                 BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2); 
                 RUN = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1); 
-                monitor.append(INPUT); monitor.addCommand(BACK); monitor.addCommand(RUN); 
+                monitor.append(USER); monitor.addCommand(BACK); monitor.addCommand(RUN); 
 
                 monitor.setCommandListener(this); display.setCurrent(monitor); 
             } 
@@ -628,18 +628,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
         private String getenv(String key) { return env(getvalue(key, "")); } 
-    }
-    public class Screen implements CommandListener { 
-        private Hashtable PKG; 
-        private boolean root = false;
-        private int TYPE = 0, ; 
-        private Form screen = new Form(form.getTitle()); 
-        private List list = new List(form.getTitle(), List.IMPLICIT); 
-        private TextBox edit = new TextBox(form.getTitle(), "", 31522, TextField.ANY); 
-        private Command BACK, USER; 
-        private TextField INPUT;
-
-
     }
     // |
     // MIDlet Shell
