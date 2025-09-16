@@ -31,9 +31,9 @@ function app.proxy(passwd)
 
             if cmd == "/exit" then break end
 
-            local after = io.read()
-            os.execute(cmd)
             local before = io.read()
+            os.execute(cmd)
+            local after = io.read()
 
             io.write(string.sub(after, #before + 2) .. "\n")
         end
