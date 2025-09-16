@@ -22,7 +22,7 @@ function app.proxy(passwd)
 
     os.setproc("id", id)
 
-    --[[while true do
+    while true do
         local cmd = io.read(i)
         cmd = string.trim(cmd)
 
@@ -35,9 +35,9 @@ function app.proxy(passwd)
             os.execute(cmd)
             local before = io.read()
 
-            io.write(string.sub(before, #after + 2) .. "\n")
+            io.write(string.sub(after, #before + 2) .. "\n")
         end
-    end]]
+    end
 
     io.close(i) io.close(o) io.close(conn)
     print("WebProxy -> disconnected")
