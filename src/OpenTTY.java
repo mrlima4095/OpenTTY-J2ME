@@ -323,7 +323,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == BACK) { 
                 if (d == box) { display.setCurrent(preview); } 
                 else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER) { back(); } 
-                else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == EDIT) { processCommand("xterm", true, root); processCommand(getvalue((MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit") + ".back", "true"), true, root); }
+                else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == WEDIT) { processCommand("xterm", true, root); processCommand(getvalue((MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit") + ".back", "true"), true, root); }
                 else { processCommand("xterm", true, root); } 
                 
                 return; 
