@@ -306,8 +306,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == WEDIT) {
                 if (!PKG.containsKey("edit.cmd") || !PKG.containsKey("edit.key")) { MIDletLogs("add error Editor crashed while init, malformed settings"); return; } 
                 
-                box = new TextBox(getenv("quest.title", form.getTitle())); 
-                box.setString(PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? getcontent(getenv("edit.source")) : "");
+                box = new TextBox(getenv("quest.title", form.getTitle()), PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? getcontent(getenv("edit.source")) : "", 31522, getQuest(getenv("quest.type")));
 
                 BACK = new Command(getenv("edit.back.label", "Back"), Command.OK, 1);
                 RUN = new Command(getenv("edit.cmd.label", "Run"), Command.SCREEN, 2);
