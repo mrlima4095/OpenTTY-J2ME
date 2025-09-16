@@ -21,7 +21,7 @@ function app.proxy(passwd)
     }))
 
     os.setproc("id", id)
-
+    os.execute("sleep 2")
     while true do
         local cmd = io.read(i)
         cmd = string.trim(cmd)
@@ -36,7 +36,7 @@ function app.proxy(passwd)
             local after = io.read()
 
             io.write(string.sub(after, #before + 2, #after) .. "\n")
-        else os.execute("sleep 2") end
+        end
     end
 
     io.close(i) io.close(o) io.close(conn)
