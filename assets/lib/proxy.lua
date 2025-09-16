@@ -20,7 +20,7 @@ function app.proxy(passwd)
         }
     }))
 
-    os.setproc("id", id)
+    --os.setproc("id", id)
     os.execute("sleep 2")
     while true do
         local cmd = io.read(i)
