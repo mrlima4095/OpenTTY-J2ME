@@ -25,6 +25,8 @@ table = {
 
 socket = {
     connect = function (address) end,
+    server = function (port) end,
+    accept = function (server) end,
 
     http = {
         get = function (url, headers) end,
