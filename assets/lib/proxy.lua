@@ -48,7 +48,7 @@ function app.main()
     graphics.display(graphics.BuildEdit({
         title = "WebProxy Settings",
         label = "Password",
-        type = "password",
+        --type = "password",
         back = { root = os.exit },
         button = { label = "Connect", root = function (passwd) app.proxy(passwd) end }
     }))
