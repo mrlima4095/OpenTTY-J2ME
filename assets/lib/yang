@@ -31,7 +31,7 @@ quest.cmd=execute yang install;
 [ Index ]
 
 list.title=Repository
-list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),Graphics (Lua),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,Math (Lua),MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,X Server 0.4
+list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),Graphics (Lua),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,Math (Lua),MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,WebProxy
 list.button=Install
 
 Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install;
@@ -59,3 +59,4 @@ PasteBin=execute set RESOURCE=pastebin; yang install;
 SmartME SDK=execute set RESOURCE=sdkme; yang install; set RESOURCE=forge; yang install;
 Updater=execute set RESOURCE=sync; yang install;
 ViaVersion=execute set RESOURCE=viaversion; yang install;
+WebProxy=execute set RESOURCE=proxy.lua; yang install;
