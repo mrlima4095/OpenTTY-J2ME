@@ -3336,7 +3336,7 @@ class Lua {
                 if (args.isEmpty() || !(args.elementAt(0) instanceof ServerSocketConnection)) { return gotbad(1, "server" , "server expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
                 else {
                     Vector result = new Vector();
-                    SocketConnection conn = ((ServerSocketConnection) args.elementAt(0)).acceptAndOpen();
+                    SocketConnection conn = (SocketConnection) ((ServerSocketConnection) args.elementAt(0)).acceptAndOpen();
                         
                     result.addElement(conn);
                     result.addElement(conn.openInputStream());
