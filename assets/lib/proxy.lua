@@ -1,20 +1,22 @@
-local app = {}
+--[[
 
-function app.proxy(passwd)
-    local conn, i, o = socket.connect("socket://opentty.xyz:4096")
+[ Config ]
 
-    local _ = io.read(i)
-    io.write(passwd, o)
-    local response = io.read(i)
-    local id = string.trim(string.sub(response, 22))
+name=WebProxy
+version=1.0
+description=Global Bind
 
-    print("WebProxy ID: " .. id)
+api.version=1.16
+api.error=execute echo [ WebProxy ] OpenTTY 1.16 and Lua is required!; true
+api.match=minimum
+api.nodes=lua
 
-    os.setproc("id", id)
-    os.setproc("passwd", passwd)
+]]
+
+local session = "opentty.xyz:4096"
+local function proxy(i, o)
     while true do
-        local cmd = io.read(i)
-        cmd = string.trim(cmd)
+        local cmd = string.trim(io.read(i))
 
         if cmd then
             print("WebProxy -> " .. cmd)
@@ -28,20 +30,21 @@ function app.proxy(passwd)
             io.write(string.sub(after, #before + 2, #after) .. "\n", o)
         end
     end
-
-    io.close(i) io.close(o) io.close(conn)
-    print("WebProxy -> disconnected")
-    os.exit()
 end
 
-function app.main()
-    local thr = os.execute("case thread (MIDlet) false")
-    if thr == 255 then error("[ WebProxy ] Cannot run in MIDlet Thread") end
+if #arg > 1 then
+    local conn, i, o = socket.connect("socket://" .. session)
+    local _ = io.read(i)
 
-    if #arg > 1 then app.proxy(arg[1])
-    else print("Usage: lua " .. arg[0] .. " <password>") end
-end
+    io.write(arg[0], o)
+    local id = string.trim(string.sub(io.read(i), 22))
 
-os.setproc("name", "sh-proxy")
-app.main()
+    os.setproc("id", id)
+    os.setproc("passwd", arg[1])
+
+    local _, _ = pcall(proxy, i, o)
+
+    io.close(conn)
+    io.close(i) io.close(o)
+else print("Usage: bg lua " .. arg[0] .. " <password>") end
 
