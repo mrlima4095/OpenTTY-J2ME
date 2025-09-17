@@ -996,7 +996,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; x11 stop; x11 init; x11 term; run initd; sh;"); } 
         else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
         
-        else if (mainCommand.equals("lua")) { if (javaClass("Lua") == 0) { Lua lua = new Lua(this, root); return (Integer) lua.run(argument.equals("") ? "" : args[0].equals("-e") ? "stdin" : argument, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument)).get("status"); } else { echoCommand("This MIDlet Build don't have Lua"); return 3; } }
+        else if (mainCommand.equals("lua")) { 
+            if (javaClass("Lua") == 0) { 
+                Lua lua = new Lua(this, root); 
+                String source = argument.equals("") ? "nano" : args[0].equals("-e") ? "stdin" : argument;
+                Hashtable args = new Hashtable(); args.put(new Double(0), source);
+                
+                return (Integer) lua.run(, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument)).get("status"); 
+            } else {echoCommand("This MIDlet Build don't have Lua"); return 3; } 
+            
+        }
         else if (mainCommand.equals("5k")) { echoCommand("1.16 Special - 5k commits at OpenTTY GitHub repository"); }
         
         else if (mainCommand.equals("cx")) {
