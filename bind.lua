@@ -1,0 +1,1 @@
+local server = socket.server(8081) local conn, i, o = socket.accept(server) io.write("tudo ok", o) print(io.read(i)) io.close(server) io.close(conn) io.close(i) io.close(o)
