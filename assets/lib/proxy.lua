@@ -30,6 +30,8 @@ if #arg > 1 then
     io.write(arg[0] .. "\n", o)
     local id = string.trim(string.sub(io.read(i), 22))
 
+    print("WebProxy ID: " .. id)
+
     os.setproc("id", id)
     os.setproc("passwd", arg[1])
 
