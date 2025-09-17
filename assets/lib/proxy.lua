@@ -1,10 +1,9 @@
 local app = {}
 
-
 function app.proxy(passwd)
     local conn, i, o = socket.connect("socket://opentty.xyz:4096")
 
-    io.read(i)
+    local _ = io.read(i)
     io.write(passwd, o)
     local response = io.read(i)
     local id = string.trim(string.sub(response, 22))
