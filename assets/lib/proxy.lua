@@ -42,7 +42,7 @@ function app.main()
     if #arg > 1 then
         app.proxy(arg[1])
     else
-        print("")
+        print("Usage: lua " .. arg[0] .. " <password>")
     end
 end
 
