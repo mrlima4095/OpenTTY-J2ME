@@ -39,11 +39,8 @@ function app.main()
     local thr = os.execute("case thread (MIDlet) false")
     if thr == 255 then error("[ WebProxy ] Cannot run in MIDlet Thread") end
 
-    if #arg > 1 then
-        app.proxy(arg[1])
-    else
-        print("Usage: lua " .. arg[0] .. " <password>")
-    end
+    if #arg > 1 then app.proxy(arg[1])
+    else print("Usage: lua " .. arg[0] .. " <password>") end
 end
 
 os.setproc("name", "sh-proxy")
