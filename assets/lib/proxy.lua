@@ -45,7 +45,7 @@ function app.main()
     local thr = os.execute("case thread (MIDlet) false")
     if thr == 255 then error("[ WebProxy ] Cannot run in MIDlet Thread") end
 
-    graphics.display(graphics.BuildQuest({
+    graphics.display(graphics.BuildEdit({
         title = "WebProxy Settings",
         label = "Password",
         type = "password",
