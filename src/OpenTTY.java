@@ -2951,7 +2951,7 @@ class Lua {
                     midlet.processCommand("echo " + buffer.toString(), true, root);
                 }
             } 
-            if (MOD == EXEC) { if (args.isEmpty()) { } else { return midlet.processCommand(toLuaString(args.elementAt(0)), true, root); } }
+            if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, root)); } }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
                 Vector result = new Vector();
