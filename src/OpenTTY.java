@@ -3213,7 +3213,7 @@ class Lua {
                     if (args.elementAt(0) instanceof SocketConnection) {
                         SocketConnection conn = (SocketConnection) args.elementAt(0);
 
-                        return toLuaString(MOD == PEER ? conn.getAddress() : conn.getLocalAddress());
+                        return toLuaString(MOD == PEER ? conn.getAddress(): conn.getLocalAddress());
                     } else { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got " + type(args.elementAt(0))); }
                 }
             }
@@ -3334,6 +3334,7 @@ class Lua {
                     result.addElement(conn);
                     result.addElement(conn.openInputStream());
                     result.addElement(conn.openOutputStream());
+                    return result;
                 }
             }
 
