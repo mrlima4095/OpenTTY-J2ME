@@ -27,7 +27,7 @@ if #arg > 1 then
     local conn, i, o = socket.connect("socket://opentty.xyz:4096")
     local _ = io.read(i)
 
-    io.write(arg[0] + "\n", o)
+    io.write(arg[0] .. "\n", o)
     local id = string.trim(string.sub(io.read(i), 22))
 
     os.setproc("id", id)
