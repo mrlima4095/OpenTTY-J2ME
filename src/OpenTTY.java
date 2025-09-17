@@ -1862,7 +1862,7 @@ class Lua {
         globals.put("_VERSION", "Lua J2ME");
     }
     // | (Run Source code)
-    public Hashtable run(String source, String code) { 
+    public Hashtable run(String source, String code, String args) { 
         proc.put("name", ("lua " + source).trim());
         midlet.trace.put(PID, proc);
 
