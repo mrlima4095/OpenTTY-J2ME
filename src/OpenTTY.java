@@ -1023,16 +1023,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
         }
         else if (mainCommand.equals("5k")) { echoCommand("1.16 Special - 5k commits at OpenTTY GitHub repository"); }
-        
-        else if (mainCommand.equals("cx")) {
-            if (argument.equals("")) { }
-            else {
-                try { return processCommand(argument, ignore, root); }
-                catch (Throwable e) {
-                    echoCommand(getCatch(e));
-                }
-            }
-        }
 
         // API 015 - (Scripts)
         // |
@@ -1042,7 +1032,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 2; } } }
 
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument, ignore, root)); } }
-        else if (mainCommand.equals("catch")) { if (argument.equals("")) { } else { try { processCommand(argument, ignore, root); } catch (Exception e) { echoCommand(getCatch(e)); } } }
+        else if (mainCommand.equals("catch")) { if (argument.equals("")) { } else { try { processCommand(argument, ignore, root); } catch (Throwable e) { echoCommand(getCatch(e)); } } }
         else if (mainCommand.equals("return")) { return getNumber(argument, 2, true); }
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE LTS")); }
@@ -1840,12 +1830,12 @@ class Lua {
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
     public static final int 
-        PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, 
-        SETLOC = 8, PAIRS = 9, READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, 
-        LEN = 17, MATCH = 18, REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, 
-        TYPE = 26, CHAR = 27, TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, CLOSE = 31, HTTP_GET = 32, HTTP_POST = 33, 
-        TRIM = 34, PEER = 35, DEVICE = 36, ALERT = 37, SCREEN = 38, LIST = 39, QUEST = 40, EDIT = 41, DISPLAY = 42,
-        DATE = 43, GETPID = 44, SETPROC = 45, GETPROC = 46, TITLE = 47, WTITLE = 48, TICKER = 49, GETPROPERTY = 50;
+        PRINT = 0, EXEC = 1, ERROR = 2, PCALL = 3, GETENV = 4, REQUIRE = 5, CLOCK = 6, EXIT = 7, SETLOC = 8, PAIRS = 9, 
+        READ = 10, WRITE = 11, GC = 12, TOSTRING = 13, TONUMBER = 14, UPPER = 15, LOWER = 16, LEN = 17, MATCH = 18, 
+        REVERSE = 19, SUB = 20, RANDOM = 21, LOADS = 22, HASH = 23, BYTE = 24, SELECT = 25, TYPE = 26, CHAR = 27, 
+        TB_DECODE = 28, TB_PACK = 29, CONNECT = 30, CLOSE = 31, HTTP_GET = 32, HTTP_POST = 33, TRIM = 34, PEER = 35, 
+        DEVICE = 36, ALERT = 37, SCREEN = 38, LIST = 39, QUEST = 40, EDIT = 41, DISPLAY = 42, DATE = 43, GETPID = 44, 
+        SETPROC = 45, GETPROC = 46, TITLE = 47, WTITLE = 48, TICKER = 49, GETPROPERTY = 50, SERVER = 51, ACCEPT = 52;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -1870,7 +1860,7 @@ class Lua {
         funcs = new String[] { "get", "post" }; loaders = new int[] { HTTP_GET, HTTP_POST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "connect", "peer", "device" }; loaders = new int[] { CONNECT, PEER, DEVICE };
+        funcs = new String[] { "connect", "peer", "device", "server", "accept" }; loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
         funcs = new String[] { "Alert", "BuildScreen", "BuildList", "BuildQuest", "BuildEdit", "SetTitle", "SetTicker", "WindowTitle", "display" }; loaders = new int[] { ALERT, SCREEN, LIST, QUEST, EDIT, TITLE, TICKER, WTITLE, DISPLAY };
@@ -3338,6 +3328,21 @@ class Lua {
                 else { midlet.display.getCurrent().setTicker(label == null ? null : new Ticker(label)); }
             }
             else if (MOD == GETPROPERTY) { if (args.isEmpty()) { } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : midlet.getAppProperty(query); } }
+            else if (MOD == SERVER) {
+                if (args.isEmpty() || !(args.elementAt(0) instanceof Double)) { return gotbad(1, "server" , "number expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+                else { return Connector.open("socket://:" + port); }
+            }
+            else if (MOD == ACCEPT) {
+                if (args.isEmpty() || !(args.elementAt(0) instanceof ServerSocketConnection)) { return gotbad(1, "server" , "server expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+                else {
+                    Vector result = new Vector();
+                    SocketConnection conn = ((ServerSocketConnection) args.elementAt(0)).acceptAndOpen();
+                        
+                    result.addElement(conn);
+                    result.addElement(conn.openInputStream());
+                    result.addElement(conn.openOutputStream());
+                }
+            }
 
             return null;
         }
