@@ -50,7 +50,7 @@ function app.main()
         label = "Password",
         --type = "password",
         back = { root = os.exit },
-        button = { label = "Connect", root = function (passwd) app.proxy(passwd) end }
+        button = { label = "Connect", root = function (passwd) os.execute("xterm") app.proxy(passwd) end }
     }))
 end
 
