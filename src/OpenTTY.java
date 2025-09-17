@@ -700,7 +700,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Memory
         else if (mainCommand.equals("gc")) { System.gc(); } 
-        else if (mainCommand.equals("htop")) { new MIDletControl("list", "list.content=Monitor,Process\nlist.button=Open\nMonitor=execute top;\nProcess=execute top process;", root); }
+        else if (mainCommand.equals("htop")) { new MIDletControl(MIDletControl.LIST, "list.content=Monitor,Process\nlist.button=Open\nMonitor=execute top;\nProcess=execute top process;", root); }
         else if (mainCommand.equals("top") || mainCommand.equals("trace")) { return kernel(argument, root); }
         // |
         // Process 
