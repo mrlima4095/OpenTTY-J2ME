@@ -3330,7 +3330,7 @@ class Lua {
             else if (MOD == GETPROPERTY) { if (args.isEmpty()) { } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : midlet.getAppProperty(query); } }
             else if (MOD == SERVER) {
                 if (args.isEmpty() || !(args.elementAt(0) instanceof Double)) { return gotbad(1, "server" , "number expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
-                else { return Connector.open("socket://:" + port); }
+                else { return Connector.open("socket://:" + toLuaString(args.elementAt(0))); }
             }
             else if (MOD == ACCEPT) {
                 if (args.isEmpty() || !(args.elementAt(0) instanceof ServerSocketConnection)) { return gotbad(1, "server" , "server expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
