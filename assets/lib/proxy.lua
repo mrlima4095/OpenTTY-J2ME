@@ -20,7 +20,7 @@ function app.proxy(passwd)
         if cmd then
             print("WebProxy -> " .. cmd)
 
-            if cmd == "/exit" then break end
+            if tostring(cmd) == "/exit" then break end
 
             local before = io.read()
             os.execute(cmd)
