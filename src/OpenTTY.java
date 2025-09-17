@@ -999,10 +999,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("lua")) { 
             if (javaClass("Lua") == 0) { 
                 Lua lua = new Lua(this, root); 
-                String source = argument.equals("") ? "nano" : args[0].equals("-e") ? "stdin" : argument;
-                Hashtable args = new Hashtable(); args.put(new Double(0), source);
                 
-                return (Integer) lua.run(, argument.equals("") ? nanoContent : args[0].equals("-e") ? argument.substring(3).trim() : getcontent(argument)).get("status"); 
+                Hashtable arg = new Hashtable();
+                String source, code;
+                if (argument.equals("")) {
+                    source = "nano";
+                    code = nanoContent;
+                    arg.put(new Double(0), "nano");
+                } else if (args[0].equals("-e")) {
+                    source = "stdin";
+                    code = argument.substring(3).trim();
+                    arg.put(new Double(0), "stdin");
+                } else {
+                    source = args[0];
+                    code = getcontent(source);
+                    arg.put(new Double(0), source);
+                    
+                    for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); }
+                }
+                
+                return (Integer) lua.run(source, code, arg).get("status"); 
             } else {echoCommand("This MIDlet Build don't have Lua"); return 3; } 
             
         }
