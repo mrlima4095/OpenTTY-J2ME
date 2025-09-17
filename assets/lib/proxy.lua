@@ -23,8 +23,16 @@ quest.cmd=execute bg lua proxy.lua $PASSWD; unset PASSWD
 
 ]]
 
-local session = "opentty.xyz:4096"
-local function proxy(i, o)
+if #arg > 1 then
+    local conn, i, o = socket.connect("socket://opentty.xyz:4096")
+    local _ = io.read(i)
+
+    io.write(arg[0] + "\n", o)
+    local id = string.trim(string.sub(io.read(i), 22))
+
+    os.setproc("id", id)
+    os.setproc("passwd", arg[1])
+
     while true do
         local cmd = string.trim(io.read(i))
 
@@ -40,19 +48,6 @@ local function proxy(i, o)
             io.write(string.sub(after, #before + 2, #after) .. "\n", o)
         end
     end
-end
-
-if #arg > 1 then
-    local conn, i, o = socket.connect("socket://" .. session)
-    local _ = io.read(i)
-
-    io.write(arg[0], o)
-    local id = string.trim(string.sub(io.read(i), 22))
-
-    os.setproc("id", id)
-    os.setproc("passwd", arg[1])
-
-    local _, _ = pcall(proxy, i, o)
 
     io.close(conn)
     io.close(i) io.close(o)
