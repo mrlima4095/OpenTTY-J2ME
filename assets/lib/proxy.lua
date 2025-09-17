@@ -45,13 +45,7 @@ function app.main()
     local thr = os.execute("case thread (MIDlet) false")
     if thr == 255 then error("[ WebProxy ] Cannot run in MIDlet Thread") end
 
-    graphics.display(graphics.BuildEdit({
-        title = "WebProxy Settings",
-        label = "Password",
-        --type = "password",
-        back = { root = os.exit },
-        button = { label = "Connect", root = function (passwd) os.execute("xterm") app.proxy(passwd) end }
-    }))
+    app.proxy("abc123")
 end
 
 os.setproc("name", "sh-proxy")
