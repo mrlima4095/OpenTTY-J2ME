@@ -42,6 +42,8 @@ function app.main()
     if #arg > 1 then
         app.proxy(arg[1])
     else
+        print("")
+    end
 end
 
 os.setproc("name", "sh-proxy")
