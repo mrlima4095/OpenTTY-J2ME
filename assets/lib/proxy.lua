@@ -11,6 +11,16 @@ api.error=execute echo [ WebProxy ] OpenTTY 1.16 and Lua is required!; true
 api.match=minimum
 api.nodes=lua
 
+config=execute x11 quest /home/proxy.lua
+
+[ DISPLAY ]
+
+quest.title=WebProxy
+quest.label=Password
+quest.type=password
+quest.key=PASSWD
+quest.cmd=execute bg lua proxy.lua $PASSWD; unset PASSWD
+
 ]]
 
 local session = "opentty.xyz:4096"
