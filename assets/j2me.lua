@@ -28,6 +28,9 @@ socket = {
     server = function (port) end,
     accept = function (server) end,
 
+    peer = function (conn) end,
+    device = function (conn) end,
+
     http = {
         get = function (url, headers) end,
         post = function (url, data, headers) end
