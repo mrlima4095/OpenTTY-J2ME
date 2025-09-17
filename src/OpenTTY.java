@@ -3028,7 +3028,8 @@ class Lua {
                     for (int i = 0; i < args.size(); i++) {
                         Object arg = args.elementAt(i);
 
-                        if (arg instanceof StreamConnection) { ((StreamConnection) arg).close(); }
+                        if (arg instanceof ServerSocketConnection) { ((ServerSocketConnection) arg).close(); }
+                        else if (arg instanceof StreamConnection) { ((StreamConnection) arg).close(); }
                         else if (arg instanceof InputStream) { ((InputStream) arg).close(); }
                         else if (arg instanceof OutputStream) { ((OutputStream) arg).close(); }
                         else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
