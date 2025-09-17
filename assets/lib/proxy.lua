@@ -4,21 +4,15 @@ local app = {}
 function app.proxy(passwd)
     local conn, i, o = socket.connect("socket://opentty.xyz:4096")
 
-    local _ = io.read(i)
+    io.read(i)
     io.write(passwd, o)
     local response = io.read(i)
     local id = string.trim(string.sub(response, 22))
 
-    graphics.display(graphics.Alert({
-        title = "WebProxy",
-        message = "Your ID: " .. id,
-        button = {
-            label = "Copy ID",
-            root = function () print(id) end
-        }
-    }))
+    print("WebProxy ID: " .. id)
 
     os.setproc("id", id)
+    os.setproc("passwd", passwd)
     while true do
         local cmd = io.read(i)
         cmd = string.trim(cmd)
@@ -45,7 +39,9 @@ function app.main()
     local thr = os.execute("case thread (MIDlet) false")
     if thr == 255 then error("[ WebProxy ] Cannot run in MIDlet Thread") end
 
-    app.proxy("abc123")
+    if #arg > 1 then
+        app.proxy(arg[1])
+    else
 end
 
 os.setproc("name", "sh-proxy")
