@@ -12,15 +12,15 @@ end
 -- Função para extrair método e caminho da primeira linha da requisição
 function httpd.parse_request_line(request_text)
     -- A primeira linha termina em \r\n ou \n
-    local eol = string.find(request_text, "\r\n")
-    if not eol then eol = string.find(request_text, "\n") end
+    local eol = string.match(request_text, "\r\n")
+    if not eol then eol = string.match(request_text, "\n") end
     if not eol then return nil, nil end
 
     local line = string.sub(request_text, 1, eol - 1)
     -- Procurar espaço para separar método e caminho
-    local first_space = string.find(line, " ")
+    local first_space = string.match(line, " ")
     if not first_space then return nil, nil end
-    local second_space = string.find(line, " ", first_space + 1)
+    local second_space = string.match(line, " ", first_space + 1)
     if not second_space then return nil, nil end
 
     local method = string.sub(line, 1, first_space - 1)
@@ -32,10 +32,10 @@ end
 -- Função para extrair headers e corpo da requisição
 function httpd.parse_headers_and_body(request_text)
     -- Procurar a sequência \r\n\r\n ou \n\n que separa headers do corpo
-    local header_end = string.find(request_text, "\r\n\r\n")
+    local header_end = string.match(request_text, "\r\n\r\n")
     local offset = 4
     if not header_end then
-        header_end = string.find(request_text, "\n\n")
+        header_end = string.match(request_text, "\n\n")
         offset = 2
     end
 
@@ -55,8 +55,8 @@ function httpd.parse_headers(headers_text)
     local headers = {}
     local pos = 1
     while true do
-        local eol = string.find(headers_text, "\r\n", pos)
-        if not eol then eol = string.find(headers_text, "\n", pos) end
+        local eol = string.match(headers_text, "\r\n", pos)
+        if not eol then eol = string.match(headers_text, "\n", pos) end
         if not eol then break end
 
         local line = string.sub(headers_text, pos, eol - 1)
@@ -66,7 +66,7 @@ function httpd.parse_headers(headers_text)
         end
 
         -- Separar chave e valor pelo primeiro ':'
-        local colon_pos = string.find(line, ":")
+        local colon_pos = string.match(line, ":")
         if colon_pos then
             local key = string.sub(line, 1, colon_pos - 1)
             local value = string.sub(line, colon_pos + 1)
