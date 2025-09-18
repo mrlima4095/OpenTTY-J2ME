@@ -142,8 +142,5 @@ function httpd.run(port)
     end
 end
 
--- httpd.route("/", function(method, headers, body) return "Hello from Lua J2ME HTTP server!" end)
-
-httpd = require("httpd.lua") httpd.route("/", function (method, headers, body) return "<h1>Lua Server</h1><br><p>Hello, World!</p>" end) httpd.route("/info", function (method, headers, body) return "<p>No informations available...</p>" end) httpd.run(8081)
 
 return httpd
