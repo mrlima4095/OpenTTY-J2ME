@@ -19,7 +19,7 @@ quest.title=WebProxy
 quest.label=Password
 quest.type=password
 quest.key=PASSWD
-quest.cmd=execute bg lua proxy.lua $PASSWD; unset PASSWD
+quest.cmd=execute bg lua /home/proxy.lua $PASSWD; unset PASSWD
 
 ]]
 
