@@ -21,7 +21,7 @@ while true do
                      body
 
     -- Envia resposta
-    io.write(response)
+    io.write(response, o)
     io.close(cli, i, o)
 end
 
