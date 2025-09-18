@@ -135,7 +135,7 @@ function browser.render(raw)
     end
 
     -- Botão personalizado para voltar ao menu principal
-    local button = Hashtable.new()
+    local button = {}
     button.put("label", "Menu")
     button.put("root", browser.main)
 
