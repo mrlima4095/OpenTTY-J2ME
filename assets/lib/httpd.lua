@@ -71,7 +71,7 @@ function httpd.parse_headers(headers_text)
             local key = string.sub(line, 1, colon_pos - 1)
             local value = string.sub(line, colon_pos + 1)
             -- Trim espaços
-            key = httpd.trim(key):lower()
+            key = string.lower(httpd.trim(key))
             value = httpd.trim(value)
             headers[key] = value
         end
