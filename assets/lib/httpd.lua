@@ -14,19 +14,19 @@ function httpd.parse_request_line(request_text)
     -- A primeira linha termina em \r\n ou \n
     local eol = string.match(request_text, "\r\n")
     if not eol then eol = string.match(request_text, "\n") end
-    if not eol then return nil, nil end
+    if not eol then return { nil, nil } end
 
     local line = string.sub(request_text, 1, eol - 1)
     -- Procurar espaço para separar método e caminho
     local first_space = string.match(line, " ")
-    if not first_space then return nil, nil end
+    if not first_space then return { nil, nil } end
     local second_space = string.match(line, " ", first_space + 1)
-    if not second_space then return nil, nil end
+    if not second_space then return { nil, nil } end
 
     local method = string.sub(line, 1, first_space - 1)
     local path = string.sub(line, first_space + 1, second_space - 1)
 
-    return method, path
+    return { method, path }
 end
 
 -- Função para extrair headers e corpo da requisição
@@ -41,13 +41,13 @@ function httpd.parse_headers_and_body(request_text)
 
     if not header_end then
         -- Sem corpo, tudo é header
-        return request_text, ""
+        return { request_text, "" }
     end
 
     local headers_text = string.sub(request_text, 1, header_end - 1)
     local body = string.sub(request_text, header_end + offset)
 
-    return headers_text, body
+    return { headers_text, body }
 end
 
 -- Função para parsear headers em tabela
@@ -87,8 +87,10 @@ function httpd.run(port)
         if client then
             local request = io.read(inStream)
             if request then
-                local method, path = httpd.parse_request_line(request)
-                local headers_text, body = httpd.parse_headers_and_body(request)
+                local cache = httpd.parse_request_line(request)
+                local method, path = cache[1], cache[2]
+                cache = httpd.parse_headers_and_body(request)
+                local headers_text, body = cache[1], cache[2]
                 local headers = httpd.parse_headers(headers_text)
                 print(method)
                 print(path)
