@@ -82,6 +82,8 @@ end
 function httpd.run(port)
     while true do
         local server = socket.server(port)
+        print(server)
+        print(port)
 
         local client, inStream, outStream = socket.accept(server)
         if client then
