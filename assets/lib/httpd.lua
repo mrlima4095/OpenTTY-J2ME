@@ -86,6 +86,8 @@ function httpd.run(port)
         local client, inStream, outStream = socket.accept(server)
         if client then
             local request = io.read(inStream)
+            print(request)
+            print(pcall(socket.peer, client))
             if request then
                 local method, path = httpd.parse_request_line(request)
                 local headers_text, body = httpd.parse_headers_and_body(request)
