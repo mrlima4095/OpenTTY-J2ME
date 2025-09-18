@@ -1,24 +1,5 @@
 local PORT = 8081
-
-
 local server = socket.server(PORT)
-
-pcall(function ()
-    while true do
-        local conn, i, o = socket.accept(server)
-        io.read(i)
-        io.write("reponse", o)
-        
-        io.close(conn, i, o)
-    end
-end)
-
-io.close(server)
-
-local socket = require("socket")
-
-local PORT = 8081
-local server = assert(socket.bind("*", PORT))
 print("Servidor rodando em http://localhost:" .. PORT)
 
 while true do
