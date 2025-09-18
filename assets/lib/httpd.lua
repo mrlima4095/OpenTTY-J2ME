@@ -86,19 +86,16 @@ function httpd.run(port)
         local client, inStream, outStream = socket.accept(server)
         if client then
             local request = io.read(inStream)
-            print(request)
-            print(pcall(socket.peer, client))
             if request then
                 local method, path = httpd.parse_request_line(request)
                 local headers_text, body = httpd.parse_headers_and_body(request)
                 local headers = httpd.parse_headers(headers_text)
-
+                print(method)
+                print(path)
                 local handler = httpd.routes[path]
                 local response_body = ""
                 local response_code = 200
-                local response_headers = {
-                    ["Content-Type"] = "text/plain"
-                }
+                local response_headers = { ["Content-Type"] = "text/plain" }
 
                 if handler then
                     local ok, res = pcall(handler, method, headers, body)
