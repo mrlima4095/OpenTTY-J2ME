@@ -5,9 +5,15 @@ local browser = {
     xmenucfg = {
         title = "Browser",
         back = { root = os.exit },
-        button = function (opt)
+        button = {
+            root = function (opt)
+                
+            end
+        },
 
-        end
+        fields = {
+            "Open URL"
+        }
     },
 
     headers = {}
@@ -173,7 +179,7 @@ function browser.quest()
 end
 
 function browser.main()
-    if browser.menu == nil then browser.menu = graphics.BuildList(browser.menu) end
+    if browser.menu == nil then browser.menu = graphics.BuildList(browser.xmenucfg) end
 
     graphics.display(browser.menu)
 end
