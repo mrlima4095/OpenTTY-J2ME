@@ -23,6 +23,10 @@ quest.cmd=execute bg lua /home/proxy.lua $PASSWD; unset PASSWD
 
 ]]
 
+if os.execute("case thread (MIDlet) false") == 255 then
+    error("WebProxy cannot run in Main Thread")
+end
+
 if #arg > 1 then
     local conn, i, o = socket.connect("socket://opentty.xyz:4096")
     local _ = io.read(i)
