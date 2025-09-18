@@ -119,7 +119,7 @@ httpd.run = function(port)
                         local first = true
                         for k,v in pairs(tbl) do
                             if not first then s = s .. "," end
-                            s = s .. "\"" .. k .. "\":\"" .. v .. "\""
+                            s = s .. '\"' .. k .. '":"' .. v .. '"'
                             first = false
                         end
                         s = s .. "}"
