@@ -7,7 +7,9 @@ local browser = {
         back = { root = os.exit },
         button = {
             root = function (opt)
-                
+                if opt == "Open URL" then
+                    browser.quest()
+                end
             end
         },
 
