@@ -3,8 +3,8 @@ local httpd = {
 }
 
 function httpd.route(path, handler)
-    if handler == nil then error("httpd.route cannot be nil")
-    else httpd.routes[path] = handler end
+    if type(handler) == "function" then httpd.routes[path] = handler
+    else error("bad argument #2 'route' (function expected, got " .. type(handler) .. ")") end
 end
 
 -- Função para extrair método e caminho da primeira linha da requisição
@@ -92,10 +92,10 @@ function httpd.trim(s)
 end
 
 function httpd.run(port)
-    local server = socket.server(port)
-    if not server then error("Failed to create server socket") end
-
     while true do
+        local sucess, server = pcall(socket.server, port)
+        if not sucess then error("Failed to create server socket") break end
+
         local client, inStream, outStream = socket.accept(server)
         if client then
             local request = io.read(inStream)
@@ -113,8 +113,7 @@ function httpd.run(port)
 
                 if handler then
                     local ok, res = pcall(handler, method, headers, body)
-                    if ok then
-                        response_body = res or ""
+                    if ok then response_body = res or ""
                     else
                         response_code = 500
                         response_body = "Internal Server Error: " .. tostring(res)
@@ -138,12 +137,13 @@ function httpd.run(port)
                 io.write(full_response, outStream)
             end
 
-            socket.close(client)
+            io.close(client, inStream, outStream, server)
         end
     end
 end
 
 -- httpd.route("/", function(method, headers, body) return "Hello from Lua J2ME HTTP server!" end)
 
+httpd = require("httpd.lua") httpd.route("/", function (method, headers, body) return "<h1>Lua Server</h1><br><p>Hello, World!</p>" end) httpd.route("/info", function (method, headers, body) return "<p>No informations available...</p>" end) httpd.run(8081)
 
 return httpd
