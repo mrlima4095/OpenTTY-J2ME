@@ -41,7 +41,7 @@ local app = {
         title = "SmartME - Packages",
         back = { root = app.main },
         button = { label = "Install", root = app.install },
-        fields = { "audio.lua", "math.lua", "string.lua" },
+        fields = { "audio.lua", "httpd.lua", "math.lua", "string.lua" },
         type = "multiple"
     },
     xcfg = {
