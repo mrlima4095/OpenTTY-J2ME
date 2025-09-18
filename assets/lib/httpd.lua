@@ -135,7 +135,7 @@ function httpd.run(port)
                 end
                 local full_response = status_line .. header_lines .. "\r\n" .. response_body
 
-                io.write(outStream, full_response)
+                io.write(full_response, outStream)
             end
 
             socket.close(client)
