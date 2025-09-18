@@ -71,26 +71,12 @@ function httpd.parse_headers(headers_text)
             local key = string.sub(line, 1, colon_pos - 1)
             local value = string.sub(line, colon_pos + 1)
             -- Trim espaços
-            key = string.lower(httpd.trim(key))
-            value = httpd.trim(value)
+            key = string.lower(string.trim(key))
+            value = string.trim(value)
             headers[key] = value
         end
     end
     return headers
-end
-
--- Função para trim espaços
-function httpd.trim(s)
-    local from = 1
-    local to = #s
-    while from <= to and (string.sub(s, from, from) == " " or string.sub(s, from, from) == "\t") do
-        from = from + 1
-    end
-    while to >= from and (string.sub(s, to, to) == " " or string.sub(s, to, to) == "\t") do
-        to = to - 1
-    end
-    if from > to then return "" end
-    return string.sub(s, from, to)
 end
 
 function httpd.run(port)
