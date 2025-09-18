@@ -95,10 +95,9 @@ end
 
 function httpd.run(port)
     while true do
-        --local sucess, server = pcall(socket.server, port)
-        --if not sucess then error("[ HTTPD ] Server binding failed") break
-        --else print("[+] listening at port " .. port) end
-        local server = socket.server(port)
+        local sucess, server = pcall(socket.server, port)
+        if not sucess then error("[ HTTPD ] Server binding failed\n" .. server) break
+        else print("[+] listening at port " .. port) end
 
         local client, inStream, outStream = socket.accept(server)
         if client then
