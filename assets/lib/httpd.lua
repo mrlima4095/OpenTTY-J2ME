@@ -1,2 +1,3 @@
-local cfg = table.decode(io.read("/home/httprc"))
-local 
+local httpd = {}
+
+function httpd.route
