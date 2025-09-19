@@ -28,13 +28,14 @@ if #arg > 1 then
     local conn, i, o = socket.connect("socket://opentty.xyz:4096")
     local _ = io.read(i)
 
-    io.write(arg[0] .. "\n", o)
+    io.write(arg[1] .. "\n", o)
     local id = string.trim(string.sub(io.read(i), 22))
 
     print("WebProxy ID: " .. id)
 
     os.setproc("id", id)
     os.setproc("passwd", arg[1])
+    os.setproc("name", "web-proxy")
 
     while true do
         local cmd = string.trim(io.read(i))
