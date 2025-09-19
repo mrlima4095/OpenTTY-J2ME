@@ -12,6 +12,9 @@ end
 local function getRoute(raw)
     
 end
+local function getBody(raw)
+    
+end
 
 function httpd.route(path, method, handler)
     if path == nil then error("bad argument #1 for 'route' (string expected, got nil)")
@@ -37,13 +40,24 @@ function httpd.run(port)
         local client, i, o = socket.accept(server)
         if client then
             local raw = io.read(i)
-            local method = getMethod(raw)
-            local headers = getHeaders(raw)
-            
+            local method, headers, body = getMethod(raw), getHeaders(raw), getBody(raw)
+
             local route = getRoute(raw)
             local handler = httpd._routes[route]
             local status = "200 OK"
-            
+
+            if handler == nil then status = "404 Not Found"
+            else
+                local ok, response = pcall(handler, method, headers, body)
+                if not ok then status = "502 Internal Server Error" end
+                
+                if type(response) == "table" then
+                    status = response.status
+                    response = response.body
+                end
+                
+                io.write(response, o)
+            end
         end
     end
 end
