@@ -31,4 +31,5 @@ local function cmatrix()
     os.execute("execute x11 stop; x11 init; title $OLD_TITLE; clear;")
 end
 
+os.setproc("name", "cmatrix")
 cmatrix()
