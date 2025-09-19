@@ -58,6 +58,8 @@ function httpd.run(port)
                 
                 io.write(response, o)
             end
+            
+            io.close(client, i, o)
         end
     end
 end
