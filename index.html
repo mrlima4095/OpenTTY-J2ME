@@ -180,40 +180,40 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    (async function(){
-        try {
-            const res = await fetch('/api/versions');
-            const data = await res.json();
+        (async function(){
+            try {
+                const res = await fetch('/api/versions');
+                const data = await res.json();
 
-            const dlBody = document.getElementById('dl-body');
-            if(dlBody && data.downloads){
-                dlBody.innerHTML = '';
-                data.downloads.forEach(dl => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${dl.platform}</td>
-                        <td><a href="${dl.url}" class="btn btn-sm btn-outline-primary">${dl.file}</a> ${dl.type ? `<span class="badge bg-secondary">${dl.type}</span>` : ''}</td>
-                        <td>${dl.size}</td>
-                    `;
-                    dlBody.appendChild(tr);
-                });
-            }
+                const dlBody = document.getElementById('dl-body');
+                if(dlBody && data.downloads){
+                    dlBody.innerHTML = '';
+                    data.downloads.forEach(dl => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${dl.platform}</td>
+                            <td><a href="${dl.url}" class="btn btn-sm btn-outline-primary">${dl.file}</a> ${dl.type ? `<span class="badge bg-secondary">${dl.type}</span>` : ''}</td>
+                            <td>${dl.size}</td>
+                        `;
+                        dlBody.appendChild(tr);
+                    });
+                }
 
-            const newsContainer = document.querySelector('#news .card-body');
-            if(newsContainer && data.news){
-                newsContainer.querySelectorAll('ul').forEach(ul => ul.remove());
-                const ul = document.createElement('ul');
-                data.news.forEach(item => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<strong>[${item.date}]</strong> ${item.title}`;
-                    ul.appendChild(li);
-                });
-                newsContainer.appendChild(ul);
-            }
-        } catch(e) { console.error('Erro ao carregar versões:', e); }
-    })();
+                const newsContainer = document.querySelector('#news .card-body');
+                if(newsContainer && data.news){
+                    newsContainer.querySelectorAll('ul').forEach(ul => ul.remove());
+                    const ul = document.createElement('ul');
+                    data.news.forEach(item => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>[${item.date}]</strong> ${item.title}`;
+                        ul.appendChild(li);
+                    });
+                    newsContainer.appendChild(ul);
+                }
+            } catch(e) { console.error('Erro ao carregar versões:', e); }
+        })();
 
-    document.getElementById('y').textContent = new Date().getFullYear();
+        document.getElementById('y').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
