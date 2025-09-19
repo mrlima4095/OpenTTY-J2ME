@@ -41,7 +41,7 @@ if #arg > 1 then
         local cmd = string.trim(io.read(i))
 
         if cmd then
-            print("WebProxy -> " .. cmd)
+            print("WebProxy -> [" .. cmd .. "]")
 
             if tostring(cmd) == "/exit" then break end
 
