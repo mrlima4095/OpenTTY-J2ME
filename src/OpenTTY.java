@@ -430,7 +430,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     processCommand("nano", false);
                 }
             }
-
+            
             else {
                 if (c == RUN || c == List.SELECT_COMMAND) { 
                     if (MOD == QUEST) { 
