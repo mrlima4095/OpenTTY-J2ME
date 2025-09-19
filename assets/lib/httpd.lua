@@ -56,9 +56,12 @@ function httpd.run(port)
                     response = response.body
                 end
                 
-                io.write(response, o)
+                
             end
             
+            
+            
+            io.write(response, o)
             pcall(io.close, client, i, o)
         end
         
