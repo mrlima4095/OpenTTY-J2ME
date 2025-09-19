@@ -558,9 +558,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 MIDletLogs("add info Server was stopped");
             }
             else if (MOD == BG) { processCommand(command, ignore, root); }
-            else if (MOD == ADDON) {
-                while (trace.containsKey(PID)) { if (processCommand(command, true, root) != 0) { kill(PID, false, root); } } 
-            }
+            else if (MOD == ADDON) { while (trace.containsKey(PID)) { if (processCommand(command, true, root) != 0) { kill(PID, false, root); } } }
         }
 
         private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", root); } else { load(); } }
