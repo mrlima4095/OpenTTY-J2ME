@@ -1,29 +1,20 @@
 {
-  "downloads": [
+    "downloads": [
     {
-      "platform": "J2ME",
-      "file": "OpenTTY-1.16.jar",
-      "size": "83 KB",
-      "type": "latest",
-      "url": "/repo/versions/OpenTTY-1.16.jar"
+        "platform": "J2ME",
+        "file": "OpenTTY-1.16.jar",
+        "size": "83 KB",
+        "type": "latest",
+        "url": "/repo/versions/OpenTTY-1.16.jar"
     },
     {
-      "platform": "J2ME",
-      "file": "1.16-rc2.jar",
-      "size": "80 KB",
-      "type": "pre",
-      "url": "/repo/dist/1.16/rc2.jar"
-    },
-    {
-      "platform": "J2ME",
-      "file": "OpenTTY-1.15.jar",
-      "size": "66 KB",
-      "url": "/repo/versions/OpenTTY-1.15.jar"
+        "platform": "J2ME",
+        "file": "OpenTTY-1.15.jar",
+        "size": "66 KB",
+        "url": "/repo/versions/OpenTTY-1.15.jar"
     }
-  ],
-  "news": [
-    {"date": "2025-08-31", "title": "OpenTTY 1.16 LTS has been published."},
-    {"date": "2025-08-23", "title": "OpenTTY 1.16-rc2 has been published."},
-    {"date": "2025-08-09", "title": "OpenTTY 1.16-rc1 has been published."}
-  ]
+    ],
+    "news": [
+        { "date": "2025-08-31", "title": "OpenTTY 1.16 LTS has been published." }
+    ]
 }
