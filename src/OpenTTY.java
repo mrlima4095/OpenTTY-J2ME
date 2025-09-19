@@ -1149,6 +1149,164 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
+    // |
+    class MyCanvas extends Canvas implements CommandListener { 
+        private Hashtable PKG; 
+        private Graphics screen; 
+        private Command BACK, USER; 
+        private Image CURSOR = null; 
+        private Vector fields = new Vector(); 
+        private boolean root = false;
+        private final int cursorSize = 5; 
+
+        public MyCanvas(String code, boolean root) { 
+            if (code == null || code.length() == 0) { return; } 
+
+            this.PKG = parseProperties(code);  this.root = root;
+            setTitle(getenv("canvas.title", form.getTitle())); 
+
+            BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1); 
+            USER = new Command(getenv("canvas.button"), Command.SCREEN, 2); 
+
+            addCommand(BACK); 
+            if (PKG.containsKey("canvas.button")) { addCommand(USER); } 
+            if (PKG.containsKey("canvas.mouse")) { 
+                try { 
+                    String[] pos = split(getenv("canvas.mouse"), ','); 
+
+                    cursorX = Integer.parseInt(pos[0]); 
+                    cursorY = Integer.parseInt(pos[1]); 
+                } 
+                catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } 
+            } 
+            if (PKG.containsKey("canvas.mouse.img")) { 
+                try { CURSOR = Image.createImage(getenv("canvas.mouse.img")); } 
+                catch (Exception e) { MIDletLogs("add warn Malformed Cursor '" + getenv("canvas.mouse.img") + "'"); } 
+            } 
+            if (PKG.containsKey("canvas.fields")) { 
+                String[] names = split(getenv("canvas.fields"), ','); 
+
+                for (int i = 0; i < names.length; i++) { 
+                    String id = names[i].trim(), type = getenv("canvas." + id + ".type", "text"); 
+                    int x = Integer.parseInt(getenv("canvas." + id + ".x", "0")), y = Integer.parseInt(getenv("canvas." + id + ".y", "0")), w = Integer.parseInt(getenv("canvas." + id + ".w", "0")), h = Integer.parseInt(getenv("canvas." + id + ".h", "0")); 
+
+                    Hashtable field = new Hashtable(); 
+                    field.put("type", type); field.put("x", new Integer(x)); field.put("y", new Integer(y)); field.put("w", new Integer(w)); field.put("h", new Integer(h)); 
+                    field.put("value", getenv("canvas." + id + ".value", "")); 
+                    field.put("style", getenv("canvas." + id + ".style", "default")); 
+                    field.put("cmd", getenv("canvas." + id + ".cmd", "")); 
+
+                    fields.addElement(field); 
+                } 
+            } 
+
+            setCommandListener(this); 
+        } 
+
+        protected void paint(Graphics g) { 
+            if (screen == null) { screen = g; } 
+
+            g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); 
+
+            if (PKG.containsKey("canvas.background")) { 
+                String backgroundType = getenv("canvas.background.type", "default"); 
+
+                if (backgroundType.equals("color") || backgroundType.equals("default")) { setpallete("background", g, 0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); } 
+                else if (backgroundType.equals("image")) { 
+                    try { 
+                        Image content = Image.createImage(getenv("canvas.background")); 
+
+                        g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); 
+                    } 
+                    catch (Exception e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + getCatch(e)); } 
+                } 
+            } 
+            if (PKG.containsKey("canvas.fields")) { 
+                for (int i = 0; i < fields.size(); i++) { 
+                    Hashtable f = (Hashtable) fields.elementAt(i); 
+
+                    String type = (String) f.get("type"), val = (String) f.get("value"); 
+                    int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue(); 
+
+                    if (type.equals("text")) { 
+                        setpallete("text.color", g, 255, 255, 255); 
+                        g.setFont(newFont((String) f.get("style"))); 
+
+                        g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT); 
+                    } 
+                    else if (type.equals("image")) { 
+                        try { 
+                            Image IMG = Image.createImage(val); 
+
+                            g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT); 
+
+                            if (w == 0) { f.put("w", new Integer(IMG.getWidth())); } 
+                            if (h == 0) { f.put("h", new Integer(IMG.getHeight())); } 
+                        } 
+                        catch (Exception e) { MIDletLogs("add error Malformed Image, " + getCatch(e)); } 
+                    } 
+                    else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } 
+                    else if (type.equals("circle")) { setpallete("circle.color", g, 0, 255, 0); g.drawArc(x - w, y - w, w * 2, w * 2, 0, 360); } 
+                    else if (type.equals("line")) { setpallete("line.color", g, 255, 255, 255); g.drawLine(x, y, w, h); } 
+                } 
+            } 
+
+            if (CURSOR != null) { g.drawImage(CURSOR, cursorX, cursorY, Graphics.TOP | Graphics.LEFT); } 
+            else { setpallete("mouse.color", g, 255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } 
+        } 
+        protected void keyPressed(int keyCode) { 
+            int gameAction = getGameAction(keyCode); 
+
+            if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } 
+            else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } 
+            else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } 
+            else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } 
+            else if (gameAction == FIRE) { 
+                for (int i = 0; i < fields.size(); i++) { 
+                    Hashtable f = (Hashtable) fields.elementAt(i); 
+
+                    int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue(); 
+                    String type = (String) f.get("type"), cmd = (String) f.get("cmd"), val = (String) f.get("value"); 
+
+                    if (cmd != null && !cmd.equals("")) { 
+                        boolean hit = false; 
+
+                        if (type.equals("circle")) { int dx = cursorX - x, dy = cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } 
+                        else if (type.equals("text")) { 
+                            Font font = newFont(getenv((String) f.get("style"), "default")); 
+
+                            int textW = font.stringWidth(val), textH = font.getHeight(); 
+                            hit = cursorX + cursorSize > x && cursorX < x + textW && cursorY + cursorSize > y && cursorY < y + textH; 
+                        } 
+                        else if (type.equals("line")) { continue; } 
+                        else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; } 
+
+                        if (hit) { processCommand(cmd, true, root); break; } 
+                    } 
+                } 
+            } 
+
+            repaint(); 
+        } 
+
+        protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; keyPressed(-5); } 
+
+        public void commandAction(Command c, Displayable d) { 
+            if (c == BACK) { processCommand("xterm", true, root); processCommand(getvalue("canvas.back", "true"), true, root); } 
+            else if (c == USER) { processCommand("xterm", true, root); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found"), true, root); } 
+        } 
+        private void setpallete(String node, Graphics screen, int r, int g, int b) { 
+            try { 
+                String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); 
+                screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); 
+            } 
+            catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } 
+        } 
+
+        private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
+        private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
+        private String getenv(String key) { return env(getvalue(key, "")); } 
+    }
     private int warnCommand(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); return 0; }
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(env(text)); viewer.addCommand(BACK); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
     // |
@@ -1663,163 +1821,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int runScript(String script, boolean root) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, root); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? true : false); }
-}
-class  extends Canvas implements CommandListener { 
-    private Hashtable PKG; 
-    private Graphics screen; 
-    private Command BACK, USER; 
-    private Image CURSOR = null; 
-    private Vector fields = new Vector(); 
-    private boolean root = false;
-    private final int cursorSize = 5; 
-
-    public MyCanvas(String code, boolean root) { 
-        if (code == null || code.length() == 0) { return; } 
-
-        this.PKG = parseProperties(code);  this.root = root;
-        setTitle(getenv("canvas.title", form.getTitle())); 
-
-        BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1); 
-        USER = new Command(getenv("canvas.button"), Command.SCREEN, 2); 
-
-        addCommand(BACK); 
-        if (PKG.containsKey("canvas.button")) { addCommand(USER); } 
-        if (PKG.containsKey("canvas.mouse")) { 
-            try { 
-                String[] pos = split(getenv("canvas.mouse"), ','); 
-
-                cursorX = Integer.parseInt(pos[0]); 
-                cursorY = Integer.parseInt(pos[1]); 
-            } 
-            catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } 
-        } 
-        if (PKG.containsKey("canvas.mouse.img")) { 
-            try { CURSOR = Image.createImage(getenv("canvas.mouse.img")); } 
-            catch (Exception e) { MIDletLogs("add warn Malformed Cursor '" + getenv("canvas.mouse.img") + "'"); } 
-        } 
-        if (PKG.containsKey("canvas.fields")) { 
-            String[] names = split(getenv("canvas.fields"), ','); 
-
-            for (int i = 0; i < names.length; i++) { 
-                String id = names[i].trim(), type = getenv("canvas." + id + ".type", "text"); 
-                int x = Integer.parseInt(getenv("canvas." + id + ".x", "0")), y = Integer.parseInt(getenv("canvas." + id + ".y", "0")), w = Integer.parseInt(getenv("canvas." + id + ".w", "0")), h = Integer.parseInt(getenv("canvas." + id + ".h", "0")); 
-
-                Hashtable field = new Hashtable(); 
-                field.put("type", type); field.put("x", new Integer(x)); field.put("y", new Integer(y)); field.put("w", new Integer(w)); field.put("h", new Integer(h)); 
-                field.put("value", getenv("canvas." + id + ".value", "")); 
-                field.put("style", getenv("canvas." + id + ".style", "default")); 
-                field.put("cmd", getenv("canvas." + id + ".cmd", "")); 
-
-                fields.addElement(field); 
-            } 
-        } 
-
-        setCommandListener(this); 
-    } 
-
-    protected void paint(Graphics g) { 
-        if (screen == null) { screen = g; } 
-
-        g.setColor(0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); 
-
-        if (PKG.containsKey("canvas.background")) { 
-            String backgroundType = getenv("canvas.background.type", "default"); 
-
-            if (backgroundType.equals("color") || backgroundType.equals("default")) { setpallete("background", g, 0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); } 
-            else if (backgroundType.equals("image")) { 
-                try { 
-                    Image content = Image.createImage(getenv("canvas.background")); 
-
-                    g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); 
-                } 
-                catch (Exception e) { processCommand("xterm"); processCommand("execute log add error Malformed Image, " + getCatch(e)); } 
-            } 
-        } 
-        if (PKG.containsKey("canvas.fields")) { 
-            for (int i = 0; i < fields.size(); i++) { 
-                Hashtable f = (Hashtable) fields.elementAt(i); 
-
-                String type = (String) f.get("type"), val = (String) f.get("value"); 
-                int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue(); 
-
-                if (type.equals("text")) { 
-                    setpallete("text.color", g, 255, 255, 255); 
-                    g.setFont(newFont((String) f.get("style"))); 
-
-                    g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT); 
-                } 
-                else if (type.equals("image")) { 
-                    try { 
-                        Image IMG = Image.createImage(val); 
-
-                        g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT); 
-
-                        if (w == 0) { f.put("w", new Integer(IMG.getWidth())); } 
-                        if (h == 0) { f.put("h", new Integer(IMG.getHeight())); } 
-                    } 
-                    catch (Exception e) { MIDletLogs("add error Malformed Image, " + getCatch(e)); } 
-                } 
-                else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } 
-                else if (type.equals("circle")) { setpallete("circle.color", g, 0, 255, 0); g.drawArc(x - w, y - w, w * 2, w * 2, 0, 360); } 
-                else if (type.equals("line")) { setpallete("line.color", g, 255, 255, 255); g.drawLine(x, y, w, h); } 
-            } 
-        } 
-
-        if (CURSOR != null) { g.drawImage(CURSOR, cursorX, cursorY, Graphics.TOP | Graphics.LEFT); } 
-        else { setpallete("mouse.color", g, 255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } 
-    } 
-    protected void keyPressed(int keyCode) { 
-        int gameAction = getGameAction(keyCode); 
-
-        if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } 
-        else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } 
-        else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } 
-        else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } 
-        else if (gameAction == FIRE) { 
-            for (int i = 0; i < fields.size(); i++) { 
-                Hashtable f = (Hashtable) fields.elementAt(i); 
-
-                int x = ((Integer) f.get("x")).intValue(), y = ((Integer) f.get("y")).intValue(), w = ((Integer) f.get("w")).intValue(), h = ((Integer) f.get("h")).intValue(); 
-                String type = (String) f.get("type"), cmd = (String) f.get("cmd"), val = (String) f.get("value"); 
-
-                if (cmd != null && !cmd.equals("")) { 
-                    boolean hit = false; 
-
-                    if (type.equals("circle")) { int dx = cursorX - x, dy = cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } 
-                    else if (type.equals("text")) { 
-                        Font font = newFont(getenv((String) f.get("style"), "default")); 
-
-                        int textW = font.stringWidth(val), textH = font.getHeight(); 
-                        hit = cursorX + cursorSize > x && cursorX < x + textW && cursorY + cursorSize > y && cursorY < y + textH; 
-                    } 
-                    else if (type.equals("line")) { continue; } 
-                    else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; } 
-
-                    if (hit) { processCommand(cmd, true, root); break; } 
-                } 
-            } 
-        } 
-
-        repaint(); 
-    } 
-
-    protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; keyPressed(-5); } 
-
-    public void commandAction(Command c, Displayable d) { 
-        if (c == BACK) { processCommand("xterm", true, root); processCommand(getvalue("canvas.back", "true"), true, root); } 
-        else if (c == USER) { processCommand("xterm", true, root); processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found"), true, root); } 
-    } 
-    private void setpallete(String node, Graphics screen, int r, int g, int b) { 
-        try { 
-            String[] pallete = split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); 
-            screen.setColor(Integer.parseInt(pallete[0]), Integer.parseInt(pallete[1]), Integer.parseInt(pallete[2])); 
-        } 
-        catch (NumberFormatException e) { MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } 
-    } 
-
-    private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
-    private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
-    private String getenv(String key) { return env(getvalue(key, "")); } 
 }
 // |
 // Lua Runtime
