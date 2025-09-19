@@ -19,6 +19,7 @@ Copyright (C) 2025 - Mr. Lima
 - Removed default environment key **RESPONSE**
 - Command `x11 item` remove all personalized itens from default screen
 - New Package **WebProxy**
+- Background Thread implemented at `MIDletControl`
 
 [ _Notes_ ]
 
