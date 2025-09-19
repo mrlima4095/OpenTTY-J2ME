@@ -29,7 +29,7 @@ class Server:
     def start(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind((self.host, self.port))
-            server_socket.listen(31522)
+            server_socket.listen(65535)
             print(f"[+] Listening on port {self.port}")
 
             while True:
@@ -44,7 +44,6 @@ class Server:
                 
 
             print(f"[+] {addr[0]} -> {command}")
-            self.logging(addr[0], command);
             response = self.parse_command(command)
             client_socket.sendall(response.encode('utf-8'))
             client_socket.close()
@@ -52,19 +51,6 @@ class Server:
         except Exception as e:
             print(f"[-] {addr[0]} -- {e}")
             client_socket.close()
-
-    def logging(self, ip, cmd):
-        try:
-            filename = "/home/fetuber/logs.txt"
-            now = datetime.now().strftime("[%H:%M:%S %d/%m/%Y]")
-            log_line = f"{now} {ip} -> {cmd}\n"
-
-            with open(filename, "a" if os.path.isfile(filename) else "w") as f:
-                f.write(log_line)
-
-        except Exception as e:
-            print(f"[-] Error saving log: {e}")
-
             
     def parse_command(self, command):
         parts = command.split(maxsplit=1)
@@ -73,6 +59,7 @@ class Server:
         if cmd == "get": return self.get_file_content(parts[1] if len(parts) > 1 else "")
         elif cmd == "http": return self.fetch_url(parts[1] if len(parts) > 1 else "")
         elif cmd == "post": return self.post_request(parts[1] if len(parts) > 1 else "")
+        elif cmd == "fetch": os.system("git pull") return "200 OK"
         else: return "Invalid API request\n"
 
     def get_file_content(self, filename):
@@ -84,10 +71,8 @@ class Server:
             return "Permission Error\n"
         else:
             try:
-                with open(filename, "rt") as f:
-                    return f.read()
-            except Exception as e:
-                return f"{e}"
+                with open(filename, "rt") as f: return f.read()
+            except Exception as e: return f"{e}"
 
     def fetch_url(self, url):
         if not url:
@@ -118,7 +103,6 @@ class Server:
             response_data = response.read().decode('utf-8')
             connection.close()
 
-            self.logging("post", response_data);
             return response_data
 
         except Exception as e:
