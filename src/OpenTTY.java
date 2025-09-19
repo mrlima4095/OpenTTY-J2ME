@@ -1869,7 +1869,7 @@ class Lua {
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
         funcs = new String[] { "Alert", "BuildScreen", "BuildList", "BuildQuest", "BuildEdit", "SetTitle", "SetTicker", "WindowTitle", "display" }; loaders = new int[] { ALERT, SCREEN, LIST, QUEST, EDIT, TITLE, TICKER, WTITLE, DISPLAY };
-        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("xterm", midlet.form) globals.put("graphics", graphics);
+        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("xterm", midlet.form); globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
