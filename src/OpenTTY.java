@@ -874,7 +874,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (PWD.equals("/tmp/")) {
                     for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) {
                         String KEY = (String) KEYS.nextElement();
-                        if ((all || !KEY.startsWith(".")) && !BUFFER.contains(ROOT)) { 
+                        if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { 
                             BUFFER.addElement(KEY); 
                         } 
                     }
