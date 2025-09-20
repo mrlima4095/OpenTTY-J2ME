@@ -195,7 +195,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 preview.addCommand(CONNECT = new Command("Connect", Command.BACK, 1));
                 preview.addCommand(SAVE = new Command("Save Logs", Command.SCREEN, 2));
                 preview.setCommandListener(this);
-
                 proc.put("screen", preview);
                 display.setCurrent(preview);
             }
@@ -205,6 +204,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         public MIDletControl(Form screen, String node, String code, boolean root) {
             if (code == null || code.length() == 0) { return; } 
+            
 
             this.PKG = parseProperties(code); this.node = node; this.root = root; 
 

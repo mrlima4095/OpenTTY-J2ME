@@ -52,7 +52,6 @@ local function install(pkg)
     if content == "File 'lib/" .. filename .. "' not found." then
         os.execute("warn Error while installing package!") os.exit(1)
     end
-
     io.write(content, filename)
 end
 
