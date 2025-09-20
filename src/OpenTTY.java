@@ -585,7 +585,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { preview.append("..", null); }
 
                 try {
-                    if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } } 
+                    if (path.equals("/tmp/")) { for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement(), null); } }
+                    else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } } 
                     else if (path.startsWith("/mnt/")) {
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
                         Vector dirs = new Vector(), files = new Vector();
@@ -618,7 +619,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     }
                 } catch (IOException e) { }
-
             } 
             else if (MOD == MONITOR) { console.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) ((Hashtable) trace.get(PID)).get("name"); if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); } } }
@@ -871,7 +871,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Vector BUFFER = new Vector();
 
             try { 
-                if (PWD.equals("/mnt/")) { 
+                if (PWD.equals("/tmp/")) {
+                    for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) {
+                        String KEY = (String) KEYS.nextElement();
+                        if ((all || !KEY.startsWith(".")) && !BUFFER.contains(ROOT)) { 
+                            BUFFER.addElement(KEY); 
+                        } 
+                    }
+                }
+                else if (PWD.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
                         String ROOT = (String) ROOTS.nextElement(); 
                         if ((all || !ROOT.startsWith(".")) && !BUFFER.contains(ROOT)) { 
