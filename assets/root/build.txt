@@ -142,3 +142,7 @@
 [2025-1.16.1-02x75] Improved Command 'mmspt'
 [2025-1.16.1-02x76] X Server 0.6.4 | Improved class `OpenTTY$MyCanvas` to generate Global `MIDletCanvas`
 [2025-1.16.1-02x77] Release 1.16.1
+
+-- [ Branch 1.16.x ]
+
+[2025-1.17-02x78] 1.17 Suite case

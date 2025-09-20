@@ -1,0 +1,11 @@
+#!/java/bin/sh
+# -*- coding: utf-8 -*-
+#
+
+mount /etc/fstab
+stty /dev/tty
+
+x11 init
+x11 term
+
+start sh
