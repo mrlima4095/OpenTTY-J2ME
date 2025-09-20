@@ -1757,7 +1757,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
 
                 if (type.equals("text")) { 
                     setpallete("text.color", g, 255, 255, 255); 
-                    g.setFont(newFont((String) f.get("style"))); 
+                    g.setFont(midlet.newFont((String) f.get("style"))); 
 
                     g.drawString(val, x, y, Graphics.TOP | Graphics.LEFT); 
                 } 
@@ -1800,7 +1800,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
 
                     if (type.equals("circle")) { int dx = cursorX - x, dy = cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } 
                     else if (type.equals("text")) { 
-                        Font font = newFont(getenv((String) f.get("style"), "default")); 
+                        Font font = midlet.newFont(getenv((String) f.get("style"), "default")); 
 
                         int textW = font.stringWidth(val), textH = font.getHeight(); 
                         hit = cursorX + cursorSize > x && cursorX < x + textW && cursorY + cursorSize > y && cursorY < y + textH; 
