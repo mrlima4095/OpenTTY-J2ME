@@ -2,16 +2,23 @@
     "downloads": [
     {
         "platform": "J2ME",
+        "file": "OpenTTY-1.16.1.jar",
+        "size": "86 KB",
+        "type": "mod",
+        "url": "/versions/OpenTTY-1.16.1.jar"
+    },
+    {
+        "platform": "J2ME",
         "file": "OpenTTY-1.16.jar",
         "size": "83 KB",
         "type": "latest",
-        "url": "/repo/versions/OpenTTY-1.16.jar"
+        "url": "/versions/OpenTTY-1.16.jar"
     },
     {
         "platform": "J2ME",
         "file": "OpenTTY-1.15.jar",
         "size": "66 KB",
-        "url": "/repo/versions/OpenTTY-1.15.jar"
+        "url": "/versions/OpenTTY-1.15.jar"
     }
     ],
     "news": [
