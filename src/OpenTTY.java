@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16.1-02x77";
+    private String logs = "", path = "/home/", build = "2025-1.16.2-02x79";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
