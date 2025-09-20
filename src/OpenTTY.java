@@ -1104,7 +1104,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 is.close(); fileConn.close(); 
                 return env(content.toString()); 
             } 
-            else if (filename.startsWith("/tmp/")) { String content = tmp.get(filename.substring(5)); return content == null ? "" : content; }
+            else if (filename.startsWith("/tmp/")) { String content = (String) tmp.get(filename.substring(5)); return content == null ? "" : content; }
             else { 
                 if (filename.startsWith("/dev/")) {
                     filename = filename.substring(5);
