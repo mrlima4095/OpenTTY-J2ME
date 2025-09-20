@@ -29,5 +29,5 @@ Device Language=execute set VALUE=LOCALE; set LABEL=Device Language; cfg run;
 Device Name=execute set VALUE=HOSTNAME; set LABEL=Device Name; cfg run;
 Query Storage=execute set VALUE=QUERY; set LABEL=Query target file; cfg run;
 Server Page=execute set VALUE=RESPONSE; set LABEL=HTML Page for Server; cfg run;
-Network Port=execute set VALUE=PORT; set LABEL=Service Port (Bind and Server); cfg run;
+Network Port=execute set VALUE=PORT; set LABEL=Service Port (Bind); cfg run;
 PackJ Repository=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); cfg run;
