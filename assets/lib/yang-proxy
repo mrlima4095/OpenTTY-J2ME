@@ -31,7 +31,7 @@ quest.cmd=execute yang install;
 [ Index ]
 
 list.title=Repository
-list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),Graphics (Lua),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,Math (Lua),MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,WebProxy
+list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,WebProxy
 list.button=Install
 
 Android ME=execute set RESOURCE=android; yang install; set RESOURCE=forge; yang install;
@@ -45,13 +45,11 @@ Discord (MIDlet)=execute warn This is a 3rd MIDlet from 'gtrxac'; bg exec sleep 
 Forge=execute set RESOURCE=forge; yang install;
 Github (MIDlet)=execute warn This is a 3rd MIDlet from 'shinovon'; bg exec sleep 3 & open http://nnp.nnchan.ru/dl/GH2ME.jar;
 GoBuster (Word list)=execute set RESOURCE=gobuster; yang install;
-Graphics (Lua)=execute set RESOURCE=graphics.lua
 ImmersiveShell=execute set RESOURCE=sh2me; yang install; 
 JAuth2=execute set RESOURCE=jauth2; yang install;
 JBuntu=execute set RESOURCE=jbuntu; yang install;
 JBenchmark=execute set RESOURCE=debuggers; yang install;
 J2ME Loader=execute set RESOURCE=modme; yang install; import modme;
-Math (Lua)=execute set RESOURCE=math.lua; yang install;
 MobiX Loader=execute set RESOURCE=mxos; yang install; set RESOURCE=forge; yang install;
 PackJ (Update)=execute set RESOURCE=yang; yang install;
 PackJ (Proxy)=execute set RESOURCE=yang-proxy; yang install;
