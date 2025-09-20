@@ -746,11 +746,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
         else if (mainCommand.equals("mmspt")) {
             if (argument.equals("")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
-            else if (argument.equals("priority")) { echoCommand("" + Thread.currentThread().getPriority()); }
+            else if (argument.equals("priority")) 
             else { 
                 int value = getNumber(argument, Thread.NORM_PRIORITY, true); 
                 if (value > 10 || value < 1) { return 2; }
                 else { Thread.currentThread().setPriority(value); }
+            }
+            
+        }
+        else if (mainCommand.equals("chrt")) {
+            if (argument.equals("")) { echoCommand("" + Thread.currentThread().getPriority()); }
+            else {
+                boolean all = false, verbose = false;
+
+                while (true) {
+                    if (argument.startsWith("-a")) { all = true; } 
+                    else if (argument.startsWith("-v")) { verbose = true; }
+                    else { break; }
+
+                    argument = argument.substring(2).trim();
+                }
             }
             
         }
