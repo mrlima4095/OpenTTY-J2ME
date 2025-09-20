@@ -565,7 +565,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void load() {
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
             else if (MOD == EXPLORER) {
-                if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); }
+                if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { if (DELETE == null) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); } }
                 else { preview.removeCommand(DELETE); DELETE = null; }
 
                 if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); RUNS = null; IMPORT = null; }
