@@ -571,10 +571,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void load() {
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
             else if (MOD == EXPLORER) {
-                if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/"))) { if (DELETE == null) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); } }
+                if (path.startsWith("/home/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")) || path.startsWith("/tmp/") || path.startsWith("/proc/")) { if (DELETE == null) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); } }
                 else { preview.removeCommand(DELETE); DELETE = null; }
 
-                if (path.equals("/") || path.equals("/mnt/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); RUNS = null; IMPORT = null; }
+                if (path.equals("/") || path.equals("/mnt/") || path.equals("/dev/")) { preview.removeCommand(RUNS); preview.removeCommand(IMPORT); RUNS = null; IMPORT = null; }
                 else { if (RUNS == null && IMPORT == null) { preview.addCommand(RUNS = new Command("Run Script", Command.OK, 1)); preview.addCommand(IMPORT = new Command("Import File", Command.OK, 1)); } }
 
                 if (attributes.containsKey("J2EMU")) { }
@@ -602,7 +602,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         while (!files.isEmpty()) { preview.append(getFirstString(files), null); }
 
                         CONN.close();
-                    } else if (path.startsWith("/home/")) {
+                    } 
+                    else if (path.startsWith("/home/")) {
                         String[] recordStores = RecordStore.listRecordStores();
 
                         for (int i = 0; i < recordStores.length; i++) {
@@ -733,6 +734,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
         else if (mainCommand.equals("stty")) { 
             if (argument.equals("")) { echoCommand("" + TTY_MAX_LEN); }
+            else if (argument.indexOf("=") != -1) {
+                
+            }
             else {
                 String source = getcontent(argument);
                 if (source.equals("")) { return 2; }
@@ -1121,6 +1125,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (filename.equals("stdin")) { return stdin.getString(); }
                     else if (filename.equals("stdout")) { return stdout.getText(); }
                     else if (filename.equals("null")) { return "\r"; }
+                    else if (filename.equals("zero")) { return "\0"; }
 
                     filename = "/dev/" + filename;
                 } 
