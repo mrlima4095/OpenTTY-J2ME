@@ -13,7 +13,7 @@ import java.io.*;
 // |
 // OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
-    private int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
+    public int MAX_STDOUT_LEN = -1, cursorX = 10, cursorY = 10;
     // |
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
@@ -1700,10 +1700,10 @@ class MIDletCanvas extends Canvas implements CommandListener {
             try { 
                 String[] pos = midlet.split(getenv("canvas.mouse"), ','); 
 
-                cursorX = Integer.parseInt(pos[0]); 
-                cursorY = Integer.parseInt(pos[1]); 
+                midlet.cursorX = Integer.parseInt(pos[0]); 
+                midlet.cursorY = Integer.parseInt(pos[1]); 
             } 
-            catch (NumberFormatException e) { midlet.MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); cursorX = 10; cursorY = 10; } 
+            catch (NumberFormatException e) { midlet.MIDletLogs("add warn Invalid value for 'canvas.mouse' - (x,y) may be a int number"); midlet.cursorX = 10; midlet.cursorY = 10; } 
         } 
         if (PKG.containsKey("canvas.mouse.img")) { 
             try { CURSOR = Image.createImage(getenv("canvas.mouse.img")); } 
@@ -1778,16 +1778,16 @@ class MIDletCanvas extends Canvas implements CommandListener {
             } 
         } 
 
-        if (CURSOR != null) { g.drawImage(CURSOR, cursorX, cursorY, Graphics.TOP | Graphics.LEFT); } 
-        else { setpallete("mouse.color", g, 255, 255, 255); g.fillRect(cursorX, cursorY, cursorSize, cursorSize); } 
+        if (CURSOR != null) { g.drawImage(CURSOR, midlet.cursorX, midlet.cursorY, Graphics.TOP | Graphics.LEFT); } 
+        else { setpallete("mouse.color", g, 255, 255, 255); g.fillRect(midlet.cursorX, midlet.cursorY, cursorSize, cursorSize); } 
     } 
     protected void keyPressed(int keyCode) { 
         int gameAction = getGameAction(keyCode); 
 
-        if (gameAction == LEFT) { cursorX = Math.max(0, cursorX - 5); } 
-        else if (gameAction == RIGHT) { cursorX = Math.min(getWidth() - cursorSize, cursorX + 5); } 
-        else if (gameAction == UP) { cursorY = Math.max(0, cursorY - 5); } 
-        else if (gameAction == DOWN) { cursorY = Math.min(getHeight() - cursorSize, cursorY + 5); } 
+        if (gameAction == LEFT) { midlet.cursorX = Math.max(0, midlet.cursorX - 5); } 
+        else if (gameAction == RIGHT) { midlet.cursorX = Math.min(getWidth() - cursorSize, midlet.cursorX + 5); } 
+        else if (gameAction == UP) { midlet.cursorY = Math.max(0, midlet.cursorY - 5); } 
+        else if (gameAction == DOWN) { midlet.cursorY = Math.min(getHeight() - cursorSize, midlet.cursorY + 5); } 
         else if (gameAction == FIRE) { 
             for (int i = 0; i < fields.size(); i++) { 
                 Hashtable f = (Hashtable) fields.elementAt(i); 
@@ -1798,15 +1798,15 @@ class MIDletCanvas extends Canvas implements CommandListener {
                 if (cmd != null && !cmd.equals("")) { 
                     boolean hit = false; 
 
-                    if (type.equals("circle")) { int dx = cursorX - x, dy = cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } 
+                    if (type.equals("circle")) { int dx = midlet.cursorX - x, dy = midlet.cursorY - y; hit = (dx * dx + dy * dy) <= (w * w); } 
                     else if (type.equals("text")) { 
                         Font font = midlet.newFont(getenv((String) f.get("style"), "default")); 
 
                         int textW = font.stringWidth(val), textH = font.getHeight(); 
-                        hit = cursorX + cursorSize > x && cursorX < x + textW && cursorY + cursorSize > y && cursorY < y + textH; 
+                        hit = midlet.cursorX + cursorSize > x && midlet.cursorX < x + textW && midlet.cursorY + cursorSize > y && midlet.cursorY < y + textH; 
                     } 
                     else if (type.equals("line")) { continue; } 
-                    else { hit = cursorX + cursorSize > x && cursorX < x + w && cursorY + cursorSize > y && cursorY < y + h; } 
+                    else { hit = midlet.cursorX + cursorSize > x && midlet.cursorX < x + w && midlet.cursorY + cursorSize > y && midlet.cursorY < y + h; } 
 
                     if (hit) { midlet.processCommand(cmd, true, root); break; } 
                 } 
@@ -1815,7 +1815,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
 
         repaint(); 
     }
-    protected void pointerPressed(int x, int y) { cursorX = x; cursorY = y; keyPressed(-5); } 
+    protected void pointerPressed(int x, int y) { midlet.cursorX = x; midlet.cursorY = y; keyPressed(-5); } 
 
     public void commandAction(Command c, Displayable d) { 
         midlet.processCommand("xterm", true, root); 
