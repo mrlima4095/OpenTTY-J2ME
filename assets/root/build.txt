@@ -139,3 +139,4 @@
 [2025-1.16.1-02x72] Removed native Server
 [2025-1.16.1-02x73] ItemLoader and MIDletControl Threads merged
 [2025-1.16.1-02x74] Background and MIDlet-MOD Threads merged with MIDletControl
+[2025-1.16.1-02x75] Improved Command 'mmspt'

@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    private String logs = "", path = "/home/", build = "2025-1.16.1-02x74";
+    private String logs = "", path = "/home/", build = "2025-1.16.1-02x75";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -744,9 +744,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 009 - (Threads)
         // |
         // MIDlet Tracker
-        else if (mainCommand.equals("thr")) { if (argument.equals("")) { echoCommand("" + Thread.activeCount()); } else { echoCommand(Thread.currentThread().toString()); } }
         else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
-        else if (mainCommand.equals("mmspt")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
+        else if (mainCommand.equals("mmspt")) {
+            if (argument.equals("")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
+            else if (argument.equals("priority")) { echoCommand("" + Thread.currentThread().getPriority()); }
+            else { 
+                int value = getNumber(argument, Thread.NORM_PRIORITY, true); 
+                if (value > 10 || value < 1) { return 2; }
+                else { Thread.currentThread().setPriority(value); }
+            }
+            
+        }
         else if (mainCommand.equals("bg")) { if (argument.equals("")) { } else { new MIDletControl("Background", argument, ignore, root); } }
 
         // API 010 - (Requests)

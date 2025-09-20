@@ -484,8 +484,12 @@ Usage: mkdir [NAME]
 	Only can create directories in Device Storage. 
 </mkdir>
 <mmspt>
-Usage: mmspt
-* Print current Thread Type.
+Usage: mmspt [PRIORITY]
+* Current Thread Manager.
+
+	When no arguments are given, show Thread name.
+	If argument is word 'priority' prints this value of current Thread.
+	If argument is a number between 0-10 set it as priority of current Thread. 
 </mmspt>
 <mount>
 Usage: mount [FILE]
