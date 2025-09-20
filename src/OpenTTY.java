@@ -1691,7 +1691,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
     public MIDletCanvas(OpenTTY midlet, String code, boolean root) { 
         if (code == null || code.length() == 0) { return; } 
 
-        this.PKG = parseProperties(code); this.midlet = midlet; this.root = root;
+        this.PKG = midlet.parseProperties(code); this.midlet = midlet; this.root = root;
         setTitle(getenv("canvas.title", midlet.form.getTitle())); 
 
         addCommand(BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1)); 
