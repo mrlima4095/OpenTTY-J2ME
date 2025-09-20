@@ -7,6 +7,7 @@
 /dev/random
 /dev/stdin
 /dev/stdout
+/dev/tty
 /dev/zero
 /etc/
 /etc/init
