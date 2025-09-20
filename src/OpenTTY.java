@@ -66,7 +66,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // Control Thread
-    public OpenTTY getInstance() { return this; }
+    public static String getThreadName(Thread thr) {
+        String name = thr.getName();
+        String[] generic = { "MIDletEventQueue", "Thread-0", "Thread-1" }
+        for (int i = 0; i < generic.length; i++) { name = replace(name, generic[i], "MIDlet"); }
+
+        return name;
+    }
     public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
         private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18;
 
@@ -744,9 +750,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // MIDlet Tracker
         else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
-        else if (mainCommand.equals("mmspt")) {
-            if (argument.equals("")) { echoCommand(replace(replace(Thread.currentThread().getName(), "MIDletEventQueue", "MIDlet"), "Thread-1", "MIDlet")); }
-            else if (argument.equals("priority")) 
+        else if (mainCommand.equals("mmspt") || mainCommand.equals("chrt")) {
+            if (argument.equals("")) { echoCommand(); }
+            else if (argument.equals("priority")) { echoCommand("" + Thread.currentThread().getPriority()); }
             else { 
                 int value = getNumber(argument, Thread.NORM_PRIORITY, true); 
                 if (value > 10 || value < 1) { return 2; }
@@ -754,8 +760,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             
         }
-        else if (mainCommand.equals("chrt")) {
-            if (argument.equals("")) { echoCommand("" + Thread.currentThread().getPriority()); }
+        else if () {
+            if (argument.equals("")) 
             else {
                 boolean all = false, verbose = false;
 
