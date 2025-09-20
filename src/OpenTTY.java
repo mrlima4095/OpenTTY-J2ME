@@ -1770,7 +1770,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
                         if (w == 0) { f.put("w", new Integer(IMG.getWidth())); } 
                         if (h == 0) { f.put("h", new Integer(IMG.getHeight())); } 
                     } 
-                    catch (Exception e) { midlet.MIDletLogs("add error Malformed Image, " + getCatch(e)); } 
+                    catch (Exception e) { midlet.MIDletLogs("add error Malformed Image, " + midlet.getCatch(e)); } 
                 } 
                 else if (type.equals("rect")) { setpallete("rect.color", g, 0, 0, 255); g.drawRect(x, y, w, h); } 
                 else if (type.equals("circle")) { setpallete("circle.color", g, 0, 255, 0); g.drawArc(x - w, y - w, w * 2, w * 2, 0, 360); } 
