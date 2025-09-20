@@ -27,4 +27,7 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _API Nodes_ ]
 
-- `lua`: check if current MIDlet build has Lua
+Use to check if current MIDlet have external implementations, got error if their is missing to package:
+
+- `lua`: without **Lua Runtime**
+- `canvas`: without **X11 Canvas Service**
