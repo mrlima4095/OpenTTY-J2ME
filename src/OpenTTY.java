@@ -68,7 +68,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Control Thread
     public static String getThreadName(Thread thr) {
         String name = thr.getName();
-        String[] generic = { "MIDletEventQueue", "Thread-0", "Thread-1" }
+        String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }
         for (int i = 0; i < generic.length; i++) { name = replace(name, generic[i], "MIDlet"); }
 
         return name;
@@ -757,21 +757,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int value = getNumber(argument, Thread.NORM_PRIORITY, true); 
                 if (value > 10 || value < 1) { return 2; }
                 else { Thread.currentThread().setPriority(value); }
-            }
-            
-        }
-        else if () {
-            if (argument.equals("")) 
-            else {
-                boolean all = false, verbose = false;
-
-                while (true) {
-                    if (argument.startsWith("-a")) { all = true; } 
-                    else if (argument.startsWith("-v")) { verbose = true; }
-                    else { break; }
-
-                    argument = argument.substring(2).trim();
-                }
             }
             
         }
