@@ -140,3 +140,4 @@
 [2025-1.16.1-02x73] ItemLoader and MIDletControl Threads merged
 [2025-1.16.1-02x74] Background and MIDlet-MOD Threads merged with MIDletControl
 [2025-1.16.1-02x75] Improved Command 'mmspt'
+[2025-1.16.1-02x76] X Server 0.6.4 | Improved class `OpenTTY$MyCanvas` to generate Global `MIDletCanvas`
