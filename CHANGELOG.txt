@@ -8,6 +8,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Updates_ ]
 
 - X Server **0.6.4**
+- Added support for `canvas.fullscreen` if it value is `true` toggle Canvas to Full Screen mode
 - **Audio API** added support to play **.midi** files
 - **Lua** added support for `repeat until [expr]` loops
 - **Lua** added default library `socket` with network interfaces
