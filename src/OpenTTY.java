@@ -67,7 +67,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Control Thread
     public static String getThreadName(Thread thr) {
         String name = thr.getName();
-        String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }
+        String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" };
         for (int i = 0; i < generic.length; i++) { name = replace(name, generic[i], "MIDlet"); }
 
         return name;
