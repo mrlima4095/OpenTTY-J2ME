@@ -1745,7 +1745,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
 
                     g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); 
                 } 
-                catch (Exception e) { midlet.processCommand("xterm"); midlet.processCommand("execute log add error Malformed Image, " + getCatch(e)); } 
+                catch (Exception e) { midlet.processCommand("xterm"); midlet.processCommand("execute log add error Malformed Image, " + midlet.getCatch(e)); } 
             } 
         } 
         if (PKG.containsKey("canvas.fields")) { 
