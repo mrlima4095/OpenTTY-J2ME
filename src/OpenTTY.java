@@ -3499,6 +3499,7 @@ class Lua {
                     return result;
                 }
             }
+            else if (MOD == APPEND)
 
             return null;
         }
