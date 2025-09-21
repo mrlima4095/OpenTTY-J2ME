@@ -964,8 +964,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 argument = argument.endsWith("/") ? argument : argument + "/"; 
                 argument = argument.startsWith("/") ? argument : path + argument; 
                 
-                if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (filename.startsWith("/tmp/")) {
-                    String pathTmp = filename.substring(5);
+                if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } 
+                else if (argument.startsWith("/tmp/")) {
+                    String pathTmp = argument.substring(5);
                     if (pathTmp.equals("")) return "";
 
                     Object obj = getTmpObject(pathTmp);
