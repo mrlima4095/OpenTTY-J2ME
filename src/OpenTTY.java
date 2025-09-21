@@ -364,18 +364,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, root); } 
                     else if (c == VIEW) { processCommand("trace view " + PID, false, root); } 
                     else if (c == LOAD) {
-                        if (getowner(PID).equals("root") && !root) {
-                            STATUS = 13;
-                        }
+                        if (getowner(PID).equals("root") && !root) { STATUS = 13; }
 
                         Displayable screen = (Displayable) getobject(PID, "screen");
 
-                        if (screen == null) {
-                            STATUS = 69;
-                        } else {
-                            display.setCurrent(screen);
-                            return;
-                        }
+                        if (screen == null) { STATUS = 69; } 
+                        else { display.setCurrent(screen); return; }
                     }
 
                     if (STATUS != 0) { warnCommand(form.getTitle(), STATUS == 13 ? "Permission denied!" : "No screens for this process!"); }
@@ -586,6 +580,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     if (path.equals("/tmp/")) { for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement(), null); } }
+                    else if (path.equals("/proc/")) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement() + "/", null); } }
+                    else if (path.startsWith("/proc/")) { for (Enumeration KEYS = getprocess(path.substring(6)).keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement(), null); } }
                     else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } } 
                     else if (path.startsWith("/mnt/")) {
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
@@ -883,12 +879,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } 
                     }
                 }
+                else if (PWD.equals("/proc/")) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(); if ((all || !KEY.startsWith(".")) && !BUFFER.contains(ROOT)) { BUFFER.addElement(KEY); } }
+                else if (PWD.startsWith("/proc/")) { for (Enumeration KEYS = getprocess(path.substring(6)).keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(); if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } }
+                    
                 else if (PWD.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
-                        String ROOT = (String) ROOTS.nextElement(); 
-                        if ((all || !ROOT.startsWith(".")) && !BUFFER.contains(ROOT)) { 
-                            BUFFER.addElement(ROOT); 
-                        } 
+                        String ROOT = (String) ROOTS.nextElement(); if ((all || !ROOT.startsWith(".")) && !BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
                     }
                 } 
                 else if (PWD.startsWith("/mnt/")) { 
