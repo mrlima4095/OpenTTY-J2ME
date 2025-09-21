@@ -860,7 +860,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     path = TARGET.endsWith("/") ? TARGET : TARGET + "/";
                 }
-
                 else { echoCommand(mainCommand + ": " + basename(TARGET) + ": not accessible"); return 127; } 
 
             } 
@@ -999,11 +998,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             else { echoCommand("mkdir: " + key + ": not a directory"); return 1; }
                         } else {
                             if (obj == null) {
-                                echoCommand("mkdir: cannot create directory: intermediate path '" + key + "' not found");
+                                echoCommand("mkdir: cannot create directory '" + key + "': not found");
                                 return 127;
                             } 
                             else if (obj instanceof Hashtable) { current = (Hashtable) obj; } 
-                            else { echoCommand("mkdir: cannot create directory: '" + key + "' is not a directory"); return 1; }
+                            else { echoCommand("mkdir: cannot create directory '" + key + "': is not a directory"); return 1; }
                         }
                     }
                 }
