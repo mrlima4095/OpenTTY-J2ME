@@ -298,7 +298,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 preview.setCommandListener(this); display.setCurrent(preview); 
             } 
-            else if (MOD == QUEST) {                 
+            else if (MOD == QUEST) {
                 if (!PKG.containsKey("quest.label") || !PKG.containsKey("quest.cmd") || !PKG.containsKey("quest.key")) { MIDletLogs("add error Quest crashed while init, malformed settings"); return; } 
                 monitor = new Form(getenv("quest.title", form.getTitle())); 
 
