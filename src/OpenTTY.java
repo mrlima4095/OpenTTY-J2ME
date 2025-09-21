@@ -966,13 +966,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } 
                 else if (argument.startsWith("/tmp/")) {
-                    String pathTmp = argument.substring(5);
-                    if (pathTmp.equals("")) return "";
-
-                    Object obj = getTmpObject(pathTmp);
-                    if (obj instanceof String) return (String) obj;
-                    else if (obj instanceof Hashtable) return "(directory)";
-                    else return "";
+                    argument = argument.substring(5);
+                    if (argument.equals("")) {
+                        echoCommand("mkdir: missing operand");
+                        return 2;
+                    }
+                
+                    String[] parts = split(argument, '/');
+                    Hashtable current = tmp;
+                
+                    for (int i = 0; i < parts.length; i++) {
+                        String key = parts[i];
+                        Object obj = current.get(key);
+                
+                        if (i == parts.length - 1) {
+                            if (obj == null) {
+                                Hashtable newDir = new Hashtable();
+                                current.put(key, newDir);
+                            } else if (obj instanceof Hashtable) {
+                                echoCommand("mkdir: " + key + ": file exists");
+                            } else {
+                                echoCommand("mkdir: " + key + ": not a directory");
+                                return 1;
+                            }
+                        } else {
+                            if (obj == null) {
+                                echoCommand("mkdir: cannot create directory '" + key + "': not found");
+                                return 127;
+                            } else if (obj instanceof Hashtable) {
+                                current = (Hashtable) obj;
+                            } else {
+                                echoCommand("mkdir: cannot create directory '" + key + "': is not a directory");
+                                return 1;
+                            }
+                        }
+                    }
                 }
                 else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } 
                 else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
@@ -1154,7 +1182,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (current != null) return current.toString();
                 else { return ""; }
             }
-            else if (filename.startsWith("/tmp/")) { String content = (String) tmp.get(filename.substring(5)); return content == null ? "" : content; }
+            else if (filename.startsWith("/tmp/")) {
+                String pathTmp = filename.substring(5);
+                if (pathTmp.equals("")) return "";
+            
+                Object obj = getTmpObject(pathTmp);
+                if (obj instanceof String) return (String) obj;
+                else if (obj instanceof Hashtable) return "(directory)";
+                else return "";
+            }
             else { 
                 if (filename.startsWith("/dev/")) {
                     filename = filename.substring(5);
