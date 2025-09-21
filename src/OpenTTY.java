@@ -737,7 +737,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String source = getcontent(argument);
                 if (source.equals("")) { return 2; }
 
-                attributes.put("TTY", argument);
+                attributes.put("TTY", argument.startsWith("/") ? argument : path + "/" + argument);
 
                 Hashtable TTY = parseProperties(source);
                 
