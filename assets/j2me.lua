@@ -57,7 +57,7 @@ graphics = {
     BuildQuest = function (config) end,
     BuildEdit = function (config) end,
     SetTitle = function (title) end,
-    WindowTitle = function (title) end,
+    WindowTitle = function (title, screen) end,
     SetTicker = function (text) end
 }
 
