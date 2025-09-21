@@ -3499,7 +3499,9 @@ class Lua {
                     return result;
                 }
             }
-            else if (MOD == APPEND)
+            else if (MOD == APPEND) {
+                if (args.isEmpty()) { return gotbad(1, "append", "screen expected, got no value"); }
+            }
 
             return null;
         }
