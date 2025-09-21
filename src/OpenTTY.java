@@ -843,9 +843,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                 } 
                 else if (TARGET.startsWith("/proc/")) {
-                    if (trace.containsKey(TARGET.substring(6, TARGET.length() - 1))) { path = TARGET; }
-                    else { echoCommand(mainCommand + ": " + basename(TARGET) + ": not found"); return 127; }
+                    String[] parts = TARGET.substring(6).split("/");
+                    if (parts.length < 1) { echoCommand(mainCommand + ": not found"); return 127; }
+
+                    String pid = parts[0];
+                    Hashtable proc = getprocess(pid);
+                    Object current = proc;
+
+                    for (int i = 1; i < parts.length; i++) {
+                        if (current instanceof Hashtable) {
+                            current = ((Hashtable) current).get(parts[i]);
+
+                            if (current == null) { echoCommand(mainCommand + ": " + parts[i] + ": not found"); return 127; }
+                        } else { echoCommand(mainCommand + ": " + parts[i] + ": not a directory"); return 127; }
+                    }
+
+                    path = TARGET.endsWith("/") ? TARGET : TARGET + "/";
                 }
+
                 else { echoCommand(mainCommand + ": " + basename(TARGET) + ": not accessible"); return 127; } 
 
             } 
@@ -944,7 +959,58 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = deleteFile(argument); if (STATUS != 0) { return STATUS; } } } }
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { return writeRMS(argument, nanoContent); } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { for (int i = 0; i < args.length; i++) { int STATUS = writeRMS(argument, ""); if (STATUS != 0) { return STATUS; } } } }
-        else if (mainCommand.equals("mkdir")) { if (argument.equals("")) { } else { argument = argument.endsWith("/") ? argument : argument + "/"; argument = argument.startsWith("/") ? argument : path + argument; if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } } }
+        else if (mainCommand.equals("mkdir")) { 
+            if (argument.equals("")) { } 
+            else { 
+                argument = argument.endsWith("/") ? argument : argument + "/"; 
+                argument = argument.startsWith("/") ? argument : path + argument; 
+                
+                if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } 
+                else if (argument.startsWith("/tmp/")) {
+
+                }
+                else if (argument.startsWith("/proc/")) {
+                    argument = argument.substring(6);
+                    if (argument.equals("")) {
+                        echoCommand("mkdir: cannot create directory at /proc/");
+                        return 1;
+                    }
+
+                    String[] parts = split(argument, '/');
+                    String pid = parts[0];
+
+                    Hashtable proc = getprocess(pid);
+                    if (proc == null) {
+                        echoCommand("mkdir: " + pid + ": not found");
+                        return 127;
+                    }
+
+                    Hashtable current = proc; 
+                    for (int i = 1; i < parts.length; i++) {
+                        String key = parts[i];
+                        Object obj = current.get(key);
+
+                        if (i == parts.length - 1) { 
+                            if (obj == null) {
+                                Hashtable newDir = new Hashtable();
+                                current.put(key, newDir);
+                            } 
+                            else if (obj instanceof Hashtable) { echoCommand("mkdir: " + key + ": file exists"); } 
+                            else { echoCommand("mkdir: " + key + ": not a directory"); return 1; }
+                        } else {
+                            if (obj == null) {
+                                echoCommand("mkdir: cannot create directory: intermediate path '" + key + "' not found");
+                                return 127;
+                            } 
+                            else if (obj instanceof Hashtable) { current = (Hashtable) obj; } 
+                            else { echoCommand("mkdir: cannot create directory: '" + key + "' is not a directory"); return 1; }
+                        }
+                    }
+                }
+                else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } 
+                else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
+            } 
+        }
         else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } }
         // |
         // Text Manager
@@ -1100,18 +1166,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (filename.startsWith("/proc/")) {
                 filename = filename.substring(6);
-                
                 if (filename.equals("")) { return ""; }
-                else if (filename.indexOf("/") != -1) {
-                    String PID = filename.substring(0, filename.indexOf("/")), obj = filename.substring(filename.indexOf("/"));
-                    Hashtable proc = getprocess(PID);
-                    
-                    return proc.containsKey(obj) ? (proc.get(obj)).toString() : "";
-                } else {
-                    if (trace.containsKey(filename)) {
-                        return renderJSON(trace.get(filename), 0);
-                    } else { return ""; }
+
+                String[] parts = split(filename, '/');
+                if (parts.length < 1) { return ""; }
+
+                String pid = parts[0];
+                Hashtable proc = getprocess(pid);
+                if (proc == null) { return ""; }
+
+                Object current = proc;
+                for (int i = 1; i < parts.length; i++) {
+                    if (current instanceof Hashtable) {
+                        current = ((Hashtable) current).get(parts[i]);
+                        if (current == null) return "";
+                    } 
+                    else { return ""; }
                 }
+
+                if (current instanceof String) return (String) current;
+                else if (current != null) return current.toString();
+                else { return ""; }
             }
             else if (filename.startsWith("/tmp/")) { String content = (String) tmp.get(filename.substring(5)); return content == null ? "" : content; }
             else { 
@@ -1404,7 +1479,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | 
     // Virtual Objects
-    // | (Generators)
+    // | ('Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
     public Hashtable genprocess(String name, boolean root, String collector) { 
         Hashtable proc = new Hashtable(); 
