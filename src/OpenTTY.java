@@ -1122,11 +1122,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String PID = filename.substring(0, filename.indexOf("/")), obj = filename.substring(filename.indexOf("/"));
                     Hashtabe proc = getprocess(PID);
                     
-                    return proc.containsKey(obj) ? (proc.get(obj))
+                    return proc.containsKey(obj) ? (proc.get(obj)).toString() : "";
                 } else {
                     if (trace.containsKey(filename)) {
                         return renderJSON(trace.get(filename), 0);
-                    }
+                    } else { return ""; }
                 }
             }
             else if (filename.startsWith("/tmp/")) { String content = (String) tmp.get(filename.substring(5)); return content == null ? "" : content; }
