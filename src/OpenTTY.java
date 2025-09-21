@@ -3479,7 +3479,7 @@ class Lua {
                 String label = args.isEmpty() || args.elementAt(0) == null ? null : toLuaString(args.elementAt(0));
 
                 if (MOD == TITLE) { midlet.form.setTitle(label); }
-                else if (MOD == WTITLE) { midlet.display.getCurrent().setTitle(label); }
+                else if (MOD == WTITLE) { if () { } else { midlet.display.getCurrent().setTitle(label); } }
                 else { midlet.display.getCurrent().setTicker(label == null ? null : new Ticker(label)); }
             }
             else if (MOD == GETPROPERTY) { if (args.isEmpty()) { } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : midlet.getAppProperty(query); } }
