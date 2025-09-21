@@ -844,7 +844,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else if (TARGET.startsWith("/proc/")) {
                     if (trace.containsKey(TARGET.substring(6, TARGET.length() - 1))) { path = TARGET; }
-                    else { echoCommand(mainCommand + ": " + basename(TARGET) + ": not accessible"); return 127; }
+                    else { echoCommand(mainCommand + ": " + basename(TARGET) + ": not found"); return 127; }
                 }
                 else { echoCommand(mainCommand + ": " + basename(TARGET) + ": not accessible"); return 127; } 
 
