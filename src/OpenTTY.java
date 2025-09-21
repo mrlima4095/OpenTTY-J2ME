@@ -882,7 +882,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 }
                 else if (PWD.equals("/proc/")) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(); if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } } }
-                else if (PWD.startsWith("/proc/")) { for (Enumeration KEYS = getprocess(PWD.substring(6), PWD.length() - 1).keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(); if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } } }
+                else if (PWD.startsWith("/proc/")) { Hashtable proc = getprocess(PWD.substring(6), PWD.length() - 1); if (proc == null) { proc = new Hashtable(); } for (Enumeration KEYS = proc.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(); if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } } }
                 
                 else if (PWD.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
