@@ -843,7 +843,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                 } 
                 else if (TARGET.startsWith("/proc/")) {
-                    String[] parts = TARGET.substring(6).split("/");
+                    String[] parts = split(TARGET.substring(6), '/');
                     if (parts.length < 1) { echoCommand(mainCommand + ": not found"); return 127; }
 
                     String pid = parts[0];
