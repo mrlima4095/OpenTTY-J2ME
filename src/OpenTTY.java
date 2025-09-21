@@ -1639,10 +1639,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; } 
         } 
         else if (filename.startsWith("/tmp/")) {
-            filename = filename.substring(5); 
-            if (filename.equals("")) { return 2; }
-            else if (tmp.containsKey(filename)) { tmp.remove(filename); }
-            else { echoCommand("rm: " + filename + ": not found"); return 127; } 
+            String pathTmp = filename.substring(5);
+            if (pathTmp.equals("")) return 2;
+        
+            String[] parts = split(pathTmp, '/');
+            Hashtable current = tmp;
+        
+            for (int i = 0; i < parts.length - 1; i++) {
+                Object obj = current.get(parts[i]);
+                if (!(obj instanceof Hashtable)) {
+                    echoCommand("rm: " + parts[i] + ": not a directory");
+                    return 1;
+                }
+                current = (Hashtable) obj;
+            }
+        
+            String last = parts[parts.length - 1];
+            if (current.containsKey(last)) {
+                current.remove(last);
+            } else {
+                echoCommand("rm: " + last + ": not found");
+                return 127;
+            }
         }
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
         else { return deleteFile(path + filename); } 
@@ -1669,7 +1687,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (filename.equals("stdout")) { stdout.setText(new String(data)); }
             else { echoCommand("read-only storage"); return 5; }
         }
-        else if (filename.startsWith("/tmp/")) { filename = filename.substring(5); if (filename.equals("")) { } else { tmp.put(filename, new String(data)); } }
+        else if (filename.startsWith("/tmp/")) {
+            String pathTmp = filename.substring(5);
+            if (pathTmp.equals("")) { return 2; }
+
+            String[] parts = split(pathTmp, '/');
+            Hashtable current = tmp;
+
+            for (int i = 0; i < parts.length - 1; i++) {
+                Object obj = current.get(parts[i]);
+                if (obj == null || !(obj instanceof Hashtable)) {
+                    return 1;
+                }
+                current = (Hashtable) obj;
+            }
+
+            current.put(parts[parts.length - 1], new String(data));
+        }
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
         else { return writeRMS(path + filename, data); } return 0; }
     public int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { echoCommand(getCatch(e)); return 1; } return 0; }
