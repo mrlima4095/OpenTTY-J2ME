@@ -1188,7 +1188,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
                 Object obj = getTmpObject(pathTmp);
                 if (obj instanceof String) return (String) obj;
-                else if (obj instanceof Hashtable) return "(directory)";
                 else return "";
             }
             else { 
