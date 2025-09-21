@@ -581,7 +581,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 try {
                     if (path.equals("/tmp/")) { for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement(), null); } }
                     else if (path.equals("/proc/")) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement() + "/", null); } }
-                    else if (path.startsWith("/proc/")) { for (Enumeration KEYS = getprocess(path.substring(6)).keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement(), null); } }
+                    else if (path.startsWith("/proc/")) { for (Enumeration KEYS = getprocess(path.substring(6), path.length() - 1).keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement(), null); } }
                     else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } } 
                     else if (path.startsWith("/mnt/")) {
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
@@ -882,7 +882,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                 }
                 else if (PWD.equals("/proc/")) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(); if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } } }
-                else if (PWD.startsWith("/proc/")) { for (Enumeration KEYS = getprocess(path.substring(6)).keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(); if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } } }
+                else if (PWD.startsWith("/proc/")) { for (Enumeration KEYS = getprocess(PWD.substring(6), PWD.length() - 1).keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(); if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } } }
                 
                 else if (PWD.equals("/mnt/")) { 
                     for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
