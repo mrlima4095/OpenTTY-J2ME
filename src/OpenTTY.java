@@ -3501,6 +3501,15 @@ class Lua {
             }
             else if (MOD == APPEND) {
                 if (args.isEmpty()) { return gotbad(1, "append", "screen expected, got no value"); }
+                else if (args.size() < 2) { return gotbad(2, "append", "value expected, got no value"); }
+                else {
+                    Object obj1 = args.elementAt(0), obj2 = args.elementAt(1);
+                    if (obj1 instanceof Displayable) {
+                        if (obj2 instanceof )
+                    } else {
+                        
+                    }
+                }
             }
 
             return null;
