@@ -1087,24 +1087,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     // |
     private String read(String filename) { 
-        try { 
-            if (filename.startsWith("/home/")) { 
-                RecordStore recordStore = null; 
-                String content = ""; 
-                try { 
-                    recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
-                    
-                    if (recordStore.getNumRecords() >= 1) { 
-                        byte[] data = recordStore.getRecord(1); 
-                        if (data != null) { content = new String(data); } 
-                    } 
-                } 
-                catch (RecordStoreException e) { content = ""; } 
-                finally { 
-                    if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } 
-                } 
-                return content; 
-            } 
+        try {  
+            if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } 
             else if (filename.startsWith("/mnt/")) { 
                 FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); 
                 InputStream is = fileConn.openInputStream(); 
