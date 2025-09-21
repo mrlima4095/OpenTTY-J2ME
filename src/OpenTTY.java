@@ -3504,10 +3504,11 @@ class Lua {
                 else if (args.size() < 2) { return gotbad(2, "append", "value expected, got no value"); }
                 else {
                     Object obj1 = args.elementAt(0), obj2 = args.elementAt(1);
-                    if (obj1 instanceof Displayable) {
-                        if (obj2 instanceof )
-                    } else {
-                        
+                    if (obj1 instanceof Form) {
+                        if (obj2 instanceof Hashtable || obj2 instanceof String) { AppendScreen((Form) obj1, obj2); }
+                    }
+                    else if (obj1 instanceof List) {
+                        ((List) obj1).append(toLuaString(obj2), null);
                     }
                 }
             }
