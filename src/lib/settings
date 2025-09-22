@@ -6,13 +6,13 @@ description=Config. Menu
 
 command=cfg
 
-cfg=execute x11 list /java/lib/settings;
+cfg=execute x11 list /lib/settings;
 
 shell.name=cfg
 shell.args=run,info
 
-run=execute x11 set cfg.back; x11 quest /java/lib/settings;
-info=execute about /java/lib/settings;
+run=execute x11 set cfg.back; x11 quest /lib/settings;
+info=execute about /lib/settings;
 
 [ DISPLAY ]
 
