@@ -963,7 +963,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 argument = argument.startsWith("/") ? argument : path + argument; 
                 
                 if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } 
-                else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } 
+                else if (argument.startsWith("/home/") || argument.startsWith("/tmp/")) { echoCommand("Unsupported API"); return 3; } 
                 else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
             } 
         }
@@ -1144,12 +1144,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { return ""; }
             }
             else if (filename.startsWith("/tmp/")) {
-                String pathTmp = filename.substring(5);
-                if (pathTmp.equals("")) return "";
-            
-                Object obj = getTmpObject(pathTmp);
-                if (obj instanceof String) return (String) obj;
-                else return "";
+                filename = filename.substring(5);
+                
+                return filename.equals("") ? "" : tmp.containsKey(filename) ? (String) tmp.get(filename) : "";
             }
             else { 
                 if (filename.startsWith("/dev/")) {
@@ -1636,26 +1633,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; } 
         } 
         else if (filename.startsWith("/tmp/")) {
-            String pathTmp = filename.substring(5);
-            if (pathTmp.equals("")) return 2;
-        
-            String[] parts = split(pathTmp, '/');
-            Hashtable current = tmp;
-        
-            for (int i = 0; i < parts.length - 1; i++) {
-                Object obj = current.get(parts[i]);
-                if (!(obj instanceof Hashtable)) {
-                    echoCommand("rm: " + parts[i] + ": not a directory");
-                    return 1;
-                }
-                current = (Hashtable) obj;
-            }
-        
-            String last = parts[parts.length - 1];
-            if (current.containsKey(last)) {
-                current.remove(last);
-            } else {
-                echoCommand("rm: " + last + ": not found");
+            filename = filename.substring(5);
+            if (filename.equals("")) { }
+            else if (tmp.containsKey(filename)) { tmp.remove(filename); }
+            else {
+                echoCommand("rm: " + filename + ": not found");
                 return 127;
             }
         }
@@ -1685,21 +1667,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { echoCommand("read-only storage"); return 5; }
         }
         else if (filename.startsWith("/tmp/")) {
-            String pathTmp = filename.substring(5);
-            if (pathTmp.equals("")) { return 2; }
-
-            String[] parts = split(pathTmp, '/');
-            Hashtable current = tmp;
-
-            for (int i = 0; i < parts.length - 1; i++) {
-                Object obj = current.get(parts[i]);
-                if (obj == null || !(obj instanceof Hashtable)) {
-                    return 1;
-                }
-                current = (Hashtable) obj;
-            }
-
-            current.put(parts[parts.length - 1], new String(data));
+            filename = filename.substring(5); 
+            if (filename.equals("")) { return 2; }
+            else { tmp.put(filename, new String(data)); }
         }
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
         else { return writeRMS(path + filename, data); } return 0; }
