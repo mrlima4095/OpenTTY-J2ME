@@ -6,7 +6,7 @@ description=OpenTTY Package Manager
 
 include=/lib/settings
 
-config=execute touch /tmp/.yang-lock; case !key (REPO) set REPO=opentty.xyz:31522; 
+config=execute touch /home/.yang-lock; case !key (REPO) set REPO=opentty.xyz:31522; 
 command=yang,setrepo
 
 yang=execute x11 list /lib/yang;
@@ -15,8 +15,8 @@ setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RET
 shell.name=yang
 shell.args=install,update,query,setrepo,info
 
-install=execute case file (.yang-lock) exec rm /tmp/.yang-lock & set OLD_QUERY=$QUERY & set QUERY=/home/$RESOURCE & tick Installing... & query socket://$REPO get lib/$RESOURCE & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & unset RESOURCE & touch /tmp/.yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
-update=execute case file (.yang-lock) exec rm /tmp/.yang-lock & set OLD_QUERY=$QUERY & set QUERY=/home/yang & tick Updating... & query socket://$REPO get lib/yang & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & touch /tmp/.yang-lock & cd & import /home/yang; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
+install=execute case file (.yang-lock) exec rm /home/.yang-lock & set OLD_QUERY=$QUERY & set QUERY=/home/$RESOURCE & tick Installing... & query socket://$REPO get lib/$RESOURCE & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & unset RESOURCE & touch /home/.yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
+update=execute case file (.yang-lock) exec rm /home/.yang-lock & set OLD_QUERY=$QUERY & set QUERY=/home/yang & tick Updating... & query socket://$REPO get lib/yang & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & touch /home/.yang-lock & cd & import /home/yang; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
 query=execute x11 quest /lib/yang;
 
 info=execute echo PackJ 1.4 (Default);
