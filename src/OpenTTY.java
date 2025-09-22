@@ -1084,8 +1084,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { }
             else {
                 argument = basename(argument);
-                String[] info = 
-                echoCommand()
+                String[] info = getExtensionInfo(getExtension(argument));
+                
+                echoCommand(argument + ": " + info[0] + " " + info[1] + " " + info[2])
             }
         }
 
@@ -1681,26 +1682,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { echoCommand(getCatch(e)); return 1; } return 0; }
     public int writeRMS(String filename, String data) { return writeRMS(filename, data.getBytes()); }
     public String loadRMS(String filename) { return read("/home/" + filename); }
-    // | (Temp)
-    private Object getTmpObject(String path) {
-        if (path.equals("")) { return tmp; }
-    
-        String[] parts = split(path, '/');
-        Object current = tmp;
-    
-        for (int i = 0; i < parts.length; i++) {
-            if (!(current instanceof Hashtable)) { return null; }
-            current = ((Hashtable) current).get(parts[i]);
-            if (current == null) { return null; }
-        }
-        return current;
-    }
-    
-    private Hashtable getTmpDir(String path) {
-        Object obj = getTmpObject(path);
-        return (obj instanceof Hashtable) ? (Hashtable) obj : null;
-    }
-
     // |
     // Text Manager
     private int StringEditor(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("-2u")) { nanoContent = nanoContent.toUpperCase(); } else if (mainCommand.equals("-2l")) { nanoContent = nanoContent.toLowerCase(); } else if (mainCommand.equals("-d")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], ""); } else if (mainCommand.equals("-a")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } else if (mainCommand.equals("-r")) { nanoContent = replace(nanoContent, split(argument, ' ')[0], split(argument, ' ')[1]); } else if (mainCommand.equals("-l")) { int i = 0; try { i = Integer.parseInt(argument); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } echoCommand(split(nanoContent, '\n')[i]); } else if (mainCommand.equals("-s")) { int i = 0; try { i = Integer.parseInt(getCommand(argument)); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } Vector lines = new Vector(); String div = getArgument(argument); int start = 0, index; while ((index = nanoContent.indexOf(div, start)) != -1) { lines.addElement(nanoContent.substring(start, index)); start = index + div.length(); } if (start < nanoContent.length()) { lines.addElement(nanoContent.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); if (i >= 0 && i < result.length) { echoCommand(result[i]); } else { echoCommand("null"); return 1; } } else if (mainCommand.equals("-p")) { String[] contentLines = split(nanoContent, '\n'); StringBuffer updatedContent = new StringBuffer(); for (int i = 0; i < contentLines.length; i++) { updatedContent.append(argument).append(contentLines[i]).append("\n"); } nanoContent = updatedContent.toString().trim(); } else if (mainCommand.equals("-v")) { String[] lines = split(nanoContent, '\n'); StringBuffer reversed = new StringBuffer(); for (int i = lines.length - 1; i >= 0; i--) { reversed.append(lines[i]).append("\n"); } nanoContent = reversed.toString().trim(); } else { return 127; } return 0; }
