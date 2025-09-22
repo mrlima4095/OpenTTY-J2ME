@@ -11,7 +11,7 @@
 .css = Cascading Style Sheets, text/css, text
 .csv = CSV Spreadsheet, text/csv, text
 .deb = Debian Package, application/vnd.debian.binary-package, bin
-.desktop = Linux Desktop Entry, application/x-desktop, text
+.desktop = Desktop Entry, application/x-desktop, text
 .dll = Windows Dynamic Library, application/x-msdownload, bin
 .doc = Microsoft Word, application/msword, document
 .docx = Microsoft Word (XML), application/vnd.openxmlformats-officedocument.wordprocessingml.document, document
@@ -43,7 +43,7 @@
 .svg = Scalable Vector Graphics, image/svg+xml, image
 .tar = Tape Archive, application/x-tar, archive
 .txt = Plain Text, text/plain, text
-.wav = WAV Audio, audio/wav, audio
+.wav = WAV Audio, audio/x-wav, audio
 .xls = Microsoft Excel, application/vnd.ms-excel, document
 .xlsx = Microsoft Excel (XML), application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, document
 .zip = ZIP Archive, application/zip, archive
