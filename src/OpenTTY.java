@@ -1782,7 +1782,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public String[] getExtensionInfo(String ext) {
         if (filetypes == null) { filetypes  = parseProperties(getcontent("/res/filetypes")); }
-        String value = (String) fileTypes.get(ext.toLowerCase());
+        String value = (String) filetypes.get(ext.toLowerCase());
         if (value == null) { return new String[] { "Unknown", "application/octet-stream", "binary" }; }
         return split(value, ',');
     }
