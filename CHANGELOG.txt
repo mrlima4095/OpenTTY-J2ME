@@ -3,8 +3,7 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Commands_ ]
 
-- 
-- 
+- `file [filename]`: prints information about file
 - 
 - 
 
@@ -12,8 +11,8 @@ Copyright (C) 2025 - Mr. Lima
 
 - Directories tree modified
 - Initalize script changed to `.initrc`
-- 
-- 
+- Fixed **Lua** security error that allow access to process **owner** field
+- **Lua** functions `io.read` and `io.write` now needs to use `/dev/stdin` and `/dev/stdout`
 
 [ _Notes_ ]
 
