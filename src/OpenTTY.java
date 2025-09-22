@@ -580,8 +580,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     if (path.equals("/tmp/")) { for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement(), null); } }
-                    else if (path.equals("/proc/")) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement() + "/", null); } }
-                    else if (path.startsWith("/proc/")) { for (Enumeration KEYS = getprocess(path.substring(6, path.length() - 1)).keys(); KEYS.hasMoreElements();) { preview.append((String) KEYS.nextElement(), null); } }
                     else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } } 
                     else if (path.startsWith("/mnt/")) {
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
@@ -965,43 +963,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 argument = argument.startsWith("/") ? argument : path + argument; 
                 
                 if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } 
-                else if (argument.startsWith("/tmp/")) {
-                    argument = argument.substring(5);
-                    if (argument.equals("")) {
-                        echoCommand("mkdir: missing operand");
-                        return 2;
-                    }
-                
-                    String[] parts = split(argument, '/');
-                    Hashtable current = tmp;
-                
-                    for (int i = 0; i < parts.length; i++) {
-                        String key = parts[i];
-                        Object obj = current.get(key);
-                
-                        if (i == parts.length - 1) {
-                            if (obj == null) {
-                                Hashtable newDir = new Hashtable();
-                                current.put(key, newDir);
-                            } else if (obj instanceof Hashtable) {
-                                echoCommand("mkdir: " + key + ": file exists");
-                            } else {
-                                echoCommand("mkdir: " + key + ": not a directory");
-                                return 1;
-                            }
-                        } else {
-                            if (obj == null) {
-                                echoCommand("mkdir: cannot create directory '" + key + "': not found");
-                                return 127;
-                            } else if (obj instanceof Hashtable) {
-                                current = (Hashtable) obj;
-                            } else {
-                                echoCommand("mkdir: cannot create directory '" + key + "': is not a directory");
-                                return 1;
-                            }
-                        }
-                    }
-                }
                 else if (argument.startsWith("/home/")) { echoCommand("Unsupported API"); return 3; } 
                 else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
             } 
