@@ -17,7 +17,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
-    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
+    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null,
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     private String logs = "", path = "/home/", build = "2025-1.17-02x78";
@@ -669,7 +669,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Session
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(root == true ? "root": username); }
-        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return processCommand(argument.equals("") ? "import /java/bin/sh" : ". " + argument, false, root); }
+        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return processCommand(argument.equals("") ? "import /bin/sh" : ". " + argument, false, root); }
         else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (root) { return processCommand(argument, ignore, root); } else { new MIDletControl(argument); } }
         else if (mainCommand.equals("su")) { if (root) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); processCommand("sh", false); } else { echoCommand("su: permission denied"); return 13; } }
         else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else { if (root) { writeRMS("OpenRMS", String.valueOf(argument.hashCode()).getBytes(), 2); } else { echoCommand("passwd: permission denied"); return 13; } } }
