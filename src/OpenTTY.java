@@ -1077,7 +1077,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 
                 return (Integer) lua.run(source, code, arg).get("status"); 
-            } else {echoCommand("This MIDlet Build don't have Lua"); return 3; } 
+            } else { echoCommand("This MIDlet Build don't have Lua"); return 3; } 
             
         }
 
@@ -1256,7 +1256,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // |
         // Interfaces
-        else if (mainCommand.equals("canvas")) { display.setCurrent(new MIDletCanvas(this, argument.equals("") ? "Canvas" : argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root)); }
+        else if (mainCommand.equals("canvas")) { if (javaClass("MIDletCanvas") == 0) { display.setCurrent(new MIDletCanvas(this, argument.equals("") ? "Canvas" : argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root)); } else { echoCommand("This MIDlet Build don't have MIDletCanvas"); return 3; } }
         else if (mainCommand.equals("make") || mainCommand.equals("list") || mainCommand.equals("quest") || mainCommand.equals("edit")) { new MIDletControl(mainCommand.equals("make") ? MIDletControl.SCREEN : mainCommand.equals("list") ? MIDletControl.LIST : mainCommand.equals("quest") ? MIDletControl.QUEST : MIDletControl.WEDIT, argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); }
         else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { form.deleteAll(); form.append(stdout); form.append(stdin); } else { new MIDletControl(form, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), root); } }
 
