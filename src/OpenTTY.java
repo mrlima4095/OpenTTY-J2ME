@@ -1086,7 +1086,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 argument = basename(argument);
                 String[] info = getExtensionInfo(getExtension(argument));
                 
-                echoCommand(argument + ": " + info[0] + " " + info[1] + " " + info[2])
+                echoCommand(argument + ": " + info[0] + " " + info[1] + " " + info[2]);
             }
         }
 
