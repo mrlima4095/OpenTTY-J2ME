@@ -44,7 +44,7 @@ Others API:
 
 [ Package Manager ] 
 
-  Run 'import /java/lib/yang' to load PackJ.  
+  Run 'import /lib/yang' to load PackJ.  
   Usage: yang
 
   The downloaded packages will be installed at home folder. 
