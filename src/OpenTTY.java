@@ -1080,6 +1080,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else { echoCommand("This MIDlet Build don't have Lua"); return 3; } 
             
         }
+        else if (mainCommand.equals("file")) {
+            if (argument.equals("")) { }
+            else {
+                argument = basename(argument);
+                String[] info = 
+                echoCommand()
+            }
+        }
 
         // API 015 - (Scripts)
         // |
