@@ -1772,12 +1772,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0; 
     }
-    private String getMimeType(String filename) {
-        
-    }
-    private String getFileType(String filename) {
-        
-    }
+    private String getMimeType(String filename) { return filename.equals("") ? "" : getExtensionInfo(getExtension(filename))[1]; }
+    private String getFileType(String filename) { return filename.equals("") ? "" : getExtensionInfo(getExtension(filename))[2]; }
     private String getExtension(String filename) {
         if (filename == null) { return ""; }
         int dot = filename.lastIndexOf('.');
