@@ -1,7 +1,7 @@
 /
 /bin/
-/bin/sh
 /bin/java
+/bin/sh
 /dev/
 /dev/null
 /dev/random
@@ -10,8 +10,8 @@
 /dev/tty
 /dev/zero
 /etc/
-/etc/init
 /etc/fstab
+/etc/init
 /home/
 /lib/
 /lib/yang
