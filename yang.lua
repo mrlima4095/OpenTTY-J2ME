@@ -30,11 +30,7 @@ local app = {
 }
 
 function app.install(package)
-    if app.repo[package] == nil then
-        print("yang: " .. package .. ": not found")
-        os.exit(127)
-    end
-
+    
     
 end
 function app.update()
@@ -45,7 +41,12 @@ function app.prefetch(...)
     local query = ...
 
     for _,v in query do
-        app.install(v)
+        if app.repo[v] == nil then
+            print("yang: " .. package .. ": not found")
+            os.exit(127)
+        end
+
+        app.install(app.repo[v])
     end
 end
 
