@@ -22,7 +22,7 @@ import http.client
 from datetime import datetime
 
 class Server:
-    def __init__(self, host='0.0.0.0', port=31522):
+    def __init__(self, host='0.0.0.0', port=31521):
         self.host = host
         self.port = port
 
