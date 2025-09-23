@@ -1127,7 +1127,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                         String[] info = getExtensionInfo(getExtension(name));
                                         echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); 
                                     }
-                                    break
+                                    break;
                                 }
                             }
                             
