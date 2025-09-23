@@ -802,6 +802,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
+            String old_pwd = path;
             if (argument.equals("") && mainCommand.equals("cd")) { path = "/home/"; } 
             else if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); }
             else if (argument.equals("..")) { 
@@ -833,7 +834,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             } 
 
-            if (mainCommand.equals("pushd")) { ((Vector) getobject("1", "stack")).addElement(path); echoCommand(readStack()); }
+            if (mainCommand.equals("pushd")) { ((Vector) getobject("1", "stack")).addElement(old_pwd); echoCommand(readStack()); }
         }
         else if (mainCommand.equals("popd")) { 
             Vector stack = (Vector) getobject("1", "stack");
