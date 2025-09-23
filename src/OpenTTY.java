@@ -1117,7 +1117,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         
                         if (paths.containsKey(target + "/")) {
                             echoCommand(argument + ": directory");
-                        } else if (paths.containsKey(parent)) {
+                        } 
+                        else if (paths.containsKey(parent)) {
                             String[] contents = (String[]) paths.get(parent);
                             for (int i = 0; i < contents.length; i++) {
                                 if (contents[i].equals(name)) {
@@ -1127,13 +1128,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                         String[] info = getExtensionInfo(getExtension(name));
                                         echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); 
                                     }
-                                    break;
+                                    return 0;
                                 }
                             }
                             
                             echoCommand(argument + ": not found");
                             return 127;
-                        } else { echoCommand(argument + ": not found"); return 127; }
+                        } 
+                        else { echoCommand(argument + ": not found"); return 127; }
                     }
                     else { echoCommand(argument + ": unknown"); return 127; }
                 } catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; }
