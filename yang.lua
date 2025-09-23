@@ -40,7 +40,11 @@ function app.install(package)
         
         if raw == "File 'lib/" .. package .. "' not found." then
             print("yang: " .. package .. ": not found")
+            os.exit(127)
         end
+        
+        os.write(raw, "/home/" .. package)
+        
     elseif app.source == "proxy" then
         
     end
