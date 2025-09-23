@@ -30,8 +30,11 @@ local app = {
 }
 
 function app.install(package)
-    
-    
+    if app.source == "server" then
+        
+    elseif app.source == "proxy" then
+        
+    end
 end
 function app.update()
     
