@@ -35,10 +35,12 @@ function app.install(package)
         graphics.SetTicker("Installing '" .. package .. "'...")
         local conn, i, o = socket.connect("socket://" .. app.mirror)
         io.write("get lib/" .. package, o)
-        local raw = io.read(i)
-        
-        
+        local raw = string.trim(io.read(i))
         graphics.SetTicker(nil)
+        
+        if raw == "File 'lib/" .. package .. "' not found." then
+            print("yang: " .. package .. ": not found")
+        end
     elseif app.source == "proxy" then
         
     end
