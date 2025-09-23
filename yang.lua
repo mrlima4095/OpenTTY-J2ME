@@ -97,10 +97,6 @@ function app.main()
         for k,v in pairs(arg) do
             app.install(v)
         end
-    elseif arg[1] == "remove" then
-
-    elseif arg[1] == "update" then
-
     end
 end
 
