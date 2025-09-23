@@ -2,6 +2,7 @@ local app = {
     version = "1.5",
 
     mirror = os.getenv("REPO") or "opentty.xyz:31522",
+    github = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/",
     proxy = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?",
 
     source = "server",
@@ -31,7 +32,8 @@ local app = {
 
 function app.install(package)
     if app.source == "server" then
-        
+        local conn, i, o = socket.connect("socket://" .. app.mirror)
+        io.write("get ")
     elseif app.source == "proxy" then
         
     end
