@@ -14,6 +14,8 @@ Copyright (C) 2025 - Mr. Lima
 - Fixed `pushd` invalid directories stacking
 - Fixed **Lua** security error that allow access to process **owner** field
 - **Lua** functions `io.read` and `io.write` now needs to use `/dev/stdin` and `/dev/stdout`
+- Removed default parsers commands `vnt`
+- Default title for command `view` now is same of Main Window
 
 [ _Notes_ ]
 

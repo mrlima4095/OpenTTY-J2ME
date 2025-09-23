@@ -979,13 +979,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
         else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
         else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
-        else if (mainCommand.equals("vnt")) { if (argument.equals("")) { } else { String IN = getcontent(args[0]), OUT = args.length > 1 ? args[1] : ""; if (OUT.equals("")) { nanoContent = text2note(IN); } else { writeRMS(OUT, text2note(IN)); } } }
         else if (mainCommand.equals("ph2s")) { Vector history = (Vector) getobject("1", "history"); StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/java/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script); } }
         // |
         // Interfaces
         else if (mainCommand.equals("nano")) { nano.setString(argument.equals("") ? nanoContent : getcontent(argument)); display.setCurrent(nano); }
-        else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent)), html2text(env(nanoContent))); }
-        else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument)), html2text(env(argument))); } }
+        else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument), form.getTitle()), html2text(env(argument))); } }
+        else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent), "HTML Viewer"), html2text(env(nanoContent))); }
         // |
         // Audio Manager
         else if (mainCommand.equals("audio")) { return audio(argument, root); }
@@ -1682,29 +1681,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public int writeRMS(String filename, byte[] data) { 
         if (filename == null || filename.length() == 0) { return 2; } 
-        else if (filename.startsWith("/mnt/")) { 
-            try { 
-                FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
-                if (!CONN.exists()) { CONN.create(); } 
-                OutputStream OUT = CONN.openOutputStream(); 
-                OUT.write(data); OUT.flush(); 
-                OUT.close(); CONN.close(); 
-            } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } 
-        } 
+        else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } 
         else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
-        else if (filename.startsWith("/dev/")) {
-            filename = filename.substring(5); 
-            if (filename.equals("")) { return 2; }
-            else if (filename.equals("null")) { }
-            else if (filename.equals("stdin")) { stdin.setString(new String(data)); }
-            else if (filename.equals("stdout")) { stdout.setText(new String(data)); }
-            else { echoCommand("read-only storage"); return 5; }
-        }
-        else if (filename.startsWith("/tmp/")) {
-            filename = filename.substring(5); 
-            if (filename.equals("")) { return 2; }
-            else { tmp.put(filename, new String(data)); }
-        }
+        else if (filename.startsWith("/dev/")) { filename = filename.substring(5); if (filename.equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { echoCommand("read-only storage"); return 5; } }
+        else if (filename.startsWith("/tmp/")) { filename = filename.substring(5); if (filename.equals("")) { return 2; } else { tmp.put(filename, new String(data)); } }
         else if (filename.startsWith("/")) { echoCommand("read-only storage"); return 5; } 
         else { return writeRMS(path + filename, data); } return 0; }
     public int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { echoCommand(getCatch(e)); return 1; } return 0; }
@@ -1717,10 +1697,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Text Parsers
     private String parseJson(String text) { Hashtable properties = parseProperties(text); if (properties.isEmpty()) { return "{}"; } Enumeration keys = properties.keys(); StringBuffer jsonBuffer = new StringBuffer(); jsonBuffer.append("{"); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); String value = (String) properties.get(key); jsonBuffer.append("\n  \"").append(key).append("\": "); jsonBuffer.append("\"").append(value).append("\""); if (keys.hasMoreElements()) { jsonBuffer.append(","); } } jsonBuffer.append("\n}"); return jsonBuffer.toString(); }
     private String parseConf(String text) { StringBuffer iniBuffer = new StringBuffer(); text = text.trim(); if (text.startsWith("{") && text.endsWith("}")) { text = text.substring(1, text.length() - 1); } String[] pairs = split(text, ','); for (int i = 0; i < pairs.length; i++) { String pair = pairs[i].trim(); String[] keyValue = split(pair, ':'); if (keyValue.length == 2) { String key = getpattern(keyValue[0].trim()); String value = getpattern(keyValue[1].trim()); iniBuffer.append(key).append("=").append(value).append("\n"); } } return iniBuffer.toString(); }
-    private String text2note(String content) { if (content == null || content.length() == 0) { return "BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:\nEND:VNOTE"; } content = replace(content, "=", "=3D"); content = replace(content, "\n", "=0A"); StringBuffer vnote = new StringBuffer(); vnote.append("BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:" + content + "\nEND:VNOTE"); return vnote.toString(); }
     // |
     // Interfaces
-    private String extractTitle(String htmlContent) { return extractTag(htmlContent, "title", "HTML Viewer"); }
+    private String extractTitle(String htmlContent, String fallback) { return extractTag(htmlContent, "title", fallback); }
     private String extractTag(String htmlContent, String tag, String fallback) { String startTag = "<" + tag + ">", endTag = "</" + tag + ">"; int start = htmlContent.indexOf(startTag), end = htmlContent.indexOf(endTag); if (start != -1 && end != -1 && end > start) { return htmlContent.substring(start + startTag.length(), end).trim(); } else { return fallback; } }
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
     // |
