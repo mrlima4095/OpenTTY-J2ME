@@ -12,6 +12,7 @@
 /etc/
 /etc/fstab
 /etc/init
+/etc/os-release
 /home/
 /lib/
 /lib/settings
