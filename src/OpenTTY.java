@@ -1084,8 +1084,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         boolean found = false;
                         if (rms != null) { for (int i = 0; i < rms.length; i++) { if (rms[i].equals(filename)) { found = true; break; } } }
 
-                        echoCommand(found ? argument + ": Plain Text, text" : argument + ": not found");
-                        return found ? 0 : 127;
+                        if (found) {
+                            String[] info = getExtensionInfo(getExtension(filename));
+                            echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
+                        } else {
+                            echoCommand(argument + ": not found")
+                            return 127;
+                        } 
                     }
                     else if (target.startsWith("/mnt/")) {
                         String filename = target.substring(5);
@@ -1106,11 +1111,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         } 
                         else { echoCommand(argument + ": not found"); return 127; }
                     }
-                    else if (target.startsWith("/dev/")) { echoCommand(argument + ": special device"); }
                     else if (target.startsWith("/")) {
                         if (paths.containsKey(target)) {
                             if (target.startsWith("/bin/")) { echoCommand(argument + ": Application, bin"); }
+                            else if (target.startsWith("/dev/")) { echoCommand(argument + ": special device"); }
                             else if (target.startsWith("/lib/")) { echoCommand(argument + ": Package, text"); }
+                            
                             else {
                                 String[] info = getExtensionInfo(getExtension(target));
                                 echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
@@ -1806,7 +1812,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String[] getExtensionInfo(String ext) {
         if (filetypes == null) { filetypes  = parseProperties(getcontent("/res/filetypes")); }
         String value = (String) filetypes.get(ext.toLowerCase());
-        if (value == null) { return new String[] { "Unknown", "application/octet-stream", "binary" }; }
+        if (value == null) { return new String[] { "Unknown", "application/octet-stream", "bin" }; }
         return split(value, ',');
     }
 
