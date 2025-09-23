@@ -1,79 +1,87 @@
---[[
+local app = {
+    version = "1.5",
 
-config=execute touch /home/.yang-lock; case !key (REPO) set REPO=opentty.xyz:31522; 
-command=yang
+    mirror = os.getenv("REPO") or "opentty.xyz:31522",
+    proxy = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?",
 
-yang=execute lua /home/yang.lua;
+    source = "server",
 
-]]
-
-local mirror = os.getenv("REPO") or "opentty.xyz:31522"
-
-local repo = {
-    ["Android ME"] = "android",
-    ["Armitage"] = "armitage",
-    ["Auto Clean"] = "autogc",
-    ["Auto Syntax"] = "tab",
-    ["Back Previous"] = "bprevious",
-    ["BoxME"] = "boxme",
-    ["CMatrix"] = "cmatrix",
-    ["Discord (MIDlet)"] = { url = "http://146.59.80.3/discord_midp2_beta.jar", author = "gtrxac" },
-    ["Forge"] = "forge",
-    ["Github (MIDlet)"] = { url = "http://nnp.nnchan.ru/dl/GH2ME.jar", author = "shinovon" },
-    ["GoBuster (Word list)"] = "gobuster",
-    ["Graphics (Lua)"] = "graphics.lua",
-    ["ImmersiveShell"] = "sh2me",
-    ["JBuntu"] = "jbuntu",
-    ["JBenchmark"] = "debuggers",
-    ["J2ME Loader"] = "modme",
-    ["Math (Lua)"] = "math.lua",
-    ["MobiX Loader"] = "mxos",
-    ["PackJ (Update)"] = "yang",
-    ["PackJ (Proxy)"] = "yang-proxy",
-    ["PasteBin"] = "pastebin",
-    ["SmartME SDK"] = "sdkme",
-    ["Updater"] = "sync",
-    ["ViaVersion"] = "viaversion"
-}
-
-local function install(pkg)
-    if string.match(pkg, "MIDlet") then
-        local MIDlet = repo[pkg]
-
-        os.execute("execute warn This is a 3rd MIDlet from '" .. MIDlet.author .. "'; bg exec sleep 3 & open " .. MIDlet.url) os.exit()
-    end
-
-    local filename = repo[pkg]
-    local conn, i, o = socket.connect("socket://" .. mirror)
-
-    io.write("get lib/" .. filename, o)
-    local content = io.read(i)
-
-    if content == "File 'lib/" .. filename .. "' not found." then
-        os.execute("warn Error while installing package!") os.exit(1)
-    end
-
-    io.write(content, filename)
-end
-
-local function menu()
-    local m = {
-        title = "Repository",
-        type = "multiple",
-        back = { label = "Back", root = function () os.exit() end },
-        button = { label = "Install", root = function (...) for k, v in pairs(...) do install(v) end os.exit() end },
-
-        fields = {}
+    repo = {
+        ["Android ME"] = "android",
+        ["Armitage"] = "armitage",
+        ["Auto Clean"] = "autogc",
+        ["Auto Syntax"] = "tab",
+        ["Back Previous"] = "bprevious",
+        ["BoxME"] = "boxme",
+        ["Forge"] = "forge",
+        ["GoBuster (word list)"] = "gobuster",
+        ["JBuntu"] = "jbuntu",
+        ["JBenchmark"] = "debuggers",
+        ["J2ME Loader"] = "modme",
+        ["MobiX Loader"] = "mxos",
+        ["PackJ (Proxy)"] = "yang-proxy",
+        ["PasteBin"] = "pastebin",
+        ["SmartME SDK"] = "sdkme",
+        ["Updater"] = "sync",
+        ["ViaVersion"] = "viaversion",
+        ["WebProxy"] = "proxy.lua"
     }
 
-    local index = 1
-    for k, v in pairs(repo) do
-        m.fields[index] = k
+}
 
-        index = index + 1
+function app.install(package)
+    if app.repo[package] == nil then
+        print("yang: " .. package .. ": not found")
+        os.exit(127)
     end
 
-    graphics.display(graphics.BuildList(m))
+    
+end
+function app.update()
+    
 end
 
-menu()
+function app.prefetch(...)
+    local query = ...
+
+    for _,v in query do
+        app.install(v)
+    end
+end
+
+function app.main()
+    for k,v in pairs(arg) do
+        if v == "--proxy" then
+            app.source = "proxy"
+            table.remove(arg, k)
+        elseif v == "--update" then
+            return app.update()
+        end
+    end
+
+    if #arg == 1 or arg[1] == "list" then
+        local list, i = {
+            title = "Repository",
+            back = { label = "Back", root = os.exit },
+            button = { label = "Install", root = app.prefetch },
+            fields = {}
+        }, 1
+        for k,v in pairs(app.repo) do
+            list.fields[i], i = k, i + 1
+        end
+
+        graphics.display(graphics.BuildList(list))
+    elseif arg[1] == "install" then
+        for k,v in pairs(arg) do
+            app.install(v)
+        end
+    elseif arg[1] == "remove" then
+
+    elseif arg[1] == "update" then
+
+    end
+end
+
+
+os.setproc("name", "yang")
+app.main()
