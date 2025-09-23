@@ -1074,10 +1074,41 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("file")) {
             if (argument.equals("")) { }
             else {
-                argument = basename(argument);
-                String[] info = getExtensionInfo(getExtension(argument));
+                String target = argument.startsWith("/") ? argument : path + argument;
                 
-                echoCommand(argument + ": " + info[0] + " " + info[1] + " " + info[2]);
+                try {
+                    if (target.endsWith("/")) { echoCommand(target + ": directory"); }
+                    else if (target.startsWith("/home/")) {
+                        String filename = target.substring(6);
+                        String[] rms = RecordStore.listRecordStores();
+                        boolean found = false;
+                        if (rms != null) { for (int i = 0; i < rms.length; i++) { if (rms[i].equals(filename)) { found = true; break; } } }
+
+                        echoCommand(found ? argument + ": Plain Text, text" : argument + ": not found");
+                        return found ? 0 : 127;
+                    }
+                    else if (target.startsWith("/mnt/")) {
+                        String filename = target.substring(5);
+                        FileConnection fc = (FileConnection) Connector.open("file:///" + filename, Connector.READ);
+                        if (fc.exists()) {
+                            String[] info = getExtensionInfo(getExtension(filename));
+                            echoCommand(argument + (fc.isDirectory() ? ": directory" : ": " + info[0] + ", " + info[2]));
+                        } 
+                        else { echoCommand(argument + ": not found"); fc.close(); return 127; }
+
+                        fc.close();
+                    }
+                    else if (target.startsWith("/tmp/")) {
+                        String filename = target.substring(5);
+                        if (tmp.containsKey(filename)) {
+                            String[] info = getExtensionInfo(getExtension(filename));
+                            echoCommand(argument + ": " + info[0].equals("Unknown") ? "Plain Text" + ", " + info[0].equals("Unknown") ? "text" : info[2]);
+                        } 
+                        else { echoCommand(argument + ": not found"); return 127; }
+                    }
+                    else if (target.startsWith("/dev/")) { echoCommand(argument + ": special device"); }
+                    else { echoCommand(argument + ": unknown"); return 127; }
+                } catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; }
             }
         }
 
