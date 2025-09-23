@@ -1,4 +1,4 @@
-local app = {
+Local app = {
     version = "1.5",
 
     mirror = os.getenv("REPO") or "opentty.xyz:31522",
