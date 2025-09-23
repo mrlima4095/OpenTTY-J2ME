@@ -84,6 +84,7 @@ function app.main()
     if #arg == 1 or arg[1] == "list" then
         local list, i = {
             title = "Repository",
+            type = "multiple",
             back = { label = "Back", root = os.exit },
             button = { label = "Install", root = app.prefetch },
             fields = {}
