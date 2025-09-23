@@ -89,7 +89,8 @@ function app.main()
             fields = {}
         }, 1
         for k,v in pairs(app.repo) do
-            list.fields[i], i = k, i + 1
+            list.fields[i] = k
+            i = i + 1
         end
 
         graphics.display(graphics.BuildList(list))
