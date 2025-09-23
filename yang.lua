@@ -31,23 +31,28 @@ local app = {
 }
 
 function app.install(package)
+    local raw, status = "", 200
+    graphics.SetTicker("Installing '" .. package .. "'...")
     if app.source == "server" then
-        graphics.SetTicker("Installing '" .. package .. "'...")
         local conn, i, o = socket.connect("socket://" .. app.mirror)
         io.write("get lib/" .. package, o)
-        local raw = string.trim(io.read(i))
+        raw = string.trim(io.read(i))
         graphics.SetTicker(nil)
         
         if raw == "File 'lib/" .. package .. "' not found." then
             print("yang: " .. package .. ": not found")
             os.exit(127)
         end
-        
-        os.write(raw, "/home/" .. package)
-        
     elseif app.source == "proxy" then
-        
+        raw, status = socket.http.get(app.proxy .. app.github .. package)
+        if status == 404 then
+            print("yang: " .. package .. ": not found")
+            os.exit(127)
+        end
     end
+    
+    os.write(raw, "/home/" .. package)
+    print("[ Yang ] " .. package .. " installed")
 end
 function app.update()
     
