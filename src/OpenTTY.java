@@ -1112,18 +1112,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         else { echoCommand(argument + ": not found"); return 127; }
                     }
                     else if (target.startsWith("/")) {
-                        if (paths.containsKey(target)) {
-                            if (target.startsWith("/bin/")) { echoCommand(argument + ": Application, bin"); }
-                            else if (target.startsWith("/dev/")) { echoCommand(argument + ": special device"); }
-                            else if (target.startsWith("/lib/")) { echoCommand(argument + ": Package, text"); }
-                            
-                            else {
-                                String[] info = getExtensionInfo(getExtension(target));
-                                echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
+                        String parent = target.substring(0, target.lastIndexOf('/') + 1);
+                        String name   = target.substring(target.lastIndexOf('/') + 1);
+                        
+                        if (paths.containsKey(target + "/")) {
+                            echoCommand(argument + ": directory");
+                        } else if (paths.containsKey(parent)) {
+                            String[] contents = (String[]) paths.get(parent);
+                            for (int i = 0; i < contents.length; i++) {
+                                if (contents[i].equals(name)) {
+                                    if (parent.equals("/bin/")) { echoCommand(argument + ": Application, bin"); } 
+                                    else if (parent.equals("/dev/")) { echoCommand(argument + ": special device"); } 
+                                    else { 
+                                        String[] info = getExtensionInfo(getExtension(name));
+                                        echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); 
+                                    }
+                                    break
+                                }
                             }
-                        } 
-                        else if (paths.containsKey(target + "/")) { echoCommand(argument + ": directory"); }
-                        else { echoCommand(argument + ": not found"); return 127; }
+                            
+                            echoCommand(argument + ": not found");
+                            return 127;
+                        } else { echoCommand(argument + ": not found"); return 127; }
                     }
                     else { echoCommand(argument + ": unknown"); return 127; }
                 } catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; }
