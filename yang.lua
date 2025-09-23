@@ -32,8 +32,13 @@ local app = {
 
 function app.install(package)
     if app.source == "server" then
+        graphics.SetTicker("Installing '" .. package .. "'...")
         local conn, i, o = socket.connect("socket://" .. app.mirror)
-        io.write("get ")
+        io.write("get lib/" .. package, o)
+        local raw = io.read(i)
+        
+        
+        graphics.SetTicker(nil)
     elseif app.source == "proxy" then
         
     end
