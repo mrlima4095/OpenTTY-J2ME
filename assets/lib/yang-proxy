@@ -15,8 +15,8 @@ setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RET
 shell.name=yang
 shell.args=install,update,query,setrepo,info
 
-install=execute cd; case file (.yang-lock) exec rm .yang-lock & install nano & tick Installing... & proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/$RESOURCE & install $RESOURCE & get nano & unset RESOURCE & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
-update=execute cd; case file (.yang-lock) exec rm .yang-lock & install nano & tick Updating... & proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/yang-proxy & install yang-proxy & get nano & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
+install=execute cd; case file (.yang-lock) exec rm .yang-lock & install nano & tick Installing... & proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/1.16.x/assets/lib/$RESOURCE & install $RESOURCE & get nano & unset RESOURCE & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
+update=execute cd; case file (.yang-lock) exec rm .yang-lock & install nano & tick Updating... & proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/1.16.x/assets/lib/yang-proxy & install yang-proxy & get nano & touch .yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
 query=execute x11 quest yang-proxy;
 
 info=execute echo PackJ 1.4 (Proxy Edition);
