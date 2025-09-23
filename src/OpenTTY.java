@@ -1116,7 +1116,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
                             }
                         } 
-                        else if (paths.containsKey(filename + "/")) { echoCommand(argument + ": directory"); }
+                        else if (paths.containsKey(target + "/")) { echoCommand(argument + ": directory"); }
                         else { echoCommand(argument + ": not found"); return 127; }
                     }
                     else { echoCommand(argument + ": unknown"); return 127; }
