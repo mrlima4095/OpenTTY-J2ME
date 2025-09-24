@@ -155,18 +155,6 @@ function httpd.run(port, debug, buffer, mime)
 
         pcall(io.close, server, client)
     end
-                local full = "HTTP/1.1 " .. status .. "\r\n" ..
-                             "Content-Type: text/html\r\n" ..
-                             "Content-Length: " .. #response .. "\r\n\r\n" ..
-                             response
-
-                io.write(full, o)
-            end
-            pcall(io.close, client, i, o)
-        end
-    end
-
-    pcall(io.close, server)
 end
 
 return httpd
