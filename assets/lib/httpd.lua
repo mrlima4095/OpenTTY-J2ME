@@ -3,15 +3,9 @@ local httpd = {}
 httpd._row = 1
 httpd._routes = {}
 
-local function getMethod(raw)
-    
-end
-local function getHeaders(raw)
-    
-end
-local function getRoute(raw)
-    
-end
+local function getMethod(raw) end
+local function getHeaders(raw) end
+local function getRoute(raw) end
 local function getBody(raw)
     
 end
@@ -50,21 +44,17 @@ function httpd.run(port)
             else
                 local ok, response = pcall(handler, method, headers, body)
                 if not ok then status = "502 Internal Server Error" end
-                
+
                 if type(response) == "table" then
                     status = response.status
                     response = response.body
                 end
-                
-                
             end
-            
-            
-            
+
             io.write(response, o)
             pcall(io.close, client, i, o)
         end
-        
+
         pcall(io.close, server)
     end
 end
