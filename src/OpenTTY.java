@@ -3149,14 +3149,14 @@ class Lua {
                 else {
                     Vector result = new Vector(), fnArgs = new Vector();
 
-                    if (args.elementAt(0) instanceof LuaFunction) { result.addElement(Boolean.FALSE); result.addElement("attempt to call a " + type(args.elementAt(0)) + " value"); } 
-                    else {
+                    if (args.elementAt(0) instanceof LuaFunction) {
                         LuaFunction func = (LuaFunction) unwrap(args.elementAt(0));
                         for (int i = 1; i < args.size(); i++) { fnArgs.addElement(unwrap(args.elementAt(i))); }
 
                         try { Object value = func.call(fnArgs); result.addElement(Boolean.TRUE); result.addElement(value); }
                         catch (Exception e) { result.addElement(Boolean.FALSE); result.addElement(midlet.getCatch(e)); }
                     }
+                    else { result.addElement(Boolean.FALSE); result.addElement("attempt to call a " + type(args.elementAt(0)) + " value"); } 
 
                     return result;
                 }
