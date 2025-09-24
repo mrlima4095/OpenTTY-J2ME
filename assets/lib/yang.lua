@@ -7,6 +7,7 @@ local app = {
 
     source = "server",
 
+    root = "/home/",
     repo = {
         ["Android ME"] = "android",
         ["Armitage"] = "armitage",
@@ -29,37 +30,52 @@ local app = {
 
 }
 
-function app.install(package)
-    local raw, status = "", 200
-    graphics.SetTicker("Installing '" .. package .. "'...")
+function app.install(pkg)
+    graphics.SetTicker("Downloading '" .. pkg .. "'")
+
     if app.source == "server" then
-        local conn, i, o = socket.connect("socket://" .. app.mirror)
-        io.write("get lib/" .. package, o)
-        raw = string.trim(io.read(i, 4096))
+        local conn, i, o = socket.connect("socket://" .. app.mirror); io.write("get lib/" .. pkg, o)
+        local raw = io.read(i, 4096)
+
         graphics.SetTicker(nil)
+        io.close(i) io.close(o)
+        io.close(conn)
 
-        if raw == "File 'lib/" .. package .. "' not found." then
-            print("yang: " .. package .. ": not found")
-            os.exit(127)
-        end
+        if string.trim(raw) == "File 'lib/" .. pkg .. "' not found" then print("Unable to locate package: " .. pkg) os.exit(127) end
 
-        io.close(conn) io.close(i) io.close(o)
+        io.write(raw, app.root .. pkg)
     elseif app.source == "proxy" then
-        raw, status = socket.http.get(app.proxy .. app.github .. package)
+        local raw, status = socket.http.get(app.proxy .. app.github .. pkg)
         graphics.SetTicker(nil)
 
-        if status == 404 then
-            print("yang: " .. package .. ": not found")
-            os.exit(127)
-        end
+        if status == 200 then io.write(raw, app.root .. pkg)
+        elseif status == 404 then print("Unable to locate package: " .. pkg) os.exit(127)
+        else print("[ Yang ] Downloading failed!\n[ Yang ] HTTP Status: " .. status) os.exit(1) end
     end
-
-    io.write(raw, "/home/" .. package)
-    print("[ Yang ] " .. package .. " installed")
 end
 function app.update()
-    local raw, _ = socket.http.get("http://opentty.xyz/yang.lua")
-    io.write(raw, "/home/yang.lua")
+    graphics.SetTicker("Updating...")
+
+    local this = "/home/yang.lua"
+    if string.sub(arg[0], 1, 1) == "/" then this = arg[0]
+    else this = "/home/" .. arg[0] end
+
+    if app.source == "server" then
+        local conn, i, o = socket.connect("socket://" .. app.mirror); io.write("get lib/yang.lua", o)
+        local raw = io.read(i, 4096)
+
+        graphics.SetTicker(nil)
+        io.close(i) io.close(o)
+        io.close(conn)
+
+        io.write(raw, this)
+    elseif app.source == "proxy" then
+        local raw, status = socket.http.get(app.proxy .. app.github .. "yang.lua")
+        graphics.SetTicker(nil)
+
+        if status == 200 then io.write(raw, this)
+        else print("[ Yang ] Updating failed!\n[ Yang ] HTTP Status: " .. status) os.exit(1) end
+    end
 end
 
 function app.prefetch(...)
@@ -93,7 +109,7 @@ function app.main()
     end
 
     if #args == 0 or args[1] == "list" then
-        local list, i = {
+        local list, idx = {
             title = "Repository",
             type = "multiple",
             back = { label = "Back", root = os.exit },
@@ -101,8 +117,8 @@ function app.main()
             fields = {}
         }, 1
         for k,v in pairs(app.repo) do
-            list.fields[i] = k
-            i = i + 1
+            list.fields[idx] = k
+            idx = idx + 1
         end
 
         graphics.display(graphics.BuildList(list))
