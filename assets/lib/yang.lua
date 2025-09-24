@@ -103,8 +103,6 @@ function app.main()
         if v == "--proxy" then
             app.source = "proxy"
             table.remove(args, k)
-        elseif v == "--update" then
-            return app.update()
         end
     end
 
@@ -128,7 +126,7 @@ function app.main()
             app.install(v)
         end
     elseif args[1] == "remove" then
-    elseif args[1] == "update" then end
+    elseif args[1] == "update" then app.update() end
 end
 
 
