@@ -7,7 +7,8 @@ os = {
     date = function () end,
     getpid = function (proc) end,
     getproc = function (pid, field) return {} end,
-    setproc = function (field, value) end
+    setproc = function (field, value) end,
+    getcwd = function () return "/home/" end
 }
 
 package = { loadlib = function (libname, funcname) end, loaded = {} }
