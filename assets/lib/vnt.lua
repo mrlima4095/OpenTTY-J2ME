@@ -14,9 +14,7 @@ local function replace_all(text, find, repl)
 end
 
 local function text2note(content)
-    if content == nil or content == "" then
-        return "BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:\nEND:VNOTE"
-    end
+    if content == nil or content == "" then return "BEGIN:VNOTE\nVERSION:1.1\nBODY;ENCODING=QUOTED-PRINTABLE;CHARSET=UTF-8:\nEND:VNOTE" end
 
     content = replace_all(content, "=", "=3D")
     content = replace_all(content, "\n", "=0A")
