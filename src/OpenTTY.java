@@ -2211,9 +2211,9 @@ class Lua {
     // Statements
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
-        
-        if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); } 
+         
         if (status != 0) { midlet.trace.remove(PID); throw new Error(); }
+        if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); }
 
         if (current.type == IDENTIFIER) {
             // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
