@@ -118,7 +118,6 @@ function app.main()
             list.fields[idx] = k
             idx = idx + 1
         end
-        print(list.fields)
 
         graphics.display(graphics.BuildList(list))
     elseif args[1] == "install" then
