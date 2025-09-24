@@ -58,7 +58,7 @@ function app.update()
 
     local this = "/home/yang.lua"
     if string.sub(arg[0], 1, 1) == "/" then this = arg[0]
-    else this = "/home/" .. arg[0] end
+    else this = os.getcwd() .. arg[0] end
 
     if app.source == "server" then
         local conn, i, o = socket.connect("socket://" .. app.mirror); io.write("get lib/yang.lua", o)
