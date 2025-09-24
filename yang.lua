@@ -38,19 +38,23 @@ function app.install(package)
         io.write("get lib/" .. package, o)
         raw = string.trim(io.read(i))
         graphics.SetTicker(nil)
-        
+
         if raw == "File 'lib/" .. package .. "' not found." then
             print("yang: " .. package .. ": not found")
             os.exit(127)
         end
+
+        io.close(conn) io.close(i) io.close(o)
     elseif app.source == "proxy" then
         raw, status = socket.http.get(app.proxy .. app.github .. package)
+        graphics.SetTicker(nil)
+
         if status == 404 then
             print("yang: " .. package .. ": not found")
             os.exit(127)
         end
     end
-    
+
     io.write(raw, "/home/" .. package)
     print("[ Yang ] " .. package .. " installed")
 end
@@ -72,16 +76,23 @@ function app.prefetch(...)
 end
 
 function app.main()
+    local args, i = {}, 1
     for k,v in pairs(arg) do
+        if k ~= 0 then
+           args[i] = v
+           i = i + 1
+        end
+    end
+    for k,v in pairs(args) do
         if v == "--proxy" then
             app.source = "proxy"
-            table.remove(arg, k)
+            table.remove(args, k)
         elseif v == "--update" then
             return app.update()
         end
     end
 
-    if #arg == 1 or arg[1] == "list" then
+    if #args == 0 or args[1] == "list" then
         local list, i = {
             title = "Repository",
             type = "multiple",
@@ -95,11 +106,12 @@ function app.main()
         end
 
         graphics.display(graphics.BuildList(list))
-    elseif arg[1] == "install" then
-        for k,v in pairs(arg) do
+    elseif args[1] == "install" then
+        for _,v in pairs(args) do
             app.install(v)
         end
-    end
+    elseif args[1] == "remove" then
+    elseif args[1] == "update" then end
 end
 
 
