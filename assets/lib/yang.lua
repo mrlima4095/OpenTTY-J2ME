@@ -62,7 +62,7 @@ function app.update()
 
     if app.source == "server" then
         local conn, i, o = socket.connect("socket://" .. app.mirror); io.write("get lib/yang.lua", o)
-        local raw = io.read(i, 4096)
+        local raw = io.read(i, 9999)
 
         graphics.SetTicker(nil)
         io.close(i) io.close(o)
