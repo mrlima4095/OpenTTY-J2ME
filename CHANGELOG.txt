@@ -16,6 +16,7 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** functions `io.read` and `io.write` now needs to use `/dev/stdin` and `/dev/stdout`
 - Removed default parsers commands `vnt`
 - Default title for command `view` now is same of Main Window
+- **Lua** added function `os.getcwd()` to read current working directory
 
 [ _Notes_ ]
 
