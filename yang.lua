@@ -59,7 +59,8 @@ function app.install(package)
     print("[ Yang ] " .. package .. " installed")
 end
 function app.update()
-    
+    local raw, _ = socket.http.get("http://opentty.xyz/yang.lua")
+    io.write(raw, "/home/yang.lua")
 end
 
 function app.prefetch(...)
