@@ -1,6 +1,7 @@
 local httpd = {}
 
 httpd._routes = {}
+httpd._row = 1
 
 local function trim(s)
     if not s or #s == 0 then return "" end
@@ -96,42 +97,45 @@ function httpd.route(path, method, handler)
         handler = method
         method = "GET"
     end
-    httpd._routes[path] = httpd._routes[path] or {}
-    httpd._routes[path][method] = handler
+    httpd._routes[path] = { method = method, handler = handler }
 end
 
-function httpd.run(port)
-    local ok, server = pcall(socket.server, port)
-    if not ok then
-        print("httpd - port in use\nhttpd - server stopped")
-        return
-    end
-
-    print("httpd - listening at port " .. port)
-
+function httpd.run(port, debug, buffer, mime)
     while true do
+        local ok, server = pcall(socket.server, port)
+        if not ok then
+            pcall(io.close, server)
+            print(server)
+
+            if httpd._row == 1 then error("httpd - server binding error")
+            else error("httpd - " .. server) end
+        end
+
+        if httpd._row == 1 then print("httpd - listening at port " .. port) end
+
         local client, i, o = socket.accept(server)
         if client then
-            local raw = io.read(i)
-            if raw then
-                local method = getMethod(raw)
-                local route = getRoute(raw)
-                local headers = getHeaders(raw)
-                local body = getBody(raw)
+            local raw = io.read(i, buffer or 4096)
 
-                local handler = httpd._routes[route] and httpd._routes[route][method]
+            if raw then
+                if debug then print(string.trim(raw)) end
+
+                local method, route, headers, body = getMethod(raw), getRoute(raw), getHeaders(raw), getBody(raw)
+                local handler = httpd._routes[route]
 
                 local response, status = "", "200 OK"
                 if not handler then
                     status = "404 Not Found"
-                    response = "<h1>404 Not Found</h1>"
+                    response = "<h1>404 - Not Found</h1>"
+                elseif handler["method"] ~= method then
+                    status = "405 Method Not Allowed"
+                    response = "<h1>Method Not Allowed</h1>"
                 else
-                    local ok_handler, resp = pcall(handler, method, headers, body)
-                    if not ok_handler then
+                    ok, response = pcall(handler, method, headers, body)
+                    if not ok then
                         status = "500 Internal Server Error"
-                        response = "<h1>Internal Server Error</h1>"
+                        response = "<h1>500 Internal Server Error</h1>"
                     else
-                        response = resp or ""
                         if type(response) == "table" then
                             if response.status then status = response.status end
                             if response.body then response = response.body end
@@ -139,6 +143,18 @@ function httpd.run(port)
                     end
                 end
 
+                local sendb = "HTTP/1.1 " .. status .. "\r\n" ..
+                            "Content-Type: " .. (mime or "text/html") .. "\r\n" ..
+                            "Content-Length: " .. #response .. "\r\n\r\n" ..
+                            response
+
+                io.write(sendb, o)
+                pcall(io.close, i, o)
+            end
+        end
+
+        pcall(io.close, server, client)
+    end
                 local full = "HTTP/1.1 " .. status .. "\r\n" ..
                              "Content-Type: text/html\r\n" ..
                              "Content-Length: " .. #response .. "\r\n\r\n" ..
