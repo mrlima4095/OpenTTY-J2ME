@@ -35,7 +35,7 @@ function app.install(pkg)
 
     if app.source == "server" then
         local conn, i, o = socket.connect("socket://" .. app.mirror); io.write("get lib/" .. pkg, o)
-        local raw = io.read(i, 4096)
+        local raw = io.read(i, 9999)
 
         graphics.SetTicker(nil)
         io.close(i) io.close(o)
