@@ -35,7 +35,7 @@ function app.install(pkg)
 
     if app.source == "server" then
         local conn, i, o = socket.connect("socket://" .. app.mirror); io.write("get lib/" .. pkg, o)
-        local raw = io.read(i, 9999)
+        local raw = io.read(i, 4096)
 
         graphics.SetTicker(nil)
         io.close(i) io.close(o)
@@ -62,7 +62,7 @@ function app.update()
 
     if app.source == "server" then
         local conn, i, o = socket.connect("socket://" .. app.mirror); io.write("get lib/yang.lua", o)
-        local raw = io.read(i, 9999)
+        local raw = io.read(i, 4096)
 
         graphics.SetTicker(nil)
         io.close(i) io.close(o)
