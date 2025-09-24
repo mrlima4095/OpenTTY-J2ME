@@ -20,7 +20,6 @@ local app = {
         ["JBenchmark"] = "debuggers",
         ["J2ME Loader"] = "modme",
         ["MobiX Loader"] = "mxos",
-        ["PackJ (Proxy)"] = "yang-proxy",
         ["PasteBin"] = "pastebin",
         ["SmartME SDK"] = "sdkme",
         ["Updater"] = "sync",
@@ -36,7 +35,7 @@ function app.install(package)
     if app.source == "server" then
         local conn, i, o = socket.connect("socket://" .. app.mirror)
         io.write("get lib/" .. package, o)
-        raw = string.trim(io.read(i))
+        raw = string.trim(io.read(i, 4096))
         graphics.SetTicker(nil)
 
         if raw == "File 'lib/" .. package .. "' not found." then
