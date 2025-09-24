@@ -2089,7 +2089,7 @@ class Lua {
         proc.put("name", ("lua " + source).trim());
         midlet.trace.put(PID, proc); globals.put("arg", args);
 
-        Hashtable ITEM = new Hashtable(); ITEM.put("status", status);
+        Hashtable ITEM = new Hashtable(); 
         
         try { 
             this.tokens = tokenize(code); 
@@ -2100,6 +2100,7 @@ class Lua {
         catch (Error e) { if (e.getMessage() != null) { midlet.processCommand("echo " + e.getMessage(), true, root); } status = 1; }
 
         if (kill) { midlet.trace.remove(PID); }
+        ITEM.put("status", status);
         return ITEM;
     }
     // |
