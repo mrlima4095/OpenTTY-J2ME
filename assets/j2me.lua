@@ -1,12 +1,12 @@
 os = {
-    execute = function (command) end,
-    getenv = function (key) end,
+    execute = function (command) return 0 end,
+    getenv = function (key) return nil or key end,
     clock = function () end,
     setlocale = function (locale) end,
-    exit = function (status) end,
+    exit = function (status) os.exit(status, true) end,
     date = function () end,
     getpid = function (proc) end,
-    getproc = function (pid, field) end,
+    getproc = function (pid, field) return {} end,
     setproc = function (field, value) end
 }
 
@@ -32,8 +32,8 @@ socket = {
     device = function (conn) end,
 
     http = {
-        get = function (url, headers) end,
-        post = function (url, data, headers) end
+        get = function (url, headers) return "", 200 end,
+        post = function (url, data, headers) return "", 200 end
     }
 }
 
