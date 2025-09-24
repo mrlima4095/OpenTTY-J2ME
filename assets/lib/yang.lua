@@ -125,7 +125,6 @@ function app.main()
         for _,v in pairs(args) do
             app.install(v)
         end
-    elseif args[1] == "remove" then
     elseif args[1] == "update" then app.update() end
 end
 
