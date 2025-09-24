@@ -121,6 +121,7 @@ function app.main()
 
         graphics.display(graphics.BuildList(list))
     elseif args[1] == "install" then
+        table.remove(args, 1)
         for _,v in pairs(args) do
             app.install(v)
         end
