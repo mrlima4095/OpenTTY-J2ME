@@ -51,7 +51,7 @@ function app.install(package)
         end
     end
     
-    os.write(raw, "/home/" .. package)
+    io.write(raw, "/home/" .. package)
     print("[ Yang ] " .. package .. " installed")
 end
 function app.update()
