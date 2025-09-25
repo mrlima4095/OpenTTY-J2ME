@@ -12,6 +12,7 @@
 /etc/
 /etc/fstab
 /etc/init
+/etc/motd
 /etc/os-release
 /home/
 /lib/
