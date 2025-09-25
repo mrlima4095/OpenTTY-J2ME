@@ -182,10 +182,10 @@ httpd.run = function(port, debug, buffer, mime)
                 if not ok3 then
                     log("Error sending response: " .. tostring(err3))
                 end
-                log("ok")
 
                 pcall(io.close, i, o)
             end
+            log("ok")
         end
         pcall(io.close, server, client)
     end
