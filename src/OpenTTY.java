@@ -648,7 +648,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { return processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true", ignore, root); } else if (args.containsKey(getCommand(argument).toLowerCase())) { return processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument), ignore, root); } else { return processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "echo " + mainCommand + ": " + getCommand(argument) + ": not found", args.containsKey("shell.unknown") ? true : false, root); } }
         else if (aliases.containsKey(mainCommand) && ignore) { return processCommand((String) aliases.get(mainCommand) + " " + argument, ignore, root); }
         else if (functions.containsKey(mainCommand) && ignore) { return runScript((String) functions.get(mainCommand)); }
-        else if (indexOf(mainCommand, (String[]) paths.get("/bin/")) != -1) {
+        else if (indexOf(mainCommand, paths.containsKey("/bin/") ? (String[]) paths.get("/bin/") : new String[]) != -1) {
             String content = getcontent("/bin/" + mainCommand);
             if (content.startsWith("[ Config ]")) {
                 importScript(content, root);
