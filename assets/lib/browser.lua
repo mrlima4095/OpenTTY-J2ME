@@ -117,9 +117,7 @@ function browser.render(raw)
     end
 
     -- Botão personalizado para voltar ao menu principal
-    local button = {}
-    button["label"] = "Menu"
-    button["root"] = browser.main
+    local button = { label = "Menu", root = browser.main }
 
     -- Monta a tela com título, botão Back para voltar para browser.quest e botão Menu
     local screen = graphics.BuildScreen({
