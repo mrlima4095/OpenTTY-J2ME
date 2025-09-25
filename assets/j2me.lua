@@ -20,8 +20,14 @@ io = {
 }
 
 table = {
-    pack = function (...) end,
-    decode = function (text) end
+    insert = function (table, field) end,
+    concat = function (table, char) end,
+    remove = function (table, field) end,
+    sort = function (table) end,
+    move = function (table, from, to) end,
+    pack = function () end,
+    unpack = function () end,
+    decode = function (text) return {} end
 }
 
 socket = {
