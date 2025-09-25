@@ -103,6 +103,52 @@ local function getBody(raw)
     end
     return string.sub(raw, header_end + 4)
 end
+local function processRequest(raw, i, o)
+    if debug then
+        log("Raw request:\n" .. trim(raw))
+    end
+
+    local method, route, headers, body = getMethod(raw), getRoute(raw), getHeaders(raw), getBody(raw)
+    log("Method: " .. tostring(method) .. ", Route: " .. tostring(route))
+    local handler = httpd._routes[route]
+
+    local response, status = "", "200 OK"
+    if not handler then
+        status = "404 Not Found"
+        response = "<h1>404 - Not Found</h1>"
+        log("No handler found for route: " .. route)
+    elseif handler["method"] ~= method then
+        status = "405 Method Not Allowed"
+        response = "<h1>Method Not Allowed</h1>"
+        log("Method not allowed: " .. method)
+    else
+        local ok2, res = pcall(handler.handler, method, headers, body)
+        if not ok2 then
+            status = "500 Internal Server Error"
+            response = "<h1>500 Internal Server Error</h1>"
+            log("Handler error: " .. tostring(res))
+        else
+            response = res
+            if type(res) == "table" then
+                if res.status then status = res.status end
+                if res.body then response = res.body end
+            end
+            log("Handler executed successfully for route: " .. route)
+        end
+    end
+
+    local sendb = "HTTP/1.1 " .. status .. "\r\n" ..
+                  "Content-Type: " .. (mime or "text/html") .. "\r\n" ..
+                  "Content-Length: " .. #response .. "\r\n\r\n" ..
+                  response
+
+    local ok3, err3 = pcall(io.write, sendb, o)
+    if not ok3 then
+        log("Error sending response: " .. tostring(err3))
+    end
+
+    pcall(io.close, i, o)
+end
 
 httpd.route = function(path, method, handler)
     if not path then
