@@ -6,6 +6,7 @@ local browser = {
         title = "Browser",
         back = { root = os.exit },
         button = {
+            label = "Select",
             root = function (opt)
                 if opt == "Open URL" then
                     browser.quest()
@@ -13,20 +14,17 @@ local browser = {
             end
         },
 
-        fields = {
-            "Open URL"
-        }
+        fields = { "Open URL" }
     },
 
     headers = {}
 }
 
 function browser.render(raw)
-    local fields = {} -- cria um vetor para os campos
+    local fields = {}
     local pos = 1
     local len = string.len(raw)
 
-    -- Função auxiliar para extrair tag e conteúdo simples sem regex
     local function parseTag(text, startPos)
         local s = string.find(text, "<", startPos, true)
         if s ~= startPos then return nil end -- tag deve começar exatamente em startPos
@@ -59,8 +57,6 @@ function browser.render(raw)
 
         return tagName, attr, content, closeStart + string.len(closeTag)
     end
-
-    -- Função para extrair href do atributo (procura href="...")
     local function extractHref(attr)
         if not attr then return nil end
         local hrefStart = string.find(attr, 'href="', 1, true)
@@ -70,30 +66,8 @@ function browser.render(raw)
         return string.sub(attr, hrefStart + 6, hrefEnd - 1)
     end
 
-    -- Função para adicionar texto com estilo
-    local function addText(value, style)
-        style = style or "default"
-        local field = {}
-        field.put("type", "text")
-        field.put("value", value)
-        field.put("style", style)
-        fields.addElement(field)
-    end
-
-    -- Função para adicionar botão
-    local function addButton(label, url)
-        local field = {}
-        field.put("type", "item")
-        field.put("label", label)
-        -- root é uma função, mas aqui vamos guardar uma tabela com root = função para chamar browser.load(url)
-        -- Como não podemos criar closures facilmente, vamos guardar uma tabela com root = função que chama browser.load(url)
-        -- Para isso, criamos uma função anônima que chama browser.load(url)
-        local func = function()
-            browser.load(url)
-        end
-        field.put("root", func)
-        fields.addElement(field)
-    end
+    local function addText(value, style) table.insert(fields, { type = "text", value = value, style = style or "default" }) end
+    local function addButton(label, url) table.insert(fields, { type = "item", label = label, root = function () browser.load(url) end }) end
 
     while pos <= len do
         local nextTagStart = string.find(raw, "<", pos, true)
@@ -144,8 +118,8 @@ function browser.render(raw)
 
     -- Botão personalizado para voltar ao menu principal
     local button = {}
-    button.put("label", "Menu")
-    button.put("root", browser.main)
+    button["label"] = "Menu"
+    button["root"] = browser.main
 
     -- Monta a tela com título, botão Back para voltar para browser.quest e botão Menu
     local screen = graphics.BuildScreen({
