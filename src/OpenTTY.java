@@ -679,6 +679,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // Session
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(root == true ? "root": username); }
+        
         else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return processCommand(argument.equals("") ? "import /bin/sh" : ". " + argument, false, root); }
         else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (root) { return processCommand(argument, ignore, root); } else { new MIDletControl(argument); } }
         else if (mainCommand.equals("su")) { if (root) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); processCommand("sh", false); } else { echoCommand("su: permission denied"); return 13; } }

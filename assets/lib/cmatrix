@@ -24,7 +24,7 @@ local function cmatrix()
     while os.getenv("CMATRIX") do
         local x = random(10)
 
-        io.write(x .. " ", "stdout", "a")
+        io.write(x .. " ", "/dev/stdout", "a")
 
         if string.len(io.read()) > 200 then os.execute("clear") end
     end
