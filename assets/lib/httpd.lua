@@ -132,7 +132,7 @@ httpd.run = function(port, debug, buffer, mime)
         local client, i, o = socket.accept(server)
         if client then
             log("Client connected")
-            local ok, raw = pcall(io.read, i, buffer or 4096)
+            local ok, raw = pcall(io.read, i, 4096)
             if not ok then
                 log("Error reading client data: " .. tostring(raw))
             elseif raw then
