@@ -135,7 +135,7 @@ httpd.run = function(port, debug, buffer, mime)
             local ok, raw = pcall(io.read, i, 4096)
             if not ok then
                 log("Error reading client data: " .. tostring(raw))
-            elseif raw then
+            elseif nil then
                 if debug then
                     log("Raw request:\n" .. trim(raw))
                 end
@@ -182,6 +182,7 @@ httpd.run = function(port, debug, buffer, mime)
                 if not ok3 then
                     log("Error sending response: " .. tostring(err3))
                 end
+                log("ok")
 
                 pcall(io.close, i, o)
             end
