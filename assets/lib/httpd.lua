@@ -3,10 +3,6 @@ local httpd = {}
 httpd._routes = {}
 httpd._row = 1
 
-local function log(msg)
-    print("[httpd] " .. msg)
-end
-
 local function trim(s)
     if not s or #s == 0 then
         return ""
@@ -57,6 +53,7 @@ local function getHeaders(raw)
     if not header_end then header_end = #raw + 1 end
 
     local header_part = string.sub(raw, pos, header_end - 1)
+
     local line_start = 1
     while line_start <= #header_part do
         local line_end = indexOf(header_part, "\r\n", line_start)
@@ -84,10 +81,12 @@ local function getRoute(raw)
         return ""
     end
     local start = space1 + 1
+
     local space2 = indexOf(raw, " ", start)
     if not space2 then
         space2 = #raw + 1
     end
+
     return string.sub(raw, start, space2 - 1)
 end
 
@@ -97,10 +96,12 @@ local function getBody(raw)
         return ""
     end
     local pos = end_req + 2
+
     local header_end = indexOf(raw, "\r\n\r\n", pos)
     if not header_end then
         return ""
     end
+
     return string.sub(raw, header_end + 4)
 end
 
@@ -113,80 +114,71 @@ httpd.route = function(path, method, handler)
         method = "GET"
     end
     httpd._routes[path] = { method = method, handler = handler }
-    log("Registered route: " .. path .. " [" .. method .. "]")
 end
-
-httpd.run = function(port, debug, buffer, mime)
+httpd.run = function (port, debug, buffer, mime)
     while true do
-        log("Starting server on port " .. port)
         local ok, server = pcall(socket.server, port)
         if not ok then
-            log("Server binding error: " .. tostring(server))
-            error("httpd - server binding error")
+            pcall(io.close, server)
+            print(server)
+
+            if httpd._row == 1 then
+                error("httpd - server binding error")
+            else
+                error("httpd - " .. server)
+            end
         end
 
         if httpd._row == 1 then
-            log("Listening at port " .. port)
+            print("httpd - listening at port " .. port)
         end
 
         local client, i, o = socket.accept(server)
         if client then
-            log("Client connected")
-            local ok, raw = pcall(io.read, i, buffer or 4096)
-            if not ok then
-                log("Error reading client data: " .. tostring(raw))
-            else
+            local raw = io.read(i, 4096)
+
+            if raw then
                 if debug then
-                    log("Raw request:\n" .. trim(raw))
+                    print(trim(raw))
                 end
 
                 local method, route, headers, body = getMethod(raw), getRoute(raw), getHeaders(raw), getBody(raw)
-                log("Method: " .. tostring(method) .. ", Route: " .. tostring(route))
                 local handler = httpd._routes[route]
 
                 local response, status = "", "200 OK"
                 if not handler then
                     status = "404 Not Found"
                     response = "<h1>404 - Not Found</h1>"
-                    log("No handler found for route: " .. route)
                 elseif handler["method"] ~= method then
                     status = "405 Method Not Allowed"
                     response = "<h1>Method Not Allowed</h1>"
-                    log("Method not allowed: " .. method)
                 else
-                    local ok2, res = pcall(handler.handler, method, headers, body)
-                    if not ok2 then
+                    ok, response = pcall(handler, method, headers, body)
+                    if not ok then
                         status = "500 Internal Server Error"
                         response = "<h1>500 Internal Server Error</h1>"
-                        log("Handler error: " .. tostring(res))
-                        log(debug.traceback(res))
                     else
-                        response = res
-                        if type(res) == "table" then
-                            if res.status then
-                                status = res.status
+                        if type(response) == "table" then
+                            if response.status then
+                                status = response.status
                             end
-                            if res.body then
-                                response = res.body
+                            if response.body then
+                                response = response.body
                             end
                         end
-                        log("Handler executed successfully for route: " .. route)
                     end
                 end
 
                 local sendb = "HTTP/1.1 " .. status .. "\r\n" ..
-                              "Content-Type: " .. (mime or "text/html") .. "\r\n" ..
-                              "Content-Length: " .. #response .. "\r\n\r\n" ..
-                              response
+                            "Content-Type: " .. (mime or "text/html") .. "\r\n" ..
+                            "Content-Length: " .. #response .. "\r\n\r\n" ..
+                            response
 
-                local ok3, err3 = pcall(io.write, sendb, o)
-                if not ok3 then
-                    log("Error sending response: " .. tostring(err3))
-                end
-
+                io.write(sendb, o)
                 pcall(io.close, i, o)
             end
         end
+
         pcall(io.close, server, client)
     end
 end
