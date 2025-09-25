@@ -4,4 +4,4 @@ name=OpenTTY
 version=$VERSION
 description=MIDlet Shell
 
-config=execute title; cd; buff; clear; echo Welcome to OpenTTY $VERSION; echo Copyright (C) 2025 - Mr. Lima; echo; clear history;
+config=execute title; cd; buff; clear; cat /etc/motd; clear history;
