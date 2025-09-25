@@ -3,6 +3,7 @@
 #
 
 mount /etc/fstab
+cat /etc/motd
 stty /dev/tty
 
 x11 init
