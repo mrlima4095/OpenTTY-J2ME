@@ -651,7 +651,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (indexOf(mainCommand, paths.containsKey("/bin/") ? (String[]) paths.get("/bin/") : new String[]) != -1) {
             String content = getcontent("/bin/" + mainCommand);
             if (content.startsWith("[ Config ]")) {
-                importScript(content, root);
+                importScript("/bin/" + mainCommand, root);
             } else if (content.startsWith("#!/bin/sh")) {
                 runScript(content, root);
             } else {
