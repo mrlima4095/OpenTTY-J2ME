@@ -1211,7 +1211,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     // |
     // Readers
-    private InputStream read(String filename) throws Exception {
+    private InputStream readRaw(String filename) throws Exception {
         if (filename.startsWith("/home/")) {
             RecordStore rs = null;
             try {
@@ -1240,7 +1240,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         try {
             if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; }
 
-            InputStream is = read(filename);
+            InputStream is = readRaw(filename);
             if (is == null) { return ""; }
             StringBuffer sb = new StringBuffer();
             int ch;
@@ -1249,9 +1249,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return sb.toString();
         } catch (Exception e) { return ""; }
     }
-    private Image read(String filename) {
+    private Image readImg(String filename) {
         try {
-            InputStream is = read(filename);
+            InputStream is = readRaw(filename);
             if (is == null) { return null; }
             Image img = Image.createImage(is);
             is.close();
