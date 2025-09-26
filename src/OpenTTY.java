@@ -1256,7 +1256,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Image img = Image.createImage(is);
             is.close();
             return img;
-        } catch (Exception e) { Image img = Image.createImage(16, 16); return img; }
+        } catch (Exception e) { return Image.createImage(16, 16); }
     }
     // |
     public String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
