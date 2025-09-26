@@ -24,9 +24,8 @@ local function cmatrix()
     os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 xfinit stdout; clear; bg cron 20 unset CMATRIX; true")
 
     while os.getenv("CMATRIX") do
-        local x = random(10)
 
-        io.write(x .. " ", "/dev/stdout", "a")
+        io.write(random(10) .. " ", "/dev/stdout", "a")
 
         if string.len(io.read()) > 200 then os.execute("clear") end
     end
