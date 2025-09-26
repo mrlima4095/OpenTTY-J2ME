@@ -3,28 +3,3 @@ Copyright (C) 2025 - Mr. Lima
 
 [ _Updates_ ]
 
-- X Server **0.6.4**
-- Added support for `canvas.fullscreen` if it value is `true` toggle Canvas to Full Screen mode
-- **Audio API** added support to play **.midi** files
-- **Lua** added support for `arg` table with args parsed in script calling
-- **Lua** added support for `repeat until [expr]` loops
-- **Lua** added default library `socket` with network interfaces
-- **Lua** added default library `graphics` with Graphics API
-- **Lua** `io` library added new function `close(stream)` to close interfaces
-- **Lua** removed bug that pcall recognizes string function name to call
-- Classes **MIDletControl** and **Connect** have been merged
-- New Package field `api.require` to check MIDlet dependencies, if false run `api.error`
-- Removed Command `server`
-- Removed file `/java/etc/index.html`
-- Removed default environment key **RESPONSE**
-- Command `x11 item` remove all personalized itens from default screen
-- New Package **WebProxy**
-- Background Thread implemented at `MIDletControl`
-- Command `mmspt` when read arguments, set it as **Thread priority**, if argument is `priority` show current priority of current Thread
-
-[ _API Nodes_ ]
-
-Use to check if current MIDlet have external implementations, got error if their is missing to package:
-
-- `lua`: without **Lua Runtime**
-- `canvas`: without **X11 Canvas Service**
