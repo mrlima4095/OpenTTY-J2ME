@@ -88,9 +88,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private TextBox box;
         private StringItem console, s;
         private TextField USER, PASSWD, remotein;
-        private Command BACK = new Command("Back", Command.BACK, 1), 
-        RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, PROPERTY, KILL, LOAD, 
-        DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO;
+        private Command BACK = new Command("Back", Command.BACK, 1), RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, PROPERTY, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO;
 
         private SocketConnection CONN;
         private ServerSocketConnection server = null;
@@ -384,10 +382,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             ChoiceGroup perms = new ChoiceGroup("Permissions", Choice.MULTIPLE);
                             perms.append("Read", null); perms.append("Write", null);
 
-                            boolean canRW = (path.startsWith("/home/") || path.startsWith("/tmp/")) || (path.startsWith("/mnt/") && !path.equals("/mnt/")); 
-
                             perms.setSelectedIndex(0, true);
-                            perms.setSelectedIndex(1, canRW);
+                            perms.setSelectedIndex(1, (path.startsWith("/home/") || path.startsWith("/tmp/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")) || (selected = path + selected).equals("/dev/null") || selected.equals("/dev/stdin") || selected.equals("/dev/stdout")));
 
                             monitor.append(perms);
                         }
@@ -1213,9 +1209,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     // |
-    private String read(String filename) { 
+    private Object read(String filename) throws Exception {
+        
+    }
+    private String read(Object stream) { 
         try {  
-            if (filename.startsWith("/home/")) { RecordStore recordStore = null; String content = ""; try { recordStore = RecordStore.openRecordStore(filename.substring(6), true); if (recordStore.getNumRecords() >= 1) { byte[] data = recordStore.getRecord(1); if (data != null) { content = new String(data); } } } catch (RecordStoreException e) { content = ""; } finally { if (recordStore != null) { try { recordStore.closeRecordStore(); } catch (RecordStoreException e) { } } } return content; } 
+            if (filename.startsWith("/home/")) { 
+                RecordStore recordStore = null; 
+                String content = ""; 
+                try { 
+                    recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
+                    if (recordStore.getNumRecords() >= 1) { 
+                        byte[] data = recordStore.getRecord(1); 
+                        if (data != null) { content = new String(data); } 
+                    } 
+                } 
+                catch (RecordStoreException e) { content = ""; } 
+                finally { 
+                    if (recordStore != null) { 
+                        try { recordStore.closeRecordStore(); } 
+                        catch (RecordStoreException e) { } 
+                    } 
+                } 
+                
+                return content; 
+            } 
             else if (filename.startsWith("/mnt/")) { 
                 FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); 
                 InputStream is = fileConn.openInputStream(); 
