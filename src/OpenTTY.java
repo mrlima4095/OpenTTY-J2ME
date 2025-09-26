@@ -380,7 +380,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         monitor.append(new StringItem("Type:", type));
                         if (type.equals("Directory")) { }
                         else {
-                            monitor.append(new StringItem("Size:", getcontent(path + selected).length()));
+                            monitor.append(new StringItem("Size:", String.valueOf(getcontent(path + selected).length())));
                             ChoiceGroup perms = new ChoiceGroup("Permissions", Choice.MULTIPLE);
                             perms.append("Read", null); perms.append("Write", null);
 
