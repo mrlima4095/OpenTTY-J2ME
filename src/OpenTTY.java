@@ -2158,6 +2158,10 @@ class Lua {
     private Vector tokenize(String code) throws Exception {
         Vector tokens = new Vector();
         int i = 0;
+        if (code.startsWith("#!")) {
+            while (i < code.length() && code.charAt(i) != '\n') { i++; }
+            if (i < code.length() && code.charAt(i) == '\n') { i++; }
+        }
         while (i < code.length()) {
             char c = code.charAt(i);
     
