@@ -19,7 +19,7 @@ local function cmatrix()
     if os.getenv("J2EMU") ~= nil then error("cmatrix cannot run in j2me loader!") end
 
     local thr = os.execute("case thread (MIDlet) false")
-    if tonumber(thr) == 255 then error("cmatrix cannot run in Main Thread") end
+    if tonumber(thr) == 255 then return os.execute("bg lua " .. arg[0]) end
 
     os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; case !key (J2EMU) title hide; x11 xfinit stdout; clear; bg cron 20 unset CMATRIX; true")
 
