@@ -1164,7 +1164,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 if (contents[i].equals(name)) {
                                     if (parent.equals("/bin/")) { echoCommand(argument + ": Application, bin"); } 
                                     else if (parent.equals("/dev/")) { echoCommand(argument + ": special device"); } 
-                                    else if (parent.equals("/lib/")) { echoCommand(argument + ": Shared package, text") }
+                                    else if (parent.equals("/lib/")) { echoCommand(argument + ": Shared package, text"); }
                                     else { 
                                         String[] info = getExtensionInfo(getExtension(name));
                                         echoCommand(argument + ": " + (info[0].equals("Unknown") ? "ASCII text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); 
