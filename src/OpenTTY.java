@@ -1538,7 +1538,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | 
     // Virtual Objects
-    // | ('Generators)
+    // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
     public Hashtable genprocess(String name, boolean root, String collector) { 
         Hashtable proc = new Hashtable(); 
