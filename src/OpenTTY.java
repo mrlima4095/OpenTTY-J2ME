@@ -370,7 +370,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (selected.equals("..")) { }
                     else {
                         String[] info = getExtensionInfo(getExtension(selected)); 
-                        String type = selected.endsWith("/") ? "Directory" : (path.startsWith("/home/") || path.startsWith("/tmp/")) ? (info[0].equals("Unknown") ? "ASCII text" : info[0]) : path.startsWith("/bin/") ? "Application" : path.startsWith("/dev/") ? "Special Device" : path.startsWith("/lib/") ? "Shared Package" : path.equals("/tmp/") ? "ASCII text" : info[0];
+                        String type = selected.endsWith("/") ? "Directory" : (path.startsWith("/home/") || path.startsWith("/tmp/")) ? (info[0].equals("Unknown") ? "ASCII text" : info[0]) : path.startsWith("/bin/") ? "Application" : path.startsWith("/dev/") ? "Special Device" : path.startsWith("/lib/") ? "Shared Package" : (path.equals("/tmp/") || path.equals("/res/")) ? "ASCII text" : info[0];
                         
                         monitor = new Form(selected + " - Information");
                         monitor.addCommand(BACK);
@@ -386,7 +386,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             perms.setSelectedIndex(1, (path.startsWith("/home/") || path.startsWith("/tmp/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")) || (selected = path + selected).equals("/dev/null") || selected.equals("/dev/stdin") || selected.equals("/dev/stdout")));
 
                             monitor.append(perms);
-                            if (info[2].equals("image")) { monitor.append(readImg(path + selected)); }
+                            if (info[2].equals("image")) { monitor.append(new ImageItem(null, readRaw(path + selected), ImageItem.LAYOUT_DEFAULT, null)); }
                             if (info[2].equals("text")) { monitor.addCommand(OPEN); }
                         }
                         monitor.setCommandListener(this);
@@ -1256,7 +1256,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Image img = Image.createImage(is);
             is.close();
             return img;
-        } catch (Exception e) { Image img = Image.createImage(16, 16); Graphics g = img.getGraphics(); g.setColor(0xFFFFFF); g.fillRect(0, 0, 16, 16); return img; }
+        } catch (Exception e) { Image img = Image.createImage(16, 16); return img; }
     }
     // |
     public String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
