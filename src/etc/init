@@ -3,8 +3,8 @@
 #
 
 mount /etc/fstab
-cat /etc/motd
 stty /dev/tty
+cat /etc/motd
 
 x11 init
 x11 term
