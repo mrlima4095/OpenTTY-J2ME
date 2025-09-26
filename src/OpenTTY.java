@@ -370,7 +370,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (selected.equals("..")) { }
                     else {
                         String[] info = getExtensionInfo(getExtension(selected)); 
-                        String type = selected.endsWith("/") ? "Directory" : (path.startsWith("/home/") || path.startsWith("/tmp/")) ? (info[0].equals("Unknown") ? "ASCII text" : info[0]) : path.startsWith("/bin/") ? "Application" : path.startsWith("/dev/") ? "Special Device" : path.startsWith("/lib/") ? "Shared Package" : info[0];
+                        String type = selected.endsWith("/") ? "Directory" : (path.startsWith("/home/") || path.startsWith("/tmp/")) ? (info[0].equals("Unknown") ? "ASCII text" : info[0]) : path.startsWith("/bin/") ? "Application" : path.startsWith("/dev/") ? "Special Device" : path.startsWith("/lib/") ? "Shared Package" : path.equals("/tmp/") ? "ASCII text" : info[0];
                         
                         monitor = new Form(selected + " - Information");
                         monitor.addCommand(BACK);
@@ -1164,9 +1164,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 if (contents[i].equals(name)) {
                                     if (parent.equals("/bin/")) { echoCommand(argument + ": Application, bin"); } 
                                     else if (parent.equals("/dev/")) { echoCommand(argument + ": special device"); } 
+                                    else if (parent.equals("/lib/")) { echoCommand(argument + ": Shared package, text") }
                                     else { 
                                         String[] info = getExtensionInfo(getExtension(name));
-                                        echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); 
+                                        echoCommand(argument + ": " + (info[0].equals("Unknown") ? "ASCII text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); 
                                     }
                                     return 0;
                                 }
