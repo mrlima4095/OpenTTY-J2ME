@@ -149,3 +149,4 @@
 [2025-1.16.2-02x79] (Branch: 1.16.x) 1.16.2 Suite case 
 [2025-1.17-02x80] Fixed Command 'PUSHD' directories stacking
 [2025-1.17-02x81] Removed Command 'RUN' | Improved File Explorer
+[2025-1.17-02x82] New internal reading streams

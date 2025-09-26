@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null,
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x81";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x82";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -386,6 +386,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             perms.setSelectedIndex(1, (path.startsWith("/home/") || path.startsWith("/tmp/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")) || (selected = path + selected).equals("/dev/null") || selected.equals("/dev/stdin") || selected.equals("/dev/stdout")));
 
                             monitor.append(perms);
+                            if (info[2].equals("image")) { monitor.append((Image) read(path + selected)); }
                         }
                         monitor.setCommandListener(this);
                         display.setCurrent(monitor);
@@ -1209,70 +1210,55 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     // |
-    private Object read(String filename) throws Exception {
-        
-    }
-    private String read(Object stream) { 
-        try {  
-            if (filename.startsWith("/home/")) { 
-                RecordStore recordStore = null; 
-                String content = ""; 
-                try { 
-                    recordStore = RecordStore.openRecordStore(filename.substring(6), true); 
-                    if (recordStore.getNumRecords() >= 1) { 
-                        byte[] data = recordStore.getRecord(1); 
-                        if (data != null) { content = new String(data); } 
-                    } 
-                } 
-                catch (RecordStoreException e) { content = ""; } 
-                finally { 
-                    if (recordStore != null) { 
-                        try { recordStore.closeRecordStore(); } 
-                        catch (RecordStoreException e) { } 
-                    } 
-                } 
-                
-                return content; 
-            } 
-            else if (filename.startsWith("/mnt/")) { 
-                FileConnection fileConn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ); 
-                InputStream is = fileConn.openInputStream(); 
-                StringBuffer content = new StringBuffer(); 
-                int ch; 
-                while ((ch = is.read()) != -1) { content.append((char) ch); } 
-                is.close(); fileConn.close(); 
-                return env(content.toString()); 
-            } 
-            else if (filename.startsWith("/tmp/")) {
+    // Readers
+    private InputStream read(String filename) throws Exception {
+        if (filename.startsWith("/home/")) {
+            RecordStore rs = null;
+            try {
+                rs = RecordStore.openRecordStore(filename.substring(6), false);
+                if (rs.getNumRecords() > 0) { return new ByteArrayInputStream(rs.getRecord(1)); }
+            } finally { if (rs != null) { rs.closeRecordStore(); } }
+
+            return null;
+        } 
+        else if (filename.startsWith("/mnt/")) { return ((FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ)).openInputStream(); } 
+        else if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? new ByteArrayInputStream(((String) tmp.get(filename)).getBytes("UTF-8")) : null; } 
+        else {
+            if (filename.startsWith("/dev/")) {
                 filename = filename.substring(5);
-                
-                return filename.equals("") ? "" : tmp.containsKey(filename) ? (String) tmp.get(filename) : "";
-            }
-            else { 
-                if (filename.startsWith("/dev/")) {
-                    filename = filename.substring(5);
+                String content = filename.equals("random") ? String.valueOf(random.nextInt(256)) : filename.equals("stdin") ? stdin.getString() : filename.equals("stdout") ? stdout.getText() : filename.equals("null") ? "\r" : filename.equals("zero") ? "\0" : null;
+                if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
-                    if (filename.equals("random")) { return String.valueOf(random.nextInt(256)); }
-                    else if (filename.equals("stdin")) { return stdin.getString(); }
-                    else if (filename.equals("stdout")) { return stdout.getText(); }
-                    else if (filename.equals("null")) { return "\r"; }
-                    else if (filename.equals("zero")) { return "\0"; }
-
-                    filename = "/dev/" + filename;
-                } 
-
-                StringBuffer content = new StringBuffer(); 
-                InputStream is = getClass().getResourceAsStream(filename); 
-                if (is == null) { return ""; } 
-                InputStreamReader isr = new InputStreamReader(is, "UTF-8"); 
-                int ch; 
-                while ((ch = isr.read()) != -1) { content.append((char) ch); } 
-                isr.close(); 
-                
-                return env(content.toString()); 
+                filename = "/dev/" + filename;
             } 
-        } catch (IOException e) { return ""; } 
+
+            InputStream is = getClass().getResourceAsStream(filename);
+            return is;
+        }
     }
+    private String read(String filename) {
+        try {
+            if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; }
+
+            InputStream is = read(filename);
+            if (is == null) { return ""; }
+            StringBuffer sb = new StringBuffer();
+            int ch;
+            while ((ch = is.read()) != -1) { sb.append((char) ch); }
+            is.close();
+            return sb.toString();
+        } catch (Exception e) { return ""; }
+    }
+    private Image read(String filename) {
+        try {
+            InputStream is = read(filename);
+            if (is == null) { return null; }
+            Image img = Image.createImage(is);
+            is.close();
+            return img;
+        } catch (Exception e) {  }
+    }
+    // |
     public String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     public String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); for (Enumeration keys = attributes.keys(); keys.hasMoreElements();) { String key = (String) keys.nextElement(); text = replace(text, "$" + key, (String) attributes.get(key)); } text = replace(text, "$.", "$"); return escape(text); }
     public String escape(String text) { text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); text = replace(text, "\\b", "\b"); text = replace(text, "\\\\", "\\"); text = replace(text, "\\.", "\\"); return text; }
