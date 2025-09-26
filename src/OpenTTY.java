@@ -124,7 +124,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     preview.addCommand(FILTER = new Command("Filter", Command.OK, 1)); 
                 }
                 else if (MOD == EXPLORER) {
-                    preview.addCommand(DELETE = new Command("Delete"));
+                    preview.addCommand(DELETE = new Command("Delete", Command.OK, 1));
                     preview.addCommand(RUNS = new Command("Run Script", Command.OK, 1));
                     preview.addCommand(PROPERTY = new Command("Properties", Command.OK, 1));
                     preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1));
