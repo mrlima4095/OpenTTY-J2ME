@@ -39,7 +39,7 @@
 .ppt=Microsoft PowerPoint presentation,application/vnd.ms-powerpoint,document
 .pptx=PowerPoint presentation (OOXML),application/vnd.openxmlformats-officedocument.presentationml.presentation,document
 .rar=RAR archive,application/vnd.rar,bin
-.sh=POSIX shell script,application/x-sh,text
+.sh=Shell cript,application/x-sh,text
 .svg=SVG image,image/svg+xml,image
 .tar=tar archive,application/x-tar,archive
 .txt=ASCII text,text/plain,text
