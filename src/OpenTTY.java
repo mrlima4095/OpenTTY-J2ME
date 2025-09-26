@@ -1157,9 +1157,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String parent = target.substring(0, target.lastIndexOf('/') + 1);
                         String name   = target.substring(target.lastIndexOf('/') + 1);
                         
-                        if (paths.containsKey(target + "/")) {
-                            echoCommand(argument + ": directory");
-                        } 
+                        if (paths.containsKey(target + "/")) { echoCommand(argument + ": directory"); } 
                         else if (paths.containsKey(parent)) {
                             String[] contents = (String[]) paths.get(parent);
                             for (int i = 0; i < contents.length; i++) {
