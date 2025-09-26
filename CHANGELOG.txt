@@ -15,9 +15,11 @@ Copyright (C) 2025 - Mr. Lima
 - Fixed **Lua** security error that allow access to process **owner** field
 - **Lua** functions `io.read` and `io.write` now needs to use `/dev/stdin` and `/dev/stdout`
 - Removed default parsers commands `vnt`
+- Removed simbolic link file `/bin/java`
 - Default title for command `view` now is same of Main Window
 - **Lua** added function `os.getcwd()` to read current working directory
 - MIDlet initial message from file `/etc/motd`
+- Improved **File Explorer**
 
 
 [ _Notes_ ]
