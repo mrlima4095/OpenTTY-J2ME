@@ -390,8 +390,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             perms.setSelectedIndex(1, canRW);
 
                             monitor.append(perms);
-                            display.setCurrent(monitor);
                         }
+                        monitor.setCommandListener(this);
+                        display.setCurrent(monitor);
                     }
                 } 
                 else if (c == REFRESH) { reload(); }
