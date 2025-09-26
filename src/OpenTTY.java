@@ -366,7 +366,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else if (c == RUNS) {
                     if (selected.equals("..") || selected.endsWith("/")) { }
-                    else { processCommand(". " + path + selected, true, root); }
+                    else { processCommand("xterm", true, root); processCommand(". " + path + selected, true, root); }
                 } 
                 else if (c == PROPERTY) {
                     if (selected.equals("..")) { }
