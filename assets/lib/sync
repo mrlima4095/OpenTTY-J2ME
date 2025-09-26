@@ -5,7 +5,7 @@ version=1.1
 description=Update Checker
 
 command=sync 
-sync=execute x11 list sync; warn Select a Mirror to Connect with GitHub!;
+sync=execute x11 list /home/sync; warn Select a Mirror to Connect with GitHub!;
 
 [ DISPLAY ]
 
@@ -14,7 +14,7 @@ list.content=OpenTTY Server,MIDlet Proxy,---,OpenTTY 1.16 LTS,---,Download (Beta
 
 OpenTTY Server=execute set OLD_QUERY=$QUERY; set QUERY=latest.sh; query socket://$REPO get scripts/latest.sh; run latest.sh; rm latest.sh; set QUERY=$OLD_QUERY; unset $OLD_QUERY;
 MIDlet Proxy=execute clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/latest.sh;
----=execute x11 list sync
+---=execute x11 list /home/sync
 OpenTTY 1.16 LTS=execute open http://opentty.xyz/versions/OpenTTY-1.16.jar
----=execute x11 list sync
+---=execute x11 list /home/sync
 Download (Beta)=execute open http://opentty.xyz/dist/OpenTTY.jar
