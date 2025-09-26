@@ -1203,9 +1203,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String content = argument.equals("") ? nanoContent : getcontent(args[0]);
 
             if (content.startsWith("#!/bin/sh")) { return runScript(content, root); }
-            else if (content.startsWith("#!/bin/lua")) { 
-                return javaClass("Lua") == 0 ? processCommand("lua " + argument, ignore, root) : importScript(content, root); 
-            }
+            else if (content.startsWith("#!/bin/lua")) { return javaClass("Lua") == 0 ? processCommand("lua " + argument, ignore, root) : importScript(content, root); }
             else { return importScript(content, root); }
         }
 
