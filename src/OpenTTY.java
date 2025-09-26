@@ -27,7 +27,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     public StringItem stdout = new StringItem("", "");
     private Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4),
-                    BACK = new Command("Back", Command.BACK, 1), RUNS = new Command("Run Script", Command.OK, 1), IMPORT = new Command("Import File", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1);
+                    BACK = new Command("Back", Command.BACK, 1), RUNS = new Command("Run Script", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1);
     // |
     // MIDlet Loader
     public void startApp() { 
@@ -39,9 +39,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String[] KEYS = { "TYPE", "CONFIG", "PROFILE", "LOCALE" }, SYS = { "platform", "configuration", "profiles", "locale" };
             for (int i = 0; i < KEYS.length; i++) { attributes.put(KEYS[i], System.getProperty("microedition." + SYS[i])); }
             // |
-            Command[] NANO_CMDS = { BACK, CLEAR, RUNS, IMPORT, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
+            Command[] NANO_CMDS = { BACK, CLEAR, RUNS, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
             // |
-            runScript(read("/etc/init"), true); 
+            runScript(read("/etc/init"), true); setLabel();
             // |
             if (username.equals("") || MIDletControl.passwd().equals("")) { new MIDletControl(null); }
             else { runScript(loadRMS(".initrc")); }
@@ -390,6 +390,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             perms.setSelectedIndex(1, canRW);
 
                             monitor.append(perms);
+                            display.setCurrent(monitor);
                         }
                     }
                 } 
