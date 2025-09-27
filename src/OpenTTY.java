@@ -3710,7 +3710,7 @@ class Lua {
 
                     if (args.elementAt(0) == null || pattern == null) { }
                     else {
-                        int pos = text.indexOf(pattern, args.size() > 2 ? (args.elementAt(2) ? ((Double) args.elementAt(2)).intValue() : gotbad(3, "match", "number expected, got " + type(args.elementAt(2)))) : 0);
+                        int pos = text.indexOf(pattern, args.size() > 2 ? (args.elementAt(2) ? ((Double) args.elementAt(2)).intValue() : (int) gotbad(3, "match", "number expected, got " + type(args.elementAt(2)))) : 0);
 
                         if (pos == -1) { }
                         else { return new Double(pos + 1); }
