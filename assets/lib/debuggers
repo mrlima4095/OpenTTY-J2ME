@@ -7,9 +7,27 @@ function app.start()
 
 end
 
-function app.connect(args) end
-function app.shell(args) end
-function app.install(args) end
+function app.connect(args)
+    if args then
+        
+    else
+
+    end
+end
+function app.shell(args)
+    table.remove(app, 1)
+
+    if #args < 1 then
+
+    elseif args[1] == "su" then
+
+    elseif args[1] == "dumpsys" then
+
+    elseif args[1] == "" then
+
+    else print(arg[0] .. ": shell: " .. args[1] .. ": not found") end
+end
+function app.install(args) end 
 function app.uninstall(args) end
 function app.logcat(args) end
 
@@ -18,8 +36,7 @@ function app.main(args)
         print("usage: jdb []")
     elseif args[1] == "connect" then
 
-    elseif args[1] == "shell" then
-
+    elseif args[1] == "shell" then app.shell(args)
     elseif args[1] == "start" then
 
     elseif args[1] == "stop" then
