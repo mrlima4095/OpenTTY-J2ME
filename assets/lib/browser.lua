@@ -123,6 +123,8 @@ function browser.load(url)
         html = fetch_url(url)
     end
 
+    graphics.SetTicker(nil)
+
     if not html then
         graphics.display(graphics.Alert({
             title = "Browser",
