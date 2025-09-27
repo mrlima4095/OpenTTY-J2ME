@@ -21,6 +21,7 @@ Copyright (C) 2025 - Mr. Lima
 - MIDlet initial message from file `/etc/motd`
 - Improved **File Explorer**
 - Merged build tools **Lua**, **Shell Script** and **Packages**, utility `.` consider _shebangs_ to build.
+- **Lua** Graphics API - _BuildScreen_ now can build Images from all sources
 
 [ _Notes_ ]
 

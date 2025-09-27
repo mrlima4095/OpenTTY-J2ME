@@ -1211,7 +1211,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     // |
     // Readers
-    private InputStream readRaw(String filename) throws Exception {
+    public InputStream readRaw(String filename) throws Exception {
         if (filename.startsWith("/home/")) {
             RecordStore rs = null;
             try {
@@ -1236,7 +1236,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return is;
         }
     }
-    private String read(String filename) {
+    public String read(String filename) {
         try {
             if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; }
 
@@ -1249,7 +1249,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return sb.toString();
         } catch (Exception e) { return ""; }
     }
-    private Image readImg(String filename) { try { InputStream is = readRaw(filename); if (is == null) { return null; } Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
+    public Image readImg(String filename) { try { InputStream is = readRaw(filename); if (is == null) { return null; } Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
     // |
     public String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     public String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); for (Enumeration keys = attributes.keys(); keys.hasMoreElements();) { String key = (String) keys.nextElement(); text = replace(text, "$" + key, (String) attributes.get(key)); } text = replace(text, "$.", "$"); return escape(text); }
@@ -2087,7 +2087,7 @@ class Lua {
     private Vector tokens;
     private int tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, RANDOM = 12, EXEC = 13, GETENV = 14, CLOCK = 15, SETLOC = 16, EXIT = 17, DATE = 18, GETPID = 19, SETPROC = 20, GETPROC = 21, READ = 22, WRITE = 23, CLOSE = 24, TB_INSERT = 25, TB_CONCAT = 26, TB_REMOVE = 27, TB_SORT = 28, TB_MOVE = 29, TB_UNPACK = 30, TB_PACK = 31, TB_DECODE = 32, HTTP_GET = 33, HTTP_POST = 34, CONNECT = 35, PEER = 36, DEVICE = 37, SERVER = 38, ACCEPT = 39, ALERT = 40, SCREEN = 41, LIST = 42, QUEST = 43, EDIT = 44, TITLE = 45, TICKER = 46, WTITLE = 47, DISPLAY = 48, APPEND = 49, UPPER = 50, LOWER = 51, LEN = 52, MATCH = 53, REVERSE = 54, SUB = 55, HASH = 56, BYTE = 57, CHAR = 58, TRIM = 59, GETCWD = 60;
+    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, RANDOM = 12, EXEC = 13, GETENV = 14, CLOCK = 15, SETLOC = 16, EXIT = 17, DATE = 18, GETPID = 19, SETPROC = 20, GETPROC = 21, READ = 22, WRITE = 23, CLOSE = 24, TB_INSERT = 25, TB_CONCAT = 26, TB_REMOVE = 27, TB_SORT = 28, TB_MOVE = 29, TB_UNPACK = 30, TB_PACK = 31, TB_DECODE = 32, HTTP_GET = 33, HTTP_POST = 34, CONNECT = 35, PEER = 36, DEVICE = 37, SERVER = 38, ACCEPT = 39, ALERT = 40, SCREEN = 41, LIST = 42, QUEST = 43, EDIT = 44, TITLE = 45, TICKER = 46, WTITLE = 47, DISPLAY = 48, APPEND = 49, UPPER = 50, LOWER = 51, LEN = 52, MATCH = 53, REVERSE = 54, SUB = 55, HASH = 56, BYTE = 57, CHAR = 58, TRIM = 59, GETCWD = 60, OPEN = 61;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
     public static final Object LUA_NIL = new Object();
     // |
@@ -3390,6 +3390,7 @@ class Lua {
                     }
                 } 
             }
+            else if (MOD == OPEN) { return args.isEmpty() ? gotbad(1, "open", "string expected, got no value") : midlet.readRaw(toLuaString(args.elementAt(0))); }
             // Package: table
             else if (MOD == TB_INSERT) {
                 if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
@@ -3786,7 +3787,7 @@ class Lua {
         }
         // |
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (res != null && doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
-        private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : "userdata"; }
+        private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : item instanceof Image ? "image" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
         private Object http(String method, String url, String data, Object item) throws Exception {
@@ -3861,9 +3862,10 @@ class Lua {
             if (obj instanceof Hashtable) {
                 Hashtable field = (Hashtable) obj;
                 String type = getenv(field, "type", "text").trim();
+
                 if (type.equals("image")) {
                     String imgPath = getenv(field, "img", "");
-                    if (imgPath.equals("")) { } else { f.append(Image.createImage(imgPath)); }
+                    if (imgPath.equals("")) { } else { f.append(Image.createImage(midlet.readImg(imgPath))); }
                 } 
                 else if (type.equals("text")) {
                     String value = getenv(field, "value", "");
@@ -3885,15 +3887,47 @@ class Lua {
 
                     if (ITEM == null) { ITEM = new Hashtable(); }
                     ITEM.put(s, rootObj);
-
-
                 }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
+                else if (type.equals("gauge")) { f.append(new Gauge(getvalue(field, "label", ""), getBoolean(field, "interactive", true), getNumber(field, "max", 100), getNumber(field, "value", 0))); } 
+                else if (type.equals("textfield")) {
+                    TextField tf = new TextField(getvalue(field, "label", ""), getvalue(field, "value", ""), 256, getQuest(getenv(field, "mode", "default")));
+                    if (field.containsKey("style")) { tf.setFont(midlet.newFont(getenv(field, "style", "default"))); }
+
+                    f.append(tf);
+                }
+                else if (type.equals("choice")) { 
+                    String choiceType = getvalue(field, "mode", "exclusive");
+                    ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.EXCLUSIVE);
+                    Object options = field.get("options");
+                    Image IMG = null;
+                    if (PKG.containsKey("icon")) {
+                        try { IMG = Image.createImage(getenv(PKG, "icon", "")); } 
+                        catch (Exception e) { midlet.MIDletLogs("add warn Malformed Image '" + getenv(PKG, "icon", "") + "'"); } 
+                    }
+
+                    if (fieldsObj instanceof Hashtable) {
+                        Hashtable fields = (Hashtable) fieldsObj;
+
+                        if (isListTable(fields)) {
+                            Vector fv = toVector(fields);
+
+                            for (int i = 0; i < fields.size(); i++) { cg.append(toLuaString(fv.elementAt(i)), IMG); }
+                        } else {
+                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
+                                cg.append(toLuaString(fields.get(keys.nextElement())), IMG);
+                            }
+                        }
+                    }
+
+                    f.append(cg);
+                } 
             } 
             else if (obj instanceof String) { f.append(toLuaString(obj)); }
         }
-
-        private String getvalue(Hashtable table, String key, String fallback) { return table.containsKey(key) ? toLuaString(table.get(key)) : fallback; } 
+        
+        private int getNumber(Hashtable table, String key, int fallback) { Object val = table.get(key); if (val instanceof Double) { return ((Double) val).intValue(); } try { return Integer.parseInt(toLuaString(val)); } catch (Exception e) { return fallback; } }
+        private boolean getBoolean(Hashtable table, String key, boolean fallback) { Object val = table.get(key); if (val instanceof Boolean) { return ((Boolean) val).booleanValue(); } return toLuaString(val).equalsIgnoreCase("true") ? true : fallback; } private String getvalue(Hashtable table, String key, String fallback) { return table.containsKey(key) ? toLuaString(table.get(key)) : fallback; } 
         private String getenv(Hashtable table, String key, String fallback) { return midlet.env(getvalue(table, key, fallback)); }
         private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = midlet.replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
 
@@ -3952,7 +3986,7 @@ class Lua {
                 if (fieldsObj != null) {
                     Image IMG = null;
                     if (PKG.containsKey("icon")) {
-                        try { IMG = Image.createImage(getenv(PKG, "icon", "")); } 
+                        try { IMG = Image.createImage(midlet.readImg(getenv(PKG, "icon", ""))); } 
                         catch (Exception e) { midlet.MIDletLogs("add warn Malformed Image '" + getenv(PKG, "icon", "") + "'"); } 
                     }
 
@@ -4080,10 +4114,33 @@ class Lua {
                                 } else if (fire != null) { midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, root); }
                             }
                         }
-                    } 
+                    }
                     else if (MOD == SCREEN) {
+                        Vector formData = new Vector();
+                        if (screen instanceof Form) {
+                            Form form = (Form) screen;
+                            for (int i = 0; i < form.size(); i++) {
+                                Item item = form.get(i);
+
+                                if (item instanceof TextField) { formData.addElement(((TextField) item).getString()); } 
+                                else if (item instanceof Gauge) { formData.addElement(new Double(((Gauge) item).getValue())); }
+                                else if (item instanceof ChoiceGroup) {
+                                    ChoiceGroup cg = (ChoiceGroup) item;
+                                    if (cg.getChoiceType() == Choice.EXCLUSIVE) {
+                                        int sel = cg.getSelectedIndex();
+                                        formData.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
+                                    } else { 
+                                        Hashtable selTable = new Hashtable();
+                                        for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
+
+                                        formData.addElement(selTable);
+                                    }
+                                }
+                            }
+                        }
+                        
                         midlet.processCommand("xterm", true, root);
-                        if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
+                        if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(formData); } 
                         else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
                     }
                 }
