@@ -44,31 +44,22 @@ local function parse_html(html)
                 local tag_content = string.sub(html, i + 1, tag_end - 1)
                 local tag = tag_content
                 local space = string.find(tag_content, " ")
-                if space then
-                    tag = string.sub(tag_content, 1, space - 1)
-                end
+                if space then tag = string.sub(tag_content, 1, space - 1) end
                 tag = string.lower(tag)
 
-                if tag == "h1" then
-                    in_h1 = true
-                elseif tag == "/h1" then
-                    in_h1 = false
-                elseif tag == "p" then
-                    in_p = true
-                elseif tag == "/p" then
-                    in_p = false
-                elseif tag == "br" then
-                    fields[#fields + 1] = { type = "spacer", width = 1, height = 1 }
-                elseif tag == "a" then
+                if tag == "h1" then in_h1 = true
+                elseif tag == "/h1" then in_h1 = false
+                elseif tag == "p" then in_p = true
+                elseif tag == "/p" then in_p = false
+                elseif tag == "br" then fields[#fields + 1] = { type = "spacer", width = 1, height = 1 }
+                elseif tag == "a" then 
                     in_a = true
                     local href_start = string.find(tag_content, "href=")
                     if href_start then
                         local quote1 = string.find(tag_content, '"', href_start)
                         if quote1 then
                             local quote2 = string.find(tag_content, '"', quote1 + 1)
-                            if quote2 then
-                                a_href = string.sub(tag_content, quote1 + 1, quote2 - 1)
-                            end
+                            if quote2 then a_href = string.sub(tag_content, quote1 + 1, quote2 - 1) end
                         end
                     end
                 elseif tag == "/a" then
@@ -77,9 +68,7 @@ local function parse_html(html)
                 end
 
                 i = tag_end + 1
-            else
-                break
-            end
+            else break end
         else
             current_text = current_text .. c
             i = i + 1
@@ -158,7 +147,7 @@ function browser.open()
         title = "Browser",
         label = "URL:",
         content = "http://",
-        back = { label = "Back" },
+        back = { label = "Back", root = browser.main },
         button = { label = "Go", root = browser.load }
     }))
 end
