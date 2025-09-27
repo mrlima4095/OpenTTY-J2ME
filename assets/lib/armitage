@@ -9,7 +9,7 @@ include=/lib/settings
 config=execute x11 list /home/armitage;
 command=armitage,browser,whois
 
-armitage=execute x11 list armitage;
+armitage=execute x11 list /home/armitage;
 browser=execute open http://mini.opera.com;
 whois=query socket://whois.iana.org:43
 
@@ -36,7 +36,7 @@ Connect (Remote)=execute set TOOL=nc; set LABEL=IP Adress (Connect); x11 quest /
 Connect - Server=execute nc $REPO;
 Get Local Adress=execute x11 list /home/armitage; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
 Search IP Info=execute set TOOL=fw; set LABEL=IP Adress (GeoIP Query); x11 quest /home/armitage;
-\ Search=execute set TOOL=whois; set LABEL=Domain (WhoIS Query); x11 quest /home/armitage;
+WhoIS Search=execute set TOOL=whois; set LABEL=Domain (WhoIS Query); x11 quest /home/armitage;
 GoBuster=execute set TOOL=gobuster; set LABEL=WebSite URL (GoBuster Query); x11 quest /home/armitage;
 Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress (Port Scanner); x11 quest /home/armitage;
 Address Finder=execute set TOOL=armitage gaddr; set LABEL=Web Domain; x11 quest /home/armitage;
