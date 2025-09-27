@@ -20,7 +20,6 @@ local function parse_html(html)
     while i <= len do
         local c = string.sub(html, i, i)
         if c == "<" then
-            -- se estava acumulando texto, joga antes de processar a tag
             if current_text ~= "" then
                 if in_a and a_href then
                     fields[#fields + 1] = {
@@ -40,7 +39,6 @@ local function parse_html(html)
                 current_text = ""
             end
 
-            -- procurar fechamento da tag
             local tag_end = string.find(html, ">", i)
             if tag_end then
                 local tag_content = string.sub(html, i + 1, tag_end - 1)
@@ -63,7 +61,6 @@ local function parse_html(html)
                     fields[#fields + 1] = { type = "spacer", width = 1, height = 1 }
                 elseif tag == "a" then
                     in_a = true
-                    -- procurar href="..."
                     local href_start = string.find(tag_content, "href=")
                     if href_start then
                         local quote1 = string.find(tag_content, '"', href_start)
@@ -89,7 +86,6 @@ local function parse_html(html)
         end
     end
 
-    -- texto que sobrou no final
     if current_text ~= "" then
         if in_a and a_href then
             fields[#fields + 1] = {
@@ -111,29 +107,51 @@ local function parse_html(html)
     return fields
 end
 
+local function extract_title(html, url)
+    local title_start = string.match(html, "<title>", 1)
+    local title_end   = string.match(html, "</title>", 1)
+
+    if title_start and title_end then
+        local raw = string.sub(html, title_start + 7, title_end - 1)
+        raw = string.trim(raw)
+        if raw ~= "" then return raw end
+    end
+    return url
+end
 
 function browser.load(url)
-    if string.sub(url, 0, 7) ~= "http://" then url = "http://" .. url end
+    local html
 
-    graphics.SetTicker("Loading...")
-    local html = fetch_url(url)
+    if string.sub(url, 1, 7) == "http://" then
+        graphics.SetTicker("Loading...")
+        html = fetch_url(url)
+    elseif string.sub(url, 1, 7) == "file://" then
+        html = io.read(string.sub(url, 8))
+    else
+        url = "http://" .. url
+        graphics.SetTicker("Loading...")
+        html = fetch_url(url)
+    end
+
     if not html then
         graphics.display(graphics.Alert({
             title = "Browser",
             message = "Rendering failed!",
             back = { root = browser.main }
         }))
-
         return
     end
 
+    local page_title = extract_title(html, url)
+
     graphics.display(graphics.BuildScreen({
-        title = url,
+        title = page_title,
         fields = parse_html(html),
         back = { root = browser.open },
         button = { label = "Menu", root = browser.main }
     }))
 end
+
 
 function browser.open()
     graphics.display(graphics.BuildQuest({
