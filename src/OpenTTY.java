@@ -1987,7 +1987,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
             if (backgroundType.equals("color") || backgroundType.equals("default")) { setpallete("background", g, 0, 0, 0); g.fillRect(0, 0, getWidth(), getHeight()); } 
             else if (backgroundType.equals("image")) { 
                 try { 
-                    Image content = Image.createImage(getenv("canvas.background")); 
+                    Image content = midlet.readImg(getenv("canvas.background")); 
 
                     g.drawImage(content, (getWidth() - content.getWidth()) / 2, (getHeight() - content.getHeight()) / 2, Graphics.TOP | Graphics.LEFT); 
                 } 
@@ -2009,7 +2009,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
                 } 
                 else if (type.equals("image")) { 
                     try { 
-                        Image IMG = Image.createImage(val); 
+                        Image IMG = midlet.readImg(val); 
 
                         g.drawImage(IMG, x, y, Graphics.TOP | Graphics.LEFT); 
 
