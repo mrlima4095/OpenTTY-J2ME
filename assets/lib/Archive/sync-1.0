@@ -1,8 +1,0 @@
-[ Config ]
-
-name=Sync
-version=1.0
-description=Update Checker
-
-command=sync 
-sync=execute set OLD_QUERY=$QUERY; set QUERY=latest.sh; query $REPO http https://raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/latest.sh; run latest.sh; rm latest.sh; set QUERY=$OLD_QUERY; unset $OLD_QUERY;
