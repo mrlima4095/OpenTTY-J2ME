@@ -1238,15 +1238,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public String read(String filename) {
         try {
-            if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; }
-
+            if (filename.startsWith("/tmp/")) {
+                return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : "";
+            }
             InputStream is = readRaw(filename);
             if (is == null) { return ""; }
-            StringBuffer sb = new StringBuffer();
+            
+            InputStreamReader reader = new InputStreamReader(is, "UTF-8");
+            StringBuilder sb = new StringBuilder();
             int ch;
-            while ((ch = is.read()) != -1) { sb.append((char) ch); }
+            while ((ch = reader.read()) != -1) { sb.append((char) ch); }
+            reader.close();
             is.close();
-            return sb.toString();
+            
+            return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
         } catch (Exception e) { return ""; }
     }
     public Image readImg(String filename) { try { InputStream is = readRaw(filename); if (is == null) { return null; } Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
