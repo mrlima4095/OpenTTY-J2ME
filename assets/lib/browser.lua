@@ -159,6 +159,7 @@ function browser.main()
         fields = { "Open URL", "Exit" },
         back = { label = "Exit" },
         button = {
+            label = "Select",
             root = function (opt)
                 if opt == "Open URL" then browser.open()
                 elseif opt == "Exit" then os.exit()
