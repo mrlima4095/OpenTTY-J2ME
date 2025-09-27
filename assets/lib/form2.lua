@@ -1,4 +1,4 @@
-graphics.display(BuildScreen({
+graphics.display(graphics.BuildScreen({
     title = "Tela de Teste",
     back = { label = "Voltar", root = os.exit },
     button = { label = "OK" },
