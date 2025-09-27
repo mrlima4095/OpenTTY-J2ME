@@ -1,6 +1,6 @@
 graphics.display(BuildScreen({
     title = "Tela de Teste",
-    back = { label = "Voltar" },
+    back = { label = "Voltar", root = os.exit },
     button = { label = "OK" },
     fields = {
         [1] = { type = "text", label = "Mensagem:", value = "Olá mundo no J2ME!" },
