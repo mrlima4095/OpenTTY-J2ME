@@ -3901,8 +3901,8 @@ class Lua {
                         catch (Exception e) { midlet.MIDletLogs("add warn Malformed Image '" + getenv(PKG, "icon", "") + "'"); } 
                     }
 
-                    if (fieldsObj instanceof Hashtable) {
-                        Hashtable fields = (Hashtable) fieldsObj;
+                    if (options instanceof Hashtable) {
+                        Hashtable fields = (Hashtable) options;
 
                         if (isListTable(fields)) {
                             Vector fv = toVector(fields);
