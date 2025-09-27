@@ -1,4 +1,4 @@
-graphics.BuildScreen{
+graphics.display(BuildScreen({
     title = "Tela de Teste",
     back = { label = "Voltar" },
     button = { label = "OK" },
@@ -11,5 +11,4 @@ graphics.BuildScreen{
                 options = { [1] = "A", [2] = "B", [3] = "C" } },
         [6] = { type = "item", label = "Executar", root = "echo Você clicou em Executar" }
     }
-}
-()
+}))
