@@ -10,7 +10,7 @@ local function fetch_url(url)
     return result
 end
 local function parse_html(html)
-    local fields = {}  -- Lista de campos para o form
+    local fields = {}
     local current_text = ""
     local in_h1 = false
     local in_p = false
@@ -18,48 +18,34 @@ local function parse_html(html)
     local len = #html
 
     while i <= len do
-        local c = html:sub(i, i)
+        local c = string.sub(html, i, i)
         if c == "<" then
-            -- Fim de tag anterior
             if current_text ~= "" then
-                if in_h1 then
-                    fields[#fields + 1] = {type="text", label="", value=current_text, style="bold"}
-                elseif in_p then
-                    fields[#fields + 1] = {type="text", label="", value=current_text, style="default"}
-                else
-                    fields[#fields + 1] = {type="text", label="", value=current_text, style="default"}
-                end
+                if in_h1 then fields[#fields + 1] = {type="text", label="", value=current_text, style="bold"}
+                elseif in_p then fields[#fields + 1] = {type="text", label="", value=current_text, style="default"}
+                else fields[#fields + 1] = {type="text", label="", value=current_text, style="default"} end
+
                 current_text = ""
             end
 
-            -- Parse tag
-            local tag_end = html:find(">", i)
+            local tag_end = string.match(html, ">", i)
             if tag_end then
-                local tag = html:sub(i+1, tag_end-1):lower():gsub("/%s*", "")  -- Remove espaços e /
+                local tag = string.lower(string.sub(html, i + 1, tag_end - 1))
 
-                if tag == "h1" then
-                    in_h1 = true
-                elseif tag == "/h1" then
-                    in_h1 = false
-                elseif tag == "p" then
-                    in_p = true
-                elseif tag == "/p" then
-                    in_p = false
-                elseif tag == "br" then
-                    fields[#fields + 1] = {type="spacer", width=1, height=1}  -- Quebra de linha simples
-                end
+                if tag == "h1" then in_h1 = true
+                elseif tag == "/h1" then in_h1 = false
+                elseif tag == "p" then in_p = true
+                elseif tag == "/p" then in_p = false
+                elseif tag == "br" then fields[#fields + 1] = { type = "spacer", width = 1, height = 1 } end
 
                 i = tag_end + 1
-            else
-                break
-            end
+            else break end
         else
             current_text = current_text .. c
             i = i + 1
         end
     end
 
-    -- Adiciona texto restante
     if current_text ~= "" then
         local style = in_h1 and "bold" or "default"
         fields[#fields + 1] = {type="text", label="", value=current_text, style=style}
