@@ -387,7 +387,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                             monitor.append(perms);
                             if (info[2].equals("image")) { monitor.append(new ImageItem(null, readImg(path + selected), ImageItem.LAYOUT_DEFAULT, null)); }
-                            if (info[2].equals("text")) { monitor.addCommand(OPEN); }
+                            if (info[2].equals("text") || path.startsWith("/home/") || path.startsWith("/tmp/")) { monitor.addCommand(OPEN); }
                         }
                         monitor.setCommandListener(this);
                         display.setCurrent(monitor);
