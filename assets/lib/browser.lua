@@ -1,9 +1,7 @@
 #!/bin/lua
 
 
-local browser = {
-    _previous = ""
-}
+local browser = { }
 
 local function fetch_url(url)
     local res, _ = socket.http.get(url)
@@ -98,7 +96,7 @@ end
 
 local function extract_title(html, url)
     local title_start = string.match(html, "<title>", 1)
-    local title_end   = string.match(html, "</title>", 1)
+    local title_end = string.match(html, "</title>", 1)
 
     if title_start and title_end then
         local raw = string.sub(html, title_start + 7, title_end - 1)
@@ -131,10 +129,8 @@ function browser.load(url)
         return
     end
 
-    local page_title = extract_title(html, url)
-
     graphics.display(graphics.BuildScreen({
-        title = page_title,
+        title = extract_title(html, url),
         fields = parse_html(html),
         back = { root = browser.open },
         button = { label = "Menu", root = browser.main }
