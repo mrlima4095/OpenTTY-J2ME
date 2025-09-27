@@ -168,4 +168,5 @@ function browser.main()
     }))
 end
 
-browser.main()
+if #arg == 1 then browser.main()
+else browser.load(arg[1]) end
