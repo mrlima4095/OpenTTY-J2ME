@@ -1245,7 +1245,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (is == null) { return ""; }
             
             InputStreamReader reader = new InputStreamReader(is, "UTF-8");
-            StringBuilder sb = new StringBuilder();
+            StringBuffer sb = new StringBuffer();
             int ch;
             while ((ch = reader.read()) != -1) { sb.append((char) ch); }
             reader.close();
