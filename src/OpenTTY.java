@@ -1009,7 +1009,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 try {
                     String origin = args[0], target = (args.length > 1 && !args[1].equals("")) ? args[1] : origin + "-copy";
 
-                    InputStream in = readRaw(origem);
+                    InputStream in = readRaw(origin);
                     if (in == null) { echoCommand("cp: cannot open " + origin); return 1; }
 
                     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
