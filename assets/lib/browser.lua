@@ -1,164 +1,156 @@
-local browser = {
-    version = "1.0",
+#!/bin/lua
 
-    xback = os.exit,
-    xmenucfg = {
-        title = "Browser",
-        back = { root = os.exit },
-        button = {
-            label = "Select",
-            root = function (opt)
-                if opt == "Open URL" then
-                    browser.quest()
+-- Mini Navegador em Lua para o runtime J2ME
+-- Este script cria um menu simples e um mini browser que pede uma URL,
+-- faz HTTP GET, parseia HTML básico (h1 bold, p normal, etc.) e renderiza em um Form.
+
+-- Função para fazer HTTP GET (usando socket.http.get)
+local function fetch_url(url)
+    local result, status = socket.http.get(url)
+    return result
+end
+
+-- Função simples para parsear HTML básico
+-- Suporta: <h1>texto</h1> (bold), <p>texto</p> (normal), <br> (nova linha), texto plano
+-- Ignora o resto por simplicidade (não é um parser full)
+local function parse_html(html)
+    local fields = {}  -- Lista de campos para o form
+    local current_text = ""
+    local in_h1 = false
+    local in_p = false
+    local i = 1
+    local len = #html
+
+    while i <= len do
+        local c = html:sub(i, i)
+        if c == "<" then
+            -- Fim de tag anterior
+            if current_text ~= "" then
+                if in_h1 then
+                    fields[#fields + 1] = {type="text", label="", value=current_text, style="bold"}
+                elseif in_p then
+                    fields[#fields + 1] = {type="text", label="", value=current_text, style="default"}
+                else
+                    fields[#fields + 1] = {type="text", label="", value=current_text, style="default"}
                 end
+                current_text = ""
             end
-        },
 
-        fields = { "Open URL" }
-    },
+            -- Parse tag
+            local tag_end = html:find(">", i)
+            if tag_end then
+                local tag = html:sub(i+1, tag_end-1):lower():gsub("/%s*", "")  -- Remove espaços e /
 
-    headers = {}
-}
+                if tag == "h1" then
+                    in_h1 = true
+                elseif tag == "/h1" then
+                    in_h1 = false
+                elseif tag == "p" then
+                    in_p = true
+                elseif tag == "/p" then
+                    in_p = false
+                elseif tag == "br" then
+                    fields[#fields + 1] = {type="spacer", width=1, height=1}  -- Quebra de linha simples
+                end
 
-function browser.render(raw)
-    local fields = {}
-    local pos = 1
-    local len = string.len(raw)
-
-    local function parseTag(text, startPos)
-        local s = string.find(text, "<", startPos, true)
-        if s ~= startPos then return nil end -- tag deve começar exatamente em startPos
-
-        -- procura o fechamento da tag de abertura '>'
-        local tagEnd = string.find(text, ">", s, true)
-        if not tagEnd then return nil end
-
-        -- extrai o conteúdo da tag de abertura, ex: b, a href="..."
-        local tagContent = string.sub(text, s + 1, tagEnd - 1)
-
-        -- separa o nome da tag e os atributos (se houver)
-        local spacePos = string.find(tagContent, " ", 1, true)
-        local tagName, attr
-        if spacePos then
-            tagName = string.sub(tagContent, 1, spacePos - 1)
-            attr = string.sub(tagContent, spacePos + 1)
-        else
-            tagName = tagContent
-            attr = nil
-        end
-
-        -- procura a tag de fechamento correspondente </tagName>
-        local closeTag = "</" .. tagName .. ">"
-        local closeStart = string.find(text, closeTag, tagEnd + 1, true)
-        if not closeStart then return nil end
-
-        -- extrai o conteúdo entre as tags
-        local content = string.sub(text, tagEnd + 1, closeStart - 1)
-
-        return tagName, attr, content, closeStart + string.len(closeTag)
-    end
-    local function extractHref(attr)
-        if not attr then return nil end
-        local hrefStart = string.find(attr, 'href="', 1, true)
-        if not hrefStart then return nil end
-        local hrefEnd = string.find(attr, '"', hrefStart + 6, true)
-        if not hrefEnd then return nil end
-        return string.sub(attr, hrefStart + 6, hrefEnd - 1)
-    end
-
-    local function addText(value, style) table.insert(fields, { type = "text", value = value, style = style or "default" }) end
-    local function addButton(label, url) table.insert(fields, { type = "item", label = label, root = function () browser.load(url) end }) end
-
-    while pos <= len do
-        local nextTagStart = string.find(raw, "<", pos, true)
-        if not nextTagStart then
-            -- Sem mais tags, adiciona o resto como texto normal
-            local text = string.sub(raw, pos)
-            if string.len(text) > 0 then addText(text) end
-            break
-        end
-
-        if nextTagStart > pos then
-            -- Texto antes da tag
-            local text = string.sub(raw, pos, nextTagStart - 1)
-            if string.len(text) > 0 then addText(text) end
-        end
-
-        -- Tenta parsear tag
-        local tag, attr, content, newPos = parseTag(raw, nextTagStart)
-        if not tag then
-            -- Tag mal formada, adiciona o resto como texto e sai
-            local text = string.sub(raw, nextTagStart)
-            if string.len(text) > 0 then addText(text) end
-            break
-        end
-
-        tag = string.lower(tag)
-
-        if tag == "b" then
-            addText(content, "bold")
-        elseif tag == "i" then
-            addText(content, "italic")
-        elseif tag == "large" then
-            addText(content, "large")
-        elseif tag == "a" then
-            local href = extractHref(attr)
-            if href then
-                addButton(content, href)
+                i = tag_end + 1
             else
-                addText(content)
+                break
             end
         else
-            -- Tag desconhecida, adiciona conteúdo como texto normal
-            addText(content)
+            current_text = current_text .. c
+            i = i + 1
         end
-
-        pos = newPos
     end
 
-    -- Botão personalizado para voltar ao menu principal
-    local button = { label = "Menu", root = browser.main }
-
-    -- Monta a tela com título, botão Back para voltar para browser.quest e botão Menu
-    local screen = graphics.BuildScreen({
-        title = "Browser - Page",
-        back = { root = browser.quest },
-        button = button,
-        fields = fields
-    })
-
-    return screen
-end
-
--- Ajuste na função load para usar browser.render e exibir a tela
-function browser.load(url)
-    local raw, status = socket.http.get(url, browser.headers)
-
-    if status ~= 200 then
-        raw = "<title>404 - Not found</title>\nPage not found"
+    -- Adiciona texto restante
+    if current_text ~= "" then
+        local style = in_h1 and "bold" or "default"
+        fields[#fields + 1] = {type="text", label="", value=current_text, style=style}
     end
 
-    local screen = browser.render(raw)
-    graphics.display(screen)
+    return fields
 end
 
-function browser.quest()
-    graphics.display(graphics.BuildQuest({
-        title = "Browser",
-        label = "WebSite URL",
+-- Função para construir e mostrar o form do browser
+local function show_browser_page(title, fields)
+    local screen_table = {
+        title = title or "Página Carregada",
+        fields = fields,  -- Lista de campos já parseados
+        back = {label="Voltar"},
+        button = {label="Fechar", root="menu"}  -- Volta ao menu
+    }
+    return graphics.BuildScreen(screen_table)
+end
+
+-- Função para carregar URL (chamada após input)
+local function load_url(url)
+    local url = io.read("stdin") or "http://example.com"  -- Pega o input do quest
+    if not string.match(url, "https://") then
+        url = "http://" .. url
+    end
+
+    print("Carregando: " .. url)
+    local html = fetch_url(url)
+    if not html then
+        print("Erro ao carregar URL")
+        return
+    end
+
+    local fields = parse_html(html)
+    local page_screen = show_browser_page("Conteúdo de " .. url, fields)
+    graphics.display(page_screen)
+end
+
+-- Função para o browser
+local function browser()
+    -- Pede URL
+    local quest_table = {
+        title = "Digite a URL",
+        label = "URL:",
         content = "http://",
-        back = { root = browser.main },
-        button = { label = "Go", root = browser.load }
-    }))
+        type = "default",  -- TextField normal
+        back = {label="Cancelar"},
+        button = {label="Carregar", root=load_url}
+    }
+    local quest_screen = graphics.BuildQuest(quest_table)
+    graphics.display(quest_screen)
+
+    -- Aqui, o runtime cuida do input via commandAction, mas para simular o fluxo,
+    -- assumimos que após input, chamamos load_url com o valor.
+    -- No script real, o root="load_url" chama a função abaixo.
 end
 
-function browser.main()
-    if browser.menu == nil then browser.menu = graphics.BuildList(browser.xmenucfg) end
 
-    graphics.display(browser.menu)
+-- Handler para menu (simulado; no real, usa ITEM ou commandAction)
+local function handle_menu(...)
+    local selected = select(1, ...) or 1  -- Pega o selecionado da list
+    if selected == 1 then
+        browser()
+    elseif selected == 2 then
+        os.exit(0)
+    end
+end
+
+-- Menu principal
+local function menu()
+    local menu_items = {"1. Mini Browser", "2. Sair"}
+    local list_table = {
+        title = "Menu Principal",
+        type = "implicit",  -- List.IMPLICIT
+        fields = menu_items,
+        back = {label="Sair"},
+        button = {label="Selecionar", root=handle_menu}
+    }
+    local menu_screen = graphics.BuildList(list_table)
+    graphics.display(menu_screen)
 end
 
 
+-- Inicialização
+menu()
 
-os.setproc("name", "browser")
-browser.quest()
+-- Nota: Este script assume que o runtime lida com os eventos de tela (commandAction).
+-- Para inputs, use graphics.BuildQuest e defina root para funções como load_url.
+-- Para múltiplos retornos em funções, use return {val1, val2}.
+-- Rode com: lua mini_browser.lua
