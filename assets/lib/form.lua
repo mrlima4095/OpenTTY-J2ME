@@ -23,6 +23,7 @@ end
 -- Define a callback for the interactive item click
 local function on_item_click()
     print("Interactive item clicked!")
+    os.execute("@alert")
 end
 
 -- Main screen configuration table
