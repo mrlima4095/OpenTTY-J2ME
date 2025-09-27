@@ -95,8 +95,8 @@ local function parse_html(html)
 end
 
 local function extract_title(html, url)
-    local start = string.match(html, "<title>", 1)
-    local _end = string.match(html, "</title>", 1)
+    local start = string.match(html, "<title>")
+    local _end = string.match(html, "</title>")
 
     if start and _end then
         start = start + 7
