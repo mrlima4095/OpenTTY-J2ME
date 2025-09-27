@@ -3893,7 +3893,7 @@ class Lua {
                 else if (type.equals("textfield")) { f.append(new TextField(getvalue(field, "label", ""), getvalue(field, "value", ""), 256, getQuest(getenv(field, "mode", "default")))); }
                 else if (type.equals("choice")) { 
                     String choiceType = getvalue(field, "mode", "exclusive");
-                    ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.EXCLUSIVE);
+                    ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), (LTYPE = choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.EXCLUSIVE));
                     Object options = field.get("options");
                     Image IMG = null;
                     if (PKG.containsKey("icon")) {
@@ -3916,6 +3916,9 @@ class Lua {
                     }
 
                     f.append(cg);
+
+                    if (ITEM == null) { ITEM = new Hashtable(); }
+                    ITEM.put(cg, LTYPE);
                 } 
             } 
             else if (obj instanceof String) { f.append(toLuaString(obj)); }
@@ -4121,14 +4124,15 @@ class Lua {
                                 else if (item instanceof Gauge) { formData.addElement(new Double(((Gauge) item).getValue())); }
                                 else if (item instanceof ChoiceGroup) {
                                     ChoiceGroup cg = (ChoiceGroup) item;
-                                    if (cg.getChoiceType() == Choice.EXCLUSIVE) {
-                                        int sel = cg.getSelectedIndex();
-                                        formData.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
-                                    } else { 
+                                    
+                                    if (ITEM.get(cg) == Choice.MULTIPLE) {
                                         Hashtable selTable = new Hashtable();
                                         for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
 
                                         formData.addElement(selTable);
+                                    } else {
+                                        int sel = cg.getSelectedIndex();
+                                        formData.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
                                     }
                                 }
                             }
