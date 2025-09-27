@@ -1,7 +1,0 @@
-[ Config ]
-
-name=DeviceFS
-version=1.0
-description=API for FileSystems
-
-config=execute tick Mounting...; install nano; getty; install stdout-cache; touch; clear; fdisk; add $OUTPUT; sed -p /mnt/; mount nano; get stdout-cache; rraw; get nano; rm stdout-cache; tick;
