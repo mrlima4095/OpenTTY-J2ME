@@ -3895,7 +3895,7 @@ class Lua {
                 }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
                 else if (type.equals("gauge")) { f.append(new Gauge(getvalue(field, "label", ""), getBoolean(field, "interactive", true), getNumber(field, "max", 100), getNumber(field, "value", 0))); } 
-                else if (type.equals("textfield")) { f.append(new TextField(getvalue(field, "label", midlet.stdin.getLabel()), getvalue(field, "value", ""), getNumber(field, "length", 100), getQuest(getenv(field, "mode", "default")))); }
+                else if (type.equals("textfield")) { f.append(new TextField(getvalue(field, "label", midlet.stdin.getLabel()), getvalue(field, "value", ""), getNumber(field, "length", 256), getQuest(getenv(field, "mode", "default")))); }
                 else if (type.equals("choice")) { 
                     String choiceType = getvalue(field, "mode", "exclusive");
                     ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), (LTYPE = choiceType.equals("exclusive") ? Choice.EXCLUSIVE : choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.POPUP));
