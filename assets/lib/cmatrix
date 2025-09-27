@@ -2,6 +2,8 @@
 
 --[[
 
+[ Config ]
+
 name=cmatrix
 version=1.0
 description=Matrix Effect
