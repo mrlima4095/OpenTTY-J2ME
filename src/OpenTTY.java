@@ -1012,7 +1012,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("get")) { nanoContent = argument.equals("") || argument.equals("nano") ? loadRMS("nano") : getcontent(argument); }
         else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
         else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
-        else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String VALUE = getpattern((String) parseProperties(getcontent(args[1])).get(args[0])); echoCommand(VALUE != null ? VALUE : "null"); } }
+        else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String VALUE = (String) parseProperties(getcontent(args[1])).get(args[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
         else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0]); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, false) : 10, LINES.length); for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } } }
         else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0]); String[] LINES = split(CONTENT, '\n'); int COUNT = args.length > 1 ? getNumber(args[1], 10, false) : 10; COUNT = Math.max(0, LINES.length - COUNT); for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } } }
         else if (mainCommand.equals("diff")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] LINES1 = split(getcontent(args[0]), '\n'), LINES2 = split(getcontent(args[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
@@ -1094,21 +1094,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 Hashtable arg = new Hashtable();
                 String source, code;
-                if (argument.equals("")) {
-                    source = "nano";
-                    code = nanoContent;
-                    arg.put(new Double(0), "nano");
-                } else if (args[0].equals("-e")) {
-                    source = "stdin";
-                    code = argument.substring(3).trim();
-                    arg.put(new Double(0), "/dev/stdin");
-                } else {
-                    source = args[0];
-                    code = getcontent(source);
-                    arg.put(new Double(0), source);
-                    
-                    for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); }
-                }
+                if (argument.equals("")) { source = "nano"; code = nanoContent; arg.put(new Double(0), "nano"); } 
+                else if (args[0].equals("-e")) { source = "stdin"; code = argument.substring(3).trim(); arg.put(new Double(0), "/dev/stdin"); } 
+                else { source = args[0]; code = getcontent(source); arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
                 
                 return (Integer) lua.run(source, code, arg).get("status"); 
             } else { echoCommand("This MIDlet Build don't have Lua"); return 3; } 
