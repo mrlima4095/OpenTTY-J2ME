@@ -12,4 +12,4 @@ graphics.BuildScreen{
         [6] = { type = "item", label = "Executar", root = "echo Você clicou em Executar" }
     }
 }
-graphics.display()
+()
