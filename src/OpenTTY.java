@@ -3893,7 +3893,7 @@ class Lua {
                 else if (type.equals("textfield")) { f.append(new TextField(getvalue(field, "label", ""), getvalue(field, "value", ""), 256, getQuest(getenv(field, "mode", "default")))); }
                 else if (type.equals("choice")) { 
                     String choiceType = getvalue(field, "mode", "exclusive");
-                    ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), (LTYPE = choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.EXCLUSIVE));
+                    ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), (LTYPE = choiceType.equals("exclusive") ? Choice.EXCLUSIVE : choiceType.equals("multiple") ? Choice.MULTIPLE : choiceType.equals("popup") ? Choice.POPUP : Choice.IMPLICIT));
                     Object options = field.get("options");
                     Image IMG = null;
                     if (PKG.containsKey("icon")) {
