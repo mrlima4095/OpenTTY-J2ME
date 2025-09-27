@@ -4,7 +4,7 @@
 local browser = { }
 
 local function fetch_url(url)
-    local res, _ = socket.http.get(url)
+    local res, status = socket.http.get(url)
     return res
 end
 local function parse_html(html)
