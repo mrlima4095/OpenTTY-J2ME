@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null,
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x82";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x83";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -999,7 +999,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { return writeRMS(argument, nanoContent); } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { for (int i = 0; i < args.length; i++) { int STATUS = writeRMS(argument, ""); if (STATUS != 0) { return STATUS; } } } }
         else if (mainCommand.equals("mkdir")) { if (argument.equals("")) { } else { argument = argument.endsWith("/") ? argument : argument + "/"; argument = argument.startsWith("/") ? argument : path + argument; if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (argument.startsWith("/home/") || argument.startsWith("/tmp/")) { echoCommand("Unsupported API"); return 3; } else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } } }
-        else if (mainCommand.equals("cp")) { if (argument.equals("")) { echoCommand("cp: missing [origin]"); } else { return writeRMS(args[1].equals("") ? args[0] + "-copy" : args[1], getcontent(args[0])); } }
+        else if (mainCommand.equals("cp")) {
+            if (argument.equals("")) { echoCommand("cp: missing [origin]"); } 
+            else {
+                try {
+                    String origin = args[0], target = (args.length > 1 && !args[1].equals("")) ? args[1] : origem + "-copy";
+
+                    InputStream in = readRaw(origem);
+                    if (in == null) { echoCommand("cp: cannot open " + origin); return 1; }
+
+                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                    byte[] tmpBuf = new byte[4096];
+                    int len;
+                    while ((len = in.read(tmpBuf)) != -1) { buffer.write(tmpBuf, 0, len); }
+                    in.close();
+
+                    return writeRMS(target, buffer.toByteArray());
+                } catch (Exception e) { echoCommand("cp: " + getCatch(e)); return getCatch(e, 1); }
+            }
+        }
         // |
         // Text Manager
         else if (mainCommand.equals("rraw")) { stdout.setText(nanoContent); }

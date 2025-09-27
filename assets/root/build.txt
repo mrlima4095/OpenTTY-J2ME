@@ -150,3 +150,4 @@
 [2025-1.17-02x80] Fixed Command 'PUSHD' directories stacking
 [2025-1.17-02x81] Removed Command 'RUN' | Improved File Explorer
 [2025-1.17-02x82] New internal reading streams
+[2025-1.17-02x83] Command 'CP' fixed - Using raw byte reader

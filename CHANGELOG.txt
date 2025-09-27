@@ -22,6 +22,8 @@ Copyright (C) 2025 - Mr. Lima
 - Improved **File Explorer**
 - Merged build tools **Lua**, **Shell Script** and **Packages**, utility `.` consider _shebangs_ to build.
 - **Lua** Graphics API - _BuildScreen_ now can build Images from all sources
+- Process viewer added new button **Refresh**
+- Command `cp` now using raw _byte-array_
 
 [ _Notes_ ]
 
