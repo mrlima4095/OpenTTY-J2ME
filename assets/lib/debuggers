@@ -1,48 +1,46 @@
-[ Config ]
+#!/bin/lua
 
-name=JBenchmark
-version=1.2
-description=Debuggers 
+local app = {}
 
-api.version=1.14
-api.error=execute echo [ JBenchmark ] This version requires OpenTTY 1.14;
-api.match=minimum
 
-config=execute set JDB_VERSION=1.2;
-command=jdb,dumpsys
+function app.connect(args)
 
-jdb=execute jdb version; 
-dumpsys=execute jdb run; true 
+end
+function app.shell(args)
+    
+end
+function app.install(args)
+    
+end
+function app.uninstall(args)
+    
+end
+function app.logcat(args)
+    
+end
 
-shell.name=jdb
-shell.args=start,run,version
+function app.main(args)
+    if #arg == 0 then
+        print("usage: jdb []")
+    elseif arg[1] == "connect" then
 
-start=execute install nano; touch; add process.type=bind; add process.port=31337; add process.db=jdb; import nano; get nano; 
-run=execute start dumpsys; tick Debugging...; install nano; getty; install stdout-content-backup; clear; touch; add JBenchmark $JDB_VERSION; add; exec add MicroEdition Config: $CONFIG & add MicroEdition Profiles: $PROFILE & add MicroEdition Platform: $TYPE & pkg /microedition.encoding & add MicroEdition Encoding: $OUTPUT & add; clear; raw; set LOGS=$OUTPUT; tick; x11 make debuggers; get stdout-content-backup; rm stdout-content-backup; rraw; get nano; stop dumpsys;
-version=execute echo JBenchmark $JDB_VERSION;
+    elseif arg[1] == "shell" then
 
-[ DISPLAY ]
+    elseif arg[1] == "start" then
 
-screen.title=JBenchmark
-screen.content=$LOGS
+    elseif arg[1] == "stop" then
 
-screen.fields=logs
-screen.logs.type=text
-screen.logs.value=$LOGS
+    elseif arg[1] == "install" then
 
-screen.back=execute unset LOGS;
-screen.button=Menu
-screen.button.cmd=execute x11 list debuggers;
+    elseif arg[1] == "uninstall" then
 
-quest.title=JBenchmark
-quest.label=Save Logs (filename)
-quest.key=FILENAME
-quest.cmd=execute x11 list debuggers; install nano; touch; add $LOGS; install $FILENAME; get nano; unset FILENAME;
-quest.back=execute x11 list debuggers;
+    elseif arg[1] == "logcat" then
 
-list.title=JBenchmark
-list.content=Save Logs,Run Again
-list.back=execute x11 make debuggers;
+    end
+end
 
-Save Logs=execute x11 quest debuggers;
-Run Again=execute dumpsys;
+local args = {}
+for i = 1, #arg do args[i] = arg[i] end
+
+os.setproc("name", "debuggers")
+app.main(args)
