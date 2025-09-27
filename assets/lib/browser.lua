@@ -137,7 +137,6 @@ local function menu()
     local menu_items = {"1. Mini Browser", "2. Sair"}
     local list_table = {
         title = "Menu Principal",
-        type = "implicit",  -- List.IMPLICIT
         fields = menu_items,
         back = {label="Sair"},
         button = {label="Selecionar", root=handle_menu}
