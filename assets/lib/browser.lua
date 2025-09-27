@@ -48,7 +48,7 @@ local function parse_html(html)
 
     if current_text ~= "" then
         local style = in_h1 and "bold" or "default"
-        fields[#fields + 1] = {type="text", label="", value=current_text, style=style}
+        fields[#fields + 1] = { type = "text", label = "", value = current_text, style = style }
     end
 
     return fields
