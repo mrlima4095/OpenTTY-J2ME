@@ -10,7 +10,8 @@
 -- It also tests back/button navigation, title, and form data collection on submit.
 
 -- Define a callback function for the submit button (to handle form data)
-local function on_submit(form_data)
+local function on_submit(...)
+    form_data = ...
     print("=== Form Data Submitted ===")
     for i = 1, #form_data do
         local item_data = form_data[i]
