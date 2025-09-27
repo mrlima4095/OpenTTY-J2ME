@@ -4172,4 +4172,4 @@ class Lua {
 } 
 // |
 // |
-// EOFfr
+// EOF
