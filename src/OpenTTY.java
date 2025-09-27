@@ -4125,7 +4125,7 @@ class Lua {
                                 else if (item instanceof ChoiceGroup) {
                                     ChoiceGroup cg = (ChoiceGroup) item;
 
-                                    if ((int) ITEM.get(cg) == Choice.MULTIPLE) {
+                                    if (((int) ITEM.get(cg)) == Choice.MULTIPLE) {
                                         Hashtable selTable = new Hashtable();
                                         for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
 
