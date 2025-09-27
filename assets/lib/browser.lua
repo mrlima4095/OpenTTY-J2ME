@@ -102,18 +102,20 @@ function browser.open()
 end
 
 
-function browser.handle_menu(opt)
-    if opt == "Open URL" then browser.open()
-    elseif opt == "Exit" then os.exit()
-    end
-end
+
 
 function browser.main()
     graphics.display(graphics.BuildList({
         title = "Browser",
         fields = { "Open URL", "Exit" },
         back = { label = "Exit" },
-        button = { root = browser.handle_menu }
+        button = {
+            root = function (opt)
+                if opt == "Open URL" then browser.open()
+                elseif opt == "Exit" then os.exit()
+                end
+            end
+        }
     }))
 end
 
