@@ -53,7 +53,7 @@ local screen_config = {
         -- 2. Image field
         {
             type = "image",
-            img = "/test_image.png"  -- Replace with a valid image path if available; otherwise, it may skip or error
+            img = "/res/img/app.png"  -- Replace with a valid image path if available; otherwise, it may skip or error
         },
         
         -- 3. Interactive item (button-like)
