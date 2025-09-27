@@ -79,7 +79,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         private int MOD = -1, COUNT = 1, start;
         private boolean root = false, ignore = true, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
-        private String command = null, pfilter = "", PID = genpid(), DB, address, port, node;
+        private String command = null, pfilter = "", PID = genpid(), DB, address, port, node, proc_name;
         private Vector history = (Vector) getobject("1", "history");
         private Hashtable sessions = (Hashtable) getobject("1", "sessions"), PKG;
         private Alert confirm;
@@ -159,16 +159,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
             MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("bind") ? BIND : -1;
             this.root = root;
 
-            if (MOD == BIND) {
-                if (args == null || args.length() == 0 || args.equals("$PORT")) { attributes.put("PORT", "31522"); port = "31522"; DB = ""; } 
-                else { port = getCommand(args); DB = getArgument(args); }
+
+            if (args == null || args.length() == 0) { return; }
+            if (MOD == -1) { return; }
+            else if (MOD == BIND) {
+                String[] argv = splitArgs(args);
+
+                port = argv[0]; 
+                DB = argv.length > 1 ? argv[1] : "";
+                proc_name = argv.length > 2 ? argv[2] : "bind";
+
 
                 new Thread(this, "Bind").start();
                 return;
             } 
-            else if (MOD == -1) { return; }
-
-            if (args == null || args.length() == 0) { return; }
 
             Hashtable proc = genprocess(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", root, null);
 
@@ -559,7 +563,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == BIND) {
                 if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
 
-                Hashtable proc = genprocess("bind", root, null);
+                Hashtable proc = genprocess(proc_name, root, null);
                 proc.put("port", port); trace.put(PID, proc); sessions.put(port, "nobody");
 
                 while (trace.containsKey(PID)) {
@@ -675,7 +679,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Shell
     public int processCommand(String command) { return processCommand(command, true, false); }
-    public int processCommand(String command, boolean ignore) { return processCommand(command, ignore, false); }
+    public iant processCommand(String command, boolean ignore) { return processCommand(command, ignore, false); }
     public int processCommand(String command, boolean ignore, boolean root) { 
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command), argument = getpattern(getArgument(command));
@@ -4168,4 +4172,4 @@ class Lua {
 } 
 // |
 // |
-// EOF
+// EOFfr

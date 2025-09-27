@@ -30,4 +30,3 @@ Copyright (C) 2025 - Mr. Lima
 
 - Files writed in **/tmp/** will be deleted when MIDlet closes.
 - 
-- 
