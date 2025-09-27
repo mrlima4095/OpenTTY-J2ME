@@ -403,6 +403,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     display.setCurrent(box);
                     return;
                 }
+                else if (c == REFRESH) { reload(); }
 
                 int index = preview.getSelectedIndex();
                 if (index >= 0) {
