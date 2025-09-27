@@ -95,13 +95,16 @@ local function parse_html(html)
 end
 
 local function extract_title(html, url)
-    local title_start = string.match(html, "<title>", 1)
-    local title_end = string.match(html, "</title>", 1)
+    local start = string.match(html, "<title>", 1)
+    local _end = string.match(html, "</title>", 1)
 
-    if title_start and title_end then
-        local raw = string.sub(html, title_start + 7, title_end - 1)
-        raw = string.trim(raw)
-        if raw ~= "" then return raw end
+    if start and _end then
+        start = start + 7
+        _end = _end - 1
+        local raw = string.trim(string.sub(html, start, _end))
+        if raw ~= "" then
+            return raw
+        end
     end
     return url
 end
