@@ -1,46 +1,40 @@
 #!/bin/lua
 
-local app = {}
 
+local app = { _port = 5037 }
 
-function app.connect(args)
+function app.start()
 
 end
-function app.shell(args)
-    
-end
-function app.install(args)
-    
-end
-function app.uninstall(args)
-    
-end
-function app.logcat(args)
-    
-end
+
+function app.connect(args) end
+function app.shell(args) end
+function app.install(args) end
+function app.uninstall(args) end
+function app.logcat(args) end
 
 function app.main(args)
-    if #arg == 0 then
+    if #args == 0 then
         print("usage: jdb []")
-    elseif arg[1] == "connect" then
+    elseif args[1] == "connect" then
 
-    elseif arg[1] == "shell" then
+    elseif args[1] == "shell" then
 
-    elseif arg[1] == "start" then
+    elseif args[1] == "start" then
 
-    elseif arg[1] == "stop" then
+    elseif args[1] == "stop" then
 
-    elseif arg[1] == "install" then
+    elseif args[1] == "install" then
 
-    elseif arg[1] == "uninstall" then
+    elseif args[1] == "uninstall" then
 
-    elseif arg[1] == "logcat" then
-
+    elseif args[1] == "logcat" then app.logcat()
+    else
+        print(arg[0] .. ": " .. args[1] .. ": not found")
     end
 end
 
 local args = {}
 for i = 1, #arg do args[i] = arg[i] end
 
-os.setproc("name", "debuggers")
 app.main(args)
