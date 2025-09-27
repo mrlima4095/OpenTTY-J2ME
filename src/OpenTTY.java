@@ -3918,7 +3918,7 @@ class Lua {
                     f.append(cg);
 
                     if (ITEM == null) { ITEM = new Hashtable(); }
-                    ITEM.put(cg, LTYPE);
+                    ITEM.put(cg, new Double(LTYPE));
                 } 
             } 
             else if (obj instanceof String) { f.append(toLuaString(obj)); }
@@ -4125,7 +4125,7 @@ class Lua {
                                 else if (item instanceof ChoiceGroup) {
                                     ChoiceGroup cg = (ChoiceGroup) item;
 
-                                    if (((Integer) ITEM.get(cg)).intValue() == Choice.MULTIPLE) {
+                                    if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) {
                                         Hashtable selTable = new Hashtable();
                                         for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
 
