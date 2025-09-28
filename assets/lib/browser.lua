@@ -107,11 +107,10 @@ local function extract_title(html, url)
 
     if start == nil and finish == nil then
         return url
-    else
+    end
         local title = string.trim(string.sub(html, start + 7, finish - 1))
         if title == "" then title = url end
         return title
-    end
 end
 
 function browser.load(url)
