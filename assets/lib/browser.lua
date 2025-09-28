@@ -112,6 +112,7 @@ local function extract_title(html, url)
     if start and finish then
         local title = string.sub(html, start + 7, finish - 1)
         print("dentro do if")
+        print("> " .. title)
         if not title or title == "" then
             return url
         end
