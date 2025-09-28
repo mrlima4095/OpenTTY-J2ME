@@ -142,5 +142,8 @@ function browser.main()
     }))
 end
 
+
+os.setproc("name", "browser")
+
 if #arg == 1 then browser.main()
 else browser.load(arg[1]) end
