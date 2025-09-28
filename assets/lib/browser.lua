@@ -4,14 +4,10 @@
 local browser = { }
 
 local function has_printable(s)
-    for i = 1, #s do
-        local c = string.sub(s, i, i)
-        local byte = string.byte(c)
-        if byte >= 33 and byte <= 126 then
-            return true
-        end
+    if string.trim(s) == "" then
+        return false
     end
-    return false
+    return true
 end
 
 local function fetch_url(url)
