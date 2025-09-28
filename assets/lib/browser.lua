@@ -106,8 +106,8 @@ local function extract_title(html, url)
     local start = string.match(html, "<title>")
     local finish = string.match(html, "</title>")
 
-    print("---\n" .. start .. "[" .. type(start) .. "]")
-    print("---\n" .. finish .. "[" .. type(finish) .. "]")
+    print("---\n- index: " .. start .. "\n- type: [" .. type(start) .. "]\n")
+    print("---\n- index: " .. finish .. "\n- type: [" .. type(finish) .. "]\n")
 
     if start and finish then
         local title = string.sub(html, start + 7, finish - 1)
