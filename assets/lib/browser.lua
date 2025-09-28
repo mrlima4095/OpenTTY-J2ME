@@ -8,6 +8,7 @@ local function has_printable(s)
         local c = string.sub(s, i, i)
         local byte = string.byte(c)
         if byte >= 33 and byte <= 126 then
+            print(byte)
             return true
         end
     end
