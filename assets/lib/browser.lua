@@ -127,7 +127,7 @@ function browser.load(url)
     graphics.display(graphics.BuildScreen({
         title = extract_title(html, url),
         fields = parse_html(html),
-        back = { root = browser.open },
+        back = { root = function () if arg[1] == nil then browser.open() else os.exit() end end },
         button = { label = "Menu", root = browser.main }
     }))
 end
