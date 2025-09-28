@@ -65,7 +65,8 @@ graphics = {
     BuildEdit = function (config) end,
     SetTitle = function (title) end,
     WindowTitle = function (title, screen) end,
-    SetTicker = function (text) end
+    SetTicker = function (text) end,
+    getCurrent = function () end
 }
 
 getAppProperty = function (field) end
