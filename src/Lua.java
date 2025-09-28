@@ -2,8 +2,8 @@ import javax.microedition.lcdui.*;
 import javax.microedition.io.*;
 import java.util.*;
 import java.io.*;
-
-
+// |
+// Lua Runtime
 class Lua {
     private boolean root, breakLoop = false, doreturn = false, kill = true, gc = true;
     private boolean[] attrchanges = new boolean[] { true, true };
