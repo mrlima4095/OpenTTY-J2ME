@@ -103,7 +103,7 @@ local function parse_html(html)
 end
 
 local function extract_title(html, url)
-    local start, finish = string.match(html, "<title>"), string.match(html, "</title>")
+    local start, finish = string.match(html, "<title>", 1), string.match(html, "</title>", 1)
 
     if start == nil and finish == nil then
         return url
