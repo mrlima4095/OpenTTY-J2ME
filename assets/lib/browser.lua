@@ -82,7 +82,7 @@ local function parse_html(html)
     end
 
     if not in_head and current_text ~= "" then
-        if in_a and a_href then
+        if in_a and a_href ~= nil then
             fields[#fields + 1] = {
                 type = "item",
                 label = current_text,
