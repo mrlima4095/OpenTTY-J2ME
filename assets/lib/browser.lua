@@ -8,20 +8,28 @@ local function fetch_url(url)
     return res
 end
 
+local function join_styles(styles)
+    if #styles == 0 then return "default" end
+    local s = ""
+    for i = 1, #styles do
+        if s == "" then s = styles[i] else s = s .. " " .. styles[i] end
+    end
+    return s
+end
 
 local function parse_html(html)
     local fields = {}
     local i = 1
-    local current_style = "default"
+    local styles = {} -- pilha de estilos
     local in_head = false
 
     while i <= #html do
         local start_tag = string.match(html, "<", i)
-        if start_tag == nil then
+        if not start_tag then
             if not in_head then
                 local text = string.trim(string.sub(html, i))
                 if text ~= "" then
-                    fields[#fields + 1] = { type = "text", value = text, style = current_style }
+                    fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) }
                 end
             end
             break
@@ -31,12 +39,12 @@ local function parse_html(html)
         if start_tag > i and not in_head then
             local text = string.trim(string.sub(html, i, start_tag - 1))
             if text ~= "" then
-                fields[#fields + 1] = { type = "text", value = text, style = current_style }
+                fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) }
             end
         end
 
-        -- Encontra final da tag
-        local end_tag = string.match(html, ">", start_tag, true)
+        -- Final da tag
+        local end_tag = string.match(html, ">", start_tag)
         if not end_tag then break end
 
         local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
@@ -45,31 +53,30 @@ local function parse_html(html)
         if tag == "head" then in_head = true
         elseif tag == "/head" then in_head = false
         elseif not in_head then
-            -- Atualiza estilo
-            if tag == "b" then current_style = "bold"
-            elseif tag == "/b" then current_style = "default"
-            elseif tag == "i" then current_style = "italic"
-            elseif tag == "/i" then current_style = "default"
-            elseif tag == "small" then current_style = "small"
-            elseif tag == "/small" then current_style = "default"
-            elseif tag == "large" then current_style = "large"
-            elseif tag == "/large" then current_style = "default"
-            elseif tag == "p" then current_style = "small"
-            elseif tag == "/p" then current_style = "default"
-            elseif tag == "h1" then current_style = "large bold"
-            elseif tag == "/h1" then current_style = "default"
-            elseif tag == "h2" then current_style = "bold"
-            elseif tag == "/h2" then current_style = "default"
-            elseif tag == "h3" then current_style = "bold small"
-            elseif tag == "/h3" then current_style = "default"
-            elseif tag == "h4" then current_style = "small"
-            elseif tag == "/h4" then current_style = "default"
-            elseif tag == "h5" then current_style = "small"
-            elseif tag == "/h5" then current_style = "default"
-            elseif tag == "h6" then current_style = "small"
-            elseif tag == "/h6" then current_style = "default"
+            if tag == "b" then styles[#styles + 1] = "bold"
+            elseif tag == "/b" then if #styles > 0 and styles[#styles] == "bold" then styles[#styles] = nil end
+            elseif tag == "i" then styles[#styles + 1] = "italic"
+            elseif tag == "/i" then if #styles > 0 and styles[#styles] == "italic" then styles[#styles] = nil end
+            elseif tag == "small" then styles[#styles + 1] = "small"
+            elseif tag == "/small" then if #styles > 0 and styles[#styles] == "small" then styles[#styles] = nil end
+            elseif tag == "large" then styles[#styles + 1] = "large"
+            elseif tag == "/large" then if #styles > 0 and styles[#styles] == "large" then styles[#styles] = nil end
+            elseif tag == "p" then styles[#styles + 1] = "small"
+            elseif tag == "/p" then if #styles > 0 and styles[#styles] == "small" then styles[#styles] = nil end
+            elseif tag == "h1" then styles[#styles + 1] = "large bold"
+            elseif tag == "/h1" then if #styles > 0 and styles[#styles] == "large bold" then styles[#styles] = nil end
+            elseif tag == "h2" then styles[#styles + 1] = "bold"
+            elseif tag == "/h2" then if #styles > 0 and styles[#styles] == "bold" then styles[#styles] = nil end
+            elseif tag == "h3" then styles[#styles + 1] = "bold small"
+            elseif tag == "/h3" then if #styles > 0 and styles[#styles] == "bold small" then styles[#styles] = nil end
+            elseif tag == "h4" then styles[#styles + 1] = "small"
+            elseif tag == "/h4" then if #styles > 0 and styles[#styles] == "small" then styles[#styles] = nil end
+            elseif tag == "h5" then styles[#styles + 1] = "small"
+            elseif tag == "/h5" then if #styles > 0 and styles[#styles] == "small" then styles[#styles] = nil end
+            elseif tag == "h6" then styles[#styles + 1] = "small"
+            elseif tag == "/h6" then if #styles > 0 and styles[#styles] == "small" then styles[#styles] = nil end
             elseif tag == "br" then
-                fields[#fields + 1] = { type = "text", value = "\n", style = current_style }
+                fields[#fields + 1] = { type = "text", value = "\n", style = join_styles(styles) }
             end
         end
 
@@ -78,6 +85,7 @@ local function parse_html(html)
 
     return fields
 end
+
 
 
 local function extract_title(html, url)
