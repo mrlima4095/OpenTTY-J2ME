@@ -33,7 +33,7 @@ local function parse_html(html)
                     local href_copy = a_href
                     fields[#fields + 1] = {
                         type = "item",
-                        label = current_text,
+                        label = string.trim(current_text),
                         root = function(...) print("clicou") end
                     }
                 else
@@ -51,10 +51,8 @@ local function parse_html(html)
                 if space then tag = string.sub(tag_content, 1, space - 1) end
                 tag = string.lower(tag)
 
-                if tag == "head" then
-                    in_head = true
-                elseif tag == "/head" then
-                    in_head = false
+                if tag == "head" then in_head = true
+                elseif tag == "/head" then in_head = false
                 elseif not in_head then
                     if tag == "h1" then in_h1 = true
                     elseif tag == "/h1" then in_h1 = false
@@ -68,28 +66,18 @@ local function parse_html(html)
                             local quote1 = string.match(tag_content, '"', href_pos)
                             if quote1 then
                                 local quote2 = string.match(tag_content, '"', quote1 + 1)
-                                if quote2 then
-                                    a_href = string.sub(tag_content, quote1 + 1, quote2 - 1)
-                                else
-                                    a_href = nil
-                                end
-                            else
-                                a_href = nil
-                            end
-                        else
-                            a_href = nil
-                        end
-                    elseif tag == "/a" then
-                        in_a = false
-                    end
+                                if quote2 then a_href = string.sub(tag_content, quote1 + 1, quote2 - 1)
+                                else a_href = nil end
+                            else a_href = nil end
+                        else a_href = nil end
+                    elseif tag == "/a" then in_a = false end
                 end
 
                 i = tag_end + 1
             else break end
         else
-            if not in_head then
-                current_text = current_text .. c
-            end
+            if not in_head then current_text = current_text .. c end
+
             i = i + 1
         end
     end
@@ -117,7 +105,7 @@ local function parse_html(html)
             fields[#fields + 1] = {
                 type = "text",
                 label = "",
-                value = current_text,
+                value = string.trim(current_text),
                 style = style
             }
         end
