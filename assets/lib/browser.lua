@@ -141,7 +141,7 @@ end
 function browser.main()
     graphics.display(graphics.BuildList({
         title = "Browser",
-        fields = { "Open URL", "Exit" },
+        fields = { "Open URL", "Tabs", "Bookmarks", "Settings", "Exit" },
         back = { label = "Exit", root = os.exit },
         button = {
             label = "Select",
