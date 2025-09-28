@@ -78,7 +78,6 @@ local function parse_html(html)
 
     return fields
 end
-=
 
 
 local function extract_title(html, url)
