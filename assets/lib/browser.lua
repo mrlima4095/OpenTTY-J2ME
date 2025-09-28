@@ -43,10 +43,8 @@ local function parse_html(html)
         local tag = string.lower(trim(string.sub(html, start_tag + 1, end_tag - 1)))
 
         -- Controle head
-        if tag == "head" then
-            in_head = true
-        elseif tag == "/head" then
-            in_head = false
+        if tag == "head" then in_head = true
+        elseif tag == "/head" then in_head = false
         elseif not in_head then
             -- Atualiza estilo
             if tag == "b" then current_style = "bold"
@@ -161,5 +159,8 @@ end
 
 os.setproc("name", "browser")
 
-if #arg == 1 then browser.main()
-else browser.load(arg[1]) end
+if #arg == 1 then
+    browser.main()
+else
+    browser.load(arg[1])
+end
