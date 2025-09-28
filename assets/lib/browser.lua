@@ -110,7 +110,7 @@ local function extract_title(html, url)
         if title == "" then title = url end
         return title
     end 
-    return url
+    return "*"
 end
 
 function browser.load(url)
