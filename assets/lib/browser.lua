@@ -25,7 +25,6 @@ end
 local function parse_html(html)
     local fields = {}
     local i = 1
-    local bold = false
     local current_style = "default"
     local in_head = false
 
@@ -49,7 +48,7 @@ local function parse_html(html)
             end
         end
 
-        -- Encontra final da tag
+        -- Final da tag
         local end_tag = string.match(html, ">", start_tag)
         if not end_tag then break end
 
@@ -64,9 +63,7 @@ local function parse_html(html)
             -- Processa estilo e quebras
             if tag == "b" then current_style = "bold"
             elseif tag == "/b" then current_style = "default"
-            elseif tag == "p" then
-                current_style = "small"
-                -- não gera field vazio para p
+            elseif tag == "p" then current_style = "small"
             elseif tag == "/p" then current_style = "default"
             elseif tag == "h1" then current_style = "large"
             elseif tag == "/h1" then current_style = "default"
