@@ -185,5 +185,8 @@ function browser.main()
     }))
 end
 
+print(extract_title("<title>teste</title>", nil))
+print(extract_title("<x>teste</x>", 12))
+
 if #arg == 1 then browser.main()
 else browser.load(arg[1]) end
