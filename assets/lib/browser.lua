@@ -116,6 +116,7 @@ local function extract_title(html, url)
         if not title or title == "" then
             return url
         end
+        print("chegou aq!")
         return string.trim(title)
     end
 
