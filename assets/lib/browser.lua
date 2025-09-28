@@ -105,7 +105,7 @@ local function extract_title(html, url)
         if raw ~= "" then
             return raw
         end
-    end
+    end print(url)
     return url
 end
 
