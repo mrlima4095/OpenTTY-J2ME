@@ -20,10 +20,11 @@ local function parse_html(html)
         if c == "<" then
             if not in_head and current_text ~= "" then
                 if in_a and a_href then
-                    fields[#fields + 1] = { 
+                    local href_copy = a_href
+                    fields[#fields + 1] = {
                         type = "item",
                         label = current_text,
-                        root = function() print(a_href) end
+                        root = function() print(href_copy) end
                     }
                 else
                     local style = in_h1 and "bold" or "default"
