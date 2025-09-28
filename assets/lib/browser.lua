@@ -103,14 +103,15 @@ local function parse_html(html)
 end
 
 local function extract_title(html, url)
-    local start, finish, title = string.match(html, "<title>"), string.match(html, "</title>"), ""
+    local start, finish = string.match(html, "<title>"), string.match(html, "</title>")
 
-    if start ~= nil and finish ~= nil then
-        title = string.trim(string.sub(html, start + 7, finish - 1))
+    if start == nil and finish == nil then
+        local title = string.trim(string.sub(html, start + 7, finish - 1))
         if title == "" then title = url end
         return title
-    end 
-    return "*"
+    else 
+        return url
+    end
 end
 
 function browser.load(url)
