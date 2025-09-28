@@ -16,7 +16,7 @@ local function parse_html(html)
     local in_head = false
 
     while i <= #html do
-        local start_tag = string.match(html, "<", i)
+        local start_tag = string.find(html, "<", i, true)
         if not start_tag then
             if not in_head then
                 local text = string.trim(string.sub(html, i))
@@ -36,7 +36,7 @@ local function parse_html(html)
         end
 
         -- Encontra final da tag
-        local end_tag = string.match(html, ">", start_tag)
+        local end_tag = string.find(html, ">", start_tag, true)
         if not end_tag then break end
 
         local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
