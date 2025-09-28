@@ -3,10 +3,13 @@
 
 local browser = { }
 
-local function has_content(s)
+local function has_printable(s)
     for i = 1, #s do
         local c = string.sub(s, i, i)
-        if c ~= " " and c ~= "\t" and c ~= "\n" and c ~= "\r" then return true end
+        local byte = string.byte(c)
+        if byte >= 33 and byte <= 126 then
+            return true
+        end
     end
     return false
 end
