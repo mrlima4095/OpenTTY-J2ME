@@ -36,7 +36,7 @@ local function parse_html(html)
         end
 
         -- Encontra final da tag
-        local end_tag = string.find(html, ">", start_tag, true)
+        local end_tag = string.match(html, ">", start_tag, true)
         if not end_tag then break end
 
         local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
