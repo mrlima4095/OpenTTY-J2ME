@@ -21,7 +21,7 @@ local function parse_html(html)
             if not in_head then
                 local text = string.trim(string.sub(html, i))
                 if text ~= "" then
-                    fields[#fields + 1] = { type = "text", value = text, style = current_style }
+                    fields[#fields + 1] = { type = "text", value = text .. "\n", style = current_style }
                 end
             end
             break
@@ -31,7 +31,7 @@ local function parse_html(html)
         if start_tag > i and not in_head then
             local text = string.trim(string.sub(html, i, start_tag - 1))
             if text ~= "" then
-                fields[#fields + 1] = { type = "text", value = text, style = current_style }
+                fields[#fields + 1] = { type = "text", value = text .. "\n", style = current_style }
             end
         end
 
