@@ -13,7 +13,6 @@ local function has_content(s)
     return false
 end
 
-
 local function fetch_url(url)
     local res, status = socket.http.get(url)
     return res
@@ -35,7 +34,7 @@ local function parse_html(html)
                     fields[#fields + 1] = {
                         type = "item",
                         label = current_text,
-                        root = function() print(href_copy) end
+                        root = function(...) print(href_copy) end
                     }
                 else
                     local style = in_h1 and "bold" or "default"
@@ -101,7 +100,7 @@ local function parse_html(html)
             fields[#fields + 1] = {
                 type = "item",
                 label = current_text,
-                root = function()
+                root = function(...)
                     --[[if a_href and a_href ~= "" then
                         browser.load(a_href)
                     else
