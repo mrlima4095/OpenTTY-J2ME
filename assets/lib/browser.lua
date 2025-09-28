@@ -2,6 +2,7 @@
 
 
 local browser = { }
+local trim = string.trim
 
 local function fetch_url(url)
     local res, status = socket.http.get(url)
