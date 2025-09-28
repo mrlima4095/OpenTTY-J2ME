@@ -34,7 +34,7 @@ local function parse_html(html)
                     fields[#fields + 1] = {
                         type = "item",
                         label = current_text,
-                        root = function(...) print(href_copy) end
+                        root = function(...) print("clicou") end
                     }
                 else
                     local style = in_h1 and "bold" or "default"
@@ -109,7 +109,7 @@ local function parse_html(html)
                             message = "Invalid link!"
                         }))
                     end]]
-                    print(href_copy)
+                    print("clicou")
                 end
             }
         else
