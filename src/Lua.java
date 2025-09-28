@@ -1619,7 +1619,7 @@ class Lua {
                         if (args.size() > 2) {
                             Object startObj = args.elementAt(2);
                             if (!(startObj instanceof Double)) { return gotbad(3, "match", "number expected, got " + type(startObj)); }
-                            startIdx = Math.max(0, ((Double) startObj).intValue() - 1); // Lua->Java conversion
+                            startIdx = Math.max(0, ((Double) startObj).intValue() - 1);
                         }
                         int pos = text.indexOf(pattern, startIdx);
                         if (pos == -1) { }
