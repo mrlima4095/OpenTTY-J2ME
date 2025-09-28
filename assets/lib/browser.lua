@@ -19,9 +19,9 @@ local function parse_html(html)
         local start_tag = string.match(html, "<", i)
         if not start_tag then
             if not in_head then
-                local text = string.trim(string.sub(html, i))
+                local text = trim(string.sub(html, i))
                 if text ~= "" then
-                    fields[#fields + 1] = { type = "text", value = text .. "\n", style = current_style }
+                    fields[#fields + 1] = { type = "text", value = text, style = current_style }
                 end
             end
             break
@@ -29,33 +29,47 @@ local function parse_html(html)
 
         -- Texto antes da tag
         if start_tag > i and not in_head then
-            local text = string.trim(string.sub(html, i, start_tag - 1))
+            local text = trim(string.sub(html, i, start_tag - 1))
             if text ~= "" then
-                fields[#fields + 1] = { type = "text", value = text .. "\n", style = current_style }
+                fields[#fields + 1] = { type = "text", value = text, style = current_style }
             end
         end
 
-        -- Final da tag
+        -- Encontra final da tag
         local end_tag = string.match(html, ">", start_tag)
         if not end_tag then break end
 
-        local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
+        local tag = string.lower(trim(string.sub(html, start_tag + 1, end_tag - 1)))
 
-        -- Ignorar head
+        -- Controle head
         if tag == "head" then
             in_head = true
         elseif tag == "/head" then
             in_head = false
         elseif not in_head then
-            -- Processa estilo e quebras
+            -- Atualiza estilo
             if tag == "b" then current_style = "bold"
             elseif tag == "/b" then current_style = "default"
+            elseif tag == "i" then current_style = "italic"
+            elseif tag == "/i" then current_style = "default"
+            elseif tag == "small" then current_style = "small"
+            elseif tag == "/small" then current_style = "default"
+            elseif tag == "large" then current_style = "large"
+            elseif tag == "/large" then current_style = "default"
             elseif tag == "p" then current_style = "small"
             elseif tag == "/p" then current_style = "default"
-            elseif tag == "h1" then current_style = "large"
+            elseif tag == "h1" then current_style = "large bold"
             elseif tag == "/h1" then current_style = "default"
             elseif tag == "h2" then current_style = "bold"
             elseif tag == "/h2" then current_style = "default"
+            elseif tag == "h3" then current_style = "bold small"
+            elseif tag == "/h3" then current_style = "default"
+            elseif tag == "h4" then current_style = "small"
+            elseif tag == "/h4" then current_style = "default"
+            elseif tag == "h5" then current_style = "small"
+            elseif tag == "/h5" then current_style = "default"
+            elseif tag == "h6" then current_style = "small"
+            elseif tag == "/h6" then current_style = "default"
             elseif tag == "br" then
                 fields[#fields + 1] = { type = "text", value = "\n", style = current_style }
             end
@@ -66,6 +80,7 @@ local function parse_html(html)
 
     return fields
 end
+=
 
 
 local function extract_title(html, url)
