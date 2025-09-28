@@ -57,17 +57,24 @@ local function parse_html(html)
                     elseif tag == "br" then fields[#fields + 1] = { type = "spacer", width = 1, height = 1 }
                     elseif tag == "a" then
                         in_a = true
-                        local href_start = string.match(tag_content, "href=", 1)
-                        if href_start then
-                            local quote1 = string.match(tag_content, '"', href_start)
+                        local href_pos = string.match(tag_content, "href=")
+                        if href_pos then
+                            local quote1 = string.match(tag_content, '"', href_pos)
                             if quote1 then
                                 local quote2 = string.match(tag_content, '"', quote1 + 1)
-                                if quote2 then a_href = string.sub(tag_content, quote1 + 1, quote2 - 1) end
+                                if quote2 then
+                                    a_href = string.sub(tag_content, quote1 + 1, quote2 - 1)
+                                else
+                                    a_href = nil
+                                end
+                            else
+                                a_href = nil
                             end
+                        else
+                            a_href = nil
                         end
                     elseif tag == "/a" then
                         in_a = false
-                        a_href = nil
                     end
                 end
 
@@ -103,20 +110,13 @@ local function parse_html(html)
 end
 
 local function extract_title(html, url)
-    local start = string.match(html, "<title>")
-    local finish = string.match(html, "</title>")
-
-    print("---\n- index: " .. start .. "\n- type: [" .. type(start) .. "]\n")
-    print("---\n- index: " .. finish .. "\n- type: [" .. type(finish) .. "]\n")
+    local start, finish = string.match(html, "<title>"), string.match(html, "</title>")
 
     if start and finish then
         local title = string.sub(html, start + 7, finish - 1)
-        print("dentro do if")
-        print("> " .. title)
         if not title or title == "" then
             return url
         end
-        print("chegou aq!")
         return string.trim(title)
     end
 
