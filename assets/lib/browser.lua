@@ -163,7 +163,7 @@ function browser.main()
     graphics.display(graphics.BuildList({
         title = "Browser",
         fields = { "Open URL", "Exit" },
-        back = { label = "Exit" },
+        back = { label = "Exit", root = os.exit },
         button = {
             label = "Select",
             root = function (opt)
