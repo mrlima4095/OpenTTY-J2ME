@@ -94,14 +94,15 @@ local function parse_html(html)
                 type = "item",
                 label = current_text,
                 root = function()
-                    if a_href and a_href ~= "" then
+                    --[[if a_href and a_href ~= "" then
                         browser.load(a_href)
                     else
                         graphics.display(graphics.Alert({
                             title = "Browser",
                             message = "Invalid link!"
                         }))
-                    end
+                    end]]
+                    print(a_href)
                 end
             }
         else
