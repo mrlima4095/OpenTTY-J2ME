@@ -3,6 +3,14 @@
 
 local browser = { }
 
+local function has_content(s)
+    for i = 1, #s do
+        local c = string.sub(s, i, i)
+        if c ~= " " and c ~= "\t" and c ~= "\n" and c ~= "\r" then return true end
+    end
+    return false
+end
+
 local function fetch_url(url)
     local res, status = socket.http.get(url)
     return res
@@ -18,7 +26,7 @@ local function parse_html(html)
     while i <= len do
         local c = string.sub(html, i, i)
         if c == "<" then
-            if not in_head and current_text ~= "" then
+            if not in_head and has_content(current_text) then
                 if in_a and a_href then
                     local href_copy = a_href
                     fields[#fields + 1] = {
@@ -28,12 +36,7 @@ local function parse_html(html)
                     }
                 else
                     local style = in_h1 and "bold" or "default"
-                    fields[#fields + 1] = {
-                        type = "text",
-                        label = "",
-                        value = current_text,
-                        style = style
-                    }
+                    fields[#fields + 1] = { type = "text", label = "", value = current_text, style = style }
                 end
                 current_text = ""
             end
@@ -89,7 +92,7 @@ local function parse_html(html)
         end
     end
 
-    if not in_head and current_text ~= "" then
+    if not in_head and has_content(current_text) then
         if in_a and a_href and a_href ~= "" then
             local href_copy = a_href
             fields[#fields + 1] = {
