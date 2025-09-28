@@ -105,9 +105,9 @@ end
 local function extract_title(html, url)
     local start, finish = string.match(html, "<title>"), string.match(html, "</title>")
 
-    if start == nil or finish == nil then
-        return url
-    end
+    if type(start) ~= "number" then return url end
+    if type(finish) ~= "number" then return url end
+
     local title = string.trim(string.sub(html, start + 7, finish - 1))
     if title == "" then title = url end
     return title
