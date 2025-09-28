@@ -1374,7 +1374,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(env(text)); viewer.addCommand(BACK); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
     // |
     // Font Generator
-    public Font newFont(String argument) { if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); } int style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; if (argument.equals("bold")) { style = Font.STYLE_BOLD; } else if (argument.equals("italic")) { style = Font.STYLE_ITALIC; } else if (argument.equals("ul")) { style = Font.STYLE_UNDERLINED; } else if (argument.equals("small")) { size = Font.SIZE_SMALL; } else if (argument.equals("large")) { size = Font.SIZE_LARGE; } else { return newFont("default"); } return Font.getFont(Font.FACE_SYSTEM, style, size); }
+    public Font newFont(String argument) {
+        if (argument == null || argument.length() == 0 || argument.equals("default")) {
+            return Font.getDefaultFont();
+        }
+
+        int style = Font.STYLE_PLAIN;
+        int size = Font.SIZE_MEDIUM;
+
+        // Divide o argumento por espaços
+        String[] tokens = split(argument, ' ');
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i].toLowerCase();
+            if (token.equals("bold")) style |= Font.STYLE_BOLD;
+            else if (token.equals("italic")) style |= Font.STYLE_ITALIC;
+            else if (token.equals("ul")) style |= Font.STYLE_UNDERLINED;
+            else if (token.equals("small")) size = Font.SIZE_SMALL;
+            else if (token.equals("large")) size = Font.SIZE_LARGE;
+            // ignorar tokens desconhecidos
+        }
+
+        return Font.getFont(Font.FACE_SYSTEM, style, size);
+    }
 
     // API 005 - (Operators)
     // |
