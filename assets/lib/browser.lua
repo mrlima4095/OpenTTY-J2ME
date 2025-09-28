@@ -106,7 +106,7 @@ local function extract_title(html, url)
     local start = string.match(html, "<title>")
     local finish = string.match(html, "</title>")
 
-    if type(start) ~= "number" or type(finish) ~= "number" then
+    --[[if type(start) ~= "number" or type(finish) ~= "number" then
         return url
     end
 
@@ -115,7 +115,10 @@ local function extract_title(html, url)
     if not title or title == "" then
         return url
     end
-    return string.trim(title)
+    return string.trim(title)]]
+
+    print("---\n" .. start .. "[" .. type(start) .. "]")
+    print("---\n" .. finish .. "[" .. type(finish) .. "]")
 end
 
 
