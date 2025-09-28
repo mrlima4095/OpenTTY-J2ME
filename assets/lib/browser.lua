@@ -3,17 +3,16 @@
 
 local browser = { }
 
-local function has_printable(s)
+local function has_content(s)
     for i = 1, #s do
         local c = string.sub(s, i, i)
-        local byte = string.byte(c)
-        if byte >= 33 and byte <= 126 then
-            print(byte)
+        if c ~= " " and c ~= "\t" and c ~= "\n" and c ~= "\r" then
             return true
         end
     end
     return false
 end
+
 
 local function fetch_url(url)
     local res, status = socket.http.get(url)
@@ -30,7 +29,7 @@ local function parse_html(html)
     while i <= len do
         local c = string.sub(html, i, i)
         if c == "<" then
-            if not in_head and (in_a or in_h1 or has_printable(current_text)) then
+            if not in_head and (in_a or in_h1 or has_content(current_text)) then
                 if in_a and a_href then
                     local href_copy = a_href
                     fields[#fields + 1] = {
@@ -96,7 +95,7 @@ local function parse_html(html)
         end
     end
 
-    if not in_head and (in_a or in_h1 or has_printable(current_text)) then
+    if not in_head and (in_a or in_h1 or has_content(current_text)) then
         if in_a and a_href and a_href ~= "" then
             local href_copy = a_href
             fields[#fields + 1] = {
