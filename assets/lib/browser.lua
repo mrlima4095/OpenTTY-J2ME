@@ -90,6 +90,7 @@ local function parse_html(html)
 
     if not in_head and current_text ~= "" then
         if in_a and a_href and a_href ~= "" then
+            local href_copy = a_href
             fields[#fields + 1] = {
                 type = "item",
                 label = current_text,
@@ -102,7 +103,7 @@ local function parse_html(html)
                             message = "Invalid link!"
                         }))
                     end]]
-                    print(a_href)
+                    print(href_copy)
                 end
             }
         else
