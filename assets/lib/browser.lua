@@ -37,11 +37,11 @@ local function parse_html(html)
                 current_text = ""
             end
 
-            local tag_end = string.find(html, ">", i, true)
+            local tag_end = string.match(html, ">", i)
             if tag_end then
                 local tag_content = string.sub(html, i + 1, tag_end - 1)
                 local tag = tag_content
-                local space = string.find(tag_content, " ", 1, true)
+                local space = string.match(tag_content, " ", 1)
                 if space then tag = string.sub(tag_content, 1, space - 1) end
                 tag = string.lower(tag)
 
@@ -57,11 +57,11 @@ local function parse_html(html)
                     elseif tag == "br" then fields[#fields + 1] = { type = "spacer", width = 1, height = 1 }
                     elseif tag == "a" then
                         in_a = true
-                        local href_start = string.find(tag_content, "href=", 1, true)
+                        local href_start = string.match(tag_content, "href=", 1)
                         if href_start then
-                            local quote1 = string.find(tag_content, '"', href_start, true)
+                            local quote1 = string.match(tag_content, '"', href_start)
                             if quote1 then
-                                local quote2 = string.find(tag_content, '"', quote1 + 1, true)
+                                local quote2 = string.match(tag_content, '"', quote1 + 1)
                                 if quote2 then a_href = string.sub(tag_content, quote1 + 1, quote2 - 1) end
                             end
                         end
