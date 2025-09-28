@@ -17,7 +17,7 @@ local function parse_html(html)
 
     while i <= #html do
         local start_tag = string.match(html, "<", i)
-        if not start_tag then
+        if start_tag == nil then
             if not in_head then
                 local text = string.trim(string.sub(html, i))
                 if text ~= "" then
