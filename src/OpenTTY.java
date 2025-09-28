@@ -2861,7 +2861,7 @@ class Lua {
         else if (current.type == BREAK) { if (loopDepth == 0) { throw new RuntimeException("break outside loop"); } consume(BREAK); breakLoop = true; return null; }
         else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) { expression(scope); return null; }
 
-        throw new RuntimeException("Unexpected token at statement: " + current.value);
+        throw new RuntimeException("Unexpected token at statement: " + current.toString());
     }
     // |
     // Expressions
