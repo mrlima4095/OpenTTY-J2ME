@@ -30,7 +30,7 @@ local function parse_html(html)
     while i <= len do
         local c = string.sub(html, i, i)
         if c == "<" then
-            if not in_head and has_printable(current_text) then
+            if not in_head and (in_a or in_h1 or has_printable(current_text)) then
                 if in_a and a_href then
                     local href_copy = a_href
                     fields[#fields + 1] = {
@@ -96,7 +96,7 @@ local function parse_html(html)
         end
     end
 
-    if not in_head and has_printable(current_text) then
+    if not in_head and (in_a or in_h1 or has_printable(current_text)) then
         if in_a and a_href and a_href ~= "" then
             local href_copy = a_href
             fields[#fields + 1] = {
