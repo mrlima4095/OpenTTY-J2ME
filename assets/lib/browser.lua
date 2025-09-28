@@ -7,20 +7,7 @@ local function fetch_url(url)
     local res, status = socket.http.get(url)
     return res
 end
-local function trim(s)
-    local starti = 1
-    while starti <= #s and string.sub(s, starti, starti) == " " do
-        starti = starti + 1
-    end
 
-    local endi = #s
-    while endi >= starti and string.sub(s, endi, endi) == " " do
-        endi = endi - 1
-    end
-
-    if starti > endi then return "" end
-    return string.sub(s, starti, endi)
-end
 
 local function parse_html(html)
     local fields = {}
@@ -32,7 +19,7 @@ local function parse_html(html)
         local start_tag = string.match(html, "<", i)
         if not start_tag then
             if not in_head then
-                local text = trim(string.sub(html, i))
+                local text = string.trim(string.sub(html, i))
                 if text ~= "" then
                     fields[#fields + 1] = { type = "text", value = text, style = current_style }
                 end
@@ -42,7 +29,7 @@ local function parse_html(html)
 
         -- Texto antes da tag
         if start_tag > i and not in_head then
-            local text = trim(string.sub(html, i, start_tag - 1))
+            local text = string.trim(string.sub(html, i, start_tag - 1))
             if text ~= "" then
                 fields[#fields + 1] = { type = "text", value = text, style = current_style }
             end
@@ -52,7 +39,7 @@ local function parse_html(html)
         local end_tag = string.match(html, ">", start_tag)
         if not end_tag then break end
 
-        local tag = string.lower(trim(string.sub(html, start_tag + 1, end_tag - 1)))
+        local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
 
         -- Ignorar head
         if tag == "head" then
