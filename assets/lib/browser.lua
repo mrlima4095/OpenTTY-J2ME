@@ -10,7 +10,7 @@ end
 local function parse_html(html)
     local fields = {}
     local current_text = ""
-    local in_h1, in_p, in_a = false, false, false
+    local in_h1, in_p, in_a, in_head = false, false, false, false
     local a_href = nil
     local i = 1
     local len = #html
@@ -18,7 +18,7 @@ local function parse_html(html)
     while i <= len do
         local c = string.sub(html, i, i)
         if c == "<" then
-            if current_text ~= "" then
+            if not in_head and current_text ~= "" then
                 if in_a and a_href then
                     fields[#fields + 1] = {
                         type = "item",
@@ -37,43 +37,51 @@ local function parse_html(html)
                 current_text = ""
             end
 
-            local tag_end = string.match(html, ">", i)
+            local tag_end = string.find(html, ">", i, true)
             if tag_end then
                 local tag_content = string.sub(html, i + 1, tag_end - 1)
                 local tag = tag_content
-                local space = string.match(tag_content, " ")
+                local space = string.find(tag_content, " ", 1, true)
                 if space then tag = string.sub(tag_content, 1, space - 1) end
                 tag = string.lower(tag)
 
-                if tag == "h1" then in_h1 = true
-                elseif tag == "/h1" then in_h1 = false
-                elseif tag == "p" then in_p = true
-                elseif tag == "/p" then in_p = false
-                elseif tag == "br" then fields[#fields + 1] = { type = "spacer", width = 1, height = 1 }
-                elseif tag == "a" then
-                    in_a = true
-                    local href_start = string.match(tag_content, "href=")
-                    if href_start then
-                        local quote1 = string.match(tag_content, '"', href_start)
-                        if quote1 then
-                            local quote2 = string.match(tag_content, '"', quote1 + 1)
-                            if quote2 then a_href = string.sub(tag_content, quote1 + 1, quote2 - 1) end
+                if tag == "head" then
+                    in_head = true
+                elseif tag == "/head" then
+                    in_head = false
+                elseif not in_head then
+                    if tag == "h1" then in_h1 = true
+                    elseif tag == "/h1" then in_h1 = false
+                    elseif tag == "p" then in_p = true
+                    elseif tag == "/p" then in_p = false
+                    elseif tag == "br" then fields[#fields + 1] = { type = "spacer", width = 1, height = 1 }
+                    elseif tag == "a" then
+                        in_a = true
+                        local href_start = string.find(tag_content, "href=", 1, true)
+                        if href_start then
+                            local quote1 = string.find(tag_content, '"', href_start, true)
+                            if quote1 then
+                                local quote2 = string.find(tag_content, '"', quote1 + 1, true)
+                                if quote2 then a_href = string.sub(tag_content, quote1 + 1, quote2 - 1) end
+                            end
                         end
+                    elseif tag == "/a" then
+                        in_a = false
+                        a_href = nil
                     end
-                elseif tag == "/a" then
-                    in_a = false
-                    a_href = nil
                 end
 
                 i = tag_end + 1
             else break end
         else
-            current_text = current_text .. c
+            if not in_head then
+                current_text = current_text .. c
+            end
             i = i + 1
         end
     end
 
-    if current_text ~= "" then
+    if not in_head and current_text ~= "" then
         if in_a and a_href then
             fields[#fields + 1] = {
                 type = "item",
@@ -97,7 +105,7 @@ end
 local function extract_title(html, url)
     local start, finish, title = string.match(html, "<title>"), string.match(html, "</title>"), ""
 
-    if start and finish then
+    if start ~= nil and finish ~= nil then
         start = start + 7
         finish = finish - 1
         title = string.trim(string.sub(html, start, finish))
