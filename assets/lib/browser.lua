@@ -172,7 +172,6 @@ function browser.load(url)
     }))
 end
 
-
 function browser.open()
     graphics.display(graphics.BuildQuest({
         title = "Browser",
@@ -182,7 +181,6 @@ function browser.open()
         button = { label = "Go", root = browser.load }
     }))
 end
-
 
 function browser.main()
     graphics.display(graphics.BuildList({
