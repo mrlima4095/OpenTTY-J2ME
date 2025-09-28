@@ -89,11 +89,20 @@ local function parse_html(html)
     end
 
     if not in_head and current_text ~= "" then
-        if in_a and a_href ~= nil then
+        if in_a and a_href and a_href ~= "" then
             fields[#fields + 1] = {
                 type = "item",
                 label = current_text,
-                root = function() browser.load(a_href) end
+                root = function()
+                    if a_href and a_href ~= "" then
+                        browser.load(a_href)
+                    else
+                        graphics.display(graphics.Alert({
+                            title = "Browser",
+                            message = "Invalid link!"
+                        }))
+                    end
+                end
             }
         else
             local style = in_h1 and "bold" or "default"
