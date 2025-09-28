@@ -1615,10 +1615,16 @@ class Lua {
 
                     if (args.elementAt(0) == null || pattern == null) { }
                     else {
-                        int pos = text.indexOf(pattern, args.size() > 2 ? ((Double) (args.elementAt(2) instanceof Double ? args.elementAt(2) : gotbad(3, "match", "number expected, got " + type(args.elementAt(2))))).intValue() : 1);
-
+                        int startIdx = 0;
+                        if (args.size() > 2) {
+                            Object startObj = args.elementAt(2);
+                            if (!(startObj instanceof Double)) { return gotbad(3, "match", "number expected, got " + type(startObj)); }
+                            startIdx = Math.max(0, ((Double) startObj).intValue() - 1); // Lua->Java conversion
+                        }
+                        int pos = text.indexOf(pattern, startIdx);
                         if (pos == -1) { }
                         else { return new Double(pos + 1); }
+
                     }
                 }
             }
