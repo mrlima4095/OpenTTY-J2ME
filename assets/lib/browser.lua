@@ -96,12 +96,12 @@ end
 
 local function extract_title(html, url)
     local start = string.match(html, "<title>")
-    local _end = string.match(html, "</title>")
+    local finish = string.match(html, "</title>")
 
-    if start and _end then
+    if start and finish then
         start = start + 7
-        _end = _end - 1
-        local raw = string.trim(string.sub(html, start, _end))
+        finish = finish - 1
+        local raw = string.trim(string.sub(html, start, finish))
         if raw ~= "" then
             return raw
         end
