@@ -47,3 +47,4 @@ list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.1
 1.15=execute set REQUEST=1.15; set PATCH=Hidden Void; axrz run;
 1.16=execute set REQUEST=1.16; set PATCH=Absurd Anvil; axrz run;
 1.16.1=execute set REQUEST=1.16.1; set PATCH=Absurd Anvil; axrz run;
+1.16.2=execute set REQUEST=1.16.2; set PATCH=Absurd Anvil; axrz run;
