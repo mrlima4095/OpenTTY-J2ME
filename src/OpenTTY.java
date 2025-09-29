@@ -1065,6 +1065,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String getCommand(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return input; } else { return input.substring(0, spaceIndex); } }
     private String getArgument(String input) { int spaceIndex = input.indexOf(' '); if (spaceIndex == -1) { return ""; } else { return input.substring(spaceIndex + 1).trim(); } }
     // |
+    // Readers
     public InputStream readRaw(String filename) throws Exception {
         if (filename.startsWith("/home/")) {
             RecordStore rs = null;
@@ -1077,14 +1078,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } 
         else if (filename.startsWith("/mnt/")) { return ((FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ)).openInputStream(); } 
         else {
-            if (filename.startsWith("/dev/")) {
-                filename = filename.substring(5);
-                String content = filename.equals("random") ? String.valueOf(random.nextInt(256)) : filename.equals("stdin") ? stdin.getString() : filename.equals("stdout") ? stdout.getText() : filename.equals("null") ? "\r" : filename.equals("zero") ? "\0" : null;
-                if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
-
-                filename = "/dev/" + filename;
-            } 
-
             InputStream is = getClass().getResourceAsStream(filename);
             return is;
         }
@@ -1093,11 +1086,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         try {
             InputStream is = readRaw(filename);
             if (is == null) { return ""; }
+            
+            InputStreamReader reader = new InputStreamReader(is, "UTF-8");
             StringBuffer sb = new StringBuffer();
             int ch;
-            while ((ch = is.read()) != -1) { sb.append((char) ch); }
+            while ((ch = reader.read()) != -1) { sb.append((char) ch); }
+            reader.close();
             is.close();
-            return sb.toString();
+            
+            return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
         } catch (Exception e) { return ""; }
     }
     public Image readImg(String filename) { try { InputStream is = readRaw(filename); if (is == null) { return null; } Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
