@@ -19,10 +19,7 @@ local function join_styles(styles)
 end
 
 local function parse_html(html)
-    if not string.match(html, "<") then
-        return { string.trim(html) }
-        print("unreacheble")
-    end
+    if not string.match(html, "<") then return { { type = "text", value = html, style = join_styles(styles) } } end
 
     local fields = {}
     local i = 1
@@ -40,15 +37,14 @@ local function parse_html(html)
                     fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) }
                 end
             end
+
             break
         end
 
         -- Texto antes da tag
         if start_tag > i and not in_head and not in_script and not in_style then
             local text = string.trim(string.sub(html, i, start_tag - 1))
-            if text ~= "" then
-                fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) }
-            end
+            if text ~= "" then fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) } end
         end
 
         local end_tag = string.match(html, ">", start_tag)
@@ -99,9 +95,8 @@ local function extract_title(html, url)
 
     if start and finish then
         local title = string.sub(html, start + 7, finish - 1)
-        if not title or title == "" then
-            return url
-        end
+        if not title or title == "" then return url end
+
         return string.trim(title)
     end
 
