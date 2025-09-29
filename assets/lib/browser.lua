@@ -27,11 +27,13 @@ local function parse_html(html)
     local i = 1
     local styles = {}
     local in_head = false
+    local in_script = false
+    local in_style = false
 
     while i <= #html do
         local start_tag = string.match(html, "<", i)
         if not start_tag then
-            if not in_head then
+            if not in_head and not in_script and not in_style then
                 local text = string.trim(string.sub(html, i))
                 if text ~= "" then
                     fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) }
@@ -41,7 +43,7 @@ local function parse_html(html)
         end
 
         -- Texto antes da tag
-        if start_tag > i and not in_head then
+        if start_tag > i and not in_head and not in_script and not in_style then
             local text = string.trim(string.sub(html, i, start_tag - 1))
             if text ~= "" then
                 fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) }
@@ -53,10 +55,20 @@ local function parse_html(html)
 
         local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
 
-        -- Controle head
-        if tag == "head" then in_head = true
-        elseif tag == "/head" then in_head = false
-        elseif not in_head then
+        -- Controle head/script/style
+        if tag == "head" then
+            in_head = true
+        elseif tag == "/head" then
+            in_head = false
+        elseif tag == "script" then
+            in_script = true
+        elseif tag == "/script" then
+            in_script = false
+        elseif tag == "style" then
+            in_style = true
+        elseif tag == "/style" then
+            in_style = false
+        elseif not in_head and not in_script and not in_style then
             if tag == "b" then styles["bold"] = true
             elseif tag == "/b" then styles["bold"] = nil
             elseif tag == "i" then styles["italic"] = true
@@ -77,7 +89,8 @@ local function parse_html(html)
             elseif tag == "/h3" then styles["bold"] = nil; styles["small"] = nil
             elseif tag == "h4" or tag == "h5" or tag == "h6" then styles["small"] = true
             elseif tag == "/h4" or tag == "/h5" or tag == "/h6" then styles["small"] = nil
-            elseif tag == "br" then fields[#fields + 1] = { type = "text", value = "\n", style = "default" } end
+            elseif tag == "br" then fields[#fields + 1] = { type = "text", value = "\n", style = "default" }
+            end
         end
 
         i = end_tag + 1
