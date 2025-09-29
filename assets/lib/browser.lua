@@ -105,8 +105,7 @@ function browser.load(url)
     if string.sub(url, 1, 7) == "http://" then
         graphics.SetTicker("Loading...")
         html = fetch_url(url)
-    elseif string.sub(url, 1, 7) == "file://" then
-        html = io.read(string.sub(url, 8))
+    elseif string.sub(url, 1, 7) == "file://" then html = io.read(string.sub(url, 8))
     else
         url = "http://" .. url
         graphics.SetTicker("Loading...")
@@ -151,6 +150,9 @@ function browser.main()
             label = "Select",
             root = function (opt)
                 if opt == "Open URL" then browser.open()
+                elseif opt == "Tabs" then
+                elseif opt == "Bookmarks" then
+                elseif opt == "Settings" then
                 elseif opt == "Exit" then os.exit()
                 end
             end
