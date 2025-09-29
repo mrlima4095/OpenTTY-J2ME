@@ -1,5 +1,6 @@
-OpenTTY Java Edition 1.16.1
+OpenTTY Java Edition 1.16.2
 Copyright (C) 2025 - Mr. Lima
 
 [ _Updates_ ]
 
+- Fixed a security bug with `case user (any name) ...` command getting root permission
