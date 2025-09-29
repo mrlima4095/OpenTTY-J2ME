@@ -4,6 +4,9 @@
 
 [ Config ]
 
+name=JBenchmark
+version=1.3
+description=Debuggers
 
 
 ]]
