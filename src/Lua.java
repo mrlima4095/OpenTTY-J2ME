@@ -857,12 +857,8 @@ class Lua {
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value = unwrap(scope.get(name));
-            if (value == null && scope == globals == false) {
-                // fallback handled below — but keep safe checks
-            }
-            if (value == null && globals.containsKey(name)) {
-                value = unwrap(globals.get(name));
-            }
+            if (value == null && scope == globals == false) { }
+            if (value == null && globals.containsKey(name)) { value = unwrap(globals.get(name)); }
             // Leitura de campos encadeados: t.a.b  e/ou t["x"]
             while (peek().type == LBRACKET || peek().type == DOT) {
                 Object key = null;
