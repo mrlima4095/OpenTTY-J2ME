@@ -33,9 +33,7 @@ local function parse_html(html)
         if start_tag == nil then
             if not in_head and not in_script and not in_style then
                 local text = string.trim(string.sub(html, i))
-                if text ~= "" then
-                    fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) }
-                end
+                if text ~= "" then fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) } end
             end
 
             break
