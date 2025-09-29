@@ -315,9 +315,8 @@ class Lua {
                     result = statement(scope);
                     if (doreturn) { return result; }
                 }
-            } else {
-                skipIfBodyUntilElsePart();
-            }
+            } 
+            else { skipIfBodyUntilElsePart(); }
 
             while (peek().type == ELSEIF) {
                 consume(ELSEIF);
@@ -330,31 +329,28 @@ class Lua {
                         result = statement(scope);
                         if (doreturn) { return result; }
                     }
-                } else {
-                    skipIfBodyUntilElsePart();
                 }
+                else { skipIfBodyUntilElsePart(); }
             }
 
             if (peek().type == ELSE) {
                 consume(ELSE);
                 if (!taken) {
-                    while (peek().type != END) {
-                        result = statement(scope);
+                    while (peek().type != END) { 
+                        result = statement(scope); 
                         if (doreturn) { return result; }
                     }
-                } else {
-                    skipUntilMatchingEnd();
-                }
+                } 
+                else { skipUntilMatchingEnd(); }
             }
 
             consume(END);
             return result;
         }
         else if (current.type == FOR) {
-            // Código incorporado do forStatement:
             consume(FOR);
 
-            loopDepth++; // Entrou em um loop
+            loopDepth++;
 
             if (peek().type == IDENTIFIER) {
                 Token t1 = (Token) peek();
@@ -420,7 +416,6 @@ class Lua {
                     loopDepth--;
                     return null;
                 } else {
-                    // for genérico
                     tokenIndex = save;
                     Vector names = new Vector();
                     names.addElement(((Token) consume(IDENTIFIER)).value);
@@ -467,7 +462,8 @@ class Lua {
 
                             if (breakLoop) { breakLoop = false; break; }
                         }
-                    } else if (iterSrc instanceof Vector) {
+                    } 
+                    else if (iterSrc instanceof Vector) {
                         Vector vec = (Vector) iterSrc;
                         for (int idx = 0; idx < vec.size(); idx++) {
                             Object item = vec.elementAt(idx);
@@ -500,11 +496,9 @@ class Lua {
 
                             if (breakLoop) { breakLoop = false; break; }
                         }
-                    } else if (iterSrc == null) {
-                        // Nada a iterar (nil)
-                    } else {
-                        throw new Exception("Generic for: unsupported iterator source");
-                    }
+                    } 
+                    else if (iterSrc == null) { } 
+                    else { throw new Exception("Generic for: unsupported iterator source"); }
 
                     loopDepth--;
                     return null;
@@ -515,21 +509,19 @@ class Lua {
             throw new Exception("Malformed 'for' statement");
         }
         else if (current.type == WHILE) {
-            // Código incorporado do whileStatement:
             consume(WHILE);
             int conditionStartTokenIndex = tokenIndex;
 
             Object result = null;
             boolean endAlreadyConsumed = false;
 
-            loopDepth++; // Entrou em um loop
+            loopDepth++; 
 
             while (true) {
                 tokenIndex = conditionStartTokenIndex;
                 Object condition = expression(scope);
 
                 if (!isTruthy(condition) || breakLoop) {
-                    // Pular o corpo até o END correspondente
                     int depth = 1;
                     while (depth > 0) {
                         Token token = consume();
@@ -537,18 +529,16 @@ class Lua {
                         else if (token.type == END) depth--;
                         else if (token.type == EOF) throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
                     }
-                    endAlreadyConsumed = true; // já consumimos o END acima
+                    endAlreadyConsumed = true; 
                     break;
                 }
 
                 consume(DO);
 
-                // Executa corpo até o END do laço
                 while (peek().type != END) {
                     result = statement(scope);
                     if (breakLoop) { breakLoop = false; endAlreadyConsumed = true; break; }
                     if (doreturn) {
-                        // "return" dentro do while: consome até o END do laço e retorna
                         int depth = 1;
                         while (depth > 0) {
                             Token token = consume();
@@ -556,26 +546,25 @@ class Lua {
                             else if (token.type == END) depth--;
                             else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
                         }
-                        loopDepth--; // Saindo do loop
+                        loopDepth--; 
                         return result;
                     }
                 }
                 tokenIndex = conditionStartTokenIndex;
             }
 
-            loopDepth--; // Saindo do loop
+            loopDepth--;
 
             if (!endAlreadyConsumed) consume(END);
             return null;
         }
         else if (current.type == REPEAT) {
-            // Código incorporado do repeatStatement:
             consume(REPEAT);
 
             int bodyStartTokenIndex = tokenIndex;
             Object result = null;
 
-            loopDepth++; // Entrou em um loop
+            loopDepth++;
 
             while (true) {
                 tokenIndex = bodyStartTokenIndex;
@@ -585,12 +574,10 @@ class Lua {
 
                     if (breakLoop) {
                         breakLoop = false;
-                        while (peek().type != UNTIL && peek().type != EOF) {
-                            consume();
-                        }
+                        while (peek().type != UNTIL && peek().type != EOF) { consume(); }
                         break;
                     }
-                    if (result != null && doreturn) {
+                    if (doreturn) {
                         while (peek().type != UNTIL && peek().type != EOF) { consume(); }
                         loopDepth--;
                         return result;
@@ -858,7 +845,7 @@ class Lua {
             String name = (String) consume(IDENTIFIER).value;
             Object value = unwrap(scope.get(name));
             if (value == null && scope == globals == false) { }
-            if (value == null && globals.containsKey(name)) { value = unwrap(globals.get(name)); }
+            if (value == null && globals.containsKey(name)) { value = unwrap(globals.get(name)); 8}
             // Leitura de campos encadeados: t.a.b  e/ou t["x"]
             while (peek().type == LBRACKET || peek().type == DOT) {
                 Object key = null;
