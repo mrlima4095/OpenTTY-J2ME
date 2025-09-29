@@ -19,6 +19,10 @@ local function join_styles(styles)
 end
 
 local function parse_html(html)
+    if not string.find(html, "<") then
+        return { { type = "text", value = string.trim(html), style = "default" } }
+    end
+
     local fields = {}
     local i = 1
     local styles = {}
