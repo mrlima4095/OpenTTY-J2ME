@@ -21,6 +21,7 @@ end
 local function parse_html(html)
     if not string.match(html, "<") then
         return { string.trim(html) }
+        print("unreacheble")
     end
 
     local fields = {}
