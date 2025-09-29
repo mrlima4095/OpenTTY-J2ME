@@ -950,10 +950,10 @@ class Lua {
             if (varargs == null) return new Hashtable();
             return varargs;
         }
-        else if (current.type == LBRACE) { // Table literal
+        else if (current.type == LBRACE) { 
             consume(LBRACE);
             Hashtable table = new Hashtable();
-            int index = 1; // Lua tables podem usar números sequenciais automaticamente
+            int index = 1;
 
             while (peek().type != RBRACE) {
                 Object key = null, value = null;
@@ -987,7 +987,7 @@ class Lua {
                 }
             }
 
-            consume(RBRACE); // Consome o '}' que fecha a tabela
+            consume(RBRACE);
             return table;
         }
 
@@ -1107,7 +1107,7 @@ class Lua {
                 Object result = statement(functionScope);
 
                 if (peek().type == EOF && result != null) { returnValue = result; break; } 
-                else if (result != null && doreturn) { returnValue = result; doreturn = false; break; }
+                else if (doreturn) { returnValue = result; doreturn = false; break; }
             }
 
             // Restore original token state
