@@ -393,10 +393,7 @@ class Lua {
                     double stepVal = step.doubleValue();
 
                     while ((stepVal > 0 && iVal <= stopVal) || (stepVal < 0 && iVal >= stopVal)) {
-                        if (breakLoop) {
-                            breakLoop = false;
-                            break;
-                        }
+                        if (breakLoop) { breakLoop = false; break; }
 
                         scope.put(name, new Double(iVal));
 
@@ -461,17 +458,14 @@ class Lua {
                             Object ret = null;
                             while (peek().type != EOF) {
                                 ret = statement(scope);
-                                if (ret != null && doreturn) { return ret; }
+                                if (doreturn) { return ret; }
                             }
 
                             tokenIndex = originalTokenIndex;
                             tokens = originalTokens;
                             if (ret != null) { return ret; }
 
-                            if (breakLoop) {
-                                breakLoop = false;
-                                break;
-                            }
+                            if (breakLoop) { breakLoop = false; break; }
                         }
                     } else if (iterSrc instanceof Vector) {
                         Vector vec = (Vector) iterSrc;
@@ -497,17 +491,14 @@ class Lua {
                             Object ret = null;
                             while (peek().type != EOF) {
                                 ret = statement(scope);
-                                if (ret != null && doreturn) { doreturn = false; return ret; }
+                                if (doreturn) { return ret; }
                             }
 
                             tokenIndex = originalTokenIndex;
                             tokens = originalTokens;
                             if (ret != null) return ret;
 
-                            if (breakLoop) {
-                                breakLoop = false;
-                                break;
-                            }
+                            if (breakLoop) { breakLoop = false; break; }
                         }
                     } else if (iterSrc == null) {
                         // Nada a iterar (nil)
