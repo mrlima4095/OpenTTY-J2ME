@@ -54,10 +54,8 @@ local function parse_html(html)
         local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
 
         -- Controle head
-        if tag == "head" then
-            in_head = true
-        elseif tag == "/head" then
-            in_head = false
+        if tag == "head" then in_head = true
+        elseif tag == "/head" then in_head = false
         elseif not in_head then
             if tag == "b" then styles["bold"] = true
             elseif tag == "/b" then styles["bold"] = nil
@@ -145,6 +143,10 @@ function browser.open()
     }))
 end
 
+function browser.tabs() end
+function browser.bookmarks() end
+function browser.settings() end
+
 function browser.main()
     graphics.display(graphics.BuildList({
         title = "Browser",
@@ -154,9 +156,9 @@ function browser.main()
             label = "Select",
             root = function (opt)
                 if opt == "Open URL" then browser.open()
-                elseif opt == "Tabs" then
-                elseif opt == "Bookmarks" then
-                elseif opt == "Settings" then
+                elseif opt == "Tabs" then browser.tabs()
+                elseif opt == "Bookmarks" then browser.bookmarks()
+                elseif opt == "Settings" then browser.settings()
                 elseif opt == "Exit" then os.exit()
                 end
             end
