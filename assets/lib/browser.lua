@@ -33,7 +33,7 @@ local function parse_html(html)
 
     while i <= #html do
         local start_tag = string.match(html, "<", i)
-        print(start_tag .. \n .. type(start_tag))
+        print(start_tag .. "\n" .. type(start_tag))
         if start_tag == nil then
             if not in_head and not in_script and not in_style then
                 local text = string.trim(string.sub(html, i))
