@@ -1375,26 +1375,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Font Generator
     public Font newFont(String argument) {
-        if (argument == null || argument.length() == 0 || argument.equals("default")) {
-            return Font.getDefaultFont();
-        }
+        if (argument == null || argument.length() == 0 || argument.equals("default")) { return Font.getDefaultFont(); }
 
+        int face = Font.FACE_SYSTEM;
         int style = Font.STYLE_PLAIN;
         int size = Font.SIZE_MEDIUM;
 
-        // Divide o argumento por espaços
         String[] tokens = split(argument, ' ');
         for (int i = 0; i < tokens.length; i++) {
             String token = tokens[i].toLowerCase();
-            if (token.equals("bold")) style |= Font.STYLE_BOLD;
+
+            if (token.equals("system")) face = Font.FACE_SYSTEM;
+            else if (token.equals("monospace")) face = Font.FACE_MONOSPACE;
+            else if (token.equals("proportional")) face = Font.FACE_PROPORTIONAL;
+
+            else if (token.equals("bold")) style |= Font.STYLE_BOLD;
             else if (token.equals("italic")) style |= Font.STYLE_ITALIC;
-            else if (token.equals("ul")) style |= Font.STYLE_UNDERLINED;
+            else if (token.equals("ul") || token.equals("underline") || token.equals("underlined"))
+                style |= Font.STYLE_UNDERLINED;
+
             else if (token.equals("small")) size = Font.SIZE_SMALL;
+            else if (token.equals("medium")) size = Font.SIZE_MEDIUM;
             else if (token.equals("large")) size = Font.SIZE_LARGE;
-            // ignorar tokens desconhecidos
         }
 
-        return Font.getFont(Font.FACE_SYSTEM, style, size);
+        Font f = Font.getFont(face, style, size);
+
+        return f == null ? Font.getDefaultFont() : f;
     }
 
     // API 005 - (Operators)
