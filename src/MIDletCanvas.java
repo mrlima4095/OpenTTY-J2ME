@@ -162,3 +162,5 @@ class MIDletCanvas extends Canvas implements CommandListener {
     private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); } 
     private String getenv(String key) { return midlet.env(getvalue(key, "")); } 
 }
+// |
+// EOF
