@@ -17,7 +17,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
-    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(),
+    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), 
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     private String logs = "", path = "/home/", build = "2025-1.16.2-02x79";
@@ -1076,7 +1076,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return null;
         } 
         else if (filename.startsWith("/mnt/")) { return ((FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ)).openInputStream(); } 
-        else if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? new ByteArrayInputStream(((String) tmp.get(filename)).getBytes("UTF-8")) : null; } 
         else {
             if (filename.startsWith("/dev/")) {
                 filename = filename.substring(5);
@@ -1092,8 +1091,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public String read(String filename) {
         try {
-            if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; }
-
             InputStream is = readRaw(filename);
             if (is == null) { return ""; }
             StringBuffer sb = new StringBuffer();
