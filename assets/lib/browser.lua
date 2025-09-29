@@ -19,7 +19,7 @@ local function join_styles(styles)
 end
 
 local function parse_html(html)
-    if not string.find(html, "<") then
+    if not string.match(html, "<") then
         return { { type = "text", value = string.trim(html), style = "default" } }
     end
 
