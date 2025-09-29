@@ -54,6 +54,9 @@ class MIDletCanvas extends Canvas implements CommandListener {
         setFullScreenMode(getenv("canvas.fullscreen", "false").equals("true") ? true : false);
         setCommandListener(this); 
     } 
+    public MIDletCanvas(OpenTTY midlet, Hashtable PKG, boolean root) {
+        this.PKG = PKG; this.midlet = midlet; this.root = root;
+    }
 
     protected void paint(Graphics g) { 
         if (screen == null) { screen = g; } 
