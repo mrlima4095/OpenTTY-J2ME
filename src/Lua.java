@@ -967,13 +967,7 @@ class Lua {
 
                 table.put(key, value == null ? LUA_NIL : value);
 
-                if (peek().type == COMMA) {
-                    consume(COMMA); // Consome a vírgula opcional
-                } else if (peek().type == RBRACE) {
-                    break; // Finaliza a tabela
-                } else {
-                    throw new Exception("Malformed table syntax.");
-                }
+                if (peek().type == COMMA) { consume(COMMA); } else if (peek().type == RBRACE) { break; } else { throw new Exception("Malformed table syntax."); }
             }
 
             consume(RBRACE);
