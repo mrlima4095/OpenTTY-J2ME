@@ -328,7 +328,7 @@ class Lua {
                     taken = true;
                     while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
                         result = statement(scope);
-                        if (result != null && doreturn) { doreturn = false; return result; }
+                        if (result != null && doreturn) { return result; }
                     }
                 } else {
                     skipIfBodyUntilElsePart();
@@ -409,7 +409,7 @@ class Lua {
                         Object ret = null;
                         while (peek().type != EOF) {
                             ret = statement(scope);
-                            if (ret != null && doreturn) { doreturn = false; break; }
+                            if (ret != null && doreturn) { break; }
                         }
 
                         tokenIndex = originalTokenIndex;
@@ -461,7 +461,7 @@ class Lua {
                             Object ret = null;
                             while (peek().type != EOF) {
                                 ret = statement(scope);
-                                if (ret != null && doreturn) { doreturn = false; return ret; }
+                                if (ret != null && doreturn) { return ret; }
                             }
 
                             tokenIndex = originalTokenIndex;
@@ -566,7 +566,6 @@ class Lua {
                             else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
                         }
                         loopDepth--; // Saindo do loop
-                        doreturn = false;
                         return result;
                     }
                 }
@@ -603,7 +602,6 @@ class Lua {
                     if (result != null && doreturn) {
                         while (peek().type != UNTIL && peek().type != EOF) { consume(); }
                         loopDepth--;
-                        doreturn = false;
                         return result;
                     }
                 }
