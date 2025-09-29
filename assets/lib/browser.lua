@@ -21,12 +21,9 @@ end
 local function parse_html(html)
     if not string.match(html, "<") then return { { type = "text", value = html, style = join_styles(styles) } } end
 
-    local fields = {}
     local i = 1
-    local styles = {}
-    local in_head = false
-    local in_script = false
-    local in_style = false
+    local fields, styles = {}, {}
+    local in_head, in_script, in_style = false, false, false
 
     while i <= #html do
         local start_tag = string.match(html, "<", i)
