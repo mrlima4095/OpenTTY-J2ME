@@ -313,7 +313,7 @@ class Lua {
                 taken = true;
                 while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
                     result = statement(scope);
-                    if (result != null && doreturn) { doreturn = false; return result; }
+                    if (doreturn) { return result; }
                 }
             } else {
                 skipIfBodyUntilElsePart();
@@ -328,7 +328,7 @@ class Lua {
                     taken = true;
                     while (peek().type != ELSEIF && peek().type != ELSE && peek().type != END) {
                         result = statement(scope);
-                        if (result != null && doreturn) { return result; }
+                        if (doreturn) { return result; }
                     }
                 } else {
                     skipIfBodyUntilElsePart();
@@ -340,7 +340,7 @@ class Lua {
                 if (!taken) {
                     while (peek().type != END) {
                         result = statement(scope);
-                        if (result != null && doreturn) { doreturn = false; return result; }
+                        if (doreturn) { return result; }
                     }
                 } else {
                     skipUntilMatchingEnd();
@@ -409,7 +409,7 @@ class Lua {
                         Object ret = null;
                         while (peek().type != EOF) {
                             ret = statement(scope);
-                            if (ret != null && doreturn) { break; }
+                            if (doreturn) { break; }
                         }
 
                         tokenIndex = originalTokenIndex;
@@ -466,7 +466,7 @@ class Lua {
 
                             tokenIndex = originalTokenIndex;
                             tokens = originalTokens;
-                            if (ret != null) return ret;
+                            if (ret != null) { return ret; }
 
                             if (breakLoop) {
                                 breakLoop = false;
@@ -556,7 +556,7 @@ class Lua {
                 while (peek().type != END) {
                     result = statement(scope);
                     if (breakLoop) { breakLoop = false; endAlreadyConsumed = true; break; }
-                    if (result != null && doreturn) {
+                    if (doreturn) {
                         // "return" dentro do while: consome até o END do laço e retorna
                         int depth = 1;
                         while (depth > 0) {
