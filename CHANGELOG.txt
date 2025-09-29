@@ -28,6 +28,8 @@ Copyright (C) 2025 - Mr. Lima
 - Source code splited into `OpenTTY.java` (Main Class), `Lua.java` (Lua Runtime) and `MIDletCanvas.java` (Canvas Builder)
 - **Font Generator** improved
 - **JBenchmark** updated for _1.3_ (Migrated to Lua)
+- Fixed a security bug with `case user (any name) ...` command getting root permission
+- Command `case` context **FILE** added suppport for all files searching location
 
 [ _Notes_ ]
 
