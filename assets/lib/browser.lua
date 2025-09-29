@@ -21,7 +21,7 @@ end
 local function parse_html(html)
     local fields = {}
     local i = 1
-    local styles = {} -- conjunto ativo de estilos
+    local styles = {}
     local in_head = false
 
     while i <= #html do
@@ -75,9 +75,7 @@ local function parse_html(html)
             elseif tag == "/h3" then styles["bold"] = nil; styles["small"] = nil
             elseif tag == "h4" or tag == "h5" or tag == "h6" then styles["small"] = true
             elseif tag == "/h4" or tag == "/h5" or tag == "/h6" then styles["small"] = nil
-            elseif tag == "br" then
-                fields[#fields + 1] = { type = "text", value = "\n", style = join_styles(styles) }
-            end
+            elseif tag == "br" then fields[#fields + 1] = { type = "text", value = "\n", style = "default" } end
         end
 
         i = end_tag + 1
@@ -85,9 +83,6 @@ local function parse_html(html)
 
     return fields
 end
-
-
-
 
 local function extract_title(html, url)
     local start, finish = string.match(html, "<title>"), string.match(html, "</title>")
