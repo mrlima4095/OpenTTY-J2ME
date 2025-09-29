@@ -57,18 +57,12 @@ local function parse_html(html)
         local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
 
         -- Controle head/script/style
-        if tag == "head" then
-            in_head = true
-        elseif tag == "/head" then
-            in_head = false
-        elseif tag == "script" then
-            in_script = true
-        elseif tag == "/script" then
-            in_script = false
-        elseif tag == "style" then
-            in_style = true
-        elseif tag == "/style" then
-            in_style = false
+        if tag == "head" then in_head = true
+        elseif tag == "/head" then in_head = false
+        elseif tag == "script" then in_script = true
+        elseif tag == "/script" then in_script = false
+        elseif tag == "style" then in_style = true
+        elseif tag == "/style" then in_style = false
         elseif not in_head and not in_script and not in_style then
             if tag == "b" then styles["bold"] = true
             elseif tag == "/b" then styles["bold"] = nil
