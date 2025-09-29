@@ -17,60 +17,52 @@ config=execute
 
 ]]
 
+local app, args = {}, {}
+local services = {
+    ["x11-wm"] = { },
+    ["system"] = { }
+}
 
-local app = { _port = 31337 }
 
-function app.start()
+function app.dumpsys(service)
 
 end
 
-function app.connect(args)
-    if args then
-        
-    else
+
+
+function app.shell()
+    if #args < 2 or args[2] == "" then
+
+    elseif args[2] == "dumpsys" then
+        if args[3] == nil then
+            for k,_ in services do app.dumpsys(k) end
+        else app.dumpsys(3) end
+    elseif args[2] == "su" then
 
     end
 end
-function app.shell(args)
-    table.remove(app, 1)
 
-    if #args < 1 then
+function app.connect() end
 
-    elseif args[1] == "su" then
+function app.main()
+    for i = 1, #arg do args[i] = arg[i] end
 
-    elseif args[1] == "dumpsys" then
+    if #args == 0 or arg[1] == "" then
 
-    elseif args[1] == "" then
-
-    else print(arg[0] .. ": shell: " .. args[1] .. ": not found") end
-end
-function app.install(args) end 
-function app.uninstall(args) end
-function app.logcat(args) end
-
-function app.run() end
-
-function app.main(args)
-    if #args == 0 then
-        print("usage: jdb []")
-    elseif args[1] == "connect" then
-
-    elseif args[1] == "shell" then app.shell(args)
-    elseif args[1] == "start" then
-
-    elseif args[1] == "stop" then
+    elseif args[1] == "shell" then app.shell()
+    elseif args[1] == "connect" then app.connect()
 
     elseif args[1] == "install" then
 
     elseif args[1] == "uninstall" then
 
-    elseif args[1] == "logcat" then app.logcat()
-    else
-        print(arg[0] .. ": " .. args[1] .. ": not found")
-    end
+    elseif args[1] == "start" then
+
+    elseif args[1] == "stop" then
+
+    elseif args[1] == "logcat" then
+
+    else print("jdb: " .. args[1] .. ": not found") end
 end
 
-local args = {}
-for i = 1, #arg do args[i] = arg[i] end
-
-app.main(args)
+app.main()
