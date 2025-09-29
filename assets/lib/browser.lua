@@ -20,7 +20,7 @@ end
 
 local function parse_html(html)
     if not string.match(html, "<") then
-        return { { type = "text", value = string.trim(html), style = "default" } }
+        return { string.trim(html) }
     end
 
     local fields = {}
