@@ -991,7 +991,7 @@ class Lua {
             return table;
         }
 
-        throw new Exception("Unexpected token at factor: " + current.value);
+        throw new Exception("Unexpected token at factor: " + current.toString());
     }
 
     private Object callFunction(String funcName, Hashtable scope) throws Exception {
