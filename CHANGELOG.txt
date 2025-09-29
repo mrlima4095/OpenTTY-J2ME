@@ -26,6 +26,7 @@ Copyright (C) 2025 - Mr. Lima
 - Command `cp` now using raw _byte-array_
 - Command `bind` need to read port from argument line, no default port in environment key anymore.
 - Source code splited into `OpenTTY.java` (Main Class), `Lua.java` (Lua Runtime) and `MIDletCanvas.java` (Canvas Builder)
+- **Font Generator** improved
 
 [ _Notes_ ]
 
