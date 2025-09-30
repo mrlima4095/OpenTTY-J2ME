@@ -1828,6 +1828,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (filename.endsWith("/")) { return paths.containsKey(filename); }
         else { String dir = diirname(filename); return (paths.containsKey((dir)) && indexOf(filename, (String[]) paths.get(dir)) != -1); }
+        
+        return false;
     }
     // |
     // Text Manager
