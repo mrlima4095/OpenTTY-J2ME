@@ -205,6 +205,5 @@ function app.main()
     graphics.display(app.menu)
 end
 
-
 os.setproc("name", "sdkme")
 app.main()
