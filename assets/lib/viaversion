@@ -11,21 +11,21 @@ axrz=execute axrz list;
 shell.name=axrz
 shell.args=list,run,update,query
 
-list=execute x11 list viaversion;
+list=execute x11 list /home/viaversion; 
 run=execute log add debug ViaVersion - Modified from $VERSION to $REQUEST; set VERSION=$REQUEST; unset REQUEST; sh; 
-update=execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/viaversion; install viaversion; import viaversion; tick; 
-query=execute x11 quest viaversion;
+update=execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/1.16.x/assets/lib/viaversion; install viaversion; import viaversion; tick; 
+query=execute x11 quest /home/viaversion;
 
 [ DISPLAY ]
 
 quest.title=Select API
 quest.label=Version
 quest.key=REQUEST
-quest.cmd=execute find $REQUEST viaversion; if ($OUTPUT == null) exec echo [ ViaVersion ] Invalid API '$REQUEST' & @alert & set OUTPUT=true; $OUTPUT;
+quest.cmd=execute find $REQUEST /home/viaversion; if ($OUTPUT == null) exec echo [ ViaVersion ] Invalid API '$REQUEST' & @alert & set OUTPUT=true; $OUTPUT;
 
 
 list.title=Select API
-list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.13,1.14,1.14.1,1.14.2,1.14.3,1.14.4,1.15,1.16,1.16.1
+list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.13,1.14,1.14.1,1.14.2,1.14.3,1.14.4,1.15,1.16,1.16.1,1.16.2
 
 1.8.5=execute set REQUEST=1.8.5; set PATCH=Netman Update; axrz run;
 1.8.6=execute set REQUEST=1.8.6; set PATCH=Netman Update; axrz run;
