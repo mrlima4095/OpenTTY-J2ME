@@ -580,7 +580,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         sessions.put(port, address);
                         while (trace.containsKey(PID)) {
                             byte[] buffer = new byte[4096];
-                            int bytesRead = IN.read(buffer);
+                            int b9ytesRead = IN.read(buffer);
                             if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); break; }
                             String PAYLOAD = new String(buffer, 0, bytesRead).trim();
                             echoCommand("[+] " + address + " -> " + env(PAYLOAD));
@@ -1212,6 +1212,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, root) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, ignore, root) : importScript(content, root)) : runScript(content, root);
         }
+        else if (mainCommand.equals("x")) {
+            echoCommand(diirname(argument));
+        }
 
         else { echoCommand(mainCommand + ": not found"); return 127; }
 
@@ -1816,7 +1819,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (filename.startsWith("/home/")) {
             String[] recordStores = RecordStore.listRecordStores();
-            if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(filename)) { return true; } } }
+            if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(filename.substring(6))) { return true; } } }
         }
         else if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename.substring(5)); }
         else if (filename.startsWith("/mnt/")) {
