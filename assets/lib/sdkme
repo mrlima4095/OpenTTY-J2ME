@@ -1,3 +1,5 @@
+#!/bin/lua
+
 --[[
 
 [ Config ]
@@ -15,7 +17,7 @@ include=forge
 config=execute set SDK=1.1;
 command=sdk
 
-sdk=execute lua sdkme; #x11 list /home/sdkme; true
+sdk=execute lua /home/sdkme; #x11 list /home/sdkme; true
 
 shell.name=sdk
 shell.args=setxback
@@ -134,7 +136,7 @@ function app.install(...)
             return
         end
     end
-    
+
     graphics.display(graphics.Alert({
         title = "SmartME",
         message = "Download complete!",

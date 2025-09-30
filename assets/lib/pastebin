@@ -1,3 +1,5 @@
+#!/bin/lua
+
 --[[
     
 [ Config ]
@@ -6,7 +8,7 @@ name=PasteBin
 version=1.0
 description=Paste Client 
 
-include=/java/lib/settings
+include=/lib/settings
 
 config=execute case !key (PASTEBIN_API) echo [ PasteBin ] To setup your API Key use 'pastebin api'
 command=pastebin
