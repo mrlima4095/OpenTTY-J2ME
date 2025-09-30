@@ -1212,9 +1212,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, root) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, ignore, root) : importScript(content, root)) : runScript(content, root);
         }
-        else if (mainCommand.equals("x")) {
-            echoCommand(diirname(argument));
-        }
 
         else { echoCommand(mainCommand + ": not found"); return 127; }
 
