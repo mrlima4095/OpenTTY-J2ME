@@ -138,7 +138,7 @@ local function processRequest(raw, i, o)
     end
 
     local sendb = "HTTP/1.1 " .. status .. "\r\n" ..
-                  "Content-Type: " .. (mime or "text/html") .. "\r\n" ..
+                  "Content-Type: " .. (nil or "text/html") .. "\r\n" ..
                   "Content-Length: " .. #response .. "\r\n\r\n" ..
                   response
 
