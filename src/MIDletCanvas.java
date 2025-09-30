@@ -56,6 +56,8 @@ class MIDletCanvas extends Canvas implements CommandListener {
     } 
     public MIDletCanvas(OpenTTY midlet, Hashtable PKG, boolean root) {
         this.PKG = PKG; this.midlet = midlet; this.root = root;
+
+        setTitle(PKG.containsKey("title") ? getenv)
     }
 
     protected void paint(Graphics g) { 
@@ -157,6 +159,10 @@ class MIDletCanvas extends Canvas implements CommandListener {
         } 
         catch (NumberFormatException e) { midlet.MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } 
     } 
+
+    private String getvalue(Hashtable fields, String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
+    private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); } 
+    private String getenv(String key) { return midlet.env(getvalue(key, "")); } 
 
     private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
     private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); } 
