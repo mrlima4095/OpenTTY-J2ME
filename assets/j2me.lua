@@ -53,7 +53,8 @@ string = {
     sub = function (text, x, y) end,
     hash = function (text) end,
     byte = function (text, x, y) end,
-    char = function (...) end
+    char = function (...) end,
+    trim = function (text) return "" end
 }
 
 graphics = {
