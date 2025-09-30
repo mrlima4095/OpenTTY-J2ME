@@ -580,7 +580,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         sessions.put(port, address);
                         while (trace.containsKey(PID)) {
                             byte[] buffer = new byte[4096];
-                            int b9ytesRead = IN.read(buffer);
+                            int bytesRead = IN.read(buffer);
                             if (bytesRead == -1) { echoCommand("[-] " + address + " disconnected"); break; }
                             String PAYLOAD = new String(buffer, 0, bytesRead).trim();
                             echoCommand("[+] " + address + " -> " + env(PAYLOAD));
