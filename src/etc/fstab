@@ -1,5 +1,9 @@
 /
 /bin/
+/bin/cwd
+/bin/load
+/bin/tk
+/bin/summon
 /bin/sh
 /dev/
 /dev/null
