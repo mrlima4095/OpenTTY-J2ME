@@ -79,6 +79,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
         if (fieldsObj != null) {
             if (fieldsObj instanceof String) { } 
             else if (fieldsObj instanceof Hashtable) {
+                Hashtable flds = (Hashtable) flds;
                 for (Enumeration keys = flds.keys(); keys.hasMoreElements();) {
                     Object f = flds.get(keys.nextElement());
                     if (f instanceof Hashtable) fields.addElement((Hashtable) f);
