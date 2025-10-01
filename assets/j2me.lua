@@ -67,7 +67,8 @@ graphics = {
     SetTitle = function (title) end,
     WindowTitle = function (title, screen) end,
     SetTicker = function (text) end,
-    getCurrent = function () end
+    getCurrent = function () end,
+    render = function (img) end
 }
 
 getAppProperty = function (field) end
