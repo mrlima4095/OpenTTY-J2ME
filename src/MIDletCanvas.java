@@ -69,8 +69,8 @@ class MIDletCanvas extends Canvas implements CommandListener {
             Hashtable mouse = (PKG.get("mouse") instanceof Hashtable) ? (Hashtable) PKG.get("mouse") : null;
 
             if (mouse == null) { }
-            else if (mouse.containsKey("x")) { midlet.cursorX = (mouse.get("x") instanceof Double ? (Double) mouse.get("x") : 10.0).intValue(); }
-            else if (mouse.containsKey("y")) { midlet.cursorY = (mouse.get("y") instanceof Double ? (Double) mouse.get("y") : 10.0).intValue(); }
+            else if (mouse.containsKey("x")) { midlet.cursorX = (mouse.get("x") instanceof Double ? (Double) mouse.get("x") : new Double(10)).intValue(); }
+            else if (mouse.containsKey("y")) { midlet.cursorY = (mouse.get("y") instanceof Double ? (Double) mouse.get("y") : new Double(10)).intValue(); }
             else if (mouse.containsKey("img")) { CURSOR = mouse.get("img") instanceof Image ? (Image) mouse.get("img") : midlet.readImg(mouse.get().toString()); }
         }
 
