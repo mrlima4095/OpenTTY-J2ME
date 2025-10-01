@@ -31,6 +31,7 @@ Copyright (C) 2025 - Mr. Lima
 - Fixed a security bug with `case user (any name) ...` command getting root permission
 - Command `case` context **FILE** added suppport for all files searching location
 - **Lua** added function `graphics.render(file)` to get **Image** item
+- **Lua** added new _type_ **Image**
 
 [ _Notes_ ]
 
