@@ -44,7 +44,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             runScript(read("/etc/init"), true); setLabel();
             // |
             if (username.equals("") || MIDletControl.passwd().equals("")) { new MIDletControl(null); }
-            else { runScript(loadRMS(".initrc")); }
+            else { processCommand(". /home/.initrc"); }
         }
     }
     // |
@@ -382,7 +382,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         monitor.append(new StringItem("Type:", type));
                         if (type.equals("Directory")) { }
                         else {
-                            int size = -1;
+                            int size = 0;
                             try {
                                 InputStream in = readRaw(path + selected);
                                 size = in.available(); in.close();
