@@ -1760,7 +1760,7 @@ class Lua {
             return true;
         }
         private Vector toVector(Hashtable table) throws Exception { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
-        // |
+
         private void AppendScreen(Form f, Object obj) throws Exception {
             if (obj instanceof Hashtable) {
                 Hashtable field = (Hashtable) obj;
@@ -1768,7 +1768,9 @@ class Lua {
 
                 if (type.equals("image")) {
                     String imgPath = getenv(field, "img", "");
-                    if (imgPath.equals("")) { } else { f.append(Image.createImage(midlet.readImg(imgPath))); }
+                    
+                    if (imgPath.equals("")) { } 
+                    else { f.append(midlet.readImg(imgPath)); }
                 } 
                 else if (type.equals("text")) {
                     String value = getenv(field, "value", "");
