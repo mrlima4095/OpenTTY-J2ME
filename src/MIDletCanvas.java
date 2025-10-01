@@ -57,7 +57,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
     public MIDletCanvas(OpenTTY midlet, Hashtable PKG, boolean root) {
         this.PKG = PKG; this.midlet = midlet; this.root = root;
 
-        setTitle(PKG.containsKey("title") ? getenv)
+        setTitle(getenv("title", midlet.form.getTitle()));
     }
 
     protected void paint(Graphics g) { 
