@@ -51,13 +51,43 @@ class MIDletCanvas extends Canvas implements CommandListener {
             } 
         } 
 
-        setFullScreenMode(getenv("canvas.fullscreen", "false").equals("true") ? true : false);
+        setFullScreenMode(getenv("canvas.fullscreen", "false").equals("true"));
         setCommandListener(this); 
     } 
     public MIDletCanvas(OpenTTY midlet, Hashtable PKG, boolean root) {
         this.PKG = PKG; this.midlet = midlet; this.root = root;
 
         setTitle(getenv("title", midlet.form.getTitle()));
+
+        Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
+        Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
+        addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.OK, 1));
+
+        if (buttonTable == null) { } else { addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
+
+        if (PKG.containsKey("mouse")) {
+            Hashtable mouse = (PKG.get("mouse") instanceof Hashtable) ? (Hashtable) PKG.get("mouse") : null;
+
+            if (mouse == null) { }
+            else if (mouse.containsKey("x")) { midlet.cursorX = (mouse.get("x") instanceof Double ? (Double) mouse.get("x") : 10.0).intValue(); }
+            else if (mouse.containsKey("y")) { midlet.cursorY = (mouse.get("y") instanceof Double ? (Double) mouse.get("y") : 10.0).intValue(); }
+            else if (mouse.containsKey("img")) { CURSOR = mouse.get("img") instanceof Image ? (Image) mouse.get("img") : midlet.readImg(mouse.get().toString()); }
+        }
+
+
+        Object fieldsObj = PKG.get("fields");
+        if (fieldsObj != null) {
+            if (fieldsObj instanceof String) { } 
+            else if (fieldsObj instanceof Hashtable) {
+                for (Enumeration keys = flds.keys(); keys.hasMoreElements();) {
+                    Object f = flds.get(keys.nextElement());
+                    if (f instanceof Hashtable) fields.addElement((Hashtable) f);
+                }
+            }
+        }
+
+        setFullScreenMode(getenv("fullscreen", "false").equals("true"));
+        setCommandListener(this);
     }
 
     protected void paint(Graphics g) { 
@@ -152,6 +182,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
         if (c == BACK) { midlet.processCommand(getvalue("canvas.back", "true"), true, root); } 
         else if (c == USER) { midlet.processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found"), true, root); } 
     } 
+
     private void setpallete(String node, Graphics screen, int r, int g, int b) { 
         try { 
             String[] pallete = midlet.split(getenv("canvas." + node, "" + r + "," + g + "," + b), ','); 
