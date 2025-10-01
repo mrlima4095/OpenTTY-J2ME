@@ -63,7 +63,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
         Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
         addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.OK, 1));
 
-        if (buttonTable == null) { } else { addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
+        if (buttonTable != null) { addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
 
         if (PKG.containsKey("mouse")) {
             Hashtable mouse = (PKG.get("mouse") instanceof Hashtable) ? (Hashtable) PKG.get("mouse") : null;
