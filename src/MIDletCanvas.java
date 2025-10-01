@@ -191,9 +191,9 @@ class MIDletCanvas extends Canvas implements CommandListener {
         catch (NumberFormatException e) { midlet.MIDletLogs("add warn Invalid value for 'canvas." + node + "' - (r,g,b) may be a int number"); } 
     } 
 
-    private String getvalue(Hashtable fields, String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
-    private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); } 
-    private String getenv(String key) { return midlet.env(getvalue(key, "")); } 
+    private String getvalue(Hashtable fields, String key, String fallback) { return fields.containsKey(key) ? (String) fields.get(key) : fallback; } 
+    private String getenv(Hashtable fields, String key, String fallback) { return midlet.env(fields, getvalue(key, fallback)); } 
+    private String getenv(Hashtable fields, String key) { return midlet.env(fields, getvalue(key, "")); } 
 
     private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
     private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); } 
