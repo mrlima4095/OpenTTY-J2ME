@@ -4,7 +4,7 @@ import java.util.*;
 import java.io.*;
 // |
 // Lua Runtime
-class Lua {
+public class Lua {
     private boolean breakLoop = false, doreturn = false, kill = true, gc = true;
     private boolean[] attrchanges = new boolean[] { true, true };
     private OpenTTY midlet;
