@@ -1956,7 +1956,7 @@ class Lua {
                     Object fire = PKG.get("button") == null ? null : ((Hashtable) PKG.get("button")).get("root");
     
                     if (MOD == ALERT) {
-                        midlet.processCommand("xterm", true, root);
+                        midlet.processCommand("xterm", true, id);
     
                         if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
                         else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
