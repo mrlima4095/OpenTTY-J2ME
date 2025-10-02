@@ -10,13 +10,13 @@ class MIDletCanvas extends Canvas implements CommandListener {
     private Command BACK, USER; 
     private Image CURSOR = null; 
     private Vector fields = new Vector(); 
-    private boolean root = false;
+    private int id = 1;
     private final int cursorSize = 5; 
 
-    public MIDletCanvas(OpenTTY midlet, String code, boolean root) { 
+    public MIDletCanvas(OpenTTY midlet, String code, int id) { 
         if (code == null || code.length() == 0) { return; } 
 
-        this.PKG = midlet.parseProperties(code); this.midlet = midlet; this.root = root;
+        this.PKG = midlet.parseProperties(code); this.midlet = midlet; this.id = id;
         setTitle(getenv("canvas.title", midlet.form.getTitle())); 
 
         addCommand(BACK = new Command(getenv("canvas.back.label", "Back"), Command.OK, 1)); 
@@ -54,8 +54,8 @@ class MIDletCanvas extends Canvas implements CommandListener {
         setFullScreenMode(getenv("canvas.fullscreen", "false").equals("true"));
         setCommandListener(this); 
     } 
-    public MIDletCanvas(OpenTTY midlet, Hashtable PKG, boolean root) {
-        this.PKG = PKG; this.midlet = midlet; this.root = root;
+    public MIDletCanvas(OpenTTY midlet, Hashtable PKG, int id) {
+        this.PKG = PKG; this.midlet = midlet; this.id = id;
 
         setTitle(getenv("title", midlet.form.getTitle()));
 
@@ -169,7 +169,7 @@ class MIDletCanvas extends Canvas implements CommandListener {
                     else if (type.equals("line")) { continue; } 
                     else { hit = midlet.cursorX + cursorSize > x && midlet.cursorX < x + w && midlet.cursorY + cursorSize > y && midlet.cursorY < y + h; } 
 
-                    if (hit) { midlet.processCommand(cmd, true, root); break; } 
+                    if (hit) { midlet.processCommand(cmd, true, id); break; } 
                 } 
             } 
         } 
@@ -179,9 +179,9 @@ class MIDletCanvas extends Canvas implements CommandListener {
     protected void pointerPressed(int x, int y) { midlet.cursorX = x; midlet.cursorY = y; keyPressed(-5); } 
 
     public void commandAction(Command c, Displayable d) { 
-        midlet.processCommand("xterm", true, root); 
-        if (c == BACK) { midlet.processCommand(getvalue("canvas.back", "true"), true, root); } 
-        else if (c == USER) { midlet.processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found"), true, root); } 
+        midlet.processCommand("xterm", true, id); 
+        if (c == BACK) { midlet.processCommand(getvalue("canvas.back", "true"), true, id); } 
+        else if (c == USER) { midlet.processCommand(getvalue("canvas.button.cmd", "log add warn An error occurred, 'canvas.button.cmd' not found"), true, id); } 
     } 
 
     private void setpallete(String node, Graphics screen, int r, int g, int b) { 
