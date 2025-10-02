@@ -1959,7 +1959,7 @@ class Lua {
                         midlet.processCommand("xterm", true, id);
     
                         if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
-                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, root); }
+                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id); }
                     } 
                     else if (MOD == QUEST) {
                         String value = INPUT.getString().trim();
