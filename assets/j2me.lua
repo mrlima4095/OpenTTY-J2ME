@@ -71,5 +71,10 @@ graphics = {
     render = function (img) end
 }
 
+java = {
+    class = function (name) return true end,
+    getName = function () return "JVM" end
+}
+
 getAppProperty = function (field) end
 random = function (max) end
