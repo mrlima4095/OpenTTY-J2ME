@@ -7,9 +7,9 @@ version=1.0
 description=Global Bind
 
 api.version=1.16
+api.require=lua
 api.error=execute echo [ WebProxy ] OpenTTY 1.16 and Lua is required!; true
 api.match=minimum
-api.nodes=lua
 
 config=execute x11 quest /home/proxy.lua
 
