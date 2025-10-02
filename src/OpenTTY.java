@@ -1639,7 +1639,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    private int query(String command, int id) { 
+    private int query(String command) { 
         command = env(command.trim()); 
         String mainCommand = getCommand(command), argument = getArgument(command); 
         if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return 2; } 
