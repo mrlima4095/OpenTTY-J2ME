@@ -27,31 +27,31 @@ public class Lua {
         this.proc = midlet.genprocess("lua", id, null);
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable();
-        String[] funcs = { "execute", "getenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd" }; int[] loaders = { EXEC, GETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD };
+        String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
-        funcs = { "read", "write", "close", "open" }; loaders = { READ, WRITE, CLOSE, OPEN };
+        funcs = new String[] { "read", "write", "close", "open" }; loaders = new int[] { READ, WRITE, CLOSE, OPEN };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
 
-        funcs = { "insert", "concat", "remove", "sort", "move", "unpack", "pack", "decode" }; loaders = { TB_INSERT, TB_CONCAT, TB_REMOVE, TB_SORT, TB_MOVE, TB_UNPACK, TB_PACK, TB_DECODE };
+        funcs = new String[] { "insert", "concat", "remove", "sort", "move", "unpack", "pack", "decode" }; loaders = new int[] { TB_INSERT, TB_CONCAT, TB_REMOVE, TB_SORT, TB_MOVE, TB_UNPACK, TB_PACK, TB_DECODE };
         for (int i = 0; i < funcs.length; i++) { table.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("table", table);
 
-        funcs = { "get", "post" }; loaders = { HTTP_GET, HTTP_POST };
+        funcs = new String[] { "get", "post" }; loaders = new int[] { HTTP_GET, HTTP_POST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = { "class", "getName" }; loaders = { CLASS, NAME };
+        funcs = new String[] { "class", "getName" }; loaders = new int[] { CLASS, NAME };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("java", java);
 
-        funcs = { "connect", "peer", "device", "server", "accept" }; loaders = { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
+        funcs = new String[] { "connect", "peer", "device", "server", "accept" }; loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
-        funcs = { "Alert", "BuildScreen", "BuildList", "BuildQuest", "BuildEdit", "SetTitle", "SetTicker", "WindowTitle", "display", "append", "getCurrent" }; loaders = { ALERT, SCREEN, LIST, QUEST, EDIT, TITLE, TICKER, WTITLE, DISPLAY, APPEND, GETCURRENT };
+        funcs = new String[] { "Alert", "BuildScreen", "BuildList", "BuildQuest", "BuildEdit", "SetTitle", "SetTicker", "WindowTitle", "display", "append", "getCurrent" }; loaders = new int[] { ALERT, SCREEN, LIST, QUEST, EDIT, TITLE, TICKER, WTITLE, DISPLAY, APPEND, GETCURRENT };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("xterm", midlet.form); globals.put("graphics", graphics);
 
-        funcs = { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
+        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
-        funcs = { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty" }; loaders = { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY };
+        funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
