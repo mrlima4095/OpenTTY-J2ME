@@ -1122,70 +1122,50 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("file")) {
             if (argument.equals("")) { }
             else {
-                String target = argument.startsWith("/") ? argument : path + argument;
-                
-                try {
-                    if (target.endsWith("/")) { echoCommand(target + ": directory"); }
-                    else if (target.startsWith("/home/")) {
-                        String filename = target.substring(6);
-                        String[] rms = RecordStore.listRecordStores();
-                        boolean found = false;
-                        if (rms != null) { for (int i = 0; i < rms.length; i++) { if (rms[i].equals(filename)) { found = true; break; } } }
+                for (int i = 0; i < args.length; i++) {
+                    args[i] = args[i].startsWith("/") ? args[i] : path + args[i];
 
-                        if (found) {
-                            String[] info = getExtensionInfo(getExtension(filename));
-                            echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
-                        } else {
+                    try {
+                        if (!file(args[i])) {
                             echoCommand(argument + ": not found");
                             return 127;
-                        } 
-                    }
-                    else if (target.startsWith("/mnt/")) {
-                        String filename = target.substring(5);
-                        FileConnection fc = (FileConnection) Connector.open("file:///" + filename, Connector.READ);
-                        if (fc.exists()) {
-                            String[] info = getExtensionInfo(getExtension(filename));
-                            echoCommand(argument + (fc.isDirectory() ? ": directory" : ": " + info[0] + ", " + info[2]));
-                        } 
-                        else { echoCommand(argument + ": not found"); fc.close(); return 127; }
+                        }
 
-                        fc.close();
-                    }
-                    else if (target.startsWith("/tmp/")) {
-                        String filename = target.substring(5);
-                        if (tmp.containsKey(filename)) {
-                            String[] info = getExtensionInfo(getExtension(filename));
-                            echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
-                        } 
-                        else { echoCommand(argument + ": not found"); return 127; }
-                    }
-                    else if (target.startsWith("/")) {
-                        String parent = target.substring(0, target.lastIndexOf('/') + 1);
-                        String name   = target.substring(target.lastIndexOf('/') + 1);
-                        
-                        if (paths.containsKey(target + "/")) { echoCommand(argument + ": directory"); } 
-                        else if (paths.containsKey(parent)) {
-                            String[] contents = (String[]) paths.get(parent);
-                            for (int i = 0; i < contents.length; i++) {
-                                if (contents[i].equals(name)) {
-                                    if (parent.equals("/bin/")) { echoCommand(argument + ": Application, bin"); } 
-                                    else if (parent.equals("/dev/")) { echoCommand(argument + ": special device"); } 
-                                    else if (parent.equals("/lib/")) { echoCommand(argument + ": Shared package, text"); }
-                                    else { 
-                                        String[] info = getExtensionInfo(getExtension(name));
-                                        echoCommand(argument + ": " + (info[0].equals("Unknown") ? "ASCII text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); 
-                                    }
-                                    return 0;
-                                }
+                        if (args[i].endsWith("/")) { echoCommand(args[i] + ": directory"); }
+                        else if (args[i].startsWith("/home/")) { 
+                            String[] info = getExtensionInfo(getExtension(args[i].substring(6)));
+                            echoCommand(args[i] + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
+                        }
+                        else if (args[i].startsWith("/mnt/")) {
+                            FileConnection fc = (FileConnection) Connector.open("file:///" + args[i].substring(5), Connector.READ);
+                            if (fc.isDirectory()) { echoCommand(args[i] + ": directory"); } 
+                            else { 
+                                String[] info = getExtensionInfo(getExtension(args[i]));
+                                echoCommand(argument + ": " + info[0] + ", " + info[2]);
                             }
-                            
-                            echoCommand(argument + ": not found");
-                            return 127;
-                        } 
-                        else { echoCommand(argument + ": not found"); return 127; }
-                    }
-                    else { echoCommand(argument + ": unknown"); return 127; }
-                } catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; }
+                            fc.close();
+                        }
+                        else if (args[i].startsWith("/tmp/")) {
+                            String[] info = getExtensionInfo(getExtension(args[i].substring(5)));
+                            echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
+                        }
+                        else if (args[i].startsWith("/")) {
+                            String parent = args[i].substring(0, args[i].lastIndexOf('/') + 1), name = args[i].substring(args[i].lastIndexOf('/') + 1);
+
+                            if (paths.containsKey(args[i] + "/")) { echoCommand(args[i] + ": directory"); }
+                            else if (parent.equals("/bin/")) { echoCommand(args[i] + ": Application, bin"); }
+                            else if (parent.equals("/dev/")) { echoCommand(args[i] + ": special device"); }
+                            else if (parent.equals("/lib/")) { echoCommand(args[i] + ": Shared package, text"); }
+                            else {
+                                String[] info = getExtensionInfo(getExtension(name));
+                                echoCommand(args[i] + ": " + (info[0].equals("Unknown") ? "ASCII text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
+                            }
+                        }
+                        else { echoCommand(args[i] + ": unknown"); return 127; }
+
+                        return 0;
+                    } catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; }
+                }
             }
         }
 
