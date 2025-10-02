@@ -1688,7 +1688,7 @@ class Lua {
             }
             else if (MOD == TRIM) { return args.isEmpty() ? null : toLuaString(args.elementAt(0)).trim(); }
             // Package: java
-            else if (MOD == CLASS) { if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "class", "string expected, got no value"); } else { return new Boolean(midlet.javaClass(toLuaString(args.elementAt(0)))); } }
+            else if (MOD == CLASS) { if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "class", "string expected, got no value"); } else { return new Boolean(midlet.javaClass(toLuaString(args.elementAt(0))) == 0); } }
             else if (MOD == NAME) { return midlet.getName(); }  
 
             return null;
