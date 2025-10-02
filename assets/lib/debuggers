@@ -19,11 +19,34 @@ config=execute
 
 local app, args = {}, {}
 local services = {
-    ["x11-wm"] = { },
-    ["system"] = { }
+    ["x11-wm"] = {
+        process = "x11-wm",
+        root = function ()
+            local debug = app.__debug("x11-wm")
+
+            return debug
+        end
+    },
+    ["system"] = {
+        process = "sh",
+        root = function ()
+            local debug = app.__debug("sh")
+
+            return debug
+        end
+    }
 }
 
+function app.__debug(pname)
+    local struct = {}
 
+    struct.pid = os.getpid(pname)
+    if struct.pid then struct.running = true
+    else struct.running = false end
+
+
+    return struct
+end
 function app.dumpsys(service)
 
 end
