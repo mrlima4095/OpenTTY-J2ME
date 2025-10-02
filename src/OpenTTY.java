@@ -1969,7 +1969,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private int runScript(String script, int id) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, id); if (STATUS != 0) { return STATUS; } } return 0; }
-    private int runScript(String script) { return runScript(script, username.equals("root") ? 0 : ); }
+    private int runScript(String script) { return runScript(script, username.equals("root") ? 0 : 1); }
 }
 // |
 // EOF
