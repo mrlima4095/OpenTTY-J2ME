@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null,
                      aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x87";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x88";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -1958,6 +1958,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (nodes[i].equals("lua") && javaClass("Lua") != 0) { fail = true; }
                 if (nodes[i].equals("canvas") && javaClass("MIDletCanvas") != 0) { fail = true; }
+                if (nodes[i].equals("devicefs") && javaClass("javax.microedition.io.FileConnection") != 0) { fail = true; } 
 
                 if (fail) { String error = (String) PKG.get("api.error"); processCommand(error != null ? error : "true", true, root); return 3; }             
             }

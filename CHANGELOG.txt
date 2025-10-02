@@ -38,3 +38,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - Files writed in **/tmp/** will be deleted when MIDlet closes.
 - 
+
+[ _API Nodes_ ]
+
+- `devicefs`: Check if device supports **JSR-75** (_Access to Device File System on `/mnt/`_)
