@@ -40,10 +40,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             // |
             Command[] NANO_CMDS = { BACK, CLEAR, RUNS, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
             // |
-            runScript(read("/etc/init"), true); setLabel();
+            runScript(read("/etc/init"), 0); setLabel();
             // |
             if (username.equals("") || MIDletControl.passwd().equals("")) { new MIDletControl(null); }
-            else { processCommand(". /home/.initrc", true, 0); }
+            else { processCommand(". /home/.initrc", true, 1); }
         }
     }
     // |
