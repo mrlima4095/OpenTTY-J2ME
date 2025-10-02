@@ -4,7 +4,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Commands_ ]
 
 - `file [filename]`: prints information about file
-- 
+- `id [user]`: prints user id
 - 
 
 [ _Updates_ ]
@@ -33,6 +33,8 @@ Copyright (C) 2025 - Mr. Lima
 - Command `case` context **FILE** added suppport for all files searching location
 - **Lua** added function `graphics.render(file)` to get **Image** item
 - **Lua** added new _type_ **Image**
+- **Screens** _event listener_ no longer passing root to `xterm` command call
+- **File Explorer** _Delete_ button don't requesting to remove `..` directory anymore
 
 [ _Notes_ ]
 
