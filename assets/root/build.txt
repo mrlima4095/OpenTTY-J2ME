@@ -154,3 +154,4 @@
 [2025-1.17-02x84] Command 'BIND' needs read port from argument line
 [2025-1.17-02x85] Improved Font Generator
 [2025-1.17-02x86] Improved Command 'case'
+[2025-1.17-02x87] Run '.initrc' considering shebang
