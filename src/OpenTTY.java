@@ -1696,7 +1696,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             try {
                 conn = (MessageConnection) Connector.open("sms://:" + PID);
                 echoCommand("[+] listening at port " + PID); MIDletLogs("add info Server listening at port " + PID);
-                start("wireless", PID, null, false);
+                start("wireless", PID, null, 1);
                 try {
                     while (trace.containsKey(PID)) {
                         Message msg = conn.receive();
@@ -1710,7 +1710,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             echoCommand("[+] " + sender + " -> binary payload.");
                         }
                     }
-                } catch (Exception e) { echoCommand("[-] " + getCatch(e)); kill(PID, false, false); }
+                } catch (Exception e) { echoCommand("[-] " + getCatch(e)); kill(PID, false, 1); }
             } catch (Exception e) { echoCommand("[-] " + getCatch(e)); MIDletLogs("add info Server crashed '" + PID + "'"); } 
             finally {
                 if (conn != null) { try { conn.close(); } catch (IOException e) { } }
