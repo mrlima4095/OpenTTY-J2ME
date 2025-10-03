@@ -113,7 +113,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         this.midlet = midlet; this.id = id;
         MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : mode.equals("prscan") ? PRSCAN : mode.equals("gobuster") ? GOBUSTER : mode.equals("bind") ? BIND : -1;
 
-        if (args == null || args.length() == 0 || MOD = -1) { return; } 
+        if (args == null || args.length() == 0 || MOD == -1) { return; } 
         else if (MOD == BIND) {
             String[] argv = midlet.splitArgs(args);
 
