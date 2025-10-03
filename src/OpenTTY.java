@@ -51,17 +51,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
     // |
     // | (Main Listener)
-    public void commandAction(Command c, Displayable d) {
-        if (d == nano) {
-            nanoContent = nano.getString(); 
-
-            if (c == CLEAR) { nano.setString(""); } 
-            else { processCommand("execute xterm; " + (c == RUNS ? "." : c == VIEW ? "html" : "true")); }
-        } else {
-            if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); setLabel(); }            
-            else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn Invalid KEY (" + c.getLabel() + ") - " + c.getCommandType()); }
-        }
-    }
+    public void commandAction(Command c, Displayable d) { if (d == nano) { nanoContent = nano.getString(); if (c == CLEAR) { nano.setString(""); } else { processCommand("execute xterm; " + (c == RUNS ? "." : c == VIEW ? "html" : "true")); } } else { if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); setLabel(); } else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn Invalid KEY (" + c.getLabel() + ") - " + c.getCommandType()); } } }
     // |
     // Control Thread
     public String getThreadName(Thread thr) {
@@ -74,8 +64,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }
     // |
     // MIDlet Shell
-    public int processCommand(String command) { return processCommand(command, true, 1); }
-    public int processCommand(String command, boolean ignore) { return processCommand(command, ignore, 1); }
+    public int processCommand(String command) { return processCommand(command, true, 1000); }
+    public int processCommand(String command, boolean ignore) { return processCommand(command, ignore, 1000); }
     public int processCommand(String command, boolean ignore, int id) { 
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command), argument = getpattern(getArgument(command));
@@ -92,7 +82,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (shell.containsKey(mainCommand) && ignore) { Hashtable args = (Hashtable) shell.get(mainCommand); if (argument.equals("")) { return processCommand(aliases.containsKey(mainCommand) ? (String) aliases.get(mainCommand) : "true", ignore, id); } else if (args.containsKey(getCommand(argument).toLowerCase())) { return processCommand((String) args.get(getCommand(argument)) + " " + getArgument(argument), ignore, id); } else { return processCommand(args.containsKey("shell.unknown") ? (String) args.get(getCommand("shell.unknown")) + " " + getArgument(argument) : "echo " + mainCommand + ": " + getCommand(argument) + ": not found", args.containsKey("shell.unknown") ? true : false, id); } }
         else if (aliases.containsKey(mainCommand) && ignore) { return processCommand((String) aliases.get(mainCommand) + " " + argument, ignore, id); }
         else if (functions.containsKey(mainCommand) && ignore) { return runScript((String) functions.get(mainCommand)); }
-        else if (file("/bin/" + mainCommand)) { return processCommand(". /bin/" + command, ignore, id); }
+        else if (file("/bin/" + mainCommand)) { return run(argument, args, id); }
         // |
         // Aliases
         else if (mainCommand.equals("alias")) { if (argument.equals("")) { for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { echoCommand("alias " + KEY + "='" + VALUE.trim() + "'"); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { echoCommand("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'"); } else { echoCommand("alias: " + argument + ": not found"); return 127; } } } else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } }  
@@ -581,12 +571,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE")); }
         else if (mainCommand.equals("!!")) { stdin.setString((argument.equals("") ? "" : argument + " ") + getLastHistory()); }
-        else if (mainCommand.equals(".")) {
-            String content = argument.equals("") ? nanoContent : getcontent(args[0]);
-
-            return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, id) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, ignore, id) : importScript(content, id)) : runScript(content, id);
-        }
-
+        else if (mainCommand.equals(".")) { return run(argument, args, ignore, id); }
+        
         else { echoCommand(mainCommand + ": not found"); return 127; }
 
         return 0;
@@ -1349,6 +1335,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private int runScript(String script, int id) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, id); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? 0 : 1); }
+    // |
+    private int run(String argument, String[] args, int id) { String content = argument.equals() ? nanoContent : getcontent(args[0]); return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, id) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, false, id) : importScript(content, id)) : runScript(content, id);
+    }
 }
 // |
 // EOF
