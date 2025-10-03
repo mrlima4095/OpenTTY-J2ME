@@ -1779,9 +1779,9 @@ public class Lua {
                     else { f.append(midlet.readImg(imgPath)); }
                 } 
                 else if (type.equals("text")) {
-                    String value = getenv(field, "value", "");
+                    String value = getenv(field, "value", ""), layout = getenv(field, "layout", "default");
                     if (value.equals("")) { }
-                    else { StringItem si = new StringItem(getenv(field, "label", ""), value); si.setFont(midlet.newFont(getenv(field, "style", "default"))); f.append(si); }
+                    else { StringItem si = new StringItem(getenv(field, "label", ""), value, layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT); si.setFont(midlet.newFont(getenv(field, "style", "default"))); f.append(si); }
                 } 
                 else if (type.equals("item")) {
                     String label = field.containsKey("label") ? toLuaString(field.get("label")) : (String) gotbad("BuildScreen", "item", "missing label");
