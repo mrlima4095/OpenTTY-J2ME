@@ -1025,7 +1025,7 @@ public class Lua {
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
     // |
     // Lua Object
-    public class LuaFunction implements CommandListener, ItemCommandListener,ItemStateListener {
+    public class LuaFunction implements CommandListener, ItemCommandListener, ItemStateListener {
         private Vector params, bodyTokens;
         private Hashtable closureScope, PKG, ITEM = null, STATE = null; 
         private int MOD = -1, LTYPE = -1;
@@ -2076,9 +2076,7 @@ public class Lua {
                             args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
                         }
                     }
-                    else if (item instanceof Gauge) {
-
-                    }
+                    else if (item instanceof Gauge) { args.addElement(new Double(((Gauge) item).getValue())); }
 
                     ((LuaFunction) fire).call(args); 
                 } 
