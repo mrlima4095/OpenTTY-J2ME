@@ -1832,7 +1832,7 @@ public class Lua {
                     if (ITEM == null) { ITEM = new Hashtable(); }
                     if (STATE == null) { STATE = new Hashtable(); }
                     ITEM.put(cg, new Double(LTYPE));
-                    STATE.put(field.containsKey("root") ? field.get("root") : LUA_NIL);
+                    STATE.put(cg, field.containsKey("root") ? field.get("root") : LUA_NIL);
                 } 
             } 
             else if (obj instanceof String) { f.append(toLuaString(obj)); }
