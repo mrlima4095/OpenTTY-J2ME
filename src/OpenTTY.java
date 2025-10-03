@@ -10,7 +10,7 @@ import javax.microedition.io.*;
 import javax.bluetooth.*;
 import java.util.*;
 import java.io.*;
-// | 
+// |
 // OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
     public int TTY_MAX_LEN = 0, cursorX = 10, cursorY = 10;
