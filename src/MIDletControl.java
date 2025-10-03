@@ -40,13 +40,11 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     public MIDletControl(OpenTTY midlet, String command, int id) {
         this.midlet = midlet;
         this.id = id;
-        asking_user = midlet.username.equals(""); // Fixed: Delegate
-        asking_passwd = midlet.passwd().equals(""); // Fixed: Assume midlet has passwd() or delegate
         MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
 
-        history = (Vector) midlet.getobject("1", "history"); // Fixed: Delegate
-        sessions = (Hashtable) midlet.getobject("1", "sessions"); // Fixed: Delegate
-        PID = midlet.genpid(); // Fixed: Delegate
+        history = (Vector) midlet.getobject("1", "history"); 
+        sessions = (Hashtable) midlet.getobject("1", "sessions"); 
+        PID = midlet.genpid(); 
 
         if (MOD == MONITOR) {
             monitor = new Form(midlet.form.getTitle());
