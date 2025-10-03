@@ -425,7 +425,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
 
                     midlet.display.setCurrent(midlet.form);
                     midlet.processCommand(". /home/.initrc");
-                    setLabel(); 
+                    midlet.setLabel(); 
                 }
             } 
             else if (c == EXIT) { midlet.processCommand("exit", false); }
@@ -434,7 +434,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             String password = PASSWD.getString().trim();
 
             if (password.equals("")) { } 
-            else if (String.valueOf(password.hashCode()).equals(passwd())) { midlet.processCommand("xterm"); midlet.processCommand(command, true, id); setLabel(); } 
+            else if (String.valueOf(password.hashCode()).equals(passwd())) { midlet.processCommand("xterm"); midlet.processCommand(command, true, id); midlet.setLabel(); } 
             else { PASSWD.setString(""); midlet.warnCommand(monitor.getTitle(), "Wrong password"); }
         } 
         else if (MOD == NC) {
