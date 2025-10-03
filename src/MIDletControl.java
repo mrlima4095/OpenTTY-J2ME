@@ -674,8 +674,8 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
                             else { files.addElement(name); }
                         }
 
-                        while (!dirs.isEmpty()) { preview.append(midlet.getFirstString(dirs), null); dirs.removeElementAt(0); }
-                        while (!files.isEmpty()) { preview.append(midlet.getFirstString(files), null); files.removeElementAt(0); }
+                        while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), null); dirs.removeElementAt(0); }
+                        while (!files.isEmpty()) { preview.append(getFirstString(files), null); files.removeElementAt(0); }
 
                         CONN.close();
                     } else if (midlet.path.startsWith("/home/")) { 
