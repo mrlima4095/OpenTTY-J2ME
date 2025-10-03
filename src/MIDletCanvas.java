@@ -3,6 +3,7 @@ import javax.microedition.io.*;
 import java.util.*;
 import java.io.*;
 // |
+// MIDletCanvas
 public class MIDletCanvas extends Canvas implements CommandListener { 
     private OpenTTY midlet;
     private Hashtable PKG; 
