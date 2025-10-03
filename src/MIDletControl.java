@@ -83,7 +83,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     public MIDletControl(OpenTTY midlet, String command) {
         this.midlet = midlet;
         asking_user = midlet.username.equals("");
-        asking_passwd = midlet.passwd().equals("");
+        asking_passwd = passwd().equals("");
         MOD = command == null || command.length() == 0 || command.equals("login") ? SIGNUP : REQUEST;
         monitor = new Form(midlet.form.getTitle());
 
