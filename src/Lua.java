@@ -1797,11 +1797,14 @@ public class Lua {
                     f.append(s);
 
                     if (ITEM == null) { ITEM = new Hashtable(); }
-                    if (STATE == null) { STATE = new Hashtable(); }
                     ITEM.put(s, rootObj);
                 }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
-                else if (type.equals("gauge")) { f.append(new Gauge(getvalue(field, "label", ""), getBoolean(field, "interactive", true), getNumber(field, "max", 100), getNumber(field, "value", 0))); } 
+                else if (type.equals("gauge")) { 
+                    f.append(new Gauge(getvalue(field, "label", ""), getBoolean(field, "interactive", true), getNumber(field, "max", 100), getNumber(field, "value", 0)));
+                    if (STATE == null) { STATE = new Hashtable(); }
+                    STATE.put(field.containsKey("root") ? field.get("root") : LUA_NIL);
+                } 
                 else if (type.equals("textfield")) { f.append(new TextField(getvalue(field, "label", midlet.stdin.getLabel()), getvalue(field, "value", ""), getNumber(field, "length", 256), getQuest(getenv(field, "mode", "default")))); }
                 else if (type.equals("choice")) { 
                     String choiceType = getvalue(field, "mode", "exclusive");
@@ -1826,7 +1829,9 @@ public class Lua {
                     f.append(cg);
 
                     if (ITEM == null) { ITEM = new Hashtable(); }
+                    if (STATE == null) { STATE = new Hashtable(); }
                     ITEM.put(cg, new Double(LTYPE));
+                    STATE.put(field.containsKey("root") ? field.get("root") : LUA_NIL);
                 } 
             } 
             else if (obj instanceof String) { f.append(toLuaString(obj)); }
@@ -2060,21 +2065,15 @@ public class Lua {
             try {
                 Object fire = STATE.get(item); 
                 
-                if (fire instanceof LuaFunction) { 
+                if (fire == LUA_NIL) { }
+                else if (fire instanceof LuaFunction) { 
                     Vector args = new Vector();
 
                     if (item instanceof ChoiceGroup) {
                         ChoiceGroup cg = (ChoiceGroup) item;
 
-                        if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) {
-                            Hashtable selTable = new Hashtable();
-                            for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
-
-                            args.addElement(selTable);
-                        } else {
-                            int sel = cg.getSelectedIndex();
-                            args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
-                        }
+                        if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) { for (int j = 0; j < cg.size(); j++) { args.addElement(new Boolean(cg.isSelected(j))); } } 
+                        else { int sel = cg.getSelectedIndex(); args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL); }
                     }
                     else if (item instanceof Gauge) { args.addElement(new Double(((Gauge) item).getValue())); }
 
