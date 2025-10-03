@@ -68,13 +68,17 @@ graphics = {
     WindowTitle = function (title, screen) end,
     SetTicker = function (text) end,
     getCurrent = function () end,
-    render = function (img) end
+    render = function (img) end,
+    append = function (screen, field) end,
+    xterm = ""
 }
 
 java = {
     class = function (name) return true end,
     getName = function () return "JVM" end
 }
+
+graphics.append(graphics.xterm, { type = "choice", label = "Modo:", options = { "Hetero", "LGBTQ+" }, root = function (mode) print("Escolheu o modo " .. mode) end })
 
 getAppProperty = function (field) end
 random = function (max) end

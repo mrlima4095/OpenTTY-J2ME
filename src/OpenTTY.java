@@ -714,7 +714,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(id == 1 ? "root" : username); }
         else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (id == 0) { return processCommand(argument, ignore, id); } else { new MIDletControl(argument); } }
         else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return argument.equals("") ? processCommand(". /bin/sh", false, id) : runScript(getcontent(argument), id); }
-        else if (mainCommand.equals("id")) { echoCommand(argument.equals("") ? ("" + id) : argument.equals("root") ? "0" : argument.equals(loadRMS("OpenRMS")) ? "1" : "id: " + argument + ": no such user"); }
+        else if (mainCommand.equals("id")) { echoCommand(argument.equals("") ? ("" + id) : argument.equals("root") ? "0" : argument.equals(loadRMS("OpenRMS")) ? "1" : ("id: " + argument + ": no such user")); }
         else if (mainCommand.equals("su")) { if (id == 0) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; processCommand("sh", false); } else { echoCommand("Permission denied!"); return 13; } }
         else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else { if (id == 0) { writeRMS("OpenRMS", String.valueOf(argument.hashCode()).getBytes(), 2); } else { echoCommand("Permission denied!"); return 13; } } }
         else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (id == 0) { writeRMS("/home/OpenRMS", ""); processCommand("exit", false); } else { echoCommand("Permission denied!"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
