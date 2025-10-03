@@ -1025,9 +1025,9 @@ public class Lua {
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
     // |
     // Lua Object
-    public class LuaFunction implements CommandListener, ItemCommandListener {
+    public class LuaFunction implements CommandListener, ItemCommandListener,ItemStateListener {
         private Vector params, bodyTokens;
-        private Hashtable closureScope, PKG, ITEM = null; 
+        private Hashtable closureScope, PKG, ITEM = null, STATE = null; 
         private int MOD = -1, LTYPE = -1;
         // | (Screen)
         private Displayable screen; 
@@ -1797,6 +1797,7 @@ public class Lua {
                     f.append(s);
 
                     if (ITEM == null) { ITEM = new Hashtable(); }
+                    if (STATE == null) { STATE = new Hashtable(); }
                     ITEM.put(s, rootObj);
                 }
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
@@ -2055,6 +2056,35 @@ public class Lua {
             catch (Error e) { midlet.trace.remove(PID); }
         }
         public void commandAction(Command c, Item item) { try { Object fire = ITEM.get(item); if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id); } } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, id); midlet.trace.remove(PID); } catch (Error e) { midlet.trace.remove(PID); } }
+        public void itemStateChanged(Item item) {
+            try {
+                Object fire = STATE.get(item); 
+                
+                if (fire instanceof LuaFunction) { 
+                    Vector args = new Vector();
+
+                    if (item instanceof ChoiceGroup) {
+                        ChoiceGroup cg = (ChoiceGroup) item;
+
+                        if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) {
+                            Hashtable selTable = new Hashtable();
+                            for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
+
+                            args.addElement(selTable);
+                        } else {
+                            int sel = cg.getSelectedIndex();
+                            args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
+                        }
+                    }
+                    else if (item instanceof Gauge) {
+
+                    }
+
+                    ((LuaFunction) fire).call(args); 
+                } 
+                else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id); } 
+            } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, id); midlet.trace.remove(PID); } catch (Error e) { midlet.trace.remove(PID); } 
+        }
     }
 } 
 // |
