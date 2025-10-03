@@ -174,7 +174,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         midlet.trace.put(PID, proc);
         new Thread(this, "NET").start();
     }
-    public MIDletControl(OpenTTY midlet, Form screen, String node, String code, int id) { this.midlet = midlet; this.node = node; this.id = id; if (code == null || code.length() == 0) { return; } PKG = midlet.parseProperties(code); if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { midlet.MIDletLogs("add error Malformed ITEM, missing params"); return; } RUN = new Command(midlet.getenv(node + ".label", ""), Command.ITEM, 1); s = new StringItem(null, midlet.getenv(node + ".label", ""), StringItem.BUTTON); s.setFont(midlet.newFont(midlet.getenv(node + ".style", "default")));  s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(RUN); s.setDefaultCommand(RUN); s.setItemCommandListener(this); screen.append(s); }
+    public MIDletControl(OpenTTY midlet, Form screen, String node, String code, int id) { this.midlet = midlet; this.node = node; this.id = id; if (code == null || code.length() == 0) { return; } PKG = midlet.parseProperties(code); if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { midlet.MIDletLogs("add error Malformed ITEM, missing params"); return; } RUN = new Command(getenv(node + ".label", ""), Command.ITEM, 1); s = new StringItem(null, getenv(node + ".label", ""), StringItem.BUTTON); s.setFont(midlet.newFont(getenv(node + ".style", "default")));  s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(RUN); s.setDefaultCommand(RUN); s.setItemCommandListener(this); screen.append(s); }
     public MIDletControl(OpenTTY midlet, int MOD, String code, int id) {
         this.midlet = midlet; this.MOD = MOD; this.id = id;
 
@@ -183,31 +183,31 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         PKG = midlet.parseProperties(code);
 
         if (MOD == SCREEN) {
-            monitor = new Form(midlet.getenv("screen.title", midlet.form.getTitle())); 
-            BACK = new Command(midlet.getenv("screen.back.label", "Back"), Command.OK, 1);
-            RUN = new Command(midlet.getenv("screen.button", "Menu"), Command.SCREEN, 2);
+            monitor = new Form(getenv("screen.title", midlet.form.getTitle())); 
+            BACK = new Command(getenv("screen.back.label", "Back"), Command.OK, 1);
+            RUN = new Command(getenv("screen.button", "Menu"), Command.SCREEN, 2);
             monitor.addCommand(BACK);
             if (PKG.containsKey("screen.button")) { monitor.addCommand(RUN); }
             if (PKG.containsKey("screen.fields")) {
-                String[] fields = midlet.split(midlet.getenv("screen.fields"), ','); 
+                String[] fields = midlet.split(getenv("screen.fields"), ','); 
 
                 for (int i = 0; i < fields.length; i++) {
                     String field = fields[i].trim();
-                    String type = midlet.getenv("screen." + field + ".type");
+                    String type = getenv("screen." + field + ".type");
 
-                    if (type.equals("image") && !midlet.getenv("screen." + field + ".img").equals("")) {
-                        try { monitor.append(new ImageItem(null, Image.createImage(midlet.getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
-                        catch (Exception e) { midlet.MIDletLogs("add warn Malformed Image '" + midlet.getenv("screen." + field + ".img") + "'"); }
+                    if (type.equals("image") && !getenv("screen." + field + ".img").equals("")) {
+                        try { monitor.append(new ImageItem(null, Image.createImage(getenv("screen." + field + ".img")), ImageItem.LAYOUT_CENTER, null)); } 
+                        catch (Exception e) { midlet.MIDletLogs("add warn Malformed Image '" + getenv("screen." + field + ".img") + "'"); }
                     } 
-                    else if (type.equals("text") && !midlet.getenv("screen." + field + ".value").equals("")) {
-                        StringItem content = new StringItem(midlet.getenv("screen." + field + ".label"), midlet.getenv("screen." + field + ".value"));
+                    else if (type.equals("text") && !getenv("screen." + field + ".value").equals("")) {
+                        StringItem content = new StringItem(getenv("screen." + field + ".label"), getenv("screen." + field + ".value"));
 
-                        content.setFont(midlet.newFont(midlet.getenv("screen." + field + ".style", "default"))); 
+                        content.setFont(midlet.newFont(getenv("screen." + field + ".style", "default"))); 
                         monitor.append(content);
                     } 
                     else if (type.equals("item")) { new MIDletControl(monitor, "screen." + field, code, id); } 
                     else if (type.equals("spacer")) {
-                        int width = Integer.parseInt(midlet.getenv("screen." + field + ".w", "1")), height = Integer.parseInt(midlet.getenv("screen." + field + ".h", "10"));
+                        int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10"));
                         monitor.append(new Spacer(width, height));
                     }
                 }
@@ -221,20 +221,20 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
 
             if (!PKG.containsKey("list.content")) { midlet.MIDletLogs("add error List crashed while init, malformed settings"); return; }
 
-            preview = new List(midlet.getenv("list.title", midlet.form.getTitle()), List.IMPLICIT);
+            preview = new List(getenv("list.title", midlet.form.getTitle()), List.IMPLICIT);
             if (PKG.containsKey("list.icon")) {
-                try { IMG = Image.createImage(midlet.getenv("list.icon")); } 
-                catch (Exception e) { midlet.MIDletLogs("add warn Malformed Image '" + midlet.getenv("list.icon") + "'"); }
+                try { IMG = Image.createImage(getenv("list.icon")); } 
+                catch (Exception e) { midlet.MIDletLogs("add warn Malformed Image '" + getenv("list.icon") + "'"); }
             }
 
-            preview.addCommand(BACK = new Command(midlet.getenv("list.back.label", "Back"), Command.OK, 1));
-            preview.addCommand(RUN = new Command(midlet.getenv("list.button", "Select"), Command.SCREEN, 2));
+            preview.addCommand(BACK = new Command(getenv("list.back.label", "Back"), Command.OK, 1));
+            preview.addCommand(RUN = new Command(getenv("list.button", "Select"), Command.SCREEN, 2));
 
-            String[] content = midlet.split(midlet.getenv("list.content"), ',');
+            String[] content = midlet.split(getenv("list.content"), ',');
             for (int i = 0; i < content.length; i++) { preview.append(content[i], IMG); }
 
             if (PKG.containsKey("list.source")) {
-                String source = midlet.getcontent(midlet.getenv("list.source"));
+                String source = midlet.getcontent(getenv("list.source"));
 
                 if (!source.equals("")) {
                     String[] lines = midlet.split(source, '\n'); 
@@ -258,11 +258,11 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         } 
         else if (MOD == QUEST) {
             if (!PKG.containsKey("quest.label") || !PKG.containsKey("quest.cmd") || !PKG.containsKey("quest.key")) { midlet.MIDletLogs("add error Quest crashed while init, malformed settings"); return; }
-            monitor = new Form(midlet.getenv("quest.title", midlet.form.getTitle())); 
+            monitor = new Form(getenv("quest.title", midlet.form.getTitle())); 
 
-            monitor.append(USER = new TextField(midlet.getenv("quest.label"), midlet.getenv("quest.content", ""), 256, getQuest(midlet.getenv("quest.type", ""))));
-            monitor.addCommand(BACK = new Command(midlet.getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2));
-            monitor.addCommand(RUN = new Command(midlet.getvalue("quest.cmd.label", "Send"), Command.OK, 1));
+            monitor.append(USER = new TextField(getenv("quest.label"), getenv("quest.content", ""), 256, getQuest(getenv("quest.type", ""))));
+            monitor.addCommand(BACK = new Command(getvalue("quest.back.label", "Cancel"), Command.SCREEN, 2));
+            monitor.addCommand(RUN = new Command(getvalue("quest.cmd.label", "Send"), Command.OK, 1));
 
             monitor.setCommandListener(this);
             midlet.display.setCurrent(monitor);
@@ -270,11 +270,11 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         else if (MOD == WEDIT) {
             if (!PKG.containsKey("edit.cmd") || !PKG.containsKey("edit.key")) { midlet.MIDletLogs("add error Editor crashed while init, malformed settings"); return; }
             
-            String content = PKG.containsKey("edit.content") ? midlet.getenv("edit.content") : PKG.containsKey("edit.source") ? midlet.getcontent(midlet.getenv("edit.source")) : "";
-            box = new TextBox(midlet.getenv("edit.title", midlet.form.getTitle()), content, 31522, getQuest(midlet.getenv("edit.type", ""))); 
+            String content = PKG.containsKey("edit.content") ? getenv("edit.content") : PKG.containsKey("edit.source") ? midlet.getcontent(getenv("edit.source")) : "";
+            box = new TextBox(getenv("edit.title", midlet.form.getTitle()), content, 31522, getQuest(getenv("edit.type", ""))); 
 
-            box.addCommand(BACK = new Command(midlet.getenv("edit.back.label", "Back"), Command.OK, 1));
-            box.addCommand(RUN = new Command(midlet.getenv("edit.cmd.label", "Run"), Command.SCREEN, 2));
+            box.addCommand(BACK = new Command(getenv("edit.back.label", "Back"), Command.OK, 1));
+            box.addCommand(RUN = new Command(getenv("edit.cmd.label", "Run"), Command.SCREEN, 2));
 
             box.setCommandListener(this);
             midlet.display.setCurrent(box);
@@ -474,14 +474,14 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
                 if (MOD == QUEST) {
                     String value = USER.getString().trim();
                     if (!value.equals("")) {
-                        midlet.attributes.put(midlet.getenv("quest.key"), midlet.env(value)); 
+                        midlet.attributes.put(getenv("quest.key"), midlet.env(value)); 
                         midlet.processCommand("xterm", true, id); 
                         midlet.processCommand(getvalue("quest.cmd", "true"), true, id); 
                     }
                 } else if (MOD == WEDIT) {
                     String value = box.getString().trim();
                     if (!value.equals("")) {
-                        midlet.attributes.put(midlet.getenv("edit.key"), midlet.env(value)); 
+                        midlet.attributes.put(getenv("edit.key"), midlet.env(value)); 
                         midlet.processCommand("xterm", true, id);
                         midlet.processCommand(getvalue("edit.cmd", "true"), true, id); 
                     }
@@ -490,11 +490,11 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
                     if (index >= 0) {
                         midlet.processCommand("xterm", true, id); 
                         String key = midlet.env(preview.getString(index)); 
-                        midlet.processCommand(midlet.getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, id); 
+                        midlet.processCommand(getvalue(key, "log add warn An error occurred, '" + key + "' not found"), true, id); 
                     }
                 } else if (MOD == SCREEN) {
                     midlet.processCommand("xterm", true, id); 
-                    midlet.processCommand(midlet.getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found"), true, id); 
+                    midlet.processCommand(getvalue("screen.button.cmd", "log add warn An error occurred, 'screen.button.cmd' not found"), true, id); 
                 }
             }
         }
