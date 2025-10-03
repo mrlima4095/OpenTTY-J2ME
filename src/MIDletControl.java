@@ -204,7 +204,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
                         content.setFont(midlet.newFont(getenv("screen." + field + ".style", "default"))); 
                         monitor.append(content);
                     } 
-                    else if (type.equals("item")) { new MIDletControl(monitor, "screen." + field, code, id); } 
+                    else if (type.equals("item")) { new MIDletControl(midlet, monitor, "screen." + field, code, id); } 
                     else if (type.equals("spacer")) {
                         int width = Integer.parseInt(getenv("screen." + field + ".w", "1")), height = Integer.parseInt(getenv("screen." + field + ".h", "10"));
                         monitor.append(new Spacer(width, height));
