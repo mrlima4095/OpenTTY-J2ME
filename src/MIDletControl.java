@@ -289,7 +289,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         if (c == BACK) {
             if (d == box || (d == monitor && MOD == EXPLORER)) { midlet.display.setCurrent(preview); } 
             else if (MOD == NC || MOD == PRSCAN || MOD == GOBUSTER) { back(); } 
-            else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == WEDIT) { midlet.processCommand("xterm"); midlet.processCommand(midlet.getvalue((MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit") + ".back", "true"), true, id); } 
+            else if (MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == WEDIT) { midlet.processCommand("xterm"); midlet.processCommand(getvalue((MOD == SCREEN ? "screen" : MOD == LIST ? "list" : MOD == QUEST ? "quest" : "edit") + ".back", "true"), true, id); } 
             else { midlet.processCommand("xterm"); }
             
             return;
@@ -476,14 +476,14 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
                     if (!value.equals("")) {
                         midlet.attributes.put(midlet.getenv("quest.key"), midlet.env(value)); 
                         midlet.processCommand("xterm", true, id); 
-                        midlet.processCommand(midlet.getvalue("quest.cmd", "true"), true, id); 
+                        midlet.processCommand(getvalue("quest.cmd", "true"), true, id); 
                     }
                 } else if (MOD == WEDIT) {
                     String value = box.getString().trim();
                     if (!value.equals("")) {
                         midlet.attributes.put(midlet.getenv("edit.key"), midlet.env(value)); 
                         midlet.processCommand("xterm", true, id);
-                        midlet.processCommand(midlet.getvalue("edit.cmd", "true"), true, id); 
+                        midlet.processCommand(getvalue("edit.cmd", "true"), true, id); 
                     }
                 } else if (MOD == LIST) {
                     int index = preview.getSelectedIndex();
