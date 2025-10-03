@@ -1124,47 +1124,43 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { }
             else {
                 for (int i = 0; i < args.length; i++) {
+                    String raw = args[i];
                     args[i] = args[i].startsWith("/") ? args[i] : path + args[i];
 
                     try {
-                        if (!file(args[i])) {
-                            echoCommand(argument + ": not found");
-                            return 127;
-                        }
+                        if (!file(args[i])) { echoCommand(raw + ": not found"); return 127; }
 
-                        if (args[i].endsWith("/")) { echoCommand(args[i] + ": directory"); }
+                        if (args[i].endsWith("/")) { echoCommand(raw + ": directory"); }
                         else if (args[i].startsWith("/home/")) { 
                             String[] info = getExtensionInfo(getExtension(args[i].substring(6)));
-                            echoCommand(args[i] + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
+                            echoCommand(raw + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
                         }
                         else if (args[i].startsWith("/mnt/")) {
                             FileConnection fc = (FileConnection) Connector.open("file:///" + args[i].substring(5), Connector.READ);
-                            if (fc.isDirectory()) { echoCommand(args[i] + ": directory"); } 
+                            if (fc.isDirectory()) { echoCommand(raw + ": directory"); } 
                             else { 
                                 String[] info = getExtensionInfo(getExtension(args[i]));
-                                echoCommand(argument + ": " + info[0] + ", " + info[2]);
+                                echoCommand(raw + ": " + info[0] + ", " + info[2]);
                             }
                             fc.close();
                         }
                         else if (args[i].startsWith("/tmp/")) {
                             String[] info = getExtensionInfo(getExtension(args[i].substring(5)));
-                            echoCommand(argument + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
+                            echoCommand(raw + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
                         }
                         else if (args[i].startsWith("/")) {
                             String parent = args[i].substring(0, args[i].lastIndexOf('/') + 1), name = args[i].substring(args[i].lastIndexOf('/') + 1);
 
-                            if (paths.containsKey(args[i] + "/")) { echoCommand(args[i] + ": directory"); }
-                            else if (parent.equals("/bin/")) { echoCommand(args[i] + ": Application, bin"); }
-                            else if (parent.equals("/dev/")) { echoCommand(args[i] + ": special device"); }
-                            else if (parent.equals("/lib/")) { echoCommand(args[i] + ": Shared package, text"); }
+                            if (paths.containsKey(args[i] + "/")) { echoCommand(raw + ": directory"); }
+                            else if (parent.equals("/bin/")) { echoCommand(raw + ": Application, bin"); }
+                            else if (parent.equals("/dev/")) { echoCommand(raw + ": special device"); }
+                            else if (parent.equals("/lib/")) { echoCommand(raw + ": Shared package, text"); }
                             else {
                                 String[] info = getExtensionInfo(getExtension(name));
-                                echoCommand(args[i] + ": " + (info[0].equals("Unknown") ? "ASCII text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
+                                echoCommand(raw + ": " + (info[0].equals("Unknown") ? "ASCII text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
                             }
                         }
-                        else { echoCommand(args[i] + ": unknown"); return 127; }
-
-                        return 0;
+                        else { echoCommand(raw + ": unknown"); return 127; }
                     } catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; }
                 }
             }
