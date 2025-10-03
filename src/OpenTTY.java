@@ -680,6 +680,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String[] args = splitArgs(getArgument(command));
 
         if (username.equals("root")) { id = 0; }
+        if (command.endsWith("&")) { return processCommand("bg " + command.substring(0, command.length() - 1), ignore, id); }
 
         if (mainCommand.equals("")) { }
 
