@@ -764,6 +764,8 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; }
     private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); }
     private String getenv(String key) { return midlet.env(getvalue(key, "")); }
+
+    private String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } 
 }
 // |
 // EOF
