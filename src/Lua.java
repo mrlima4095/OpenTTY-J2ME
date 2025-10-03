@@ -1802,6 +1802,7 @@ public class Lua {
                 else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
                 else if (type.equals("gauge")) { 
                     Gauge g = new Gauge(getvalue(field, "label", ""), getBoolean(field, "interactive", true), getNumber(field, "max", 100), getNumber(field, "value", 0));
+                    g.setItemStateListener(this);
                     f.append(g);
                     if (STATE == null) { STATE = new Hashtable(); }
                     STATE.put(g, field.containsKey("root") ? field.get("root") : LUA_NIL);
@@ -1827,6 +1828,7 @@ public class Lua {
                         }
                     }
 
+                    cg.setItemStateListener(this);
                     f.append(cg);
 
                     if (ITEM == null) { ITEM = new Hashtable(); }
