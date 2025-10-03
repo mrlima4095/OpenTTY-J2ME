@@ -425,7 +425,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
 
                     midlet.display.setCurrent(midlet.form);
                     midlet.processCommand(". /home/.initrc");
-                    midlet.setLabel(); 
+                    this.midlet.setLabel(); 
                 }
             } 
             else if (c == EXIT) { midlet.processCommand("exit", false); }
