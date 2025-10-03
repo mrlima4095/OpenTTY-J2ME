@@ -8,7 +8,7 @@ import java.io.*;
 // MIDlet Controller
 public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
     public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18;
-
+    // |
     private OpenTTY midlet;
     private int MOD = -1, COUNT = 1, id = 1000, start;
     private boolean ignore = true, asked = false, keep = false, asking_user = false, asking_passwd = false;
@@ -22,14 +22,16 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     private StringItem console, s;
     private TextField USER, PASSWD, remotein;
     private Command BACK = new Command("Back", Command.BACK, 1), RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, PROPERTY, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO, EXECUTE = midlet.EXECUTE, CLEAR = midlet.CLEAR;
-
+    // |
+    // Remote Objects
     private SocketConnection CONN;
     private ServerSocketConnection server = null;
     private InputStream IN;
     private OutputStream OUT;
-
+    // |
     private String[] wordlist;
-
+    // |
+    // MIDletControl Interfaces
     public MIDletControl(OpenTTY midlet, String command, int id) {
         this.midlet = midlet;
         this.id = id;
@@ -275,7 +277,8 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     }
     public MIDletControl(OpenTTY midlet, String name, String command, boolean ignore, int id) { this.midlet = midlet; this.MOD = BG; this.command = command; this.ignore = ignore; this.id = id; new Thread(this, name).start(); }
     public MIDletControl(OpenTTY midlet, String pid, String name, String command, boolean ignore, int id) { this.midlet = midlet; this.MOD = ADDON; this.PID = pid; this.command = command; this.ignore = ignore; this.id = id; new Thread(this, name).start(); }
-
+    // |
+    // LCDUI Listeners
     public void commandAction(Command c, Displayable d) {
         if (c == BACK) {
             if (d == box || (d == monitor && MOD == EXPLORER)) { midlet.display.setCurrent(preview); } 
@@ -491,7 +494,8 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         }
     }
     public void commandAction(Command c, Item item) { if (c == RUN) { midlet.processCommand("xterm", true, id); midlet.processCommand((String) PKG.get(node + ".cmd"), true, id); } }
-
+    // |
+    // Runnable Thread Interface
     public void run() {
         if (MOD == NC) {
             while (midlet.trace.containsKey(PID)) { 
@@ -626,12 +630,11 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             while (midlet.trace.containsKey(PID)) { if (midlet.processCommand(command, true, id) != 0) { midlet.kill(PID, false, id); } }
         }
     }
-
-    private void reload() {
-        if (midlet.attributes.containsKey("J2EMU")) { new MIDletControl(midlet, MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id); } 
-        else { load(); }
-    }
-
+    // |
+    // Module Loaders
+    // | (Reload)
+    private void reload() { if (midlet.attributes.containsKey("J2EMU")) { new MIDletControl(midlet, MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id); } else { load(); } }
+    // | (Load)
     private void load() {
         if (MOD == HISTORY) {
             if (preview != null) {
@@ -724,22 +727,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         } finally { try { if (H != null) H.close(); } catch (IOException x) { } }
     }
 
-    public static String passwd() {
-        try {
-            RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true);
-            if (RMS.getNumRecords() >= 2) {
-                byte[] data = RMS.getRecord(2);
-                if (data != null) {
-                    String result = new String(data);
-                    RMS.closeRecordStore();
-                    return result;
-                }
-            }
-            if (RMS != null) { RMS.closeRecordStore(); }
-        } catch (RecordStoreException e) { }
-
-        return "";
-    }
+    public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { String result = new String(data); RMS.closeRecordStore(); return result; } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
 
     public int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = midlet.replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; }
 
