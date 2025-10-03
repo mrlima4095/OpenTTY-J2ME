@@ -1,16 +1,9 @@
 import javax.microedition.lcdui.*;
-import javax.microedition.midlet.MIDlet;
-import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
-import javax.wireless.messaging.*;
-import javax.microedition.media.*;
 import javax.microedition.rms.*;
-import javax.microedition.pki.*;
 import javax.microedition.io.*;
-import javax.bluetooth.*;
 import java.util.*;
 import java.io.*;
-
 // |
 // MIDlet Controller
 public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
@@ -280,7 +273,6 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         } 
         else { return; }
     }
-
     public MIDletControl(OpenTTY midlet, String name, String command, boolean ignore, int id) { this.midlet = midlet; this.MOD = BG; this.command = command; this.ignore = ignore; this.id = id; new Thread(this, name).start(); }
     public MIDletControl(OpenTTY midlet, String pid, String name, String command, boolean ignore, int id) { this.midlet = midlet; this.MOD = ADDON; this.PID = pid; this.command = command; this.ignore = ignore; this.id = id; new Thread(this, name).start(); }
 
