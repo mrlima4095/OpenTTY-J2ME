@@ -757,10 +757,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             password = true;
             mode = midlet.replace(mode, "password", "").trim(); 
         }
-        int base = mode.equals("number") ? TextField.NUMERIC :
-                   mode.equals("email") ? TextField.EMAILADDR :
-                   mode.equals("phone") ? TextField.PHONENUMBER :
-                   mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY;
+        int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY;
         return password ? (base | TextField.PASSWORD) : base;
     }
 
