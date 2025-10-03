@@ -741,16 +741,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         return "";
     }
 
-    public int getQuest(String mode) {
-        if (mode == null || mode.length() == 0) { return TextField.ANY; }
-        boolean password = false;
-        if (mode.indexOf("password") != -1) {
-            password = true;
-            mode = midlet.replace(mode, "password", "").trim(); 
-        }
-        int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY;
-        return password ? (base | TextField.PASSWORD) : base;
-    }
+    public int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = midlet.replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; }
 
     private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; }
     private String getenv(String key, String fallback) { return midlet.env(getvalue(key, fallback)); }
