@@ -73,7 +73,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return name;
     }
     public void setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }
-
     // |
     // MIDlet Shell
     public int processCommand(String command) { return processCommand(command, true, 1); }
