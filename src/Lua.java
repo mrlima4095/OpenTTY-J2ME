@@ -247,7 +247,7 @@ public class Lua {
                     ((Hashtable) targetTable).put(key, value == null ? LUA_NIL : value);
                     return null;
                 } 
-                else if (peek().type == LPAREN) { return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope);  
+                else if (peek().type == LPAREN) { return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope); }
                 else { return null; }
             } 
             else if (peek().type == COLON) {
