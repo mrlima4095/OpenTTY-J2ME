@@ -587,19 +587,17 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
                     }
                 } 
                 catch (IOException e) { midlet.echoCommand("[-] " + midlet.getCatch(e)); if (COUNT == 1) { midlet.echoCommand("[-] Server crashed"); } } 
-                finally {
-                    try { if (IN != null) { IN.close(); } } catch (IOException e) { }
-                    try { if (OUT != null) { OUT.close(); } } catch (IOException e) { }
-                    try { if (CONN != null) { CONN.close(); } } catch (IOException e) { }
-                    try { if (server != null) { server.close(); } } catch (IOException e) { midlet.echoCommand("[-] " + midlet.getCatch(e)); break; }
-                    
-                    sessions.put(port, "nobody");
-                }
+                
+                try { if (IN != null) { IN.close(); } } catch (IOException e) { }
+                try { if (OUT != null) { OUT.close(); } } catch (IOException e) { }
+                try { if (CONN != null) { CONN.close(); } } catch (IOException e) { }
+                try { if (server != null) { server.close(); } } catch (IOException e) { midlet.echoCommand("[-] " + midlet.getCatch(e)); break; }
+                
+                sessions.put(port, "nobody");
             }
 
             midlet.trace.remove(PID); sessions.remove(port);
-            midlet.echoCommand("[-] Server stopped"); 
-            midlet.MIDletLogs("add info Server was stopped"); 
+            midlet.echoCommand("[-] Server stopped"); midlet.MIDletLogs("add info Server was stopped"); 
         } 
         else if (MOD == BG) { midlet.processCommand(command, ignore, id); } 
         else if (MOD == ADDON) { while (midlet.trace.containsKey(PID)) { if (midlet.processCommand(command, true, id) != 0) { midlet.kill(PID, false, id); } } }
