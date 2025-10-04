@@ -157,4 +157,4 @@
 [2025-1.17-02x87] Run '.initrc' considering shebang
 [2025-1.17-02x88] New 'api.require' node - devicefs
 [2025-1.17-02x89] Added command 'id' | Internal identifier for root as (id: 0)
-[2025-1.17-02x90]
+[2025-1.17-02x90] UID Support Structure

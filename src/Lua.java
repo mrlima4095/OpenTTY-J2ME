@@ -15,7 +15,7 @@ public class Lua {
     private int id = 1, tokenIndex, status = 0, loopDepth = 0;
     // |
     public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, RANDOM = 12, EXEC = 13, GETENV = 14, CLOCK = 15, SETLOC = 16, EXIT = 17, DATE = 18, GETPID = 19, SETPROC = 20, GETPROC = 21, READ = 22, WRITE = 23, CLOSE = 24, TB_INSERT = 25, TB_CONCAT = 26, TB_REMOVE = 27, TB_SORT = 28, TB_MOVE = 29, TB_UNPACK = 30, TB_PACK = 31, TB_DECODE = 32, HTTP_GET = 33, HTTP_POST = 34, CONNECT = 35, PEER = 36, DEVICE = 37, SERVER = 38, ACCEPT = 39, ALERT = 40, SCREEN = 41, LIST = 42, QUEST = 43, EDIT = 44, TITLE = 45, TICKER = 46, WTITLE = 47, DISPLAY = 48, APPEND = 49, UPPER = 50, LOWER = 51, LEN = 52, MATCH = 53, REVERSE = 54, SUB = 55, HASH = 56, BYTE = 57, CHAR = 58, TRIM = 59, GETCWD = 60, OPEN = 61, GETCURRENT = 62, IMG = 63, CLASS = 64, NAME = 65;
-    public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47;
+    public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
     public static final Object LUA_NIL = new Object();
     // |
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
@@ -105,7 +105,7 @@ public class Lua {
                 else if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; } 
                 else { tokens.addElement(new Token(DOT, ".")); i++; }
             }
-            else if (c == ':') { tokens.addElement(new Token(DOT, ".")); i++; }
+            else if (c == ':') { tokens.addElement(new Token(COLON, ":")); i++; }
 
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
                 StringBuffer sb = new StringBuffer();
@@ -216,7 +216,6 @@ public class Lua {
                 values.addElement(expression(scope));
                 while (peek().type == COMMA) { consume(COMMA); values.addElement(expression(scope)); }
 
-                // Expansão da última expressão caso seja Vector (para múltiplos retornos)
                 Vector assignValues = new Vector();
                 for (int i = 0; i < values.size(); i++) {
                     Object v = values.elementAt(i);
@@ -243,7 +242,6 @@ public class Lua {
                 if (!(targetTable instanceof Hashtable)) { throw new Exception("Attempt to index non-table value"); }
 
                 if (peek().type == ASSIGN) {
-                    // t.a = expr
                     consume(ASSIGN);
                     Object value = expression(scope);
                     ((Hashtable) targetTable).put(key, value == null ? LUA_NIL : value);
@@ -252,6 +250,18 @@ public class Lua {
                 else if (peek().type == LPAREN) { return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope);  
                 else { return null; }
             } 
+            else if (peek().type == COLON) {
+                Object self = unwrap(scope.get(varName));
+                if (self == null && globals.containsKey(varName)) { self = unwrap(globals.get(varName)); }
+                if (self == null) { throw new Exception("attempt to call method on nil value: " + varName); }
+                consume(COLON);
+                String methodName = (String) consume(IDENTIFIER).value;
+                if (!(self instanceof Hashtable)) { throw new Exception("attempt to index non-table for method: " + varName); }
+                Object methodObj = unwrap(((Hashtable) self).get(methodName));
+                if (methodObj == null) { throw new Exception("method '" + methodName + "' not found in " + varName); }
+
+                return callMethod(self, methodObj, methodName, scope);
+            }
             else {
                 if (peek().type == ASSIGN) {
                     consume(ASSIGN);
@@ -761,8 +771,17 @@ public class Lua {
 
                 value = unwrap(((Hashtable)value).get(key));
             }
-
-            if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
+            if (peek().type == COLON) {
+                consume(COLON);
+                String methodName = (String) consume(IDENTIFIER).value;
+                
+                if (!(value instanceof Hashtable)) { throw new Exception("attempt to call method on non-table: " + methodName); }
+                Object methodObj = unwrap(((Hashtable) value).get(methodName));
+                if (methodObj == null) { throw new Exception("method '" + methodName + "' not found"); }
+                
+                return callMethod(value, methodObj, methodName, scope);
+            }
+            else if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
         }
@@ -829,7 +848,8 @@ public class Lua {
 
         throw new Exception("Unexpected token at factor: " + current.toString());
     }
-
+    // |
+    // Call LuaFunction
     private Object callFunction(String funcName, Hashtable scope) throws Exception {
         consume(LPAREN);
         Vector args = new Vector();
@@ -857,13 +877,31 @@ public class Lua {
         if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
-
+    // |
+    private Object callMethod(Object self, Object methodObj, String methodName, Hashtable scope) throws Exception {
+        consume(LPAREN);
+        Vector args = new Vector();
+        
+        args.addElement(self);
+        if (peek().type != RPAREN) {
+            args.addElement(expression(scope));
+            while (peek().type == COMMA) { 
+                consume(COMMA); 
+                args.addElement(expression(scope)); 
+            }
+        }
+        consume(RPAREN);
+        if (methodObj instanceof LuaFunction) { return ((LuaFunction) methodObj).call(args); } 
+        else { throw new Exception("attempt to call non-function as method: " + methodName); }
+    }
+    // |
+    // Handling NullPointers
     private Object wrap(Object v) { return v == null ? LUA_NIL : v; }
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
-
+    // |
     private void skipIfBodyUntilElsePart() throws Exception { int depth = 1; while (true) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; if (depth == 0) { tokenIndex--; return; } } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) { tokenIndex--; return; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } }
     private void skipUntilMatchingEnd() throws Exception { int depth = 1; while (depth > 0) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } tokenIndex--; }
-
+    // |
     private boolean isTruthy(Object value) { if (value == null || value == LUA_NIL) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
         Object table = unwrap(scope.get(varName));
