@@ -112,41 +112,33 @@ public class Lua {
                 boolean hasDecimal = false;
                 while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
                     if (code.charAt(i) == '.') {
-                        if (hasDecimal) break;
-                        // Verifica se ".." logo após o ponto
-                        if (i + 1 < code.length() && code.charAt(i + 1) == '.') break;
+                        if (hasDecimal) { break; }
+                        if (i + 1 < code.length() && code.charAt(i + 1) == '.') { break; }
                         hasDecimal = true;
                     }
                     sb.append(code.charAt(i));
                     i++;
                 }
-                try {
-                    double numValue = Double.parseDouble(sb.toString());
-                    tokens.addElement(new Token(NUMBER, new Double(numValue)));
-                } 
+                try { double numValue = Double.parseDouble(sb.toString()); tokens.addElement(new Token(NUMBER, new Double(numValue))); } 
                 catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
                 continue;
             }
             else if (c == '-' && i + 1 < code.length() && (isDigit(code.charAt(i + 1)) || (code.charAt(i + 1) == '.' && i + 2 < code.length() && isDigit(code.charAt(i + 2))))) {
-                i++; // Pula o sinal negativo
+                i++; 
                 StringBuffer sb = new StringBuffer();
-                sb.append('-'); // Adiciona o sinal negativo
+                sb.append('-'); 
                 
                 boolean hasDecimal = false;
                 while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
                     if (code.charAt(i) == '.') {
-                        if (hasDecimal) break;
-                        // Verifica se ".." logo após o ponto
-                        if (i + 1 < code.length() && code.charAt(i + 1) == '.') break;
+                        if (hasDecimal) { break; }
+                        if (i + 1 < code.length() && code.charAt(i + 1) == '.') { break; }
                         hasDecimal = true;
                     }
                     sb.append(code.charAt(i));
                     i++;
                 }
-                try {
-                    double numValue = Double.parseDouble(sb.toString());
-                    tokens.addElement(new Token(NUMBER, new Double(numValue)));
-                } 
+                try { double numValue = Double.parseDouble(sb.toString()); tokens.addElement(new Token(NUMBER, new Double(numValue))); } 
                 catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
             }
 
@@ -195,38 +187,23 @@ public class Lua {
         if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); } 
 
         if (current.type == IDENTIFIER) {
-            // lookahead seguro: verifica se o padrão é IDENT (COMMA IDENT)* ASSIGN
             int la = 0;
             boolean patternIsMultiAssign = false;
             if (tokenIndex + la < tokens.size() && ((Token)tokens.elementAt(tokenIndex + la)).type == IDENTIFIER) {
-                la++; // passou o primeiro IDENT
-                // consumir pares ", IDENT"
+                la++; 
                 while (tokenIndex + la < tokens.size() && ((Token)tokens.elementAt(tokenIndex + la)).type == COMMA) {
-                    // next after comma must be IDENT, senão não é múltipla atribuição
                     if (!(tokenIndex + la + 1 < tokens.size() && ((Token)tokens.elementAt(tokenIndex + la + 1)).type == IDENTIFIER)) {
                         patternIsMultiAssign = false;
                         break;
                     }
-                    la += 2; // pulando ", IDENT"
+                    la += 2; 
                 }
-                // depois disso, se houver ASSIGN, então é atribuição múltipla
-                if (tokenIndex + la < tokens.size() && ((Token)tokens.elementAt(tokenIndex + la)).type == ASSIGN) {
-                    patternIsMultiAssign = true;
-                }
+                if (tokenIndex + la < tokens.size() && ((Token)tokens.elementAt(tokenIndex + la)).type == ASSIGN) { patternIsMultiAssign = true; }
             }
 
-            // Caso 1: chamada direta: foo(...)
-            // (se o próximo token for LPAREN e NÃO faz parte de atribuição múltipla)
-            Token next = (tokenIndex + 1 < tokens.size()) ? (Token) tokens.elementAt(tokenIndex + 1) : new Token(EOF, "EOF");
-            if (!patternIsMultiAssign && next.type == LPAREN) {
-                String funcName = (String) consume(IDENTIFIER).value;
-                callFunction(funcName, scope); // consome os parênteses e argumentos
-                return null;
-            }
-
-            // Caso: atribuição múltipla detectada
+            Token next = peekNext(); // (tokenIndex + 1 < tokens.size()) ? (Token) tokens.elementAt(tokenIndex + 1) : new Token(EOF, "EOF");
+            if (!patternIsMultiAssign && next.type == LPAREN) { String funcName = (String) consume(IDENTIFIER).value; callFunction(funcName, scope); return null; }
             if (patternIsMultiAssign) {
-                // Parse lista de variáveis (lado esquerdo)
                 Vector varNames = new Vector();
                 varNames.addElement(((Token) consume(IDENTIFIER)).value);
                 while (peek().type == COMMA) {
@@ -235,13 +212,9 @@ public class Lua {
                 }
                 consume(ASSIGN);
 
-                // Parse lista de expressões (lado direito)
                 Vector values = new Vector();
                 values.addElement(expression(scope));
-                while (peek().type == COMMA) {
-                    consume(COMMA);
-                    values.addElement(expression(scope));
-                }
+                while (peek().type == COMMA) { consume(COMMA); values.addElement(expression(scope)); }
 
                 // Expansão da última expressão caso seja Vector (para múltiplos retornos)
                 Vector assignValues = new Vector();
@@ -249,23 +222,19 @@ public class Lua {
                     Object v = values.elementAt(i);
                     if (i == values.size() - 1 && v instanceof Vector) {
                         Vector expanded = (Vector) v;
-                        for (int j = 0; j < expanded.size(); j++)
-                            assignValues.addElement(expanded.elementAt(j));
-                    } else {
-                        assignValues.addElement(v);
-                    }
+                        for (int j = 0; j < expanded.size(); j++) { assignValues.addElement(expanded.elementAt(j)); }
+                    } 
+                    else { assignValues.addElement(v); }
                 }
 
                 for (int i = 0; i < varNames.size(); i++) {
                     String v = (String) varNames.elementAt(i);
                     Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
-                    // armazenar LUA_NIL se val == null
                     scope.put(v, val == null ? LUA_NIL : val);
                 }
                 return null;
             }
 
-            // Caso 2: identifier seguido de . ou [ -> pode ser atribuição em tabela OU chamada de função: t.a = ... OU t.a(...)
             String varName = (String) consume(IDENTIFIER).value;
             if (peek().type == DOT || peek().type == LBRACKET) {
                 Object[] pair = resolveTableAndKey(varName, scope);
@@ -279,28 +248,19 @@ public class Lua {
                     Object value = expression(scope);
                     ((Hashtable) targetTable).put(key, value == null ? LUA_NIL : value);
                     return null;
-                } else if (peek().type == LPAREN) {
-                    // t.a(...) -> chamar função armazenada em t[a]
-                    Object funcObj = unwrap(((Hashtable) targetTable).get(key));
-                    return callFunctionObject(funcObj, scope);
-                } else {
-                    // Apenas acesso a campo como statement: ignore/avalie se quiser
-                    return null;
-                }
-            } else {
-                // Caso 3: atribuição simples: a = expr
+                } 
+                else if (peek().type == LPAREN) { return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope);  
+                else { return null; }
+            } 
+            else {
                 if (peek().type == ASSIGN) {
                     consume(ASSIGN);
                     Object value = expression(scope);
                     scope.put(varName, value == null ? LUA_NIL : value);
                     return null;
-                } else if (peek().type == LPAREN) {
-                    // chamada de função usando nome simples: foo(...)
-                    return callFunction(varName, scope);
-                } else {
-                    // referência isolada como statement (ex: apenas "x" numa linha) - no momento ignora
-                    return null;
-                }
+                } 
+                else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
+                else { return null; }
             }
         }
 
@@ -338,18 +298,14 @@ public class Lua {
 
             if (peek().type == ELSE) {
                 consume(ELSE);
-                if (!taken) {
-                    while (peek().type != END) { 
-                        result = statement(scope); 
-                        if (doreturn) { return result; }
-                    }
-                } 
+                if (!taken) { while (peek().type != END) {  result = statement(scope); if (doreturn) { return result; } } } 
                 else { skipUntilMatchingEnd(); }
             }
 
             consume(END);
             return result;
         }
+        
         else if (current.type == FOR) {
             consume(FOR);
 
@@ -361,7 +317,6 @@ public class Lua {
                 String name = (String) consume(IDENTIFIER).value;
 
                 if (peek().type == ASSIGN) {
-                    // for numérico
                     consume(ASSIGN);
                     Object a = expression(scope);
                     consume(COMMA);
@@ -387,9 +342,7 @@ public class Lua {
                         if (depth > 0) bodyTokens.addElement(tk);
                     }
 
-                    double iVal = start.doubleValue();
-                    double stopVal = stop.doubleValue();
-                    double stepVal = step.doubleValue();
+                    double iVal = start.doubleValue(), stopVal = stop.doubleValue(), stepVal = step.doubleValue();
 
                     while ((stepVal > 0 && iVal <= stopVal) || (stepVal < 0 && iVal >= stopVal)) {
                         if (breakLoop) { breakLoop = false; break; }
@@ -411,14 +364,15 @@ public class Lua {
                         tokenIndex = originalTokenIndex;
                         tokens = originalTokens;
 
-                        if (ret != null) return ret;
+                        if (ret != null) { return ret; }
 
                         iVal += stepVal;
                     }
 
                     loopDepth--;
                     return null;
-                } else {
+                } 
+                else {
                     tokenIndex = save;
                     Vector names = new Vector();
                     names.addElement(((Token) consume(IDENTIFIER)).value);
@@ -528,9 +482,9 @@ public class Lua {
                     int depth = 1;
                     while (depth > 0) {
                         Token token = consume();
-                        if (token.type == IF || token.type == WHILE || token.type == FUNCTION || token.type == FOR) depth++;
-                        else if (token.type == END) depth--;
-                        else if (token.type == EOF) throw new RuntimeException("Unmatched 'while' statement: Expected 'end'");
+                        if (token.type == IF || token.type == WHILE || token.type == FUNCTION || token.type == FOR) { depth++; }
+                        else if (token.type == END) { depth--; }
+                        else if (token.type == EOF) { throw new RuntimeException("Unmatched 'while' statement: Expected 'end'"); }
                     }
                     endAlreadyConsumed = true; 
                     break;
@@ -575,16 +529,8 @@ public class Lua {
                 while (peek().type != UNTIL) {
                     result = statement(scope);
 
-                    if (breakLoop) {
-                        breakLoop = false;
-                        while (peek().type != UNTIL && peek().type != EOF) { consume(); }
-                        break;
-                    }
-                    if (doreturn) {
-                        while (peek().type != UNTIL && peek().type != EOF) { consume(); }
-                        loopDepth--;
-                        return result;
-                    }
+                    if (breakLoop) { breakLoop = false; while (peek().type != UNTIL && peek().type != EOF) { consume(); } break; }
+                    if (doreturn) { while (peek().type != UNTIL && peek().type != EOF) { consume(); } loopDepth--; return result; }
                 }
 
                 consume(UNTIL);
@@ -601,7 +547,6 @@ public class Lua {
             consume(FUNCTION);
             String funcName = (String) consume(IDENTIFIER).value;
 
-            // Verifica se é atribuição em tabela: x.y ou x[y]
             boolean isTableAssignment = (peek().type == DOT || peek().type == LBRACKET);
             Object targetTable = null, key = null;
 
@@ -627,15 +572,14 @@ public class Lua {
             }
             consume(RPAREN);
 
-            // Captura corpo da função até o END correspondente
             Vector bodyTokens = new Vector();
             int depth = 1;
             while (depth > 0) {
                 Token token = consume();
-                if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) depth++;
-                else if (token.type == END) depth--;
-                else if (token.type == EOF) throw new RuntimeException("Unmatched 'function' statement: Expected 'end'");
-                if (depth > 0) bodyTokens.addElement(token);
+                if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) { depth++; }
+                else if (token.type == END) { depth--; }
+                else if (token.type == EOF) { throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); }
+                if (depth > 0) { bodyTokens.addElement(token); }
             }
 
             LuaFunction func = new LuaFunction(params, bodyTokens, scope);
@@ -647,96 +591,69 @@ public class Lua {
         } 
         else if (current.type == LOCAL) {
             consume(LOCAL);
+
             if (peek().type == FUNCTION) {
                 consume(FUNCTION);
                 String funcName = (String) consume(IDENTIFIER).value;
-                // Leitura dos parâmetros da função, aceitando vararg
+
                 consume(LPAREN);
                 Vector params = new Vector();
                 while (true) {
                     int t = peek().type;
-                    if (t == IDENTIFIER) {
-                        params.addElement(consume(IDENTIFIER).value);
-                    } else if (t == VARARG) {
-                        consume(VARARG);
-                        params.addElement("...");
-                        break; // vararg deve ser o último parâmetro
-                    } else {
-                        break;
-                    }
-                    if (peek().type == COMMA) {
-                        consume(COMMA);
-                    } else {
-                        break;
-                    }
+                    if (t == IDENTIFIER) { params.addElement(consume(IDENTIFIER).value); } 
+                    else if (t == VARARG) { consume(VARARG); params.addElement("..."); break; } 
+                    else { break; }
+
+                    if (peek().type == COMMA) { consume(COMMA); } 
+                    else { break; }
                 }
                 consume(RPAREN);
-                // Captura o corpo da função até o END correspondente
+    
                 Vector bodyTokens = new Vector();
                 int depth = 1;
                 while (depth > 0) {
                     Token token = consume();
-                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) {
-                        depth++;
-                    } else if (token.type == END) {
-                        depth--;
-                    } else if (token.type == EOF) {
-                        throw new Exception("Unmatched 'function' statement: Expected 'end'");
-                    }
-                    if (depth > 0) {
-                        bodyTokens.addElement(token);
-                    }
+                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) { depth++; } 
+                    else if (token.type == END) { depth--; } 
+                    else if (token.type == EOF) { throw new Exception("Unmatched 'function' statement: Expected 'end'"); }
+
+                    if (depth > 0) { bodyTokens.addElement(token); }
                 }
-                // Cria a função e adiciona no escopo local
+
                 LuaFunction func = new LuaFunction(params, bodyTokens, scope);
                 scope.put(funcName, func);
                 return null;
-            } else {
-                // Novo: suportar múltiplas declarações locais: local a, b, c = expr1, expr2, expr3
+            } 
+            else {
                 Vector varNames = new Vector();
-                // deve haver ao menos um IDENTIFIER
+
                 varNames.addElement(((Token) consume(IDENTIFIER)).value);
-                while (peek().type == COMMA) {
-                    consume(COMMA);
-                    varNames.addElement(((Token) consume(IDENTIFIER)).value);
-                }
-        
-                // Se houver atribuição, parsear lista de expressões
+                while (peek().type == COMMA) { consume(COMMA); varNames.addElement(((Token) consume(IDENTIFIER)).value); }
+
                 if (peek().type == ASSIGN) {
                     consume(ASSIGN);
                     Vector values = new Vector();
                     values.addElement(expression(scope));
-                    while (peek().type == COMMA) {
-                        consume(COMMA);
-                        values.addElement(expression(scope));
-                    }
+                    while (peek().type == COMMA) { consume(COMMA); values.addElement(expression(scope)); }
         
-                    // Expansão da última expressão caso seja Vector (para múltiplos retornos)
                     Vector assignValues = new Vector();
                     for (int i = 0; i < values.size(); i++) {
                         Object v = values.elementAt(i);
                         if (i == values.size() - 1 && v instanceof Vector) {
                             Vector expanded = (Vector) v;
-                            for (int j = 0; j < expanded.size(); j++)
-                                assignValues.addElement(expanded.elementAt(j));
-                        } else {
-                            assignValues.addElement(v);
-                        }
+                            for (int j = 0; j < expanded.size(); j++) { assignValues.addElement(expanded.elementAt(j)); }
+                        } 
+                        else { assignValues.addElement(v);}
                     }
-        
-                    // Atribui aos nomes locais (se faltar valor, coloca null)
+
                     for (int i = 0; i < varNames.size(); i++) {
                         String v = (String) varNames.elementAt(i);
                         Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
                         scope.put(v, val == null ? LUA_NIL : val);
                     }
-                } else {
-                    // Sem '=', inicializa todos como nil (LUA_NIL)
-                    for (int i = 0; i < varNames.size(); i++) {
-                        String v = (String) varNames.elementAt(i);
-                        scope.put(v, LUA_NIL);
-                    }
-                }
+                } 
+                else { for (int i = 0; i < varNames.size(); i++) { String v = (String) varNames.elementAt(i); scope.put(v, LUA_NIL); } }
+
                 return null;
             }
         }
@@ -759,10 +676,10 @@ public class Lua {
     // |
     // Arithmetic
     private Object arithmetic(Hashtable scope) throws Exception {
-        Object left = term(scope); // Chama o novo método
+        Object left = term(scope); 
         while (peek().type == PLUS || peek().type == MINUS) {
             Token op = consume();
-            Object right = term(scope); // Chama o novo método
+            Object right = term(scope); 
             if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
 
             double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
@@ -772,13 +689,11 @@ public class Lua {
         return left;
     }
     private Object term(Hashtable scope) throws Exception {
-        Object left = exponentiation(scope); // Agora chama exponentiation em vez de factor
+        Object left = exponentiation(scope);
         while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
             Token op = consume();
-            Object right = exponentiation(scope); // Agora chama exponentiation em vez de factor
-            if (!(left instanceof Double) || !(right instanceof Double)) {
-                throw new ArithmeticException("Arithmetic operation on non-number types.");
-            }
+            Object right = exponentiation(scope);r
+            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
             double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
 
             if (op.type == MULTIPLY) { left = new Double(lVal * rVal); } 
@@ -792,40 +707,27 @@ public class Lua {
         while (peek().type == POWER) {
             consume(POWER);
             Object right = factor(scope);
-            if (!(left instanceof Double) || !(right instanceof Double)) { 
-                throw new ArithmeticException("Arithmetic operation on non-number types."); 
-            }
+            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types.");  }
 
-            double base = ((Double) left).doubleValue();
-            double exponent = ((Double) right).doubleValue();
-            
-            double result;
-            if (exponent == 0) {
-                result = 1; // Qualquer número elevado a 0 é 1
-            } else if (exponent == 0.5) {
-                // Caso especial: raiz quadrada
-                if (base < 0) { throw new ArithmeticException("Square root of negative number."); }
-                result = Math.sqrt(base);
-            } else if (exponent < 0 && Math.floor(exponent) == exponent) {
-                // Expoente negativo inteiro
+            double base = ((Double) left).doubleValue(), exponent = ((Double) right).doubleValue(), result;
+
+            if (exponent == 0) { result = 1; } 
+            else if (exponent == 0.5) { if (base < 0) { throw new ArithmeticException("Square root of negative number."); } result = Math.sqrt(base); } 
+            else if (exponent < 0 && Math.floor(exponent) == exponent) {
                 base = 1 / base;
                 exponent = -exponent;
                 result = 1;
-                for (int i = 0; i < (int) exponent; i++) {
-                    result *= base;
-                }
-            } else if (Math.floor(exponent) == exponent) {
-                // Expoente positivo inteiro
-                result = 1;
                 for (int i = 0; i < (int) exponent; i++) { result *= base; }
             } 
+            else if (Math.floor(exponent) == exponent) { result = 1; for (int i = 0; i < (int) exponent; i++) { result *= base; } } 
             else { throw new ArithmeticException("Fractional exponent not supported: " + exponent); }
 
             left = new Double(result);
         }
         return left;
     }
-
+    // |
+    // Build Objects
     private Object factor(Hashtable scope) throws Exception {
         Token current = peek();
         
@@ -837,7 +739,7 @@ public class Lua {
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
         else if (current.type == LENGTH) {
             consume(LENGTH);
-            Object val = factor(scope); // aplica o operador unário ao próximo fator
+            Object val = factor(scope);
             if (val == null || val instanceof Boolean) throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value");
             if (val instanceof String) { return new Double(((String) val).length()); } 
             else if (val instanceof Hashtable) { return new Double(((Hashtable) val).size()); } 
@@ -849,31 +751,17 @@ public class Lua {
             Object value = unwrap(scope.get(name));
             if (value == null && scope == globals == false) { }
             if (value == null && globals.containsKey(name)) { value = unwrap(globals.get(name)); }
-            // Leitura de campos encadeados: t.a.b  e/ou t["x"]
             while (peek().type == LBRACKET || peek().type == DOT) {
                 Object key = null;
-                if (peek().type == LBRACKET) {
-                    consume(LBRACKET);
-                    key = expression(scope);
-                    consume(RBRACKET);
-                } else { // DOT
-                    consume(DOT);
-                    Token fieldToken = consume(IDENTIFIER);
-                    key = (String) fieldToken.value;
-                }
+                if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); } 
+                else { consume(DOT); key = (String) consume(IDENTIFIER).value; }
 
-                if (value == null) {
-                    // No Lua, ler campo de nil retorna nil
-                    return null;
-                }
-                if (!(value instanceof Hashtable)) {
-                    // No Lua, tentar indexar não-table lança erro
-                    throw new Exception("attempt to index a non-table value");
-                }
+                if (value == null) { return null; }
+                if (!(value instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
+
                 value = unwrap(((Hashtable)value).get(key));
             }
 
-            // Se o próximo token for parênteses, chamamos a função (value deve ser um LuaFunction)
             if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
@@ -881,50 +769,33 @@ public class Lua {
         else if (current.type == FUNCTION) {
             consume(FUNCTION);
 
-            // Parâmetros
             consume(LPAREN);
             Vector params = new Vector();
             while (true) {
                 int t = peek().type;
 
-                if (t == IDENTIFIER) {
-                    params.addElement(consume(IDENTIFIER).value);
-                } else if (t == VARARG) {
-                    consume(VARARG);
-                    params.addElement("...");
-                    break; // vararg deve ser o último parâmetro
-                } else {
-                    break;
-                }
+                if (t == IDENTIFIER) { params.addElement(consume(IDENTIFIER).value); } 
+                else if (t == VARARG) { consume(VARARG); params.addElement("..."); break; } 
+                else { break; }
 
-                if (peek().type == COMMA) {
-                    consume(COMMA);
-                } else {
-                    break;
-                }
+                if (peek().type == COMMA) { consume(COMMA); } 
+                else { break; }
             }
             consume(RPAREN);
 
-            // Corpo da função
             Vector bodyTokens = new Vector();
             int depth = 1;
             while (depth > 0) {
                 Token token = consume();
-                if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) depth++;
-                else if (token.type == END) depth--;
-                else if (token.type == EOF) throw new RuntimeException("Unmatched 'function' statement: Expected 'end'");
-                if (depth > 0) bodyTokens.addElement(token);
+                if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) { depth++; }
+                else if (token.type == END) { depth--; }
+                else if (token.type == EOF) { throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); }
+                if (depth > 0) { bodyTokens.addElement(token); }
             }
 
-            // Cria e retorna a função anônima
             return new LuaFunction(params, bodyTokens, scope);
         }
-        else if (current.type == VARARG) {
-            consume(VARARG);
-            Object varargs = scope.get("...");
-            if (varargs == null) return new Hashtable();
-            return varargs;
-        }
+        else if (current.type == VARARG) { consume(VARARG); Object varargs = scope.get("..."); if (varargs == null) { return new Hashtable(); } return varargs; }
         else if (current.type == LBRACE) { 
             consume(LBRACE);
             Hashtable table = new Hashtable();
@@ -934,22 +805,18 @@ public class Lua {
                 Object key = null, value = null;
 
                 if (peek().type == IDENTIFIER && peekNext().type == ASSIGN) {
-                    // Caso: nome = valor
-                    key = consume(IDENTIFIER).value; // Consome o nome
-                    consume(ASSIGN); // Consome o '='
-                    value = expression(scope); // Avalia o valor
-                } else if (peek().type == LBRACKET) {
-                    // Caso: [expr] = valor
+                    key = consume(IDENTIFIER).value; 
+                    consume(ASSIGN); 
+                    value = expression(scope); 
+                } 
+                else if (peek().type == LBRACKET) {
                     consume(LBRACKET);
                     key = expression(scope);
                     consume(RBRACKET);
                     consume(ASSIGN);
                     value = expression(scope);
-                } else {
-                    // Caso: apenas valores (modo array-style)
-                    value = expression(scope);
-                    key = new Double(index++); // Chave numérica automática
-                }
+                } 
+                else { value = expression(scope); key = new Double(index++); }
 
                 table.put(key, value == null ? LUA_NIL : value);
 
@@ -968,10 +835,7 @@ public class Lua {
         Vector args = new Vector();
         if (peek().type != RPAREN) {
             args.addElement(expression(scope));
-            while (peek().type == COMMA) {
-                consume(COMMA);
-                args.addElement(expression(scope));
-            }
+            while (peek().type == COMMA) { consume(COMMA); args.addElement(expression(scope)); }
         }
         consume(RPAREN);
 
@@ -986,10 +850,7 @@ public class Lua {
         Vector args = new Vector();
         if (peek().type != RPAREN) {
             args.addElement(expression(scope));
-            while (peek().type == COMMA) {
-                consume(COMMA);
-                args.addElement(expression(scope));
-            }
+            while (peek().type == COMMA) { consume(COMMA); args.addElement(expression(scope)); }
         }
         consume(RPAREN);
 
@@ -997,6 +858,7 @@ public class Lua {
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
 
+    private Object wrap(Object v) { return v == null ? LUA_NIL : v; }
     private Object unwrap(Object v) { return v == LUA_NIL ? null : v; }
 
     private void skipIfBodyUntilElsePart() throws Exception { int depth = 1; while (true) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; if (depth == 0) { tokenIndex--; return; } } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) { tokenIndex--; return; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } }
@@ -1043,17 +905,15 @@ public class Lua {
             if (MOD != -1) { return internals(args); }
 
             Hashtable functionScope = new Hashtable();
-            // Inherit from closure scope (simple lexical scoping) and globals
             for (Enumeration e = closureScope.keys(); e.hasMoreElements();) { String key = (String) e.nextElement(); functionScope.put(key, unwrap(closureScope.get(key))); }
             for (Enumeration e = globals.keys(); e.hasMoreElements();) { String key = (String) e.nextElement(); if (!functionScope.containsKey(key)) { functionScope.put(key, unwrap(globals.get(key))); } }
 
-            // Bind arguments to parameters
             int paramCount = params.size();
             boolean hasVararg = paramCount > 0 && params.elementAt(paramCount - 1).equals("...");
             int fixedParamCount = hasVararg ? paramCount - 1 : paramCount;
             for (int i = 0; i < fixedParamCount; i++) {
                 String paramName = (String) params.elementAt(i);
-                Object argValue = (i < args.size()) ? args.elementAt(i) : null; // Default to nil if no arg
+                Object argValue = (i < args.size()) ? args.elementAt(i) : null; 
                 functionScope.put(paramName, argValue == null ? LUA_NIL : argValue);
             }
             if (hasVararg) {
@@ -1063,11 +923,9 @@ public class Lua {
                 functionScope.put("...", varargValues);
             }
 
-            // Save current token state
             int originalTokenIndex = tokenIndex;
             Vector originalTokens = tokens;
 
-            // Set tokens to function body
             tokens = bodyTokens;
             tokenIndex = 0;
 
@@ -1079,7 +937,6 @@ public class Lua {
                 else if (doreturn) { returnValue = result; doreturn = false; break; }
             }
 
-            // Restore original token state
             tokenIndex = originalTokenIndex;
             tokens = originalTokens;
 
