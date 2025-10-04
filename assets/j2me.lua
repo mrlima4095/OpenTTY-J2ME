@@ -45,16 +45,16 @@ socket = {
 }
 
 string = {
-    upper = function (text) end,
-    lower = function (text) end,
-    len = function (text) end,
-    match = function (text, pattern) end,
-    reverse = function (text) end,
-    sub = function (text, x, y) end,
-    hash = function (text) end,
-    byte = function (text, x, y) end,
+    upper = function (s) end,
+    lower = function (s) end,
+    len = function (s) end,
+    match = function (s, pattern) end,
+    reverse = function (s) end,
+    sub = function (s, x, y) end,
+    hash = function (s) end,
+    byte = function (s, x, y) end,
     char = function (...) end,
-    trim = function (text) return "" end
+    trim = function (s) return "" end
 }
 
 graphics = {
