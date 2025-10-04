@@ -1270,7 +1270,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // OpenTTY Packages
     private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2025 - Mr. Lima")); return; } Hashtable PKG = parseProperties(getcontent(script)); if (PKG.containsKey("name")) { echoCommand((String) PKG.get("name") + " " + (String) PKG.get("version")); } if (PKG.containsKey("description")) { echoCommand((String) PKG.get("description")); } }
-    private int importScript(String script) { return importScript(script, username.equals("root") ? 0 : 1); }
+    private int importScript(String script) { return importScript(script, username.equals("root") ? 0 : 1000); }
     private int importScript(String script, int id) {
         if (script == null || script.length() == 0) { return 2; }
 
@@ -1334,7 +1334,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     private int runScript(String script, int id) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, id); if (STATUS != 0) { return STATUS; } } return 0; }
-    private int runScript(String script) { return runScript(script, username.equals("root") ? 0 : 1); }
+    private int runScript(String script) { return runScript(script, username.equals("root") ? 0 : 1000); }
     // |
     private int run(String argument, String[] args, int id) { String content = argument.equals() ? nanoContent : getcontent(args[0]); return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, id) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, false, id) : importScript(content, id)) : runScript(content, id);
     }
