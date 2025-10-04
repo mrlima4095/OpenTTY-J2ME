@@ -1,19 +1,19 @@
 [ Config ]
 
 name=JBuntu
-version=1.3.2
+version=1.4
 description=Desktop for OpenTTY
 
-api.version=1.14
-api.error=execute log add error JBuntu requires OpenTTY 1.14; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.14; title $OLD_TITLE; unset OLD_TITLE;
+api.version=1.17
+api.error=execute log add error JBuntu requires OpenTTY 1.17; set OLD_TITLE=$TITLE; title JBuntu; warn JBuntu requires OpenTTY 1.17d; title $OLD_TITLE; unset OLD_TITLE;
 api.match=minimum
 
 process.name=jbuntu
 process.exit=execute log add info JBuntu was stopped!; @reload;
 
-include=/java/lib/netkit,/java/lib/settings,/java/lib/yang,/java/lib/jauth2
+include=/lib/yang
 
-config=execute set JVERSION=1.3.2; bg exec x11 gauge Loading JBuntu $JVERSION & sleep 2 & xterm & x11 set jb.back; cd; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; hash jauth2; if ($OUTPUT != 0) import jauth2; if ($OUTPUT == 0) rm jauth2; install nano; touch; case file (armitage) add Armitage=import armitage; case file (sdkme) exec import sdkme & add SmartME SDK=sdk; install .jbuntu-apps; get nano; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
+config=execute set JVERSION=1.4; bg exec x11 gauge Loading JBuntu $JVERSION & sleep 2 & xterm & x11 set jb.back; cd; cat .jbuntu-notes; set JBUNTU_NOTES=$OUTPUT; cat .jbuntu-desktop; if (not $OUTPUT) echo make; set DISPLAY=$OUTPUT; hash jauth2; if ($OUTPUT != 0) import jauth2; if ($OUTPUT == 0) rm jauth2; install nano; touch; case file (armitage) add Armitage=import armitage; case file (sdkme) exec import sdkme & add SmartME SDK=sdk; install .jbuntu-apps; get nano; x11 stop; x11 init; x11 cmd hide; x11 item jbuntu; title JBuntu $JVERSION; clear; log add info Running JBuntu $JVERSION; logcat;
 command=xterm,jbuntu
 
 xterm=execute cd; x11 set jb.back; x11 $DISPLAY jbuntu;
@@ -74,7 +74,7 @@ canvas.title=JBuntu $JVERSION
 canvas.fields=files,label1,xterm,label2,back,label3,run,label4
 # |
 canvas.files.type=image
-canvas.files.value=/java/etc/icons/dir.png
+canvas.files.value=/res/img/dir.png
 canvas.files.cmd=execute ls;
 canvas.files.x=10
 canvas.files.y=10
@@ -87,7 +87,7 @@ canvas.label1.y=12
 canvas.label1.cmd=execute ls;
 # |
 canvas.xterm.type=image
-canvas.xterm.value=/java/etc/icons/icon.png
+canvas.xterm.value=/res/img/icon.png
 canvas.xterm.x=10
 canvas.xterm.y=32
 canvas.xterm.cmd=execute jbuntu term;
@@ -100,7 +100,7 @@ canvas.label2.y=34
 canvas.label2.cmd=execute jbuntu term;
 # |
 canvas.back.type=image
-canvas.back.value=/java/etc/icons/app.png
+canvas.back.value=/res/img/app.png
 canvas.back.x=10
 canvas.back.y=54
 canvas.back.cmd=execute case screen (jb.back) x11 load jb.back;
@@ -113,7 +113,7 @@ canvas.label3.y=56
 canvas.label3.cmd=execute case screen (jb.back) x11 load jb.back;
 # |
 canvas.run.type=image
-canvas.run.value=/java/etc/icons/exec.png
+canvas.run.value=/res/img/exec.png
 canvas.run.x=10
 canvas.run.y=76
 canvas.run.cmd=execute jbuntu run;
@@ -131,7 +131,7 @@ canvas.back.label=Menu
 canvas.back=execute jbuntu menu;
 canvas.button=Apps
 canvas.button.cmd=execute x11 list jbuntu;
-canvas.mouse.img=/java/etc/icons/cursor.png
+canvas.mouse.img=/res/img/cursor.png
 # |
 # |
 # Quest 

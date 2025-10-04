@@ -35,6 +35,7 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** added new _type_ **Image**
 - **Screens** _event listener_ no longer passing root to `xterm` command call
 - **File Explorer** _Delete_ button don't requesting to remove `..` directory anymore
+- **JBuntu** updated to _1.4_
 
 [ _Notes_ ]
 
