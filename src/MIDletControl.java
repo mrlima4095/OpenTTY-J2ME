@@ -13,8 +13,8 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     private int MOD = -1, COUNT = 1, id = 1000, start;
     private boolean ignore = true, asked = false, keep = false, asking_user = false, asking_passwd = false;
     private String command = null, pfilter = "", PID = "", DB = "", address = "", port = "", node = "", proc_name = "";
-    private Vector history = (Vector) midlet.getobject("1", "history");
-    private Hashtable sessions = new Hashtable(), PKG = new Hashtable();
+    private Vector history;
+    private Hashtable sessions, PKG;
     private Alert confirm;
     private Form monitor;
     private List preview;
@@ -24,10 +24,10 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     private Command BACK = new Command("Back", Command.BACK, 1), RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, PROPERTY, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO, EXECUTE = midlet.EXECUTE, CLEAR = midlet.CLEAR;
     // |
     // Remote Objects
-    private SocketConnection CONN;
+    private SocketConnection CONN = null;
     private ServerSocketConnection server = null;
-    private InputStream IN;
-    private OutputStream OUT;
+    private InputStream IN = null;
+    private OutputStream OUT = null;
     // |
     private String[] wordlist;
     // |
@@ -36,9 +36,6 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         this.midlet = midlet;
         this.id = id;
         MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1;
-
-        history = (Vector) midlet.getobject("1", "history"); 
-        sessions = (Hashtable) midlet.getobject("1", "sessions"); 
         PID = midlet.genpid(); 
 
         if (MOD == MONITOR) {
@@ -96,7 +93,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             this.command = command;
 
             monitor.append(PASSWD = new TextField("[sudo] password for " + midlet.loadRMS("OpenRMS"), "", 256, TextField.ANY | TextField.PASSWORD));
-            monitor.addCommand(EXECUTE = new Command("Execute", Command.OK, 1)); 
+            monitor.addCommand(EXECUTE); 
             monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2));
         }
 
@@ -119,7 +116,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             return;
         }
 
-        Hashtable proc = midlet.genprocess(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", id, null); // Fixed: Delegate
+        Hashtable proc = midlet.genprocess(MOD == NC ? "remote" : MOD == PRSCAN ? "prscan" : "gobuster", id, null); 
 
         if (MOD == NC) {
             address = args;
@@ -138,8 +135,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             monitor.setCommandListener(this);
 
             proc.put("socket", CONN);
-            proc.put("in-stream", IN);
-            proc.put("out-stream", OUT);
+            proc.put("in", IN); proc.put("out", OUT);
             proc.put("screen", monitor);
             midlet.display.setCurrent(monitor);
         } else {
@@ -553,7 +549,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             return;
         } 
         else if (MOD == BIND) {
-            if (sessions.containsKey(port)) { midlet.echoCommand("[-] Port '" + port + "' is unavailable"); return; }
+            if ((sessions = (Hashtable) midlet.getobject("1", "sessions")).containsKey(port)) { midlet.echoCommand("[-] Port '" + port + "' is unavailable"); return; }
 
             Hashtable proc = midlet.genprocess(proc_name, id, null);
             proc.put("port", port); midlet.trace.put(PID, proc);
@@ -608,12 +604,8 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     private void reload() { if (midlet.attributes.containsKey("J2EMU")) { new MIDletControl(midlet, MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id); } else { load(); } }
     // | (Load)
     private void load() {
-        if (MOD == HISTORY) {
-            if (preview != null) {
-                preview.deleteAll();
-                for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); }
-            }
-        } else if (MOD == EXPLORER) {
+        if (MOD == HISTORY) { if (preview != null) { preview.deleteAll(); for (int i = 0; i < (history = (Vector) midlet.getobject("1", "history")).size(); i++) { preview.append((String) history.elementAt(i), null); } } } 
+        else if (MOD == EXPLORER) {
             if (midlet.attributes.containsKey("J2EMU")) { } 
             else if (preview != null) { preview.setTitle(midlet.path); }
 
@@ -700,8 +692,6 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
     }
 
     public static String passwd() { return loadRMS(1); }
-    public static String passwd(String user) { return passwd(); }
-
     public static String loadRMS(int index) {
         try { 
             RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); 
@@ -714,7 +704,6 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         
         return ""; 
     }
-    public static String loadRMS(String filename) { if (filename == null || filename.length() == 0) { return ""; } return loadRMS(filename.equals("/etc/passwd") ? 1 : filename.equals("/etc/shadow") ? 3 : filename.equals("/etc/group") ? 2 : 0); }
 
     public int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = midlet.replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; }
 
