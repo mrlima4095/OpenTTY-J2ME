@@ -565,7 +565,7 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
                     if (COUNT == 1) { midlet.echoCommand("[+] listening on port " + port); midlet.MIDletLogs("add info Server listening on port " + port); COUNT++; }
 
                     CONN = (SocketConnection) server.acceptAndOpen(); address = CONN.getAddress();
-                    midlet.echoCommand("[+] " + address " connected")
+                    midlet.echoCommand("[+] " + address + " connected");
 
                     IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
                     proc.put("in", IN); proc.put("out", OUT);

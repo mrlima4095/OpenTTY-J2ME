@@ -564,10 +564,9 @@ public class Lua {
                 Object[] pair = resolveTableAndKey(funcName, scope);
                 targetTable = pair[0];
                 key = pair[1];
-                if (!(targetTable instanceof Hashtable)) throw new Exception("Attempt to index non-table value in function definition");
+                if (!(targetTable instanceof Hashtable)) { throw new Exception("Attempt to index non-table value in function definition"); } 
             }
-
-
+            
             consume(LPAREN);
             Vector params = new Vector();
             while (true) {
