@@ -531,7 +531,8 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             if (keep) { } else { midlet.trace.remove(PID); }
 
             return;
-        } else if (MOD == GOBUSTER) {
+        } 
+        else if (MOD == GOBUSTER) {
             preview.setTicker(new Ticker("Searching..."));
             for (int i = 0; i < wordlist.length; i++) {
                 String path = wordlist[i].trim();
@@ -550,85 +551,58 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
             if (keep) { } else { midlet.trace.remove(PID); }
 
             return;
-        } else if (MOD == BIND) {
+        } 
+        else if (MOD == BIND) {
             if (sessions.containsKey(port)) { midlet.echoCommand("[-] Port '" + port + "' is unavailable"); return; }
 
             Hashtable proc = midlet.genprocess(proc_name, id, null);
-            proc.put("port", port);
-            midlet.trace.put(PID, proc);
+            proc.put("port", port); midlet.trace.put(PID, proc);
             sessions.put(port, "nobody");
 
-            ServerSocketConnection localServer = null;
-            SocketConnection localConn = null;
-            InputStream localIn = null;
-            OutputStream localOut = null;
+            while (midlet.trace.containsKey(PID)) {
+                try {
+                    server = (ServerSocketConnection) Connector.open("socket://:" + port); proc.put("server", server);
+                    if (COUNT == 1) { midlet.echoCommand("[+] listening on port " + port); midlet.MIDletLogs("add info Server listening on port " + port); COUNT++; }
 
-            try {
-                localServer = (ServerSocketConnection) Connector.open("socket://:" + port);
-                proc.put("server", localServer);
-                if (COUNT == 1) {
-                    midlet.echoCommand("[+] listening on port " + port); 
-                    midlet.MIDletLogs("add info Server listening on port " + port);
-                    COUNT++;
-                }
+                    CONN = (SocketConnection) server.acceptAndOpen(); address = CONN.getAddress();
+                    midlet.echoCommand("[+] " + address " connected")
 
-                while (midlet.trace.containsKey(PID)) { 
-                    try {
-                        localConn = (SocketConnection) localServer.acceptAndOpen();
-                        address = localConn.getAddress();
-                        midlet.echoCommand("[+] " + address + " connected");
+                    IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
+                    proc.put("in", IN); proc.put("out", OUT);
+                    sessions.put(port, address);
 
-                        localIn = localConn.openInputStream();
-                        localOut = localConn.openOutputStream();
-                        proc.put("in-stream", localIn);
-                        proc.put("out-stream", localOut);
+                    while (midlet.trace.containsKey(PID)) { 
+                        byte[] buffer = new byte[4096];
+                        int bytesRead = IN.read(buffer);
+                        if (bytesRead == -1) { midlet.echoCommand("[-] " + address + " disconnected"); break; }
 
-                        sessions.put(port, address);
-                        while (midlet.trace.containsKey(PID)) { 
-                            byte[] buffer = new byte[4096];
-                            int bytesRead = localIn.read(buffer);
-                            if (bytesRead == -1) {
-                                midlet.echoCommand("[-] " + address + " disconnected"); 
-                                break;
-                            }
-                            String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                            midlet.echoCommand("[+] " + address + " -> " + midlet.env(PAYLOAD));
+                        String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                        midlet.echoCommand("[+] " + address + " -> " + midlet.env(PAYLOAD));
 
-                            String commandStr = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
+                        String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD, before = (midlet.stdout != null) ? midlet.stdout.getText() : ""; 
+                        midlet.processCommand(command, true, id); 
+                        String after = (midlet.stdout != null) ? midlet.stdout.getText() : "", output = after.length() >= before.length() ? after.substring(before.length()).trim() + "\n" : after + "\n";
 
-                            String before = (midlet.stdout != null) ? midlet.stdout.getText() : ""; 
-                            midlet.processCommand(commandStr, true, id); 
-                            String after = (midlet.stdout != null) ? midlet.stdout.getText() : ""; 
-
-                            String output = after.length() >= before.length() ? after.substring(before.length()).trim() + "\n" : after + "\n";
-
-                            localOut.write(output.getBytes()); localOut.flush();
-                        }
-                    } finally {
-                        try { if (localIn != null) { localIn.close(); } } catch (IOException e) { }
-                        try { if (localOut != null) { localOut.close(); } } catch (IOException e) { }
-                        try { if (localConn != null) { localConn.close(); } } catch (IOException e) { }
-                        
-                        sessions.put(port, "nobody");
+                        OUT.write(output.getBytes()); OUT.flush();
                     }
+                } 
+                catch (IOException e) { midlet.echoCommand("[-] " + midlet.getCatch(e)); if (COUNT == 1) { midlet.echoCommand("[-] Server crashed"); } } 
+                finally {
+                    try { if (IN != null) { IN.close(); } } catch (IOException e) { }
+                    try { if (OUT != null) { OUT.close(); } } catch (IOException e) { }
+                    try { if (CONN != null) { CONN.close(); } } catch (IOException e) { }
+                    try { if (server != null) { server.close(); } } catch (IOException e) { midlet.echoCommand("[-] " + midlet.getCatch(e)); break; }
+                    
+                    sessions.put(port, "nobody");
                 }
-            } catch (IOException e) {
-                midlet.echoCommand("[-] " + midlet.getCatch(e)); 
-                if (COUNT == 1) { midlet.echoCommand("[-] Server crashed"); }
-            } finally {
-                try { if (localServer != null) localServer.close(); } 
-                catch (IOException e) { }
             }
-            
-            midlet.trace.remove(PID); 
-            sessions.remove(port);
+
+            midlet.trace.remove(PID); sessions.remove(port);
             midlet.echoCommand("[-] Server stopped"); 
             midlet.MIDletLogs("add info Server was stopped"); 
         } 
         else if (MOD == BG) { midlet.processCommand(command, ignore, id); } 
-        else if (MOD == ADDON) {
-            while (midlet.trace.containsKey(PID)) { if (midlet.processCommand(command, true, id) != 0) { midlet.kill(PID, false, id); } }
-        }
+        else if (MOD == ADDON) { while (midlet.trace.containsKey(PID)) { if (midlet.processCommand(command, true, id) != 0) { midlet.kill(PID, false, id); } } }
     }
     // |
     // Module Loaders

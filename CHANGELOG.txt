@@ -36,6 +36,7 @@ Copyright (C) 2025 - Mr. Lima
 - **Screens** _event listener_ no longer passing root to `xterm` command call
 - **File Explorer** _Delete_ button don't requesting to remove `..` directory anymore
 - **JBuntu** updated to _1.4_
+- **Bind** process objects `InputStream` and `OutputStream` moved to keys `in` and `out` 
 
 [ _Notes_ ]
 
