@@ -727,7 +727,22 @@ public class MIDletControl implements ItemCommandListener, CommandListener, Runn
         } finally { try { if (H != null) H.close(); } catch (IOException x) { } }
     }
 
-    public static String passwd() { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= 2) { byte[] data = RMS.getRecord(2); if (data != null) { String result = new String(data); RMS.closeRecordStore(); return result; } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
+    public static String passwd() { return loadRMS(1); }
+    public static String passwd(String user) { return passwd(); }
+
+    public static String loadRMS(int index) {
+        try { 
+            RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); 
+            if (RMS.getNumRecords() >= index) { 
+                byte[] data = RMS.getRecord(index); 
+                if (data != null) { String result = new String(data); RMS.closeRecordStore(); return result; } 
+            } 
+            if (RMS != null) { RMS.closeRecordStore(); } 
+        } catch (RecordStoreException e) { } 
+        
+        return ""; 
+    }
+    public static String loadRMS(String filename) { if (filename == null || filename.length() == 0) { return ""; } return loadRMS(filename.equals("/etc/passwd") ? 1 : filename.equals("/etc/shadow") ? 3 : filename.equals("/etc/group") ? 2 : 0); }
 
     public int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = midlet.replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; }
 

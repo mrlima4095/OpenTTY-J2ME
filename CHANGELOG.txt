@@ -5,7 +5,6 @@ Copyright (C) 2025 - Mr. Lima
 
 - `file [filename]`: prints information about file
 - `id [user]`: prints user id
-- 
 
 [ _Updates_ ]
 
