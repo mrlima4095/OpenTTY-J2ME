@@ -702,7 +702,7 @@ public class Lua {
         Object left = exponentiation(scope);
         while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
             Token op = consume();
-            Object right = exponentiation(scope);r
+            Object right = exponentiation(scope);
             if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
             double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
 
