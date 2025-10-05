@@ -1094,7 +1094,7 @@ public class Lua {
         }
         public Object internals(Vector args) throws Exception {
             // Globals
-            if (MOD == PRINT) { if (args.isEmpty()) { } else { StringBuffer buffer = new StringBuffer(); for (int i = 0; i < args.size(); i++) { buffer.append(toLuaString(args.elementAt(i))).append("\t"); } midlet.processCommand("echo " + buffer.toString(), true, id); } }
+            if (MOD == PRINT) { if (args.isEmpty()) { } else { StringBuffer buffer = new StringBuffer(); for (int i = 0; i < args.size(); i++) { buffer.append(toLuaString(args.elementAt(i))).append("\t"); } midlet.echoCommand("echo " + buffer.toString()); } }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
                 if (args.isEmpty()) { return gotbad(1, "pcall", "value expected"); }
