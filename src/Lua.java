@@ -752,10 +752,57 @@ public class Lua {
     private Object factor(Hashtable scope) throws Exception {
         Token current = peek();
         
-        if (current.type == NUMBER) { return consume(NUMBER).value; } 
-        else if (current.type == STRING) { return consume(STRING).value; } 
-        else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
-        else if (current.type == NIL) { consume(NIL); return null; } 
+        if (current.type == STRING || current.type == NUMBER || current.type == BOOLEAN || current.type == NIL) {
+    Object baseValue = null;
+
+    if (current.type == STRING) {
+        baseValue = consume(STRING).value;
+    } else if (current.type == NUMBER) {
+        baseValue = consume(NUMBER).value;
+    } else if (current.type == BOOLEAN) {
+        consume(BOOLEAN);
+        baseValue = new Boolean(current.value.equals("true"));
+    } else if (current.type == NIL) {
+        consume(NIL);
+        baseValue = null;
+    }
+
+    // Agora verifica se há '.' ou ':' depois do literal
+    while (peek().type == DOT || peek().type == COLON) {
+        if (peek().type == DOT) {
+            consume(DOT);
+            String field = (String) consume(IDENTIFIER).value;
+
+            Object module = resolveMethod(baseValue);
+            if (!(module instanceof Hashtable)) {
+                throw new Exception("attempt to index non-table value after literal");
+            }
+            baseValue = unwrap(((Hashtable) module).get(field));
+        } 
+        else if (peek().type == COLON) {
+            consume(COLON);
+            String method = (String) consume(IDENTIFIER).value;
+
+            Object module = resolveMethod(baseValue);
+            if (!(module instanceof Hashtable)) {
+                throw new Exception("attempt to call method on non-table after literal");
+            }
+
+            Object func = unwrap(((Hashtable) module).get(method));
+            if (func == null) {
+                throw new Exception("method '" + method + "' not found for type: " + LuaFunction.type(baseValue));
+            }
+
+            baseValue = callMethod(baseValue, null, func, method, scope);
+        }
+    }
+
+    return baseValue;
+}
+        //if (current.type == NUMBER) { return consume(NUMBER).value; } 
+        //else if (current.type == STRING) { return consume(STRING).value; } 
+        //else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
+        //else if (current.type == NIL) { consume(NIL); return null; } 
         else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
         else if (current.type == LENGTH) {
