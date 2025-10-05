@@ -896,22 +896,18 @@ public class Lua {
     }
     private Object callMethod(Object self, Object methodObj, String methodName, Hashtable scope) throws Exception {
         if (methodObj == null) {
-            Object type = resolveMethod(self);
-            if (type == self) {
-                Object table = unwrap(scope.get(methodName));
-                if (table == null && globals.containsKey(methodName)) table = unwrap(globals.get(methodName));
-                Object key = null;
+            methodObj = resolveMethod(self);
+            Object table = unwrap(scope.get(methodName));
+            if (table == null && globals.containsKey(methodName)) table = unwrap(globals.get(methodName));
+            Object key = null;
             
-                while (peek().type == DOT || peek().type == LBRACKET) {
-                    if (peek().type == DOT) { consume(DOT); Token field = consume(IDENTIFIER); key = field.value; } 
-                    else if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); }
+            while (peek().type == DOT || peek().type == LBRACKET) {
+                if (peek().type == DOT) { consume(DOT); Token field = consume(IDENTIFIER); key = field.value; } 
+                else if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); }
         
-                    if (table == null) { throw new Exception("attempt to index a nil value"); }
-                    if (!(table instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
-                    if (peek().type == DOT || peek().type == LBRACKET) { methodObj = unwrap(((Hashtable)table).get(key)); }
-                }
-            } else {
-                methodObj = type;
+                if (table == null) { throw new Exception("attempt to index a nil value"); }
+                if (!(table instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
+                if (peek().type == DOT || peek().type == LBRACKET) { methodObj = unwrap(((Hashtable)table).get(key)); }
             }
         }
         consume(LPAREN);
