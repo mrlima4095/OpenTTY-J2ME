@@ -834,21 +834,38 @@ public class Lua {
 
                 value = unwrap(((Hashtable)value).get(key));
             }
-            if (peek().type == COLON) {
-                consume(COLON);
-                String methodName = (String) consume(IDENTIFIER).value;
-            
-                Object module = resolveMethod(value);
-                if (module instanceof Hashtable) {
-                    Object fn = unwrap(((Hashtable) module).get(methodName));
-                    if (fn == null) {
-                        throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(value));
-                    }
-                    return callMethod(value, null, fn, methodName, scope);
-                } else {
-                    throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(value));
-                }
-            }
+else if (peek().type == COLON) {
+    Object self = unwrap(scope.get(varName));
+    if (self == null && globals.containsKey(varName)) {
+        self = unwrap(globals.get(varName));
+    }
+    if (self == null) {
+        throw new Exception("attempt to call method on nil value: " + varName);
+    }
+
+    consume(COLON);
+    String methodName = (String) consume(IDENTIFIER).value;
+
+    // Primeiro tenta resolver módulo via tipo (ex: string, io, socket, etc.)
+    Object module = resolveMethod(self);
+    Object func = null;
+
+    if (module == self && self instanceof Hashtable) {
+        // É uma tabela personalizada, usa o método próprio
+        func = unwrap(((Hashtable) self).get(methodName));
+    } 
+    else if (module instanceof Hashtable) {
+        // É um tipo conhecido (string, io, socket, etc.)
+        func = unwrap(((Hashtable) module).get(methodName));
+    }
+
+    if (func == null) {
+        throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self));
+    }
+
+    return callMethod(self, varName, func, methodName, scope);
+}
+
             else if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
