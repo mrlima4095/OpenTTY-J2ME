@@ -70,8 +70,8 @@ public class Lua {
             
             while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
-        catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, id); status = 1; } 
-        catch (Error e) { if (e.getMessage() != null) { midlet.processCommand("echo " + e.getMessage(), true, id); } status = 1; }
+        catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); status = 1; } 
+        catch (Error e) { if (e.getMessage() != null) { midlet.echoCommand(e.getMessage()); } status = 1; }
 
         if (kill) { midlet.trace.remove(PID); }
         ITEM.put("status", status);
@@ -1026,59 +1026,59 @@ public class Lua {
     private void skipUntilMatchingEnd() throws Exception { int depth = 1; while (depth > 0) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } tokenIndex--; }
     // |
     private boolean isTruthy(Object value) { if (value == null || value == LUA_NIL) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
-private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
-    Object table = unwrap(scope.get(varName));
-    if (table == null && globals.containsKey(varName)) 
-        table = unwrap(globals.get(varName));
-
-    Object key = null;
-
-    while (peek().type == DOT || peek().type == LBRACKET) {
-        if (peek().type == DOT) { 
-            consume(DOT); 
-            Token field = consume(IDENTIFIER); 
-            key = field.value; 
-        } 
-        else if (peek().type == LBRACKET) { 
-            consume(LBRACKET); 
-            key = expression(scope); 
-            consume(RBRACKET); 
-        }
-
-        if (table == null) { 
-            throw new Exception("attempt to index a nil value"); 
-        }
-        if (!(table instanceof Hashtable)) { 
-            throw new Exception("attempt to index a non-table value"); 
-        }
-
-        // Suporte a __index em metatables
-        Object val = ((Hashtable) table).get(key);
-        if (val == null) {
-            Object mt = ((Hashtable) table).get("__metatable");
-            if (mt instanceof Hashtable) {
-                Object index = ((Hashtable) mt).get("__index");
-
-                if (index instanceof Hashtable) {
-                    val = ((Hashtable) index).get(key);
-                } 
-                else if (index instanceof LuaFunction) {
-                    Vector a = new Vector();
-                    a.addElement(table);
-                    a.addElement(key);
-                    // Se __index for função, chama ela e retorna o resultado
-                    return new Object[]{table, ((LuaFunction) index).call(a)};
+    private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
+        Object table = unwrap(scope.get(varName));
+        if (table == null && globals.containsKey(varName)) 
+            table = unwrap(globals.get(varName));
+    
+        Object key = null;
+    
+        while (peek().type == DOT || peek().type == LBRACKET) {
+            if (peek().type == DOT) { 
+                consume(DOT); 
+                Token field = consume(IDENTIFIER); 
+                key = field.value; 
+            } 
+            else if (peek().type == LBRACKET) { 
+                consume(LBRACKET); 
+                key = expression(scope); 
+                consume(RBRACKET); 
+            }
+    
+            if (table == null) { 
+                throw new Exception("attempt to index a nil value"); 
+            }
+            if (!(table instanceof Hashtable)) { 
+                throw new Exception("attempt to index a non-table value"); 
+            }
+    
+            // Suporte a __index em metatables
+            Object val = ((Hashtable) table).get(key);
+            if (val == null) {
+                Object mt = ((Hashtable) table).get("__metatable");
+                if (mt instanceof Hashtable) {
+                    Object index = ((Hashtable) mt).get("__index");
+    
+                    if (index instanceof Hashtable) {
+                        val = ((Hashtable) index).get(key);
+                    } 
+                    else if (index instanceof LuaFunction) {
+                        Vector a = new Vector();
+                        a.addElement(table);
+                        a.addElement(key);
+                        // Se __index for função, chama ela e retorna o resultado
+                        return new Object[]{table, ((LuaFunction) index).call(a)};
+                    }
                 }
             }
+    
+            if (peek().type == DOT || peek().type == LBRACKET) { 
+                table = unwrap(val); 
+            }
         }
-
-        if (peek().type == DOT || peek().type == LBRACKET) { 
-            table = unwrap(val); 
-        }
+    
+        return new Object[]{table, key};
     }
-
-    return new Object[]{table, key};
-}
 
     // |
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
@@ -1144,7 +1144,7 @@ private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exce
         }
         public Object internals(Vector args) throws Exception {
             // Globals
-            if (MOD == PRINT) { if (args.isEmpty()) { } else { StringBuffer buffer = new StringBuffer(); for (int i = 0; i < args.size(); i++) { buffer.append(toLuaString(args.elementAt(i))).append("\t"); } midlet.echoCommand("echo " + buffer.toString()); } }
+            if (MOD == PRINT) { if (args.isEmpty()) { } else { StringBuffer buffer = new StringBuffer(); for (int i = 0; i < args.size(); i++) { buffer.append(toLuaString(args.elementAt(i))).append("\t"); } midlet.echoCommand(buffer.toString()); } }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
                 if (args.isEmpty()) { return gotbad(1, "pcall", "value expected"); }
