@@ -1210,11 +1210,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public Image readImg(String filename) { 
         try { 
-            if (filename.startsWith("/home/") || filename.startsWith("/tmp/") || filename.startsWith("/mnt/")) {
-                InputStream is = readRaw(filename); 
-                Image img = Image.createImage(is); 
-                is.close(); return img; 
-            } else { return Image.createImage(filename); }
+            InputStream is = readRaw(filename); 
+            Image img = Image.createImage(is); 
+            is.close(); return img; 
         } catch (Exception e) { return Image.createImage(16, 16); } 
     }
     // |
