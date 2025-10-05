@@ -2142,10 +2142,10 @@ public class Lua {
                     }
                 }
             }
-            catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, id); midlet.trace.remove(PID); } 
+            catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.trace.remove(PID); } 
             catch (Error e) { midlet.trace.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { Object fire = ITEM.get(item); if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id); } } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, id); midlet.trace.remove(PID); } catch (Error e) { midlet.trace.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { Object fire = ITEM.get(item); if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id); } } catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.trace.remove(PID); } catch (Error e) { midlet.trace.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 Object fire = STATE.get(item); 
@@ -2164,8 +2164,8 @@ public class Lua {
 
                     ((LuaFunction) fire).call(args); 
                 } 
-                else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id); } 
-            } catch (Exception e) { midlet.processCommand("echo " + midlet.getCatch(e), true, id); midlet.trace.remove(PID); } catch (Error e) { midlet.trace.remove(PID); } 
+                else if (fire != null) { midlet.echoCommand(toLuaString(fire)); } 
+            } catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.trace.remove(PID); } catch (Error e) { midlet.trace.remove(PID); } 
         }
     }
 } 
