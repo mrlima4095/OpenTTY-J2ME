@@ -264,15 +264,20 @@ public class Lua {
             
                 // Resolve o módulo baseado no tipo
                 Object methodObj = resolveMethod(self);
-                if (methodObj instanceof Hashtable) {
+                if (methodObj == self && self instanceof Hashtable) {
+                    // tabela comum
+                    Object fn = unwrap(((Hashtable) self).get(methodName));
+                    if (fn == null) throw new Exception("method '" + methodName + "' not found in table: " + varName);
+                    return callMethod(self, varName, fn, methodName, scope);
+                }
+                else if (methodObj instanceof Hashtable) {
                     Object fn = unwrap(((Hashtable) methodObj).get(methodName));
                     if (fn == null) {
                         throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self));
                     }
                     return callMethod(self, varName, fn, methodName, scope);
-                } else {
-                    throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(self));
-                }
+                } 
+                else { throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(self)); }
             }
             else {
                 if (peek().type == ASSIGN) {
@@ -828,7 +833,8 @@ public class Lua {
                 if (!(value instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
 
                 value = unwrap(((Hashtable)value).get(key));
-            }if (peek().type == COLON) {
+            }
+            if (peek().type == COLON) {
                 consume(COLON);
                 String methodName = (String) consume(IDENTIFIER).value;
             
@@ -842,7 +848,7 @@ public class Lua {
                 } else {
                     throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(value));
                 }
-            }
+            }d
             else if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
