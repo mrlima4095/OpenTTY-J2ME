@@ -1026,59 +1026,72 @@ public class Lua {
     private void skipUntilMatchingEnd() throws Exception { int depth = 1; while (depth > 0) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } tokenIndex--; }
     // |
     private boolean isTruthy(Object value) { if (value == null || value == LUA_NIL) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
-    private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
-        Object table = unwrap(scope.get(varName));
-        if (table == null && globals.containsKey(varName)) 
-            table = unwrap(globals.get(varName));
-    
-        Object key = null;
-    
-        while (peek().type == DOT || peek().type == LBRACKET) {
-            if (peek().type == DOT) { 
-                consume(DOT); 
-                Token field = consume(IDENTIFIER); 
-                key = field.value; 
-            } 
-            else if (peek().type == LBRACKET) { 
-                consume(LBRACKET); 
-                key = expression(scope); 
-                consume(RBRACKET); 
-            }
-    
-            if (table == null) { 
-                throw new Exception("attempt to index a nil value"); 
-            }
-            if (!(table instanceof Hashtable)) { 
-                throw new Exception("attempt to index a non-table value"); 
-            }
+private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
+    Object table = unwrap(scope.get(varName));
+    if (table == null && globals.containsKey(varName))
+        table = unwrap(globals.get(varName));
 
-            // Suporte completo a __index em metatables (recursivo)
-            Object val = ((Hashtable) table).get(key);
-            if (val == null) {
-                Object mt = ((Hashtable) table).get("__metatable");
-                while (mt instanceof Hashtable) {
-                    Object index = ((Hashtable) mt).get("__index");
-                    if (index instanceof Hashtable) {
-                        val = ((Hashtable) index).get(key);
-                        if (val != null) break; // encontrou
-                        mt = ((Hashtable) index).get("__metatable"); // sobe mais um nível
-                    } else if (index instanceof LuaFunction) {
-                        Vector a = new Vector();
-                        a.addElement(table);
-                        a.addElement(key);
-                        Object ret = ((LuaFunction) index).call(a);
-                        return new Object[]{table, ret};
-                    } else break;
-                }
-            }
+    Object key = null;
+    Hashtable rootMetatable = null;
 
-            if (peek().type == DOT || peek().type == LBRACKET) { 
-                table = unwrap(val); 
-            }
-        }
-    
-        return new Object[]{table, key};
+    // guarda metatable raiz de foo pra usar como fallback nos filhos
+    if (table instanceof Hashtable) {
+        Object mt = ((Hashtable) table).get("__metatable");
+        if (mt instanceof Hashtable)
+            rootMetatable = (Hashtable) mt;
     }
+
+    while (peek().type == DOT || peek().type == LBRACKET) {
+        if (peek().type == DOT) {
+            consume(DOT);
+            key = (String) consume(IDENTIFIER).value;
+        } else {
+            consume(LBRACKET);
+            key = expression(scope);
+            consume(RBRACKET);
+        }
+
+        if (table == null)
+            throw new Exception("attempt to index a nil value");
+        if (!(table instanceof Hashtable))
+            throw new Exception("attempt to index a non-table value");
+
+        Object val = ((Hashtable) table).get(key);
+
+        // busca na metatable do próprio objeto
+        if (val == null) {
+            Object mt = ((Hashtable) table).get("__metatable");
+            val = lookupMetatableIndex(mt, table, key);
+        }
+
+        // se ainda for nulo e tem metatable raiz, tenta nela também
+        if (val == null && rootMetatable != null) {
+            val = lookupMetatableIndex(rootMetatable, table, key);
+        }
+
+        table = unwrap(val);
+    }
+
+    return new Object[]{table, key};
+}
+
+private Object lookupMetatableIndex(Object mt, Object self, Object key) throws Exception {
+    while (mt instanceof Hashtable) {
+        Object index = ((Hashtable) mt).get("__index");
+        if (index instanceof Hashtable) {
+            Object val = ((Hashtable) index).get(key);
+            if (val != null) return val;
+            mt = ((Hashtable) index).get("__metatable"); // sobe recursivamente
+        } else if (index instanceof LuaFunction) {
+            Vector a = new Vector();
+            a.addElement(self);
+            a.addElement(key);
+            return ((LuaFunction) index).call(a);
+        } else break;
+    }
+    return null;
+}
+
 
     // |
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
