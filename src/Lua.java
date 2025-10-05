@@ -877,7 +877,43 @@ public class Lua {
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
     // |
+    private Object resolveMethod(Object obj) {
+        String type = LuaFunction.type(obj);
+        
+        if (type.equals("string")) {
+            return globals.get("string");
+        } else if (type.equals("table")) {
+            return globals.get("table");
+        } else if (type.equals("stream")) {
+            return globals.get("io");
+        } else if (type.equals("connection") || type.equals("server")) {
+            return globals.get("socket");
+        } else if (type.equals("screen") || type.equals("image")) {
+            return globals.get("graphics");
+        }
+        
+        return obj;
+    }
     private Object callMethod(Object self, Object methodObj, String methodName, Hashtable scope) throws Exception {
+        if (methodObj == null) {
+            Object type = resolveMethod(self);
+            if (type == self) {
+                Object table = unwrap(scope.get(methodName));
+                if (table == null && globals.containsKey(methodName)) table = unwrap(globals.get(methodName));
+                Object key = null;
+            
+                while (peek().type == DOT || peek().type == LBRACKET) {
+                    if (peek().type == DOT) { consume(DOT); Token field = consume(IDENTIFIER); key = field.value; } 
+                    else if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); }
+        
+                    if (table == null) { throw new Exception("attempt to index a nil value"); }
+                    if (!(table instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
+                    if (peek().type == DOT || peek().type == LBRACKET) { methodObj = unwrap(((Hashtable)table).get(key)); }
+                }
+            } else {
+                methodObj = type;
+            }
+        }
         consume(LPAREN);
         Vector args = new Vector();
         
@@ -1589,7 +1625,7 @@ public class Lua {
         }
         // |
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
-        private String type(Object item) throws Exception { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : item instanceof Image ? "image" : "userdata"; }
+        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : item instanceof Image ? "image" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
         private Object http(String method, String url, String data, Object item) throws Exception {
