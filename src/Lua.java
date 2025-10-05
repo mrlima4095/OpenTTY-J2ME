@@ -203,6 +203,7 @@ public class Lua {
 
             Token next = peekNext();
             if (!patternIsMultiAssign && next.type == LPAREN) { String funcName = (String) consume(IDENTIFIER).value; callFunction(funcName, scope); return null; }
+            if (!patternIsMultiAssign && next.type == LPAREN) { String funcName = (String) consume(IDENTIFIER).value; callFunction(funcName, scope); return null; }
             if (patternIsMultiAssign) {
                 Vector varNames = new Vector();
                 varNames.addElement(((Token) consume(IDENTIFIER)).value);
@@ -234,7 +235,7 @@ public class Lua {
                 return null;
             }
 
-            String varName = (String) consume(IDENTIFIER).value;
+            /*String varName = (String) consume(IDENTIFIER).value;
             if (peek().type == DOT || peek().type == LBRACKET) {
                 Object[] pair = resolveTableAndKey(varName, scope);
                 Object targetTable = pair[0];
@@ -249,6 +250,41 @@ public class Lua {
                 } 
                 else if (peek().type == LPAREN) { return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope); }
                 else { return null; }
+            } 
+            
+            else {
+                if (peek().type == ASSIGN) {
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    scope.put(varName, value == null ? LUA_NIL : value);
+                    return null;
+                } 
+                else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
+                else { return null; }
+            }*/
+
+            String varName = (String) consume(IDENTIFIER).value;
+            if (peek().type == DOT || peek().type == LBRACKET) {
+                Object[] pair = resolveTableAndKey(varName, scope);
+                Object targetTable = pair[0];
+                Object key = pair[1];
+                if (!(targetTable instanceof Hashtable)) { 
+                    throw new Exception("Attempt to index non-table value"); 
+                }
+
+                if (peek().type == ASSIGN) {
+                    consume(ASSIGN);
+                    Object value = expression(scope);
+                    ((Hashtable) targetTable).put(key, value == null ? LUA_NIL : value);
+                    return null;
+                } 
+                else if (peek().type == LPAREN) { 
+                    return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope); 
+                }
+                else { 
+                    // MODIFICAÇÃO: Retorna o valor da chave em vez de null
+                    return unwrap(((Hashtable) targetTable).get(key)); 
+                }
             } 
             else if (peek().type == COLON) {
                 Object self = unwrap(scope.get(varName));
@@ -276,9 +312,14 @@ public class Lua {
                     scope.put(varName, value == null ? LUA_NIL : value);
                     return null;
                 } 
-                else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
-                else { return null; }
+                else if (peek().type == LPAREN) { 
+                    return callFunction(varName, scope); 
+                } 
+                else { 
+                    return unwrap(scope.get(varName)); 
+                }
             }
+        }
         }
 
         else if (current.type == IF) {
