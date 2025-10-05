@@ -252,15 +252,27 @@ public class Lua {
             } 
             else if (peek().type == COLON) {
                 Object self = unwrap(scope.get(varName));
-                if (self == null && globals.containsKey(varName)) { self = unwrap(globals.get(varName)); }
-                if (self == null) { throw new Exception("attempt to call method on nil value: " + varName); }
+                if (self == null && globals.containsKey(varName)) {
+                    self = unwrap(globals.get(varName));
+                }
+                if (self == null) {
+                    throw new Exception("attempt to call method on nil value: " + varName);
+                }
+            
                 consume(COLON);
                 String methodName = (String) consume(IDENTIFIER).value;
-                if (!(self instanceof Hashtable)) { throw new Exception("attempt to index non-table for method: " + varName); }
-                Object methodObj = unwrap(((Hashtable) self).get(methodName));
-                if (methodObj == null) { throw new Exception("method '" + methodName + "' not found in " + varName); }
-
-                return callMethod(self, varName, null, methodName, scope);
+            
+                // Resolve o módulo baseado no tipo
+                Object methodObj = resolveMethod(self);
+                if (methodObj instanceof Hashtable) {
+                    Object fn = unwrap(((Hashtable) methodObj).get(methodName));
+                    if (fn == null) {
+                        throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self));
+                    }
+                    return callMethod(self, varName, fn, methodName, scope);
+                } else {
+                    throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(self));
+                }
             }
             else {
                 if (peek().type == ASSIGN) {
@@ -769,16 +781,20 @@ public class Lua {
                 if (!(value instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
 
                 value = unwrap(((Hashtable)value).get(key));
-            }
-            if (peek().type == COLON) {
+            }if (peek().type == COLON) {
                 consume(COLON);
                 String methodName = (String) consume(IDENTIFIER).value;
-                
-                if (!(value instanceof Hashtable)) { throw new Exception("attempt to call method on non-table: " + methodName); }
-                Object methodObj = unwrap(((Hashtable) value).get(methodName));
-                if (methodObj == null) { throw new Exception("method '" + methodName + "' not found"); }
-                
-                return callMethod(value, null, methodName, scope);
+            
+                Object module = resolveMethod(value);
+                if (module instanceof Hashtable) {
+                    Object fn = unwrap(((Hashtable) module).get(methodName));
+                    if (fn == null) {
+                        throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(value));
+                    }
+                    return callMethod(value, null, fn, methodName, scope);
+                } else {
+                    throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(value));
+                }
             }
             else if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
