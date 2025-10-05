@@ -834,7 +834,7 @@ public class Lua {
 
                 value = unwrap(((Hashtable)value).get(key));
             }
-else if (peek().type == COLON) {
+if (peek().type == COLON) {
     Object self = unwrap(scope.get(varName));
     if (self == null && globals.containsKey(varName)) {
         self = unwrap(globals.get(varName));
