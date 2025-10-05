@@ -848,7 +848,7 @@ public class Lua {
                 } else {
                     throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(value));
                 }
-            }d
+            }
             else if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
