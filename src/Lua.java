@@ -203,7 +203,6 @@ public class Lua {
 
             Token next = peekNext();
             if (!patternIsMultiAssign && next.type == LPAREN) { String funcName = (String) consume(IDENTIFIER).value; callFunction(funcName, scope); return null; }
-            if (!patternIsMultiAssign && next.type == LPAREN) { String funcName = (String) consume(IDENTIFIER).value; callFunction(funcName, scope); return null; }
             if (patternIsMultiAssign) {
                 Vector varNames = new Vector();
                 varNames.addElement(((Token) consume(IDENTIFIER)).value);
@@ -235,7 +234,7 @@ public class Lua {
                 return null;
             }
 
-            /*String varName = (String) consume(IDENTIFIER).value;
+            String varName = (String) consume(IDENTIFIER).value;
             if (peek().type == DOT || peek().type == LBRACKET) {
                 Object[] pair = resolveTableAndKey(varName, scope);
                 Object targetTable = pair[0];
@@ -249,42 +248,7 @@ public class Lua {
                     return null;
                 } 
                 else if (peek().type == LPAREN) { return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope); }
-                else { return null; }
-            } 
-            
-            else {
-                if (peek().type == ASSIGN) {
-                    consume(ASSIGN);
-                    Object value = expression(scope);
-                    scope.put(varName, value == null ? LUA_NIL : value);
-                    return null;
-                } 
-                else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
-                else { return null; }
-            }*/
-
-            String varName = (String) consume(IDENTIFIER).value;
-            if (peek().type == DOT || peek().type == LBRACKET) {
-                Object[] pair = resolveTableAndKey(varName, scope);
-                Object targetTable = pair[0];
-                Object key = pair[1];
-                if (!(targetTable instanceof Hashtable)) { 
-                    throw new Exception("Attempt to index non-table value"); 
-                }
-
-                if (peek().type == ASSIGN) {
-                    consume(ASSIGN);
-                    Object value = expression(scope);
-                    ((Hashtable) targetTable).put(key, value == null ? LUA_NIL : value);
-                    return null;
-                } 
-                else if (peek().type == LPAREN) { 
-                    return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope); 
-                }
-                else { 
-                    // MODIFICAÇÃO: Retorna o valor da chave em vez de null
-                    return unwrap(((Hashtable) targetTable).get(key)); 
-                }
+                else { return unwrap(((Hashtable) targetTable).get(key)); }
             } 
             else if (peek().type == COLON) {
                 Object self = unwrap(scope.get(varName));
@@ -312,14 +276,9 @@ public class Lua {
                     scope.put(varName, value == null ? LUA_NIL : value);
                     return null;
                 } 
-                else if (peek().type == LPAREN) { 
-                    return callFunction(varName, scope); 
-                } 
-                else { 
-                    return unwrap(scope.get(varName)); 
-                }
+                else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
+                else { return unwrap(scope.get(varName)); }
             }
-        }
         }
 
         else if (current.type == IF) {
@@ -1005,7 +964,7 @@ public class Lua {
     // |
     private boolean isTruthy(Object value) { if (value == null || value == LUA_NIL) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
     // |
-    /*private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
+    private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
         Object table = unwrap(scope.get(varName));
         if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
         Object key = null;
@@ -1019,90 +978,6 @@ public class Lua {
             if (peek().type == DOT || peek().type == LBRACKET) { table = unwrap(((Hashtable)table).get(key)); }
         }
         return new Object[]{table, key};
-    }*/
-    private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
-        Object table = unwrap(scope.get(varName));
-        if (table == null && globals.containsKey(varName))
-            table = unwrap(globals.get(varName));
-
-        Object key = null;
-        Hashtable rootMetatable = null;
-
-        // guarda metatable raiz de foo pra fallback global
-        if (table instanceof Hashtable) {
-            Object mt = ((Hashtable) table).get("__metatable");
-            if (mt instanceof Hashtable)
-                rootMetatable = (Hashtable) mt;
-        }
-
-        // percorre foo.bar[1].baz ...
-        while (peek().type == DOT || peek().type == LBRACKET) {
-            // obtém o nome ou expressão da chave
-            if (peek().type == DOT) {
-                consume(DOT);
-                key = (String) consume(IDENTIFIER).value;
-            } else {
-                consume(LBRACKET);
-                key = expression(scope);
-                consume(RBRACKET);
-            }
-
-            if (table == null)
-                throw new Exception("attempt to index a nil value");
-            if (!(table instanceof Hashtable))
-                throw new Exception("attempt to index a non-table value");
-
-            // tenta pegar o valor direto
-            Object val = ((Hashtable) table).get(key);
-
-            // tenta via metatable local
-            if (val == null) {
-                Object mt = ((Hashtable) table).get("__metatable");
-                val = lookupMetatableIndex(mt, table, key);
-            }
-
-            // fallback via metatable raiz (do primeiro nível)
-            if (val == null && rootMetatable != null) {
-                val = lookupMetatableIndex(rootMetatable, table, key);
-            }
-
-            // se encontrou valor, descompacta e continua
-            if (val != null) {
-                table = unwrap(val);
-
-                // atualiza rootMetatable se a nova tabela tiver outro __metatable
-                if (table instanceof Hashtable) {
-                    Object newMt = ((Hashtable) table).get("__metatable");
-                    if (newMt instanceof Hashtable && rootMetatable == null)
-                        rootMetatable = (Hashtable) newMt;
-                }
-            } else {
-                // não encontrou a chave; se houver mais índices à frente, erro
-                if (peekNext().type == DOT || peekNext().type == LBRACKET)
-                    throw new Exception("attempt to index a nil value (field '" + key + "')");
-                // caso contrário, último campo — mantém a tabela atual
-                break;
-            }
-        }
-
-        return new Object[]{table, key};
-    }
-    private Object lookupMetatableIndex(Object mt, Object self, Object key) throws Exception {
-        while (mt instanceof Hashtable) {
-            Object index = ((Hashtable) mt).get("__index");
-            if (index instanceof Hashtable) {
-                Object val = ((Hashtable) index).get(key);
-                if (val != null) return val;
-                mt = ((Hashtable) index).get("__metatable");
-            } 
-            else if (index instanceof LuaFunction) {
-                Vector a = new Vector();
-                a.addElement(self); a.addElement(key);
-                return ((LuaFunction) index).call(a);
-            } 
-            else { break; }
-        }
-        return null;
     }
     // |
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
