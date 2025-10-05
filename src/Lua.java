@@ -1051,27 +1051,27 @@ public class Lua {
             if (!(table instanceof Hashtable)) { 
                 throw new Exception("attempt to index a non-table value"); 
             }
-    
-            // Suporte a __index em metatables
+
+            // Suporte completo a __index em metatables (recursivo)
             Object val = ((Hashtable) table).get(key);
             if (val == null) {
                 Object mt = ((Hashtable) table).get("__metatable");
-                if (mt instanceof Hashtable) {
+                while (mt instanceof Hashtable) {
                     Object index = ((Hashtable) mt).get("__index");
-    
                     if (index instanceof Hashtable) {
                         val = ((Hashtable) index).get(key);
-                    } 
-                    else if (index instanceof LuaFunction) {
+                        if (val != null) break; // encontrou
+                        mt = ((Hashtable) index).get("__metatable"); // sobe mais um nível
+                    } else if (index instanceof LuaFunction) {
                         Vector a = new Vector();
                         a.addElement(table);
                         a.addElement(key);
-                        // Se __index for função, chama ela e retorna o resultado
-                        return new Object[]{table, ((LuaFunction) index).call(a)};
-                    }
+                        Object ret = ((LuaFunction) index).call(a);
+                        return new Object[]{table, ret};
+                    } else break;
                 }
             }
-    
+
             if (peek().type == DOT || peek().type == LBRACKET) { 
                 table = unwrap(val); 
             }
