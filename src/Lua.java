@@ -260,7 +260,7 @@ public class Lua {
                 Object methodObj = unwrap(((Hashtable) self).get(methodName));
                 if (methodObj == null) { throw new Exception("method '" + methodName + "' not found in " + varName); }
 
-                return callMethod(self, null, methodName, scope);
+                return callMethod(self, varName, null, methodName, scope);
             }
             else {
                 if (peek().type == ASSIGN) {
@@ -894,11 +894,11 @@ public class Lua {
         
         return obj;
     }
-    private Object callMethod(Object self, Object methodObj, String methodName, Hashtable scope) throws Exception {
+    private Object callMethod(Object self, String varName, Object methodObj, String methodName, Hashtable scope) throws Exception {
         if (methodObj == null) {
             methodObj = resolveMethod(self);
-            Object table = unwrap(scope.get(methodName));
-            if (table == null && globals.containsKey(methodName)) table = unwrap(globals.get(methodName));
+            Object table = unwrap(scope.get(varName));
+            if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
             Object key = null;
             
             while (peek().type == DOT || peek().type == LBRACKET) {
