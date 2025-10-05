@@ -1202,6 +1202,31 @@ public class Lua {
             else if (MOD == TYPE) { return args.isEmpty() ? gotbad(1, "type", "value expected") : type(args.elementAt(0)); }
             else if (MOD == GETPROPERTY) { if (args.isEmpty()) { } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : midlet.getAppProperty(query); } }
             else if (MOD == RANDOM) { Double gen = new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); return args.isEmpty() ? new Double(gen.doubleValue() / 100) : gen; }
+            else if (MOD == SETMETATABLE) {
+                if (args.size() < 2) return gotbad(1, "setmetatable", "table expected, got no value");
+            
+                Object table = unwrap(args.elementAt(0));
+                Object mt = unwrap(args.elementAt(1));
+            
+                if (!(table instanceof Hashtable))
+                    return gotbad(1, "setmetatable", "table expected, got " + type(table));
+                if (mt != null && !(mt instanceof Hashtable))
+                    return gotbad(2, "setmetatable", "nil or table expected, got " + type(mt));
+            
+                ((Hashtable) table).put("__metatable", mt == null ? LUA_NIL : mt);
+                return table;
+            }
+            else if (MOD == GETMETATABLE) {
+                if (args.isEmpty())
+                    return gotbad(1, "getmetatable", "table expected, got no value");
+            
+                Object table = unwrap(args.elementAt(0));
+                if (!(table instanceof Hashtable))
+                    return gotbad(1, "getmetatable", "table expected, got " + type(table));
+            
+                Object mt = ((Hashtable) table).get("__metatable");
+                return (mt == LUA_NIL || mt == null) ? null : mt;
+            }
             // Package: os
             else if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, id)); } }
             else if (MOD == GETENV) { return args.isEmpty() ? gotbad(1, "getenv", "string expected, got no value") : midlet.attributes.get(toLuaString(args.elementAt(0))); }
