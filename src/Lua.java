@@ -260,7 +260,7 @@ public class Lua {
                 Object methodObj = unwrap(((Hashtable) self).get(methodName));
                 if (methodObj == null) { throw new Exception("method '" + methodName + "' not found in " + varName); }
 
-                return callMethod(self, methodObj, methodName, scope);
+                return callMethod(self, null, methodName, scope);
             }
             else {
                 if (peek().type == ASSIGN) {
@@ -778,7 +778,7 @@ public class Lua {
                 Object methodObj = unwrap(((Hashtable) value).get(methodName));
                 if (methodObj == null) { throw new Exception("method '" + methodName + "' not found"); }
                 
-                return callMethod(value, methodObj, methodName, scope);
+                return callMethod(value, null, methodName, scope);
             }
             else if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
