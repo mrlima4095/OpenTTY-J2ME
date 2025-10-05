@@ -970,19 +970,12 @@ if (peek().type == COLON) {
     private Object resolveMethod(Object obj) {
         String type = LuaFunction.type(obj);
         
-        if (type.equals("string")) {
-            return globals.get("string");
-        } else if (type.equals("table")) {
-            return globals.get("table");
-        } else if (type.equals("stream")) {
-            return globals.get("io");
-        } else if (type.equals("connection") || type.equals("server")) {
-            return globals.get("socket");
-        } else if (type.equals("screen") || type.equals("image")) {
-            return globals.get("graphics");
+        if (obj instanceof Hashtable) {
+            Object meta = ((Hashtable) obj).get("__index");
+            if (meta instanceof Hashtable) return meta;
         }
-        
-        return obj;
+
+        return type.equals("string") ? globals.get("string") : type.equals("table") ? globals.get("table") : type.equals("stream") ? globals.get("io") : type.equals("connection") || type.equals("server") ? globals.get("socket") : type.equals("screen") || type.equals("image") ? globals.get("graphics") : obj;
     }
     private Object callMethod(Object self, String varName, Object methodObj, String methodName, Hashtable scope) throws Exception {
         if (methodObj == null) {
