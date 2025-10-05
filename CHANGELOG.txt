@@ -38,6 +38,7 @@ Copyright (C) 2025 - Mr. Lima
 - **JBuntu** updated to _1.4_
 - **Bind** process objects `InputStream` and `OutputStream` moved to keys `in` and `out`
 - **Lua** added support for **methods** and `:` token
+- **Lua** added minimal support for **metatables**
 
 [ _Notes_ ]
 
