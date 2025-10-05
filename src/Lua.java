@@ -834,42 +834,40 @@ public class Lua {
 
                 value = unwrap(((Hashtable)value).get(key));
             }
-if (peek().type == COLON) {
-    // Obtem o nome da variável consumida anteriormente
-    String objectName = (String) ((Token) tokens.elementAt(tokenIndex - 1)).value;
-
-    Object self = unwrap(scope.get(objectName));
-    if (self == null && globals.containsKey(objectName)) {
-        self = unwrap(globals.get(objectName));
-    }
-    if (self == null) {
-        throw new Exception("attempt to call method on nil value: " + objectName);
-    }
-
-    consume(COLON);
-    String methodName = (String) consume(IDENTIFIER).value;
-
-    // Resolve o módulo (string, io, table, etc.)
-    Object module = resolveMethod(self);
-    Object func = null;
-
-    if (module == self && self instanceof Hashtable) {
-        // Tabela personalizada: método próprio
-        func = unwrap(((Hashtable) self).get(methodName));
-    } 
-    else if (module instanceof Hashtable) {
-        // Tipo conhecido (string, table, io, etc.)
-        func = unwrap(((Hashtable) module).get(methodName));
-    }
-
-    if (func == null) {
-        throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self));
-    }
-
-    return callMethod(self, objectName, func, methodName, scope);
-}
-
-
+            if (peek().type == COLON) {
+                // Obtem o nome da variável consumida anteriormente
+                String objectName = (String) ((Token) tokens.elementAt(tokenIndex - 1)).value;
+            
+                Object self = unwrap(scope.get(objectName));
+                if (self == null && globals.containsKey(objectName)) {
+                    self = unwrap(globals.get(objectName));
+                }
+                if (self == null) {
+                    throw new Exception("attempt to call method on nil value: " + objectName);
+                }
+            
+                consume(COLON);
+                String methodName = (String) consume(IDENTIFIER).value;
+            
+                // Resolve o módulo (string, io, table, etc.)
+                Object module = resolveMethod(self);
+                Object func = null;
+            
+                if (module == self && self instanceof Hashtable) {
+                    // Tabela personalizada: método próprio
+                    func = unwrap(((Hashtable) self).get(methodName));
+                } 
+                else if (module instanceof Hashtable) {
+                    // Tipo conhecido (string, table, io, etc.)
+                    func = unwrap(((Hashtable) module).get(methodName));
+                }
+            
+                if (func == null) {
+                    throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self));
+                }
+            
+                return callMethod(self, objectName, func, methodName, scope);
+            }
             else if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
 
             return value;
