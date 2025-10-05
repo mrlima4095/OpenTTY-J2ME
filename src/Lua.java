@@ -201,7 +201,7 @@ public class Lua {
                 if (tokenIndex + la < tokens.size() && ((Token)tokens.elementAt(tokenIndex + la)).type == ASSIGN) { patternIsMultiAssign = true; }
             }
 
-            Token next = peekNext(); // (tokenIndex + 1 < tokens.size()) ? (Token) tokens.elementAt(tokenIndex + 1) : new Token(EOF, "EOF");
+            Token next = peekNext();
             if (!patternIsMultiAssign && next.type == LPAREN) { String funcName = (String) consume(IDENTIFIER).value; callFunction(funcName, scope); return null; }
             if (patternIsMultiAssign) {
                 Vector varNames = new Vector();
@@ -252,32 +252,22 @@ public class Lua {
             } 
             else if (peek().type == COLON) {
                 Object self = unwrap(scope.get(varName));
-                if (self == null && globals.containsKey(varName)) {
-                    self = unwrap(globals.get(varName));
-                }
-                if (self == null) {
-                    throw new Exception("attempt to call method on nil value: " + varName);
-                }
-            
+                if (self == null && globals.containsKey(varName)) { self = unwrap(globals.get(varName)); }
+                if (self == null) { throw new Exception("attempt to call method on nil value: " + varName); }
+
                 consume(COLON);
                 String methodName = (String) consume(IDENTIFIER).value;
-            
-                // Resolve o módulo baseado no tipo
                 Object methodObj = resolveMethod(self);
-                if (methodObj == self && self instanceof Hashtable) {
-                    // tabela comum
-                    Object fn = unwrap(((Hashtable) self).get(methodName));
-                    if (fn == null) throw new Exception("method '" + methodName + "' not found in table: " + varName);
+
+                if (methodObj instanceof Hashtable) {
+                    Hashtable table = (Hashtable) methodObj;
+                    Object fn = unwrap(table.get(methodName));
+                    if (fn == null) { throw new Exception("method '" + methodName + "' not found " + ((methodObj == self && self instanceof Hashtable) ? "in table: " + varName : "for type: " + LuaFunction.type(self))); }
+                    
                     return callMethod(self, varName, fn, methodName, scope);
                 }
-                else if (methodObj instanceof Hashtable) {
-                    Object fn = unwrap(((Hashtable) methodObj).get(methodName));
-                    if (fn == null) {
-                        throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self));
-                    }
-                    return callMethod(self, varName, fn, methodName, scope);
-                } 
-                else { throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(self)); }
+
+                throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(self));
             }
             else {
                 if (peek().type == ASSIGN) {
@@ -758,67 +748,41 @@ public class Lua {
         Token current = peek();
         
         if (current.type == STRING || current.type == NUMBER || current.type == BOOLEAN || current.type == NIL) {
-    Object baseValue = null;
+            Object base = null;
 
-    if (current.type == STRING) {
-        baseValue = consume(STRING).value;
-    } else if (current.type == NUMBER) {
-        baseValue = consume(NUMBER).value;
-    } else if (current.type == BOOLEAN) {
-        consume(BOOLEAN);
-        baseValue = new Boolean(current.value.equals("true"));
-    } else if (current.type == NIL) {
-        consume(NIL);
-        baseValue = null;
-    }
+            if (current.type == STRING) { base = consume(STRING).value; } 
+            else if (current.type == NUMBER) { base = consume(NUMBER).value; } 
+            else if (current.type == BOOLEAN) { consume(BOOLEAN); base = new Boolean(current.value.equals("true")); } 
+            else if (current.type == NIL) { consume(NIL); base = null; }
 
-    // Agora verifica se há '.' ou ':' depois do literal
-    while (peek().type == DOT || peek().type == COLON) {
-        if (peek().type == DOT) {
-            consume(DOT);
-            String field = (String) consume(IDENTIFIER).value;
+            while (peek().type == DOT || peek().type == COLON) {
+                if (peek().type == DOT) {
+                    consume(DOT);
+                    String field = (String) consume(IDENTIFIER).value;
 
-            Object module = resolveMethod(baseValue);
-            if (!(module instanceof Hashtable)) {
-                throw new Exception("attempt to index non-table value after literal");
-            }
-            baseValue = unwrap(((Hashtable) module).get(field));
-        } 
-        else if (peek().type == COLON) {
-            consume(COLON);
-            String method = (String) consume(IDENTIFIER).value;
+                    Object module = resolveMethod(base);
+                    if (!(module instanceof Hashtable)) { throw new Exception("attempt to index non-table value after literal"); }
+                    base = unwrap(((Hashtable) module).get(field));
+                } 
+                else if (peek().type == COLON) {
+                    consume(COLON);
+                    String method = (String) consume(IDENTIFIER).value;
 
-            Object module = resolveMethod(baseValue);
-            if (!(module instanceof Hashtable)) {
-                throw new Exception("attempt to call method on non-table after literal");
+                    Object module = resolveMethod(base);
+                    if (!(module instanceof Hashtable)) { throw new Exception("attempt to call method on non-table after literal"); }
+
+                    Object func = unwrap(((Hashtable) module).get(method));
+                    if (func == null) { throw new Exception("method '" + method + "' not found for type: " + LuaFunction.type(base)); }
+
+                    base = callMethod(base, null, func, method, scope);
+                }
             }
 
-            Object func = unwrap(((Hashtable) module).get(method));
-            if (func == null) {
-                throw new Exception("method '" + method + "' not found for type: " + LuaFunction.type(baseValue));
-            }
-
-            baseValue = callMethod(baseValue, null, func, method, scope);
+            return base;
         }
-    }
-
-    return baseValue;
-}
-        //if (current.type == NUMBER) { return consume(NUMBER).value; } 
-        //else if (current.type == STRING) { return consume(STRING).value; } 
-        //else if (current.type == BOOLEAN) { consume(BOOLEAN); return new Boolean(current.value.equals("true")); } 
-        //else if (current.type == NIL) { consume(NIL); return null; } 
         else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
-        else if (current.type == LENGTH) {
-            consume(LENGTH);
-            Object val = factor(scope);
-            if (val == null || val instanceof Boolean) throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value");
-            if (val instanceof String) { return new Double(((String) val).length()); } 
-            else if (val instanceof Hashtable) { return new Double(((Hashtable) val).size()); } 
-            else if (val instanceof Vector) { return new Double(((Vector) val).size()); } 
-            else { return new Double(0); }
-        }
+        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (val == null || val instanceof Boolean) { throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return new Double(((String) val).length()); } else if (val instanceof Hashtable) { return new Double(((Hashtable) val).size()); } else if (val instanceof Vector) { return new Double(((Vector) val).size()); } else { return new Double(0); } }
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value = unwrap(scope.get(name));
@@ -834,37 +798,23 @@ public class Lua {
 
                 value = unwrap(((Hashtable)value).get(key));
             }
+
             if (peek().type == COLON) {
-                // Obtem o nome da variável consumida anteriormente
                 String objectName = (String) ((Token) tokens.elementAt(tokenIndex - 1)).value;
             
                 Object self = unwrap(scope.get(objectName));
-                if (self == null && globals.containsKey(objectName)) {
-                    self = unwrap(globals.get(objectName));
-                }
-                if (self == null) {
-                    throw new Exception("attempt to call method on nil value: " + objectName);
-                }
+                if (self == null && globals.containsKey(objectName)) { self = unwrap(globals.get(objectName)); }
+                if (self == null) { throw new Exception("attempt to call method on nil value: " + objectName); }
             
                 consume(COLON);
                 String methodName = (String) consume(IDENTIFIER).value;
             
-                // Resolve o módulo (string, io, table, etc.)
-                Object module = resolveMethod(self);
-                Object func = null;
+                Object module = resolveMethod(self), func = null;
             
-                if (module == self && self instanceof Hashtable) {
-                    // Tabela personalizada: método próprio
-                    func = unwrap(((Hashtable) self).get(methodName));
-                } 
-                else if (module instanceof Hashtable) {
-                    // Tipo conhecido (string, table, io, etc.)
-                    func = unwrap(((Hashtable) module).get(methodName));
-                }
+                if (module == self && self instanceof Hashtable) { func = unwrap(((Hashtable) self).get(methodName)); } 
+                else if (module instanceof Hashtable) { func = unwrap(((Hashtable) module).get(methodName)); }
             
-                if (func == null) {
-                    throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self));
-                }
+                if (func == null) { throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self)); }
             
                 return callMethod(self, objectName, func, methodName, scope);
             }
@@ -969,22 +919,12 @@ public class Lua {
         if (obj instanceof Hashtable) {
             Hashtable table = (Hashtable) obj;
     
-            // Busca apenas na metatable, não no próprio objeto
             Object mt = table.get("__metatable");
-            if (mt instanceof Hashtable) {
-                Object index = ((Hashtable) mt).get("__index");
-                if (index instanceof Hashtable) return index;
-                if (index instanceof LuaFunction) return index;
-            }
+            if (mt instanceof Hashtable) { Object index = ((Hashtable) mt).get("__index"); if (index instanceof Hashtable || index instanceof LuaFunction) { return index; } }
         }
-    
-        // Fallback: tipos nativos conhecidos (string, table, etc.)
+
         String type = LuaFunction.type(obj);
-        return type.equals("string") ? globals.get("string") :
-               type.equals("table")  ? globals.get("table")  :
-               type.equals("stream") ? globals.get("io")     :
-               type.equals("connection") || type.equals("server") ? globals.get("socket") :
-               type.equals("screen") || type.equals("image") ? globals.get("graphics") : obj;
+        return type.equals("string") ? globals.get("string") : type.equals("table") ? globals.get("table") : type.equals("stream") ? globals.get("io") : type.equals("connection") || type.equals("server") ? globals.get("socket") : type.equals("screen") || type.equals("image") ? globals.get("graphics") : obj;
     }
     private Object callMethod(Object self, String varName, Object methodObj, String methodName, Hashtable scope) throws Exception {
         if (methodObj == null) {
@@ -1008,10 +948,7 @@ public class Lua {
         args.addElement(self);
         if (peek().type != RPAREN) {
             args.addElement(expression(scope));
-            while (peek().type == COMMA) { 
-                consume(COMMA); 
-                args.addElement(expression(scope)); 
-            }
+            while (peek().type == COMMA) { consume(COMMA); args.addElement(expression(scope)); }
         }
         consume(RPAREN);
         if (methodObj instanceof LuaFunction) { return ((LuaFunction) methodObj).call(args); } 
@@ -1026,73 +963,106 @@ public class Lua {
     private void skipUntilMatchingEnd() throws Exception { int depth = 1; while (depth > 0) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } tokenIndex--; }
     // |
     private boolean isTruthy(Object value) { if (value == null || value == LUA_NIL) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
-private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
-    Object table = unwrap(scope.get(varName));
-    if (table == null && globals.containsKey(varName))
-        table = unwrap(globals.get(varName));
+    // |
+    /*private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
+        Object table = unwrap(scope.get(varName));
+        if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
+        Object key = null;
+    
+        while (peek().type == DOT || peek().type == LBRACKET) {
+            if (peek().type == DOT) { consume(DOT); Token field = consume(IDENTIFIER); key = field.value; } 
+            else if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); }
 
-    Object key = null;
-    Hashtable rootMetatable = null;
-
-    // guarda metatable raiz de foo pra usar como fallback nos filhos
-    if (table instanceof Hashtable) {
-        Object mt = ((Hashtable) table).get("__metatable");
-        if (mt instanceof Hashtable)
-            rootMetatable = (Hashtable) mt;
-    }
-
-    while (peek().type == DOT || peek().type == LBRACKET) {
-        if (peek().type == DOT) {
-            consume(DOT);
-            key = (String) consume(IDENTIFIER).value;
-        } else {
-            consume(LBRACKET);
-            key = expression(scope);
-            consume(RBRACKET);
+            if (table == null) { throw new Exception("attempt to index a nil value"); }
+            if (!(table instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
+            if (peek().type == DOT || peek().type == LBRACKET) { table = unwrap(((Hashtable)table).get(key)); }
         }
+        return new Object[]{table, key};
+    }*/
+    private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
+        Object table = unwrap(scope.get(varName));
+        if (table == null && globals.containsKey(varName))
+            table = unwrap(globals.get(varName));
 
-        if (table == null)
-            throw new Exception("attempt to index a nil value");
-        if (!(table instanceof Hashtable))
-            throw new Exception("attempt to index a non-table value");
+        Object key = null;
+        Hashtable rootMetatable = null;
 
-        Object val = ((Hashtable) table).get(key);
-
-        // busca na metatable do próprio objeto
-        if (val == null) {
+        // guarda metatable raiz de foo pra fallback global
+        if (table instanceof Hashtable) {
             Object mt = ((Hashtable) table).get("__metatable");
-            val = lookupMetatableIndex(mt, table, key);
+            if (mt instanceof Hashtable)
+                rootMetatable = (Hashtable) mt;
         }
 
-        // se ainda for nulo e tem metatable raiz, tenta nela também
-        if (val == null && rootMetatable != null) {
-            val = lookupMetatableIndex(rootMetatable, table, key);
+        // percorre foo.bar[1].baz ...
+        while (peek().type == DOT || peek().type == LBRACKET) {
+            // obtém o nome ou expressão da chave
+            if (peek().type == DOT) {
+                consume(DOT);
+                key = (String) consume(IDENTIFIER).value;
+            } else {
+                consume(LBRACKET);
+                key = expression(scope);
+                consume(RBRACKET);
+            }
+
+            if (table == null)
+                throw new Exception("attempt to index a nil value");
+            if (!(table instanceof Hashtable))
+                throw new Exception("attempt to index a non-table value");
+
+            // tenta pegar o valor direto
+            Object val = ((Hashtable) table).get(key);
+
+            // tenta via metatable local
+            if (val == null) {
+                Object mt = ((Hashtable) table).get("__metatable");
+                val = lookupMetatableIndex(mt, table, key);
+            }
+
+            // fallback via metatable raiz (do primeiro nível)
+            if (val == null && rootMetatable != null) {
+                val = lookupMetatableIndex(rootMetatable, table, key);
+            }
+
+            // se encontrou valor, descompacta e continua
+            if (val != null) {
+                table = unwrap(val);
+
+                // atualiza rootMetatable se a nova tabela tiver outro __metatable
+                if (table instanceof Hashtable) {
+                    Object newMt = ((Hashtable) table).get("__metatable");
+                    if (newMt instanceof Hashtable && rootMetatable == null)
+                        rootMetatable = (Hashtable) newMt;
+                }
+            } else {
+                // não encontrou a chave; se houver mais índices à frente, erro
+                if (peekNext().type == DOT || peekNext().type == LBRACKET)
+                    throw new Exception("attempt to index a nil value (field '" + key + "')");
+                // caso contrário, último campo — mantém a tabela atual
+                break;
+            }
         }
 
-        table = unwrap(val);
+        return new Object[]{table, key};
     }
-
-    return new Object[]{table, key};
-}
-
-private Object lookupMetatableIndex(Object mt, Object self, Object key) throws Exception {
-    while (mt instanceof Hashtable) {
-        Object index = ((Hashtable) mt).get("__index");
-        if (index instanceof Hashtable) {
-            Object val = ((Hashtable) index).get(key);
-            if (val != null) return val;
-            mt = ((Hashtable) index).get("__metatable"); // sobe recursivamente
-        } else if (index instanceof LuaFunction) {
-            Vector a = new Vector();
-            a.addElement(self);
-            a.addElement(key);
-            return ((LuaFunction) index).call(a);
-        } else break;
+    private Object lookupMetatableIndex(Object mt, Object self, Object key) throws Exception {
+        while (mt instanceof Hashtable) {
+            Object index = ((Hashtable) mt).get("__index");
+            if (index instanceof Hashtable) {
+                Object val = ((Hashtable) index).get(key);
+                if (val != null) return val;
+                mt = ((Hashtable) index).get("__metatable");
+            } 
+            else if (index instanceof LuaFunction) {
+                Vector a = new Vector();
+                a.addElement(self); a.addElement(key);
+                return ((LuaFunction) index).call(a);
+            } 
+            else { break; }
+        }
+        return null;
     }
-    return null;
-}
-
-
     // |
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
     private static boolean isDigit(char c) { return c >= '0' && c <= '9'; }
