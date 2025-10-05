@@ -966,14 +966,25 @@ public class Lua {
     }
     // |
     private Object resolveMethod(Object obj) {
-        String type = LuaFunction.type(obj);
-        
         if (obj instanceof Hashtable) {
-            Object meta = ((Hashtable) obj).get("__index");
-            if (meta instanceof Hashtable) return meta;
+            Hashtable table = (Hashtable) obj;
+    
+            // Busca apenas na metatable, não no próprio objeto
+            Object mt = table.get("__metatable");
+            if (mt instanceof Hashtable) {
+                Object index = ((Hashtable) mt).get("__index");
+                if (index instanceof Hashtable) return index;
+                if (index instanceof LuaFunction) return index;
+            }
         }
-
-        return type.equals("string") ? globals.get("string") : type.equals("table") ? globals.get("table") : type.equals("stream") ? globals.get("io") : type.equals("connection") || type.equals("server") ? globals.get("socket") : type.equals("screen") || type.equals("image") ? globals.get("graphics") : obj;
+    
+        // Fallback: tipos nativos conhecidos (string, table, etc.)
+        String type = LuaFunction.type(obj);
+        return type.equals("string") ? globals.get("string") :
+               type.equals("table")  ? globals.get("table")  :
+               type.equals("stream") ? globals.get("io")     :
+               type.equals("connection") || type.equals("server") ? globals.get("socket") :
+               type.equals("screen") || type.equals("image") ? globals.get("graphics") : obj;
     }
     private Object callMethod(Object self, String varName, Object methodObj, String methodName, Hashtable scope) throws Exception {
         if (methodObj == null) {
