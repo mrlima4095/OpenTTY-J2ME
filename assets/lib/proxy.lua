@@ -50,7 +50,7 @@ if #arg > 1 then
             local after = io.read()
 
             io.write(string.sub(after, #before + 2, #after) .. "\n", o)
-        end
+        else print("WebProxy -> Server disconnected") break end
     end
 
     io.close(conn)
