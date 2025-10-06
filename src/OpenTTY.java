@@ -980,7 +980,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 try {
                     String origin = args[0], target = (args.length > 1 && !args[1].equals("")) ? args[1] : origin + "-copy";
 
-                    InputStream in = readRaw(origin);
+                    InputStream in = readRaw(origin.startsWith("/") ? origin : path + origin);
                     if (in == null) { echoCommand("cp: cannot open " + origin); return 1; }
 
                     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -989,7 +989,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     while ((len = in.read(tmpBuf)) != -1) { buffer.write(tmpBuf, 0, len); }
                     in.close();
 
-                    return writeRMS(target, buffer.toByteArray());
+                    return writeRMS(target.startsWith("/") ? target : path + target, buffer.toByteArray());
                 } catch (Exception e) { echoCommand("cp: " + getCatch(e)); return getCatch(e, 1); }
             }
         }
