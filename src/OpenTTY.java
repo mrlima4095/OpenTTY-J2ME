@@ -19,7 +19,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x90";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x91";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -39,7 +39,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             // |
             Command[] NANO_CMDS = { BACK, CLEAR, RUNS, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
             // |
-            runScript(read("/etc/init"), 0); setLabel();
+            if (runScript(read("/etc/init"), 0) != 0) { destroyApp(); }
+            setLabel();
             // |
             if (username.equals("") || MIDletControl.passwd().equals("")) { new MIDletControl(null); }
             else { run("/home/.initrc", new String[] { "/home/.initrc" }, 1000); }
@@ -48,13 +49,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // | (Triggers)
     public void pauseApp() { processCommand(functions.containsKey("pauseApp()") ? "pauseApp()" : "true"); }
-    public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); }
+    public void destroyApp(boolean unconditional) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); }
     // |
     // | (Main Listener)
     public void commandAction(Command c, Displayable d) { if (d == nano) { nanoContent = nano.getString(); if (c == CLEAR) { nano.setString(""); } else { processCommand("execute xterm; " + (c == RUNS ? "." : c == VIEW ? "html" : "true")); } } else { if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); setLabel(); } else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn Invalid KEY (" + c.getLabel() + ") - " + c.getCommandType()); } } }
     // |
     // Control Thread
-    public OpenTTY getInstance() { return this; }
     public String getThreadName(Thread thr) {
         String name = thr.getName();
         String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" };
@@ -411,7 +411,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
 
                         display.setCurrent(form);
-                        getInstance().run("/home/.initrc", new String[] { "/home/.initrc" }, 1000);
+                        processCommand(". /home/.initrc");
                         setLabel();
                     }
                 } 
@@ -694,7 +694,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("su")) { if (id == 0) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; processCommand("sh", false); } else { echoCommand("Permission denied!"); return 13; } }
         else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else { if (id == 0) { writeRMS("OpenRMS", String.valueOf(argument.hashCode()).getBytes(), 2); } else { echoCommand("Permission denied!"); return 13; } } }
         else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (id == 0) { writeRMS("/home/OpenRMS", ""); processCommand("exit", false); } else { echoCommand("Permission denied!"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
-        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (loadRMS("OpenRMS").equals(username)) { writeRMS("/home/nano", nanoContent); notifyDestroyed(); } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
+        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (loadRMS("OpenRMS").equals(username)) { destroyApp(); } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
         
         // API 004 - (LCDUI Interface)
         // |
@@ -1088,12 +1088,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 
                 Hashtable arg = new Hashtable();
                 String source, code;
-                if (argument.equals("")) { source = ""; code = nanoContent; arg.put(new Double(0), "nano"); } 
+                if (argument.equals("")) { source = "nano"; code = nanoContent; arg.put(new Double(0), "nano"); } 
                 else if (args[0].equals("-e")) { source = "stdin"; code = argument.substring(3).trim(); arg.put(new Double(0), "/dev/stdin"); } 
                 else { source = args[0]; code = getcontent(source); arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
                 
                 return (Integer) lua.run(source, code, arg).get("status"); 
-            } else { echoCommand("This MIDlet Build don't have Lua"); return 3; } 
+            } 
+            else { echoCommand("This MIDlet Build don't have Lua"); return 3; } 
             
         }
         else if (mainCommand.equals("file")) {
