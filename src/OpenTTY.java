@@ -410,7 +410,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
 
                         display.setCurrent(form);
-                        processCommand(". /home/.initrc");
+                        run("/home/.initrc", new String[] { "/home/.initrc" }, 1000);
                         setLabel();
                     }
                 } 
