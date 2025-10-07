@@ -39,7 +39,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             // |
             Command[] NANO_CMDS = { BACK, CLEAR, RUNS, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
             // |
-            if (runScript(read("/etc/init"), 0) != 0) { destroyApp(); }
+            if (runScript(read("/etc/init"), 0) != 0) { destroyApp(true); }
             setLabel();
             // |
             if (username.equals("") || MIDletControl.passwd().equals("")) { new MIDletControl(null); }
@@ -693,7 +693,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("su")) { if (id == 0) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; processCommand("sh", false); } else { echoCommand("Permission denied!"); return 13; } }
         else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else { if (id == 0) { writeRMS("OpenRMS", String.valueOf(argument.hashCode()).getBytes(), 2); } else { echoCommand("Permission denied!"); return 13; } } }
         else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (id == 0) { writeRMS("/home/OpenRMS", ""); processCommand("exit", false); } else { echoCommand("Permission denied!"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
-        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (loadRMS("OpenRMS").equals(username)) { destroyApp(); } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
+        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (loadRMS("OpenRMS").equals(username)) { destroyApp(false); } else { username = loadRMS("OpenRMS"); processCommand("sh", false); } }
         
         // API 004 - (LCDUI Interface)
         // |
