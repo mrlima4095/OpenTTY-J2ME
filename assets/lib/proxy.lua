@@ -43,17 +43,18 @@ if #arg > 1 then
         if cmd then
             print("WebProxy -> [" .. cmd .. "]")
 
-            if tostring(cmd) == "/exit" then break end
+            if cmd == "/exit" then break
+            else
+                local before = io.read()
+                os.execute(cmd)
+                local after = io.read()
 
-            local before = io.read()
-            os.execute(cmd)
-            local after = io.read()
-
-            io.write(string.sub(after, #before + 2, #after) .. "\n", o)
-        else print("WebProxy -> Server disconnected") break end
+                io.write(string.sub(after, #before + 2, #after) .. "\n", o)
+            end
+        else break end
     end
 
-    io.close(conn)
-    io.close(i) io.close(o)
+    pcall(io.close, conn, i, o)
+    print("WebProxy -> Server disconnected")
 else print("Usage: bg lua " .. arg[0] .. " <password>") end
 
