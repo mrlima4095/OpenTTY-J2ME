@@ -495,7 +495,7 @@ public class Lua {
                 tokenIndex = conditionStartTokenIndex;
                 Object condition = expression(scope);
 
-                if (!isTruthy(condition) || breakLoop) {
+                if (!isTruthy(condition) || breakLoop || doreturn) {
                     int depth = 1;
                     while (depth > 0) {
                         Token token = consume();
@@ -511,18 +511,7 @@ public class Lua {
 
                 while (peek().type != END) {
                     result = statement(scope);
-                    if (breakLoop) { breakLoop = false; endAlreadyConsumed = true; break; }
-                    if (doreturn) {
-                        int depth = 1;
-                        while (depth > 0) {
-                            Token token = consume();
-                            if (token.type == IF || token.type == WHILE || token.type == FUNCTION || token.type == FOR) depth++;
-                            else if (token.type == END) depth--;
-                            else if (token.type == EOF) throw new Exception("Unmatched 'while' statement: Expected 'end'");
-                        }
-                        loopDepth--; 
-                        return result;
-                    }
+                    if (doreturn || breakLoop) { break; }
                 }
                 tokenIndex = conditionStartTokenIndex;
             }
@@ -530,7 +519,7 @@ public class Lua {
             loopDepth--;
 
             if (!endAlreadyConsumed) consume(END);
-            return null;
+            return result;
         }
         else if (current.type == REPEAT) {
             consume(REPEAT);
@@ -546,18 +535,18 @@ public class Lua {
                 while (peek().type != UNTIL) {
                     result = statement(scope);
 
-                    if (breakLoop) { breakLoop = false; while (peek().type != UNTIL && peek().type != EOF) { consume(); } break; }
-                    if (doreturn) { while (peek().type != UNTIL && peek().type != EOF) { consume(); } loopDepth--; return result; }
+                    if (doreturn || breakLoop) { while (peek().type != UNTIL && peek().type != EOF) { consume(); } break; }
                 }
 
                 consume(UNTIL);
                 Object cond = expression(scope);
 
-                if (isTruthy(cond)) { break; }
+                if (isTruthy(cond) || doreturn) { break; }
+                else if (breakLoop) { breakLoop = false; break; } 
             }
 
             loopDepth--;
-            return null;
+            return result;
         }
         else if (current.type == RETURN) { consume(RETURN); doreturn = true; return expression(scope); } 
         else if (current.type == FUNCTION) {
