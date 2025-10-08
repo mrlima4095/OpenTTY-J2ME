@@ -41,6 +41,7 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** added minimal support for **metatables**
 - **Lua** fixed _Token_ `break` don't working on `while` and `repeat` looping
 - Errors in `/etc/init` throws a _Kernel Panic_ and causes **MIDlet** death
+- New default environment key `SHELL`
 
 [ _Notes_ ]
 
