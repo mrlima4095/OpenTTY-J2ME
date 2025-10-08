@@ -548,7 +548,21 @@ public class Lua {
             loopDepth--;
             return result;
         }
-        else if (current.type == RETURN) { consume(RETURN); doreturn = true; return expression(scope); } 
+        else if (current.type == RETURN) {
+            consume(RETURN);
+            doreturn = true;
+
+            if (peek().type == EOF || peek().type == END) return new Vector();
+
+            Vector results = new Vector();
+            results.addElement(expression(scope));
+            while (peek().type == COMMA) {
+                consume(COMMA);
+                results.addElement(expression(scope));
+            }
+            return results;
+        }
+
         else if (current.type == FUNCTION) {
             consume(FUNCTION);
             String funcName = (String) consume(IDENTIFIER).value;
@@ -888,7 +902,16 @@ public class Lua {
         Object funcObj = unwrap(scope.get(funcName));
         if (funcObj == null && globals.containsKey(funcName)) { funcObj = unwrap(globals.get(funcName)); }
 
-        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
+        if (funcObj instanceof LuaFunction) { 
+            Object ret = ((LuaFunction) funcObj).call(args);
+            if (ret instanceof Vector) {
+                Vector v = (Vector) ret;
+                if (v.size() == 0) return null;
+                if (v.size() == 1) return v.elementAt(0);
+                return v;
+            }
+            return ret;
+        }
         else { throw new RuntimeException("Attempt to call a non-function value: " + funcName); }
     }
     private Object callFunctionObject(Object funcObj, Hashtable scope) throws Exception {
@@ -900,7 +923,16 @@ public class Lua {
         }
         consume(RPAREN);
 
-        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); } 
+        if (funcObj instanceof LuaFunction) { 
+            Object ret = ((LuaFunction) funcObj).call(args);
+            if (ret instanceof Vector) {
+                Vector v = (Vector) ret;
+                if (v.size() == 0) return null;
+                if (v.size() == 1) return v.elementAt(0);
+                return v;
+            }
+            return ret;
+        }
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
     // |
@@ -1020,9 +1052,13 @@ public class Lua {
             Object returnValue = null;
             while (peek().type != EOF) {
                 Object result = statement(functionScope);
-
-                if (peek().type == EOF && result != null) { returnValue = result; break; } 
-                else if (doreturn) { returnValue = result; doreturn = false; break; }
+                if (result instanceof Vector) {
+                    returnValue = result;
+                } else if (doreturn) {
+                    returnValue = result;
+                    doreturn = false;
+                    break;
+                }
             }
 
             tokenIndex = originalTokenIndex;
