@@ -85,8 +85,8 @@ local function parse_url(url)
 end
 
 function ftp.login(url)
-    local user, pass, host = parse_url(url)
-    ftp.connect(host, 21)
+    local user, pass, host, port = parse_url(url)
+    ftp.connect(host, port)
     ftp.readline()
     ftp.send("USER " .. user)
     ftp.readline()
