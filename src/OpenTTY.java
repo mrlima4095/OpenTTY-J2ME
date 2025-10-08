@@ -32,7 +32,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (trace.containsKey("1")) { }
         else {
             attributes.put("PATCH", "Fear Fog"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.6.4");
-            attributes.put("HOSTNAME", "localhost"); attributes.put("QUERY", "nano");
+            attributes.put("HOSTNAME", "localhost"); attributes.put("QUERY", "nano"); attributes.put("SHELL", "/bin/sh");
             // |
             String[] KEYS = { "TYPE", "CONFIG", "PROFILE", "LOCALE" }, SYS = { "platform", "configuration", "profiles", "locale" };
             for (int i = 0; i < KEYS.length; i++) { attributes.put(KEYS[i], System.getProperty("microedition." + SYS[i])); }
@@ -64,7 +64,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public void setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }
     public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
-        private static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18;
+        public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18;
+        public static final String impl = "full";
 
         private int MOD = -1, COUNT = 1, id = 1, start;
         private boolean ignore = true, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
