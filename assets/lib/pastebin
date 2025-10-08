@@ -75,8 +75,7 @@ function app.paste(content)
         }
     }))
 
-    io.close(conn)
-    io.close(i) io.close(o)
+    io.close(conn) io.close(i) io.close(o)
 end
 
 function app.GetFile()
@@ -100,37 +99,20 @@ function app.GetFile()
         }
    }))
 end
-function app.GetPaste()
-   graphics.display(graphics.BuildEdit({
-        title = "Paste Content",
-        back = { root = app.main },
-        button = {
-            label = "Create",
-            root = app.paste
-        }
-   }))
-end
+function app.GetPaste() graphics.display(graphics.BuildEdit({ title = "Paste Content", back = { root = app.main }, button = { label = "Create", root = app.paste } })) end
 
 function app.SaveFile(content, screen)
     graphics.display(graphics.BuildQuest({
         title = "PasteBin",
         label = "File to Save",
         back = { root = function () graphics.display(graphics.BuildScreen(screen)) end },
-        button = {
-            label = "Save",
-            root = function (filename) io.write(content, filename) graphics.display(graphics.BuildScreen(screen)) end
-        }
+        button = { label = "Save", root = function (filename) io.write(content, filename) graphics.display(graphics.BuildScreen(screen)) end }
     }))
 end
 function app.Preview(id)
     local content, status = socket.http.get(PROXY_HTTP .. "pastebin.com/raw/" .. id)
 
-    if status == 404 then
-        graphics.display(graphics.Alert({
-            title = "PasteBin",
-            message = "No Pastes found!",
-            back = { root = app.GetURL }
-        }))
+    if status == 404 then graphics.display(graphics.Alert({ title = "PasteBin", message = "No Pastes found!", back = { root = app.GetURL } }))
     else
         local screen = {
             title = "Paste - " .. id,
@@ -142,17 +124,7 @@ function app.Preview(id)
         graphics.display(graphics.BuildScreen(screen))
     end
 end
-function app.GetURL()
-    graphics.display(graphics.BuildQuest({
-        title = "PasteBin",
-        label = "Paste ID",
-        back = { root = app.main },
-        button = {
-            label = "View",
-            root = app.Preview
-        }
-    }))
-end
+function app.GetURL() graphics.display(graphics.BuildQuest({ title = "PasteBin", label = "Paste ID", back = { root = app.main }, button = { label = "View", root = app.Preview } })) end
 
 os.setproc("name", "pastebin")
 app.main()
