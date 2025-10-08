@@ -80,7 +80,7 @@ local function parse_url(url)
     else
         host = url
     end
-
+print(user, pass, host, port)
     return user, pass, host, port
 end
 
