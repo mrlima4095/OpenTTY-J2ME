@@ -60,11 +60,11 @@ local function parse_url(url)
         url = string.sub(url, string.len(prefix) + 1)
     end
 
-    local at = string.find(url, "@")
+    local at = string.match(url, "@")
     if at then
         local creds = string.sub(url, 1, at - 1)
         url = string.sub(url, at + 1)
-        local colon = string.find(creds, ":")
+        local colon = string.match(creds, ":")
         if colon then
             user = string.sub(creds, 1, colon - 1)
             pass = string.sub(creds, colon + 1)
@@ -73,7 +73,7 @@ local function parse_url(url)
         end
     end
 
-    local colon = string.find(url, ":")
+    local colon = string.match(url, ":")
     if colon then
         host = string.sub(url, 1, colon - 1)
         port = tonumber(string.sub(url, colon + 1))
