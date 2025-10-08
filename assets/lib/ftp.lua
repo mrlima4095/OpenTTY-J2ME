@@ -33,7 +33,7 @@ local function split(s, sep)
 end
 
 function ftp.connect(host, port)
-    local c, i, o = print("socket://" .. host .. ":" .. port)
+    local c, i, o = socket.connect("socket://" .. host .. ":" .. port)
     ftp.conn = c ftp.input = i ftp.output = o
     return true
 end
@@ -80,12 +80,13 @@ local function parse_url(url)
     else
         host = url
     end
-print(user, pass, host, port)
-    return user, pass, host, port
+
+    return {user, pass, host, port}
 end
 
 function ftp.login(url)
-    local user, pass, host, port = parse_url(url)
+    local t = parse_url(url)
+    local user, pass, host, port = t[1], t[2], t[3], t[4]
     ftp.connect(host, port)
     ftp.readline()
     ftp.send("USER " .. user)
