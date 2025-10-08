@@ -33,7 +33,8 @@ local function split(s, sep)
 end
 
 function ftp.connect(host, port)
-    ftp.conn, ftp.input, ftp.output = socket.connect("socket://" .. host .. ":" .. (port or 21))
+    local c, i, o = socket.connect("socket://" .. host .. ":" .. (port or 21))
+    ftp.conn = c ftp.input = i ftp.output = o
     return true
 end
 
