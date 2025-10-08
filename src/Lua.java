@@ -1273,7 +1273,7 @@ public class Lua {
 
                     if (args.size() > 1 && args.elementAt(1) instanceof InputStream) { return gotbad(2, "write", "output stream expected, got input"); }  
                     else if (args.size() > 1 && args.elementAt(1) instanceof OutputStream) { OutputStream out = (OutputStream) args.elementAt(1); out.write(content.getBytes("UTF-8")); out.flush(); }
-                    else if (args.elementAt(0) instanceof OutputStream) { OutputStream out = (OutputStream) args.elementAt(0); out.write(out.getBytes("UTF-8")); out.flush(); }
+                    else if (args.elementAt(0) instanceof OutputStream) { OutputStream o = (OutputStream) args.elementAt(0); o.write(out.getBytes("UTF-8")); o.flush(); }
                     else {
                         if (out.equals("nano")) { midlet.nanoContent = mode ? midlet.nanoContent + content : content; }
                         else { return midlet.writeRMS(out, mode ? midlet.getcontent(out) + content : content); }
