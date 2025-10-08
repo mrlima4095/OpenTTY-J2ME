@@ -53,23 +53,35 @@ end
 function ftp.send(cmd) io.write(cmd .. "\r\n", ftp.output) end
 
 local function parse_url(url)
-    local user = "anonymous"
-    local pass = "guest"
-    local host = url
-    local prefix = "ftp://"
+    local user, pass, host, port = "anonymous", "guest", "", 21
 
-    if string.sub(url, 1, string.len(prefix)) == prefix then host = string.sub(url, string.len(prefix) + 1) end
-    local at = string.match(host, "@")
+    local prefix = "ftp://"
+    if string.sub(url, 1, string.len(prefix)) == prefix then
+        url = string.sub(url, string.len(prefix) + 1)
+    end
+
+    local at = string.find(url, "@")
     if at then
-        local creds = string.sub(host, 1, at - 1)
-        host = string.sub(host, at + 1)
-        local colon = string.match(creds, ":")
+        local creds = string.sub(url, 1, at - 1)
+        url = string.sub(url, at + 1)
+        local colon = string.find(creds, ":")
         if colon then
             user = string.sub(creds, 1, colon - 1)
             pass = string.sub(creds, colon + 1)
-        else user = creds end
+        else
+            user = creds
+        end
     end
-    return user, pass, host
+
+    local colon = string.find(url, ":")
+    if colon then
+        host = string.sub(url, 1, colon - 1)
+        port = tonumber(string.sub(url, colon + 1))
+    else
+        host = url
+    end
+
+    return user, pass, host, port
 end
 
 function ftp.login(url)
