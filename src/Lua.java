@@ -661,9 +661,9 @@ public class Lua {
                         if (i == values.size() - 1 && v instanceof Vector) {
                             Vector expanded = (Vector) v;
                             for (int j = 0; j < expanded.size(); j++) { assignValues.addElement(expanded.elementAt(j)); }
-                        } 
-                        else { assignValues.addElement(v);}
+                        } else { assignValues.addElement(v); }
                     }
+
 
                     for (int i = 0; i < varNames.size(); i++) {
                         String v = (String) varNames.elementAt(i);
@@ -902,16 +902,7 @@ public class Lua {
         Object funcObj = unwrap(scope.get(funcName));
         if (funcObj == null && globals.containsKey(funcName)) { funcObj = unwrap(globals.get(funcName)); }
 
-        if (funcObj instanceof LuaFunction) { 
-            Object ret = ((LuaFunction) funcObj).call(args);
-            if (ret instanceof Vector) {
-                Vector v = (Vector) ret;
-                if (v.size() == 0) return null;
-                if (v.size() == 1) return v.elementAt(0);
-                return v;
-            }
-            return ret;
-        }
+        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); }
         else { throw new RuntimeException("Attempt to call a non-function value: " + funcName); }
     }
     private Object callFunctionObject(Object funcObj, Hashtable scope) throws Exception {
@@ -923,16 +914,7 @@ public class Lua {
         }
         consume(RPAREN);
 
-        if (funcObj instanceof LuaFunction) { 
-            Object ret = ((LuaFunction) funcObj).call(args);
-            if (ret instanceof Vector) {
-                Vector v = (Vector) ret;
-                if (v.size() == 0) return null;
-                if (v.size() == 1) return v.elementAt(0);
-                return v;
-            }
-            return ret;
-        }
+        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); }
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
     // |
@@ -1068,7 +1050,22 @@ public class Lua {
         }
         public Object internals(Vector args) throws Exception {
             // Globals
-            if (MOD == PRINT) { if (args.isEmpty()) { } else { StringBuffer buffer = new StringBuffer(); for (int i = 0; i < args.size(); i++) { buffer.append(toLuaString(args.elementAt(i))).append("\t"); } midlet.echoCommand(buffer.toString()); } }
+            if (MOD == PRINT) { 
+                if (args.isEmpty()) { } 
+                else { 
+                    StringBuffer buffer = new StringBuffer(); 
+                    for (int i = 0; i < args.size(); i++) {
+                        Object a = args.elementAt(i);
+                        if (a instanceof Vector) {
+                            Vector vv = (Vector) a;
+                            for (int j = 0; j < vv.size(); j++) {
+                                buffer.append(toLuaString(vv.elementAt(j))).append("\t");
+                            }
+                        } else { buffer.append(toLuaString(a)).append("\t"); }
+                    }
+                    midlet.echoCommand(buffer.toString()); 
+                } 
+            }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
                 if (args.isEmpty()) { return gotbad(1, "pcall", "value expected"); }
