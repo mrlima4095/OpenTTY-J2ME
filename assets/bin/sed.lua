@@ -66,19 +66,19 @@ elseif cmd == "-s" then
     local lines = {}
     local start = 1
     while true do
-        local index = string.find(nanoContent, div, start, true)
+        local index = string.find(buffer, div, start, true)
         if not index then
-            table.insert(lines, string.sub(nanoContent, start))
+            table.insert(lines, string.sub(buffer, start))
             break
         end
-        table.insert(lines, string.sub(nanoContent, start, index - 1))
+        table.insert(lines, string.sub(buffer, start, index - 1))
         start = index + #div
     end
     if idx >= 0 and idx < #lines then print(lines[idx + 1])
     else print("null") os.exit(1) end
 elseif cmd == "-p" then
     local prefix = arg[3] or ""
-    local lines = split(nanoContent, "\n")
+    local lines = split(buffer, "\n")
     local result = {}
     for _, line in ipairs(lines) do
         table.insert(result, prefix .. line)
