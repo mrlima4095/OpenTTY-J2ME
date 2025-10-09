@@ -14,7 +14,7 @@ public class Lua {
     private Vector tokens;
     private int id = 1, tokenIndex, status = 0, loopDepth = 0;
     // |
-    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, RANDOM = 12, EXEC = 13, GETENV = 14, CLOCK = 15, SETLOC = 16, EXIT = 17, DATE = 18, GETPID = 19, SETPROC = 20, GETPROC = 21, READ = 22, WRITE = 23, CLOSE = 24, TB_INSERT = 25, TB_CONCAT = 26, TB_REMOVE = 27, TB_SORT = 28, TB_MOVE = 29, TB_UNPACK = 30, TB_PACK = 31, TB_DECODE = 32, HTTP_GET = 33, HTTP_POST = 34, CONNECT = 35, PEER = 36, DEVICE = 37, SERVER = 38, ACCEPT = 39, ALERT = 40, SCREEN = 41, LIST = 42, QUEST = 43, EDIT = 44, TITLE = 45, TICKER = 46, WTITLE = 47, DISPLAY = 48, APPEND = 49, UPPER = 50, LOWER = 51, LEN = 52, MATCH = 53, REVERSE = 54, SUB = 55, HASH = 56, BYTE = 57, CHAR = 58, TRIM = 59, GETCWD = 60, OPEN = 61, GETCURRENT = 62, IMG = 63, CLASS = 64, NAME = 65, SETMETATABLE = 66, GETMETATABLE = 67;
+    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, RANDOM = 12, EXEC = 13, GETENV = 14, CLOCK = 15, SETLOC = 16, EXIT = 17, DATE = 18, GETPID = 19, SETPROC = 20, GETPROC = 21, READ = 22, WRITE = 23, CLOSE = 24, TB_INSERT = 25, TB_CONCAT = 26, TB_REMOVE = 27, TB_SORT = 28, TB_MOVE = 29, TB_UNPACK = 30, TB_PACK = 31, TB_DECODE = 32, HTTP_GET = 33, HTTP_POST = 34, CONNECT = 35, PEER = 36, DEVICE = 37, SERVER = 38, ACCEPT = 39, ALERT = 40, SCREEN = 41, LIST = 42, QUEST = 43, EDIT = 44, TITLE = 45, TICKER = 46, WTITLE = 47, DISPLAY = 48, APPEND = 49, UPPER = 50, LOWER = 51, LEN = 52, MATCH = 53, REVERSE = 54, SUB = 55, HASH = 56, BYTE = 57, CHAR = 58, TRIM = 59, GETCWD = 60, OPEN = 61, GETCURRENT = 62, IMG = 63, CLASS = 64, NAME = 65, SETMETATABLE = 66, GETMETATABLE = 67, FIND = 68;
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
     public static final Object LUA_NIL = new Object();
     // |
@@ -48,7 +48,7 @@ public class Lua {
         funcs = new String[] { "Alert", "BuildScreen", "BuildList", "BuildQuest", "BuildEdit", "SetTitle", "SetTicker", "WindowTitle", "display", "append", "getCurrent", "render" }; loaders = new int[] { ALERT, SCREEN, LIST, QUEST, EDIT, TITLE, TICKER, WTITLE, DISPLAY, APPEND, GETCURRENT, IMG };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("xterm", midlet.form); globals.put("graphics", graphics);
 
-        funcs = new String[] { "upper", "lower", "len", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
+        funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
         funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty", "setmetatable", "getmetatable" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY, SETMETATABLE, GETMETATABLE };
@@ -1051,18 +1051,24 @@ public class Lua {
         public Object internals(Vector args) throws Exception {
             // Globals
             if (MOD == PRINT) { 
-                if (args.isEmpty()) { } 
-                else { 
+                if (args.isEmpty()) { }
+                else {
                     StringBuffer buffer = new StringBuffer(); 
                     for (int i = 0; i < args.size(); i++) {
                         Object a = args.elementAt(i);
+
                         if (a instanceof Vector) {
                             Vector vv = (Vector) a;
                             for (int j = 0; j < vv.size(); j++) {
-                                buffer.append(toLuaString(vv.elementAt(j))).append("\t");
+                                buffer.append(toLuaString(vv.elementAt(j)));
+                                if (j < vv.size() - 1) { buffer.append("\t"); }
                             }
-                        } else { buffer.append(toLuaString(a)).append("\t"); }
+                        } 
+                        else { buffer.append(toLuaString(a)); }
+
+                        if (i < args.size() - 1) buffer.append("\t");
                     }
+
                     midlet.echoCommand(buffer.toString()); 
                 } 
             }
@@ -1575,7 +1581,7 @@ public class Lua {
             else if (MOD == IMG) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0))); }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
-            else if (MOD == MATCH || MOD == LEN) {
+            else if (MOD == FIND || MOD == MATCH || MOD == LEN) {
                 if (args.isEmpty()) { }
                 else {
                     Object obj = args.elementAt(0);
@@ -1596,9 +1602,9 @@ public class Lua {
                             startIdx = Math.max(0, ((Double) startObj).intValue() - 1);
                         }
                         int pos = text.indexOf(pattern, startIdx);
-                        if (pos == -1) { }
-                        else { return new Double(pos + 1); }
-
+                        if (pos == -1) { return null; } 
+                        else if (MOD == FIND) { return new Double(pos + 1); } 
+                        else if (MOD == MATCH) { return text.substring(pos, pos + pattern.length()); }
                     }
                 }
             }

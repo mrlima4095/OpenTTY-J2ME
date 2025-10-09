@@ -48,6 +48,7 @@ string = {
     upper = function (s) end,
     lower = function (s) end,
     len = function (s) end,
+    find = function (s, pattern, init, plain) end,
     match = function (s, pattern) end,
     reverse = function (s) end,
     sub = function (s, x, y) end,
