@@ -24,6 +24,7 @@
 .inf=Setup information,text/inf,text
 .ini=INI configuration,text/plain,text
 .iso=ISO 9660 CD-ROM image,application/x-iso9660-image,bin
+.jar=Java archive,application/java-archive,bin
 .jad=J2ME application descriptor,text/vnd.sun.j2me.app-descriptor,text
 .java=Java source,text/x-java,text
 .jpeg=JPEG image,image/jpeg,image
