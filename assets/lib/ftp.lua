@@ -22,11 +22,11 @@ local function trim(s) return string.trim(s or "") end
 local function split(s, sep)
     local parts = {}
     local i = 1
-    local j = string.match(s, sep, i)
+    local j = string.find(s, sep, i)
     while j do
         table.insert(parts, string.sub(s, i, j - 1))
         i = j + string.len(sep)
-        j = string.match(s, sep, i)
+        j = string.find(s, sep, i)
     end
     table.insert(parts, string.sub(s, i))
     return parts
@@ -60,11 +60,11 @@ local function parse_url(url)
         url = string.sub(url, string.len(prefix) + 1)
     end
 
-    local at = string.match(url, "@")
+    local at = string.find(url, "@")
     if at then
         local creds = string.sub(url, 1, at - 1)
         url = string.sub(url, at + 1)
-        local colon = string.match(creds, ":")
+        local colon = string.find(creds, ":")
         if colon then
             user = string.sub(creds, 1, colon - 1)
             pass = string.sub(creds, colon + 1)
@@ -73,7 +73,7 @@ local function parse_url(url)
         end
     end
 
-    local colon = string.match(url, ":")
+    local colon = string.find(url, ":")
     if colon then
         host = string.sub(url, 1, colon - 1)
         port = tonumber(string.sub(url, colon + 1))
@@ -99,8 +99,8 @@ function ftp.list()
     ftp.send("PASV")
     local resp = ftp.readline()
 
-    local start = string.match(resp, "(")
-    local stop = string.match(resp, ")")
+    local start = string.find(resp, "(")
+    local stop = string.find(resp, ")")
     if not start or not stop then return "Invalid response" end
 
     local data = string.sub(resp, start + 1, stop - 1)

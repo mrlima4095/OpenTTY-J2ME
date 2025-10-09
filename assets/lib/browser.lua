@@ -20,14 +20,14 @@ end
 
 local function parse_html(html)
     if not html then return {} end
-    if not string.match(html, "<") then return { { type = "text", value = html, style = "default" } } end
+    if not string.find(html, "<") then return { { type = "text", value = html, style = "default" } } end
 
     local i = 1
     local fields, styles = {}, {}
     local in_head, in_script, in_style = false, false, false
 
     while i <= #html do
-        local start_tag = string.match(html, "<", i)
+        local start_tag = string.find(html, "<", i)
         if start_tag == nil then
             if not in_head and not in_script and not in_style then
                 local text = string.trim(string.sub(html, i))
@@ -43,7 +43,7 @@ local function parse_html(html)
             if text ~= "" then fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) } end
         end
 
-        local end_tag = string.match(html, ">", start_tag)
+        local end_tag = string.find(html, ">", start_tag)
         if not end_tag then break end
 
         local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
@@ -87,7 +87,7 @@ local function parse_html(html)
 end
 
 local function extract_title(html, url)
-    local start, finish = string.match(html, "<title>"), string.match(html, "</title>")
+    local start, finish = string.find(html, "<title>"), string.find(html, "</title>")
 
     if start and finish then
         local title = string.sub(html, start + 7, finish - 1)
