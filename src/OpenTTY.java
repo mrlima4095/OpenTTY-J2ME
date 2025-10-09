@@ -63,7 +63,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return name;
     }
     public void setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }
-    /*public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
+    public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
         public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18;
         public static final String impl = "full";
 
@@ -645,7 +645,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String getvalue(String key, String fallback) { return PKG.containsKey(key) ? (String) PKG.get(key) : fallback; } 
         private String getenv(String key, String fallback) { return env(getvalue(key, fallback)); } 
         private String getenv(String key) { return env(getvalue(key, "")); } 
-    }*/
+    }
     // |
     // MIDlet Shell
     public int processCommand(String command) { return processCommand(command, true, 1000); }
