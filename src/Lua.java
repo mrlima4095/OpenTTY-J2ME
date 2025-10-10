@@ -1823,7 +1823,7 @@ public class Lua {
                     if (STATE == null) { STATE = new Hashtable(); }
                     STATE.put(g, field.containsKey("root") ? field.get("root") : LUA_NIL);
                 } 
-                else if (type.equals("textfield")) { f.append(new TextField(getvalue(field, "label", midlet.stdin.getLabel()), getvalue(field, "value", ""), getNumber(field, "length", 256), getQuest(getenv(field, "mode", "default")))); }
+                else if (type.equals("field")) { f.append(new TextField(getvalue(field, "label", midlet.stdin.getLabel()), getvalue(field, "value", ""), getNumber(field, "length", 256), getQuest(getenv(field, "mode", "default")))); }
                 else if (type.equals("choice")) { 
                     String choiceType = getvalue(field, "mode", "exclusive");
                     ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), (LTYPE = choiceType.equals("exclusive") ? Choice.EXCLUSIVE : choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.POPUP));
