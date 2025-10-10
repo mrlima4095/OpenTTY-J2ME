@@ -1210,13 +1210,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
         } catch (Exception e) { return ""; }
     }
-    public Image readImg(String filename) { 
-        try { 
-            InputStream is = readRaw(filename); 
-            Image img = Image.createImage(is); 
-            is.close(); return img; 
-        } catch (Exception e) { return Image.createImage(16, 16); } 
-    }
+    public Image readImg(String filename) { try { InputStream is = readRaw(filename); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
     // |
     public String replace(String source, String target, String replacement) { StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     public String env(String text) { text = replace(text, "$PATH", path); text = replace(text, "$USERNAME", username); text = replace(text, "$TITLE", form.getTitle()); text = replace(text, "$PROMPT", stdin.getString()); for (Enumeration keys = attributes.keys(); keys.hasMoreElements();) { String key = (String) keys.nextElement(); text = replace(text, "$" + key, (String) attributes.get(key)); } text = replace(text, "$.", "$"); return escape(text); }
