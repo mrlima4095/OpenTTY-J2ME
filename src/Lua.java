@@ -1082,7 +1082,13 @@ public class Lua {
                         LuaFunction func = (LuaFunction) unwrap(args.elementAt(0));
                         for (int i = 1; i < args.size(); i++) { fnArgs.addElement(unwrap(args.elementAt(i))); }
 
-                        try { Object value = func.call(fnArgs); result.addElement(Boolean.TRUE); result.addElement(value); }
+                        try { 
+                            Object value = func.call(fnArgs); 
+                            result.addElement(Boolean.TRUE); 
+
+                            if (value instanceof Vector) { Vector v = (Vector) value; for (int i = 0; i < v.size(); i++) { result.addElement(v.elementAt(i)); } }
+                            else { result.addElement(value); }
+                        }
                         catch (Exception e) { result.addElement(Boolean.FALSE); result.addElement(midlet.getCatch(e)); }
                     }
                     else { result.addElement(Boolean.FALSE); result.addElement("attempt to call a " + type(args.elementAt(0)) + " value"); } 
