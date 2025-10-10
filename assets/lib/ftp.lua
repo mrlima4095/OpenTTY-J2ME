@@ -53,7 +53,7 @@ end
 function ftp.send(cmd) io.write(cmd .. "\r\n", ftp.output) end
 
 local function parse_url(url)
-    local user, pass, host, port = "anonymous", "guest", "", 21
+    local user, pass, host, port = "anonymous", "guest", "", tonumber("21")
 
     local prefix = "ftp://"
     if string.sub(url, 1, string.len(prefix)) == prefix then
