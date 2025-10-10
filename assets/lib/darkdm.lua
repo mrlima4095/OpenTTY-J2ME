@@ -27,20 +27,22 @@ local function lock()
 
                 if uid == 255 and pid == 255 then
                     os.execute("xterm")
+                    os.exit()
+                else
+                    os.execute("@alert")
+
+                    local dict = { message = "User not found!", back = { label = "Back", root = function () lock() end } }
+
+                    if pid ~= 255 then dict.message = "Wrong password!" end
+
+                    graphics.display(graphics.Alert(dict))
                 end
             end
         },
 
         fields = {
-            {
-                type = "field",
-                label = "Username"
-            },
-            {
-                type = "field",
-                label = "Password",
-                mode = "text password"
-            }
+            { type = "field", label = "Username" },
+            { type = "field", label = "Password", mode = "text password" }
         }
     }))
 end
