@@ -614,7 +614,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         CONN.close();
                     } 
                     else if (PWD.equals("/bin/") || PWD.equals("/lib/")) {
-                        String = loadRMS("OpenRMS", PWD.equals("/bin/") ? 3 : 4);
+                        String content = loadRMS("OpenRMS", PWD.equals("/bin/") ? 3 : 4);
                         int index = 0;
 
                         while (true) {
@@ -951,7 +951,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     CONN.close(); 
                 } 
                 else if (PWD.equals("/bin/") || PWD.equals("/lib/")) {
-                    String = loadRMS("OpenRMS", PWD.equals("/bin/") ? 3 : 4);
+                    String content = loadRMS("OpenRMS", PWD.equals("/bin/") ? 3 : 4);
                     int index = 0;
 
                     while (true) {
