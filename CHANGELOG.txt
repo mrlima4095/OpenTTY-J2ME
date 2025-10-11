@@ -49,7 +49,8 @@ Copyright (C) 2025 - Mr. Lima
 [ _Notes_ ]
 
 - Files writed in **/tmp/** will be deleted when MIDlet closes.
-- **OpenTTY API** official development programming language now is **Lua** 
+- **OpenTTY API** official development programming language now is **Lua**
+- In limited memory devices you can disable shell **PATH** search run `stty classpath=false` 
 
 [ _API Nodes_ ]
 
