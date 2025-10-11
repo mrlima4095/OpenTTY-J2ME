@@ -19,7 +19,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x91";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x92";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -613,6 +613,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                         CONN.close();
                     } 
+                    else if (PWD.equals("/bin/") || PWD.equals("/lib/")) {
+                        String = loadRMS("OpenRMS", PWD.equals("/bin/") ? 3 : 4)
+                        int index = 0;
+
+                        while (true) {
+                            int start = content.indexOf("[\0BEGIN:", index);
+                            if (start == -1) { break; }
+
+                            int end = content.indexOf("\0]", start);
+                            if (end == -1) { break; }
+
+                            preview.append(content.substring(start + 7, end), null);
+
+                            index = content.indexOf("[\0END\0]", end);
+                            if (index == -1) { break; }
+
+                            index += "[\0END\0]".length();
+                        }
+                    }
                     else if (path.startsWith("/home/")) {
                         String[] recordStores = RecordStore.listRecordStores();
 
@@ -931,6 +950,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                     CONN.close(); 
                 } 
+                else if (PWD.equals("/bin/") || PWD.equals("/lib/")) {
+                    String = loadRMS("OpenRMS", PWD.equals("/bin/") ? 3 : 4)
+                    int index = 0;
+
+                    while (true) {
+                        int start = content.indexOf("[\0BEGIN:", index);
+                        if (start == -1) { break; }
+
+                        int end = content.indexOf("\0]", start);
+                        if (end == -1) { break; }
+
+                        BUFFER.addElement(content.substring(start + 7, end));
+
+                        index = content.indexOf("[\0END\0]", end);
+                        if (index == -1) { break; }
+
+                        index += "[\0END\0]".length();
+                    }
+                }
                 else if (PWD.equals("/home/") && verbose) { 
                     String[] FILES = RecordStore.listRecordStores(); 
                     if (FILES != null) { 
@@ -1750,28 +1788,49 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // |
     // ZIP Files
-    public int addFile(String filename, String content, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, content) + "[BEGIN:" + filename + "]\n" + data + "\n[END]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
+    public int addFile(String filename, String content, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, content) + "[\0BEGIN:" + filename + "\0]\n" + data + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
     public String delFile(String filename, String content) {
-        String startTag = "[BEGIN:" + filename + "]";
+        String startTag = "[\0BEGIN:" + filename + "\0]";
         int start = content.indexOf(startTag);
         if (start == -1) { return content; }
 
-        int end = content.indexOf("[END]", start);
+        int end = content.indexOf("[\0END\0]", start);
         if (end == -1) { return content; }
 
-        end += "[END]".length();
+        end += "[\0END\0]".length();
         return content.substring(0, start) + content.substring(end);
     }
     public String read(String filename, String content) {
-        String startTag = "[BEGIN:" + filename + "]";
+        String startTag = "[\0BEGIN:" + filename + "\0]";
         int start = content.indexOf(startTag);
         if (start == -1) { return null; }
 
         start += startTag.length() + 1;
-        int end = content.indexOf("[END]", start);
+        int end = content.indexOf("[\0END\0]", start);
         if (end == -1) { return null; }
 
         return content.substring(start, end).trim();
+    }
+    public Vector listFiles(String content) {
+        Vector files = new Vector();
+        int index = 0;
+
+        while (true) {
+            int start = content.indexOf("[\0BEGIN:", index);
+            if (start == -1) { break; }
+
+            int end = content.indexOf("\0]", start);
+            if (end == -1) { break; }
+
+            files.addElement(content.substring(start + 7, end));
+
+            index = content.indexOf("[\0END\0]", end);
+            if (index == -1) { break; }
+
+            index += "[\0END\0]".length();
+        }
+
+        return files;
     }
     // |
     private boolean file(String filename) {
@@ -1790,7 +1849,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } catch (Exception e) { return false; }
         }
         else if (filename.endsWith("/")) { return paths.containsKey(filename); }
-        else { String dir = diirname(filename); return (paths.containsKey((dir)) && indexOf(basename(filename), (String[]) paths.get(dir)) != -1); }
+        else { 
+            String dir = diirname(filename); 
+            if (dir.equals("/bin/") || dir.equals("/lib/")) {
+                String content = loadRMS("OpenRMS", dir.equals("/bin/") ? 3 : 4);
+                if (content.indexOf("[\0BEGIN:" + basename(filename) + "\0]") != -1) { return true; }
+            }
+            
+            return (paths.containsKey((dir)) && indexOf(basename(filename), (String[]) paths.get(dir)) != -1); 
+        }
         
         return false;
     }
