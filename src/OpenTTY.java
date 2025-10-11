@@ -67,7 +67,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18;
         public static final String impl = "full";
 
-        private int MOD = -1, COUNT = 1, id = 1, start;
+        private int MOD = -1, COUNT = 1, id = 1000, start;
         private boolean ignore = true, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
         private String command = null, pfilter = "", PID = genpid(), DB, address, port, node, proc_name;
         private Vector history = (Vector) getobject("1", "history");
