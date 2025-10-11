@@ -49,7 +49,7 @@ Copyright (C) 2025 - Mr. Lima
 [ _Notes_ ]
 
 - Files writed in **/tmp/** will be deleted when MIDlet closes.
-- 
+- **OpenTTY API** official development programming language now is **Lua** 
 
 [ _API Nodes_ ]
 
