@@ -43,6 +43,7 @@ Copyright (C) 2025 - Mr. Lima
 - Errors in `/etc/init` throws a _Kernel Panic_ and causes **MIDlet** death
 - New default environment key `SHELL`
 - Allowed to write on `/bin/` (**Applications**) and `/lib/` (**Package**) for _super-user_
+- Fixed **MIDlet** login for user-only prompt
 
 [ _Notes_ ]
 
