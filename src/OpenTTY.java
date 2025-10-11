@@ -1788,7 +1788,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // |
     // ZIP Files
-    public int addFile(String filename, String content, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, content) + "[\0BEGIN:" + filename + "\0]\n" + data + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
+    public int addFile(String filename, String content, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, base) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
     public String delFile(String filename, String content) {
         String startTag = "[\0BEGIN:" + filename + "\0]";
         int start = content.indexOf(startTag);
