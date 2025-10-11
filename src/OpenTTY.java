@@ -1686,7 +1686,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             catch (RecordStoreNotFoundException e) { echoCommand("rm: " + filename + ": not found"); return 127; } 
             catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
-        } 
+        }
         else if (filename.startsWith("/mnt/")) { 
             try { 
                 FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
