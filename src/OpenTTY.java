@@ -1761,11 +1761,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             int index = base.equals("bin") ? 3 : 4;
             String content = loadRMS("OpenRMS", index);
-            if (content.indexOf("[\0BEGIN:" + basename(filename) + "\0]") == -1) { echoCommand("rm: " + filename + ": not found"); return 127; }
+            if (content.indexOf("[\0BEGIN:" + name + "\0]") == -1) { echoCommand("read-only storage"); return 5; }
 
-            String newContent = delFile(name, content);
-
-            return writeRMS("OpenRMS", newContent.getBytes(), index, id);
+            return writeRMS("OpenRMS", delFile(name, content).getBytes(), index, id);
         }
         else if (filename.startsWith("/tmp/")) {
             filename = filename.substring(5);
@@ -1787,7 +1785,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (filename.equals("")) { return 2; } 
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
-            else { return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), id); }
+            else { return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), base, id); }
         }
         else if (filename.startsWith("/dev/")) { filename = filename.substring(5); if (filename.equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { echoCommand("read-only storage"); return 5; } }
         else if (filename.startsWith("/tmp/")) { filename = filename.substring(5); if (filename.equals("")) { return 2; } else { tmp.put(filename, new String(data)); } }
@@ -1799,7 +1797,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // |
     // ZIP Files
-    public int addFile(String filename, String content, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, base) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
+    public int addFile(String filename, String content, String archive, String base, int id) { 
+        return writeRMS("OpenRMS", (delFile(filename, archive) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); 
+    }
     public String delFile(String filename, String content) {
         String startTag = "[\0BEGIN:" + filename + "\0]";
         int start = content.indexOf(startTag);
