@@ -1754,7 +1754,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; } 
         }
         else if (filename.startsWith("/bin/") || filename.startsWith("/lib/")) {
-            String base = filename.substring(1, 3); filename = filename.substring(5);
+            String base = filename.substring(1, 4); filename = filename.substring(5);
 
             if (filename.equals("")) { return 2; } 
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
@@ -1776,11 +1776,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); OUT.close(); CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } 
         else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1, id); } 
         else if (filename.startsWith("/bin/") || filename.startsWith("/lib/")) {
-            String base = filename.substring(1, 3); filename = filename.substring(5);
+            String base = filename.substring(1, 4); filename = filename.substring(5);
 
             if (filename.equals("")) { return 2; } 
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
-            else { return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), base.equals("bin") ? 3 : 4, id); }
+            else { return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), id); }
         }
         else if (filename.startsWith("/dev/")) { filename = filename.substring(5); if (filename.equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { echoCommand("read-only storage"); return 5; } }
         else if (filename.startsWith("/tmp/")) { filename = filename.substring(5); if (filename.equals("")) { return 2; } else { tmp.put(filename, new String(data)); } }
@@ -1792,7 +1792,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // |
     // ZIP Files
-    public int addFile(String filename, String content, String base, int index, int id) { return writeRMS("OpenRMS", (delFile(filename, base) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), index, id); }
+    public int addFile(String filename, String content, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, base) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
     public String delFile(String filename, String content) {
         String startTag = "[\0BEGIN:" + filename + "\0]";
         int start = content.indexOf(startTag);
