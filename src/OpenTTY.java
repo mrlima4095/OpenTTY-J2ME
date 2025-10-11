@@ -771,7 +771,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { echoCommand("" + TTY_MAX_LEN); }
             else if (argument.indexOf("=") != -1) {
                 if (argument.substring(0, argument.indexOf("=")).equals("classpath")) { classpath = argument.substring(argument.indexOf("=") + 1).equals("true"); }
-                else { echoCommand("stty: " + argument.substring(0, argument.indexOf("=")) + ": not found") }
+                else { echoCommand("stty: " + argument.substring(0, argument.indexOf("=")) + ": not found"); return 127; }
             }
             else {
                 String source = getcontent(argument);
