@@ -1785,7 +1785,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int writeRMS(String filename, byte[] data, int index, int id) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { echoCommand(getCatch(e)); return 1; } return 0; }
     public int writeRMS(String filename, String data, int id) { return writeRMS(filename, data.getBytes(), id); }
     public String loadRMS(String filename) { return read("/home/" + filename); }
-    public String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
+    public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // |
     // ZIP Files
     public int addFile(String filename, String content, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, base) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
