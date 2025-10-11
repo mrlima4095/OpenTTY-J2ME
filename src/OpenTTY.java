@@ -19,7 +19,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x92";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x93";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -1033,6 +1033,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (Exception e) { echoCommand("cp: " + getCatch(e)); return getCatch(e, 1); }
             }
         }
+        else if (mainCommand.equals("rmsfix")) {
+            if (id != 0) { echoCommand("Permission denied!"); return 13; }
+            else if (argument.equals("")) { }
+            else if (args[0].equals("read")) { if (args.length() < 2) { return 2; } else { echoCommand(loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : 4)); } }
+            else if (args[0].equals("swap")) { if (args.length() < 3) { return 2; } else { writeRMS(args[2].startsWith("/") ? args[2] : path + args[2], loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : 4), id); } }
+            else if (args[0].startsWith("/")) {
+                args[0] = args[0].endsWith("/") ? args[0] : args[0] + "/";
+                if (args[0].equals("/bin/") || args[0].equals("/lib/")) { return writeRMS("OpenRMS", new byte[0], args[0].equals("/bin/") ? 3 : 4, 0); }
+                else { echoCommand("rmsfix: " + args[0] + ": not found"); return 127; }
+            }
+            else { echoCommand("rmsfix: " + args[0] + ": not found"); return 127; }
+        }
         // |
         // Text Manager
         else if (mainCommand.equals("rraw")) { stdout.setText(nanoContent); }
@@ -1196,10 +1208,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE")); }
         else if (mainCommand.equals("!!")) { stdin.setString((argument.equals("") ? "" : argument + " ") + getLastHistory()); }
         else if (mainCommand.equals(".")) { return run(argument, args, id); }
-        else if (mainCommand.equals("x")) { echoCommand(loadRMS("OpenRMS", 3)); }
-        else if (mainCommand.equals("y")) { echoCommand(loadRMS("OpenRMS", 4)); }
-        else if (mainCommand.equals("fixx")) { writeRMS("OpenRMS", new byte[0], 3, 0); }
-        else if (mainCommand.equals("fixy")) { writeRMS("OpenRMS", new byte[0], 4, 0); }
         
         else { echoCommand(mainCommand + ": not found"); return 127; }
 
@@ -1797,9 +1805,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // |
     // ZIP Files
-    public int addFile(String filename, String content, String archive, String base, int id) { 
-        return writeRMS("OpenRMS", (delFile(filename, archive) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); 
-    }
+    public int addFile(String filename, String content, String archive, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, archive) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
     public String delFile(String filename, String content) {
         String startTag = "[\0BEGIN:" + filename + "\0]";
         int start = content.indexOf(startTag);

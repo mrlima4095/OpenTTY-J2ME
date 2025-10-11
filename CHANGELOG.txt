@@ -5,6 +5,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - `file [filename]`: prints information about file
 - `id [user]`: prints user id
+- `rmsfix [option]`: fix an RMS archive structure
 
 [ _Updates_ ]
 

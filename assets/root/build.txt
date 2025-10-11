@@ -160,3 +160,4 @@
 [2025-1.17-02x90] UID Support Structure
 [2025-1.17-02x91] Error in '/etc/init' throws a Kernel Panic
 [2025-1.17-02x92] Improved Persistent File System
+[2025-1.17-02x93] Added Command 'RMSFIX'
