@@ -403,7 +403,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else if (MOD == SIGNUP) {
                 if (c == LOGIN) {
-                    String password = PASSWD.getString().trim();
+                    String password = asking_passwd ? PASSWD.getString().trim() : "";
 
                     if (asking_user) { username = USER.getString().trim(); }
                     if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warnCommand(form.getTitle(), "Missing credentials!"); } 
