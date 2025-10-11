@@ -62,7 +62,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return name;
     }
-    punlic OpenTTY getInstance() { return this; }
+    public OpenTTY getInstance() { return this; }
     public void setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }
     public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
         public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18;
