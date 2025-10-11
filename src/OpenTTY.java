@@ -625,7 +625,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             int end = content.indexOf("\0]", start);
                             if (end == -1) { break; }
 
-                            preview.append(content.substring(start + 7, end), null);
+                            preview.append(content.substring(start + "[\0BEGIN:".length(), end), null);
 
                             index = content.indexOf("[\0END\0]", end);
                             if (index == -1) { break; }
@@ -962,7 +962,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         int end = content.indexOf("\0]", start);
                         if (end == -1) { break; }
 
-                        BUFFER.addElement(content.substring(start + 7, end));
+                        BUFFER.addElement(content.substring(start + "[\0BEGIN:".length(), end));
 
                         index = content.indexOf("[\0END\0]", end);
                         if (index == -1) { break; }
@@ -1827,7 +1827,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int end = content.indexOf("\0]", start);
             if (end == -1) { break; }
 
-            files.addElement(content.substring(start + 7, end));
+            files.addElement(content.substring(start + "[\0BEGIN:".length(), end));
 
             index = content.indexOf("[\0END\0]", end);
             if (index == -1) { break; }
