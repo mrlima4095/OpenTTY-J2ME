@@ -1,0 +1,161 @@
+#!/bin/lua
+
+--[[
+
+[ Config ]
+
+name=PackJ
+version=1.5
+description=OpenTTY Package Manager
+
+include=/lib/settings
+
+config=execute case !file (.yang-lock) touch /home/.yang-lock; case !key (REPO) set REPO=opentty.xyz:31522; x11 list /bin/yang; true
+command=yang,setrepo
+
+yang=execute case !user (root) exec echo ":: Root permission required!" & return 13 ; x11 list /bin/yang;
+setrepo=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; cfg run;
+
+shell.name=yang
+shell.args=install,update,query,setrepo,info
+
+install=execute case file (.yang-lock) exec rm /home/.yang-lock & set OLD_QUERY=$QUERY & set QUERY=$LOCAL & tick Installing... & query socket://$REPO get lib/$RESOURCE & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & unset RESOURCE & unset LOCAL & & touch /home/.yang-lock; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
+update=execute case file (.yang-lock) exec rm /home/.yang-lock & set OLD_QUERY=$QUERY & set QUERY=/bin/yang & tick Updating... & query socket://$REPO get lib/yang & tick & set QUERY=$OLD_QUERY & unset OLD_QUERY & touch /home/.yang-lock & cd & import /bin/yang; case !file (.yang-lock) exec log add error Yang - Broken pipe (Blocked duplicated) & echo [ Yang ] Command failed! & echo [ Yang ] See logs to more info.;
+query=execute x11 quest /lib/yang;
+
+info=execute echo PackJ 1.5 (Default);
+
+[ DISPLAY ]
+
+quest.title=PackJ Query
+quest.label=Package
+quest.key=RESOURCE
+quest.cmd=execute yang install;
+
+[ Index ]
+
+list.title=Repository
+list.content=Android ME,Armitage,Auto Clean,Auto Syntax,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JAuth2,JBuntu,JBenchmark,J2ME Loader,MobiX Loader,PackJ (Update),PackJ (Proxy),PasteBin,SmartME SDK,Updater,ViaVersion,WebProxy
+list.button=Install
+
+Android ME=execute set RESOURCE=android; set LOCAL=/bin/droid; yang install; set RESOURCE=forge; yang install;
+Armitage=execute set RESOURCE=armitage; set LOCAL=/bin/armitage; yang install; 
+Auto Clean=execute set RESOURCE=autogc; set LOCAL=/bin/autogc; yang install;
+Auto Syntax=execute set RESOURCE=tab; set LOCAL=/bin/tab; yang install; 
+Back Previous=execute set RESOURCE=bprevious; set LOCAL=/lib/bprevious; yang install;
+BoxME=execute set RESOURCE=boxme; set LOCAL=/bin/boxme; yang install;
+CMatrix=execute set RESOURCE=cmatrix; set LOCAL=/bin/cmatrix; yang install;
+Discord (MIDlet)=execute warn This is a 3rd MIDlet from 'gtrxac'; bg exec sleep 3 & open http://146.59.80.3/discord_midp2_beta.jar;
+Forge=execute set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
+Github (MIDlet)=execute warn This is a 3rd MIDlet from 'shinovon'; bg exec sleep 3 & open http://nnp.nnchan.ru/dl/GH2ME.jar;
+GoBuster (Word list)=execute set RESOURCE=gobuster; set LOCAL=/home/gobuster; yang install;
+ImmersiveShell=execute set RESOURCE=sh2me; set LOCAL=/bin/sh2me; yang install;
+JBuntu=execute set RESOURCE=jbuntu; set LOCAL=/bin/jbuntu; yang install;
+JBenchmark=execute set RESOURCE=debuggers; set LOCAL=/bin/jdb; yang install;
+J2ME Loader=execute set RESOURCE=modme; set LOCAL=/bin/modme; yang install; import modme;
+MobiX Loader=execute set RESOURCE=mxos; set LOCAL=/bin/mxos; yang install; 
+PackJ (Update)=execute set RESOURCE=yang; yang install;
+PasteBin=execute set RESOURCE=pastebin; set LOCAL=/bin/pastebin; yang install;
+SmartME SDK=execute set RESOURCE=sdkme; set LOCAL=/bin/sdk; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
+Updater=execute set RESOURCE=sync; set LOCAL=/bin/sync; yang install;
+ViaVersion=execute set RESOURCE=viaversion; set LOCAL=/bin/axrz; yang install;
+WebProxy=execute set RESOURCE=proxy.lua; set LOCAL=/bin/shprxy; yang install;
+
+]]
+
+local server, proxy = os.getenv("REPO") or "opentty.xyz:31522", "http://opentty.xyz/proxy.php?"
+local repo = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/"
+
+local mirror = {
+    ["android"] = { name = "/bin/droid", requires = { "forge" } },
+    ["armitage"] = { name = "/bin/armitage" },
+    ["autogc"] = { name = "/bin/autogc" },
+    ["boxme"] = { name = "/bin/boxme" },
+    ["bprevious"] = { name = "/lib/bprevious" },
+    ["cmatrix"] = { name = "/bin/cmatrix" },
+    ["darkdm"] = { name = "/bin/darkdm" },
+    ["debuggers"] = { name = "/bin/jdb" },
+    ["forge"] = { name = "/bin/forge" },
+    ["httpd"] = { name = "/lib/httpd.lua" },
+    ["jbuntu"] = { name = "/bin/jbuntu" },
+    ["modme"] = { name = "/bin/modme" },
+    ["mxos"] = { name = "/bin/mxos" },
+    ["proxy.lua"] = { name = "/bin/shprxy" },
+    ["pastebin"] = { name = "/bin/pastebin" },
+    ["sdkme"] = { name = "/bin/sdk", requires = { "forge" } },
+    ["sh2me"] = { name = "/bin/sh2me" },
+    ["tab"] = { name = "/bin/tab" },
+    ["viaversion"] = { name = "/bin/axrz" },
+    ["yang"] = { name = "/bin/yang" }
+}
+
+local function use_proxy() for k,v in pairs(arg) do if v == "--proxy" then return true end end return false end
+local function is_root() local status = os.execute("case user (root) return false") if status == 255 then return true end return false end
+local function install(pkg)
+    if mirror[pkg] == nil then print(":: Package '" .. pkg .. " - not found") return 127 end
+
+    if use_proxy() then
+        local ok, content, status = pcall(socket.http.get, proxy .. repo .. pkg)
+        if not ok then print(":: Error - cannot connect with GitHub") return 101 end
+
+        if status == 200 then
+            local dependencies = mirror[pkg]["requires"]
+
+            if dependencies then
+                for _,v in pairs(dependencies) do
+                    status = install(v)
+
+                    if status > 0 then print(":: Failed to resolve dependecies for " .. pkg) return status end
+                end
+            end
+
+            io.write(content, mirror[pkg]["name"])
+            print(":: Package '" .. pkg .. "' installed on [ " .. mirror[pkg]["name"] .. " ]")
+        elseif status == 404 then print(":: Package '" .. pkg .. " - has no installation candidate") return 1
+        else print(":: Error [ Response Code - " .. status .. " ]") return 1 end
+
+    else
+        local ok, conn, i, o = pcall(socket.connect, "socket://" .. server)
+        if not ok then print(":: Error - cannot connect with server") pcall(io.close, conn, i, o) return 101 end
+
+        io.write("get lib/" .. pkg, o)
+        local content = io.read(i, 4096)
+
+        if content == "File '" .. pkg .. "' not found." then print(":: Package '" .. pkg .. " - has no installation candidate") return 1
+        else
+            local dependencies = mirror[pkg]["requires"]
+
+            if dependencies then
+                for _,v in pairs(dependencies) do
+                    local status = install(v)
+
+                    if status > 0 then print(":: Failed to resolve dependecies for " .. pkg) return status end
+                end
+            end
+
+            io.write(content, mirror[pkg]["name"])
+        end
+
+        pcall(io.close, conn, i, o)
+    end
+end
+
+local function main()
+    if not arg[1] or arg[1] == "view" then os.execute("x11 list /bin/yang")
+    elseif arg[1] == "install" then
+        local status
+        for k,v in pairs(arg) do
+            if k < 2 then
+            elseif string.sub(k, 1, 2) ~= "--" then status = install(v) end
+        end
+        os.exit(status)
+    elseif arg[1] == "remove" then
+    elseif arg[1] == "update" then
+    elseif arg[1] == "upgrade" then
+    else print("yang: " .. arg[1] .. ": not found") os.exit(127) end
+end
+
+os.setproc("name", "yang")
+
+if is_root() then main()
+else print(":: Root permission required!") os.exit(13) end
