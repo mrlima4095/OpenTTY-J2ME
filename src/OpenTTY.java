@@ -782,7 +782,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Hashtable TTY = parseProperties(source);
                 
                 if (TTY.containsKey("max-length")) { try { TTY_MAX_LEN = Integer.parseInt((String) TTY.get("max-length")); } catch (Exception e) { notifyDestroyed(); } }
-                if (TTY.containsKey("classpath")) { if (((String) TTY.get("classpath")).equals("true")) { classpath = true; } else { classpath = false; } }
+                if (TTY.containsKey("classpath")) { classpath = ((String) TTY.get("classpath")).equals("true"); }
             } 
         }
         // |
