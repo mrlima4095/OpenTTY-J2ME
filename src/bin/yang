@@ -150,7 +150,7 @@ local function main()
         end
         os.exit(status)
     elseif arg[1] == "remove" then
-    elseif arg[1] == "update" then
+    elseif arg[1] == "update" then os.exit(install("yang"))
     elseif arg[1] == "upgrade" then
     else print("yang: " .. arg[1] .. ": not found") os.exit(127) end
 end
