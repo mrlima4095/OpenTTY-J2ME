@@ -1796,7 +1796,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (filename.equals("")) { return 2; } 
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
-            else if (filename.equals("sh") || filename.equals("sh")) {
+            else if (filename.equals("sh") || filename.equals("lua")) {
                 echoCommand("read-only storage"); return 5;
             }
             else { return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), base, id); }
