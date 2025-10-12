@@ -1,6 +1,7 @@
 /
 /bin/
 /bin/sh
+/bin/yang
 /dev/
 /dev/null
 /dev/random
@@ -16,7 +17,6 @@
 /home/
 /lib/
 /lib/settings
-/lib/yang
 /mnt/
 /res/
 /res/docs
