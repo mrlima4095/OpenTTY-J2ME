@@ -90,7 +90,7 @@ local mirror = {
 }
 
 local function use_proxy() for k,v in pairs(arg) do if v == "--proxy" then return true end end return false end
-local function is_root() local status = os.execute("case user (root) return false") if status == 255 then return true end return false end
+local function is_root() local status = os.execute("case !user (root) false") if status == 255 then return true end return false end
 local function install(pkg)
     if mirror[pkg] == nil then print(":: Package '" .. pkg .. " - not found") return 127 end
 
