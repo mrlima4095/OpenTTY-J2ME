@@ -2,8 +2,6 @@
 
 name=ImmersiveShell
 version=1.2
-
-include=forge
  
 config=execute x11 list sh2me;
 
