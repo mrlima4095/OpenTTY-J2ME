@@ -156,6 +156,7 @@ local function main()
 end
 
 os.setproc("name", "yang")
-
+print(is_root())
+os.exit()
 if is_root() then main()
 else print(":: Root permission required!") os.exit(13) end
