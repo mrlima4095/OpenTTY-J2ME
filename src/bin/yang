@@ -40,7 +40,7 @@ list.button=Install
 
 Armitage=execute set RESOURCE=armitage; set LOCAL=/bin/armitage; yang install; 
 Auto Clean=execute set RESOURCE=autogc; set LOCAL=/bin/autogc; yang install;
-Auto Syntax=execute set RESOURCE=tab; set LOCAL=/bin/tab; yang install; 
+Auto Syntax=execute set RESOURCE=tab; set LOCAL=/bin/tab; yang instal1l; 
 Back Previous=execute set RESOURCE=bprevious; set LOCAL=/lib/bprevious; yang install;
 Discord (MIDlet)=execute warn This is a 3rd MIDlet from 'gtrxac'; bg exec sleep 3 & open http://146.59.80.3/discord_midp2_beta.jar;
 Github (MIDlet)=execute warn This is a 3rd MIDlet from 'shinovon'; bg exec sleep 3 & open http://nnp.nnchan.ru/dl/GH2ME.jar;
@@ -55,10 +55,6 @@ ViaVersion=execute set RESOURCE=viaversion; set LOCAL=/bin/axrz; yang install;
 local server, proxy = os.getenv("REPO") or "opentty.xyz:31522", getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?"
 local repo = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/"
 local use_proxy = false
-
-]]
-
-print("gg ez")
 
 local mirror = {
     ["android"] = { name = "Android ME", file = "/bin/droid", requires = { "forge" } },
@@ -81,4 +77,10 @@ local mirror = {
     ["tab"] = { name = "Auto Syntax", file = "/bin/tab" },
     ["viaversion"] = { name = "ViaVersion", file = "/bin/axrz" }
 }
+
+]]
+
+print("gg ez")
+
+
 
