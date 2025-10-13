@@ -52,11 +52,13 @@ PasteBin=execute set RESOURCE=pastebin; set LOCAL=/bin/pastebin; yang install;
 Updater=execute set RESOURCE=sync; set LOCAL=/bin/sync; yang install;
 ViaVersion=execute set RESOURCE=viaversion; set LOCAL=/bin/axrz; yang install;
 
-]]
-
 local server, proxy = os.getenv("REPO") or "opentty.xyz:31522", getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?"
 local repo = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/"
 local use_proxy = false
+
+]]
+
+print("gg ez")
 
 local mirror = {
     ["android"] = { name = "Android ME", file = "/bin/droid", requires = { "forge" } },
@@ -80,12 +82,3 @@ local mirror = {
     ["viaversion"] = { name = "ViaVersion", file = "/bin/axrz" }
 }
 
-local function root()
-    local status = os.execute("case user (root) false")
-    if status == 255 then return true
-    else print(":: Root permission required!") os.exit(13) end
-end
-
-if root() then
-    if arg[1] then print(mirror[arg[1]]) else print(":: Package '" .. arg[1] .. "' not found") os.exit(127) end
-end
