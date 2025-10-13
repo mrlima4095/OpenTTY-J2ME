@@ -87,6 +87,5 @@ local function root()
 end
 
 if root() then
-    if arg[1] then print(mirror[arg[1]])
-    else print(":: Package '" .. arg[1] .. "' not found") os.exit(127) end
+    if arg[1] then print(mirror[arg[1]]) else print(":: Package '" .. arg[1] .. "' not found") os.exit(127) end
 end
