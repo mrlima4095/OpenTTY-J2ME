@@ -58,28 +58,31 @@ local server, proxy = os.getenv("REPO") or "opentty.xyz:31522", getAppProperty("
 local repo = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/"
 local use_proxy = false
 
-local mirror = {
-    ["android"] = { name = "Android ME", file = "/bin/droid", requires = { "forge" } },
-    ["armitage"] = { name = "Armitage", file = "/bin/armitage" },
-    ["autogc"] = { name = "Auto Clean", file = "/bin/autogc" },
-    ["boxme"] = { name = "BoxME", file = "/bin/boxme" },
-    ["bprevious"] = { name = "Back Previous", file = "/lib/bprevious" },
-    ["cmatrix"] = { name = "CMatrix", file = "/bin/cmatrix" },
-    ["darkdm"] = { name = "DarkDM+", file = "/bin/darkdm" },
-    ["debuggers"] = { name = "JBenchmark", file = "/bin/jdb" },
-    ["forge"] = { name = "Forge", file = "/bin/forge" },
-    ["httpd"] = { name = "Lua - HTTPd Server", file = "/lib/httpd.lua" },
-    ["jbuntu"] = { name = "JBuntu", file = "/bin/jbuntu" },
-    ["modme"] = { name = "J2ME Loader", file = "/bin/modme" },
-    ["mxos"] = { name = "MobiX UI", file = "/bin/mxos" },
-    ["proxy.lua"] = { name = "WebProxy", file = "/bin/shprxy" },
-    ["pastebin"] = { name = "PasteBin", file = "/bin/pastebin" },
-    ["sdkme"] = { name = "SmartME SDK", file = "/bin/sdk", requires = { "forge" } },
-    ["sh2me"] = { name = "ImmersiveShell", file = "/bin/sh2me" },
-    ["tab"] = { name = "Auto Syntax", file = "/bin/tab" },
-    ["viaversion"] = { name = "ViaVersion", file = "/bin/axrz" }
-}
+local mirror = {}
 
+local function load()
+    return {
+        ["android"] = { name = "Android ME", file = "/bin/droid", requires = { "forge" } },
+        ["armitage"] = { name = "Armitage", file = "/bin/armitage" },
+        ["autogc"] = { name = "Auto Clean", file = "/bin/autogc" },
+        ["boxme"] = { name = "BoxME", file = "/bin/boxme" },
+        ["bprevious"] = { name = "Back Previous", file = "/lib/bprevious" },
+        ["cmatrix"] = { name = "CMatrix", file = "/bin/cmatrix" },
+        ["darkdm"] = { name = "DarkDM+", file = "/bin/darkdm" },
+        ["debuggers"] = { name = "JBenchmark", file = "/bin/jdb" },
+        ["forge"] = { name = "Forge", file = "/bin/forge" },
+        ["httpd"] = { name = "Lua - HTTPd Server", file = "/lib/httpd.lua" },
+        ["jbuntu"] = { name = "JBuntu", file = "/bin/jbuntu" },
+        ["modme"] = { name = "J2ME Loader", file = "/bin/modme" },
+        ["mxos"] = { name = "MobiX UI", file = "/bin/mxos" },
+        ["proxy.lua"] = { name = "WebProxy", file = "/bin/shprxy" },
+        ["pastebin"] = { name = "PasteBin", file = "/bin/pastebin" },
+        ["sdkme"] = { name = "SmartME SDK", file = "/bin/sdk", requires = { "forge" } },
+        ["sh2me"] = { name = "ImmersiveShell", file = "/bin/sh2me" },
+        ["tab"] = { name = "Auto Syntax", file = "/bin/tab" },
+        ["viaversion"] = { name = "ViaVersion", file = "/bin/axrz" }
+    }
+end
 local function root()
     local status = os.execute("case user (root) false")
     if status == 255 then return true
@@ -133,7 +136,7 @@ end
 
 local function main()
     if not arg[1] or arg[1] == "view" then print(":: Still in development")
-    elseif arg[1] == "install" then root()
+    elseif arg[1] == "install" then root() load()
         local index, status = 2, 0
         if arg[2] == "--proxy" then use_proxy = true index = 3 end
 
