@@ -1404,7 +1404,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("passwd")) { CONDITION = String.valueOf(EXPR.hashCode()).equals(MIDletControl.passwd()); } 
         else if (METHOD.equals("user")) { 
             CONDITION = username.equals(EXPR); 
-            if (EXPR.equals("root") || id == 0) { CONDITION = true; } 
+            if (EXPR.equals("root") && id == 0) { CONDITION = true; } 
         } 
         if (CONDITION != NEGATED) { return processCommand(CMD, ignore, id); } 
         
