@@ -15,8 +15,8 @@ setrepo=execute set VALUE=REPO; set LABEL=IP Address (OpenTTY Server); export RE
 shell.name=yang
 shell.args=install,update,setrepo,info
 
-install=
-update=
+install=bg execute case user case !user (root) exec echo ":: Root permission required!" & return 13; case file (/tmp/.yang-lock) exec echo ":: Another yang instance is running!" & return 68; set OLD_QUERY=$QUERY; set QUERY=__LOCAL; echo ":: Downloading $RESOURCE"; query socket://$REPO get lib/$RESOURCE; echo ":: Installed [ $__LOCAL ]" set QUERY=$OLD_QUERY; unset OLD_QUERY; unset RESOURCE; unset __LOCAL; 
+update=echo :: Still in development
 
 info=execute echo "PackJ 1.5 (Default)"
 
