@@ -51,7 +51,12 @@ Standard exit codes used across OpenTTY subsystems:
 | `1` | General I/O or runtime error |
 | `2` | Missing argument / bad usage |
 | `3` | Unsupported API or feature not available |
+| `5` | Tried to write on a read-only storage |
 | `13` | Permission denied / security exception |
+| `68` | Service is already running |
+| `69` | Service is unavailable |
+| `101` | Network related error |
+| `127` | Not found |
 | `68–255` | Reserved for subsystem-specific errors |
 
 ---
