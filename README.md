@@ -57,7 +57,8 @@ Standard exit codes used across OpenTTY subsystems:
 | `69` | Service is unavailable |
 | `101` | Network related error |
 | `127` | Not found |
-| `68–255` | Reserved for subsystem-specific errors |
+| 128–254` | Reserved for subsystem-specific errors |
+| `255` | Caused by command `false` |
 
 ---
 
