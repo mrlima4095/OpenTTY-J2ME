@@ -833,7 +833,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) { return runScript(RESPONSE, id); } } } 
         // |
         // Socket Interfaces
-        else if (mainCommand.equals("query")) { return query(argument); }
+        else if (mainCommand.equals("query")) { return query(argument, id); }
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster") || mainCommand.equals("bind")) { new MIDletControl(mainCommand, argument, id); }
         // |
@@ -1651,7 +1651,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String request(String url) { return request(url, null); }
     // |
     // Socket Interfaces
-    private int query(String command) { 
+    private int query(String command, int id) { 
         command = env(command.trim()); 
         String mainCommand = getCommand(command), argument = getArgument(command); 
         if (mainCommand.equals("")) { echoCommand("query: missing [address]"); return 2; } 
@@ -1671,7 +1671,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (FILE.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
                 else if (FILE.equals("show")) { echoCommand(DATA); } 
                 else if (FILE.equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } 
-                else { writeRMS(FILE, DATA, 1000); } 
+                else { writeRMS(FILE, DATA, id); } 
 
                 IN.close(); OUT.close(); CONN.close(); 
             } 
