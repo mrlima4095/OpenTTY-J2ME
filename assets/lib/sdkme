@@ -12,17 +12,7 @@ api.version=1.16
 api.error=execute log add error SmartME requires OpenTTY 1.16 or newer; echo [ SmartME ] Required OpenTTY 1.16 or newer;
 api.match=minimum
 
-include=forge
-
-config=execute set SDK=1.1;
-command=sdk
-
-sdk=execute lua /home/sdkme; #x11 list /home/sdkme; true
-
-shell.name=sdk
-shell.args=setxback
-
-setxback=execute alias xterm=exec sdk & unalias xterm;
+include=/bin/forge
 
 ]]
 
@@ -175,7 +165,7 @@ function app.handler(option)
                 root = function()
                     local sdkme, status = socket.http.get(app.proxy .. app.mirror .. "lib/sdkme")
 
-                    if string.hash(sdkme) == string.hash(io.read("/home/sdkme")) and status == 200 then
+                    if string.hash(sdkme) == string.hash(io.read("/bin/sdk")) and status == 200 then
                         graphics.display(graphics.Alert({
                             title = "SmartME",
                             message = "SmartME is already updated!",
@@ -188,7 +178,7 @@ function app.handler(option)
                             message = "SmartME have been updated!",
                             back = {
                                 label = "Reload",
-                                root = function() os.execute("lua /home/sdkme") os.exit() end
+                                root = function() os.execute("lua /bin/sdk") os.exit() end
                             }
                         }))
                     end
