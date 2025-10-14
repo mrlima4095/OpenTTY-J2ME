@@ -46,3 +46,9 @@ local function lock()
         }
     }))
 end
+
+
+os.setproc("name", "darkdm")
+
+if arg[1] == "lock" then lock()
+else print(arg[0] .. ": " .. arg[1] .. ": not found") end
