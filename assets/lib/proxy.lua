@@ -11,7 +11,7 @@ api.require=lua
 api.error=execute echo [ WebProxy ] OpenTTY 1.16 and Lua is required!; true
 api.match=minimum
 
-config=execute x11 quest /home/proxy.lua
+config=execute x11 quest /bin/shprxy
 
 [ DISPLAY ]
 
@@ -19,7 +19,7 @@ quest.title=WebProxy
 quest.label=Password
 quest.type=password
 quest.key=PASSWD
-quest.cmd=execute bg lua /home/proxy.lua $PASSWD; unset PASSWD
+quest.cmd=execute bg lua /bin/shprxy $PASSWD; unset PASSWD
 
 ]]
 
