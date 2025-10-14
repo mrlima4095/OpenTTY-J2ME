@@ -15,7 +15,7 @@ setrepo=execute set VALUE=REPO; set LABEL=IP Address (OpenTTY Server); export RE
 shell.name=yang
 shell.args=install,update,setrepo,info
 
-install=sudo bg execute case file (/tmp/.yang-lock) exec echo ":: Another yang instance is running!" & return 68; set OLD_QUERY=$QUERY; set QUERY=$__LOCAL; echo ":: Downloading $RESOURCE"; query socket://$REPO get lib/$RESOURCE; echo ":: Installed [ $__LOCAL ]"; set QUERY=$OLD_QUERY; unset OLD_QUERY RESOURCE __LOCAL; 
+install=sudo bg execute case file (/tmp/.yang-lock) exec echo ":: Another yang instance is running!" & return 68; set OLD_QUERY=$QUERY; set QUERY=$PKJOUT; echo ":: Downloading $RESOURCE"; query socket://$REPO get lib/$RESOURCE; echo ":: Installed [ $PKJOUT ]"; set QUERY=$OLD_QUERY; unset OLD_QUERY RESOURCE PKJOUT; 
 update=echo :: Still in development
 
 info=execute echo "PackJ 1.5 (Default)"
@@ -26,24 +26,24 @@ list.title=Repository
 list.content=Android ME,Armitage,Auto Clean,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JBuntu,JBenchmark,J2ME Loader,MobiX UI,PasteBin,SmartME SDK,Updater,ViaVersion
 list.button=Install
 
-Android ME=execute set RESOURCE=android; set __LOCAL=/bin/droid; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
-Armitage=execute set RESOURCE=armitage; set __LOCAL=/bin/armitage; yang install;
-Auto Clean=execute set RESOURCE=autogc; set __LOCAL=/lib/autogc; yang install;
-Back Previous=execute set RESOURCE=bprevious; set __LOCAL=/lib/bprevious; yang install;
-BoxME=execute set RESOURCE=boxme; set __LOCAL=/bin/boxme; yang install;
-CMatrix=execute set RESOURCE=cmatrix; set __LOCAL=/bin/cmatrix; yang install;
-DarkDM+=execute set RESOURCE=darkdm.lua; set __LOCAL=/bin/ddm; yang install
+Android ME=execute set RESOURCE=android; set PKJOUT=/bin/droid; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
+Armitage=execute set RESOURCE=armitage; set PKJOUT=/bin/armitage; yang install;
+Auto Clean=execute set RESOURCE=autogc; set PKJOUT=/lib/autogc; yang install;
+Back Previous=execute set RESOURCE=bprevious; set PKJOUT=/lib/bprevious; yang install;
+BoxME=execute set RESOURCE=boxme; set PKJOUT=/bin/boxme; yang install;
+CMatrix=execute set RESOURCE=cmatrix; set PKJOUT=/bin/cmatrix; yang install;
+DarkDM+=execute set RESOURCE=darkdm.lua; set PKJOUT=/bin/ddm; yang install
 Discord (MIDlet)=execute warn "This is a 3rd MIDlet from 'gtrxac'"; bg exec sleep 3 & open http://146.59.80.3/discord_midp2_beta.jar;
-Forge=execute set RESOURCE=forge; set __LOCAL=/bin/forge; yang install;
+Forge=execute set RESOURCE=forge; set PKJOUT=/bin/forge; yang install;
 Github (MIDlet)=execute warn "This is a 3rd MIDlet from 'shinovon'"; bg exec sleep 3 & open http://nnp.nnchan.ru/dl/GH2ME.jar;
-GoBuster (Word list)=execute set RESOURCE=gobuster; set __LOCAL=/home/gobuster; yang install;
-ImmersiveShell=execute set RESOURCE=sh2me; set __LOCAL=/lib/sh2me; yang install;
-JBuntu=execute set RESOURCE=jbuntu; set __LOCAL=/bin/jbuntu; yang install;
-JBenchmark=execute set RESOURCE=debuggers; set __LOCAL=/bin/jdb; yang install;
-J2ME Loader=execute set RESOURCE=modme; set __LOCAL=/bin/modme; yang install;
-MobiX UI=execute set RESOURCE=mxos; set __LOCAL=/bin/mxos; yang install;
-PasteBin=execute set RESOURCE=pastebin; set __LOCAL=/bin/pastebin; yang install;
-SmartME SDK=execute set RESOURCE=sdkme; set __LOCAL=/bin/sdk; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
-Updater=execute set RESOURCE=sync; set __LOCAL=/bin/sync; yang install;
-ViaVersion=execute set RESOURCE=viaversion; set __LOCAL=/lib/viaversion; yang install;
-WebProxy=execute set RESOURCE=proxy.lua; set __LOCAL=/bin/shprxy; yang install
+GoBuster (Word list)=execute set RESOURCE=gobuster; set PKJOUT=/home/gobuster; yang install;
+ImmersiveShell=execute set RESOURCE=sh2me; set PKJOUT=/lib/sh2me; yang install;
+JBuntu=execute set RESOURCE=jbuntu; set PKJOUT=/bin/jbuntu; yang install;
+JBenchmark=execute set RESOURCE=debuggers; set PKJOUT=/bin/jdb; yang install;
+J2ME Loader=execute set RESOURCE=modme; set PKJOUT=/bin/modme; yang install;
+MobiX UI=execute set RESOURCE=mxos; set PKJOUT=/bin/mxos; yang install;
+PasteBin=execute set RESOURCE=pastebin; set PKJOUT=/bin/pastebin; yang install;
+SmartME SDK=execute set RESOURCE=sdkme; set PKJOUT=/bin/sdk; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
+Updater=execute set RESOURCE=sync; set PKJOUT=/bin/sync; yang install;
+ViaVersion=execute set RESOURCE=viaversion; set PKJOUT=/lib/viaversion; yang install;
+WebProxy=execute set RESOURCE=proxy.lua; set PKJOUT=/bin/shprxy; yang install
