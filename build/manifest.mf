@@ -1,0 +1,10 @@
+MIDlet-1: OpenTTY,/res/img/sh.png,OpenTTY
+MIDlet-Name: OpenTTY
+MIDlet-Vendor: Mr Lima
+MIDlet-Version: 1.17
+MicroEdition-Configuration: CLDC-1.0
+MicroEdition-Profile: MIDP-2.0
+MIDlet-Description: Terminal Emulator for J2ME
+MIDlet-Icon: /res/img/sh.png
+MIDlet-Info-URL: https://github.com/mrlima4095/OpenTTY-J2ME
+MIDlet-Proxy: http://opentty.xyz/proxy.php?
