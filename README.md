@@ -155,5 +155,3 @@ OpenTTY is actively developed by the community.
 If you want to contribute, open issues or pull requests on GitHub.
 
 **Author:** Mr. Lima
-
----
