@@ -1,4 +1,4 @@
-OpenTTY Java Edition 1.17
+OpenTTY Java Edition 1.17  
 Copyright (C) 2025 - Mr. Lima
 
 ---
