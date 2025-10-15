@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
-    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
+    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     public String logs = "", path = "/home/", build = "2025-1.17-02x94";
     public Display display = Display.getDisplay(this);
@@ -1047,8 +1047,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         else if (mainCommand.equals("rmsfix")) {
-            if (id != 0) { echoCommand("Permission denied!"); return 13; }
-            else if (argument.equals("")) { }
+            if (argument.equals("")) { }
+            else if (id != 0) { echoCommand("Permission denied!"); return 13; }
             else if (args[0].equals("read")) { if (args.length < 2) { return 2; } else { echoCommand(loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : 4)); } }
             else if (args[0].equals("swap")) { if (args.length < 3) { return 2; } else { writeRMS(args[2].startsWith("/") ? args[2] : path + args[2], loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : 4), id); } }
             else if (args[0].startsWith("/")) {
@@ -1253,15 +1253,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (filename.startsWith("/bin/")) {
                 filename = filename.substring(5);
+                if (cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
+
                 String content = read(filename, loadRMS("OpenRMS", 3));
-                if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                if (content != null) { cache.put("/lib/" + filename); return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/bin/" + filename;
             }
             else if (filename.startsWith("/lib/")) {
                 filename = filename.substring(5);
+                if (cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
+
                 String content = read(filename, loadRMS("OpenRMS", 4));
-                if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                if (content != null) { cache.put("/lib/" + filename); return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/lib/" + filename;
             }
@@ -1272,9 +1276,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public String read(String filename) {
         try {
-            if (filename.startsWith("/tmp/")) {
-                return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : "";
-            }
+            if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; }
             InputStream is = readRaw(filename);
             if (is == null) { return ""; }
             
@@ -1783,6 +1785,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String content = loadRMS("OpenRMS", index);
             if (content.indexOf("[\0BEGIN:" + name + "\0]") == -1) { echoCommand("read-only storage"); return 5; }
 
+            cache.remove("/" + base + "/" + name);
             return writeRMS("OpenRMS", delFile(name, content).getBytes(), index, id);
         }
         else if (filename.startsWith("/tmp/")) {
@@ -1806,7 +1809,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (filename.equals("")) { return 2; } 
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
             else if (filename.equals("sh") || filename.equals("lua")) { echoCommand("read-only storage"); return 5; }
-            else { return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), base, id); }
+            else { cache.put("/" + base + "/" + name, new String(data)); return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), base, id); }
         }
         else if (filename.startsWith("/dev/")) { filename = filename.substring(5); if (filename.equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { echoCommand("read-only storage"); return 5; } }
         else if (filename.startsWith("/tmp/")) { filename = filename.substring(5); if (filename.equals("")) { return 2; } else { tmp.put(filename, new String(data)); } }
@@ -1818,7 +1821,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // |
     // ZIP Files
-    public int addFile(String filename, String content, String archive, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, archive) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
+    public int addFile(String filename, String content, String archive, String base, int id) { 
+        return writeRMS(
+            "OpenRMS", 
+            (delFile(filename, archive) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), 
+            base.equals("bin") ? 3 : 4, 
+            id
+        ); 
+    }
     public String delFile(String filename, String content) {
         String startTag = "[\0BEGIN:" + filename + "\0]";
         int start = content.indexOf(startTag);
@@ -1839,28 +1849,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         int end = content.indexOf("[\0END\0]", start);
         if (end == -1) { return null; }
 
-        return content.substring(start, end).trim();
-    }
-    public Vector listFiles(String content) {
-        Vector files = new Vector();
-        int index = 0;
-
-        while (true) {
-            int start = content.indexOf("[\0BEGIN:", index);
-            if (start == -1) { break; }
-
-            int end = content.indexOf("\0]", start);
-            if (end == -1) { break; }
-
-            files.addElement(content.substring(start + "[\0BEGIN:".length(), end));
-
-            index = content.indexOf("[\0END\0]", end);
-            if (index == -1) { break; }
-
-            index += "[\0END\0]".length();
-        }
-
-        return files;
+        String file = content.substring(start, end).trim();
+        cache.put("")
+        return ;
     }
     // |
     private boolean file(String filename) {
