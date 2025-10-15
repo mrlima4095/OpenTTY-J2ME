@@ -14,7 +14,7 @@ import java.io.*;
 // OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
     public int TTY_MAX_LEN = 0, cursorX = 10, cursorY = 10;
-    public boolean classpath = true;
+    public boolean classpath = true, useCache = true;
     // |
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
@@ -805,7 +805,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
-        else if (mainCommand.equals("clear")) { if (argument.equals("") || argument.equals("stdout")) { stdout.setText(""); } else if (argument.equals("stdin")) { stdin.setString(""); } else if (argument.equals("history")) { getprocess("1").put("history", new Vector()); } else if (argument.equals("logs")) { logs = ""; } else { echoCommand("clear: " + argument + ": not found"); return 127; } }
+        else if (mainCommand.equals("clear")) { if (argument.equals("")) { stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache.clear(); } else if (args[i].equals("logs")) { logs = ""; } else { echoCommand("clear: " + args[i] + ": not found"); return 127; } } } }
         else if (mainCommand.equals("seed")) { try { echoCommand("" + random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } }
 
         // API 009 - (Threads)
@@ -1046,6 +1046,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (Exception e) { echoCommand("cp: " + getCatch(e)); return getCatch(e, 1); }
             }
         }
+        else if (mainCommand.equals("cache")) {
+            if (argument.equals("")) { echoCommand("Cache: " + useCache ? "enabled (" + cache.size() + " items)" : "disabled"); } 
+            else if (argument.equals("on")) { useCache = true; } 
+            else if (argument.equals("off")) { useCache = false; } 
+            else if (argument.equals("")) {
+
+            } 
+            else { echoCommand("cache: " + args[0] + ": not found")
+
+            }
+        }
         else if (mainCommand.equals("rmsfix")) {
             if (argument.equals("")) { }
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
@@ -1253,19 +1264,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (filename.startsWith("/bin/")) {
                 filename = filename.substring(5);
-                if (cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
+                if (useCache && cache.containsKey("/bin/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/bin/" + filename)).getBytes("UTF-8")); }
 
                 String content = read(filename, loadRMS("OpenRMS", 3));
-                if (content != null) { cache.put("/lib/" + filename, content); return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                if (content != null) { if (useCache) { cache.put("/bin/" + filename, content); } return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/bin/" + filename;
             }
             else if (filename.startsWith("/lib/")) {
                 filename = filename.substring(5);
-                if (cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
+                if (useCache && cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
 
                 String content = read(filename, loadRMS("OpenRMS", 4));
-                if (content != null) { cache.put("/lib/" + filename, content); return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                if (content != null) { if (useCache) { cache.put("/lib/" + filename, content); } return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/lib/" + filename;
             }
@@ -1783,7 +1794,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String content = loadRMS("OpenRMS", index);
             if (content.indexOf("[\0BEGIN:" + name + "\0]") == -1) { echoCommand("read-only storage"); return 5; }
 
-            cache.remove("/" + base + "/" + name);
+            if (useCache) { cache.remove("/" + base + "/" + name); }
             return writeRMS("OpenRMS", delFile(name, content).getBytes(), index, id);
         }
         else if (filename.startsWith("/tmp/")) {
@@ -1807,7 +1818,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (filename.equals("")) { return 2; } 
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
             else if (filename.equals("sh") || filename.equals("lua")) { echoCommand("read-only storage"); return 5; }
-            else { cache.put("/" + base + "/" + filename, new String(data)); return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), base, id); }
+            else { if (useCache) { cache.put("/" + base + "/" + filename, new String(data)); } return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : 4), base, id); }
         }
         else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { echoCommand("read-only storage"); return 5; } }
         else if (filename.startsWith("/tmp/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else { tmp.put(filename, new String(data)); } }
@@ -1819,14 +1830,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore("OpenRMS", true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // |
     // ZIP Files
-    public int addFile(String filename, String content, String archive, String base, int id) { 
-        return writeRMS(
-            "OpenRMS", 
-            (delFile(filename, archive) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), 
-            base.equals("bin") ? 3 : 4, 
-            id
-        ); 
-    }
+    public int addFile(String filename, String content, String archive, String base, int id) { return writeRMS("OpenRMS", (delFile(filename, archive) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : 4, id); }
     public String delFile(String filename, String content) {
         String startTag = "[\0BEGIN:" + filename + "\0]";
         int start = content.indexOf(startTag);
