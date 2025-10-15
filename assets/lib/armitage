@@ -6,10 +6,10 @@ description=OpenTTY Exploits
 
 include=/lib/settings
 
-config=execute x11 list /home/armitage;
+config=execute x11 list /bin/armitage;
 command=armitage,browser,whois
 
-armitage=execute x11 list /home/armitage;
+armitage=execute x11 list /bin/armitage;
 browser=execute open http://mini.opera.com;
 whois=query socket://whois.iana.org:43
 
@@ -26,24 +26,24 @@ quest.title=Armitage
 quest.label=$LABEL
 quest.key=INPUT
 quest.cmd=execute tick Connecting...; $TOOL $INPUT; unset LABEL; unset TOOL; unset INPUT; 
-quest.back=execute x11 list /home/armitage; unset LABEL; unset TOOL; unset INPUT; 
+quest.back=execute x11 list /bin/armitage; unset LABEL; unset TOOL; unset INPUT; 
 
 list.title=Armitage Tools
 list.content=Connect (Remote),Connect - Server,Get Local Adress,Search IP Info,WhoIS Search,GoBuster,Port Scanner,Address Finder,Ping a WebSite,Ping a Server,IP Generator,HTTPS Requester,HTTPS (Via Proxy),Charge Server IP
 list.button=Open
 
-Connect (Remote)=execute set TOOL=nc; set LABEL=IP Adress (Connect); x11 quest /home/armitage;
+Connect (Remote)=execute set TOOL=nc; set LABEL=IP Adress (Connect); x11 quest /bin/armitage;
 Connect - Server=execute nc $REPO;
-Get Local Adress=execute x11 list /home/armitage; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
-Search IP Info=execute set TOOL=fw; set LABEL=IP Adress (GeoIP Query); x11 quest /home/armitage;
-WhoIS Search=execute set TOOL=whois; set LABEL=Domain (WhoIS Query); x11 quest /home/armitage;
-GoBuster=execute set TOOL=gobuster; set LABEL=WebSite URL (GoBuster Query); x11 quest /home/armitage;
-Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress (Port Scanner); x11 quest /home/armitage;
-Address Finder=execute set TOOL=armitage gaddr; set LABEL=Web Domain; x11 quest /home/armitage;
-Ping a WebSite=execute set TOOL=armitage ping; set LABEL=Web Domain; x11 quest /home/armitage;
-Ping a Server=execute set TOOL=armitage pong; set LABEL=IP Address; x11 quest /home/armitage;
+Get Local Adress=execute x11 list /bin/armitage; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
+Search IP Info=execute set TOOL=fw; set LABEL=IP Adress (GeoIP Query); x11 quest /bin/armitage;
+WhoIS Search=execute set TOOL=whois; set LABEL=Domain (WhoIS Query); x11 quest /bin/armitage;
+GoBuster=execute set TOOL=gobuster; set LABEL=WebSite URL (GoBuster Query); x11 quest /bin/armitage;
+Port Scanner=execute set TOOL=prscan; set LABEL=IP Adress (Port Scanner); x11 quest /bin/armitage;
+Address Finder=execute set TOOL=armitage gaddr; set LABEL=Web Domain; x11 quest /bin/armitage;
+Ping a WebSite=execute set TOOL=armitage ping; set LABEL=Web Domain; x11 quest /bin/armitage;
+Ping a Server=execute set TOOL=armitage pong; set LABEL=IP Address; x11 quest /bin/armitage;
 IP Generator=execute genip; install nano; touch; add <title>$OUTPUT Info</title>; fw $OUTPUT; add $OUTPUT; html; get nano;
-HTTPS Requester=execute set TOOL=query socket://$REPO http; set LABEL=URL (HTTPS Proxy - Local); x11 quest /home/armitage;
-HTTPS (Via Proxy)=execute set TOOL=proxy; set LABEL=URL (HTTPS Proxy); x11 quest /home/armitage;
+HTTPS Requester=execute set TOOL=query socket://$REPO http; set LABEL=URL (HTTPS Proxy - Local); x11 quest /bin/armitage;
+HTTPS (Via Proxy)=execute set TOOL=proxy; set LABEL=URL (HTTPS Proxy); x11 quest /bin/armitage;
 Charge Server IP=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; cfg run;
 
