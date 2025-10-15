@@ -1256,7 +1256,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
 
                 String content = read(filename, loadRMS("OpenRMS", 3));
-                if (content != null) { cache.put("/lib/" + filename); return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                if (content != null) { cache.put("/lib/" + filename, content); return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/bin/" + filename;
             }
@@ -1265,7 +1265,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
 
                 String content = read(filename, loadRMS("OpenRMS", 4));
-                if (content != null) { cache.put("/lib/" + filename); return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                if (content != null) { cache.put("/lib/" + filename, content); return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/lib/" + filename;
             }
@@ -1849,9 +1849,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         int end = content.indexOf("[\0END\0]", start);
         if (end == -1) { return null; }
 
-        String file = content.substring(start, end).trim();
-        cache.put("")
-        return ;
+        return content.substring(start, end).trim();
     }
     // |
     private boolean file(String filename) {
