@@ -622,14 +622,28 @@ Usage: return [CODE]
 Usage: rm [FILE]
 * Delete FILE.
 </rm>
+<rmsfix>
+Usage: rmsfix [OPTION]
+* Manage RMS archive strutures
+
+	Run with super-user permissions
+
+OPTIONS:
+	read [STRUCT]
+	| Prints structure in stdout
+	swap [STRUCT] [FILE]
+	| Save structure in file
+	[STRUCT]
+	| Clear current structure
+
+	Available stuctures:
+	/bin/ -> Applications
+	/lib/ -> Shared packages
+</rmsfix>
 <rraw>
 Usage: rraw
 * Clear standard output (stdout) and print nano buffer content.
 </rraw>
-<run>
-Usage: run [FILE]
-* Run FILE as a shell script.
-</run>
 <sed>
 Usage: sed [OPTIONS ...]
 * String Editor.
@@ -656,13 +670,6 @@ OPTIONS:
 	-v
 	| View nano buffer content inverted.
 </sed>
-<server>
-Usage: server
-* Basic socket server.
-
-	Listen at $PORT for connections. 'server' doesn't read PORT from standard input (stdin), but take it from environment key.
-	The response FILE is take from environment key 'RESPONSE'.
-</server>
 <set>
 Usage: set [KEY]=[VALUE]
 * Set VALUE of environment KEY.
