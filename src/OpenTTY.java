@@ -1045,7 +1045,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         else if (mainCommand.equals("cache")) {
-            if (argument.equals("")) { echoCommand("Cache: " + useCache ? "enabled (" + cache.size() + " items)" : "disabled"); } 
+            if (argument.equals("")) { echoCommand("Cache: " + (useCache ? "enabled (" + cache.size() + " items)" : "disabled")); } 
             else if (argument.equals("on")) { useCache = true; } 
             else if (argument.equals("off")) { useCache = false; cache = new Hashtable(); } 
             else if (argument.equals("clear")) { cache = new Hashtable(); } 
