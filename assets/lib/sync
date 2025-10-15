@@ -1,11 +1,10 @@
 [ Config ]
 
 name=Sync
-version=1.1
+version=1.2
 description=Update Checker
 
-command=sync 
-sync=execute x11 list /home/sync; warn Select a Mirror to Connect with GitHub!;
+config=execute x11 list /bin/sync; warn Select a Mirror to Connect with GitHub!;
 
 [ DISPLAY ]
 
