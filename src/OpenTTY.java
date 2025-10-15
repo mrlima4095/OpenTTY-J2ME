@@ -1044,13 +1044,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (Exception e) { echoCommand("cp: " + getCatch(e)); return getCatch(e, 1); }
             }
         }
-        else if (mainCommand.equals("cache")) {
-            if (argument.equals("")) { echoCommand("Cache: " + (useCache ? "enabled (" + cache.size() + " items)" : "disabled")); } 
-            else if (argument.equals("on")) { useCache = true; } 
-            else if (argument.equals("off")) { useCache = false; cache = new Hashtable(); } 
-            else if (argument.equals("clear")) { cache = new Hashtable(); } 
-            else { echoCommand("cache: " + args[0] + ": not found"); return 127; }
-        }
+        else if (mainCommand.equals("cache")) { if (argument.equals("")) { echoCommand("Cache: " + (useCache ? "enabled (" + cache.size() + " items)" : "disabled")); } else if (argument.equals("on")) { useCache = true; } else if (argument.equals("off")) { useCache = false; cache = new Hashtable(); } else if (argument.equals("clear")) { cache = new Hashtable(); } else { echoCommand("cache: " + args[0] + ": not found"); return 127; } } 
         else if (mainCommand.equals("rmsfix")) {
             if (argument.equals("")) { }
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
