@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x93";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x94";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -1670,10 +1670,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } 
 
-                ByteArrayOutputStream BAOS = new ByteArrayOutputStream();
-                byte[] BUFFER = new byte[1024]; int LENGTH;
-
-                while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); }
+                byte[] BUFFER = new byte[1024]; 
+                int LENGTH = IN.read(BUFFER); 
+                String DATA = LENGTH > 0 ? new String(BUFFER, 0, LENGTH, "UTF-8") : "";
 
                 String DATA = new String(BAOS.toByteArray(), "UTF-8"), FILE = env("$QUERY"); 
                 if (FILE.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
