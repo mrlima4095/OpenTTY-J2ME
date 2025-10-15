@@ -21,7 +21,6 @@ Copyright (C) 2025 - Mr. Lima
 
 ### 🔒 Security
 - **Fixed** Lua security error that allowed access to process **owner** field
-- **Lua** functions `io.read` and `io.write` now require using `/dev/stdin` and `/dev/stdout`
 - **Removed** default parser commands `vnt`
 - **Removed** symbolic link `/bin/java`
 - **Fixed** security bug with `case user (any name) ...` command getting root permission
@@ -36,6 +35,7 @@ Copyright (C) 2025 - Mr. Lima
 ### ⚙️ Features & API
 - **Lua** added function `os.getcwd()` to read current working directory
 - **Lua Graphics API** - _BuildScreen_ can now build Images from all sources
+- **Lua** functions `io.read` and `io.write` now require using `/dev/stdin` and `/dev/stdout`
 - **Lua** added default library `java` for minimal direct access and handling of Java VM resources
 - **Lua** added function `graphics.render(file)` to get **Image** item
 - **Lua** added new _type_ **Image**
