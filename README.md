@@ -136,6 +136,20 @@ lua -e "print('Hello, Lua!')"
 
 ---
 
+## 🛠️ Build & Installation
+
+For detailed build instructions and installation guide, check out our complete documentation:
+
+📖 **[Build Documentation Wiki](https://github.com/mrlima4095/OpenTTY-J2ME/wiki/%F0%9F%9A%80-Build-Documentation)**
+
+*Quick overview:*
+- Built using [J2ME SDK Mobile](http://opentty.xyz/dl/SDK.jar)
+- Compiles to `OpenTTY.jar` and `OpenTTY.jad` files
+- Direct installation on Java ME compatible devices
+- Supports various mobile platforms with J2ME runtime
+
+---
+
 ## 🤝 Contributing & Collaborators
 OpenTTY is actively developed by the community.
 If you want to contribute, open issues or pull requests on GitHub.
