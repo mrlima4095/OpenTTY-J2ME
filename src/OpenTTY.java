@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x94";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x95";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
@@ -651,10 +651,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     }
 
-                    String[] files = (String[]) paths.get(path);
+                    Vector files = (Vector) paths.get(path);
                     if (files != null) {
-                        for (int i = 0; i < files.length; i++) {
-                            String f = files[i];
+                        for (int i = 0; i < files.size(); i++) {
+                            String f = (String) files.elementAt(i);
 
                             if (f != null && !f.equals("..") && !f.equals("/")) { preview.append(f, null); }
                         }
@@ -805,7 +805,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
         else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
-        else if (mainCommand.equals("clear")) { if (argument.equals("")) { stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache.clear(); } else if (args[i].equals("logs")) { logs = ""; } else { echoCommand("clear: " + args[i] + ": not found"); return 127; } } } }
+        else if (mainCommand.equals("clear")) { if (argument.equals("")) { stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { echoCommand("clear: " + args[i] + ": not found"); return 127; } } } }
         else if (mainCommand.equals("seed")) { try { echoCommand("" + random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } }
 
         // API 009 - (Threads)
@@ -995,14 +995,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (PWD.equals("/home/")) { return processCommand("dir", false, id); }
             } catch (IOException e) { } 
 
-            String[] FILES = (String[]) paths.get(PWD); 
+            Vector FILES = (Vector) paths.get(PWD); 
             if (FILES != null) { 
-                for (int i = 0; i < FILES.length; i++) { 
-                    String file = FILES[i].trim(); 
-                    if (file == null || file.equals("..") || file.equals("/")) continue; 
-                    if ((all || !file.startsWith(".")) && !BUFFER.contains(file) && !BUFFER.contains(file + "/")) { 
-                        BUFFER.addElement(file); 
-                    } 
+                for (int i = 0; i < FILES.size(); i++) { 
+                    String file = ((String) FILES.elementAt(i)).trim(); 
+                    if (file == null || file.equals("..") || file.equals("/")) { continue; }
+                    if ((all || !file.startsWith(".")) && !BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } 
                 } 
             } 
 
@@ -1049,10 +1047,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cache")) {
             if (argument.equals("")) { echoCommand("Cache: " + useCache ? "enabled (" + cache.size() + " items)" : "disabled"); } 
             else if (argument.equals("on")) { useCache = true; } 
-            else if (argument.equals("off")) { useCache = false; } 
-            else if (argument.equals("")) {
-
-            } 
+            else if (argument.equals("off")) { useCache = false; cache = new Hashtable(); } 
+            else if (argument.equals("clear")) { cache = new Hashtable(); } 
             else { echoCommand("cache: " + args[0] + ": not found")
 
             }
@@ -1757,8 +1753,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 012 - (File)
     // |
     // Directories Manager
-    private void mount(String script) { String[] lines = split(script, '\n'); for (int i = 0; i < lines.length; i++) { String line = ""; if (lines[i] != null) { line = lines[i].trim(); } if (line.length() == 0 || line.startsWith("#")) { continue; } if (line.startsWith("/")) { String fullPath = ""; int start = 0; for (int j = 1; j < line.length(); j++) { if (line.charAt(j) == '/') { String dir = line.substring(start + 1, j); fullPath += "/" + dir; addDirectory(fullPath + "/"); start = j; } } String finalPart = line.substring(start + 1); fullPath += "/" + finalPart; if (line.endsWith("/")) { addDirectory(fullPath + "/"); } else { addDirectory(fullPath); } } } }
-    private void addDirectory(String fullPath) { boolean isDirectory = fullPath.endsWith("/"); if (!paths.containsKey(fullPath)) { if (isDirectory) { paths.put(fullPath, new String[] { ".." }); String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/', fullPath.length() - 2) + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } String dirName = fullPath.substring(parentPath.length(), fullPath.length() - 1); updatedContents.addElement(dirName + "/"); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } else { String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); String fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1); String[] parentContents = (String[]) paths.get(parentPath); Vector updatedContents = new Vector(); if (parentContents != null) { for (int k = 0; k < parentContents.length; k++) { updatedContents.addElement(parentContents[k]); } } updatedContents.addElement(fileName); String[] newContents = new String[updatedContents.size()]; updatedContents.copyInto(newContents); paths.put(parentPath, newContents); } } }
+    private int mount(String struct) {
+        if (struct == null || struct.length() == 0) { return 2; }
+        String[] lines = split(struct, '\n');
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            int div = line.indexOf('=');
+
+            if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; }
+            else {
+                String base = line.substring(0, div).trim();
+                String[] files = split(line.substring(div + 1).trim(), ',');
+
+                Vector content = new Vector(); content.addElement("..");
+                for (int j = 0; j < files.length; j++) { 
+                    if (!content.contains(files[j])) { 
+                        if (files[j].endsWith("/")) {
+                            Vector dir = new Vector(); dir.addElement("..");
+                            paths.put(base + files[j], dir);
+                        }
+                        content.addElement(files[j]);
+                    } 
+                }
+
+                paths.put(base, content);
+            }
+        }
+
+        return 0;
+    }
     private String readStack() { Vector stack = (Vector) getobject("1", "stack"); StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
@@ -1877,7 +1901,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (content.indexOf("[\0BEGIN:" + basename(filename) + "\0]") != -1) { return true; }
             }
             
-            return (paths.containsKey((dir)) && indexOf(basename(filename), (String[]) paths.get(dir)) != -1); 
+            return (paths.containsKey((dir)) && ((Vector) paths.get(dir)).indexOf(basename(filename)) != -1); 
         }
         
         return false;

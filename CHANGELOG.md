@@ -18,6 +18,7 @@ Copyright (C) 2025 - Mr. Lima
 - Initialization script changed to `.initrc`
 - `.initrc` will be executed considering shebangs
 - Fixed `pushd` invalid directories stacking
+- File System optimized and new `/etc/fstab` format
 
 ### 🔒 Security
 - **Fixed** Lua security error that allowed access to process **owner** field

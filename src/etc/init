@@ -1,6 +1,4 @@
 #!/bin/sh
-# -*- coding: utf-8 -*-
-#
 
 mount /etc/fstab
 stty /dev/tty

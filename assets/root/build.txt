@@ -162,3 +162,4 @@
 [2025-1.17-02x92] Improved Persistent File System
 [2025-1.17-02x93] Added Command 'RMSFIX'
 [2025-1.17-02x94] Command 'QUERY' not reading until connection end
+[2025-1.17-02x95] Optimized File System
