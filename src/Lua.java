@@ -635,7 +635,7 @@ public class Lua {
             int depth = 1;
             while (depth > 0) {
                 Token token = consume();
-                if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) { depth++; }
+                if (token.type == FUNCTION || token.type == IF || token.type == REPEAT || token.type == DO) { depth++; }
                 else if (token.type == END) { depth--; if (depth > 0) { bodyTokens.addElement(token); } }
                 else if (token.type == EOF) { throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); }
                 if (depth > 0 && token.type != END) { bodyTokens.addElement(token); }
@@ -675,8 +675,7 @@ while (depth > 0) {
     Token token = consume();
     
     // Tokens que ABREM blocos
-    if (token.type == FUNCTION || token.type == IF || token.type == WHILE || 
-        token.type == FOR || token.type == REPEAT || token.type == DO) { 
+    if (token.type == FUNCTION || token.type == IF || token.type == REPEAT || token.type == DO) { 
         depth++; 
     }
     // Tokens que FECHAM blocos  
