@@ -1669,21 +1669,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 InputStream IN = CONN.openInputStream(); OutputStream OUT = CONN.openOutputStream(); 
 
                 if (!argument.equals("")) { OUT.write((argument + "\r\n").getBytes()); OUT.flush(); } 
-// Substitua apenas a parte da leitura por:
-ByteArrayOutputStream response = new ByteArrayOutputStream();
-byte[] chunk = new byte[1024];
-int count;
 
-while ((count = IN.read(chunk)) > 0) {
-    response.write(chunk, 0, count);
-    
-    // Para conexões que não fecham imediatamente
-    if (IN.available() <= 0) {
-        break;
-    }
-}
+                ByteArrayOutputStream BAOS = new ByteArrayOutputStream();
+                byte[] BUFFER = new byte[1024]; int LENGTH;
 
-String DATA = response.toString("UTF-8");
+                while ((LENGTH = IN.read(BUFFER)) != -1) { BAOS.write(BUFFER, 0, LENGTH); }
+
+                String DATA = new String(BAOS.toByteArray(), "UTF-8"), FILE = env("$QUERY"); 
                 if (FILE.equals("$QUERY") || env("$QUERY").equals("")) { echoCommand(DATA); MIDletLogs("add warn Query storage setting not found"); } 
                 else if (FILE.equals("show")) { echoCommand(DATA); } 
                 else if (FILE.equals("nano")) { nanoContent = DATA; echoCommand("query: data retrieved"); } 
