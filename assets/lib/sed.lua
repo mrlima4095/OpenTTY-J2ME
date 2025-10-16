@@ -3,7 +3,7 @@
 -- Uso: lua sed.lua [comandos] [arquivo]
 
 -- Função para dividir string por delimitador
-splitString = function(str, delimiter)
+function splitString(str, delimiter)
     local result = {}
     local i = 1
     local start = 1
@@ -24,7 +24,7 @@ splitString = function(str, delimiter)
 end
 
 -- Função para encontrar substring
-findSubstring = function(str, pattern)
+function findSubstring(str, pattern)
     local len = string.len(str)
     local patternLen = string.len(pattern)
     
@@ -44,7 +44,7 @@ findSubstring = function(str, pattern)
 end
 
 -- Função de substituição simples
-substitute = function(line, pattern, replacement, global)
+function substitute(line, pattern, replacement, global)
     local result = line
     local start = 1
     
@@ -67,7 +67,7 @@ substitute = function(line, pattern, replacement, global)
 end
 
 -- Função para dividir texto em linhas
-splitLines = function(content)
+function splitLines(content)
     local lines = {}
     local i = 1
     local start = 1
@@ -91,7 +91,7 @@ splitLines = function(content)
 end
 
 -- Processar comando sed
-processSedCommand = function(command, content)
+function processSedCommand(command, content)
     local lines = splitLines(content)
     
     -- Comando de substituição: s/pattern/replacement/flags
