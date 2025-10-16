@@ -1,155 +1,155 @@
 #!/bin/lua
--- Implementação do comando sed para Lua J2ME
--- Uso: sed [OPÇÕES] COMANDO [ARQUIVO]
 
-local args = arg or {}
-local command = ""
-local filename = ""
-local options = ""
-local in_place = false
-local global_replace = false
+local function splitString(str, delimiter)
+    local result = {}
+    local i = 1
+    local start = 1
+    local delimLen = string.len(delimiter)
 
--- Parse arguments
-local i = 1
-while i <= #args do
-    local arg = args[i]
-    
-    if arg:sub(1, 1) == "-" then
-        options = arg
-        if arg == "-i" then
-            in_place = true
+    while true do
+        local pos = string.find(str, delimiter, start)
+        if not pos then
+            result[i] = string.sub(str, start)
+            break
         end
-    elseif command == "" then
-        command = arg
-    else
-        filename = arg
+        result[i] = string.sub(str, start, pos - 1)
+        start = pos + delimLen
+        i = i + 1
     end
-    i = i + 1
+
+    return result
 end
 
--- Verificar se temos um comando válido
-if command == "" then print("sed: nenhum comando especificado") os.exit(1) end
-if filename == "" then print("sed: nenhum arquivo especificado") os.exit(1) end
+local function findSubstring(str, pattern)
+    local len = string.len(str)
+    local patternLen = string.len(pattern)
 
--- Função para parse do comando sed
-function parse_sed_command(cmd)
-    if cmd:sub(1, 1) == "s" then
-        local delimiter = cmd:sub(2, 2)
-        local parts = {}
-        local start_pos = 3
-        local part_start = start_pos
-        
-        -- Parse das partes separadas pelo delimitador
-        for i = start_pos, #cmd do
-            if cmd:sub(i, i) == delimiter then
-                table.insert(parts, cmd:sub(part_start, i-1))
-                part_start = i + 1
+    for i = 1, len - patternLen + 1 do
+        local match = true
+        for j = 1, patternLen do
+            if string.sub(str, i + j - 1, i + j - 1) ~= string.sub(pattern, j, j) then
+                match = false
+                break
             end
         end
-        
-        -- Adicionar a última parte (flags)
-        if part_start <= #cmd then
-            table.insert(parts, cmd:sub(part_start))
-        end
-        
-        if #parts >= 2 then
-            local pattern = parts[1]
-            local replacement = parts[2]
-            local flags = parts[3] or ""
-            
-            global_replace = flags:find("g") ~= nil
-            
-            return {
-                type = "substitute",
-                pattern = pattern,
-                replacement = replacement,
-                flags = flags
-            }
+        if match then
+            return i
         end
     end
-    
     return nil
 end
 
--- Função de substituição simples (sem regex)
-function simple_substitute(text, pattern, replacement, flags)
-    local result = text
-    local count = 0
-    
-    if flags:find("g") then
-        -- Substituição global
-        local start_pos = 1
-        while true do
-            local pos = string.find(result, pattern, start_pos, true) -- true para plain text
-            if not pos then break end
-            
-            local before = result:sub(1, pos-1)
-            local after = result:sub(pos + #pattern)
-            result = before .. replacement .. after
-            start_pos = pos + #replacement
-            count = count + 1
-        end
-    else
-        -- Apenas primeira ocorrência
-        local pos = string.find(result, pattern, 1, true)
-        if pos then
-            local before = result:sub(1, pos-1)
-            local after = result:sub(pos + #pattern)
-            result = before .. replacement .. after
-            count = 1
-        end
+local function substitute(line, pattern, replacement, global)
+    local result = line
+    local start = 1
+
+    while true do
+        local found = findSubstring(result, pattern)
+        if not found then break end
+
+        local before = string.sub(result, 1, found - 1)
+        local after = string.sub(result, found + string.len(pattern))
+        result = before .. replacement .. after
+
+        if not global then break end
+        start = found + string.len(replacement)
+
+        if start > string.len(result) then break end
     end
     
-    return result, count
+    return result
 end
 
--- Processar o comando
-local sed_cmd = parse_sed_command(command)
-if not sed_cmd then print("sed: comando inválido: " .. command) os.exit(1) end
-
--- Ler o arquivo
-local content = io.read(filename)
-if not content then
-    print("sed: não foi possível ler o arquivo: " .. filename)
-    os.exit(1)
-end
-
--- Processar o conteúdo
-local lines = {}
-for line in content:gmatch("[^\r\n]+") do
-    table.insert(lines, line)
-end
-
-local modified_lines = {}
-local total_replacements = 0
-
-for _, line in ipairs(lines) do
-    if sed_cmd.type == "substitute" then
-        local new_line, count = simple_substitute(line, sed_cmd.pattern, sed_cmd.replacement, sed_cmd.flags)
-        table.insert(modified_lines, new_line)
-        total_replacements = total_replacements + count
-    else
-        table.insert(modified_lines, line)
+local function splitLines(content)
+    local lines = {}
+    local i = 1
+    local start = 1
+    local len = string.len(content)
+    
+    for pos = 1, len do
+        local char = string.sub(content, pos, pos)
+        if char == "\n" then
+            lines[i] = string.sub(content, start, pos - 1)
+            i = i + 1
+            start = pos + 1
+        end
     end
-end
-
--- Output ou salvar
-if in_place then
-    -- Salvar no arquivo original (append=false para sobrescrever)
-    local new_content = table.concat(modified_lines, "\n")
-    local success = io.write(filename, new_content) -- false para não fazer append
-    if not success then print("sed: erro ao salvar arquivo: " .. filename) os.exit(1) end
-    print("Arquivo " .. filename .. " modificado com " .. total_replacements .. " substituições")
-else
-    -- Output para stdout usando print
-    for _, line in ipairs(modified_lines) do
-        print(line)
+    
+    -- Adicionar última linha
+    if start <= len then
+        lines[i] = string.sub(content, start)
     end
+    
+    return lines
 end
 
--- Status de saída
-if total_replacements > 0 then
-    os.exit(0)
+
+local function processSedCommand(command, content)
+    local lines = splitLines(content)
+
+    if string.sub(command, 1, 2) == "s/" then
+        local parts = splitString(command, "/")
+
+        if #parts >= 3 then
+            local pattern = parts[2] or ""
+            local replacement = parts[3] or ""
+            local flags = parts[4] or ""
+            local global = findSubstring(flags, "g") ~= nil
+
+            for idx = 1, #lines do
+                lines[idx] = substitute(lines[idx], pattern, replacement, global)
+            end
+        end
+
+    elseif string.sub(command, string.len(command)) == "d" then
+        local pattern = string.sub(command, 1, string.len(command) - 1)
+        if string.sub(pattern, 1, 1) == "/" then
+            pattern = string.sub(pattern, 2)
+        end
+
+        local newLines = {}
+        local newIndex = 1
+        for i = 1, #lines do
+            if findSubstring(lines[i], pattern) == nil then
+                newLines[newIndex] = lines[i]
+                newIndex = newIndex + 1
+            end
+        end
+        lines = newLines
+    end
+
+    local result = ""
+    for i = 1, #lines do
+        result = result .. lines[i]
+        if i < #lines then
+            result = result .. "\n"
+        end
+    end
+
+    return result
+end
+
+local args = arg or {}
+local cmd = ""
+local file = ""
+
+if #args >= 1 then cmd = args[1] end
+if #args >= 2 then file = args[2] end
+
+if cmd == "" or cmd == "-h" or cmd == "--help" then print("Usage: sed [PATTERN] [file]") return end
+
+local content = ""
+if file ~= "" then
+    local success, fileContent = pcall(function() return io.read(file) end)
+    if success and fileContent then content = fileContent else print("Erro: Não foi possível ler o arquivo '" .. file .. "'") return end
 else
-    os.exit(1)  -- Nenhuma substituição foi feita
+    file = "nano"
+    content = io.read("nano")
+end
+
+if content ~= "" then
+    local result = processSedCommand(cmd, content)
+    io.write(result, file)
+else
+    print("Empty content")
 end
