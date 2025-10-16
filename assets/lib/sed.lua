@@ -1,3 +1,4 @@
+#!/bin/lua
 -- sed.lua - Implementação simplificada do sed para Lua J2ME
 -- Uso: lua sed.lua [comandos] [arquivo]
 
