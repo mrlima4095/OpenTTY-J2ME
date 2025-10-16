@@ -34,6 +34,7 @@ Copyright (C) 2025 - Mr. Lima
 - **File Explorer** Delete button no longer requests to remove `..` directory
 
 ### ⚙️ Features & API
+- **Lua** added function `ipairs`
 - **Lua** added function `os.getcwd()` to read current working directory
 - **Lua Graphics API** - _BuildScreen_ can now build Images from all sources
 - **Lua** functions `io.read` and `io.write` now require using `/dev/stdin` and `/dev/stdout`
@@ -62,6 +63,7 @@ Copyright (C) 2025 - Mr. Lima
 
 ### 🏗️ Architecture
 - Source code split into `OpenTTY.java` (Main Class), `Lua.java` (Lua Runtime) and `MIDletCanvas.java` (Canvas Builder)
+- Removed Command `sed`
 
 ---
 
