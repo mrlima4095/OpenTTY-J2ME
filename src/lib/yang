@@ -25,7 +25,7 @@ info=execute echo "PackJ 1.5 (Default)"
 [ Index ]
 
 list.title=Repository
-list.content=Android ME,Armitage,Auto Clean,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JBuntu,JBenchmark,J2ME Loader,MobiX UI,PasteBin,SmartME SDK,Updater,ViaVersion,WebProxy
+list.content=Android ME,Armitage,Auto Clean,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JBuntu,JBenchmark,J2ME Loader,MobiX UI,PasteBin,StringEditor,SmartME SDK,Updater,ViaVersion,WebProxy
 list.button=Install
 
 Android ME=execute set RESOURCE=android; set PKJOUT=/bin/droid; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
