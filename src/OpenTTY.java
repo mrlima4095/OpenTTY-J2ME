@@ -1130,7 +1130,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // General Utilities
         else if (mainCommand.equals("history")) { new MIDletControl("history", id); }
         else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/res/docs")); }
-        else if (mainCommand.equals("man")) { boolean verbose = argument.indexOf("-v") != -1; argument = replace(argument, "-v", "").trim(); if (argument.equals("")) { argument = "sh"; } String content = loadRMS("man.html"); if (content.equals("") || argument.equals("--update")) { int STATUS = processCommand("netstat", false); if (STATUS == 0) { STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } else { return STATUS; } } else { echoCommand("man: download error"); return STATUS; } } content = extractTag(content, argument.toLowerCase(), ""); if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } else { if (verbose) { echoCommand(content); } else { viewer(form.getTitle(), content); } } }
+        else if (mainCommand.equals("man")) { 
+            boolean verbose = argument.indexOf("-v") != -1; 
+            argument = replace(argument, "-v", "").trim(); 
+            
+            if (argument.equals("")) { argument = "sh"; } 
+            
+            String content = loadRMS("man.html"); 
+            if (content.equals("") || argument.equals("--update")) { 
+                int STATUS = processCommand("netstat", false); 
+                if (STATUS == 0) { 
+                    STATUS = processCommand("execute install /home/nano; tick Downloading...; proxy github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/assets/root/man.html; install /home/man.html; get; tick;", false); 
+                    
+                    if (STATUS == 0 && !argument.equals("--update")) { content = read("/home/man.html"); } 
+                    else { return STATUS; } 
+                } 
+                else { echoCommand("man: download error"); return STATUS; } 
+            } 
+            
+            content = extractTag(content, argument.toLowerCase(), ""); 
+            if (content.equals("")) { echoCommand("man: " + argument + ": not found"); return 127; } 
+            else { 
+                if (verbose) { echoCommand(content); } 
+                else { viewer(form.getTitle(), content); } 
+            }
+        }
         else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
         else if (mainCommand.equals("false")) { return 255; }
 
