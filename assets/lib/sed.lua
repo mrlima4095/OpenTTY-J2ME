@@ -1,240 +1,184 @@
--- Implementação do comando sed em Lua J2ME
--- Uso: sed [opções] COMANDO [arquivo]
+-- sed.lua - Implementação simplificada do sed para Lua J2ME
+-- Uso: lua sed.lua [comandos] [arquivo]
 
 local args = arg or {}
-local command = ""
-local filename = ""
-local in_place = false
-local backup_ext = ""
-local quiet = false
+local cmd = ""
+local file = ""
 
--- Parse de argumentos
-local i = 1
-while i <= #args do
-    local arg = args[i]
-    
-    if arg == "-i" then
-        in_place = true
-        if i + 1 <= #args and not string.sub(args[i + 1], 1, 1) == "-" then
-            backup_ext = args[i + 1]
-            i = i + 1
-        end
-    elseif arg == "-n" or arg == "--quiet" or arg == "--silent" then
-        quiet = true
-    elseif arg == "-e" then
-        if i + 1 <= #args then
-            command = args[i + 1]
-            i = i + 1
-        end
-    elseif string.sub(arg, 1, 1) ~= "-" then
-        if command == "" then
-            command = arg
-        elseif filename == "" then
-            filename = arg
-        end
-    end
-    i = i + 1
+-- Parse arguments
+if #args >= 1 then
+    cmd = args[1]
+end
+if #args >= 2 then
+    file = args[2]
 end
 
--- Se não tem comando específico, pega o primeiro argumento não-opção
-if command == "" then
-    for i = 1, #args do
-        local arg = args[i]
-        if string.sub(arg, 1, 1) ~= "-" and arg ~= filename then
-            command = arg
+if cmd == "" or cmd == "-h" or cmd == "--help" then
+    print("sed.lua - Substituição de texto estilo sed")
+    print("Uso: lua sed.lua 's/old/new/g' arquivo.txt")
+    print("Uso: lua sed.lua 's/old/new/' arquivo.txt") 
+    print("Uso: lua sed.lua '/pattern/d' arquivo.txt")
+    return
+end
+
+-- Função para dividir string por delimitador
+function splitString(str, delimiter)
+    local result = {}
+    local i = 1
+    local start = 1
+    local delimLen = string.len(delimiter)
+    
+    while true do
+        local pos = string.find(str, delimiter, start)
+        if not pos then
+            result[i] = string.sub(str, start)
             break
         end
-    end
-end
-
-if command == "" then
-    if not quiet then
-        print("sed: nenhum comando especificado")
-        print("Uso: sed [OPÇÕES] COMANDO [ARQUIVO]")
-        print("Opções:")
-        print("  -i[SUFIXO]  edição in-place (opcionalmente cria backup)")
-        print("  -n, --quiet suprimir saída automática")
-        print("  -e COMANDO  adicionar comando")
-    end
-    os.exit(1)
-end
-
--- Funções auxiliares
-function string.split(str, delimiter)
-    local result = {}
-    local from = 1
-    local delim_from, delim_to = string.find(str, delimiter, from)
-    
-    while delim_from do
-        table.insert(result, string.sub(str, from, delim_from - 1))
-        from = delim_to + 1
-        delim_from, delim_to = string.find(str, delimiter, from)
+        result[i] = string.sub(str, start, pos - 1)
+        start = pos + delimLen
+        i = i + 1
     end
     
-    table.insert(result, string.sub(str, from))
     return result
 end
 
-function string.trim(str)
-    return string.gsub(str, "^%s*(.-)%s*$", "%1")
-end
-
-function escape_pattern(text)
-    local special_chars = {"%.", "%^", "%$", "%(", "%)", "%[", "%]", "%*", "%+", "%-", "%?"}
-    for _, char in ipairs(special_chars) do
-        text = string.gsub(text, char, "%%" .. string.sub(char, 2))
+-- Função para encontrar substring
+function findSubstring(str, pattern)
+    local len = string.len(str)
+    local patternLen = string.len(pattern)
+    
+    for i = 1, len - patternLen + 1 do
+        local match = true
+        for j = 1, patternLen do
+            if string.sub(str, i + j - 1, i + j - 1) ~= string.sub(pattern, j, j) then
+                match = false
+                break
+            end
+        end
+        if match then
+            return i
+        end
     end
-    return text
+    return nil
 end
 
--- Processa o comando sed
-function process_sed_command(cmd, line, line_num)
+-- Função de substituição simples
+function substitute(line, pattern, replacement, global)
+    local result = line
+    local start = 1
+    
+    while true do
+        local found = findSubstring(result, pattern)
+        if not found then break end
+        
+        local before = string.sub(result, 1, found - 1)
+        local after = string.sub(result, found + string.len(pattern))
+        result = before .. replacement .. after
+        
+        if not global then break end
+        start = found + string.len(replacement)
+        
+        -- Prevenir loop infinito
+        if start > string.len(result) then break end
+    end
+    
+    return result
+end
+
+-- Função para dividir texto em linhas
+function splitLines(content)
+    local lines = {}
+    local i = 1
+    local start = 1
+    local len = string.len(content)
+    
+    for pos = 1, len do
+        local char = string.sub(content, pos, pos)
+        if char == "\n" then
+            lines[i] = string.sub(content, start, pos - 1)
+            i = i + 1
+            start = pos + 1
+        end
+    end
+    
+    -- Adicionar última linha
+    if start <= len then
+        lines[i] = string.sub(content, start)
+    end
+    
+    return lines
+end
+
+-- Processar comando sed
+function processSedCommand(command, content)
+    local lines = splitLines(content)
+    
     -- Comando de substituição: s/pattern/replacement/flags
-    if string.sub(cmd, 1, 2) == "s/" then
-        local parts = string.split(cmd, "/")
+    if string.sub(command, 1, 2) == "s/" then
+        local parts = splitString(command, "/")
+        
         if #parts >= 3 then
-            local pattern = parts[2]
-            local replacement = parts[3]
+            local pattern = parts[2] or ""
+            local replacement = parts[3] or ""
             local flags = parts[4] or ""
+            local global = findSubstring(flags, "g") ~= nil
             
-            -- Escapa o padrão para busca literal (sem regex)
-            local escaped_pattern = escape_pattern(pattern)
-            
-            -- Processa flags
-            local global_replace = string.find(flags, "g") ~= nil
-            local case_insensitive = string.find(flags, "i") ~= nil
-            
-            if case_insensitive then
-                -- Para case insensitive, converte ambos para minúsculo
-                local lower_line = string.lower(line)
-                local lower_pattern = string.lower(pattern)
-                escaped_pattern = escape_pattern(lower_pattern)
-                
-                local result = line
-                local lower_result = string.lower(result)
-                
-                if global_replace then
-                    local start_pos = 1
-                    while true do
-                        local i, j = string.find(lower_result, escaped_pattern, start_pos)
-                        if not i then break end
-                        
-                        -- Substitui mantendo o case original
-                        local before = string.sub(result, 1, i - 1)
-                        local after = string.sub(result, j + 1)
-                        local matched = string.sub(result, i, j)
-                        
-                        result = before .. replacement .. after
-                        lower_result = string.lower(result)
-                        start_pos = i + string.len(replacement)
-                    end
-                    return result
-                else
-                    local i, j = string.find(lower_result, escaped_pattern, 1)
-                    if i then
-                        local before = string.sub(result, 1, i - 1)
-                        local after = string.sub(result, j + 1)
-                        return before .. replacement .. after
-                    end
-                end
-            else
-                -- Case sensitive
-                if global_replace then
-                    return string.gsub(line, escaped_pattern, replacement)
-                else
-                    local i, j = string.find(line, escaped_pattern, 1)
-                    if i then
-                        local before = string.sub(line, 1, i - 1)
-                        local after = string.sub(line, j + 1)
-                        return before .. replacement .. after
-                    end
-                end
+            for idx = 1, #lines do
+                lines[idx] = substitute(lines[idx], pattern, replacement, global)
             end
         end
     
-    -- Comando de delete: /pattern/d
-    elseif string.sub(cmd, -2) == "/d" then
-        local pattern = string.sub(cmd, 1, -3)
-        local escaped_pattern = escape_pattern(pattern)
-        if string.find(line, escaped_pattern) then
-            return nil  -- Marca para deletar a linha
+    -- Comando de deletar: /pattern/d
+    elseif string.sub(command, string.len(command)) == "d" then
+        local pattern = string.sub(command, 1, string.len(command) - 1)
+        if string.sub(pattern, 1, 1) == "/" then
+            pattern = string.sub(pattern, 2)
         end
-    
-    -- Comando de print: /pattern/p
-    elseif string.sub(cmd, -2) == "/p" then
-        local pattern = string.sub(cmd, 1, -3)
-        local escaped_pattern = escape_pattern(pattern)
-        if string.find(line, escaped_pattern) then
-            if not quiet then print(line) end
+        
+        local newLines = {}
+        local newIndex = 1
+        for i = 1, #lines do
+            if findSubstring(lines[i], pattern) == nil then
+                newLines[newIndex] = lines[i]
+                newIndex = newIndex + 1
+            end
         end
-    
-    -- Comando de número de linha: =
-    elseif cmd == "=" then
-        if not quiet then print(line_num) end
-        return line
-    
-    -- Comando para adicionar texto após linha: a\texto
-    elseif string.sub(cmd, 1, 2) == "a\\" then
-        local text = string.sub(cmd, 3)
-        if not quiet then print(line) end
-        if not quiet then print(text) end
-        return line
-    
-    -- Comando para inserir texto antes da linha: i\texto
-    elseif string.sub(cmd, 1, 2) == "i\\" then
-        local text = string.sub(cmd, 3)
-        if not quiet then print(text) end
-        if not quiet then print(line) end
-        return line
+        lines = newLines
     end
     
-    return line
+    -- Reconstruir conteúdo
+    local result = ""
+    for i = 1, #lines do
+        result = result .. lines[i]
+        if i < #lines then
+            result = result .. "\n"
+        end
+    end
+    
+    return result
 end
 
--- Lê entrada
-local lines = {}
-if filename ~= "" then
-    local content = io.read(filename)
-    if content then
-        lines = string.split(content, "\n")
+-- Ler arquivo ou stdin
+local content = ""
+if file ~= "" then
+    local success, fileContent = pcall(function()
+        return io.read(file)
+    end)
+    if success and fileContent then
+        content = fileContent
     else
-        if not quiet then
-            print("sed: não foi possível ler o arquivo: " .. filename)
-        end
-        os.exit(1)
+        print("Erro: Não foi possível ler o arquivo '" .. file .. "'")
+        return
     end
 else
-    -- Lê da entrada padrão
-    local input = io.read("stdout")
-    if input and input ~= "" then
-        lines = string.split(input, "\n")
-    end
+    -- Ler da entrada padrão
+    content = io.read() or ""
 end
 
--- Processa as linhas
-local output_lines = {}
-for i, line in ipairs(lines) do
-    local processed_line = process_sed_command(command, line, i)
-    if processed_line ~= nil then
-        if not quiet and not string.find(command, "/p") and not string.find(command, "a\\") and not string.find(command, "i\\") then
-            print(processed_line)
-        end
-        table.insert(output_lines, processed_line)
-    end
-end
-
--- Se é edição in-place, escreve de volta no arquivo
-if in_place and filename ~= "" then
-    if backup_ext ~= "" then
-        -- Cria backup
-        local backup_name = filename .. backup_ext
-        local original_content = io.read(filename)
-        if original_content then
-            io.write(backup_name, original_content)
-        end
-    end
-    
-    -- Escreve o novo conteúdo
-    local new_content = table.concat(output_lines, "\n")
-    io.write(filename, new_content)
+-- Processar conteúdo
+if content ~= "" then
+    local result = processSedCommand(cmd, content)
+    io.write(result)
+else
+    print("Nenhum conteúdo para processar")
 end
