@@ -144,12 +144,8 @@ local cmd = ""
 local file = ""
 
 -- Parse arguments
-if #args >= 1 then
-    cmd = args[1]
-end
-if #args >= 2 then
-    file = args[2]
-end
+if #args >= 1 then cmd = args[1] end
+if #args >= 2 then file = args[2] end
 
 if cmd == "" or cmd == "-h" or cmd == "--help" then
     print("sed.lua - Substituição de texto estilo sed")
@@ -171,15 +167,12 @@ if file ~= "" then
         print("Erro: Não foi possível ler o arquivo '" .. file .. "'")
         return
     end
-else
-    -- Ler da entrada padrão
-    content = io.read() or ""
 end
 
 -- Processar conteúdo
 if content ~= "" then
     local result = processSedCommand(cmd, content)
-    io.write(result)
+    io.write(result, file)
 else
     print("Nenhum conteúdo para processar")
 end
