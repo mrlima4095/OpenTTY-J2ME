@@ -1,155 +1,109 @@
 #!/bin/lua
 
-local function splitString(str, delimiter)
-    local result = {}
-    local i = 1
-    local start = 1
-    local delimLen = string.len(delimiter)
-
-    while true do
-        local pos = string.find(str, delimiter, start)
-        if not pos then
-            result[i] = string.sub(str, start)
-            break
-        end
-        result[i] = string.sub(str, start, pos - 1)
-        start = pos + delimLen
-        i = i + 1
-    end
-
-    return result
+local cmd, file = arg[1], arg[2]
+if not cmd or cmd == "-h" or cmd == "--help" then 
+    print("Usage: sed [PATTERN] [file]")
+    print("Pattern format: s/search/replace/")
+    print("Example: sed 's/old/new/' file.txt")
+    return 
 end
 
-local function findSubstring(str, pattern)
-    local len = string.len(str)
-    local patternLen = string.len(pattern)
+if not file then file = "nano" end
 
-    for i = 1, len - patternLen + 1 do
+local content = io.read(file)
+if content == "" then 
+    print("sed: empty content") 
+    return 
+end
+
+if not string.find(cmd, "^s/") then
+    print("sed: invalid pattern format")
+    print("Use: s/search/replace/")
+    return
+end
+
+local first_slash = string.find(cmd, "/", 1)
+if not first_slash then
+    print("sed: invalid pattern - missing /")
+    return
+end
+
+local second_slash = string.find(cmd, "/", first_slash + 1)
+if not second_slash then
+    print("sed: invalid pattern - missing second /")
+    return
+end
+
+local third_slash = string.find(cmd, "/", second_slash + 1)
+if not third_slash then
+    print("sed: invalid pattern - missing third /")
+    return
+end
+
+local search = string.sub(cmd, first_slash + 1, second_slash - 1)
+local replace = string.sub(cmd, second_slash + 1, third_slash - 1)
+
+if search == "" then
+    print("sed: search pattern cannot be empty")
+    return
+end
+
+local lines = {}
+local current_line = ""
+local i = 1
+
+while i <= string.len(content) do
+    local char = string.sub(content, i, i)
+    if char == "\n" then
+        table.insert(lines, current_line)
+        current_line = ""
+    else
+        current_line = current_line .. char
+    end
+    i = i + 1
+end
+
+if current_line ~= "" then
+    table.insert(lines, current_line)
+end
+
+local result_lines = {}
+for idx, line in ipairs(lines) do
+    local result_line = ""
+    local line_pos = 1
+    local search_len = string.len(search)
+    
+    while line_pos <= string.len(line) do
+        -- Check if search pattern matches at current position
         local match = true
-        for j = 1, patternLen do
-            if string.sub(str, i + j - 1, i + j - 1) ~= string.sub(pattern, j, j) then
+        for i = 1, search_len do
+            local content_char = string.sub(line, line_pos + i - 1, line_pos + i - 1)
+            local search_char = string.sub(search, i, i)
+            if content_char ~= search_char then
                 match = false
                 break
             end
         end
+        
         if match then
-            return i
-        end
-    end
-    return nil
-end
-
-local function substitute(line, pattern, replacement, global)
-    local result = line
-    local start = 1
-
-    while true do
-        local found = findSubstring(result, pattern)
-        if not found then break end
-
-        local before = string.sub(result, 1, found - 1)
-        local after = string.sub(result, found + string.len(pattern))
-        result = before .. replacement .. after
-
-        if not global then break end
-        start = found + string.len(replacement)
-
-        if start > string.len(result) then break end
-    end
-    
-    return result
-end
-
-local function splitLines(content)
-    local lines = {}
-    local i = 1
-    local start = 1
-    local len = string.len(content)
-    
-    for pos = 1, len do
-        local char = string.sub(content, pos, pos)
-        if char == "\n" then
-            lines[i] = string.sub(content, start, pos - 1)
-            i = i + 1
-            start = pos + 1
+            -- Found match, replace with replacement text
+            result_line = result_line .. replace
+            line_pos = line_pos + search_len
+        else
+            -- No match, keep original character
+            result_line = result_line .. string.sub(line, line_pos, line_pos)
+            line_pos = line_pos + 1
         end
     end
     
-    -- Adicionar última linha
-    if start <= len then
-        lines[i] = string.sub(content, start)
-    end
-    
-    return lines
+    table.insert(result_lines, result_line)
 end
 
+local result = table.concat(result_lines, "\n")
 
-local function processSedCommand(command, content)
-    local lines = splitLines(content)
-
-    if string.sub(command, 1, 2) == "s/" then
-        local parts = splitString(command, "/")
-
-        if #parts >= 3 then
-            local pattern = parts[2] or ""
-            local replacement = parts[3] or ""
-            local flags = parts[4] or ""
-            local global = findSubstring(flags, "g") ~= nil
-
-            for idx = 1, #lines do
-                lines[idx] = substitute(lines[idx], pattern, replacement, global)
-            end
-        end
-
-    elseif string.sub(command, string.len(command)) == "d" then
-        local pattern = string.sub(command, 1, string.len(command) - 1)
-        if string.sub(pattern, 1, 1) == "/" then
-            pattern = string.sub(pattern, 2)
-        end
-
-        local newLines = {}
-        local newIndex = 1
-        for i = 1, #lines do
-            if findSubstring(lines[i], pattern) == nil then
-                newLines[newIndex] = lines[i]
-                newIndex = newIndex + 1
-            end
-        end
-        lines = newLines
-    end
-
-    local result = ""
-    for i = 1, #lines do
-        result = result .. lines[i]
-        if i < #lines then
-            result = result .. "\n"
-        end
-    end
-
-    return result
+if not io.write(file, result) then
+    print("sed: error writing to file")
+    return
 end
 
-local args = arg or {}
-local cmd = ""
-local file = ""
-
-if #args >= 1 then cmd = args[1] end
-if #args >= 2 then file = args[2] end
-
-if cmd == "" or cmd == "-h" or cmd == "--help" then print("Usage: sed [PATTERN] [file]") return end
-
-local content = ""
-if file ~= "" then
-    local success, fileContent = pcall(function() return io.read(file) end)
-    if success and fileContent then content = fileContent else print("Erro: Não foi possível ler o arquivo '" .. file .. "'") return end
-else
-    file = "nano"
-    content = io.read("nano")
-end
-
-if content ~= "" then
-    local result = processSedCommand(cmd, content)
-    io.write(result, file)
-else
-    print("Empty content")
-end
+print("sed: substitution completed successfully")
