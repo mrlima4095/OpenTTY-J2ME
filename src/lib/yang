@@ -45,6 +45,7 @@ JBenchmark=execute set RESOURCE=debuggers; set PKJOUT=/bin/jdb; yang install;
 J2ME Loader=execute set RESOURCE=modme; set PKJOUT=/bin/modme; yang install;
 MobiX UI=execute set RESOURCE=mxos; set PKJOUT=/bin/mxos; yang install;
 PasteBin=execute set RESOURCE=pastebin; set PKJOUT=/bin/pastebin; yang install;
+StringEditor=execute set RESOURCE=sed.lua; set PKJOUT=/bin/sed; yang install;
 SmartME SDK=execute set RESOURCE=sdkme; set PKJOUT=/bin/sdk; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
 Updater=execute set RESOURCE=sync; set PKJOUT=/bin/sync; yang install;
 ViaVersion=execute set RESOURCE=viaversion; set PKJOUT=/lib/viaversion; yang install;
