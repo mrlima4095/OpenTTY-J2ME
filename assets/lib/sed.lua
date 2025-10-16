@@ -11,12 +11,9 @@ end
 if not file then file = "nano" end
 
 local content = io.read(file)
-if content == "" then 
-    print("sed: empty content") 
-    return 
-end
+if content == "" then print("sed: empty content") return end
 
-if not string.find(cmd, "^s/") then
+if not string.find(cmd, "/") then
     print("sed: invalid pattern format")
     print("Use: s/search/replace/")
     return
