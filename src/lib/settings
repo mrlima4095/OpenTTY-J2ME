@@ -23,11 +23,9 @@ quest.cmd=execute set $VALUE=$CFG; unset RETURN; unset VALUE; unset LABEL; unset
 quest.key=CFG
 
 list.title=Settings
-list.content=Device Language,Device Name,Query Storage,Server Page,Network Port,PackJ Repository
+list.content=Device Language,Device Name,Query Storage,PackJ Repository
 
 Device Language=execute set VALUE=LOCALE; set LABEL=Device Language; cfg run;
 Device Name=execute set VALUE=HOSTNAME; set LABEL=Device Name; cfg run;
 Query Storage=execute set VALUE=QUERY; set LABEL=Query target file; cfg run;
-Server Page=execute set VALUE=RESPONSE; set LABEL=HTML Page for Server; cfg run;
-Network Port=execute set VALUE=PORT; set LABEL=Service Port (Bind); cfg run;
 PackJ Repository=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); cfg run;
