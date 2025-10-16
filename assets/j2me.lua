@@ -15,7 +15,7 @@ package = { loadlib = function (libname, funcname) end, loaded = {} }
 
 io = {
     read = function (file, lenght) end,
-    write = function (text, file, mode) end,
+    write = function (text, file, mode) return 0 end,
     close = function (...) end
 }
 
