@@ -637,7 +637,7 @@ public class Lua {
                 Token token = consume();
                 if (token.type == FUNCTION || token.type == IF || token.type == DO) { depth++; }
                 else if (token.type == END) { depth--; }
-                else if (token.type == EOF) { throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); }
+                else if (token.type == EOF) { throw new Exception("Unmatched 'function (" + funcName + ")' statement: Expected 'end'"); }
                 if (depth > 0) { bodyTokens.addElement(token); }
             }
 
@@ -683,7 +683,7 @@ while (depth > 0) {
         depth--; 
     }
     else if (token.type == EOF) { 
-        throw new Exception("Unmatched 'function' statement: Expected 'end'"); 
+        throw new Exception("Unmatched 'function (" + funcName + ")' statement: Expected 'end'"); 
     }
 
     if (depth > 0) { 
