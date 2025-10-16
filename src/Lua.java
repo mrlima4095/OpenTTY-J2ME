@@ -635,10 +635,10 @@ public class Lua {
             int depth = 1;
             while (depth > 0) {
                 Token token = consume();
-                if (token.type == FUNCTION || token.type == IF || token.type == REPEAT || token.type == DO) { depth++; }
-                else if (token.type == END) { depth--; if (depth > 0) { bodyTokens.addElement(token); } }
+                if (token.type == FUNCTION || token.type == IF || token.type == DO) { depth++; }
+                else if (token.type == END) { depth--; }
                 else if (token.type == EOF) { throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); }
-                if (depth > 0 && token.type != END) { bodyTokens.addElement(token); }
+                if (depth > 0) { bodyTokens.addElement(token); }
             }
 
             LuaFunction func = new LuaFunction(params, bodyTokens, scope);
@@ -675,15 +675,12 @@ while (depth > 0) {
     Token token = consume();
     
     // Tokens que ABREM blocos
-    if (token.type == FUNCTION || token.type == IF || token.type == REPEAT || token.type == DO) { 
+    if (token.type == FUNCTION || token.type == IF || token.type == DO) { 
         depth++; 
     }
     // Tokens que FECHAM blocos  
     else if (token.type == END) { 
         depth--; 
-    }
-    else if (token.type == UNTIL) {
-        depth--;
     }
     else if (token.type == EOF) { 
         throw new Exception("Unmatched 'function' statement: Expected 'end'"); 
@@ -740,27 +737,17 @@ else if (current.type == DO) {
     while (depth > 0) {
         Token token = consume();
         
-        if (token.type == FUNCTION || token.type == IF || token.type == WHILE || 
-            token.type == FOR || token.type == REPEAT || token.type == DO) { 
+        if (token.type == FUNCTION || token.type == IF || token.type == DO) { 
             depth++; 
         }
         else if (token.type == END) { 
             depth--; 
-            if (depth > 0) { 
-                bodyTokens.addElement(token); 
-            }
-        }
-        else if (token.type == UNTIL) {
-            depth--;
-            if (depth > 0) {
-                bodyTokens.addElement(token);
-            }
         }
         else if (token.type == EOF) { 
             throw new RuntimeException("Unmatched 'do' statement: Expected 'end'"); 
         }
         
-        if (depth > 0 && token.type != END && token.type != UNTIL) { 
+        if (depth > 0) { 
             bodyTokens.addElement(token); 
         }
     }
@@ -958,11 +945,11 @@ else if (current.type == DO) {
                 Token token = consume();
                 
                 // Tokens que ABREM blocos
-                if (token.type == FUNCTION || token.type == IF || token.type == REPEAT || token.type == DO) { 
+                if (token.type == FUNCTION || token.type == IF || token.type == DO) { 
                     depth++; 
                 }
                 // Tokens que FECHAM blocos
-                else if (token.type == END || token.type == UNTIL) { 
+                else if (token.type == END) { 
                     depth--; 
                     if (depth > 0) { 
                         bodyTokens.addElement(token); 
@@ -971,7 +958,7 @@ else if (current.type == DO) {
                 else if (token.type == EOF) { 
                     throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); 
                 }
-                if (depth > 0 && token.type != END && token.type != UNTIL) { 
+                if (depth > 0) { 
                     bodyTokens.addElement(token); 
                 }
             }
@@ -1023,7 +1010,7 @@ else if (current.type == DO) {
         }
         consume(RPAREN);
 
-        Object funcObj = unwrap(scope.get(funcName));
+        Object  funcObj = unwrap(scope.get(funcName));
         if (funcObj == null && globals.containsKey(funcName)) { funcObj = unwrap(globals.get(funcName)); }
 
         if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); }
