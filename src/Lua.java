@@ -418,7 +418,7 @@ public class Lua {
                         
                         if (tableObj instanceof Hashtable) {
                             Hashtable table = (Hashtable) tableObj;
-                            Vector list = toVector(table);
+                            Vector list = LuaFunction.toVector(table);
                             
                             for (int idx = currentIndex; idx < list.size(); idx++) {
                                 Object item = list.elementAt(idx);
@@ -1818,7 +1818,7 @@ public class Lua {
         }
         private int compareLua(Object a, Object b) { if (a == null && b == null) { return 0; } if (a == null) { return -1; } if (b == null) { return 1; } if (a instanceof Double && b instanceof Double) { double da = ((Double) a).doubleValue(), db = ((Double) b).doubleValue(); return da < db ? -1 : (da > db ? 1 : 0); } String sa = toLuaString(a), sb = toLuaString(b); return sa.compareTo(sb); }
         // |
-        private boolean isListTable(Hashtable table) {
+        public static isListTable(Hashtable table) {
             if (table == null) { return false; }
             else if (table.isEmpty()) { return true; }
 
@@ -1834,7 +1834,7 @@ public class Lua {
             }
             return true;
         }
-        private Vector toVector(Hashtable table) throws Exception { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
+        public static Vector toVector(Hashtable table) throws Exception { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
 
         private void AppendScreen(Form f, Object obj) throws Exception {
             if (obj instanceof Hashtable) {
