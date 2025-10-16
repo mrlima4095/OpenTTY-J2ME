@@ -2,26 +2,6 @@
 -- sed.lua - Implementação simplificada do sed para Lua J2ME
 -- Uso: lua sed.lua [comandos] [arquivo]
 
-local args = arg or {}
-local cmd = ""
-local file = ""
-
--- Parse arguments
-if #args >= 1 then
-    cmd = args[1]
-end
-if #args >= 2 then
-    file = args[2]
-end
-
-if cmd == "" or cmd == "-h" or cmd == "--help" then
-    print("sed.lua - Substituição de texto estilo sed")
-    print("Uso: lua sed.lua 's/old/new/g' arquivo.txt")
-    print("Uso: lua sed.lua 's/old/new/' arquivo.txt") 
-    print("Uso: lua sed.lua '/pattern/d' arquivo.txt")
-    return
-end
-
 -- Função para dividir string por delimitador
 function splitString(str, delimiter)
     local result = {}
@@ -157,6 +137,27 @@ function processSedCommand(command, content)
     end
     
     return result
+end
+
+
+local args = arg or {}
+local cmd = ""
+local file = ""
+
+-- Parse arguments
+if #args >= 1 then
+    cmd = args[1]
+end
+if #args >= 2 then
+    file = args[2]
+end
+
+if cmd == "" or cmd == "-h" or cmd == "--help" then
+    print("sed.lua - Substituição de texto estilo sed")
+    print("Uso: lua sed.lua 's/old/new/g' arquivo.txt")
+    print("Uso: lua sed.lua 's/old/new/' arquivo.txt") 
+    print("Uso: lua sed.lua '/pattern/d' arquivo.txt")
+    return
 end
 
 -- Ler arquivo ou stdin
