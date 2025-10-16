@@ -732,6 +732,60 @@ while (depth > 0) {
             }
         }
         else if (current.type == BREAK) { if (loopDepth == 0) { throw new RuntimeException("break outside loop"); } consume(BREAK); breakLoop = true; return null; }
+else if (current.type == DO) {
+    consume(DO);
+    
+    Vector bodyTokens = new Vector();
+    int depth = 1;
+    while (depth > 0) {
+        Token token = consume();
+        
+        if (token.type == FUNCTION || token.type == IF || token.type == WHILE || 
+            token.type == FOR || token.type == REPEAT || token.type == DO) { 
+            depth++; 
+        }
+        else if (token.type == END) { 
+            depth--; 
+            if (depth > 0) { 
+                bodyTokens.addElement(token); 
+            }
+        }
+        else if (token.type == UNTIL) {
+            depth--;
+            if (depth > 0) {
+                bodyTokens.addElement(token);
+            }
+        }
+        else if (token.type == EOF) { 
+            throw new RuntimeException("Unmatched 'do' statement: Expected 'end'"); 
+        }
+        
+        if (depth > 0 && token.type != END && token.type != UNTIL) { 
+            bodyTokens.addElement(token); 
+        }
+    }
+    
+    // Executar o bloco DO
+    int originalTokenIndex = tokenIndex;
+    Vector originalTokens = tokens;
+    
+    tokens = bodyTokens;
+    tokenIndex = 0;
+    
+    Object result = null;
+    while (peek().type != EOF) {
+        result = statement(scope);
+        if (doreturn) {
+            doreturn = false;
+            break;
+        }
+    }
+    
+    tokenIndex = originalTokenIndex;
+    tokens = originalTokens;
+    
+    return result;
+}
         else if (current.type == END) { consume(END); return null; }
         else if (current.type == LPAREN || current.type == NUMBER || current.type == STRING || current.type == BOOLEAN || current.type == NIL || current.type == NOT) { return expression(scope); }
 
