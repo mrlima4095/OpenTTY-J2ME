@@ -668,16 +668,32 @@ public class Lua {
                 }
                 consume(RPAREN);
     
-                Vector bodyTokens = new Vector();
-                int depth = 1;
-                while (depth > 0) {
-                    Token token = consume();
-                    if (token.type == FUNCTION || token.type == IF || token.type == WHILE || token.type == FOR) { depth++; } 
-                    else if (token.type == END) { depth--; } 
-                    else if (token.type == EOF) { throw new Exception("Unmatched 'function' statement: Expected 'end'"); }
+// Na parte de LOCAL FUNCTION
+Vector bodyTokens = new Vector();
+int depth = 1;
+while (depth > 0) {
+    Token token = consume();
+    
+    // Tokens que ABREM blocos
+    if (token.type == FUNCTION || token.type == IF || token.type == WHILE || 
+        token.type == FOR || token.type == REPEAT || token.type == DO) { 
+        depth++; 
+    }
+    // Tokens que FECHAM blocos  
+    else if (token.type == END) { 
+        depth--; 
+    }
+    else if (token.type == UNTIL) {
+        depth--;
+    }
+    else if (token.type == EOF) { 
+        throw new Exception("Unmatched 'function' statement: Expected 'end'"); 
+    }
 
-                    if (depth > 0) { bodyTokens.addElement(token); }
-                }
+    if (depth > 0) { 
+        bodyTokens.addElement(token); 
+    }
+}
 
                 LuaFunction func = new LuaFunction(params, bodyTokens, scope);
                 scope.put(funcName, func);
