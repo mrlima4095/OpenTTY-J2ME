@@ -20,9 +20,7 @@ if not string.find(cmd, "/") then
 end
 
 local first_slash = string.find(cmd, "/", 1)
-if not first_slash then
-    print("sed: invalid pattern - missing /")
-    return
+if not first_slash then print("sed: invalid pattern - missing /") return
 end
 
 local second_slash = string.find(cmd, "/", first_slash + 1)
@@ -98,7 +96,7 @@ end
 
 local result = table.concat(result_lines, "\n")
 
-if not io.write(file, result) then
+if not io.write(result, file) then
     print("sed: error writing to file")
     return
 end
