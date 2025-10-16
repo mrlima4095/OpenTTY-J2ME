@@ -904,8 +904,7 @@ while (depth > 0) {
                 Token token = consume();
                 
                 // Tokens que ABREM blocos
-                if (token.type == FUNCTION || token.type == IF || token.type == WHILE || 
-                    token.type == FOR || token.type == REPEAT || token.type == DO) { 
+                if (token.type == FUNCTION || token.type == IF || token.type == REPEAT || token.type == DO) { 
                     depth++; 
                 }
                 // Tokens que FECHAM blocos
