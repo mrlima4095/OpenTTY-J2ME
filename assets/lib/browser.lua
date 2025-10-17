@@ -1,73 +1,33 @@
 #!/bin/lua
 
--- Navegador Web Simples para Lua J2ME (sem regex)
+-- Navegador Web Simples para Lua J2ME
 -- Define a URL a ser carregada
 local url = arg and arg[1] or "http://opentty.xyz/api/ip"
-
-
--- Função para encontrar substring (substitui string.find simples)
-local function find_str(text, pattern, start_pos)
-    start_pos = start_pos or 1
-    local text_len = string.len(text)
-    local pattern_len = string.len(pattern)
-
-    for i = start_pos, text_len - pattern_len + 1 do
-        local match = true
-        for j = 1, pattern_len do
-            if string.sub(text, i + j - 1, i + j - 1) ~= string.sub(pattern, j, j) then
-                match = false
-                break
-            end
-        end
-        if match then
-            return i, i + pattern_len - 1
-        end
-    end
-    return nil
-end
-
--- Função para substituir strings (substitui string.gsub)
-local function replace_str(text, old, new)
-    local result = ""
-    local pos = 1
-    local old_len = string.len(old)
-    
-    while true do
-        local start_pos, end_pos = find_str(text, old, pos)
-        if not start_pos then
-            result = result .. string.sub(text, pos)
-            break
-        end
-        
-        result = result .. string.sub(text, pos, start_pos - 1) .. new
-        pos = end_pos + 1
-    end
-    
-    return result
-end
 
 -- Função para extrair título da página
 local function extract_title(html)
     -- Procura <title>
-    local title_start = find_str(html, "<title>")
-    local title_end = find_str(html, "</title>")
-    
-    if title_start and title_end then
-        return string.sub(html, title_start + 7, title_end - 1)
+    local title_start, title_end = string.find(html, "<title>")
+    if title_start then
+        local close_start, close_end = string.find(html, "</title>", title_end + 1)
+        if close_start then
+            return string.sub(html, title_end + 1, close_start - 1)
+        end
     end
     
     -- Procura <h1>
-    local h1_start = find_str(html, "<h1>")
-    local h1_end = find_str(html, "</h1>")
-    
-    if h1_start and h1_end then
-        return string.sub(html, h1_start + 4, h1_end - 1)
+    local h1_start, h1_end = string.find(html, "<h1>")
+    if h1_start then
+        local close_start, close_end = string.find(html, "</h1>", h1_end + 1)
+        if close_start then
+            return string.sub(html, h1_end + 1, close_start - 1)
+        end
     end
     
-    return "Sem título"
+    return nil
 end
 
--- Função simplificada para remover tags HTML - evita problemas com &
+-- Função simplificada para remover tags HTML
 local function strip_tags(text)
     if not text then return "" end
     
@@ -90,7 +50,7 @@ local function strip_tags(text)
     return result
 end
 
--- Função para extrair conteúdo entre tags (versão simplificada)
+-- Função para extrair conteúdo entre tags
 local function extract_between_tags(html, tag_name)
     local content = {}
     local pos = 1
@@ -99,19 +59,17 @@ local function extract_between_tags(html, tag_name)
     while pos <= html_len do
         -- Encontra abertura da tag
         local open_tag = "<" .. tag_name .. ">"
-        local open_start, open_end = find_str(html, open_tag, pos)
+        local open_start, open_end = string.find(html, open_tag, pos)
         if not open_start then break end
         
         -- Encontra tag de fechamento
         local close_tag = "</" .. tag_name .. ">"
-        local close_start = find_str(html, close_tag, open_end + 1)
+        local close_start, close_end = string.find(html, close_tag, open_end + 1)
         if not close_start then break end
         
         -- Extrai conteúdo
         local tag_content = string.sub(html, open_end + 1, close_start - 1)
         local clean_content = strip_tags(tag_content)
-        
-        -- Limpa espaços em branco
         clean_content = string.trim(clean_content)
         
         if clean_content and string.len(clean_content) > 0 then
@@ -121,7 +79,7 @@ local function extract_between_tags(html, tag_name)
             })
         end
         
-        pos = close_start + string.len(close_tag)
+        pos = close_end + 1
     end
     
     return content
@@ -149,11 +107,7 @@ end
 local function create_browser_screen(title, content, raw_html)
     local screen_fields = {}
 
-    if title and title ~= "Sem título" then
-        table.insert(screen_fields, {type = "text", value = "Título: " .. title, style = "bold"})
-        table.insert(screen_fields, {type = "spacer", height = 5})
-    end
-
+    -- Adiciona o conteúdo
     local content_added = false
     for i, item in ipairs(content) do
         if item.text and string.len(item.text) > 0 then
@@ -169,14 +123,18 @@ local function create_browser_screen(title, content, raw_html)
         end
     end
 
+    -- Se não encontrou conteúdo formatado, mostra resposta bruta
     if not content_added and raw_html then
         local display_text = raw_html
-        if string.len(display_text) > 200 then
-            display_text = string.sub(display_text, 1, 200) .. "..."
+        if string.len(display_text) > 500 then
+            display_text = string.sub(display_text, 1, 500) .. "..."
         end
-
-        table.insert(screen_fields, {type = "text", value = "Resposta:", style = "bold"})
         table.insert(screen_fields, {type = "text", value = display_text})
+    end
+
+    -- Se não tem nenhum conteúdo, mostra mensagem
+    if #screen_fields == 0 then
+        table.insert(screen_fields, {type = "text", value = "Nenhum conteúdo encontrado"})
     end
 
     return graphics.BuildScreen({
@@ -189,7 +147,10 @@ end
 local function main()
     local loading_screen = graphics.BuildScreen({
         title = "Browser",
-        fields = { { type = "text", value = "Loading: " .. url }, { type = "text", value = "Please wait..." } }
+        fields = { 
+            { type = "text", value = "Loading: " .. url }, 
+            { type = "text", value = "Please wait..." } 
+        }
     })
     graphics.display(loading_screen)
 
@@ -197,20 +158,29 @@ local function main()
     if not ok then
         graphics.display(graphics.BuildScreen({
             title = "Error",
-            fields = { { type = "text", value = "Loading error:" }, {type = "text", value = tostring(html_content) } },
+            fields = { 
+                { type = "text", value = "Loading error:" }, 
+                {type = "text", value = tostring(html_content) } 
+            },
             back = { label = "Back", root = os.exit }
         }))
         return
     end
 
-    local is_html = find_str(html_content, "<html") or find_str(html_content, "<body") or find_str(html_content, "<div") or find_str(html_content, "<p")
+    -- Verifica se é conteúdo HTML ou texto puro
+    local is_html = string.find(html_content, "<html") or 
+                   string.find(html_content, "<body") or 
+                   string.find(html_content, "<div") or 
+                   string.find(html_content, "<p")
 
     if is_html then
-        local title, content = extract_title(html_content), extract_content(html_content)
+        local title = extract_title(html_content)
+        local content = extract_content(html_content)
 
         local browser_screen = create_browser_screen(title, content, html_content)
         graphics.display(browser_screen)
     else
+        -- É texto puro/JSON - mostra diretamente
         graphics.display(graphics.BuildScreen({
             title = url,
             fields = { { type = "text", value = html_content } },
