@@ -52,15 +52,19 @@ local function strip_tags(text)
     return result
 end
 
--- Função para extrair conteúdo entre tags
+-- Função para extrair conteúdo entre tags (corrigida contra loop infinito)
 local function extract_between_tags(html, tag_name)
     local content = {}
     if not html then return content end
     
     local pos = 1
     local html_len = string.len(html)
+    local max_iterations = 1000 -- Prevenção contra loop infinito
+    local iterations = 0
     
-    while pos <= html_len do
+    while pos <= html_len and iterations < max_iterations do
+        iterations = iterations + 1
+        
         -- Encontra abertura da tag
         local open_tag = "<" .. tag_name .. ">"
         local open_start, open_end = string.find(html, open_tag, pos)
@@ -69,7 +73,11 @@ local function extract_between_tags(html, tag_name)
         -- Encontra tag de fechamento
         local close_tag = "</" .. tag_name .. ">"
         local close_start, close_end = string.find(html, close_tag, open_end + 1)
-        if not close_start or not close_end then break end
+        if not close_start or not close_end then 
+            -- Se não encontrou fechamento, avança a posição para evitar loop
+            pos = open_end + 1
+            break 
+        end
         
         -- Extrai conteúdo
         local tag_content = string.sub(html, open_end + 1, close_start - 1)
@@ -172,11 +180,15 @@ local function main()
         return
     end
 
-    -- Verifica se é conteúdo HTML ou texto puro
-    local is_html = string.find(html_content, "<html") or 
-                   string.find(html_content, "<body") or 
-                   string.find(html_content, "<div") or 
-                   string.find(html_content, "<p")
+    -- Verifica se é conteúdo HTML ou texto puro de forma mais simples
+    local is_html = false
+    if string.find(html_content, "<html") then is_html = true
+    elseif string.find(html_content, "<body") then is_html = true
+    elseif string.find(html_content, "<div") then is_html = true
+    elseif string.find(html_content, "<p") then is_html = true
+    elseif string.find(html_content, "<h1") then is_html = true
+    elseif string.find(html_content, "<h2") then is_html = true
+    elseif string.find(html_content, "<h3") then is_html = true end
 
     if is_html then
         local title = extract_title(html_content)
