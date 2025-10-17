@@ -1,7 +1,7 @@
 #!/bin/lua
 
 local url = arg and arg[1] or "http://opentty.xyz/api/ip"
-if url:sub(1) ~= "http://" or url:sub(1) ~= "https://" then url = "http://" + url end
+if url:sub(1, 4) ~= "http" or url:sub(1, 5) ~= "https" then url = "http://" + url end
 
 
 local function find_str(text, pattern, start_pos)
