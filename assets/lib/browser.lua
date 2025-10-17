@@ -4,6 +4,7 @@
 -- Define a URL a ser carregada
 local url = arg and arg[1] or "http://opentty.xyz/api/ip"
 
+
 -- Função para encontrar substring (substitui string.find simples)
 local function find_str(text, pattern, start_pos)
     start_pos = start_pos or 1
@@ -63,7 +64,7 @@ local function extract_title(html)
         return string.sub(html, h1_start + 4, h1_end - 1)
     end
     
-    return nil
+    return "Sem título"
 end
 
 -- Função simplificada para remover tags HTML - evita problemas com &
@@ -129,149 +130,94 @@ end
 -- Função para extrair todo o conteúdo textual
 local function extract_content(html)
     local content = {}
-    
-    -- Extrai h1
+
     local h1_content = extract_between_tags(html, "h1")
-    for _, item in ipairs(h1_content) do
-        table.insert(content, item)
-    end
-    
-    -- Extrai h2
+    for _, item in ipairs(h1_content) do table.insert(content, item) end
+
     local h2_content = extract_between_tags(html, "h2")
-    for _, item in ipairs(h2_content) do
-        table.insert(content, item)
-    end
-    
-    -- Extrai h3
+    for _, item in ipairs(h2_content) do table.insert(content, item) end
+
     local h3_content = extract_between_tags(html, "h3")
-    for _, item in ipairs(h3_content) do
-        table.insert(content, item)
-    end
-    
-    -- Extrai parágrafos
+    for _, item in ipairs(h3_content) do table.insert(content, item) end
+
     local p_content = extract_between_tags(html, "p")
-    for _, item in ipairs(p_content) do
-        table.insert(content, item)
-    end
-    
+    for _, item in ipairs(p_content) do table.insert(content, item) end
+
     return content
 end
 
--- Função para criar a interface do navegador
 local function create_browser_screen(title, content, raw_html)
-    local screen_title = title or url
     local screen_fields = {}
-    
-    -- Adiciona o conteúdo
+
+    if title and title ~= "Sem título" then
+        table.insert(screen_fields, {type = "text", value = "Título: " .. title, style = "bold"})
+        table.insert(screen_fields, {type = "spacer", height = 5})
+    end
+
     local content_added = false
     for i, item in ipairs(content) do
         if item.text and string.len(item.text) > 0 then
             local style = "default"
-            
+
             if item.type == "h1" then style = "bold"
             elseif item.type == "h2" then style = "bold"
             elseif item.type == "h3" then style = "bold" end
-            
+
             table.insert(screen_fields, {type = "text", value = item.text, style = style})
             table.insert(screen_fields, {type = "spacer", height = 3})
             content_added = true
         end
     end
-    
-    -- Se não encontrou conteúdo formatado, mostra resposta bruta
+
     if not content_added and raw_html then
-        -- Para API que retorna JSON/texto puro
         local display_text = raw_html
-        if string.len(display_text) > 500 then
-            display_text = string.sub(display_text, 1, 500) .. "..."
+        if string.len(display_text) > 200 then
+            display_text = string.sub(display_text, 1, 200) .. "..."
         end
-        
+
+        table.insert(screen_fields, {type = "text", value = "Resposta:", style = "bold"})
         table.insert(screen_fields, {type = "text", value = display_text})
     end
-    
-    -- Se não tem nenhum conteúdo, mostra mensagem
-    if #screen_fields == 0 then
-        table.insert(screen_fields, {type = "text", value = "Nenhum conteúdo encontrado"})
-    end
-    
+
     return graphics.BuildScreen({
-        title = screen_title,
-        back = {
-            label = "Voltar",
-            root = "xterm"
-        },
+        title = title or url,
+        back = { label = "Back", root = os.exit },
         fields = screen_fields
     })
 end
 
--- Função principal
 local function main()
-    -- Tela de carregamento
     local loading_screen = graphics.BuildScreen({
-        title = "Navegador",
-        fields = {
-            {type = "text", value = "Carregando: " .. url},
-            {type = "text", value = "Aguarde..."}
-        }
+        title = "Browser",
+        fields = { { type = "text", value = "Loading: " .. url }, { type = "text", value = "Please wait..." } }
     })
     graphics.display(loading_screen)
-    
-    -- Faz a requisição HTTP
+
     local ok, html_content, status = pcall(socket.http.get, url)
     if not ok then
         graphics.display(graphics.BuildScreen({
-            title = "Erro",
-            fields = {
-                {type = "text", value = "Erro ao carregar:"},
-                {type = "text", value = tostring(html_content)},
-                {type = "spacer", height = 10},
-                {
-                    type = "item",
-                    label = "Voltar",
-                    root = "xterm"
-                }
-            }
+            title = "Error",
+            fields = { { type = "text", value = "Loading error:" }, {type = "text", value = tostring(html_content) } },
+            back = { label = "Back", root = os.exit }
         }))
         return
     end
-    
-    -- Para APIs como opentty.xyz/api/ip que retornam JSON/texto puro
-    -- Verifica se é conteúdo HTML ou texto puro
+
     local is_html = find_str(html_content, "<html") or find_str(html_content, "<body") or find_str(html_content, "<div") or find_str(html_content, "<p")
-    
+
     if is_html then
-        -- Processa como HTML
-        local title = extract_title(html_content)
-        local content = extract_content(html_content)
-        
-        -- Cria e exibe a tela do navegador
+        local title, content = extract_title(html_content), extract_content(html_content)
+
         local browser_screen = create_browser_screen(title, content, html_content)
         graphics.display(browser_screen)
     else
-        -- É texto puro/JSON - mostra diretamente
-        local screen_title = url
-        -- Tenta extrair um título do conteúdo (primeira linha)
-        local first_line_end = find_str(html_content, "\n") or (string.len(html_content) + 1)
-        local first_line = string.sub(html_content, 1, first_line_end - 1)
-        first_line = string.trim(first_line)
-        
-        -- Se a primeira linha for curta, usa como título
-        if string.len(first_line) > 0 and string.len(first_line) < 30 then
-            screen_title = first_line
-        end
-        
         graphics.display(graphics.BuildScreen({
-            title = screen_title,
-            fields = {
-                {type = "text", value = html_content}
-            },
-            back = {
-                label = "Voltar",
-                root = "xterm"
-            }
+            title = url,
+            fields = { { type = "text", value = html_content } },
+            back = { label = "Back", root = os.exit }
         }))
     end
 end
 
--- Inicia o navegador
+os.setproc("name", "browser")
 main()
