@@ -37,5 +37,5 @@ local function cmatrix()
 end
 
 os.setproc("name", "cmatrix")
-os.setproc("collector", "execute unset CMATRIX; " + collector)
+os.setproc("collector", "execute unset CMATRIX; " .. collector)
 cmatrix()
