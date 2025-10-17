@@ -6,20 +6,22 @@ local url = arg and arg[1] or "http://opentty.xyz/api/ip"
 
 -- Função para extrair título da página
 local function extract_title(html)
+    if not html then return nil end
+    
     -- Procura <title>
     local title_start, title_end = string.find(html, "<title>")
-    if title_start then
+    if title_start and title_end then
         local close_start, close_end = string.find(html, "</title>", title_end + 1)
-        if close_start then
+        if close_start and close_end then
             return string.sub(html, title_end + 1, close_start - 1)
         end
     end
     
     -- Procura <h1>
     local h1_start, h1_end = string.find(html, "<h1>")
-    if h1_start then
+    if h1_start and h1_end then
         local close_start, close_end = string.find(html, "</h1>", h1_end + 1)
-        if close_start then
+        if close_start and close_end then
             return string.sub(html, h1_end + 1, close_start - 1)
         end
     end
@@ -53,6 +55,8 @@ end
 -- Função para extrair conteúdo entre tags
 local function extract_between_tags(html, tag_name)
     local content = {}
+    if not html then return content end
+    
     local pos = 1
     local html_len = string.len(html)
     
@@ -60,12 +64,12 @@ local function extract_between_tags(html, tag_name)
         -- Encontra abertura da tag
         local open_tag = "<" .. tag_name .. ">"
         local open_start, open_end = string.find(html, open_tag, pos)
-        if not open_start then break end
+        if not open_start or not open_end then break end
         
         -- Encontra tag de fechamento
         local close_tag = "</" .. tag_name .. ">"
         local close_start, close_end = string.find(html, close_tag, open_end + 1)
-        if not close_start then break end
+        if not close_start or not close_end then break end
         
         -- Extrai conteúdo
         local tag_content = string.sub(html, open_end + 1, close_start - 1)
@@ -88,6 +92,7 @@ end
 -- Função para extrair todo o conteúdo textual
 local function extract_content(html)
     local content = {}
+    if not html then return content end
 
     local h1_content = extract_between_tags(html, "h1")
     for _, item in ipairs(h1_content) do table.insert(content, item) end
@@ -110,7 +115,7 @@ local function create_browser_screen(title, content, raw_html)
     -- Adiciona o conteúdo
     local content_added = false
     for i, item in ipairs(content) do
-        if item.text and string.len(item.text) > 0 then
+        if item and item.text and string.len(item.text) > 0 then
             local style = "default"
 
             if item.type == "h1" then style = "bold"
@@ -125,7 +130,7 @@ local function create_browser_screen(title, content, raw_html)
 
     -- Se não encontrou conteúdo formatado, mostra resposta bruta
     if not content_added and raw_html then
-        local display_text = raw_html
+        local display_text = raw_html or ""
         if string.len(display_text) > 500 then
             display_text = string.sub(display_text, 1, 500) .. "..."
         end
@@ -139,7 +144,7 @@ local function create_browser_screen(title, content, raw_html)
 
     return graphics.BuildScreen({
         title = title or url,
-        back = { label = "Back", root = os.exit },
+        back = { label = "Back", root = "xterm" },
         fields = screen_fields
     })
 end
@@ -155,14 +160,14 @@ local function main()
     graphics.display(loading_screen)
 
     local ok, html_content, status = pcall(socket.http.get, url)
-    if not ok then
+    if not ok or not html_content then
         graphics.display(graphics.BuildScreen({
             title = "Error",
             fields = { 
                 { type = "text", value = "Loading error:" }, 
                 {type = "text", value = tostring(html_content) } 
             },
-            back = { label = "Back", root = os.exit }
+            back = { label = "Back", root = "xterm" }
         }))
         return
     end
@@ -184,7 +189,7 @@ local function main()
         graphics.display(graphics.BuildScreen({
             title = url,
             fields = { { type = "text", value = html_content } },
-            back = { label = "Back", root = os.exit }
+            back = { label = "Back", root = "xterm" }
         }))
     end
 end
