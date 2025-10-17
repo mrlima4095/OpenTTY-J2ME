@@ -1,172 +1,316 @@
 #!/bin/lua
 
 
-local browser = { }
+-- Navegador Web Simples para Lua J2ME (sem regex)
+-- Define a URL a ser carregada
+local url = arg and arg[1] or "http://opentty.xyz/api/ip"
 
-local function fetch_url(url)
-    local res, status = socket.http.get(url)
-    return res
+-- Função para fazer requisição HTTP
+local function http_get(url)
+    local result, status = socket.http.get(url)
+    if result and status == 200 then
+        return result
+    else
+        return nil, "Erro HTTP: " .. tostring(status)
+    end
 end
-local function join_styles(styles)
-    local s = ""
-    for k, v in pairs(styles) do
-        if v then
-            if s == "" then s = k else s = s .. " " .. k end
+
+-- Função para encontrar substring (substitui string.find simples)
+local function find_str(text, pattern, start_pos)
+    start_pos = start_pos or 1
+    local text_len = string.len(text)
+    local pattern_len = string.len(pattern)
+    
+    for i = start_pos, text_len - pattern_len + 1 do
+        local match = true
+        for j = 1, pattern_len do
+            if string.sub(text, i + j - 1, i + j - 1) ~= string.sub(pattern, j, j) then
+                match = false
+                break
+            end
+        end
+        if match then
+            return i, i + pattern_len - 1
         end
     end
-    if s == "" then return "default" end
-    return s
+    return nil
 end
 
-local function parse_html(html)
-    if not html then return {} end
-    if not string.find(html, "<") then return { { type = "text", value = html, style = "default" } } end
-
-    local i = 1
-    local fields, styles = {}, {}
-    local in_head, in_script, in_style = false, false, false
-
-    while i <= #html do
-        local start_tag = string.find(html, "<", i)
-        if start_tag == nil then
-            if not in_head and not in_script and not in_style then
-                local text = string.trim(string.sub(html, i))
-                if text ~= "" then fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) } end
-            end
-
+-- Função para substituir strings (substitui string.gsub)
+local function replace_str(text, old, new)
+    local result = ""
+    local pos = 1
+    local old_len = string.len(old)
+    
+    while true do
+        local start_pos, end_pos = find_str(text, old, pos)
+        if not start_pos then
+            result = result .. string.sub(text, pos)
             break
         end
+        
+        result = result .. string.sub(text, pos, start_pos - 1) .. new
+        pos = end_pos + 1
+    end
+    
+    return result
+end
 
-        -- Texto antes da tag
-        if start_tag > i and not in_head and not in_script and not in_style then
-            local text = string.trim(string.sub(html, i, start_tag - 1))
-            if text ~= "" then fields[#fields + 1] = { type = "text", value = text, style = join_styles(styles) } end
+-- Função para extrair título da página
+local function extract_title(html)
+    -- Procura <title>
+    local title_start = find_str(html, "<title>")
+    local title_end = find_str(html, "</title>")
+    
+    if title_start and title_end then
+        return string.sub(html, title_start + 7, title_end - 1)
+    end
+    
+    -- Procura <h1>
+    local h1_start = find_str(html, "<h1>")
+    local h1_end = find_str(html, "</h1>")
+    
+    if h1_start and h1_end then
+        return string.sub(html, h1_start + 4, h1_end - 1)
+    end
+    
+    return "Sem título"
+end
+
+-- Função para remover tags HTML
+local function strip_tags(text)
+    local result = text
+    local changed = true
+    
+    -- Remove tags iterativamente
+    while changed do
+        changed = false
+        local tag_start = find_str(result, "<")
+        local tag_end = find_str(result, ">")
+        
+        if tag_start and tag_end and tag_start < tag_end then
+            result = string.sub(result, 1, tag_start - 1) .. string.sub(result, tag_end + 1)
+            changed = true
         end
+    end
+    
+    -- Substitui entidades HTML básicas manualmente
+    result = replace_str(result, "&lt;", "<")
+    result = replace_str(result, "&gt;", ">")
+    result = replace_str(result, "&amp;", "&")
+    result = replace_str(result, "&quot;", "\"")
+    result = replace_str(result, "&#39;", "'")
+    result = replace_str(result, "&nbsp;", " ")
+    
+    return result
+end
 
-        local end_tag = string.find(html, ">", start_tag)
-        if not end_tag then break end
-
-        local tag = string.lower(string.trim(string.sub(html, start_tag + 1, end_tag - 1)))
-
-        -- Controle head/script/style
-        if tag == "head" then in_head = true
-        elseif tag == "/head" then in_head = false
-        elseif tag == "script" then in_script = true
-        elseif tag == "/script" then in_script = false
-        elseif tag == "style" then in_style = true
-        elseif tag == "/style" then in_style = false
-        elseif not in_head and not in_script and not in_style then
-            if tag == "b" then styles["bold"] = true
-            elseif tag == "/b" then styles["bold"] = nil
-            elseif tag == "i" then styles["italic"] = true
-            elseif tag == "/i" then styles["italic"] = nil
-            elseif tag == "u" then styles["ul"] = true
-            elseif tag == "/u" then styles["ul"] = nil
-            elseif tag == "small" then styles["small"] = true
-            elseif tag == "/small" then styles["small"] = nil
-            elseif tag == "large" then styles["large"] = true
-            elseif tag == "/large" then styles["large"] = nil
-            elseif tag == "p" then styles["small"] = true
-            elseif tag == "/p" then styles["small"] = nil
-            elseif tag == "h1" then styles["large"] = true; styles["bold"] = true
-            elseif tag == "/h1" then styles["large"] = nil; styles["bold"] = nil
-            elseif tag == "h2" then styles["bold"] = true
-            elseif tag == "/h2" then styles["bold"] = nil
-            elseif tag == "h3" then styles["bold"] = true; styles["small"] = true
-            elseif tag == "/h3" then styles["bold"] = nil; styles["small"] = nil
-            elseif tag == "h4" or tag == "h5" or tag == "h6" then styles["small"] = true
-            elseif tag == "/h4" or tag == "/h5" or tag == "/h6" then styles["small"] = nil
-            elseif tag == "br" then fields[#fields + 1] = { type = "text", value = "\n", style = "default" }
+-- Função para extrair conteúdo entre tags
+local function extract_between_tags(html, tag_name)
+    local content = {}
+    local pos = 1
+    local html_len = string.len(html)
+    
+    while pos <= html_len do
+        -- Encontra abertura da tag
+        local open_tag = "<" .. tag_name
+        local open_start, open_end = find_str(html, open_tag, pos)
+        if not open_start then break end
+        
+        -- Encontra o final da tag de abertura
+        local gt_pos = find_str(html, ">", open_end)
+        if not gt_pos then break end
+        
+        -- Encontra tag de fechamento
+        local close_tag = "</" .. tag_name .. ">"
+        local close_start = find_str(html, close_tag, gt_pos + 1)
+        if not close_start then break end
+        
+        -- Extrai conteúdo
+        local tag_content = string.sub(html, gt_pos + 1, close_start - 1)
+        local clean_content = strip_tags(tag_content)
+        
+        -- Remove espaços em branco excessivos manualmente
+        local final_content = ""
+        local last_char = ""
+        for i = 1, string.len(clean_content) do
+            local char = string.sub(clean_content, i, i)
+            if char ~= " " or last_char ~= " " then
+                final_content = final_content .. char
+                last_char = char
             end
         end
-
-        i = end_tag + 1
+        
+        final_content = string.trim(final_content)
+        
+        if final_content and string.len(final_content) > 0 then
+            table.insert(content, {
+                type = tag_name,
+                text = final_content
+            })
+        end
+        
+        pos = close_start + string.len(close_tag)
     end
-
-    return fields
+    
+    return content
 end
 
-local function extract_title(html, url)
-    local start, finish = string.find(html, "<title>"), string.find(html, "</title>")
-
-    if start and finish then
-        local title = string.sub(html, start + 7, finish - 1)
-        if not title or title == "" then return url end
-
-        return string.trim(title)
+-- Função para extrair todo o conteúdo textual
+local function extract_content(html)
+    local content = {}
+    
+    -- Extrai h1
+    local h1_content = extract_between_tags(html, "h1")
+    for _, item in ipairs(h1_content) do
+        table.insert(content, item)
     end
-
-    return url
+    
+    -- Extrai h2
+    local h2_content = extract_between_tags(html, "h2")
+    for _, item in ipairs(h2_content) do
+        table.insert(content, item)
+    end
+    
+    -- Extrai h3
+    local h3_content = extract_between_tags(html, "h3")
+    for _, item in ipairs(h3_content) do
+        table.insert(content, item)
+    end
+    
+    -- Extrai parágrafos
+    local p_content = extract_between_tags(html, "p")
+    for _, item in ipairs(p_content) do
+        table.insert(content, item)
+    end
+    
+    -- Extrai divs (como fallback)
+    local div_content = extract_between_tags(html, "div")
+    for _, item in ipairs(div_content) do
+        table.insert(content, item)
+    end
+    
+    return content
 end
 
-
-function browser.load(url)
-    local html
-
-    if string.sub(url, 1, 7) == "http://" then
-        graphics.SetTicker("Loading...")
-        html = fetch_url(url)
-    elseif string.sub(url, 1, 7) == "file://" then html = io.read(string.sub(url, 8))
-    else
-        url = "http://" .. url
-        graphics.SetTicker("Loading...")
-        html = fetch_url(url)
+-- Função para criar a interface do navegador
+local function create_browser_screen(title, content)
+    local screen_fields = {
+        {type = "text", value = "Navegando: " .. url, style = "bold"},
+        {type = "spacer", height = 10}
+    }
+    
+    -- Adiciona o título
+    if title and title ~= "Sem título" then
+        table.insert(screen_fields, {type = "text", value = title, style = "bold"})
+        table.insert(screen_fields, {type = "spacer", height = 5})
     end
+    
+    -- Adiciona o conteúdo
+    local content_added = false
+    for i, item in ipairs(content) do
+        if item.text and string.len(item.text) > 0 then
+            local style = "default"
+            
+            if item.type == "h1" then
+                style = "bold"
+            elseif item.type == "h2" then
+                style = "bold" 
+            elseif item.type == "h3" then
+                style = "bold"
+            end
+            
+            table.insert(screen_fields, {type = "text", value = item.text, style = style})
+            table.insert(screen_fields, {type = "spacer", height = 3})
+            content_added = true
+        end
+    end
+    
+    -- Se não encontrou conteúdo formatado, mostra texto bruto
+    if not content_added then
+        local text_only = strip_tags(html or "")
+        -- Limita o tamanho manualmente
+        if string.len(text_only) > 500 then
+            text_only = string.sub(text_only, 1, 500) .. "..."
+        end
+        
+        if string.len(text_only) > 0 then
+            table.insert(screen_fields, {type = "text", value = "Conteúdo bruto:"})
+            table.insert(screen_fields, {type = "text", value = text_only})
+        end
+    end
+    
+    -- Botões de navegação
+    table.insert(screen_fields, {type = "spacer", height = 10})
+    table.insert(screen_fields, {
+        type = "item",
+        label = "Recarregar",
+        root = function()
+            -- Recarrega executando o script novamente
+            os.execute("lua browser.lua " .. url)
+        end
+    })
+    
+    table.insert(screen_fields, {
+        type = "item", 
+        label = "Voltar ao Terminal",
+        root = "xterm"
+    })
+    
+    return graphics.BuildScreen({
+        title = "Navegador Web",
+        back = {
+            label = "Sair",
+            root = "xterm"
+        },
+        fields = screen_fields
+    })
+end
 
-    graphics.SetTicker(nil)
+-- Variável global para armazenar HTML
+html = nil
 
+-- Função principal
+local function main()
+    -- Tela de carregamento
+    local loading_screen = graphics.BuildScreen({
+        title = "Navegador",
+        fields = {
+            {type = "text", value = "Carregando: " .. url},
+            {type = "text", value = "Aguarde..."}
+        }
+    })
+    graphics.display(loading_screen)
+    
+    -- Faz a requisição HTTP
+    local html_content, err = http_get(url)
+    html = html_content
+    
     if not html then
-        graphics.display(graphics.Alert({
-            title = "Browser",
-            message = "Rendering failed!",
-            back = { root = browser.main }
+        graphics.display(graphics.BuildScreen({
+            title = "Erro",
+            fields = {
+                {type = "text", value = "Erro ao carregar:"},
+                {type = "text", value = tostring(err)},
+                {type = "spacer", height = 10},
+                {
+                    type = "item",
+                    label = "Voltar",
+                    root = "xterm"
+                }
+            }
         }))
         return
     end
-
-    graphics.display(graphics.BuildScreen({
-        title = extract_title(html, url),
-        fields = parse_html(html),
-        back = { root = function () if arg[1] == nil then browser.open() else os.exit() end end },
-        button = { label = "Menu", root = browser.main }
-    }))
+    
+    -- Processa o HTML
+    local title = extract_title(html)
+    local content = extract_content(html)
+    
+    -- Cria e exibe a tela do navegador
+    local browser_screen = create_browser_screen(title, content)
+    graphics.display(browser_screen)
 end
 
-function browser.open()
-    graphics.display(graphics.BuildQuest({
-        title = "Browser",
-        label = "URL:",
-        content = "http://",
-        back = { label = "Back", root = browser.main },
-        button = { label = "Go", root = browser.load }
-    }))
-end
-
-function browser.tabs() end
-function browser.bookmarks() end
-function browser.settings() end
-
-function browser.main()
-    graphics.display(graphics.BuildList({
-        title = "Browser",
-        fields = { "Open URL", "Tabs", "Bookmarks", "Settings", "Exit" },
-        back = { label = "Exit", root = os.exit },
-        button = {
-            label = "Select",
-            root = function (opt)
-                if opt == "Open URL" then browser.open()
-                elseif opt == "Tabs" then browser.tabs()
-                elseif opt == "Bookmarks" then browser.bookmarks()
-                elseif opt == "Settings" then browser.settings()
-                elseif opt == "Exit" then os.exit()
-                end
-            end
-        }
-    }))
-end
-
-
-os.setproc("name", "browser")
-
-if #arg == 1 then browser.main()
-else browser.load(arg[1]) end
+-- Inicia o navegador
+main()
