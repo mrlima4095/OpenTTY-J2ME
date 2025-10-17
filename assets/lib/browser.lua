@@ -4,22 +4,13 @@
 -- Define a URL a ser carregada
 local url = arg and arg[1] or "http://opentty.xyz/api/ip"
 
--- Função para fazer requisição HTTP
-local function http_get(url)
-    local result, status = socket.http.get(url)
-    if result and status == 200 then
-        return result
-    else
-        return nil, "Erro HTTP: " .. tostring(status)
-    end
-end
 
 -- Função para encontrar substring (substitui string.find simples)
 local function find_str(text, pattern, start_pos)
     start_pos = start_pos or 1
     local text_len = string.len(text)
     local pattern_len = string.len(pattern)
-    
+
     for i = start_pos, text_len - pattern_len + 1 do
         local match = true
         for j = 1, pattern_len do
@@ -252,14 +243,13 @@ local function main()
     graphics.display(loading_screen)
     
     -- Faz a requisição HTTP
-    local html_content, err = http_get(url)
-    
-    if not html_content then
+    local ok, html_content, status = pcall(socket.http.get, url)
+    if not ok then
         graphics.display(graphics.BuildScreen({
             title = "Erro",
             fields = {
                 {type = "text", value = "Erro ao carregar:"},
-                {type = "text", value = tostring(err)},
+                {type = "text", value = tostring(html_content)},
                 {type = "spacer", height = 10},
                 {
                     type = "item",
