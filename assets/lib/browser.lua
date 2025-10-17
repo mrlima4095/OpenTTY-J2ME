@@ -2,7 +2,7 @@
 
 -- Navegador Web Simples para Lua J2ME
 -- Define a URL a ser carregada
-local url = arg and arg[1] or "http://opentty.xyz/api/ip"
+local url = arg and arg[1] or "http://opentty.xyz/api/headers"
 
 -- Função para extrair título da página
 local function extract_title(html)
