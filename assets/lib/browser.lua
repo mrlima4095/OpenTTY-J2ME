@@ -1,9 +1,11 @@
 #!/bin/lua
 
+-- Navegador Web Simples para Lua J2ME (sem regex)
+-- Define a URL a ser carregada
 local url = arg and arg[1] or "http://opentty.xyz/api/ip"
-if url:sub(1, 4) ~= "http" or url:sub(1, 5) ~= "https" then url = "http://" + url end
 
 
+-- Função para encontrar substring (substitui string.find simples)
 local function find_str(text, pattern, start_pos)
     start_pos = start_pos or 1
     local text_len = string.len(text)
@@ -17,92 +19,115 @@ local function find_str(text, pattern, start_pos)
                 break
             end
         end
-        if match then return i, i + pattern_len - 1 end
+        if match then
+            return i, i + pattern_len - 1
+        end
     end
     return nil
 end
 
+-- Função para substituir strings (substitui string.gsub)
 local function replace_str(text, old, new)
     local result = ""
     local pos = 1
     local old_len = string.len(old)
-
+    
     while true do
         local start_pos, end_pos = find_str(text, old, pos)
         if not start_pos then
             result = result .. string.sub(text, pos)
             break
         end
-
+        
         result = result .. string.sub(text, pos, start_pos - 1) .. new
         pos = end_pos + 1
     end
-
+    
     return result
 end
 
+-- Função para extrair título da página
 local function extract_title(html)
-    local title_start, title_end = find_str(html, "<title>"), find_str(html, "</title>")
-
-    if title_start and title_end then return string.sub(html, title_start + 7, title_end - 1) end
-
-    local h1_start, h1_end = find_str(html, "<h1>"), find_str(html, "</h1>")
-
-    if h1_start and h1_end then return string.sub(html, h1_start + 4, h1_end - 1) end
-
-    return nil
+    -- Procura <title>
+    local title_start = find_str(html, "<title>")
+    local title_end = find_str(html, "</title>")
+    
+    if title_start and title_end then
+        return string.sub(html, title_start + 7, title_end - 1)
+    end
+    
+    -- Procura <h1>
+    local h1_start = find_str(html, "<h1>")
+    local h1_end = find_str(html, "</h1>")
+    
+    if h1_start and h1_end then
+        return string.sub(html, h1_start + 4, h1_end - 1)
+    end
+    
+    return "Sem título"
 end
 
+-- Função simplificada para remover tags HTML - evita problemas com &
 local function strip_tags(text)
     if not text then return "" end
-
+    
     local result = ""
     local in_tag = false
     local text_len = string.len(text)
-
+    
     for i = 1, text_len do
         local char = string.sub(text, i, i)
-
-        if char == "<" then in_tag = true
-        elseif char == ">" then in_tag = false
-        elseif not in_tag then result = result .. char end
+        
+        if char == "<" then
+            in_tag = true
+        elseif char == ">" then
+            in_tag = false
+        elseif not in_tag then
+            result = result .. char
+        end
     end
-
+    
     return result
 end
 
+-- Função para extrair conteúdo entre tags (versão simplificada)
 local function extract_between_tags(html, tag_name)
     local content = {}
     local pos = 1
     local html_len = string.len(html)
-
+    
     while pos <= html_len do
+        -- Encontra abertura da tag
         local open_tag = "<" .. tag_name .. ">"
         local open_start, open_end = find_str(html, open_tag, pos)
         if not open_start then break end
-
+        
+        -- Encontra tag de fechamento
         local close_tag = "</" .. tag_name .. ">"
         local close_start = find_str(html, close_tag, open_end + 1)
         if not close_start then break end
-
+        
+        -- Extrai conteúdo
         local tag_content = string.sub(html, open_end + 1, close_start - 1)
         local clean_content = strip_tags(tag_content)
-
+        
+        -- Limpa espaços em branco
         clean_content = string.trim(clean_content)
-
+        
         if clean_content and string.len(clean_content) > 0 then
             table.insert(content, {
                 type = tag_name,
                 text = clean_content
             })
         end
-
+        
         pos = close_start + string.len(close_tag)
     end
-
+    
     return content
 end
 
+-- Função para extrair todo o conteúdo textual
 local function extract_content(html)
     local content = {}
 
@@ -123,6 +148,11 @@ end
 
 local function create_browser_screen(title, content, raw_html)
     local screen_fields = {}
+
+    if title and title ~= "Sem título" then
+        table.insert(screen_fields, {type = "text", value = "Título: " .. title, style = "bold"})
+        table.insert(screen_fields, {type = "spacer", height = 5})
+    end
 
     local content_added = false
     for i, item in ipairs(content) do
