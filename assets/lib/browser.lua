@@ -4,7 +4,6 @@
 -- Define a URL a ser carregada
 local url = arg and arg[1] or "http://opentty.xyz/api/ip"
 
-
 -- Função para encontrar substring (substitui string.find simples)
 local function find_str(text, pattern, start_pos)
     start_pos = start_pos or 1
@@ -64,7 +63,7 @@ local function extract_title(html)
         return string.sub(html, h1_start + 4, h1_end - 1)
     end
     
-    return "Sem título"
+    return nil
 end
 
 -- Função simplificada para remover tags HTML - evita problemas com &
@@ -160,16 +159,8 @@ end
 
 -- Função para criar a interface do navegador
 local function create_browser_screen(title, content, raw_html)
-    local screen_fields = {
-        {type = "text", value = "Navegando: " .. url, style = "bold"},
-        {type = "spacer", height = 10}
-    }
-    
-    -- Adiciona o título
-    if title and title ~= "Sem título" then
-        table.insert(screen_fields, {type = "text", value = "Título: " .. title, style = "bold"})
-        table.insert(screen_fields, {type = "spacer", height = 5})
-    end
+    local screen_title = title or url
+    local screen_fields = {}
     
     -- Adiciona o conteúdo
     local content_added = false
@@ -177,13 +168,9 @@ local function create_browser_screen(title, content, raw_html)
         if item.text and string.len(item.text) > 0 then
             local style = "default"
             
-            if item.type == "h1" then
-                style = "bold"
-            elseif item.type == "h2" then
-                style = "bold" 
-            elseif item.type == "h3" then
-                style = "bold"
-            end
+            if item.type == "h1" then style = "bold"
+            elseif item.type == "h2" then style = "bold"
+            elseif item.type == "h3" then style = "bold" end
             
             table.insert(screen_fields, {type = "text", value = item.text, style = style})
             table.insert(screen_fields, {type = "spacer", height = 3})
@@ -195,35 +182,22 @@ local function create_browser_screen(title, content, raw_html)
     if not content_added and raw_html then
         -- Para API que retorna JSON/texto puro
         local display_text = raw_html
-        if string.len(display_text) > 200 then
-            display_text = string.sub(display_text, 1, 200) .. "..."
+        if string.len(display_text) > 500 then
+            display_text = string.sub(display_text, 1, 500) .. "..."
         end
         
-        table.insert(screen_fields, {type = "text", value = "Resposta:", style = "bold"})
         table.insert(screen_fields, {type = "text", value = display_text})
     end
     
-    -- Botões de navegação
-    table.insert(screen_fields, {type = "spacer", height = 10})
-    table.insert(screen_fields, {
-        type = "item",
-        label = "Recarregar",
-        root = function()
-            -- Recarrega a página
-            os.execute("lua " .. arg[0] .. " " .. url)
-        end
-    })
-    
-    table.insert(screen_fields, {
-        type = "item", 
-        label = "Voltar ao Terminal",
-        root = "xterm"
-    })
+    -- Se não tem nenhum conteúdo, mostra mensagem
+    if #screen_fields == 0 then
+        table.insert(screen_fields, {type = "text", value = "Nenhum conteúdo encontrado"})
+    end
     
     return graphics.BuildScreen({
-        title = "Navegador Web",
+        title = screen_title,
         back = {
-            label = "Sair",
+            label = "Voltar",
             root = "xterm"
         },
         fields = screen_fields
@@ -275,29 +249,24 @@ local function main()
         graphics.display(browser_screen)
     else
         -- É texto puro/JSON - mostra diretamente
+        local screen_title = url
+        -- Tenta extrair um título do conteúdo (primeira linha)
+        local first_line_end = find_str(html_content, "\n") or (string.len(html_content) + 1)
+        local first_line = string.sub(html_content, 1, first_line_end - 1)
+        first_line = string.trim(first_line)
+        
+        -- Se a primeira linha for curta, usa como título
+        if string.len(first_line) > 0 and string.len(first_line) < 30 then
+            screen_title = first_line
+        end
+        
         graphics.display(graphics.BuildScreen({
-            title = "Navegador Web",
+            title = screen_title,
             fields = {
-                {type = "text", value = "URL: " .. url, style = "bold"},
-                {type = "spacer", height = 10},
-                {type = "text", value = "Resposta:"},
-                {type = "text", value = html_content},
-                {type = "spacer", height = 10},
-                {
-                    type = "item",
-                    label = "Recarregar", 
-                    root = function()
-                        os.execute("lua " .. arg[0] .. " " .. url)
-                    end
-                },
-                {
-                    type = "item",
-                    label = "Voltar",
-                    root = "xterm"
-                }
+                {type = "text", value = html_content}
             },
             back = {
-                label = "Sair",
+                label = "Voltar",
                 root = "xterm"
             }
         }))
