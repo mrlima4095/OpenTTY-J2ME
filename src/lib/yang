@@ -13,14 +13,22 @@ yang=execute x11 list /lib/yang;
 setrepo=execute set VALUE=REPO; set LABEL=IP Address (OpenTTY Server); export RETURN; cfg run;
 
 shell.name=yang
-shell.args=install,update,setrepo,chkrun,info
+shell.args=install,update,setrepo,get,chkrun,info
 
 install=sudo bg execute yang chkrun; set OLD_QUERY=$QUERY; set QUERY=$PKJOUT; echo ":: Downloading $RESOURCE"; query socket://$REPO get lib/$RESOURCE; echo ":: Installed [ $PKJOUT ]"; set QUERY=$OLD_QUERY; unset OLD_QUERY RESOURCE PKJOUT; 
 update=sudo bg execute yang chkrun; set OLD_QUERY=$QUERY; set QUERY=/lib/yang; echo ":: Downloading..."; query socket://$REPO get lib/yang; echo ":: Yang updated!"; set QUERY=$OLD_QUERY; unset OLD_QUERY RESOURCE;
 
 chkrun=execute case file (/tmp/.yang-lock) exec echo ":: Another yang instance is running!" & return 68; 
+get=execute x11 quest /lib/yang; true
 
 info=execute echo "PackJ 1.5 (Default)"
+
+[ DISPLAY ]
+
+quest.title=PackJ Query
+quest.label=Package
+quest.key=RESOURCE
+quest.cmd=execute set PKJOUT=/home/$RESOURCE; yang install; true
 
 [ Index ]
 
