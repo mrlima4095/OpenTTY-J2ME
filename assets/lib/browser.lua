@@ -1,5 +1,19 @@
 #!/bin/lua
 
+--[[
+
+[ Config ]
+
+name=Browser
+version=1.0
+description=Web Browser
+
+api.version=1.17
+api.require=lua
+api.error=execute echo "[ Browser ] Required OpenTTY 1.17 and Lua Runtime"
+
+]]
+
 -- Navegador Web Simples para Lua J2ME
 -- Define a URL a ser carregada
 local url = arg and arg[1] or "http://opentty.xyz/api/headers"
