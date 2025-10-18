@@ -26,6 +26,7 @@ quest.cmd=execute bg lua /bin/shprxy $PASSWD; unset PASSWD
 if os.execute("case thread (MIDlet) false") == 255 then error("WebProxy cannot run in Main Thread") end
 if #arg > 1 then
     local conn, i, o = socket.connect("socket://opentty.xyz:4096")
+    local address, port = socket.device(conn)
     local _ = io.read(i)
 
     io.write(arg[1] .. "\n", o)
@@ -36,6 +37,8 @@ if #arg > 1 then
     os.setproc("id", id)
     os.setproc("passwd", arg[1])
     os.setproc("name", "web-proxy")
+
+    if java.midlet and port then java.midlet.sessions[tostring(port)] = "opentty.xyz" end
 
     while true do
         local cmd = string.trim(io.read(i))
