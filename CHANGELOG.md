@@ -55,6 +55,7 @@ Copyright (C) 2025 - Mr. Lima
 - Fixed **MIDlet** login for user-only prompt
 - Added support for `list.default` that runs by default on all List choices
 - `query` command no longer consuming until connection end
+- Added button **Refresh** in _Process Viewer_
 
 ### 📦 Packages
 - **JBuntu** updated to _1.4_
