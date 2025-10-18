@@ -70,7 +70,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public static final String impl = "full";
 
         private int MOD = -1, COUNT = 1, id = 1000, start;
-        private boolean ignore = true, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals("");
+        private boolean ignore = true, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals(""), isOpen = true;
         private String command = null, pfilter = "", PID = genpid(), DB, address, port, node, proc_name;
         private Vector history = (Vector) getobject("1", "history");
         private Hashtable sessions = (Hashtable) getobject("1", "sessions"), PKG;
@@ -492,54 +492,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Item item) { if (c == RUN) { processCommand("xterm", true, id); processCommand((String) PKG.get(node + ".cmd"), true, id); } }
 
         public void run() {
-            if (MOD == NC) {
-                while (trace.containsKey(PID)) {
-                    try {
-                        if (IN.available() > 0) {
-                            byte[] BUFFER = new byte[IN.available()];
-                            int LENGTH = IN.read(BUFFER);
-                            if (LENGTH > 0) echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console);
-                        }
-                    } catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (!keep) { trace.remove(PID); } }
-                }
-
-                try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { }
-                return;
-            }
-            else if (MOD == PRSCAN) {
-                for (int port = start; port <= 65535; port++) {
-                    try {
-                        preview.setTicker(new Ticker("Scanning port " + port + "..."));
-
-                        if (trace.containsKey(PID)) {
-                            Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close();
-                            preview.append("" + port, null);
-                        }
-                        else { break; }
-                    } catch (IOException e) { }
-                }
-                preview.setTicker(null);
-                if (keep) { } else { trace.remove(PID); }
-                return;
-            }
-            else if (MOD == GOBUSTER) {
-                preview.setTicker(new Ticker("Searching..."));
-                for (int i = 0; i < wordlist.length; i++) {
-                    String path = wordlist[i].trim();
-
-                    if (trace.containsKey(PID)) {
-                        if (!path.equals("") && !path.startsWith("#")) {
-                            try {
-                                int code = verifyHTTP(address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path);
-                                if (code != 404) { preview.append(code + " /" + path, null); }
-                            } catch (IOException e) { }
-                        }
-                    } else { break; }
-                }
-                preview.setTicker(null);
-                if (keep) { } else { trace.remove(PID); }
-                return;
-            }
+            if (MOD == NC) { while (trace.containsKey(PID)) { try { if (IN.available() > 0) { byte[] BUFFER = new byte[IN.available()]; int LENGTH = IN.read(BUFFER); if (LENGTH > 0) { echoCommand((new String(BUFFER, 0, LENGTH)).trim(), console); } } } catch (Exception e) { warnCommand(form.getTitle(), getCatch(e)); if (keep) { } else { trace.remove(PID); } } } try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } return; }
+            else if (MOD == PRSCAN) { for (int port = start; port <= 65535; port++) { try { preview.setTicker(new Ticker("Scanning port " + port + "...")); if (trace.containsKey(PID)) { Connector.open("socket://" + address + ":" + port, Connector.READ_WRITE, true).close(); preview.append("" + port, null); } else { break; } } catch (IOException e) { } } preview.setTicker(null); if (keep) { } else { trace.remove(PID); } return; }
+            else if (MOD == GOBUSTER) { preview.setTicker(new Ticker("Searching...")); for (int i = 0; i < wordlist.length; i++) { String path = wordlist[i].trim(); if (trace.containsKey(PID)) { if (!path.equals("") && !path.startsWith("#")) { try { int code = verifyHTTP(address.startsWith("http") ? address + "/" + path : "http://" + address + "/" + path); if (code != 404) { preview.append(code + " /" + path, null); } } catch (IOException e) { } } } else { break; } } preview.setTicker(null); if (keep) { } else { trace.remove(PID); } return; }
             else if (MOD == BIND) {
                 if (sessions.containsKey(port)) { echoCommand("[-] Port '" + port + "' is unavailable"); return; }
 
@@ -1711,6 +1666,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
     // |
     // Network Logging
+    public int NetLogs(String )
 
     // API 012 - (File)
     // |
