@@ -17,7 +17,6 @@ config=execute alias cmatrix=bg lua /home/cmatrix; cmatrix
 
 ]]
 
-local collector = "execute x11 stop; x11 init; title $OLD_TITLE; clear;"
 local function cmatrix()
     if os.getenv("J2EMU") ~= nil then error("cmatrix cannot run in j2me loader!") end
 
@@ -37,5 +36,5 @@ local function cmatrix()
 end
 
 os.setproc("name", "cmatrix")
-os.setproc("collector", "execute unset CMATRIX; " .. collector)
+os.setproc("collector", "execute unset CMATRIX; x11 stop; x11 init; clear; true")
 cmatrix()
