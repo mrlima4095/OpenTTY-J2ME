@@ -33,7 +33,7 @@ quest.cmd=execute set PKJOUT=/home/$RESOURCE; yang install; true
 [ Index ]
 
 list.title=Repository
-list.content=Android ME,Armitage,Auto Clean,Back Previous,BoxME,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JBuntu,JBenchmark,J2ME Loader,MobiX UI,PasteBin,StringEditor,SmartME SDK,Updater,ViaVersion,WebProxy
+list.content=Android ME,Armitage,Auto Clean,Back Previous,BoxME,Browser,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JBuntu,JBenchmark,J2ME Loader,MobiX UI,PasteBin,StringEditor,SmartME SDK,Updater,ViaVersion,WebProxy
 list.button=Install
 
 Android ME=execute set RESOURCE=android; set PKJOUT=/bin/droid; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
@@ -41,6 +41,7 @@ Armitage=execute set RESOURCE=armitage; set PKJOUT=/bin/armitage; yang install;
 Auto Clean=execute set RESOURCE=autogc; set PKJOUT=/lib/autogc; yang install;
 Back Previous=execute set RESOURCE=bprevious; set PKJOUT=/lib/bprevious; yang install;
 BoxME=execute set RESOURCE=boxme; set PKJOUT=/bin/boxme; yang install;
+Browser=execute set RESOURCE=browser.lua; set PKJOUT=/bin/web; yang install;
 CMatrix=execute set RESOURCE=cmatrix; set PKJOUT=/bin/cmatrix; yang install;
 DarkDM+=execute set RESOURCE=darkdm.lua; set PKJOUT=/bin/ddm; yang install
 Discord (MIDlet)=execute warn "This is a 3rd MIDlet from 'gtrxac'"; bg exec sleep 3 & open http://146.59.80.3/discord_midp2_beta.jar;
