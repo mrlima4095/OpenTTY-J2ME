@@ -45,6 +45,7 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** added support for **methods** and `:` token
 - **Lua** added minimal support for **metatables**
 - **Lua** fixed `break` token not working in `while` and `repeat` loops
+- **Lua** functions `socket.peer` and `socket.device` now returns **IP Address** and **Connection Port**
 - MIDlet initial message now comes from `/etc/motd` file
 - Merged build tools **Lua**, **Shell Script** and **Packages**; utility `.` considers _shebangs_ for building
 - `cp` command now using raw _byte-array_
@@ -64,6 +65,7 @@ Copyright (C) 2025 - Mr. Lima
 
 ### 🏗️ Architecture
 - Source code split into `OpenTTY.java` (Main Class), `Lua.java` (Lua Runtime) and `MIDletCanvas.java` (Canvas Builder)
+- Removed unfunctional Command `wrl`
 - Removed Command `sed`
 
 ---
