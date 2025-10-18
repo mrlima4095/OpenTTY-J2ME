@@ -855,7 +855,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("report")) { return processCommand("open mailto:felipebr4095@gmail.com", false, id); }
         else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
-        else if (mainCommand.equals("netstat")) { if (argument.equals("")) { argument = "http://ipinfo.io"; } int STATUS = 0; try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } else { STATUS = 101; } CONN.close(); } catch (SecurityException e) { STATUS = 13; } catch (Exception e) { STATUS = 101; } echoCommand(STATUS == 0 ? "true" : "false"); return STATUS; }
+        else if (mainCommand.equals("netstat")) { 
+            if (argument.equals("")) { argument = "http://ipinfo.io"; } 
+            int STATUS = 0; 
+            try { 
+                HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); 
+                CONN.setRequestMethod(HttpConnection.GET); 
+                if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } 
+                else { STATUS = 101; } CONN.close(); 
+            } 
+            catch (SecurityException e) { STATUS = 13; } 
+            catch (Exception e) { STATUS = 101; } 
+            
+            echoCommand(STATUS == 0 ? "true" : "false"); 
+            return STATUS; 
+        }
         
         // API 012 - (File)
         // |

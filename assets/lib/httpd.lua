@@ -1,193 +1,342 @@
-local httpd = {}
+-- Flask-like HTTP server para Lua J2ME
+httpd = {}
 
-httpd._routes = {}
-httpd._row = 1
+-- Tabela para armazenar as rotas
+httpd.routes = {}
 
-local function log(msg)
-    print("[httpd] " .. msg)
+-- Função para adicionar rotas
+function httpd.route(path, method, handler)
+    if not httpd.routes[path] then
+        httpd.routes[path] = {}
+    end
+    httpd.routes[path][method:upper()] = handler
 end
 
-local function trim(s)
-    if not s or #s == 0 then
-        return ""
-    end
+-- Função auxiliar para dividir string por delimitador
+function httpd.split_string(str, delimiter)
+    local result = {}
     local start = 1
-    while start <= #s and string.sub(s, start, start) == " " do
+    local delim_start, delim_end = string.find(str, delimiter, start)
+    
+    while delim_start do
+        table.insert(result, string.sub(str, start, delim_start - 1))
+        start = delim_end + 1
+        delim_start, delim_end = string.find(str, delimiter, start)
+    end
+    
+    table.insert(result, string.sub(str, start))
+    return result
+end
+
+-- Função auxiliar para trim de espaços
+function httpd.trim(str)
+    if not str then return "" end
+    -- Remove espaços do início
+    local start = 1
+    while start <= string.len(str) and string.sub(str, start, start) == " " do
         start = start + 1
     end
-    local finish = #s
-    while finish >= start and string.sub(s, finish, finish) == " " do
+    -- Remove espaços do final
+    local finish = string.len(str)
+    while finish >= 1 and string.sub(str, finish, finish) == " " do
         finish = finish - 1
     end
-    return string.sub(s, start, finish)
+    
+    if finish < start then return "" end
+    return string.sub(str, start, finish)
 end
 
-local function indexOf(text, pat, start)
-    start = start or 1
-    local plen, tlen = #pat, #text
-    for i = start, tlen - plen + 1 do
-        if string.sub(text, i, i + plen - 1) == pat then
-            return i
+-- Função para comparar paths e extrair parâmetros
+function httpd.match_path(route_path, request_path)
+    local route_parts = httpd.split_string(route_path, "/")
+    local request_parts = httpd.split_string(request_path, "/")
+    
+    -- Remove partes vazias do início (se houver)
+    if route_parts[1] == "" then table.remove(route_parts, 1) end
+    if request_parts[1] == "" then table.remove(request_parts, 1) end
+    
+    -- Verifica se têm o mesmo número de partes
+    if #route_parts ~= #request_parts then
+        return nil
+    end
+    
+    local params = {}
+    
+    -- Compara parte por parte
+    for i = 1, #route_parts do
+        local route_part = route_parts[i]
+        local request_part = request_parts[i]
+        
+        -- Se a parte da rota começa com ':', é um parâmetro
+        if string.sub(route_part, 1, 1) == ":" then
+            local param_name = string.sub(route_part, 2)
+            params[param_name] = request_part
+        else
+            -- Se não é parâmetro, as partes devem ser iguais
+            if route_part ~= request_part then
+                return nil
+            end
         end
     end
+    
+    return params
+end
+
+-- Função para encontrar rota correspondente
+function httpd.find_route(request_path, method)
+    -- Remove query parameters do path se houver
+    local clean_path = request_path
+    local query_start = string.find(request_path, "?")
+    if query_start then
+        clean_path = string.sub(request_path, 1, query_start - 1)
+    end
+    
+    -- Verifica rota exata primeiro
+    if httpd.routes[clean_path] and httpd.routes[clean_path][method] then
+        return httpd.routes[clean_path][method], {}
+    end
+    
+    -- Procura por rotas com parâmetros
+    for route_path, methods in pairs(httpd.routes) do
+        if methods[method] then
+            local params = httpd.match_path(route_path, clean_path)
+            if params then
+                return methods[method], params
+            end
+        end
+    end
+    
     return nil
 end
 
-local function getMethod(raw)
-    local buffer = ""
-    for i = 1, #raw do
-        local cur = string.sub(raw, i, i)
-        if cur == " " then
+-- Função para parsear query parameters
+function httpd.parse_query(query_string)
+    local params = {}
+    if not query_string or query_string == "" then return params end
+    
+    local pairs = httpd.split_string(query_string, "&")
+    for _, pair in ipairs(pairs) do
+        local eq_pos = string.find(pair, "=")
+        if eq_pos then
+            local key = string.sub(pair, 1, eq_pos - 1)
+            local value = string.sub(pair, eq_pos + 1)
+            params[key] = value
+        else
+            params[pair] = ""
+        end
+    end
+    
+    return params
+end
+
+-- Função para parsear requisição HTTP
+function httpd.parse_request(request_data)
+    local request = {
+        method = "GET",
+        path = "/",
+        headers = {},
+        body = "",
+        query_params = {}
+    }
+    
+    -- Encontra fim dos headers procurando por sequência vazia
+    local header_end = nil
+    local data_len = string.len(request_data)
+    
+    -- Procura por \r\n\r\n
+    for i = 1, data_len - 3 do
+        if string.sub(request_data, i, i + 3) == "\r\n\r\n" then
+            header_end = i + 3
             break
         end
-        buffer = buffer .. cur
     end
-    return buffer
-end
-
-local function getHeaders(raw)
-    local headers = {}
-    local pos = indexOf(raw, "\r\n", 1)
-    if not pos then
-        return headers
-    end
-    pos = pos + 2
-
-    local header_end = indexOf(raw, "\r\n\r\n", pos)
-    if not header_end then header_end = #raw + 1 end
-
-    local header_part = string.sub(raw, pos, header_end - 1)
-    local line_start = 1
-    while line_start <= #header_part do
-        local line_end = indexOf(header_part, "\r\n", line_start)
-        if not line_end then line_end = #header_part + 1 end
-        local line = string.sub(header_part, line_start, line_end - 1)
-
-        local colon_pos = indexOf(line, ":", 1)
-        if colon_pos then
-            local key = trim(string.sub(line, 1, colon_pos - 1))
-            local value = trim(string.sub(line, colon_pos + 1))
-            if key ~= "" then
-                headers[key] = value
-            end
-        end
-
-        line_start = line_end + 2
-    end
-
-    return headers
-end
-
-local function getRoute(raw)
-    local space1 = indexOf(raw, " ", 1)
-    if not space1 then
-        return ""
-    end
-    local start = space1 + 1
-    local space2 = indexOf(raw, " ", start)
-    if not space2 then
-        space2 = #raw + 1
-    end
-    return string.sub(raw, start, space2 - 1)
-end
-
-local function getBody(raw)
-    local end_req = indexOf(raw, "\r\n", 1)
-    if not end_req then
-        return ""
-    end
-    local pos = end_req + 2
-    local header_end = indexOf(raw, "\r\n\r\n", pos)
+    
+    -- Se não encontrou, procura por \n\n
     if not header_end then
-        return ""
+        for i = 1, data_len - 1 do
+            if string.sub(request_data, i, i + 1) == "\n\n" then
+                header_end = i + 1
+                break
+            end
+        end
     end
-    return string.sub(raw, header_end + 4)
-end
-local function processRequest(raw, i, o)
-    if debug then
-        log("Raw request:\n" .. trim(raw))
-    end
-
-    local method, route, headers, body = getMethod(raw), getRoute(raw), getHeaders(raw), getBody(raw)
-    log("Method: " .. tostring(method) .. ", Route: " .. tostring(route))
-    local handler = httpd._routes[route]
-
-    local response, status = "", "200 OK"
-    if not handler then
-        status = "404 Not Found"
-        response = "<h1>404 - Not Found</h1>"
-        log("No handler found for route: " .. route)
-    elseif handler["method"] ~= method then
-        status = "405 Method Not Allowed"
-        response = "<h1>Method Not Allowed</h1>"
-        log("Method not allowed: " .. method)
+    
+    local headers_part = ""
+    local body_part = ""
+    
+    if header_end then
+        headers_part = string.sub(request_data, 1, header_end)
+        body_part = string.sub(request_data, header_end + 1)
     else
-        local ok2, res = pcall(handler.handler, method, headers, body)
-        if not ok2 then
-            status = "500 Internal Server Error"
-            response = "<h1>500 Internal Server Error</h1>"
-            log("Handler error: " .. tostring(res))
-        else
-            response = res
-            if type(res) == "table" then
-                if res.status then status = res.status end
-                if res.body then response = res.body end
+        headers_part = request_data
+    end
+    
+    -- Divide headers em linhas
+    local header_lines = httpd.split_string(headers_part, "\r\n")
+    if #header_lines == 1 then
+        -- Tenta com \n se \r\n não funcionou
+        header_lines = httpd.split_string(headers_part, "\n")
+    end
+    
+    -- Parse primeira linha (request line)
+    if #header_lines > 0 then
+        local first_line_parts = httpd.split_string(header_lines[1], " ")
+        if #first_line_parts >= 2 then
+            request.method = first_line_parts[1]
+            local full_path = first_line_parts[2]
+            
+            -- Separa path e query parameters
+            local query_start = string.find(full_path, "?")
+            if query_start then
+                request.path = string.sub(full_path, 1, query_start - 1)
+                local query_string = string.sub(full_path, query_start + 1)
+                request.query_params = httpd.parse_query(query_string)
+            else
+                request.path = full_path
             end
-            log("Handler executed successfully for route: " .. route)
         end
     end
-
-    local sendb = "HTTP/1.1 " .. status .. "\r\n" ..
-                  "Content-Type: " .. (nil or "text/html") .. "\r\n" ..
-                  "Content-Length: " .. #response .. "\r\n\r\n" ..
-                  response
-
-    local ok3, err3 = pcall(io.write, sendb, o)
-    if not ok3 then
-        log("Error sending response: " .. tostring(err3))
+    
+    -- Parse headers restantes
+    for i = 2, #header_lines do
+        local line = header_lines[i]
+        if line and line ~= "" then
+            local colon_pos = string.find(line, ":")
+            if colon_pos then
+                local key = httpd.trim(string.sub(line, 1, colon_pos - 1))
+                local value = httpd.trim(string.sub(line, colon_pos + 1))
+                if key ~= "" then
+                    request.headers[string.lower(key)] = value
+                end
+            end
+        end
     end
-
-    pcall(io.close, i, o)
+    
+    request.body = body_part
+    return request
 end
 
-httpd.route = function(path, method, handler)
-    if not path then
-        error("bad argument #1 for 'route' (string expected, got no value)")
-    end
-    if not handler then
-        handler = method
-        method = "GET"
-    end
-    httpd._routes[path] = { method = method, handler = handler }
-    log("Registered route: " .. path .. " [" .. method .. "]")
+-- Função para criar resposta HTTP
+function httpd.create_response(status, body, content_type)
+    content_type = content_type or "text/plain"
+    local body_str = tostring(body)
+    
+    local response_lines = {
+        "HTTP/1.1 " .. tostring(status) .. " " .. httpd.status_message(status),
+        "Content-Type: " .. content_type,
+        "Content-Length: " .. string.len(body_str),
+        "Connection: close",
+        "",
+        body_str
+    }
+    
+    return table.concat(response_lines, "\r\n")
 end
 
-httpd.run = function(port, debug, buffer, mime)
+-- Mensagens de status HTTP
+function httpd.status_message(status_code)
+    local messages = {
+        [200] = "OK",
+        [201] = "Created",
+        [204] = "No Content",
+        [400] = "Bad Request",
+        [404] = "Not Found",
+        [405] = "Method Not Allowed",
+        [500] = "Internal Server Error"
+    }
+    
+    return messages[status_code] or "Unknown"
+end
+
+-- Função principal do servidor
+function httpd.run(port)
+    port = port or 8080
+    
+    print("Starting HTTP server on port " .. port)
+    
+    -- Cria servidor
+    local server = socket.server(port)
+    if not server then
+        error("Failed to start server on port " .. port)
+    end
+    
     while true do
-        log("Starting server on port " .. port)
-        local ok, server = pcall(socket.server, port)
-        if not ok then
-            log("Server binding error: " .. tostring(server))
-            error("httpd - server binding error")
+        -- Aceita conexão
+        local client_data = socket.accept(server)
+        if not client_data then
+            break
         end
-
-        if httpd._row == 1 then
-            log("Listening at port " .. port)
-        end
-
-        local client, i, o = socket.accept(server)
-        if client then
-            log("Client connected")
-            local ok, raw = pcall(io.read, i, buffer or 4096)
-            if not ok then
-                log("Error reading client data: " .. tostring(raw))
-            elseif raw then
-                processRequest(raw, i, o)
+        
+        local client_conn = client_data[1]
+        local input_stream = client_data[2]
+        local output_stream = client_data[3]
+        
+        -- Lê dados da requisição
+        local request_data = ""
+        local chunk = io.read(input_stream, 1024)
+        while chunk and chunk ~= "" do
+            request_data = request_data .. chunk
+            if string.len(request_data) > 8192 then
+                break
             end
+            chunk = io.read(input_stream, 1024)
         end
-        pcall(io.close, client)
-        pcall(io.close, server)
+        
+        if request_data ~= "" then
+            -- Parse e processa requisição
+            local success, result = pcall(function()
+                local request = httpd.parse_request(request_data)
+                local handler, params = httpd.find_route(request.path, request.method)
+                
+                if handler then
+                    -- Prepara objeto request para o handler
+                    local req_obj = {
+                        method = request.method,
+                        path = request.path,
+                        headers = request.headers,
+                        body = request.body,
+                        query = request.query_params,
+                        params = params or {}
+                    }
+                    
+                    -- Executa handler
+                    local handler_result = handler(req_obj)
+                    
+                    -- Processa resultado
+                    local status, body, content_type
+                    
+                    if type(handler_result) == "table" then
+                        status = handler_result[1] or 200
+                        body = handler_result[2] or ""
+                        content_type = handler_result[3] or "text/plain"
+                    else
+                        status = 200
+                        body = tostring(handler_result or "")
+                        content_type = "text/plain"
+                    end
+                    
+                    return httpd.create_response(status, body, content_type)
+                else
+                    -- Rota não encontrada
+                    return httpd.create_response(404, "404 Not Found: " .. request.path)
+                end
+            end)
+            
+            -- Envia resposta
+            local response_data = success and result or 
+                httpd.create_response(500, "Internal Server Error: " .. tostring(result))
+            
+            io.write(output_stream, response_data)
+            output_stream:flush()
+        end
+        
+        -- Fecha conexão
+        io.close(client_conn)
+        io.close(input_stream)
+        io.close(output_stream)
     end
+    
+    io.close(server)
 end
 
-return httpd
+local httpd=require("/home/httpd") httpd.route("/", "GET", function() return 200, "<h1>Hello, World!</h1><p></p>" end) print("rodando na porta 21") httpd.run(21)
