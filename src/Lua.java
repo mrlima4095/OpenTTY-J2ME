@@ -39,7 +39,7 @@ public class Lua {
         funcs = new String[] { "get", "post" }; loaders = new int[] { HTTP_GET, HTTP_POST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "class", "getName" }; loaders = new int[] { CLASS, NAME };
+        funcs = new String[] { "class", "getName", "delete" }; loaders = new int[] { CLASS, NAME, DELETE };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
         jdb.put("sessions", midlet.getobject("1", "sessions")); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); java.put("midlet", jdb); globals.put("java", java);
 
