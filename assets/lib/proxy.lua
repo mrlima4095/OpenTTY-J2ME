@@ -59,5 +59,6 @@ if #arg > 1 then
 
     pcall(io.close, conn, i, o)
     print("WebProxy -> Server disconnected")
+    if java.midlet and port then java.midlet.sessions[tostring(port)] = "opentty.xyz" end
 else print("Usage: bg lua " .. arg[0] .. " <password>") end
 

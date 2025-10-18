@@ -77,6 +77,7 @@ graphics = {
 java = {
     class = function (name) return true end,
     getName = function () return "JVM" end,
+    delete = function (struct, field) local value = struct[field] struct[field] = nil return value end,
 
     midlet = {
         sessions = { ["1"] = "127.0.0.1" },
