@@ -75,7 +75,7 @@ Copyright (C) 2025 - Mr. Lima
 - Files written in **/tmp/** will be deleted when MIDlet closes
 - **OpenTTY API** official development programming language is now **Lua**
 - In limited memory devices you can disable shell **PATH** search by running `stty classpath=false`
-- To use commnad `sed` download it in **PackJ**, this package is named _StringEditor_
+- To use command `sed` download it in **PackJ**, this package is named _StringEditor_
 - Documentation available on Github Wiki page
 
 ---
