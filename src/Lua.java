@@ -26,7 +26,7 @@ public class Lua {
         this.tokenIndex = 0; this.PID = midlet.genpid();
         this.proc = midlet.genprocess("lua", id, null);
         
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable();
         String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
@@ -40,7 +40,8 @@ public class Lua {
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
         funcs = new String[] { "class", "getName" }; loaders = new int[] { CLASS, NAME };
-        for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("java", java);
+        for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
+        jdb.put("sessions", midlet.getobject("1", "sessions")); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); java.put("midlet", jdb); globals.put("java", java);
 
         funcs = new String[] { "connect", "peer", "device", "server", "accept" }; loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
@@ -1643,7 +1644,10 @@ public class Lua {
                     if (args.elementAt(0) instanceof SocketConnection) {
                         SocketConnection conn = (SocketConnection) args.elementAt(0);
 
-                        return toLuaString(MOD == PEER ? conn.getAddress(): conn.getLocalAddress());
+                        Vector result = new Vector();
+                        result.addElement(MOD == PEER ? conn.getAddress() : conn.getLocalAddress());
+                        result.addElement(MOD == PEER ? conn.getPort() : conn.getLocalPort());
+                        return result;
                     } else { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got " + type(args.elementAt(0))); }
                 }
             }
