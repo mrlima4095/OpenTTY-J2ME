@@ -173,8 +173,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 monitor.setCommandListener(this);
 
                 proc.put("socket", CONN);
-                proc.put("in", IN);
-                proc.put("out", OUT);
+                proc.put("in", IN); proc.put("out", OUT);
                 proc.put("screen", monitor);
                 display.setCurrent(monitor);
             } 
@@ -532,14 +531,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     } 
                     catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
-                    finally {
-                        try { if (IN != null) IN.close(); } catch (IOException e) { }
-                        try { if (OUT != null) OUT.close(); } catch (IOException e) { }
-                        try { if (CONN != null) CONN.close(); } catch (IOException e) { }
-                        try { if (server != null) server.close(); } catch (IOException e) { }
-                        
-                        sessions.put(port, "nobody");
-                    }
+                    finally { try { if (IN != null) IN.close(); } catch (IOException e) { } try { if (OUT != null) OUT.close(); } catch (IOException e) { } try { if (CONN != null) CONN.close(); } catch (IOException e) { } try { if (server != null) server.close(); } catch (IOException e) { } sessions.put(port, "nobody"); }
                 } 
                 trace.remove(PID); sessions.remove(port);
                 if (COUNT > 1) { echoCommand("[-] Server stopped"); MIDletLogs("add info Server was stopped"); }
@@ -731,7 +723,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // TTY
         else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
         else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
-        else if (mainCommand.equals("stty")) { 
+        else if (mainCommand.equals("stty")) {
             if (argument.equals("")) { echoCommand("" + TTY_MAX_LEN); }
             else if (argument.indexOf("=") != -1) {
                 if (argument.substring(0, argument.indexOf("=")).equals("classpath")) { classpath = argument.substring(argument.indexOf("=") + 1).equals("true"); }
@@ -811,19 +803,67 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("report")) { return processCommand("open mailto:felipebr4095@gmail.com", false, id); }
         else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
         else if (mainCommand.equals("netstat")) { 
-            if (argument.equals("")) { argument = "http://ipinfo.io"; } 
-            int STATUS = 0; 
-            try { 
-                HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); 
-                CONN.setRequestMethod(HttpConnection.GET); 
-                if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } 
-                else { STATUS = 101; } CONN.close(); 
-            } 
-            catch (SecurityException e) { STATUS = 13; } 
-            catch (Exception e) { STATUS = 101; } 
+            if (argument.equals("") || args[0].equals("-a")) {
+                echoCommand("Active Connections:");
+                echoCommand("PID\tType\tLocal Address\tRemote Address\tState");
+                
+                for (Enumeration keys = trace.keys(); keys.hasMoreElements();) {
+                    String pid = (String) keys.nextElement();
+                    Hashtable proc = (Hashtable) trace.get(pid);
+                    String procName = (String) proc.get("name");
+                    
+                    if (procName.equals("nc") || procName.equals("bind") || procName.equals("remote")) {
+                        String state = "ESTABLISHED";
+                        String localAddr = "N/A";
+                        String remoteAddr = "N/A";
+                        
+                        try {
+                            if (proc.get("socket") != null) {
+                                SocketConnection conn = (SocketConnection) proc.get("socket");
+                                localAddr = conn.getLocalAddress() + ":" + conn.getLocalPort();
+                                remoteAddr = conn.getAddress() + ":" + conn.getLocalPort();
+                            }
+                        } catch (Exception e) {}
+                        
+                        echoCommand(pid + "\t" + procName + "\t" + localAddr + "\t" + remoteAddr + "\t" + state);
+                    }
+                }
+                
+                // Mostrar servidores ativos
+                echoCommand("\nActive Servers:");
+                echoCommand("PID\tType\tPort\tStatus");
+                
+                Hashtable sessions = (Hashtable) getobject("1", "sessions");
+                for (Enumeration ports = sessions.keys(); ports.hasMoreElements();) {
+                    String port = (String) ports.nextElement();
+                    String status = sessions.get(port).equals("nobody") ? "LISTENING" : "ESTABLISHED";
+                    
+                    // Encontrar PID associado à porta
+                    for (Enumeration pids = trace.keys(); pids.hasMoreElements();) {
+                        String pid = (String) pids.nextElement();
+                        Hashtable proc = (Hashtable) trace.get(pid);
+                        if (proc.get("port") != null && proc.get("port").equals(port)) {
+                            echoCommand(pid + "\tbind\t" + port + "\t" + status);
+                        }
+                    }
+                }
+            } else if (args[0].equals("-d")) {
+
+            } else {
+                int STATUS = 0; 
+                try { 
+                    HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); 
+                    CONN.setRequestMethod(HttpConnection.GET); 
+                    if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } 
+                    else { STATUS = 101; } CONN.close(); 
+                } 
+                catch (SecurityException e) { STATUS = 13; } 
+                catch (Exception e) { STATUS = 101; } 
+                
+                echoCommand(STATUS == 0 ? "true" : "false"); 
+                return STATUS; 
+            }
             
-            echoCommand(STATUS == 0 ? "true" : "false"); 
-            return STATUS; 
         }
         
         // API 012 - (File)
@@ -1664,9 +1704,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
-    // |
-    // Network Logging
-    public int NetLogs(String )
 
     // API 012 - (File)
     // |
