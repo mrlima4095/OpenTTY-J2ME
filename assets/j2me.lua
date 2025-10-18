@@ -35,8 +35,8 @@ socket = {
     server = function (port) end,
     accept = function (server) end,
 
-    peer = function (conn) end,
-    device = function (conn) end,
+    peer = function (conn) return "opentty.xyz", 31522 end,
+    device = function (conn) return "127.0.0.1", 31522 end,
 
     http = {
         get = function (url, headers) return "", 200 end,
@@ -76,7 +76,13 @@ graphics = {
 
 java = {
     class = function (name) return true end,
-    getName = function () return "JVM" end
+    getName = function () return "JVM" end,
+
+    midlet = {
+        sessions = { ["1"] = "127.0.0.1" },
+        cache = { ["/bin/shprxy"] = "Cached file" },
+        build = "2025-1.17-02x96"
+    }
 }
 
 getAppProperty = function (field) end
