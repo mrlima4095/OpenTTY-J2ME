@@ -108,7 +108,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 preview.addCommand(MOD == EXPLORER ? (OPEN = new Command("Open", Command.OK, 1)) : MOD == PROCESS ? (KILL = new Command("Kill", Command.OK, 1)) : (RUN = new Command("Run", Command.OK, 1)));
 
                 if (MOD == HISTORY) { preview.addCommand(EDIT = new Command("Edit", Command.OK, 1)); } 
-                else if (MOD == PROCESS) { preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1)); preview.addCommand(VIEW = new Command("View info", Command.OK, 1)); preview.addCommand(FILTER = new Command("Filter", Command.OK, 1)); }
+                else if (MOD == PROCESS) { preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1)); preview.addCommand(VIEW = new Command("View info", Command.OK, 1)); preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1)); preview.addCommand(FILTER = new Command("Filter", Command.OK, 1)); }
                 else if (MOD == EXPLORER) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); preview.addCommand(RUNS = new Command("Run Script", Command.OK, 1)); preview.addCommand(PROPERTY = new Command("Properties", Command.OK, 1)); preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1)); }
 
                 preview.setCommandListener(this);
@@ -379,7 +379,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     display.setCurrent(box);
                     return;
                 }
-                else if (c == REFRESH) { reload(); }
+                else if (c == REFRESH) { reload(); return; }
 
                 int index = preview.getSelectedIndex();
                 if (index >= 0) {
