@@ -66,7 +66,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public OpenTTY getInstance() { return this; }
     public void setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }
     public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
-        public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18;
+        public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18, NETMAN = 19;
         public static final String impl = "full";
 
         private int MOD = -1, COUNT = 1, id = 1000, start;
@@ -845,7 +845,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster") || mainCommand.equals("bind")) { new MIDletControl(mainCommand, argument, id); }
         // |
-        else if (mainCommand.equals("wrl")) { return wireless(argument); }
+        else if (mainCommand.equals("wrl")) { String ID = System.getProperty("wireless.messaging.sms.smsc"); if (ID == null) { echoCommand("Unsupported API"); return 3; } else { echoCommand(ID); } }
         else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); Hashtable sessions = (Hashtable) getobject("1", "sessions"); boolean all = argument.indexOf("-a") != -1; for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); if (!all && (ADDR.equals("http-cli") || ADDR.equals("nobody"))) { } else { echoCommand(PORT + "\t" + ADDR); } } }
         // |
         // IP Tools
@@ -1195,7 +1195,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return (Integer) lua.run(source, code, arg).get("status"); 
             } 
             else { echoCommand("This MIDlet Build don't have Lua"); return 3; } 
-            
         }
         else if (mainCommand.equals("file")) {
             if (argument.equals("")) { }
@@ -1485,48 +1484,31 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (app.equals("sh") || app.equals("x11-wm")) {
             pid = app.equals("sh") ? "1" : "2"; 
-            proc.put("collector", app.equals("sh") ? "exit" : "x11 stop");
-            proc.put("screen", form); 
+            proc.put("collector", app.equals("sh") ? "exit" : "x11 stop"); proc.put("screen", form); 
 
             if (trace.containsKey(pid)) { return 68; }
             else if (app.equals("sh")) { 
-                Hashtable sessions = new Hashtable();
-                sessions.put(pid, "127.0.0.1");
+                Hashtable sessions = new Hashtable(); sessions.put(pid, "127.0.0.1");
 
-                proc.put("stack", new Vector());
-                proc.put("history", new Vector()); 
-                proc.put("sessions", sessions);
-                proc.put("servers", new Hashtable());
+                proc.put("stack", new Vector()); proc.put("history", new Vector()); 
+                proc.put("sessions", sessions); proc.put("servers", new Hashtable());
             }
             else if (app.equals("x11-wm")) { 
                 proc.put("saves", new Hashtable()); 
 
-                form.append(stdout); 
-                form.append(stdin); 
+                form.append(stdout); form.append(stdin); 
                 form.addCommand(EXECUTE); 
                 processCommand("execute title; x11 cmd;"); 
                 form.setCommandListener(this); 
             }
-        } 
+        }
         else if (app.equals("audio")) { echoCommand("usage: audio play [file]"); return 1; }
         else { while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } } 
 
         trace.put(pid, proc);
         return 0;
     }
-    public int stop(String app, int id) {
-        if (app == null || app.length() == 0) return 2;
-
-        int STATUS = 0;
-
-        for (Enumeration keys = trace.keys(); keys.hasMoreElements();) {
-            String PID = (String) keys.nextElement(), NAME = (String) ((Hashtable) trace.get(PID)).get("name");
-
-            if (app.equals(NAME)) { if ((STATUS = kill(PID, false, id)) != 0) { break; } }
-        }
-
-        return STATUS;
-    }
+    public int stop(String app, int id) { if (app == null || app.length() == 0) { return 2; } int STATUS = 0; for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), NAME = (String) ((Hashtable) trace.get(PID)).get("name"); if (app.equals(NAME)) { if ((STATUS = kill(PID, false, id)) != 0) { break; } } } return STATUS; }
     // | 
     // Kernel
     private int kernel(String command, int id) {
@@ -1726,61 +1708,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0; 
     }
-    private int wireless(String command) { 
-        command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command); 
-
-        if (mainCommand.equals("") || mainCommand.equals("id")) { String ID = System.getProperty("wireless.messaging.sms.smsc"); if (ID == null) { echoCommand("Unsupported API"); return 3; } else { echoCommand(ID); } } 
-        else if (mainCommand.equals("send")) {
-            if (split(argument, ' ').length < 2) { echoCommand("wrl: missing..."); return 2; }
-
-            String address = getCommand(argument);
-            String msg = getArgument(argument);
-            try {
-                MessageConnection conn = (MessageConnection) Connector.open(address);
-                TextMessage message = (TextMessage) conn.newMessage(MessageConnection.TEXT_MESSAGE);
-                message.setPayloadText(msg);
-                conn.send(message);
-                conn.close();
-                echoCommand("wrl: message sent to '" + address + "'");
-            } catch (Exception e) {
-                echoCommand(getCatch(e));
-                return 1;
-            }
-        } 
-        else if (mainCommand.equals("listen")) {
-            String PID = argument.equals("") ? (attributes.containsKey("PORT") ? (String) attributes.get("PORT") : "31522") : argument;
-            MessageConnection conn = null;
-            try {
-                conn = (MessageConnection) Connector.open("sms://:" + PID);
-                echoCommand("[+] listening at port " + PID); MIDletLogs("add info Server listening at port " + PID);
-                start("wireless", PID, null, 1);
-                try {
-                    while (trace.containsKey(PID)) {
-                        Message msg = conn.receive();
-                        String sender = "unknown";
-                        if (msg instanceof TextMessage) {
-                            TextMessage tmsg = (TextMessage) msg;
-                            try { sender = tmsg.getAddress(); } catch (Exception ex) { }
-                            String payload = tmsg.getPayloadText();
-                            echoCommand("[+] " + sender + " -> " + payload);
-                        } else {
-                            echoCommand("[+] " + sender + " -> binary payload.");
-                        }
-                    }
-                } catch (Exception e) { echoCommand("[-] " + getCatch(e)); kill(PID, false, 1); }
-            } catch (Exception e) { echoCommand("[-] " + getCatch(e)); MIDletLogs("add info Server crashed '" + PID + "'"); } 
-            finally {
-                if (conn != null) { try { conn.close(); } catch (IOException e) { } }
-                echoCommand("[-] Server stopped");
-                MIDletLogs("add info Server was stopped");
-            }
-        }
-        else { echoCommand("wrl: " + mainCommand + ": not found"); return 127; } 
-
-        return 0; 
-    }
     private int GetAddress(String command) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig"); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { echoCommand("not found"); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } echoCommand(BUFFER.toString()); } else { echoCommand("not found"); return 127; } } catch (IOException e) { echoCommand(getCatch(e)); return 1; } } return 0; }
+    // |
+    // Network Logging
 
     // API 012 - (File)
     // |
@@ -2108,8 +2038,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int runScript(String script, int id) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, id); if (STATUS != 0) { return STATUS; } } return 0; }
     private int runScript(String script) { return runScript(script, username.equals("root") ? 0 : 1000); }
     // |
-    private int run(String argument, String[] args, int id) { String content = argument.equals("") ? nanoContent : getcontent(args[0]); return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, id) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, false, id) : importScript(content, id)) : runScript(content, id);
-    }
+    private int run(String argument, String[] args, int id) { String content = argument.equals("") ? nanoContent : getcontent(args[0]); return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, id) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, false, id) : importScript(content, id)) : runScript(content, id); }
 }
 // |
 // EOF
