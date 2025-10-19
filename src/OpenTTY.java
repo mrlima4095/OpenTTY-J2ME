@@ -812,7 +812,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Hashtable proc = (Hashtable) trace.get(pid);
                     String procName = (String) proc.get("name");
                     
-                    if (procName.equals("nc") || procName.equals("remote")) {
+                    if (proc.containsKey("socket")) {
                         String state = "ESTABLISHED";
                         String localAddr = "N/A";
                         String remoteAddr = "N/A";
