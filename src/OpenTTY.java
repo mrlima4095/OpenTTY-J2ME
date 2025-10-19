@@ -509,7 +509,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         address = CONN.getAddress(); echoCommand("[+] " + address + " connected");
 
                         IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
-                        proc.put("in", IN); proc.put("out", OUT);
+                        proc.put("socket", CONN); proc.put("in", IN); proc.put("out", OUT);
 
                         sessions.put(port, address);
                         while (trace.containsKey(PID)) {
@@ -812,7 +812,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Hashtable proc = (Hashtable) trace.get(pid);
                     String procName = (String) proc.get("name");
                     
-                    if (procName.equals("nc") || procName.equals("bind") || procName.equals("remote")) {
+                    if (procName.equals("nc") || procName.equals("remote")) {
                         String state = "ESTABLISHED";
                         String localAddr = "N/A";
                         String remoteAddr = "N/A";
@@ -823,7 +823,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                                 localAddr = conn.getLocalAddress() + ":" + conn.getLocalPort();
                                 remoteAddr = conn.getAddress() + ":" + conn.getLocalPort();
                             }
-                        } catch (Exception e) {}
+                        } catch (Exception e) { }
                         
                         echoCommand(pid + "\t" + procName + "\t" + localAddr + "\t" + remoteAddr + "\t" + state);
                     }
