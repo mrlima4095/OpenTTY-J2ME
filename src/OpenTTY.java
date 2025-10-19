@@ -23,7 +23,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String logs = "", path = "/home/", build = "2025-1.17-02x96";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
-    public Form form = new Form("OpenTTY " + getAppProperty("MIDlet-Version"));
+    public Form form = new Form(null); // "OpenTTY " + getAppProperty("MIDlet-Version")
     public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     public StringItem stdout = new StringItem("", "");
     public Command EXECUTE = new Command("Send", Command.OK, 0), HELP = new Command("Help", Command.SCREEN, 1), NANO = new Command("Nano", Command.SCREEN, 2), CLEAR = new Command("Clear", Command.SCREEN, 3), HISTORY = new Command("History", Command.SCREEN, 4), BACK = new Command("Back", Command.BACK, 1), RUNS = new Command("Run Script", Command.OK, 1), VIEW = new Command("View as HTML", Command.OK, 1);
