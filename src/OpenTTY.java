@@ -1992,6 +1992,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (nodes[i].equals("lua") && javaClass("Lua") != 0) { fail = true; }
                 if (nodes[i].equals("canvas") && javaClass("MIDletCanvas") != 0) { fail = true; }
                 if (nodes[i].equals("devicefs") && javaClass("javax.microedition.io.FileConnection") != 0) { fail = true; } 
+                if (nodes[i].equals("prg") && javaClass("javax.microedition.io.PushRegistry") != 0) { fail = true; }
+                if (nodes[i].equals("") && javaClass("") != 0) { fail = true; }
 
                 if (fail) { String error = (String) PKG.get("api.error"); processCommand(error != null ? error : "true", true, id); return 3; }             
             }

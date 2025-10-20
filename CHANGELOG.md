@@ -83,6 +83,7 @@ Copyright (C) 2025 - Mr. Lima
 ## 🔌 API Nodes
 
 - `devicefs`: Checks if device supports **JSR-75** (_Access to Device File System on `/mnt/`_)
+- `prg`: Checks if device supports **JSR-118** (PushRegistry)
 
 ---
 
