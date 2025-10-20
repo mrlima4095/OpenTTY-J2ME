@@ -56,15 +56,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void commandAction(Command c, Displayable d) { if (d == nano) { nanoContent = nano.getString(); if (c == CLEAR) { nano.setString(""); } else { processCommand("execute xterm; " + (c == RUNS ? "." : c == VIEW ? "html" : "true")); } } else { if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command); setLabel(); } else { processCommand(c == HELP ? "help" : c == NANO ? "nano" : c == CLEAR ? "clear" : c == HISTORY ? "history" : c == BACK ? "xterm" : "warn Invalid KEY (" + c.getLabel() + ") - " + c.getCommandType()); } } }
     // |
     // Control Thread
-    public String getThreadName(Thread thr) {
-        String name = thr.getName();
-        String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" };
-        for (int i = 0; i < generic.length; i++) { name = replace(name, generic[i], "MIDlet"); }
-
-        return name;
-    }
     public OpenTTY getInstance() { return this; }
-    public void setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); }
+    public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
+    public int setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); return 0; }
     public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
         public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18, NETMAN = 19;
         public static final String impl = "full";
