@@ -33,7 +33,7 @@ quest.cmd=execute set PKJOUT=/home/$RESOURCE; yang install; true
 [ Index ]
 
 list.title=Repository
-list.content=Android ME,Armitage,Auto Clean,Back Previous,BoxME,Browser,CMatrix,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JBuntu,JBenchmark,J2ME Loader,MobiX UI,PasteBin,StringEditor,SmartME SDK,Updater,ViaVersion,WebProxy
+list.content=Android ME,Armitage,Auto Clean,Back Previous,BoxME,Browser,CMatrix,DarkDM+,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JBuntu,JBenchmark,J2ME Loader,MobiX UI,PasteBin,StringEditor,SmartME SDK,Updater,ViaVersion,WebProxy
 list.button=Install
 
 Android ME=execute set RESOURCE=android; set PKJOUT=/bin/droid; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
