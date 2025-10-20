@@ -11,17 +11,17 @@ axrz=execute axrz list;
 shell.name=axrz
 shell.args=list,run,update,query
 
-list=execute x11 list /home/viaversion; warn Downgrade to versions before 1.17 may perform MIDlet damages!; true
+list=execute x11 list /lib/viaversion; warn Downgrade to versions before 1.17 may perform MIDlet damages!; true
 run=execute log add debug ViaVersion - Modified from $VERSION to $REQUEST; set VERSION=$REQUEST; unset REQUEST; sh; 
-update=execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/viaversion; install viaversion; import viaversion; tick; 
-query=execute x11 quest /home/viaversion;
+update=sudo execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/viaversion; install /lib/viaversion; import /lib/viaversion; tick; 
+query=execute x11 quest /lib/viaversion;
 
 [ DISPLAY ]
 
 quest.title=Select API
 quest.label=Version
 quest.key=REQUEST
-quest.cmd=execute find $REQUEST /home/viaversion; if ($OUTPUT == null) exec echo [ ViaVersion ] Invalid API '$REQUEST' & @alert & set OUTPUT=true; $OUTPUT;
+quest.cmd=execute find $REQUEST /lib/viaversion; if ($OUTPUT == null) exec echo [ ViaVersion ] Invalid API '$REQUEST' & @alert & set OUTPUT=true; $OUTPUT;
 
 
 list.title=Select API
