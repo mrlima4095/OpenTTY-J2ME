@@ -237,6 +237,8 @@ function httpd.handler(payload)
         cookies = cookies
     }
     
+    print("Processing request: " .. method .. " " .. path)
+    
     -- Procurar rota exata
     local route = httpd.__routes[path]
     
@@ -251,10 +253,20 @@ function httpd.handler(payload)
         
         local ok, result = pcall(route.handler, request)
         if ok then
-            if type(result) == "string" then return httpd.generate(result)
-            elseif type(result) == "table" then return httpd.generate(result.body or "", result.headers or {}, result.status or 200)
-            else return httpd.generate(tostring(result)) end
+            if type(result) == "string" then 
+                return httpd.generate(result)
+            elseif type(result) == "table" then 
+                return httpd.generate(result.body or "", result.headers or {}, result.status or 200)
+            else 
+                -- Se retornar número, assumir que é status code
+                if type(result) == "number" then
+                    return httpd.generate("<h1>Status " .. result .. "</h1>", {}, result)
+                else
+                    return httpd.generate(tostring(result or "No content"))
+                end
+            end
         else
+            print("Error in route handler: " .. tostring(result))
             return httpd.generate(
                 "<h1>500 Internal Server Error</h1><pre>" .. tostring(result) .. "</pre>",
                 { ["Content-Type"] = "text/html" },
@@ -262,6 +274,7 @@ function httpd.handler(payload)
             )
         end
     else
+        -- Procurar por rotas com wildcard
         for route_path, route_data in pairs(httpd.__routes) do
             if string.sub(route_path, -1) == "*" then
                 local base_path = string.sub(route_path, 1, -2)
@@ -281,9 +294,14 @@ function httpd.handler(payload)
                         elseif type(result) == "table" then
                             return httpd.generate(result.body or "", result.headers or {}, result.status or 200)
                         else
-                            return httpd.generate(tostring(result))
+                            if type(result) == "number" then
+                                return httpd.generate("<h1>Status " .. result .. "</h1>", {}, result)
+                            else
+                                return httpd.generate(tostring(result or "No content"))
+                            end
                         end
                     else
+                        print("Error in wildcard route handler: " .. tostring(result))
                         return httpd.generate(
                             "<h1>500 Internal Server Error</h1><pre>" .. tostring(result) .. "</pre>",
                             { ["Content-Type"] = "text/html" },
@@ -294,7 +312,12 @@ function httpd.handler(payload)
             end
         end
 
-        return httpd.generate("<h1>404 Not Found</h1><p>The requested URL " .. path .. " was not found on this server.</p>", { ["Content-Type"] = "text/html" }, 404)
+        print("Route not found: " .. path)
+        return httpd.generate(
+            "<h1>404 Not Found</h1><p>The requested URL " .. path .. " was not found on this server.</p>", 
+            { ["Content-Type"] = "text/html" }, 
+            404
+        )
     end
 end
 
@@ -311,6 +334,7 @@ function httpd.route(path, method, handler)
         error("bad argument #" .. (method == "GET" and 2 or 3) .. " to 'route' (function expected, got " .. type(handler) .. ")") 
     end
 
+    print("Registering route: " .. method .. " " .. path)
     httpd.__routes[path] = { method = string.upper(method), handler = handler }
 end
 
@@ -343,6 +367,10 @@ function httpd.run(port)
     end
     
     print("Server started successfully on port " .. port)
+    print("Registered routes:")
+    for path, route in pairs(httpd.__routes) do
+        print("  " .. route.method .. " " .. path)
+    end
     
     while true do
         print("Waiting for connections...")
@@ -362,6 +390,7 @@ function httpd.run(port)
                 
                 local response_data = response
                 if not response_ok then
+                    print("Error generating response: " .. tostring(response))
                     response_data = httpd.generate(
                         "<h1>500 Internal Server Error</h1><pre>" .. tostring(response) .. "</pre>",
                         { ["Content-Type"] = "text/html" },
@@ -370,14 +399,20 @@ function httpd.run(port)
                 end
                 
                 -- Enviar resposta
-                io.write(outstream, response_data)
-                print("Response sent")
+                local write_ok, write_err = pcall(io.write, outstream, response_data)
+                if write_ok then
+                    print("Response sent successfully")
+                else
+                    print("Error sending response: " .. tostring(write_err))
+                end
+            else
+                print("No payload received")
             end
             
             -- Fechar conexão
-            io.close(conn)
-            io.close(instream)
-            io.close(outstream)
+            pcall(io.close, conn)
+            pcall(io.close, instream)
+            pcall(io.close, outstream)
             print("Connection closed")
         else
             print("No connection received")
