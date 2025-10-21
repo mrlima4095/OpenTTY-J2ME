@@ -80,9 +80,7 @@ local function getPath(payload)
     
     -- Remove query string
     local query_start = string.find(path, "?")
-    if query_start then
-        path = string.sub(path, 1, query_start - 1)
-    end
+    if query_start then path = string.sub(path, 1, query_start - 1) end
     
     return path or "/"
 end
@@ -117,19 +115,13 @@ local function getHeaders(payload)
 end
 
 local function getBody(payload)
-    if not payload or type(payload) ~= "string" then
-        return ""
-    end
+    if not payload or type(payload) ~= "string" then return "" end
     
     local header_end = string.find(payload, "\n\n")
-    if header_end then
-        return string.sub(payload, header_end + 2)
-    end
+    if header_end then return string.sub(payload, header_end + 2) end
     
     header_end = string.find(payload, "\r\n\r\n")
-    if header_end then
-        return string.sub(payload, header_end + 4)
-    end
+    if header_end then return string.sub(payload, header_end + 4) end
     
     return ""
 end
@@ -137,9 +129,7 @@ end
 local function getQuery(payload)
     local query = {}
     
-    if not payload or type(payload) ~= "string" then
-        return query
-    end
+    if not payload or type(payload) ~= "string" then return query end
     
     local first_line_end = string.find(payload, "\n") or (string.len(payload) + 1)
     local first_line = string.sub(payload, 1, first_line_end - 1)
@@ -328,13 +318,8 @@ function httpd.put(path, handler) return httpd.route(path, "PUT", handler) end
 function httpd.delete(path, handler) return httpd.route(path, "DELETE", handler) end
 
 function httpd.run(port)
-    if not port then 
-        error("bad argument #1 to 'run' (number expected, got no value)") 
-    end
-    
-    if type(port) ~= "number" then
-        error("bad argument #1 to 'run' (number expected, got " .. type(port) .. ")")
-    end
+    if not port then error("bad argument #1 to 'run' (number expected, got no value)") end
+    if type(port) ~= "number" then error("bad argument #1 to 'run' (number expected, got " .. type(port) .. ")") end
     
     while true do
         local server, conn, instream, outstream, payload
