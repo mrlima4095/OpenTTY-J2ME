@@ -302,57 +302,87 @@ function httpd.route(path, method, handler)
     if not path then error("bad argument #1 to 'route' (string expected, got no value)") end
     if type(path) ~= "string" then error("bad argument #1 to 'route' (string expected, got " .. type(path) .. ")") end
 
-    if not handler then handler = method method = "GET" end
-    if type(handler) ~= "function" then error("bad argument #" .. (method == "GET" and 2 or 3) .. " to 'route' (function expected, got " .. type(handler) .. ")") end
+    if not handler then 
+        handler = method 
+        method = "GET" 
+    end
+    
+    if type(handler) ~= "function" then 
+        error("bad argument #" .. (method == "GET" and 2 or 3) .. " to 'route' (function expected, got " .. type(handler) .. ")") 
+    end
 
     httpd.__routes[path] = { method = string.upper(method), handler = handler }
 end
 
-function httpd.get(path, handler) return httpd.route(path, "GET", handler) end
-function httpd.post(path, handler) return httpd.route(path, "POST", handler) end
-function httpd.put(path, handler) return httpd.route(path, "PUT", handler) end
-function httpd.delete(path, handler) return httpd.route(path, "DELETE", handler) end
+function httpd.get(path, handler) 
+    return httpd.route(path, "GET", handler) 
+end
+
+function httpd.post(path, handler) 
+    return httpd.route(path, "POST", handler) 
+end
+
+function httpd.put(path, handler) 
+    return httpd.route(path, "PUT", handler) 
+end
+
+function httpd.delete(path, handler) 
+    return httpd.route(path, "DELETE", handler) 
+end
 
 function httpd.run(port)
     if not port then error("bad argument #1 to 'run' (number expected, got no value)") end
     if type(port) ~= "number" then error("bad argument #1 to 'run' (number expected, got " .. type(port) .. ")") end
     
+    print("Starting HTTP server on port " .. port)
+    
+    -- Criar servidor
+    local server = socket.server(port)
+    if not server then
+        error("Failed to create server on port " .. port)
+    end
+    
+    print("Server started successfully on port " .. port)
+    
     while true do
-        local server, conn, instream, outstream, payload
-
-        local ok, err = pcall(function() server = socket.server(port) end)
+        print("Waiting for connections...")
         
-        if not ok then 
-            if server then pcall(io.close, server) end
-            error("Failed to start server: " .. tostring(err)) break
-        end
-
-        ok, err = pcall(function() conn, instream, outstream = socket.accept(server) end)
-        if not ok then pcall(io.close, server, conn, instream, outstream) break end
-
-        ok, err = pcall(function() payload = io.read(instream, 8192) end)
-        if not ok then pcall(io.close, server, conn, instream, outstream) break end
-
-        if payload and string.len(payload) > 0 then
-            local response_ok, response = pcall(httpd.handler, payload)
+        local conn, instream, outstream = socket.accept(server)
+        
+        if conn then
+            print("Client connected")
             
-            local response_data = response
-            if not response_ok then
-                response_data = httpd.generate(
-                    "<h1>500 Internal Server Error</h1><pre>" .. tostring(response) .. "</pre>",
-                    { ["Content-Type"] = "text/html" },
-                    500
-                )
+            -- Ler dados do cliente
+            local payload = io.read(instream, 8192)
+            
+            if payload and string.len(payload) > 0 then
+                print("Received request: " .. string.sub(payload, 1, 100) .. "...")
+                
+                local response_ok, response = pcall(httpd.handler, payload)
+                
+                local response_data = response
+                if not response_ok then
+                    response_data = httpd.generate(
+                        "<h1>500 Internal Server Error</h1><pre>" .. tostring(response) .. "</pre>",
+                        { ["Content-Type"] = "text/html" },
+                        500
+                    )
+                end
+                
+                -- Enviar resposta
+                io.write(outstream, response_data)
+                print("Response sent")
             end
             
-            pcall(io.write, outstream, response_data)
-            pcall(io.close, conn, instream, outstream)
+            -- Fechar conexão
+            io.close(conn)
+            io.close(instream)
+            io.close(outstream)
+            print("Connection closed")
         else
-            pcall(io.close, conn, instream, outstream)
+            print("No connection received")
         end
-        
     end
 end
-
 
 return httpd
