@@ -251,13 +251,9 @@ function httpd.handler(payload)
         
         local ok, result = pcall(route.handler, request)
         if ok then
-            if type(result) == "string" then
-                return httpd.generate(result)
-            elseif type(result) == "table" then
-                return httpd.generate(result.body or "", result.headers or {}, result.status or 200)
-            else
-                return httpd.generate(tostring(result))
-            end
+            if type(result) == "string" then return httpd.generate(result)
+            elseif type(result) == "table" then return httpd.generate(result.body or "", result.headers or {}, result.status or 200)
+            else return httpd.generate(tostring(result)) end
         else
             return httpd.generate(
                 "<h1>500 Internal Server Error</h1><pre>" .. tostring(result) .. "</pre>",
