@@ -342,16 +342,14 @@ function httpd.run(port)
         local ok, err = pcall(function() server = socket.server(port) end)
         
         if not ok then 
-            if server then pcall(socket.close, server) end
+            if server then pcall(io.close, server) end
             error("Failed to start server: " .. tostring(err)) break
         end
 
         ok, err = pcall(function() conn, instream, outstream = socket.accept(server) end)
-        
         if not ok then pcall(io.close, server, conn, instream, outstream) break end
 
         ok, err = pcall(function() payload = io.read(instream, 8192) end)
-        
         if not ok then pcall(io.close, server, conn, instream, outstream) break end
 
         if payload and string.len(payload) > 0 then
