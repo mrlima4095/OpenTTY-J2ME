@@ -24,5 +24,3 @@ quest.title=OpenSSH
 quest.label=IP Adress
 quest.cmd=execute nc $ADDR:22; unset ADDR;
 quest.key=ADDR
-
- 
