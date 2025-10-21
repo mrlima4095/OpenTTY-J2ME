@@ -31,8 +31,8 @@ table = {
 }
 
 socket = {
-    connect = function (address) end,
-    server = function (port) end,
+    connect = function (address) return "conn", "inputstream", "outputstream" end,
+    server = function (port) return "server" end,
     accept = function (server) end,
 
     peer = function (conn) return "opentty.xyz", 31522 end,
