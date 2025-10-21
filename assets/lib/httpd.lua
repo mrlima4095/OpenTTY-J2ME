@@ -339,32 +339,20 @@ function httpd.run(port)
     while true do
         local server, conn, instream, outstream, payload
 
-        local ok, err = pcall(function() 
-            server = socket.server(port) 
-        end)
+        local ok, err = pcall(function() server = socket.server(port) end)
         
         if not ok then 
             if server then pcall(socket.close, server) end
-            error("Failed to start server: " .. tostring(err)) 
+            error("Failed to start server: " .. tostring(err)) break
         end
 
-        ok, err = pcall(function() 
-            conn, instream, outstream = socket.accept(server) 
-        end)
+        ok, err = pcall(function() conn, instream, outstream = socket.accept(server) end)
         
-        if not ok then 
-            pcall(socket.close, server, conn, instream, outstream) 
-            goto continue 
-        end
+        if not ok then pcall(io.close, server, conn, instream, outstream) break end
 
-        ok, err = pcall(function() 
-            payload = io.read(instream, 8192)
-        end)
+        ok, err = pcall(function() payload = io.read(instream, 8192) end)
         
-        if not ok then 
-            pcall(socket.close, server, conn, instream, outstream)
-            goto continue
-        end
+        if not ok then pcall(io.close, server, conn, instream, outstream) break end
 
         if payload and string.len(payload) > 0 then
             local response_ok, response = pcall(httpd.handler, payload)
@@ -378,16 +366,11 @@ function httpd.run(port)
                 )
             end
             
-            pcall(function()
-                io.write(outstream, response_data)
-                socket.close(conn, instream, outstream)
-            end)
+            pcall(function() io.write(outstream, response_data) io.close(conn, instream, outstream) end)
         else
             pcall(socket.close, conn, instream, outstream)
         end
         
-        ::continue::
-        pcall(function() os.execute("sleep 0.1") end)
     end
 end
 
