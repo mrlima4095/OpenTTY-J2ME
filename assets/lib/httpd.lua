@@ -366,9 +366,10 @@ function httpd.run(port)
                 )
             end
             
-            pcall(function() io.write(outstream, response_data) io.close(conn, instream, outstream) end)
+            pcall(io.write, outstream, response_data)
+            pcall(io.close, conn, instream, outstream)
         else
-            pcall(socket.close, conn, instream, outstream)
+            pcall(io.close, conn, instream, outstream)
         end
         
     end
