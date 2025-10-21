@@ -28,7 +28,7 @@ info=execute echo "PackJ 1.5 (Default)"
 quest.title=PackJ Query
 quest.label=Package
 quest.key=RESOURCE
-quest.cmd=execute set PKJOUT=/home/$RESOURCE; yang install; true
+quest.cmd=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; echo ":: Downloading $RESOURCE"; query socket://$REPO get lib/$RESOURCE; echo ":: Download complete!"; set QUERY=$OLD_QUERY; unset OLD_QUERY; true
 
 [ Index ]
 
