@@ -5,79 +5,31 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>OpenTTY</title>
     <style>
-    :root{
-    --bg1:#0f172a;
-    --bg2:#071033;
-    --card:#0b1220;
-    --accent:#7c3aed;
-    --muted:#9aa4b2;
-    --glass: rgba(255,255,255,0.03);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{
-    background: radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent),
-                linear-gradient(180deg,var(--bg1),var(--bg2));
-    color:#e6eef8;
-    display:flex;align-items:center;justify-content:center;padding:32px;
-    }
+        :root { --bg1:#0f172a; --bg2:#071033; --card:#0b1220; --accent:#7c3aed; --muted:#9aa4b2; --glass: rgba(255,255,255,0.03); }
+        
+        * { box-sizing: border-box }
+        html, body { height: 100%; margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial }
+        body { background: radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent), linear-gradient(180deg,var(--bg1),var(--bg2)); color: #e6eef8; display: flex; align-items: center; justify-content: center; padding: 32px; }
 
-    /* floating window */
-    .card{
-    width:min(880px,95%);
-    max-width:920px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border: 1px solid rgba(255,255,255,0.04);
-    backdrop-filter: blur(6px);
-    padding:28px 32px;
-    border-radius:18px;
-    box-shadow: 0 30px 60px rgba(2,6,23,0.6), 0 6px 18px rgba(3,7,20,0.5);
-    position:relative;
-    overflow:hidden;
-    }
+        .card { width: min(880px,95%); max-width: 920px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.04); backdrop-filter: blur(6px); padding: 28px 32px; border-radius: 18px; box-shadow: 0 30px 60px rgba(2,6,23,0.6), 0 6px 18px rgba(3,7,20,0.5); position: relative; overflow: hidden; }
+        .header { display: flex; align-items: center; gap: 16px; margin-bottom: 18px }
+        .logo { width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg,var(--accent), #3b82f6); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; color: white; box-shadow: 0 8px 24px rgba(12,8,32,0.6) }
+        
+        h1 { margin: 0; font-size: 28px; letter-spacing: -0.5px }
+        p.lead{ margin: 6px 0 0; color: var(--muted); font-size: 13px }
 
-    .header{
-    display:flex;align-items:center;gap:16px;margin-bottom:18px
-    }
-    .logo{
-    width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#3b82f6);
-    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:white;box-shadow:0 8px 24px rgba(12,8,32,0.6)
-    }
-    h1{
-    margin:0;font-size:28px;letter-spacing:-0.5px
-    }
-    p.lead{margin:6px 0 0;color:var(--muted);font-size:13px}
+        .links{ margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 12px }
+        a.btn{ display: inline-flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.03); background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.006)); transition: transform .15s ease, box-shadow .15s ease, background .15s ease; box-shadow: 0 6px 18px rgba(2,6,23,0.45); font-weight: 600; font-size: 14px }
+        a.btn:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(12,8,32,0.6) }
+        a.btn .k { font-size: 13px; color: var(--muted) }
 
-    .links{
-    margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px
-    }
+        .meta{ margin-top: 18px; color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 16px }
 
-    a.btn{
-    display:inline-flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.03);
-    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.006));
-    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
-    box-shadow: 0 6px 18px rgba(2,6,23,0.45);
-    font-weight:600;font-size:14px
-    }
-    a.btn:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(12,8,32,0.6)}
-    a.btn .k{font-size:13px;color:var(--muted)}
-
-    /* small helper text at bottom */
-    .meta{margin-top:18px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;gap:16px}
-
-    /* responsiveness */
-    @media (max-width:420px){
-        .header{gap:12px}
-        .logo{width:52px;height:52px;font-size:18px}
-        h1{font-size:20px}
-    }
+        @media (max-width:420px){ .header{ gap: 12px } .logo{ width: 52px; height: 52px; font-size: 18px } h1{ font-size: 20px } }
     </style>
 
     <script>
-        function proxy() {
-            let url = prompt("URL for Proxy")
-            document.location.href = "/proxy.php?" + url
-        }
+        function proxy() { let url = prompt("URL for Proxy:"); document.location.href = "/proxy.php?" + url }
     </script>
 </head>
 <body>
