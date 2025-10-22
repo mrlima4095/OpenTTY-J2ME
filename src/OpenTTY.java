@@ -1286,7 +1286,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (filename.startsWith("/etc/")) {
                 filename = filename.substring(5);
-                if (useCache && cache.containsKey("/etc/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
+                if (useCache && cache.containsKey("/etc/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/etc/" + filename)).getBytes("UTF-8")); }
 
                 String content = read(filename, loadRMS("OpenRMS", 5));
                 if (content != null) { if (useCache) { cache.put("/etc/" + filename, content); } return new ByteArrayInputStream(content.getBytes("UTF-8")); }
