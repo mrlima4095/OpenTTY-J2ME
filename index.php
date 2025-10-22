@@ -83,7 +83,12 @@ else {
             }
         </style>
 
-        <script>function proxy() { let url = prompt("URL for Proxy:"); if (url) { document.location.href = "/proxy.php?" + encodeURIComponent(url); } }</script>
+        <script>
+            function openProxy() { document.getElementById('proxyModal').style.display = 'flex'; document.getElementById('proxyURL').focus(); }
+            function closeProxy() { document.getElementById('proxyModal').style.display = 'none'; } 
+
+            function goProxy() { const url = document.getElementById('proxyURL').value.trim(); closeProxy(); if (url) { window.location.href = "/proxy.php?" + encodeURIComponent(url); }  }
+        </script>
     </head>
     <body>
         <main class="card" role="main" aria-labelledby="title">
@@ -111,6 +116,20 @@ else {
                 <div>© <span id="year"></span></div>
             </div>
         </main>
+
+        <div id="proxyModal" class="modal" style="display:none;">
+            <div class="window">
+                <div class="window-bar">
+                    <span class="title">🔐 HTTPS Proxy</span>
+                    <button onclick="closeProxy()">✕</button>
+                </div>
+                <div class="window-body">
+                    <label for="proxyURL" style="font-size:14px; color:#cbd5e1;">Enter URL:</label>
+                    <input id="proxyURL" type="text" placeholder="https://example.com" style="padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color:#e6eef8; width:100%; margin-bottom:12px;">
+                    <button onclick="goProxy()" style="background:var(--accent); color:white; padding:8px 12px; border-radius:8px; border:none; font-weight:600; cursor:pointer;">Connect</button>
+                </div>
+            </div>
+        </div>
 
         <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
     </body>
