@@ -34,7 +34,7 @@ list.button=Open
 
 Connect (Remote)=execute set TOOL=nc; set LABEL=IP Adress (Connect); x11 quest /bin/armitage;
 Connect - Server=execute nc $REPO;
-Get Local Adress=execute x11 list /bin/armitage; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
+Get Local Adress=execute x11 list /bin/armitage; ifconfig; set OLD_TITLE=$TITLE; title IP Adress; warn $.OUTPUT; title $OLD_TITLE; unset OLD_TITLE;
 Search IP Info=execute set TOOL=fw; set LABEL=IP Adress (GeoIP Query); x11 quest /bin/armitage;
 WhoIS Search=execute set TOOL=whois; set LABEL=Domain (WhoIS Query); x11 quest /bin/armitage;
 GoBuster=execute set TOOL=gobuster; set LABEL=WebSite URL (GoBuster Query); x11 quest /bin/armitage;
