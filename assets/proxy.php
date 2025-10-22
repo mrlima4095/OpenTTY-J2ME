@@ -4,6 +4,7 @@ $url = $_SERVER['QUERY_STRING'] ?? '';
 if (strpos($url, 'url=') === 0) { $url = substr($url, 4); }
 
 $url = urldecode($url);
+$url = trim($url)
 
 if (empty($url)) {
     http_response_code(400);
