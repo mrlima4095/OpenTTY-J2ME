@@ -29,12 +29,6 @@ if ($isOld) {
         <a href="/assets/">Mirror</a>
         <a href="/dist/">Downloads</a>
         <a href="https://github.com/mrlima4095/OpenTTY-J2ME">Repository</a>
-
-        <form action="/proxy.php" method="GET">
-            <label for="url">HTTPS Proxy:</label><br>
-            <input type="text" id="url" name="url" placeholder="example.com">
-            <input type="submit" value="Connect">
-        </form>
     </body>
     </html>
     <?php
