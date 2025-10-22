@@ -29,6 +29,7 @@ $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 if (curl_errno($ch)) {
     http_response_code(502);
     echo "" . curl_error($ch);
+    echo "$url";
     curl_close($ch);
     exit;
 }
