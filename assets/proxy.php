@@ -1,10 +1,15 @@
 <?php
-$url = $_SERVER['QUERY_STRING'] ?? '';
+$url = '';
+if (strpos($queryString, 'url=') === 0) {
+    $url = substr($queryString, 4);
+} elseif (preg_match('/url=([^&]+)/', $queryString, $matches)) {
+    $url = $matches[1];
+}
 
-if (strpos($url, 'url=') === 0) { $url = substr($url, 4); }
-
-$url = urldecode($url);
+// Decodificação múltipla e limpeza
+$url = urldecode(urldecode($url));
 $url = trim($url);
+$url = filter_var($url, FILTER_SANITIZE_URL);
 
 if (empty($url)) {
     http_response_code(400);
