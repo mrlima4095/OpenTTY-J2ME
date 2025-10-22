@@ -1,218 +1,105 @@
-<!DOCTYPE html>
-<html lang="en-US">
-<head>
+<!doctype html>
+<html lang="en">
+    <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OpenTTY WAP</title>
-
-    <meta name="description" content="OpenTTY Official Website — Terminal emulator for J2ME devices." />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>OpenTTY</title>
     <style>
-        .navbar-custom { background-color: #0D4EA3; border-bottom: 3px solid #06101d; box-shadow: 0 3px 0 #1a2e40; min-height: 70px; }
-        .navbar-custom .nav-link { color: #d1d5db !important;  }
-        .navbar-custom .nav-link:hover, .navbar-custom .nav-link.active { color: #ffffff !important; }
+    :root{
+    --bg1:#0f172a;
+    --bg2:#071033;
+    --card:#0b1220;
+    --accent:#7c3aed;
+    --muted:#9aa4b2;
+    --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent),
+                linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:#e6eef8;
+    display:flex;align-items:center;justify-content:center;padding:32px;
+    }
 
-        @media (min-width: 992px) { .navbar-custom .container { padding-top: 0.5rem; padding-bottom: 0.5rem; } }
+    /* floating window */
+    .card{
+    width:min(880px,95%);
+    max-width:920px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.04);
+    backdrop-filter: blur(6px);
+    padding:28px 32px;
+    border-radius:18px;
+    box-shadow: 0 30px 60px rgba(2,6,23,0.6), 0 6px 18px rgba(3,7,20,0.5);
+    position:relative;
+    overflow:hidden;
+    }
+
+    .header{
+    display:flex;align-items:center;gap:16px;margin-bottom:18px
+    }
+    .logo{
+    width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#3b82f6);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:white;box-shadow:0 8px 24px rgba(12,8,32,0.6)
+    }
+    h1{
+    margin:0;font-size:28px;letter-spacing:-0.5px
+    }
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:13px}
+
+    .links{
+    margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px
+    }
+
+    a.btn{
+    display:inline-flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.03);
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.006));
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.45);
+    font-weight:600;font-size:14px
+    }
+    a.btn:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(12,8,32,0.6)}
+    a.btn .k{font-size:13px;color:var(--muted)}
+
+    /* small helper text at bottom */
+    .meta{margin-top:18px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;gap:16px}
+
+    /* responsiveness */
+    @media (max-width:420px){
+    .header{gap:12px}
+    h1{font-size:20px}
+    .logo{width:52px;height:52px;font-size:18px}
+    }
     </style>
 </head>
-<body class="bg-light text-dark">
-
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-uppercase d-flex align-items-center gap-2" href="#">
-                OpenTTY
-                <span class="rounded-circle bg-warning d-inline-block" 
-                    style="width:0.6em; height:0.6em;"></span>
-                <small class="fw-semibold text-secondary">Mirror</small>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#primary-nav" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div id="primary-nav" class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#downloads">Downloads</a></li>
-                    <li class="nav-item"><a class="nav-link" href="https://github.com/mrlima4095/OpenTTY-J2ME/wiki">Documentation</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#screens">Screenshots</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#mirrors">Mirrors</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-                </ul>
+<body>
+    <main class="card" role="main" aria-labelledby="title">
+        <header class="header">
+            <div class="logo" aria-hidden>OT</div>
+            <div>
+            <h1 id="title">OpenTTY</h1>
+            <p class="lead">By Mr. Lima</p>
             </div>
+        </header>
+
+        <nav class="links" aria-label="Tools">
+            <a class="btn" href="#mirror" target="_blank"><span>🔁</span><span>Mirror</span></a>
+            <a class="btn" href="#webeditor" target="_blank"><span>📝</span><span>WebEditor</span></a>
+            <a class="btn" href="#repo" target="_blank"><span>📦</span><span>Repository</span></a>
+            <a class="btn" href="#webproxy" target="_blank"><span>🌐</span><span>WebProxy</span></a>
+            <a class="btn" href="#httpsproxy" target="_blank"><span>🔐</span><span>HTTPS Proxy</span></a>
+            <a class="btn" href="#docs" target="_blank"><span>📚</span><span>Documentation</span></a>
+            <a class="btn" href="#accounts" target="_blank"><span>👥</span><span>Accounts</span></a>
+            <a class="btn" href="#about" target="_blank"><span>ℹ️</span><span>About</span></a>
+        </nav>
+
+        <div class="meta">
+            <div>OpenTTY • J2ME</div>
+            <div>© <span id="year"></span></div>
         </div>
-    </nav>
+    </main>
 
-
-    <div class="container my-4">
-        <div class="row g-4">
-            <aside class="col-lg-3">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6 class="text-uppercase text-muted">Versions</h6>
-                        <ul class="list-unstyled">
-                            <li><a href="#downloads">Stable <span class="badge bg-info">v1.16</span></a></li>
-                            <li><a href="/repo/dist/1.16/rc2.jar">Pre-release <span class="badge bg-info">v1.16-rc2</span></a></li>
-                            <li><a href="/repo/versions">Legacy <span class="badge bg-info">v1.11 ></span></a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6 class="text-uppercase text-muted">Platforms</h6>
-                        <ul class="list-unstyled">
-                            <li><a href="#downloads">Java ME (MIDP 2.0)</a></li>
-                            <li><a href="https://github.com/woesss/JL-Mod/releases">Android (APK)</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6 class="text-uppercase text-muted">Help</h6>
-                        <ul class="list-unstyled">
-                            <li><a href="#docs">Getting started</a></li>
-                            <li><a href="#docs">Commands manual</a></li>
-                            <li><a href="#docs">J2ME permissions &amp; PushRegistry</a></li>
-                            <li><a href="#docs">Keys &amp; shortcuts</a> — e.g. press <kbd>*</kbd></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="text-uppercase text-muted">Search</h6>
-                        <form action="#" onsubmit="return false">
-                            <input class="form-control mb-2" placeholder="Search…" />
-                            <small class="text-muted">Press <kbd>Enter</kbd> to filter sections.</small>
-                        </form>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main -->
-            <main class="col-lg-9">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="alert alert-light border mb-3">
-                            <b>OpenTTY</b> <span>Unix-based Terminal Emulator for J2ME Devices.</span>
-                        </div>
-                        <h1 class="h3">OpenTTY — lightweight terminal for feature phones and vintage devices</h1>
-                        <p>This site provides <strong>verified downloads</strong>, <strong>checksums</strong>, documentation and news.</p>
-                        <div class="d-flex flex-wrap gap-3 small text-muted mt-2">
-                            <div>Last updated: <time id="lastUpdate">—</time></div>
-                            <div>Signatures: <a href="#checksums">SHA-256</a></div>
-                            <div>License: <a href="#about">MIT</a></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-4" id="downloads">
-                    <div class="card-body">
-                        <h2 class="h5">Downloads</h2>
-                        <p>Choose a version compatible with your J2ME device.</p>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered">
-                                <thead class="table-light">
-                                    <tr><th>Platform</th><th>File</th><th>Size</th></tr>
-                                </thead>
-                                <tbody id="dl-body"></tbody>
-                            </table>
-                        </div>
-                        <p id="checksums" class="alert alert-warning small">
-                            All releases at <a href="https://github.com/mrlima4095/OpenTTY-J2ME/releases">GitHub</a>. Checksums recommended.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="card mb-4" id="screens">
-                    <div class="card-body">
-                        <h2 class="h5">Screenshots</h2>
-                        <div class="row g-3">
-                            <div class="col-md-6 text-center">
-                                <img src="MIDlet.jpg" 
-                                    class="img-fluid rounded shadow-sm"
-                                    style="width:200px; height:150px; object-fit:cover;" 
-                                    alt="MIDlet Screenshot"/>
-                            </div>
-                            <div class="col-md-6 text-center">
-                                <img src="nano.jpg" 
-                                    class="img-fluid rounded shadow-sm"
-                                    style="width:200px; height:150px; object-fit:cover;" 
-                                    alt="Nano Screenshot"/>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-4" id="news">
-                    <div class="card-body">
-                        <h2 class="h5">News</h2>
-                        <ul id="news-list"></ul>
-                    </div>
-                </div>
-
-                <div class="card mb-4" id="mirrors">
-                    <div class="card-body">
-                        <h2 class="h5">Mirrors</h2>
-                        <p>Select a nearby mirror for faster downloads.</p>
-                        <div class="list-group">
-                            <a class="list-group-item list-group-item-action" href="http://opentty.xyz/">
-                                <strong>BR — São Paulo</strong><br>
-                                <small>http://opentty.xyz/</small>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-4" id="about">
-                    <div class="card-body">
-                        <h2 class="h5">About</h2>
-                        <p>OpenTTY is a terminal emulator for J2ME devices (CLDC-1.0 / MIDP-2.0). It supports application creation and network access on constrained devices.</p>
-                        <p>This website is under development.</p>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <footer class="border-top py-3 mt-4 text-center text-muted small"> © <span id="y"></span> OpenTTY — J2ME Today. </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        (async function(){
-            try {
-                const res = await fetch('/api/versions');
-                const data = await res.json();
-
-                const dlBody = document.getElementById('dl-body');
-                if (dlBody && data.downloads){
-                    dlBody.innerHTML = '';
-                    data.downloads.forEach(dl => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${dl.platform}</td>
-                            <td><a href="${dl.url}" class="btn btn-sm btn-outline-primary">${dl.file}</a> ${dl.type ? `<span class="badge bg-secondary">${dl.type}</span>` : ''}</td>
-                            <td>${dl.size}</td>
-                        `;
-                        dlBody.appendChild(tr);
-                    });
-                }
-
-                const newsContainer = document.querySelector('#news .card-body');
-                if(newsContainer && data.news){
-                    newsContainer.querySelectorAll('ul').forEach(ul => ul.remove());
-                    const ul = document.createElement('ul');
-                    data.news.forEach(item => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `<strong>[${item.date}]</strong> ${item.title}`;
-                        ul.appendChild(li);
-                    });
-                    newsContainer.appendChild(ul);
-                }
-            } catch(e) { console.error(e); }
-        })();
-
-        document.getElementById('y').textContent = new Date().getFullYear();
-    </script>
+    <script> document.getElementById('year').textContent = new Date().getFullYear(); </script>
 </body>
 </html>
