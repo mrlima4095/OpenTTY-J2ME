@@ -106,7 +106,7 @@ else {
                 <a class="btn" href="http://gitea.opentty.xyz"><span>📝</span><span>Gitea</span></a>
                 <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME"><span>📦</span><span>Repository</span></a>
                 <a class="btn" href="/cli"><span>🌐</span><span>WebProxy</span></a>
-                <a class="btn" href="javascript:proxy()"><span>🔐</span><span>HTTPS Proxy</span></a>
+                <a class="btn" href="javascript:openProxy()"><span>🔐</span><span>HTTPS Proxy</span></a>
                 <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME/wiki"><span>📚</span><span>Documentation</span></a>
                 <a class="btn" href="/lts/"><span>⏱️</span><span>LTS Source</span></a>
             </nav>
