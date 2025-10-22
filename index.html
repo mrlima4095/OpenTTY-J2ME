@@ -67,11 +67,18 @@
 
     /* responsiveness */
     @media (max-width:420px){
-    .header{gap:12px}
-    h1{font-size:20px}
-    .logo{width:52px;height:52px;font-size:18px}
+        .header{gap:12px}
+        .logo{width:52px;height:52px;font-size:18px}
+        h1{font-size:20px}
     }
     </style>
+
+    <script>
+        function proxy() {
+            let url = prompt("URL for Proxy")
+            document.location.href = url
+        }
+    </script>
 </head>
 <body>
     <main class="card" role="main" aria-labelledby="title">
@@ -84,14 +91,14 @@
         </header>
 
         <nav class="links" aria-label="Tools">
-            <a class="btn" href="#mirror" target="_blank"><span>🔁</span><span>Mirror</span></a>
+            <a class="btn" href="/assets/" target="_blank"><span>🔁</span><span>Mirror</span></a>
             <a class="btn" href="#webeditor" target="_blank"><span>📝</span><span>WebEditor</span></a>
-            <a class="btn" href="#repo" target="_blank"><span>📦</span><span>Repository</span></a>
-            <a class="btn" href="#webproxy" target="_blank"><span>🌐</span><span>WebProxy</span></a>
-            <a class="btn" href="#httpsproxy" target="_blank"><span>🔐</span><span>HTTPS Proxy</span></a>
-            <a class="btn" href="#docs" target="_blank"><span>📚</span><span>Documentation</span></a>
+            <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME" target="_blank"><span>📦</span><span>Repository</span></a>
+            <a class="btn" href="/cli"><span>🌐</span><span>WebProxy</span></a>
+            <a class="btn" href="javascript:proxy()" target="_blank"><span>🔐</span><span>HTTPS Proxy</span></a>
+            <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME/wiki" target="_blank"><span>📚</span><span>Documentation</span></a>
             <a class="btn" href="#accounts" target="_blank"><span>👥</span><span>Accounts</span></a>
-            <a class="btn" href="#about" target="_blank"><span>ℹ️</span><span>About</span></a>
+            <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME?tab=readme-ov-file" target="_blank"><span>ℹ️</span><span>About</span></a>
         </nav>
 
         <div class="meta">
@@ -100,6 +107,6 @@
         </div>
     </main>
 
-    <script> document.getElementById('year').textContent = new Date().getFullYear(); </script>
+    <script> document.getElementById('year').textContent = new Date().getFullYear(); </>
 </body>
 </html>
