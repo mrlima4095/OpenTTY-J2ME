@@ -32,7 +32,8 @@ if ($isOld) {
     </body>
     </html>
     <?php
-} else {
+} 
+else {
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -97,12 +98,12 @@ if ($isOld) {
             <nav class="links" aria-label="Tools">
                 <a class="btn" href="/assets/"><span>🔁</span><span>Mirror</span></a>
                 <a class="btn" href="/dist/"><span>⬇️</span><span>Downloads</span></a>
-                <a class="btn" href="#webeditor"><span>📝</span><span>WebEditor</span></a>
+                <a class="btn" href="http://gitea.opentty.xyz"><span>📝</span><span></span></a>
                 <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME"><span>📦</span><span>Repository</span></a>
                 <a class="btn" href="/cli"><span>🌐</span><span>WebProxy</span></a>
                 <a class="btn" href="javascript:proxy()"><span>🔐</span><span>HTTPS Proxy</span></a>
                 <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME/wiki"><span>📚</span><span>Documentation</span></a>
-                <a class="btn" href="#accounts"><span>👥</span><span>Accounts</span></a>
+                <a class="btn" href="/lts/"><span>⏱️</span><span>LTS Source</span></a>
             </nav>
 
             <div class="meta">
