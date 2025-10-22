@@ -46,43 +46,8 @@
         }
     </style>
 
-    <script>
-    function proxy() { let url = prompt("URL for Proxy:"); if (url) { document.location.href = "/proxy.php?" + url; } }
-
-    function showMirror() {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="window">
-                <div class="window-bar">
-                    <div class="title">📁 Explorer — Server Mirror</div>
-                    <button onclick="this.closest('.modal').remove()">✕</button>
-                </div>
-                <div class="window-body">
-                    <a href="/src/" target="_blank" class="folder">
-                    <img src="/res/img/dir.png" alt="">
-                    <span>/src/</span>
-                    </a>
-                    <a href="/lts/" target="_blank" class="folder">
-                    <img src="/res/img/dir.png" alt="">
-                    <span>/lts/</span>
-                    </a>
-                    <a href="/assets/" target="_blank" class="folder">
-                    <img src="/res/img/dir.png" alt="">
-                    <span>/assets/</span>
-                    </a>
-                    <a href="/dist/" target="_blank" class="folder">
-                    <img src="/res/img/dir.png" alt="">
-                    <span>/dist/</span>
-                    </a>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    </script>
+    <script>function proxy() { let url = prompt("URL for Proxy:"); if (url) { document.location.href = "/proxy.php?" + url; } }</script>
 </head>
-
 <body>
     <main class="card" role="main" aria-labelledby="title">
         <header class="header">
@@ -94,14 +59,14 @@
         </header>
 
         <nav class="links" aria-label="Tools">
-            <a class="btn" href="javascript:showMirror()"><span>🔁</span><span>Mirror</span></a>
+            <a class="btn" href="/assets/"><span>🔁</span><span>Mirror</span></a>
+            <a class="btn" href="/dist/"><span>⬇️</span><span>Downloads</span></a>
             <a class="btn" href="#webeditor"><span>📝</span><span>WebEditor</span></a>
             <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME"><span>📦</span><span>Repository</span></a>
             <a class="btn" href="/cli"><span>🌐</span><span>WebProxy</span></a>
             <a class="btn" href="javascript:proxy()"><span>🔐</span><span>HTTPS Proxy</span></a>
             <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME/wiki"><span>📚</span><span>Documentation</span></a>
             <a class="btn" href="#accounts"><span>👥</span><span>Accounts</span></a>
-            <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME?tab=readme-ov-file"><span>ℹ️</span><span>About</span></a>
         </nav>
 
         <div class="meta">
