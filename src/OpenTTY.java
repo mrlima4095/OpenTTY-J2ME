@@ -1051,11 +1051,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("rmsfix")) {
             if (argument.equals("")) { }
             else if (id != 0) { echoCommand("Permission denied!"); return 13; }
-            else if (args[0].equals("read")) { if (args.length < 2) { return 2; } else { echoCommand(loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : 4)); } }
+            else if (args[0].equals("read")) { if (args.length < 2) { return 2; } else { echoCommand(loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : args[1].equals("/etc/") ? 5 : 4)); } }
             else if (args[0].equals("swap")) { if (args.length < 3) { return 2; } else { writeRMS(args[2].startsWith("/") ? args[2] : path + args[2], loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : 4), id); } }
             else if (args[0].startsWith("/")) {
                 args[0] = args[0].endsWith("/") ? args[0] : args[0] + "/";
-                if (args[0].equals("/bin/") || args[0].equals("/lib/")) { return writeRMS("OpenRMS", new byte[0], args[0].equals("/bin/") ? 3 : 4, 0); }
+                if (args[0].equals("/bin/") || args[0].equals("/lib/")) { return writeRMS("OpenRMS", new byte[0], args[0].equals("/bin/") ? 3 : args[1].equals("/etc/") ? 5 : 4, 0); }
                 else { echoCommand("rmsfix: " + args[0] + ": not found"); return 127; }
             }
             else { echoCommand("rmsfix: " + args[0] + ": not found"); return 127; }
