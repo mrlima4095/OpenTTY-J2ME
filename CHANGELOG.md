@@ -52,7 +52,7 @@ Copyright (C) 2025 - Mr. Lima
 - `bind` command must read port from argument line, no default port in environment key anymore
 - Errors in `/etc/init` now throw a _Kernel Panic_ and cause **MIDlet** termination
 - New default environment key `SHELL`
-- **Super-user** now allowed to write to `/bin/` (**Applications**) and `/lib/` (**Package**)
+- **Super-user** now allowed to write to `/bin/` (**Applications**), `/etc/` (**Settings**) and `/lib/` (**Package**)
 - Fixed **MIDlet** login for user-only prompt
 - Added support for `list.default` that runs by default on all List choices
 - `query` command no longer consuming until connection end
