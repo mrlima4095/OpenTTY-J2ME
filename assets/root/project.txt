@@ -1,0 +1,29 @@
+    Lua
+        Add support for coroutines
+    Lua Service Host
+        Add a database with services to be real initialized with Command 'start'
+        Special applications attributes for Service Host
+    SmartME SDK
+        Debugging and Building tools
+        Generate Projects
+        Lua Packages
+            audio.lua -> Play audio and Bench for MIDI files
+            ftp.lua
+            httpd.lua
+            math.lua
+            string.lua
+    Browser
+        Menu
+        Open URL
+        Render Pages
+        Render Images
+        Links as ITEMs
+        Settings
+            Personal Headers
+            Emulate DOM Content Loader
+    Add support for SheBangs in 1.16.x
+    Yang - Lua Edition
+    MIDletCanvas Build from Lua Table
+    Release 1.16.2 LTS
+    Release 1.17 -> main
+    Optimize RMS Archives
