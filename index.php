@@ -6,12 +6,12 @@ $isOld = false;
 foreach ($oldDevices as $keyword) {
     if (stripos($ua, $keyword) !== false) {
         $isOld = true;
-        echo "$keyword"
+        echo "$keyword";
         break;
     }
 }
-echo "$isOld"
-echo "$ua"
+echo "$isOld";
+echo "$ua";
 header('Content-Type: text/html; charset=UTF-8');
 
 if ($isOld) {
