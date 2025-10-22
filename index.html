@@ -47,6 +47,38 @@
     </style>
 
     <script>function proxy() { let url = prompt("URL for Proxy:"); if (url) { document.location.href = "/proxy.php?" + encodeURIComponent(url); } }</script>
+    <script>
+    const oldDevices = [
+    "Nokia", "Series40", "MIDP", "SonyEricsson", "S40", "Opera Mini", "UCWEB", "MicroMessenger"
+    ];
+
+    const ua = navigator.userAgent;
+    const isOld = oldDevices.some(keyword => ua.includes(keyword));
+
+    if (isOld) {
+        // Substitui todo o body por HTML simples
+        document.body.innerHTML = `
+            <style>
+                body, html { background: #000; color: #fff; font-family: monospace; padding: 20px; }
+                .card, .header, .links, .meta { all: unset; }
+                a { color: #6cf; text-decoration: none; display: block; margin: 6px 0; }
+            </style>
+
+            <h1>OpenTTY</h1>
+            <p>Terminal Emulator for J2ME Phones</p><br>
+            <a href="/assets/">Mirror</a>
+            <a href="/dist/">Downloads</a>
+            <a href="https://github.com/mrlima4095/OpenTTY-J2ME">Repository</a>
+
+            <form action="/proxy.php" method="GET">
+                <label for="url">HTTPS Proxy:</label><br>
+                <input type="text" id="url" name="" placeholder="example.com">
+                <input type="submit" value="Connect">
+            </form>
+        `;
+    }
+    </script>
+
 </head>
 <body>
     <main class="card" role="main" aria-labelledby="title">
