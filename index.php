@@ -32,7 +32,7 @@ if ($isOld) {
 
         <form action="/proxy.php" method="GET">
             <label for="url">HTTPS Proxy:</label><br>
-            <input type="text" id="url" name="" placeholder="example.com">
+            <input type="text" id="url" name="url" placeholder="example.com">
             <input type="submit" value="Connect">
         </form>
     </body>
