@@ -1,6 +1,6 @@
 <?php
 $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-$oldDevices = ["Nokia", "Series40", "MIDP", "CLDC", "SonyEricsson", "S40", "Opera Mini", "UCWEB", "MicroMessenger", "LG", "Phantom"];
+$oldDevices = ["Nokia", "Series40", "MIDP", "CLDC", "SonyEricsson", "S40", "Opera Mini", "UCWEB", "MicroMessenger"];
 
 $isOld = false;
 foreach ($oldDevices as $keyword) {
@@ -90,19 +90,6 @@ if ($isOld) {
         </style>
 
         <script>function proxy() { let url = prompt("URL for Proxy:"); if (url) { document.location.href = "/proxy.php?" + encodeURIComponent(url); } }</script>
-        <script>
-        const oldDevices = [ "Nokia", "Series40", "MIDP", "CLDC", "SonyEricsson", "S40", "Opera Mini", "UCWEB", "MicroMessenger" ];
-
-        const ua = navigator.userAgent;
-        const isOld = oldDevices.some(keyword => ua.includes(keyword));
-
-        if (isOld) {
-            document.body.innerHTML = `
-                
-            `;
-        }
-        </script>
-
     </head>
     <body>
         <main class="card" role="main" aria-labelledby="title">
