@@ -19,7 +19,7 @@ if ($isOld) {
         <title>OpenTTY</title>
         <style>
             body, html { background: #000; color: #fff; font-family: monospace; padding: 20px; }
-            .card,.header,.links,.meta { all: unset; }
+            .card, .header, .links, .meta { all: unset; }
             a { color: #6cf; text-decoration: none; display: block; margin: 6px 0; }
         </style>
     </head>
