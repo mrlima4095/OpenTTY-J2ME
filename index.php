@@ -139,6 +139,7 @@ else {
 
             btn.addEventListener('click', goProxy);
             input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { goProxy(); } });
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && modal.style.display === 'flex') { closeProxy(); } });
 
             document.getElementById('year').textContent = new Date().getFullYear();
         </script>
