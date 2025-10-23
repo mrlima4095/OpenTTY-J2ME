@@ -119,7 +119,7 @@ else {
                 <div class="window-body">
                     <label for="proxyURL" style="font-size:14px; color:#cbd5e1;">Enter URL:</label>
                     <input id="proxyURL" type="text" placeholder="https://example.com" style="padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color:#e6eef8; width:100%; margin-bottom:12px;">
-                    <button onclick="goProxy()" style="background:var(--accent); color:white; padding:8px 12px; border-radius:8px; border:none; font-weight:600; cursor:pointer;">Connect</button>
+                    <button id="proxyConnect" onclick="goProxy()" style="background:var(--accent); color:white; padding:8px 12px; border-radius:8px; border:none; font-weight:600; cursor:pointer;">Connect</button>
                 </div>
             </div>
         </div>
