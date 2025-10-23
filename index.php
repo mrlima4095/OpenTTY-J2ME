@@ -1,6 +1,6 @@
 <?php
 $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-$oldDevices = ["Nokia", "Series40", "MIDP", "CLDC", "SonyEricsson", "S40", "Opera Mini", "UCWEB", "MicroMessenger"];
+$oldDevices = ["Nokia", "Series40", "MIDP", "CLDC", "SonyEricsson", "S40", "S60", "Opera Mini", "UCWEB", "MicroMessenger"];
 
 $isOld = false;
 foreach ($oldDevices as $keyword) {
