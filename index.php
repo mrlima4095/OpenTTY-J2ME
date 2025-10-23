@@ -82,13 +82,6 @@ else {
                 h1{ font-size: 20px }
             }
         </style>
-
-        <script>
-            function openProxy() { document.getElementById('proxyModal').style.display = 'flex'; document.getElementById('proxyURL').focus(); }
-            function closeProxy() { document.getElementById('proxyModal').style.display = 'none'; } 
-
-            function goProxy() { const url = document.getElementById('proxyURL').value.trim(); closeProxy(); if (url) { window.location.href = "/proxy.php?" + encodeURIComponent(url); }  }
-        </script>
     </head>
     <body>
         <main class="card" role="main" aria-labelledby="title">
@@ -119,7 +112,7 @@ else {
 
         <div id="proxyModal" class="modal" style="display:none;">
             <div class="window">
-                <div class="window-bar">
+                <div class="window-bar" style="height:32px;">
                     <span class="title">🔐 HTTPS Proxy</span>
                     <button onclick="closeProxy()">✕</button>
                 </div>
@@ -131,7 +124,24 @@ else {
             </div>
         </div>
 
-        <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+        <script>
+            const modal = document.getElementById('proxyModal');
+            const input = document.getElementById('proxyURL');
+            const btn = document.getElementById('proxyConnect');
+
+            function openProxy() { input.value = ''; modal.style.display = 'flex'; input.focus(); }
+            function closeProxy() { modal.style.display = 'none'; }
+            function goProxy() {
+                const url = input.value.trim();
+                if (url) { window.location.href = "/proxy.php?" + url; }
+                closeProxy();
+            }
+
+            btn.addEventListener('click', goProxy);
+            input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { goProxy(); } });
+
+            document.getElementById('year').textContent = new Date().getFullYear();
+        </script>
     </body>
     </html>
     <?php
