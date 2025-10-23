@@ -96,7 +96,7 @@ else {
             <nav class="links" aria-label="Tools">
                 <a class="btn" href="/assets/"><span>🔁</span><span>Mirror</span></a>
                 <a class="btn" href="/dist/"><span>⬇️</span><span>Downloads</span></a>
-                <a class="btn" href="http://gitea.opentty.xyz"><span>📝</span><span>Gitea</span></a>
+                <a class="btn" href="http://git.opentty.xyz"><span>📝</span><span>Gitea</span></a>
                 <a class="btn" href="https://github.com/mrlima4095/OpenTTY-J2ME"><span>📦</span><span>Repository</span></a>
                 <a class="btn" href="/cli"><span>🌐</span><span>WebProxy</span></a>
                 <a class="btn" href="javascript:openProxy()"><span>🔐</span><span>HTTPS Proxy</span></a>
