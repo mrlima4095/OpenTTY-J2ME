@@ -40,22 +40,24 @@ if #arg > 1 then
 
     if java.midlet and port then java.midlet.sessions[tostring(port)] = "opentty.xyz" end
 
-    while true do
-        local cmd = string.trim(io.read(i))
+    pcall(function ()
+        while true do
+            local cmd = string.trim(io.read(i))
 
-        if cmd then
-            print("WebProxy -> [" .. cmd .. "]")
+            if cmd then
+                print("WebProxy -> [" .. cmd .. "]")
 
-            if cmd == "/exit" then break
-            else
-                local before = io.read()
-                os.execute(cmd)
-                local after = io.read()
+                if cmd == "/exit" then break
+                else
+                    local before = io.read()
+                    os.execute(cmd)
+                    local after = io.read()
 
-                io.write(string.sub(after, #before + 2, #after) .. "\n", o)
-            end
-        else break end
-    end
+                    io.write(string.sub(after, #before + 2, #after) .. "\n", o)
+                end
+            else break end
+        end
+    end)
 
     pcall(io.close, conn, i, o)
     print("WebProxy -> Server disconnected")
