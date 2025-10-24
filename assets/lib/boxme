@@ -14,7 +14,7 @@ process.name=boxhost2
 process.exit=execute log add BoxME have been killed; echo [ BoxME ] Host service killed; true
 
 command=boxme
-boxme=lua boxme
+boxme=lua /bin/boxme
 
 ]]
 
