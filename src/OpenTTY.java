@@ -1510,7 +1510,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String[] service = split((String) db.get(app), ',');
                 if (service.length < 2) { MIDletLogs("add error Malformed Service '" + app + "'"); return 1; }
                 else {
-                    if (service[0].trim().equals("")) {
+                    if (service[0].trim().equals("")) { }
+                    else {
                         int STATUS = processCommand(service[0], true, id);
                         if (STATUS != 0) { return STATUS; }
                     }
