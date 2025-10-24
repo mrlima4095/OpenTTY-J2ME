@@ -26,7 +26,8 @@ local function handler()
     
 end
 local function main()
-    
+    screen.fields = table.decode(io.read("/etc/services"))
+    graphics.display(graphics.BuildList(screen))
 end
 
 if os.execute("case user (root) false") ~= 255 then
