@@ -542,6 +542,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { preview.setTitle(path); }
 
                 preview.deleteAll();
+                Vector stack = new Vector();
                 if (path.equals("/")) { }
                 else { preview.append("..", null); }
 
