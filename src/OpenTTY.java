@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x97";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x98";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form(null);
@@ -1337,7 +1337,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     public String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(getpattern(content.substring(start, i))); } start = i + 1; } } if (start < content.length()) { args.addElement(getpattern(content.substring(start))); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
     // |
-    public Hashtable parseProperties(String text) { Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (line.startsWith("#")) { } else { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { properties.put(line.substring(0, equalIndex).trim(), getpattern(line.substring(equalIndex + 1).trim())); } } } return properties; }
+    public Hashtable parseProperties(String text) { if (text == null) { return new Hashtable(); } Hashtable properties = new Hashtable(); String[] lines = split(text, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i]; if (line.startsWith("#")) { } else { int equalIndex = line.indexOf('='); if (equalIndex > 0 && equalIndex < line.length() - 1) { properties.put(line.substring(0, equalIndex).trim(), getpattern(line.substring(equalIndex + 1).trim())); } } } return properties; }
     public int getNumber(String s, int fallback, boolean print) { try { return Integer.valueOf(s); } catch (Exception e) { if (print) { echoCommand(getCatch(e)); } return fallback; } }
     public Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     // |
@@ -1501,7 +1501,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         else if (app.equals("audio")) { echoCommand("usage: audio play [file]"); return 1; }
-        else { while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } } 
+        else { 
+            while (trace.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } 
+            
+            Hashtable db = parseProperties(read("/etc/services")); 
+            if (db.containsKey(app)) {
+                String[] service = split((String) db.get(app), ',');
+                if (service.length < 2) { MIDletLogs("add error Malformed Service '" + app + "'"); return 1; }
+                else {
+                    if (service[0].trim().equals("")) {
+                        int STATUS = processCommand(service[0], true, id);
+                        if (STATUS != 0) { return STATUS; }
+                    }
+
+                    proc.put("collector", service[1]);
+                } 
+            }
+        } 
 
         trace.put(pid, proc);
         return 0;
