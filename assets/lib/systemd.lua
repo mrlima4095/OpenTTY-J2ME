@@ -7,10 +7,8 @@ local function menu(opt)
         button = {
             label = "Select",
             root = function(sel)
-                if sel == "Add" then
-                    os.execute("warn Will open a Quest Window")
-                elseif sel == "Delete" then
-                    os.execute("warn Deleted " .. opt)
+                if sel == "Add" then os.execute("warn Will open a Quest Window")
+                elseif sel == "Delete" then os.execute("warn Deleted " .. opt)
                 end
             end
         }
