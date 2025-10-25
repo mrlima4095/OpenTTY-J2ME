@@ -37,26 +37,11 @@ function app.menu(service)
         button = {
             label = "Select",
             root = function (opt)
-                if opt == "Start" then
-                    --if service == "[ No Services ]" then
-                        --app.main() 
-                        --os.execute("warn There is no services") 
-                    --else
-                        os.execute('start "' .. service .. '"') 
-                    --end
-                elseif opt == "---" then
-                    app.menu(service)
-                elseif opt == "New" then
-                    app.new_service()
-                elseif opt == "Remove" then
-                    --if service == "[ No Services ]" then 
-                        --app.main() 
-                        --os.execute("warn There is no services") 
-                    --else
-                        app.remove(service) 
-                    --end
-                elseif opt == "Clear all" then
-                    app.clear()
+                if opt == "Start" then app.handle_no_services(service, function() os.execute("start " .. service) end)
+                elseif opt == "---" then app.menu(service)
+                elseif opt == "New" then app.new_service()
+                elseif opt == "Remove" then app.handle_no_services(service, function() app.remove(service) end)
+                elseif opt == "Clear all" then app.clear()
                 end
             end
         },
@@ -65,6 +50,7 @@ function app.menu(service)
     }))
 end
 
+function app.handle_no_services(service, root) if service == "[ No Services ]" then app.main() os.execute("warn There is no services") else root() end end
 
 function app.new_service()
     graphics.display(graphics.BuildScreen({
@@ -87,20 +73,6 @@ function app.new_service()
 
                 app.main()
             end
-        },
-        fields = {
-            {
-                type = "field",
-                label = "Service ID"
-            },
-            {
-                type = "field",
-                label = "Command"
-            },
-            {
-                type = "field",
-                label = "Collector"
-            }
         }
     }))
 end
@@ -138,14 +110,9 @@ function app.clear()
 end
 
 function app.init_screen()
-    local services, db = {}, table.decode(io.read("/etc/services"))
+    local services = table.decode(io.read("/etc/services"))
 
-    if #db == 0 then services = { "[ No Services ]" }
-    else
-        for k,v in pairs(db) do
-            table.insert(services, k)
-        end
-    end
+    if #services == 0 then services = { "[ No Services ]" } end
     app.screen.button.root = app.menu
     app.screen.fields = services
 end
