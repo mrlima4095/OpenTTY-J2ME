@@ -38,17 +38,17 @@ function app.menu(service)
             label = "Select",
             root = function (opt)
                 if opt == "Start" then
-                    if service == "[ No Services ]" then 
+                    if service == "[ No Services ]" then
                         app.main() 
                         os.execute("warn There is no services") 
                     else
                         os.execute('start "' .. service .. '"') 
                     end
-                elseif opt == "---" then 
+                elseif opt == "---" then
                     app.menu(service)
                 elseif opt == "New" then
                     app.new_service()
-                elseif opt == "Remove" then 
+                elseif opt == "Remove" then
                     if service == "[ No Services ]" then 
                         app.main() 
                         os.execute("warn There is no services") 
