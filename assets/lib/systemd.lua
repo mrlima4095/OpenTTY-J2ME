@@ -68,7 +68,7 @@ function app.new_service()
 
                     io.write(table.concat(cache, "\n"), "/etc/services")
                 else
-                    io.write(db .. "\n" .. name .. "=" .. loader .. "," .. collector, "/etc/services")
+                    io.write(db .. "\n" .. name .. "=" .. loader .. "," .. collector, "/etc/services", "a")
                 end
 
                 app.main()
