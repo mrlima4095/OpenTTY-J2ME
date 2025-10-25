@@ -38,7 +38,9 @@ function app.menu(service)
             label = "Select",
             root = function (opt)
                 if opt == "Start" then
-                    if app.handle_no_services(service) then os.execute("start " .. service) end
+                    if app.handle_no_services(service) then 
+                        os.execute("start " .. service) 
+                    end
                 elseif opt == "---" then app.menu(service)
                 elseif opt == "New" then app.new_service()
                 elseif opt == "Remove" then if app.handle_no_services(service) then app.remove(service) end
