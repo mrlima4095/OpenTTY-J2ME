@@ -38,11 +38,10 @@ function app.menu(service)
             label = "Select",
             root = function (opt)
                 if opt == "Start" then
-                    app.handle_no_services(service)
-                    os.execute("start " .. service)
+                    if app.handle_no_services(service) then os.execute("start " .. service) end
                 elseif opt == "---" then app.menu(service)
                 elseif opt == "New" then app.new_service()
-                elseif opt == "Remove" then app.handle_no_services(service) app.remove(service)
+                elseif opt == "Remove" then if app.handle_no_services(service) then app.remove(service) end
                 elseif opt == "Clear all" then app.clear()
                 end
             end
@@ -52,7 +51,7 @@ function app.menu(service)
     }))
 end
 
-function app.handle_no_services(service) if service == "[ No Services ]" then app.main() os.execute("warn There is no services") end end
+function app.handle_no_services(service) if service == "[ No Services ]" then app.main() os.execute("warn There is no services") return false end return true end
 
 function app.new_service()
     graphics.display(graphics.BuildScreen({
