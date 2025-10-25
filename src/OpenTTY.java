@@ -599,7 +599,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         for (int i = 0; i < files.size(); i++) {
                             String f = (String) files.elementAt(i);
 
-                            if (f != null && !f.equals("..") && !f.equals("/") && !stack.contains(filename)) { preview.append(f, null); }
+                            if (f != null && !f.equals("..") && !f.equals("/") && !stack.contains(f)) { preview.append(f, null); }
                         }
                     }
                 } catch (IOException e) { }
