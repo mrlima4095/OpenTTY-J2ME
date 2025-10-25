@@ -42,7 +42,7 @@ function app.menu(service)
                     os.execute("start " .. service)
                 elseif opt == "---" then app.menu(service)
                 elseif opt == "New" then app.new_service()
-                elseif opt == "Remove" then app.remove(service)
+                elseif opt == "Remove" then app.handle_no_services(service) app.remove(service)
                 elseif opt == "Clear all" then app.clear()
                 end
             end
