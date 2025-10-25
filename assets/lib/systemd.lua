@@ -75,6 +75,20 @@ function app.new_service()
 
                 app.main()
             end
+        },
+        fields = {
+            {
+                type = "field",
+                label = "Service ID"
+            },
+            {
+                type = "field",
+                label = "Command"
+            },
+            {
+                type = "field",
+                label = "Collector"
+            }
         }
     }))
 end
