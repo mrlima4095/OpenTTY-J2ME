@@ -54,7 +54,7 @@ function app.menu(service)
                         --os.execute("warn There is no services") 
                     --else
                         app.remove(service) 
-                    -+end
+                    --end
                 elseif opt == "Clear all" then
                     app.clear()
                 end
