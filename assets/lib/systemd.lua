@@ -112,9 +112,14 @@ function app.clear()
 end
 
 function app.init_screen()
-    local services = table.decode(io.read("/etc/services"))
+    local services, db = {}, table.decode(io.read("/etc/services"))
 
-    if #services == 0 then services = { "[ No Services ]" } end
+    if #db == 0 then services = { "[ No Services ]" }
+    else
+        for k,v in pairs(db) do
+            table.insert(services, k)
+        end
+    end
     app.screen.button.root = app.menu
     app.screen.fields = services
 end
