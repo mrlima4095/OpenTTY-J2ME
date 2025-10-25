@@ -590,7 +590,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String[] recordStores = RecordStore.listRecordStores();
 
                         for (int i = 0; i < recordStores.length; i++) {
-                            if (!recordStores[i].startsWith(".") && !stack.contains(filename)) { preview.append(recordStores[i], null); }
+                            if (!recordStores[i].startsWith(".") && !stack.contains(recordStores[i])) { preview.append(recordStores[i], null); }
                         }
                     }
 
