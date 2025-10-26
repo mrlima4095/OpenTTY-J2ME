@@ -547,8 +547,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { preview.append("..", null); }
 
                 try {
-                    if (path.equals("/tmp/")) { for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) { String file = (String) KEYS.nextElement(); if (!file.startsWith(".") && !stack.contains(file)) { preview.append(file, null); } } }
-                    else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { String file = (String) roots.nextElement(); if (!stack.contains(file)) { preview.append(file, null); } } }
+                    if (path.equals("/tmp/")) { for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) { String file = (String) KEYS.nextElement(); if (file.startsWith(".")) { } else { preview.append(file, null); } } }
+                    else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } } }
                     else if (path.startsWith("/mnt/")) {
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
                         Vector dirs = new Vector(), files = new Vector();
@@ -590,7 +590,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String[] recordStores = RecordStore.listRecordStores();
 
                         for (int i = 0; i < recordStores.length; i++) {
-                            if (!recordStores[i].startsWith(".") && !stack.contains(recordStores[i])) { preview.append(recordStores[i], null); stack.addElement(recordStores[i]); }
+                            if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); }
                         }
                     }
 
