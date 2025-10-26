@@ -27,3 +27,4 @@
     Release 1.16.2 LTS
     Release 1.17 -> main
     Optimize RMS Archives
+    Auto fix errors
