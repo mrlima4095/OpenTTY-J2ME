@@ -578,7 +578,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             if (end == -1) { break; }
 
                             String filename = content.substring(start + "[\0BEGIN:".length(), end);
-                            if (filename.startsWith(".") || stack.contains(filename)) { } else { preview.append(filename, null); }
+                            if (filename.startsWith(".") || stack.contains(filename)) { } else { preview.append(filename, null); stack.addElement(filename); }
 
                             index = content.indexOf("[\0END\0]", end);
                             if (index == -1) { break; }
@@ -590,7 +590,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         String[] recordStores = RecordStore.listRecordStores();
 
                         for (int i = 0; i < recordStores.length; i++) {
-                            if (!recordStores[i].startsWith(".") && !stack.contains(recordStores[i])) { preview.append(recordStores[i], null); }
+                            if (!recordStores[i].startsWith(".") && !stack.contains(recordStores[i])) { preview.append(recordStores[i], null); stack.addElement(recordStores[i]); }
                         }
                     }
 
@@ -599,7 +599,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         for (int i = 0; i < files.size(); i++) {
                             String f = (String) files.elementAt(i);
 
-                            if (f != null && !f.equals("..") && !f.equals("/") && !stack.contains(f)) { preview.append(f, null); }
+                            if (f != null && !f.equals("..") && !f.equals("/") && !stack.contains(f)) { preview.append(f, null); stack.addElement(f); }
                         }
                     }
                 } catch (IOException e) { }
