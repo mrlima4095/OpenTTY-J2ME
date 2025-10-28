@@ -1613,15 +1613,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Virtual Objects
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
-    public Hashtable genprocess(String name, int id, String collector) { 
-        Hashtable proc = new Hashtable(); 
-        
-        proc.put("name", name); 
-        proc.put("owner", id == 0 ? "root" : username); 
-        if (collector != null) { proc.put("collector", collector); } 
-        
-        return proc;
-    }
+    public Hashtable genprocess(String name, int id, String collector) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", id == 0 ? "root" : username); if (collector != null) { proc.put("collector", collector); } return proc; }
     // | (Trackers)
     public Hashtable getprocess(String pid) { return trace.containsKey(pid) ? (Hashtable) trace.get(pid) : null; }
     public Object getobject(String pid, String item) { return (Object) getprocess(pid).get(item); }
