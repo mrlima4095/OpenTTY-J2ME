@@ -586,11 +586,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             index += "[\0END\0]".length();
                         }
                     }
-                    else if (path.startsWith("/home/")) {
-                        String[] recordStores = RecordStore.listRecordStores();
-
-                        for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); } }
-                    }
+                    else if (path.startsWith("/home/")) { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); } } }
 
                     Vector files = (Vector) paths.get(path);
                     if (files != null) {
