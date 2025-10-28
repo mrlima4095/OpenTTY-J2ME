@@ -1933,20 +1933,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0; 
     }
+    // |
+    // File information
     public String getMimeType(String filename) { return filename.equals("") ? "" : getExtensionInfo(getExtension(filename))[1]; }
     public String getFileType(String filename) { return filename.equals("") ? "" : getExtensionInfo(getExtension(filename))[2]; }
-    public String getExtension(String filename) {
-        if (filename == null) { return ""; }
-        int dot = filename.lastIndexOf('.');
-        if (dot >= 0 && dot < filename.length() - 1) { return filename.substring(dot).toLowerCase(); }
-        return "";
-    }
-    public String[] getExtensionInfo(String ext) {
-        if (filetypes == null) { filetypes  = parseProperties(getcontent("/res/filetypes")); }
-        String value = (String) filetypes.get(ext.toLowerCase());
-        if (value == null) { return new String[] { "Unknown", "application/octet-stream", "bin" }; }
-        return split(value, ',');
-    }
+    public String getExtension(String filename) { if (filename == null) { return ""; } int dot = filename.lastIndexOf('.'); if (dot >= 0 && dot < filename.length() - 1) { return filename.substring(dot).toLowerCase(); } return ""; }
+    public String[] getExtensionInfo(String ext) { if (filetypes == null) { filetypes  = parseProperties(getcontent("/res/filetypes")); } String value = (String) filetypes.get(ext.toLowerCase()); if (value == null) { return new String[] { "Unknown", "application/octet-stream", "bin" }; } return split(value, ','); }
 
     // API 013 - (MIDlet)
     // |
