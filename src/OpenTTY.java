@@ -749,16 +749,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // MIDlet Tracker
         else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
-        else if (mainCommand.equals("mmspt") || mainCommand.equals("chrt")) {
-            if (argument.equals("")) { echoCommand(getThreadName(Thread.currentThread())); }
-            else if (argument.equals("priority")) { echoCommand("" + Thread.currentThread().getPriority()); }
-            else { 
-                int value = getNumber(argument, Thread.NORM_PRIORITY, true); 
-                if (value > 10 || value < 1) { return 2; }
-                else { Thread.currentThread().setPriority(value); }
-            }
-            
-        }
+        else if (mainCommand.equals("mmspt") || mainCommand.equals("chrt")) { if (argument.equals("")) { echoCommand(getThreadName(Thread.currentThread())); } else if (argument.equals("priority")) { echoCommand("" + Thread.currentThread().getPriority()); } else { int value = getNumber(argument, Thread.NORM_PRIORITY, true); if (value > 10 || value < 1) { return 2; } else { Thread.currentThread().setPriority(value); } } }
         else if (mainCommand.equals("bg")) { if (argument.equals("")) { } else { new MIDletControl("Background", argument, ignore, id); } }
 
         // API 010 - (Requests)
