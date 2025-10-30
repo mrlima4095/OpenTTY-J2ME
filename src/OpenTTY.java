@@ -1137,7 +1137,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); }
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; sh; x11 stop; x11 init; . /home/.initrc"); } 
-        else if (mainCommand.startsWith("@")) { display.vibrate(500); } 
+        else if (mainCommand.startsWith("@")) { echoCommand(mainCommand.substring(1) + "") } 
         
         else if (mainCommand.equals("lua")) { 
             if (javaClass("Lua") == 0) { 
@@ -1164,23 +1164,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (!file(args[i])) { echoCommand(raw + ": not found"); return 127; }
 
                         if (args[i].endsWith("/")) { echoCommand(raw + ": directory"); }
-                        else if (args[i].startsWith("/home/")) { 
-                            String[] info = getExtensionInfo(getExtension(args[i].substring(6)));
-                            echoCommand(raw + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
-                        }
+                        else if (args[i].startsWith("/home/")) { String[] info = getExtensionInfo(getExtension(args[i].substring(6))); echoCommand(raw + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); }
                         else if (args[i].startsWith("/mnt/")) {
                             FileConnection fc = (FileConnection) Connector.open("file:///" + args[i].substring(5), Connector.READ);
                             if (fc.isDirectory()) { echoCommand(raw + ": directory"); } 
-                            else { 
-                                String[] info = getExtensionInfo(getExtension(args[i]));
-                                echoCommand(raw + ": " + info[0] + ", " + info[2]);
-                            }
+                            else { String[] info = getExtensionInfo(getExtension(args[i])); echoCommand(raw + ": " + info[0] + ", " + info[2]); }
                             fc.close();
                         }
-                        else if (args[i].startsWith("/tmp/")) {
-                            String[] info = getExtensionInfo(getExtension(args[i].substring(5)));
-                            echoCommand(raw + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2]));
-                        }
+                        else if (args[i].startsWith("/tmp/")) { String[] info = getExtensionInfo(getExtension(args[i].substring(5))); echoCommand(raw + ": " + (info[0].equals("Unknown") ? "Plain Text" : info[0]) + ", " + (info[0].equals("Unknown") ? "text" : info[2])); }
                         else if (args[i].startsWith("/")) {
                             String parent = args[i].substring(0, args[i].lastIndexOf('/') + 1), name = args[i].substring(args[i].lastIndexOf('/') + 1);
 
