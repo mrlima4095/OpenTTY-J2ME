@@ -548,7 +548,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 try {
                     if (path.equals("/tmp/")) { for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) { String file = (String) KEYS.nextElement(); if (file.startsWith(".")) { } else { preview.append(file, null); } } }
-                    else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } } }
+                    else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } }
                     else if (path.startsWith("/mnt/")) {
                         FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
                         Vector dirs = new Vector(), files = new Vector();
@@ -589,13 +589,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (path.startsWith("/home/")) { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); } } }
 
                     Vector files = (Vector) paths.get(path);
-                    if (files != null) {
-                        for (int i = 0; i < files.size(); i++) {
-                            String f = (String) files.elementAt(i);
-
-                            if (f != null && !f.equals("..") && !f.equals("/") && !stack.contains(f)) { preview.append(f, null); stack.addElement(f); }
-                        }
-                    }
+                    if (files != null) { for (int i = 0; i < files.size(); i++) { String f = (String) files.elementAt(i); if (f != null && !f.equals("..") && !f.equals("/") && !stack.contains(f)) { preview.append(f, null); stack.addElement(f); } } }
                 } catch (IOException e) { }
             } 
             else if (MOD == MONITOR) { console.setText("Used Memory: " + (runtime.totalMemory() - runtime.freeMemory()) / 1024 + " KB\n" + "Free Memory: " + runtime.freeMemory() / 1024 + " KB\n" + "Total Memory: " + runtime.totalMemory() / 1024 + " KB"); } 
