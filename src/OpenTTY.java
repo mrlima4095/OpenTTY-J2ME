@@ -785,8 +785,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
         else if (mainCommand.equals("netstat")) { 
             if (argument.equals("") || args[0].equals("-a")) {
-                echoCommand("Active Connections:");
-                echoCommand("PID\tType\tLocal Address\tRemote Address\tState");
+                echoCommand("Active Connections:\nPID\tName\tLocal\tRemote\tState");
                 
                 for (Enumeration keys = trace.keys(); keys.hasMoreElements();) {
                     String pid = (String) keys.nextElement();
@@ -794,42 +793,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String procName = (String) proc.get("name");
                     
                     if (proc.containsKey("socket")) {
-                        String state = "ESTABLISHED";
-                        String localAddr = "N/A";
-                        String remoteAddr = "N/A";
+                        String state = "ESTABLISHED", localAddr = "N/A", remoteAddr = "N/A";
                         
-                        try {
-                            if (proc.get("socket") != null) {
-                                SocketConnection conn = (SocketConnection) proc.get("socket");
-                                localAddr = conn.getLocalAddress() + ":" + conn.getLocalPort();
-                                remoteAddr = conn.getAddress() + ":" + conn.getLocalPort();
-                            }
-                        } catch (Exception e) { }
+                        try { if (proc.get("socket") != null) { conn = (SocketConnection) proc.get("socket"); localAddr = conn.getLocalAddress() + ":" + conn.getLocalPort(); remoteAddr = conn.getAddress() + ":" + conn.getLocalPort(); } } 
+                        catch (Exception e) { }
                         
                         echoCommand(pid + "\t" + procName + "\t" + localAddr + "\t" + remoteAddr + "\t" + state);
                     }
                 }
                 
-                // Mostrar servidores ativos
                 echoCommand("\nActive Servers:");
                 echoCommand("PID\tType\tPort\tStatus");
                 
                 Hashtable sessions = (Hashtable) getobject("1", "sessions");
                 for (Enumeration ports = sessions.keys(); ports.hasMoreElements();) {
-                    String port = (String) ports.nextElement();
-                    String status = sessions.get(port).equals("nobody") ? "LISTENING" : "ESTABLISHED";
+                    String port = (String) ports.nextElement(), status = sessions.get(port).equals("nobody") ? "LISTENING" : "ESTABLISHED";
                     
-                    // Encontrar PID associado à porta
                     for (Enumeration pids = trace.keys(); pids.hasMoreElements();) {
                         String pid = (String) pids.nextElement();
                         Hashtable proc = (Hashtable) trace.get(pid);
-                        if (proc.get("port") != null && proc.get("port").equals(port)) {
-                            echoCommand(pid + "\tbind\t" + port + "\t" + status);
-                        }
+                        if (proc.get("port") != null && proc.get("port").equals(port)) { echoCommand(pid + "\tbind\t" + port + "\t" + status); }
                     }
                 }
-            } else if (args[0].equals("-d")) {
-
             } else {
                 int STATUS = 0; 
                 try { 
