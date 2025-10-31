@@ -789,7 +789,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (proc.containsKey("socket")) {
                         String state = "ESTABLISHED", localAddr = "N/A", remoteAddr = "N/A";
                         
-                        try { if (proc.get("socket") != null) { conn = (SocketConnection) proc.get("socket"); localAddr = conn.getLocalAddress() + ":" + conn.getLocalPort(); remoteAddr = conn.getAddress() + ":" + conn.getLocalPort(); } } 
+                        try { if (proc.get("socket") != null) { SocketConnection conn = (SocketConnection) proc.get("socket"); localAddr = conn.getLocalAddress() + ":" + conn.getLocalPort(); remoteAddr = conn.getAddress() + ":" + conn.getLocalPort(); } } 
                         catch (Exception e) { }
                         
                         echoCommand(pid + "\t" + procName + "\t" + localAddr + "\t" + remoteAddr + "\t" + state);
