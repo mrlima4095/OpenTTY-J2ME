@@ -1131,6 +1131,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); }
         else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; sh; x11 stop; x11 init; . /home/.initrc"); } 
+        else if (mainCommand.equals("@name")) { echoCommand(this.toString()); }
         else if (mainCommand.startsWith("@")) { echoCommand("mod: " + mainCommand.substring(1) + ": not found"); } 
         
         else if (mainCommand.equals("lua")) { 
