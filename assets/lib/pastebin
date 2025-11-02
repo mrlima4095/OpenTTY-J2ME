@@ -75,7 +75,7 @@ function app.paste(content)
         }
     }))
 
-    io.close(conn) io.close(i) io.close(o)
+    pcall(io.close, conn, i, o)
 end
 
 function app.GetFile()
