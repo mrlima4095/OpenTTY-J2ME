@@ -1,4 +1,4 @@
-/=bin/,dev/,etc/,home/,lib/,res/,tmp/
+/=bin/,dev/,etc/,home/,lib/,mnt/,res/,tmp/
 /bin/=sh
 /dev/=null,random,stdin,stdout,tty,zero
 /etc/=fstab,init,motd,os-release
