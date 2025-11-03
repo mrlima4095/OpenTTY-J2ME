@@ -26,7 +26,7 @@ public class Lua {
         this.tokenIndex = 0; this.PID = midlet.genpid();
         this.proc = midlet.genprocess("lua", id, null);
         
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable();
         String[] funcs = new String[] { "execute", "getenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd" }; int[] loaders = new int[] { EXEC, GETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
@@ -56,7 +56,7 @@ public class Lua {
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
-        globals.put("random", new LuaFunction(RANDOM));
+        math.put("random", new LuaFunction(RANDOM)); globals.put("math", math);
         globals.put("_VERSION", "Lua J2ME");
     }
     // | (Run Source code)
@@ -1210,7 +1210,7 @@ public class Lua {
                     if (cached != null) { return (cached == LUA_NIL) ? null : cached; }
 
                     String code = midlet.getcontent(name);
-                    if (code.equals("")) { throw new Exception("module '" + code + "' not found"); }
+                    if (code.equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".lua")).equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".so")).equals("")) { throw new Exception("module '" + code + "' not found"); } } } 
 
                     Object obj = exec(code);
                     requireCache.put(name, (obj == null) ? LUA_NIL : obj);
