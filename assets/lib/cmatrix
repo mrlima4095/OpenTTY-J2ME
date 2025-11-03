@@ -8,12 +8,10 @@ name=cmatrix
 version=1.0
 description=Matrix Effect
 
-api.version=1.16
-api.error=execute echo [ Matrix Effect ] This program requires OpenTTY 1.16 (Lua Runtime)
+api.version=1.17
+api.error=execute echo [ Matrix Effect ] This program requires OpenTTY 1.17 (Lua Runtime)
 api.match=minimum 
 api.require=lua
-
-config=execute alias cmatrix=bg lua /home/cmatrix; cmatrix
 
 ]]
 
@@ -28,7 +26,7 @@ local function cmatrix()
 
     while os.getenv("CMATRIX") do
 
-        io.write(random(10) .. " ", "/dev/stdout", "a")
+        io.write(math.random(10) .. " ", "/dev/stdout", "a")
 
         if string.len(io.read()) > 200 then os.execute("clear") end
     end
