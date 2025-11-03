@@ -9,9 +9,9 @@ version=1.0
 description=Matrix Effect
 
 api.version=1.17
-api.error=execute echo [ Matrix Effect ] This program requires OpenTTY 1.17 (Lua Runtime)
+api.error=execute echo [ Matrix Effect ] This program requires OpenTTY 1.1 (Lua Runtime)
 api.match=minimum 
-api.require=lua
+api.require=lua 
 
 ]]
 
