@@ -40,6 +40,8 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** functions `io.read` and `io.write` now require using `/dev/stdin` and `/dev/stdout`
 - **Lua** added default library `java` for minimal direct access and handling of Java VM resources
 - **Lua** added function `graphics.render(file)` to get **Image** item
+- **Lua** function `random(max)` moved to `math.random()` by default
+- **Lua** function `require` searching module on `/lib/` if file not found in current working directory 
 - **Lua** added new _type_ **Image**
 - **Screens** event listeners no longer passing root to `xterm` command call
 - **Lua** added support for **methods** and `:` token
