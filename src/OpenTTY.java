@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x98";
+    public String logs = "", path = "/home/", build = "2025-1.17-02x99";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form(null);
@@ -1433,6 +1433,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (app == null || app.length() == 0) { return 2; }
 
         Hashtable proc = genprocess(app, id, collector);
+        Lua lua = null; String source;
 
         if (app.equals("sh") || app.equals("x11-wm")) {
             pid = app.equals("sh") ? "1" : "2"; 
@@ -1461,7 +1462,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable db = parseProperties(read("/etc/services")); 
             if (db.containsKey(app)) {
                 String[] service = split((String) db.get(app), ',');
-                if (service.length < 2) { MIDletLogs("add error Malformed Service '" + app + "'"); return 1; }
+                if (service.length < 3) { MIDletLogs("add error Malformed Service '" + app + "'"); return 1; }
                 else {
                     if (service[0].trim().equals("")) { }
                     else {
@@ -1469,12 +1470,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (STATUS != 0) { return STATUS; }
                     }
 
-                    proc.put("collector", service[1]);
+                    if (service[1].trim().equals("")) { }
+                    else {
+                        lua = new Lua(this, id); source = service[1].trim();
+                        
+                    }
+
+                    proc.put("collector", service[2]);
                 } 
             }
         } 
 
         trace.put(pid, proc);
+
+        if (lua != null) {
+            Hashtable arg = new Hashtable(); arg.put(new Double(0), source);
+            Hashtable host = ((Lua) host).run(pid, app, proc, getcontent(source), arg); 
+
+            if (host.get("object") instanceof Hashtable) {
+                Hashtable obj = (Hashtable) host.get("object"); 
+                proc.put("lua", lua); 
+                if (obj.containsKey("handler")) { proc.put("handler" obj.get("handler")); }
+            } else { MIDletLogs("add warn Service '" + app + "' dont provide a valid structure"); }
+        }
         return 0;
     }
     public int stop(String app, int id) { if (app == null || app.length() == 0) { return 2; } int STATUS = 0; for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), NAME = (String) ((Hashtable) trace.get(PID)).get("name"); if (app.equals(NAME)) { if ((STATUS = kill(PID, false, id)) != 0) { break; } } } return STATUS; }
