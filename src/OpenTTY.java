@@ -1433,7 +1433,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (app == null || app.length() == 0) { return 2; }
 
         Hashtable proc = genprocess(app, id, collector);
-        Lua lua = null; String source;
+        Lua lua = null; String source = null;
 
         if (app.equals("sh") || app.equals("x11-wm")) {
             pid = app.equals("sh") ? "1" : "2"; 
