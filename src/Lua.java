@@ -610,14 +610,11 @@ public class Lua {
             consume(RETURN);
             doreturn = true;
 
-            if (peek().type == EOF || peek().type == END) return new Vector();
+            if (peek().type == EOF || peek().type == END) { return new Vector(); }
 
             Vector results = new Vector();
             results.addElement(expression(scope));
-            while (peek().type == COMMA) {
-                consume(COMMA);
-                results.addElement(expression(scope));
-            }
+            while (peek().type == COMMA) { consume(COMMA); results.addElement(expression(scope)); }
             return results;
         }
 

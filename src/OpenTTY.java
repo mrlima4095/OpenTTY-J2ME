@@ -1507,7 +1507,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (STATUS != 0) { trace.remove(pid); return STATUS; }
 
-            if (host.get("object") instanceof Lua.LuaFunction) { proc.put("lua", lua); proc.put("handler", host.get("object")); } 
+            if (host.get("object") instanceof Vector) { proc.put("lua", lua); proc.put("handler", ((Vector) host.get("object")).elementAt(0)); } 
             else { MIDletLogs("add warn Service '" + app + "' don't provide a valid handler"); }
         }
         return 0;
