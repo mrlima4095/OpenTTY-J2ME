@@ -1485,7 +1485,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         if (lua != null) {
             Hashtable arg = new Hashtable(); arg.put(new Double(0), source);
-            Hashtable host = ((Lua) host).run(pid, app, proc, getcontent(source), arg); 
+            Hashtable host = ((Lua) lia).run(pid, app, proc, getcontent(source), arg); 
 
             if (host.get("object") instanceof Hashtable) {
                 Hashtable obj = (Hashtable) host.get("object"); 
