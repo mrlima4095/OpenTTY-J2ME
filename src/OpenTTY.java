@@ -1503,7 +1503,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lua != null) {
             Hashtable arg = new Hashtable(); arg.put(new Double(0), source);
             Hashtable host = lua.run(pid, app, proc, getcontent(source), arg); 
-            int STATUS = (Integer) host.get("status")
+            int STATUS = (Integer) host.get("status");
 
             if (STATUS != 0) { trace.remove(pid); return STATUS; }
 
