@@ -20,43 +20,22 @@ local app = {
     version = "1.2",
     proxy = "http://opentty.xyz/proxy.php?",
     mirror = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/",
+}
 
-    xwget = {
-        title = "SmartME",
-        message = "Downloading...",
-        back = { root = function ()
-            graphics.display(graphics.Alert(app.xwget))
-        end },
-        indicator = true,
-    },
-    xpkg = {
-        title = "SmartME - Packages",
-        back = { root = app.main },
-        button = { label = "Install", root = app.install },
-        fields = { "audio.lua", "httpd.lua", "math.lua", "string.lua" },
-        type = "multiple"
-    },
-    xcfg = {
-        title = "SmartME SDK",
-        back = { root = os.exit },
-        button = {
-            label = "Select",
-            root = function(opt) app.handler(opt) end
-        },
+app.xwget = { title = "SmartME", message = "Downloading...", back = { root = function () graphics.display(graphics.Alert(app.xwget)) end }, indicator = true, }
+app.xpkg = {
+    title = "SmartME - Packages",
+    back = { root = app.main },
+    button = { label = "Install", root = app.install },
+    fields = { "audio.lua", "httpd.lua", "math.lua", "string.lua" },
+    type = "multiple"
+}
+app.xcfg = {
+    title = "SmartME SDK",
+    back = { root = os.exit },
+    button = { label = "Select", root = function(opt) app.handler(opt) end },
 
-        fields = {
-            "Nano Editor",
-            "---",
-            "New",
-            "Save",
-            "File Explorer",
-            "Build Project",
-            "---",
-            "Download Libraries",
-            "Documentation",
-            "About"
-        }
-    }
+    fields = { "Nano Editor", "---", "New", "Save", "File Explorer", "Build Project", "---", "Download Libraries", "Documentation", "About" }
 }
 
 function app.new()
@@ -66,37 +45,11 @@ function app.new()
         button = {
             label = "Create",
             root = function (option)
-                if option == "Lua source code" then
-                    os.execute('execute install nano; touch; add -- Lua J2ME\n\nprint("Hello, world!")')
-                    os.execute("nano") os.exit()
-                else
-                    if string.hash(io.read("forge")) == -1512329552 then os.execute("execute import forge; forge gen; true") os.exit()
-                    else
-                        graphics.display(graphics.Alert({
-                            title = "SmartME",
-                            message = "To Generate an OpenTTY Package Project requires Forge 1.2 installed!",
-                            back = app.new,
-                            button = {
-                                label = "Install",
-                                root = function()
-                                    local forge, status = socket.http.get(app.proxy .. app.mirror .. "lib/forge")
+                os.execute("execute install /home/nano; touch;")
 
-                                    if string.hash(forge) == -1512329552 and status == 200 then
-                                        io.write(forge, "/home/forge")
-                                        os.execute("execute import forge; forge gen; true")
-                                        os.exit()
-                                    else
-                                        graphics.display(graphics.Alert({
-                                            title = "SmartME",
-                                            message = "Forge installation failed!",
-                                            back = { root = app.new }
-                                        }))
-                                    end
-                                end
-                            }
-                        }))
-                    end
-                end
+                if option == "Lua source code" then os.execute('add #!/bin/lua; add; add print("Hello, World!")') else os.execute('add [ Config ]; add name=My Package; add version=1.0; add description=About Package; add; add config=execute echo Hello, World!"') end
+
+                os.execute("nano") os.exit()
             end
         },
 
@@ -104,11 +57,7 @@ function app.new()
     }))
 end
 function app.save() end
-function app.dpkg()
-    if app.pkg == nil then app.pkg = graphics.BuildList(app.xpkg) end
-
-    graphics.display(app.pkg)
-end
+function app.dpkg() if app.pkg == nil then app.pkg = graphics.BuildList(app.xpkg) end graphics.display(app.pkg) end
 function app.install(...)
     graphics.display(graphics.Alert(app.xwget))
 
@@ -117,21 +66,13 @@ function app.install(...)
 
         if status == 200 then io.write(content, pkg)
         else
-            graphics.display(graphics.Alert({
-                title = "SmartME",
-                message = "Download failed!",
-                back = { root = app.main }
-            }))
+            graphics.display(graphics.Alert({ title = "SmartME", message = "Download failed!", back = { root = app.main } }))
 
             return
         end
     end
 
-    graphics.display(graphics.Alert({
-        title = "SmartME",
-        message = "Download complete!",
-        back = { root = app.main }
-    }))
+    graphics.display(graphics.Alert({ title = "SmartME", message = "Download complete!", back = { root = app.main } }))
 end
 
 function app.handler(option)
@@ -148,11 +89,7 @@ function app.handler(option)
             back = { root = app.main },
             fields = {
                 "\tLua is a lightweight, high-level programming language designed for embedded use in applications. It was created in Brazil in the early 1990s by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, and Waldemar Celes. Lua is known for its simple syntax, small size, and speed, making it ideal for use in game development, embedded systems, and applications that require a scripting language. It supports procedural programming, object-oriented programming, functional programming, and data-driven programming. One of Lua’s key features is its ability to be easily integrated with other programming languages, especially C and C++, allowing developers to extend applications with custom functionality. Lua is widely used in game engines like Roblox, World of Warcraft, and Adobe Lightroom for scripting purposes.",
-                {
-                    type = "item",
-                    label = "Lua docs",
-                    root = "open " .. app.proxy .. "www.lua.org/manual/5.4/"
-                }
+                { type = "item", label = "Lua docs", root = "open " .. app.proxy .. "www.lua.org/manual/5.4/" }
             }
         }))
     elseif option == "About" then
