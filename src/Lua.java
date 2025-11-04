@@ -1397,8 +1397,8 @@ public class Lua {
                         try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
                         catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); return 1; } 
                         catch (Error e) { if (e.getMessage() != null) { midlet.echoCommand(e.getMessage()); } return lua.status; }
-                    } else { echoCommand("svchost: " + args[0] + ": not a service"); return 2; }
-                }
+                    } else { return gotbad(1, "request", "not a service"); }
+                } else { return gotbad(1, "request", "process not found"); }
             }
             // Package: io
             else if (MOD == READ) {
