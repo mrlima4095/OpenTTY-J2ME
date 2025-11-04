@@ -1471,12 +1471,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
 
                     if (service[1].trim().equals("")) { }
-                    else {
-                        lua = new Lua(this, id); source = service[1].trim();
-                        
-                    }
+                    else { if (javaClass("Lua") == 0) { lua = new Lua(this, id); source = service[1].trim(); } else { return 3; } }
 
-                    proc.put("collector", service[2]);
+                    if (service[2].trim().equals("")) { }
+                    else { proc.put("collector", service[2]); }
                 } 
             }
         } 
@@ -1486,11 +1484,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (lua != null) {
             Hashtable arg = new Hashtable(); arg.put(new Double(0), source);
             Hashtable host = lua.run(pid, app, proc, getcontent(source), arg); 
+            int STATUS = (Integer) host.get("status")
 
-            if (host.get("object") instanceof Hashtable) {
-                Hashtable obj = (Hashtable) host.get("object"); 
+            if (STATUS != 0) { trace.remove(pid); return STATUS; }
+
+            if (host.get("object") instanceof Lua.LuaFunction) {
                 proc.put("lua", lua); 
-                if (obj.containsKey("handler")) { proc.put("handler", obj.get("handler")); }
+                proc.put("handler", host.get("object"));
             } else { MIDletLogs("add warn Service '" + app + "' dont provide a valid structure"); }
         }
         return 0;

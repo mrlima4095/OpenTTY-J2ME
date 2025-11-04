@@ -79,7 +79,7 @@ public class Lua {
         return ITEM;
     }
     public Hashtable run(String pid, String name, Hashtable proc, String code, Hashtable args) {
-        this.PID = pid; this.proc = proc; globals.put("arg", args); attrchanges = new boolean[] { false, true }; 
+        this.PID = pid; this.proc = proc; globals.put("arg", args); attrchanges[0] = false; 
         
         Hashtable ITEM = new Hashtable(); 
         
@@ -91,7 +91,6 @@ public class Lua {
         catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); status = 1; } 
         catch (Error e) { if (e.getMessage() != null) { midlet.echoCommand(e.getMessage()); } status = 1; }
 
-        if (kill) { midlet.trace.remove(PID); }
         ITEM.put("status", status);
         return ITEM;
     }
