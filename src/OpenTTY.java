@@ -1185,6 +1185,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
+        else if (mainCommand.equals("svchost")) {
+            if (argument.equals("")) { }
+            else {
+                if (args.length < 2) { echoCommand("svchost [pid] [request]"); return 2; }
+                else if (trace.containsKey(args[0])) {
+                    Hashtable proc = (Hashtable) trace.get(args[0]);
+                    if (proc.containsKey("lua") && proc.containsKey("handler")) {
+                        Lua lua = (Lua) proc.get("lua");
+                        Vector arg = new Vector(); arg.addElement(args[1]); arg.addElement("shell"); arg.addElement("1"); arg.addElement(id);
+                        Object response = null;
+
+                        try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
+                        catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); return 1; } 
+                        catch (Error e) { if (e.getMessage() != null) { midlet.echoCommand(e.getMessage()); } return lua.status; }
+                    } else { echoCommand("svchost: " + args[0] + ": not a service"); return 2; }
+                } else {
+                    echoCommand("svchost: " + args[0] + ": not found");
+                }
+            }
+        }
+
         // API 015 - (Scripts)
         // |
         // OpenTTY Packages
@@ -1488,10 +1509,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (STATUS != 0) { trace.remove(pid); return STATUS; }
 
-            if (host.get("object") instanceof Lua.LuaFunction) {
-                proc.put("lua", lua); 
-                proc.put("handler", host.get("object"));
-            } else { MIDletLogs("add warn Service '" + app + "' dont provide a valid structure"); }
+            if (host.get("object") instanceof Lua.LuaFunction) { proc.put("lua", lua); proc.put("handler", host.get("object")); } 
+            else { MIDletLogs("add warn Service '" + app + "' don't provide a valid handler"); }
         }
         return 0;
     }

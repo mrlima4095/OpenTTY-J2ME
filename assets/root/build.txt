@@ -166,3 +166,4 @@
 [2025-1.17-02x96] Removed Command 'SED'
 [2025-1.17-02x97] Mount '/etc/' in a RMS Archive writeable for super-user
 [2025-1.17-02x98] Command 'START' considering services on '/etc/services'
+[2025-1.17-02x99] Basic Project of services hosting
