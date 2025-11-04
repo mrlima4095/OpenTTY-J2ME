@@ -1197,8 +1197,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         Object response = null;
 
                         try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
-                        catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); return 1; } 
-                        catch (Error e) { if (e.getMessage() != null) { midlet.echoCommand(e.getMessage()); } return lua.status; }
+                        catch (Exception e) { echoCommand(getCatch(e)); return 1; } 
+                        catch (Error e) { if (e.getMessage() != null) { echoCommand(e.getMessage()); } return lua.status; }
                     } else { echoCommand("svchost: " + args[0] + ": not a service"); return 2; }
                 } else { echoCommand("svchost: " + args[0] + ": not found"); return 127; }
             }
