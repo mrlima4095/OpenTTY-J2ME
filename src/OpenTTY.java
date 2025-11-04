@@ -1490,7 +1490,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (host.get("object") instanceof Hashtable) {
                 Hashtable obj = (Hashtable) host.get("object"); 
                 proc.put("lua", lua); 
-                if (obj.containsKey("handler")) { proc.put("handler" obj.get("handler")); }
+                if (obj.containsKey("handler")) { proc.put("handler", obj.get("handler")); }
             } else { MIDletLogs("add warn Service '" + app + "' dont provide a valid structure"); }
         }
         return 0;
