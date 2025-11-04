@@ -1384,6 +1384,22 @@ public class Lua {
                 }
             }
             else if (MOD == GETCWD) { return midlet.path; }
+            else if (MOD == REQUEST) {
+                if (args.isEmpty()) { return gotbad(1, "request", "string expected, got no value"); }
+                else if (args.length < 2) { return gotbad(2, "request", "value expected, got no value"); }
+                else if (trace.containsKey(toLuaString(args.elementAt(0)))) {
+                    Hashtable proc = (Hashtable) trace.get(toLuaString(args.elementAt(0)));
+                    if (proc.containsKey("lua") && proc.containsKey("handler")) {
+                        Lua lua = (Lua) proc.get("lua");
+                        Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement("lua"); arg.addElement(PID); arg.addElement(id);
+                        Object response = null;
+
+                        try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
+                        catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); return 1; } 
+                        catch (Error e) { if (e.getMessage() != null) { midlet.echoCommand(e.getMessage()); } return lua.status; }
+                    } else { echoCommand("svchost: " + args[0] + ": not a service"); return 2; }
+                }
+            }
             // Package: io
             else if (MOD == READ) {
                 if (args.isEmpty()) { return midlet.stdout.getText(); }
