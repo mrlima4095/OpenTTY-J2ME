@@ -1,7 +1,7 @@
     Lua
         Add support for coroutines
     Lua Service Host
-        Add a database with services to be real initialized with Command 'start'
+*       Add a database with services to be real initialized with Command 'start'
         Special applications attributes for Service Host
     SmartME SDK
         Debugging and Building tools
