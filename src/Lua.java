@@ -1387,8 +1387,8 @@ public class Lua {
             else if (MOD == REQUEST) {
                 if (args.isEmpty()) { return gotbad(1, "request", "string expected, got no value"); }
                 else if (args.size() < 2) { return gotbad(2, "request", "value expected, got no value"); }
-                else if (trace.containsKey(toLuaString(args.elementAt(0)))) {
-                    Hashtable proc = (Hashtable) trace.get(toLuaString(args.elementAt(0)));
+                else if (midlet.trace.containsKey(toLuaString(args.elementAt(0)))) {
+                    Hashtable proc = (Hashtable) midlet.trace.get(toLuaString(args.elementAt(0)));
                     if (proc.containsKey("lua") && proc.containsKey("handler")) {
                         Lua lua = (Lua) proc.get("lua");
                         Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement("lua"); arg.addElement(PID); arg.addElement(id);
