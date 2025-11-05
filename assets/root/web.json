@@ -22,6 +22,7 @@
     }
     ],
     "news": [
-        { "date": "2025-08-31", "title": "OpenTTY 1.16 LTS has been published." }
+        { "date": "2025-08-31", "title": "OpenTTY 1.16 LTS has been published." },
+        { "date": "2025-11-05", "title": "1.17 Release will be released soon." }
     ]
 }
