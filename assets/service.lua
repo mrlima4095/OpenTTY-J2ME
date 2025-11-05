@@ -17,5 +17,4 @@ return function (payload, source, pid, id)
     elseif payload == nil then
         print("nothing to process")
     end
-
 end
