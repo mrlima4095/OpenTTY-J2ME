@@ -16,5 +16,7 @@ return function (payload, source, pid, id)
         print("pong")
     elseif payload == nil then
         print("nothing to process")
+    elseif type(payload) == "function" then
+        payload()
     end
 end
