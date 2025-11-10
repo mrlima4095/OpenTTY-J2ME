@@ -9,7 +9,7 @@ os = {
     getproc = function (pid, field) return {} end,
     setproc = function (field, value) end,
     getcwd = function () return "/home/" end,
-    request = function(pid, payload) end
+    request = function(pid, payload) return {} end
 }
 
 package = { loadlib = function (libname, funcname) end, loaded = {} }
