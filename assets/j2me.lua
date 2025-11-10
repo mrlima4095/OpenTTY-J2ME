@@ -8,7 +8,8 @@ os = {
     getpid = function (proc) end,
     getproc = function (pid, field) return {} end,
     setproc = function (field, value) end,
-    getcwd = function () return "/home/" end
+    getcwd = function () return "/home/" end,
+    request = function(pid, payload) end
 }
 
 package = { loadlib = function (libname, funcname) end, loaded = {} }
