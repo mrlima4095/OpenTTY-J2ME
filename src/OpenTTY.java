@@ -1501,7 +1501,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         trace.put(pid, proc);
 
         if (lua != null) {
-            Hashtable arg = new Hashtable(); arg.put(new Double(0), source);
+            Hashtable arg = new Hashtable(); arg.put(new Double(0), source); arg.put(new Double(1), "--deamon");
             Hashtable host = lua.run(pid, app, proc, getcontent(source), arg); 
             int STATUS = (Integer) host.get("status");
 
