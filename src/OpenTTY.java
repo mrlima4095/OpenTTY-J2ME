@@ -1709,33 +1709,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 012 - (File)
     // |
     // Directories Manager
-    private int mount(String struct) {
-        if (struct == null || struct.length() == 0) { return 2; }
-        String[] lines = split(struct, '\n');
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-            int div = line.indexOf('=');
-
-            if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; }
-            else {
-                String base = line.substring(0, div).trim();
-                String[] files = split(line.substring(div + 1).trim(), ',');
-
-                Vector content = new Vector(); content.addElement("..");
-                for (int j = 0; j < files.length; j++) { 
-                    if (!content.contains(files[j])) { 
-                        if (files[j].endsWith("/")) { Vector dir = new Vector(); dir.addElement(".."); paths.put(base + files[j], dir); }
-                        content.addElement(files[j]);
-                    } 
-                }
-
-                paths.put(base, content);
-            }
-        }
-
-        return 0;
-    }
+    private int mount(String struct) { if (struct == null || struct.length() == 0) { return 2; } String[] lines = split(struct, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); int div = line.indexOf('='); if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } else { String base = line.substring(0, div).trim(); String[] files = split(line.substring(div + 1).trim(), ','); Vector content = new Vector(); content.addElement(".."); for (int j = 0; j < files.length; j++) { if (!content.contains(files[j])) { if (files[j].endsWith("/")) { Vector dir = new Vector(); dir.addElement(".."); paths.put(base + files[j], dir); } content.addElement(files[j]); } } paths.put(base, content); } } return 0; }
     private String readStack() { Vector stack = (Vector) getobject("1", "stack"); StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     // RMS Files
