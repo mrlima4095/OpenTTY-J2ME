@@ -1,16 +1,33 @@
 #!/bin/lua
 
 local docker = {}
+local conteiners = {
+    -- { conteiner = "/home/conteiner", active = true }
+}
 
-function docker.run()
-    
-end
-function docker.stop()
-    
-end
-function docker.exec()
-    
-end
-function docker.list()
-    
+if arg[1] == "--deamon" then os.setproc("name", "dockerd") else os.setproc("name", "docker") end
+
+if arg[1] == nil then
+elseif arg[1] == "--deamon" then
+    os.setproc("collector", "execute rm /tmp/.docker; stop docker;")
+
+    return function (payload, source, pid, id)
+        if type(payload) == "string" then
+        elseif type(payload) == "function" then
+        elseif type(payload) == "table" then
+        end
+    end
+elseif arg[1] == "run" then
+elseif arg[1] == "exec" then
+elseif arg[1] == "ps" then
+    local dockerd = os.getpid("dockerd")
+
+    if dockerd then
+        local dockers = os.request
+    else
+        print("dockerd not running")
+        print("usage: 'start docker'")
+        os.exit(69)
+    end
+elseif arg[1] == "stop" then
 end
