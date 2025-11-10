@@ -12,9 +12,7 @@ elseif arg[1] == "--deamon" then
     os.setproc("collector", "execute rm /tmp/.docker; stop docker;")
 
     return function (payload, source, pid, id)
-        if type(payload) == "string" then
-        elseif type(payload) == "function" then
-        elseif type(payload) == "table" then
+        if payload == "ps" then return conteiners
         end
     end
 elseif arg[1] == "run" then
@@ -23,7 +21,12 @@ elseif arg[1] == "ps" then
     local dockerd = os.getpid("dockerd")
 
     if dockerd then
-        local dockers = os.request
+        local dockers = os.request(dockerd, "ps")
+
+        print("ID\tCONTEINER")
+        for id, data in pairs(dockers) do
+            print(id .. "\t" .. data["conteiner"])
+        end
     else
         print("dockerd not running")
         print("usage: 'start docker'")
