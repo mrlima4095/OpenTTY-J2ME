@@ -1725,10 +1725,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Vector content = new Vector(); content.addElement("..");
                 for (int j = 0; j < files.length; j++) { 
                     if (!content.contains(files[j])) { 
-                        if (files[j].endsWith("/")) {
-                            Vector dir = new Vector(); dir.addElement("..");
-                            paths.put(base + files[j], dir);
-                        }
+                        if (files[j].endsWith("/")) { Vector dir = new Vector(); dir.addElement(".."); paths.put(base + files[j], dir); }
                         content.addElement(files[j]);
                     } 
                 }
