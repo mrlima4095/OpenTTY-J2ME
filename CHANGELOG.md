@@ -55,6 +55,7 @@ Copyright (C) 2025 - Mr. Lima
 - Errors in `/etc/init` now throw a _Kernel Panic_ and cause **MIDlet** termination
 - New default environment key `SHELL`
 - **Super-user** now allowed to write to `/bin/` (**Applications**), `/etc/` (**Settings**) and `/lib/` (**Package**)
+- Fixed a bug that when you kill process `sh` as user `root` MIDlet doesn't closes
 - Fixed **MIDlet** login for user-only prompt
 - Added support for `list.default` that runs by default on all List choices
 - `query` command no longer consuming until connection end
