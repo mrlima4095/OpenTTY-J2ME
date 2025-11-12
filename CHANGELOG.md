@@ -49,6 +49,7 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** added minimal support for **metatables**
 - **Lua** fixed `break` token not working in `while` and `repeat` loops
 - **Lua** functions `socket.peer` and `socket.device` now returns **IP Address** and **Connection Port**
+- **Lua** function `os.execute` reading args `command` and a boolean to block run a command as super-user if the script are running as root
 - MIDlet initial message now comes from `/etc/motd` file
 - Merged build tools **Lua**, **Shell Script** and **Packages**; utility `.` considers _shebangs_ for building
 - `cp` command now using raw _byte-array_
