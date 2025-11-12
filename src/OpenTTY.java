@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-02x99";
+    public String logs = "", path = "/home/", build = "2025-1.17-03x00";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form(null);
@@ -1187,6 +1187,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         else if (mainCommand.equals("svchost")) {
             if (argument.equals("")) { }
+            else if (argument.equals("set")) {
+                if (id == 0) {
+                    if (args.length < 2) { echoCommand("svchost: set: missing module"); return 2; }
+
+                    Lua lua = new Lua(this, id);
+                    Hashtable proc = getprocess("1"), arg = new Hashtable(); arg.put(new Double(0), source); arg.put(new Double(1), "--deamon");
+                    Hashtable host = lua.run(pid, app, proc, getcontent(source), arg); 
+                    int STATUS = (Integer) host.get("status");
+
+                    if (STATUS != 0) { return STATUS; }
+
+                    if (host.get("object") instanceof Vector) { proc.put("lua", lua); proc.put("handler", ((Vector) host.get("object")).elementAt(0)); } 
+                    else { MIDletLogs("add warn Service '" + app + "' don't provide a valid handler"); }
+                } else { echoCommand("Permission denied!"); return 13; }
+            }
             else {
                 if (args.length < 2) { echoCommand("svchost [pid] [request]"); return 2; }
                 else if (trace.containsKey(args[0])) {
