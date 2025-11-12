@@ -12,3 +12,7 @@ if arg[1] then
     if ok then print(body)
     else print("curl: (6) Could not resolve host: " .. arg[1]) end
 else print("curl [url]") end
+
+
+
+

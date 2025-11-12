@@ -1,11 +1,10 @@
 #!/bin/lua
 
 local function parse_url(url)
-    if string.sub(url, 0, 4) == "http:" or string.sub(url, 0, 6) == "https:" then
-        return url
-    end
+    if string.sub(url, 1, 4) == "http:" or string.sub(url, 0, 6) == "https:" then return url end
     return "http://" .. url
 end
+
 local function save(file, content)
     if file then io.write(content, file)
     else io.write(content, "nano") end
