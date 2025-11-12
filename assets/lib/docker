@@ -7,7 +7,7 @@ local conteiners = {
 
 if arg[1] == "--deamon" then os.setproc("name", "dockerd") else os.setproc("name", "docker") end
 
-if arg[1] == nil then
+if arg[1] == nil or arg[1] == "help" then
 elseif arg[1] == "--deamon" then
     os.setproc("collector", "execute rm /tmp/.docker; stop docker;")
 
@@ -18,19 +18,7 @@ elseif arg[1] == "--deamon" then
 elseif arg[1] == "run" then
 elseif arg[1] == "exec" then
 elseif arg[1] == "ps" then
-    local dockerd = os.getpid("dockerd")
-
-    if dockerd then
-        local dockers = os.request(dockerd, "ps")
-
-        print("ID\tCONTEINER")
-        for id, data in pairs(dockers) do
-            print(id .. "\t" .. data["conteiner"])
-        end
-    else
-        print("dockerd not running")
-        print("usage: 'start docker'")
-        os.exit(69)
-    end
 elseif arg[1] == "stop" then
+else print("docker: '" .. arg[1] .. "' is not a docker command.\nSee 'docker --help'")
+
 end
