@@ -64,16 +64,7 @@ if arg[1] == "--deamon" then
         local cmd = payload:match("^(%S+)") or ""
         local args = payload:sub(#cmd + 2)
         
-        if cmd == "ps" then
-            local output = "CONTAINER ID\tNAME\tSTATUS\tPID\n"
-            for container_id, container in pairs(containers) do
-                output = output .. container_id .. "\t" .. 
-                        (container.name or "unnamed") .. "\t" ..
-                        (container.status or "unknown") .. "\t" ..
-                        (container.pid or "none") .. "\n"
-            end
-            return output
-            
+        if cmd == "ps" then return containers
         elseif cmd == "run" then
             local name = args:match("^--name=(%S+)")
             local script = name and args:sub(#name + 9) or args
@@ -196,31 +187,18 @@ if arg[1] == "--deamon" then
     end
 end
 
--- CLI principal
-if arg[1] == nil or arg[1] == "help" then
-    print([[
-Docker para OpenTTY - Gerenciador de contêineres leves
+local host = os.getpid("dockerd")
 
-Uso:
-  docker ps                         Listar contêineres
-  docker run [--name=NOME] SCRIPT   Executar script em contêiner
-  docker exec CONTAINER COMANDO     Executar comando em contêiner
-  docker stop [CONTAINER|all]       Parar contêiner(es)
-  docker rm [CONTAINER|all]         Remover contêiner(es) parados
-  docker logs CONTAINER             Mostrar informações do contêiner
-  
-Exemplos:
-  docker run --name=web /home/web_server.sh
-  docker run ". /home/my_app.sh &"
-  docker ps
-  docker stop web
-  docker rm all
-]])
-    
+if arg[1] == nil or arg[1] == "help" then
+elseif not host then print("Docker Service not runnning")
 elseif arg[1] == "ps" then
-    local result = os.execute("svchost dockerd ps")
-    print(result or "No containers running")
-    
+    containers = os.request(host, "ps")
+
+    local output = "CONTAINER ID\tNAME\tSTATUS\tPID\n"
+    for container_id, container in pairs(containers) do
+        output = output .. container_id .. "\t" .. (container.name or "unnamed") .. "\t" .. (container.status or "unknown") .. "\t" .. (container.pid or "none") .. "\n"
+    end
+    return output
 elseif arg[1] == "run" then
     local name = arg[2] and arg[2]:match("^--name=(.+)")
     local script
