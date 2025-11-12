@@ -1,5 +1,5 @@
 os = {
-    execute = function (command) return 0 end,
+    execute = function (command, sudo) return 0 end,
     getenv = function (key) return nil or key end,
     clock = function () end,
     setlocale = function (locale) end,
