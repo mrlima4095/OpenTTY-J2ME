@@ -89,12 +89,10 @@ function app.GetFile()
                 local content = io.read(filename)
 
                 if content == "" then
-                    graphics.display(graphics.Alert({
-                        title = "PasteBin",
-                        message = "File '" .. filename .. "' is empty!",
-                        back = { root = function () app.GetFile() end }
-                    }))
-                else app.paste(content) end
+                    graphics.display(graphics.Alert({ title = "PasteBin", message = "File '" .. filename .. "' is empty!", back = { root = function () app.GetFile() end } }))
+                else
+                    app.paste(content) 
+                end
             end
         }
    }))
