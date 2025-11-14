@@ -1446,6 +1446,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 006 - (Process)
     // |
     // Process
+    public int sendSignal(String pid, String signal, int id) { }
     public int kill(String pid, boolean print, int id) {
         if (pid == null || pid.length() == 0) { return 2; }
 
