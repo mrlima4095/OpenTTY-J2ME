@@ -81,6 +81,7 @@ Copyright (C) 2025 - Mr. Lima
 
 - Files written in **/tmp/** will be deleted when MIDlet closes
 - **OpenTTY API** official development programming language is now **Lua**
+- A **Lua** service call `arg[1]` is argument `--deamon`
 - In limited memory devices you can disable shell **PATH** search by running `stty classpath=false`
 - To use command `sed` download it in **PackJ**, this package is named _StringEditor_
 - Documentation available on Github Wiki page
