@@ -58,12 +58,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
     public int setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); return 0; }
     public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
-        public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18, NETMAN = 19;
+        public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 7, LOCK = 8, NC = 9, PRSCAN = 10, GOBUSTER = 11, BIND = 12, SCREEN = 13, LIST = 14, QUEST = 15, WEDIT = 16, BG = 17, ADDON = 18, NETMAN = 19, FILE = 20;
         public static final String impl = "full";
 
         private int MOD = -1, COUNT = 1, id = 1000, start;
-        private boolean ignore = true, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals(""), isOpen = true;
-        private String command = null, pfilter = "", PID = genpid(), DB, address, port, node, proc_name;
+        private boolean ignore = true, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals(""), isOpen = true, closed = false;
+        private String command = null, pfilter = "", PID = genpid(), DB, address, port, node, proc_name, filename;
         private Vector history = (Vector) getobject("1", "history");
         private Hashtable sessions = (Hashtable) getobject("1", "sessions"), PKG;
         private Alert confirm;
@@ -298,6 +298,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         public MIDletControl(String name, String command, boolean ignore, int id) { this.MOD = BG; this.command = command; this.ignore = ignore; this.id = id; new Thread(this, name).start(); }
         public MIDletControl(String pid, String name, String command, boolean ignore, int id) { this.MOD = ADDON; this.PID = pid; this.command = command; this.ignore = ignore; this.id = id; new Thread(this, name).start(); }
+
+        public MIDletControl(String filename, int id) {
+            
+        }
+        public MIDletControl(String filename, String content) {}
+        public MIDletControl(String filename, StringItem item) {}
+        public MIDletControl(String filename, InputStream in, OutputStream out) {}
+        public MIDletControl(String filename, SocketConnection socket) {}
+        public MIDletControl(String filename, SocketConnection socket, InputStream in, OutputStream out) {}
+
+        public Object read(int length) { }
+        public void write(byte[] data) { }
 
         public void commandAction(Command c, Displayable d) {
             if (c == BACK) { 
