@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
-    public String logs = "", path = "/home/", build = "2025-1.17-03x00";
+    public String logs = "", path = "/home/", build = "2025-1.17-03x01";
     public Display display = Display.getDisplay(this);
     public TextBox nano = new TextBox("Nano", "", 31522, TextField.ANY);
     public Form form = new Form(null);
@@ -1217,6 +1217,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         catch (Error e) { if (e.getMessage() != null) { echoCommand(e.getMessage()); } return lua.status; }
                     } else { echoCommand("svchost: " + args[0] + ": not a service"); return 2; }
                 } else { echoCommand("svchost: " + args[0] + ": not found"); return 127; }
+            }
+        }
+        else if (mainCommand.equals("trap")) {
+            if (argument.equals("")) { }
+            else {
+
             }
         }
 
