@@ -5,9 +5,7 @@ import javax.microedition.io.file.*;
 import javax.wireless.messaging.*;
 import javax.microedition.media.*;
 import javax.microedition.rms.*;
-import javax.microedition.pki.*;
 import javax.microedition.io.*;
-import javax.bluetooth.*;
 import java.util.*;
 import java.io.*;
 // |
