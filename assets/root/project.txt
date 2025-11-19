@@ -1,5 +1,6 @@
     Lua
         Add support for coroutines
+        Add support to register Connections on System by source or force this
     Lua Service Host
 *       Add a database with services to be real initialized with Command 'start'
         Special applications attributes for Service Host
