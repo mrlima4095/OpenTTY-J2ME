@@ -29,3 +29,5 @@
     Release 1.17 -> main
     Optimize RMS Archives
     Auto fix errors
+
+1.17 - Will be released with all features of new FileSystem, SheBangs, Service Host and the Yang Lua Edition
