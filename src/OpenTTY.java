@@ -132,7 +132,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 new Thread(this, "Remote").start();
             }
         }
-        public MIDletControl(Form screen, String node, String code, int id) { if (code == null || code.length() == 0) { return; } this.PKG = parseProperties(code); this.node = node; this.id = id; if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params"); return; } RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); s.setFont(newFont(getenv(node + ".style", "default"))); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(RUN); s.setDefaultCommand(RUN); s.setItemCommandListener(this); screen.append(s); }
+        public MIDletControl(Form screen, String node, String code, int id, Object stdout) { if (code == null || code.length() == 0) { return; } this.PKG = parseProperties(code); this.node = node; this.id = id; if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params", id, stdout); return; } RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); s.setFont(newFont(getenv(node + ".style", "default"))); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(RUN); s.setDefaultCommand(RUN); s.setItemCommandListener(this); screen.append(s); }
         public MIDletControl(String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = BG; this.command = command; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
         public MIDletControl(String pid, String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = ADDON; this.PID = pid; this.command = command; this.enable = enable; this.id = id;  this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
     
@@ -691,10 +691,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } 
                     else { print("chmod: " + args[i] + ": not found", stdout); return 127; } 
                     
-                    if (STATUS == 0) { MIDletLogs("add info Permission '" + NODE + "' granted"); } 
-                    else if (STATUS == 1) { MIDletLogs("add debug Permission '" + NODE + "' granted with exceptions"); } 
-                    else if (STATUS == 13) { MIDletLogs("add error Permission '" + NODE + "' denied"); } 
-                    else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + NODE + "'"); } 
+                    if (STATUS == 0) { MIDletLogs("add info Permission '" + NODE + "' granted", id, stdout); } 
+                    else if (STATUS == 1) { MIDletLogs("add debug Permission '" + NODE + "' granted with exceptions", id, stdout); } 
+                    else if (STATUS == 13) { MIDletLogs("add error Permission '" + NODE + "' denied", id, stdout); } 
+                    else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + NODE + "'", id, stdout); } 
                     
                     if (STATUS > 1) { break; } 
                 }
@@ -730,7 +730,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("title")) { xterm.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument.equals("hide") ? null : argument) }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { print(display.getCurrent().getTicker().getString(), stdout); } else { return xcli("tick " + argument, id, stdout, scope); } }
         // |
-        else if (mainCommand.equals("log")) { return MIDletLogs(argument); }
+        else if (mainCommand.equals("log")) { return MIDletLogs(argument, id, stdout); }
         else if (mainCommand.equals("logcat")) { print(logs, stdout); }
         // |
         else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { print(id == 0 ? "root" : username); }
@@ -816,10 +816,85 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     
     // Logging Manager
-    public int MIDletLogs(String command) { }
+    public int MIDletLogs(String command, int id, Object stdout) { 
+        command = env(command.trim()); 
+        String mainCommand = getCommand(command), argument = getArgument(command); 
+        
+        if (mainCommand.equals("")) { } 
+        else if (mainCommand.equals("clear")) { logs = ""; } 
+        else if (mainCommand.equals("swap")) { write(argument.equals("") ? "logs" : argument, logs, 1000); } 
+        else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } 
+        else if (mainCommand.equals("add")) { 
+            String level = getCommand(argument).toLowerCase(), message = getArgument(argument); 
+            
+            if (message.equals("")) { }
+            else {
+                if (level.equals("info") || level.equals("warn") || level.equals("debug") || level.equals("error")) { 
+                    logs += "[" + level.toUpperCase() + "] " + split(new java.util.Date().toString(), ' ')[3] + " " + message + "\n"; 
+                }
+                else { print("log: add: " + level + ": not found", stdout); return 127; } 
+            } 
+        } else { print("log: " + mainCommand + ": not found", stdout); return 127; } 
+
+        return 0; 
+    }
 
     // Graphics
-    public int xcli(String command, int id, Object stdout, Hashtable scope) { }
+    public int xcli(String command, int id, Object stdout, Hashtable scope) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command), argument = getArgument(command);
+        String[] args = splitArgs(getArgument(command));
+
+        if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2025-05-04\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); }
+        else if (mainCommand.equals("version")) { print("X Server " + ((String) attributes.get("XVERSION")), stdout); }
+        else if (mainCommand.equals("buffer")) { print(display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight(), stdout); }
+        // |
+        else if (mainCommand.equals("term")) { display.setCurrent(xterm); }
+        else if (mainCommand.equals("init")) { if (argument.equals("/dev/stdin")) { xterm.append(stdin); } else if (argument.equals("/dev/stdout")) { xterm.append(stdout); } else { start("x11-wm", null, null, id); } }
+        else if (mainCommand.equals("stop")) { xterm.setTitle(""); xterm.setTicker(null); xterm.deleteAll(); xcli("cmd hide", id, stdout, scope); xterm.removeCommand(EXECUTE); sys.remove("2"); }
+        else if (mainCommand.equals("cmd")) {  }
+        // |
+        else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
+        else if (mainCommand.equals("font")) { stdout.setFont(genFont(argument.equals("") ? "default" : argument)); }
+        else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
+        else if (mainCommand.equals("gauge")) { Alert alert = new Alert(xterm.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
+        // |
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else if (trace.containsKey("2")) { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); } else { return 69; } }
+        else if (mainCommand.equals("load") || mainCommand.equals("unset")) {
+            if (argument.equals("")) { }
+            else if (sys.containsKey("2")) {
+                Hashtable desktops = (Hashtable) getobject("2", "saves");
+
+                if (desktops.containsKey(argument)) {
+                    if (mainCommand.equals("load")) { display.setCurrent((Displayable) desktops.get(argument)); }
+                    else { desktops.remove(argument); }
+                } 
+                else { print("x11: " + mainCommand + ": " + argument + ": not found", stdout); return 127; }
+            } 
+            else { return 69; }
+        }
+        else if (mainCommand.equals("import") || mainCommand.equals("export")) { 
+            if (argument.equals("")) { } 
+            else {
+                if (trace.containsKey(argument)) {
+                    if (!getowner(argument).equals(username) && id != 0) { print("Permission denied!", stdout); return 13; }
+
+                    if (mainCommand.equals("import")) {
+                        Displayable screen = (Displayable) getobject(argument, "screen");
+
+                        if (screen == null) { print("x11: import: " + argument + ": no screens", stdout); return 69; }
+                        else { display.setCurrent(screen); }
+                    } 
+                    else { ((Hashtable) getprocess(argument)).put("screen", display.getCurrent()); }
+                } 
+                else { print("x11: " + mainCommand + ": " + argument + ": not found", stdout); return 127; }
+            } 
+        }
+        // |
+        else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { xterm.deleteAll(); xterm.append(stdout); xterm.append(stdin); } else { new MIDletControl(xterm, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), id); } }
+
+        else { print("x11: " + mainCommand + ": not found", stdou); return 127; 
+    }
     // |
     public void print(String message, Object stdout) { print(message, stdout, true); }
     public void print(String message, Object stdout, boolean log) {
