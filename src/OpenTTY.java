@@ -1222,6 +1222,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
 
+        else if (mainCommand.equals("uptime")) {
+            echoCommand("" + System.currentTimeMillis() - uptime);
+        }
+
         // API 015 - (Scripts)
         // |
         // OpenTTY Packages
