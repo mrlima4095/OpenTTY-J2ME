@@ -692,19 +692,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 007 - (Bundle)
         // |
         // Properties
-        else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
-        else if (mainCommand.equals("uname")) { String INFO = argument.equals("") || argument.equals("-i") ? "$TYPE" : argument.equals("-a") || argument.equals("--all") ? "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE" : argument.equals("-r") || argument.equals("--release") ? "$VERSION" : argument.equals("-v") || argument.equals("--build") ? build : argument.equals("-s") ? "J2ME" : argument.equals("-m") ? "$PROFILE" : argument.equals("-p") ? "$CONFIG" : argument.equals("-n") ? "$HOSTNAME" : null; if (INFO == null) { echoCommand("uname: " + argument + ": not found"); return 127; } else { echoCommand(env(INFO)); } }
+        //else if (mainCommand.equals("pkg")) { echoCommand(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument)); }
+        //String INFO = argument.equals("") || argument.equals("-i") ? "$TYPE" : argument.equals("-a") || argument.equals("--all") ? "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE" : argument.equals("-r") || argument.equals("--release") ? "$VERSION" : argument.equals("-v") || argument.equals("--build") ? build : argument.equals("-s") ? "J2ME" : argument.equals("-m") ? "$PROFILE" : argument.equals("-p") ? "$CONFIG" : argument.equals("-n") ? "$HOSTNAME" : null; if (INFO == null) { echoCommand("uname: " + argument + ": not found"); return 127; } else { echoCommand(env(INFO)); } else if (mainCommand.equals("uname")) { String INFO = argument.equals("") || argument.equals("-i") ? "$TYPE" : argument.equals("-a") || argument.equals("--all") ? "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE" : argument.equals("-r") || argument.equals("--release") ? "$VERSION" : argument.equals("-v") || argument.equals("--build") ? build : argument.equals("-s") ? "J2ME" : argument.equals("-m") ? "$PROFILE" : argument.equals("-p") ? "$CONFIG" : argument.equals("-n") ? "$HOSTNAME" : null; if (INFO == null) { echoCommand("uname: " + argument + ": not found"); return 127; } else { echoCommand(env(INFO)); } }
         // |
         // Device ID
-        else if (mainCommand.equals("hostname")) { processCommand(argument.equals("") ? "echo $HOSTNAME" : "set HOSTNAME=" + getCommand(argument), false, id, pid, stdout, scope); }
-        else if (mainCommand.equals("hostid")) { String DATA = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int HASH = 7; for (int i = 0; i < DATA.length(); i++) { HASH = HASH * 31 + DATA.charAt(i); } echoCommand(Integer.toHexString(HASH).toLowerCase()); }
+        //else if (mainCommand.equals("hostname")) { processCommand(argument.equals("") ? "echo $HOSTNAME" : "set HOSTNAME=" + getCommand(argument), false, id, pid, stdout, scope); }
+        //else if (mainCommand.equals("hostid")) { String DATA = System.getProperty("microedition.platform") + System.getProperty("microedition.configuration") + System.getProperty("microedition.profiles"); int HASH = 7; for (int i = 0; i < DATA.length(); i++) { HASH = HASH * 31 + DATA.charAt(i); } echoCommand(Integer.toHexString(HASH).toLowerCase()); }
 
         // API 008 - (Logic I/O) Text
         // |
         // TTY
-        else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
-        else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
-        else if (mainCommand.equals("stty")) {
+        //else if (mainCommand.equals("tty")) { echoCommand(env("$TTY")); }
+        //else if (mainCommand.equals("ttysize")) { echoCommand(stdout.getText().length() + " B"); }
+        /*else if (mainCommand.equals("stty")) {
             if (argument.equals("")) { echoCommand("" + TTY_MAX_LEN); }
             else if (argument.indexOf("=") != -1) {
                 if (argument.substring(0, argument.indexOf("=")).equals("classpath")) { classpath = argument.substring(argument.indexOf("=") + 1).equals("true"); }
@@ -721,36 +721,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (TTY.containsKey("max-length")) { try { TTY_MAX_LEN = Integer.parseInt((String) TTY.get("max-length")); } catch (Exception e) { notifyDestroyed(); } }
                 if (TTY.containsKey("classpath")) { classpath = ((String) TTY.get("classpath")).equals("true"); }
             } 
-        }
+        }*/
         // |
         // Text related commands
-        else if (mainCommand.equals("echo")) { echoCommand(argument); }
-        else if (mainCommand.equals("buff")) { stdin.setString(argument); }
-        else if (mainCommand.equals("uuid")) { echoCommand(generateUUID()); }
-        else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
-        else if (mainCommand.equals("expr")) { echoCommand(exprCommand(argument)); }
-        else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
-        else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
-        else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
-        else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
-        else if (mainCommand.equals("clear")) { if (argument.equals("")) { stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { echoCommand("clear: " + args[i] + ": not found"); return 127; } } } }
-        else if (mainCommand.equals("seed")) { try { echoCommand("" + random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } }
+        //else if (mainCommand.equals("echo")) { echoCommand(argument); }
+        //else if (mainCommand.equals("buff")) { stdin.setString(argument); }
+        //else if (mainCommand.equals("uuid")) { echoCommand(generateUUID()); }
+        //else if (mainCommand.equals("locale")) { echoCommand(env("$LOCALE")); }
+        //else if (mainCommand.equals("expr")) { echoCommand(exprCommand(argument)); }
+        //else if (mainCommand.equals("basename")) { echoCommand(basename(argument)); }
+        //else if (mainCommand.equals("getopt")) { echoCommand(getArgument(argument)); }
+        //else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
+        //else if (mainCommand.equals("date")) { echoCommand(new java.util.Date().toString()); }
+        //else if (mainCommand.equals("clear")) { if (argument.equals("")) { stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { echoCommand("clear: " + args[i] + ": not found"); return 127; } } } }
+        //else if (mainCommand.equals("seed")) { try { echoCommand("" + random.nextInt(Integer.parseInt(argument)) + ""); } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } }
 
         // API 009 - (Threads)
         // |
         // MIDlet Tracker
-        else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
-        else if (mainCommand.equals("mmspt") || mainCommand.equals("chrt")) { if (argument.equals("")) { echoCommand(getThreadName(Thread.currentThread())); } else if (argument.equals("priority")) { echoCommand("" + Thread.currentThread().getPriority()); } else { int value = getNumber(argument, Thread.NORM_PRIORITY, true); if (value > 10 || value < 1) { return 2; } else { Thread.currentThread().setPriority(value); } } }
-        else if (mainCommand.equals("bg")) { if (argument.equals("")) { } else { new MIDletControl("Background", argument, ignore, id); } }
+        //else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
+        //else if (mainCommand.equals("mmspt") || mainCommand.equals("chrt")) { if (argument.equals("")) { echoCommand(getThreadName(Thread.currentThread())); } else if (argument.equals("priority")) { echoCommand("" + Thread.currentThread().getPriority()); } else { int value = getNumber(argument, Thread.NORM_PRIORITY, true); if (value > 10 || value < 1) { return 2; } else { Thread.currentThread().setPriority(value); } } }
+        //else if (mainCommand.equals("bg")) { if (argument.equals("")) { } else { new MIDletControl("Background", argument, ignore, id); } }
 
         // API 010 - (Requests)
         // |
         // Connecting to Device API
-        else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
-        else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); return 127; } } }
+        //else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
+        //else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { echoCommand("open: " + argument + ": not found"); return 127; } } }
         // |
         // PushRegistry
-        else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (ClassNotFoundException e) { echoCommand("prg: " + getArgument(argument) + ": not found"); return 127; } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } catch (Exception e) { echoCommand(getCatch(e)); return 3; } }
+        //else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (ClassNotFoundException e) { echoCommand("prg: " + getArgument(argument) + ": not found"); return 127; } catch (NumberFormatException e) { echoCommand(getCatch(e)); return 2; } catch (Exception e) { echoCommand(getCatch(e)); return 3; } }
 
         // API 011 - (Network)
         // |
@@ -760,21 +760,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) { return runScript(RESPONSE, id); } } } 
         // |
         // Socket Interfaces
-        else if (mainCommand.equals("query")) { return query(argument, id); }
-        else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
+        //else if (mainCommand.equals("query")) { return query(argument, id); }
+        //else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
         else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster") || mainCommand.equals("bind")) { new MIDletControl(mainCommand, argument, id); }
         // |
-        else if (mainCommand.equals("wrl")) { String ID = System.getProperty("wireless.messaging.sms.smsc"); if (ID == null) { echoCommand("Unsupported API"); return 3; } else { echoCommand(ID); } }
-        else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); Hashtable sessions = (Hashtable) getobject("1", "sessions"); boolean all = argument.indexOf("-a") != -1; for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); if (!all && (ADDR.equals("http-cli") || ADDR.equals("nobody"))) { } else { echoCommand(PORT + "\t" + ADDR); } } }
+        //else if (mainCommand.equals("wrl")) { String ID = System.getProperty("wireless.messaging.sms.smsc"); if (ID == null) { echoCommand("Unsupported API"); return 3; } else { echoCommand(ID); } }
+        //else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); Hashtable sessions = (Hashtable) getobject("1", "sessions"); boolean all = argument.indexOf("-a") != -1; for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); if (!all && (ADDR.equals("http-cli") || ADDR.equals("nobody"))) { } else { echoCommand(PORT + "\t" + ADDR); } } }
         // |
         // IP Tools
-        else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
-        else if (mainCommand.equals("genip")) { echoCommand(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256)); }
-        else if (mainCommand.equals("ifconfig")) { if (argument.equals("")) { argument = "1.1.1.1:53"; } try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); echoCommand(CONN.getLocalAddress()); CONN.close(); } catch (Exception e) { echoCommand("null"); return 101; } }
+        //else if (mainCommand.equals("fw")) { echoCommand(request("http://ipinfo.io/" + (argument.equals("") ? "json" : argument))); }
+        //else if (mainCommand.equals("genip")) { echoCommand(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256)); }
+        //else if (mainCommand.equals("ifconfig")) { if (argument.equals("")) { argument = "1.1.1.1:53"; } try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); echoCommand(CONN.getLocalAddress()); CONN.close(); } catch (Exception e) { echoCommand("null"); return 101; } }
         // |
-        else if (mainCommand.equals("report")) { return processCommand("open mailto:felipebr4095@gmail.com", false, id, pid, stdout, scope); }
-        else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
-        else if (mainCommand.equals("netstat")) { 
+        //else if (mainCommand.equals("report")) { return processCommand("open mailto:felipebr4095@gmail.com", false, id, pid, stdout, scope); }
+        //else if (mainCommand.equals("mail")) { echoCommand(request(getAppProperty("MIDlet-Proxy") + "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/mail.txt")); } 
+        /*else if (mainCommand.equals("netstat")) { 
             if (argument.equals("") || args[0].equals("-a")) {
                 echoCommand("Active Connections:\nPID\tName\tLocal\tRemote\tState");
                 
@@ -821,16 +821,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return STATUS; 
             }
             
-        }
+        }*/
         
         // API 012 - (File)
         // |
         // Directories Manager
-        else if (mainCommand.equals("pwd")) { echoCommand(path); }
-        else if (mainCommand.equals("dir")) { new MIDletControl("dir", id); }
-        else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
-        else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
-        else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
+        //else if (mainCommand.equals("pwd")) { echoCommand(path); }
+        //else if (mainCommand.equals("dir")) { new MIDletControl("dir", id); }
+        //else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
+        //else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
+        /*else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
             String old_pwd = path;
             if (argument.equals("") && mainCommand.equals("cd")) { path = "/home/"; } 
             else if (argument.equals("")) { echoCommand(readStack() == null || readStack().length() == 0 ? "pushd: missing directory": readStack()); }
@@ -882,9 +882,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
 
             if (mainCommand.equals("pushd")) { ((Vector) getobject("1", "stack")).addElement(old_pwd); echoCommand(readStack()); }
-        }
-        else if (mainCommand.equals("popd")) { Vector stack = (Vector) getobject("1", "stack"); if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
-        else if (mainCommand.equals("ls")) { 
+        }*/
+        //else if (mainCommand.equals("popd")) { Vector stack = (Vector) getobject("1", "stack"); if (stack.isEmpty()) { echoCommand("popd: empty stack"); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); echoCommand(readStack()); } }
+        /*else if (mainCommand.equals("ls")) { 
             boolean all = false, verbose = false;
 
             while (true) {
@@ -976,14 +976,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 echoCommand(formatted.trim()); 
             } 
-        }
+        }*/
         // |
         // Device Files
-        else if (mainCommand.equals("fdisk")) { return processCommand("ls /mnt/", false, id, pid, stdout, scope); }
-        else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else { echoCommand("lsblk: " + argument + ": not found"); return 127; } }
+        //else if (mainCommand.equals("fdisk")) { return processCommand("ls /mnt/", false, id, pid, stdout, scope); }
+        //else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { echoCommand(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t")); } else { echoCommand("lsblk: " + argument + ": not found"); return 127; } }
         // |
         // RMS Files
-        else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = deleteFile(args[i], id); if (STATUS != 0) { return STATUS; } } } }
+        /*else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = deleteFile(args[i], id); if (STATUS != 0) { return STATUS; } } } }
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { return writeRMS(argument, nanoContent, id); } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { nanoContent = ""; } else { for (int i = 0; i < args.length; i++) { int STATUS = writeRMS(argument, "", id); if (STATUS != 0) { return STATUS; } } } }
         else if (mainCommand.equals("mkdir")) { if (argument.equals("")) { } else { argument = argument.endsWith("/") ? argument : argument + "/"; argument = argument.startsWith("/") ? argument : path + argument; if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { echoCommand("mkdir: " + basename(argument) + ": found"); } CONN.close(); } catch (Exception e) { echoCommand(getCatch(e)); return (e instanceof SecurityException) ? 13 : 1; } } else if (argument.startsWith("/home/") || argument.startsWith("/tmp/")) { echoCommand("Unsupported API"); return 3; } else if (argument.startsWith("/")) { echoCommand("read-only storage"); return 5; } } }
@@ -1018,23 +1018,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { echoCommand("rmsfix: " + args[0] + ": not found"); return 127; }
             }
             else { echoCommand("rmsfix: " + args[0] + ": not found"); return 127; }
-        }
+        }*/
         // |
         // Text Manager
-        else if (mainCommand.equals("rraw")) { stdout.setText(nanoContent); }
-        else if (mainCommand.equals("getty")) { nanoContent = stdout.getText(); }
-        else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
-        else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
-        else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { processCommand("wc -c " + argument, false, id, pid, stdout, scope); } }
-        else if (mainCommand.equals("cat") || mainCommand.equals("raw")) { if (argument.equals("")) { echoCommand(nanoContent); } else { for (int i = 0; i < args.length; i++) { echoCommand(getcontent(args[i])); } } }
-        else if (mainCommand.equals("get")) { nanoContent = argument.equals("") || argument.equals("nano") ? loadRMS("nano") : getcontent(argument); }
-        else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
-        else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
-        else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String VALUE = (String) parseProperties(getcontent(args[1])).get(args[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
-        else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0]); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, false) : 10, LINES.length); for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } } }
-        else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0]); String[] LINES = split(CONTENT, '\n'); int COUNT = args.length > 1 ? getNumber(args[1], 10, false) : 10; COUNT = Math.max(0, LINES.length - COUNT); for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } } }
-        else if (mainCommand.equals("diff")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] LINES1 = split(getcontent(args[0]), '\n'), LINES2 = split(getcontent(args[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
-        else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { int MODE = args[0].indexOf("-c") != -1 ? 1 : args[0].indexOf("-w") != -1 ? 2 : args[0].indexOf("-l") != -1 ? 3 : 0; if (MODE != 0) { argument = join(args, " ", 1); } String CONTENT = getcontent(argument), FILENAME = basename(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } echoCommand(MODE == 0 ? LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME : MODE == 1 ? CHARS + "\t" + FILENAME : MODE == 2 ? WORDS + "\t" + FILENAME : LINES + "\t" + FILENAME); } }
+        //else if (mainCommand.equals("rraw")) { stdout.setText(nanoContent); }
+        //else if (mainCommand.equals("getty")) { nanoContent = stdout.getText(); }
+        //else if (mainCommand.equals("add")) { nanoContent = nanoContent.equals("") ? argument : nanoContent + "\n" + argument; } 
+        //else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { echoCommand("" + getcontent(argument).hashCode()); } }
+        //else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { processCommand("wc -c " + argument, false, id, pid, stdout, scope); } }
+        //else if (mainCommand.equals("cat") || mainCommand.equals("raw")) { if (argument.equals("")) { echoCommand(nanoContent); } else { for (int i = 0; i < args.length; i++) { echoCommand(getcontent(args[i])); } } }
+        //else if (mainCommand.equals("get")) { nanoContent = argument.equals("") || argument.equals("nano") ? loadRMS("nano") : getcontent(argument); }
+        //else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
+        //else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { echoCommand(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false"); } }
+        //else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String VALUE = (String) parseProperties(getcontent(args[1])).get(args[0]); echoCommand(VALUE != null ? VALUE : "null"); } }
+        //else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0]); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, false) : 10, LINES.length); for (int i = 0; i < COUNT; i++) { echoCommand(LINES[i]); } } }
+        //else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0]); String[] LINES = split(CONTENT, '\n'); int COUNT = args.length > 1 ? getNumber(args[1], 10, false) : 10; COUNT = Math.max(0, LINES.length - COUNT); for (int i = COUNT; i < LINES.length; i++) { echoCommand(LINES[i]); } } }
+        //else if (mainCommand.equals("diff")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] LINES1 = split(getcontent(args[0]), '\n'), LINES2 = split(getcontent(args[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { echoCommand("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
+        //else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { int MODE = args[0].indexOf("-c") != -1 ? 1 : args[0].indexOf("-w") != -1 ? 2 : args[0].indexOf("-l") != -1 ? 3 : 0; if (MODE != 0) { argument = join(args, " ", 1); } String CONTENT = getcontent(argument), FILENAME = basename(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } echoCommand(MODE == 0 ? LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME : MODE == 1 ? CHARS + "\t" + FILENAME : MODE == 2 ? WORDS + "\t" + FILENAME : LINES + "\t" + FILENAME); } }
         // |
         // Text Parsers
         else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
@@ -1054,10 +1054,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 013 - (MIDlet)
         // |
         // Java Runtime
-        else if (mainCommand.equals("java")) { return java(argument); }
+        //else if (mainCommand.equals("java")) { return java(argument); }
         // |
         // Permissions
-        else if (mainCommand.equals("chmod")) { 
+        /*else if (mainCommand.equals("chmod")) { 
             if (argument.equals("")) { } 
             else if (argument.equals("*")) { return processCommand("chmod http socket file prg", false, id, pid, stdout, scope); }
             else { 
@@ -1087,11 +1087,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 return STATUS; 
             } 
-        }
+        }*/
         // |
         // General Utilities
-        else if (mainCommand.equals("history")) { new MIDletControl("history", id); }
-        else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/res/docs")); }
+        //else if (mainCommand.equals("history")) { new MIDletControl("history", id); }
+        //else if (mainCommand.equals("help")) { viewer(form.getTitle(), read("/res/docs")); }
         else if (mainCommand.equals("man")) { 
             boolean verbose = argument.indexOf("-v") != -1; 
             argument = replace(argument, "-v", "").trim(); 
@@ -1117,19 +1117,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else { viewer(form.getTitle(), content); } 
             }
         }
-        else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
-        else if (mainCommand.equals("false")) { return 255; }
+        //else if (mainCommand.equals("true") || mainCommand.startsWith("#")) { }
+        //else if (mainCommand.equals("false")) { return 255; }
 
-        else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : file("/bin/" + mainCommand) ? "application" : ""))); } }
+        //else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { echoCommand(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : file("/bin/" + mainCommand) ? "application" : ""))); } }
 
         // API 014 - (OpenTTY)
         // |
         // Low-level commands
-        else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
-        else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); }
-        else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; sh; x11 stop; x11 init; . /home/.initrc", true, id, pid, stdout, scope); } 
+        //else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
+        //else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, true) * 100); }
+        //else if (mainCommand.equals("@reload")) { aliases = new Hashtable(); shell = new Hashtable(); functions = new Hashtable(); username = loadRMS("OpenRMS"); processCommand("execute log add debug API reloaded; sh; x11 stop; x11 init; . /home/.initrc", true, id, pid, stdout, scope); } 
         else if (mainCommand.equals("@name")) { echoCommand(this.toString()); }
-        else if (mainCommand.startsWith("@")) { echoCommand("mod: " + mainCommand.substring(1) + ": not found"); } 
+        //else if (mainCommand.startsWith("@")) { echoCommand("mod: " + mainCommand.substring(1) + ": not found"); } 
         
         else if (mainCommand.equals("lua")) { 
             if (javaClass("Lua") == 0) { 
@@ -1229,19 +1229,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 015 - (Scripts)
         // |
         // OpenTTY Packages
-        else if (mainCommand.equals("about")) { about(argument); }
-        else if (mainCommand.equals("import")) { return importScript(getcontent(argument), id); }
+        //else if (mainCommand.equals("about")) { about(argument); }
+        //else if (mainCommand.equals("import")) { return importScript(getcontent(argument), id); }
         else if (mainCommand.equals("function")) { if (argument.equals("")) { } else { int braceIndex = argument.indexOf('{'), braceEnd = argument.lastIndexOf('}'); if (braceIndex != -1 && braceEnd != -1 && braceEnd > braceIndex) { String name = getCommand(argument).trim(); String body = replace(argument.substring(braceIndex + 1, braceEnd).trim(), ";", "\n"); functions.put(name, body); } else { echoCommand("invalid syntax"); return 2; } } }
 
-        else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument, ignore, id, pid, stdout, scope)); } }
-        else if (mainCommand.equals("catch")) { if (argument.equals("")) { } else { try { processCommand(argument, ignore, id, pid, stdout, scope); } catch (Throwable e) { echoCommand(getCatch(e)); } } }
-        else if (mainCommand.equals("return")) { return getNumber(argument, 2, true); }
+        //else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { echoCommand("" + processCommand(argument, ignore, id, pid, stdout, scope)); } }
+        //else if (mainCommand.equals("catch")) { if (argument.equals("")) { } else { try { processCommand(argument, ignore, id, pid, stdout, scope); } catch (Throwable e) { echoCommand(getCatch(e)); } } }
+        //else if (mainCommand.equals("return")) { return getNumber(argument, 2, true); }
 
-        else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE")); }
-        else if (mainCommand.equals("!!")) { stdin.setString((argument.equals("") ? "" : argument + " ") + getLastHistory()); }
-        else if (mainCommand.equals(".")) { return run(argument, args, id); }
+        //else if (mainCommand.equals("!")) { echoCommand(env("main/$RELEASE")); }
+        //else if (mainCommand.equals("!!")) { stdin.setString((argument.equals("") ? "" : argument + " ") + getLastHistory()); }
+        //else if (mainCommand.equals(".")) { return run(argument, args, id); }
         
-        else { echoCommand(mainCommand + ": not found"); return 127; }
+        //else { echoCommand(mainCommand + ": not found"); return 127; }
 
         return 0;
     }
