@@ -1653,50 +1653,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getpid(String name) { for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) trace.get(PID)).get("name"))) { return PID; } } return null; } 
     public String getowner(String pid) { return trace.containsKey(pid) ? (String) ((Hashtable) trace.get(pid)).get("owner") : null; }
     // | (Viewer)
-    private String renderJSON(Object obj, int indent) {
-        StringBuffer json = new StringBuffer();
-        String pad = "";
-        for (int i = 0; i < indent; i++) pad += "  ";
-
-        if (obj instanceof Hashtable) {
-            Hashtable map = (Hashtable) obj;
-            json.append("{\n");
-            Enumeration keys = map.keys();
-            while (keys.hasMoreElements()) {
-                String key = (String) keys.nextElement();
-                Object val = map.get(key);
-                json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1));
-                if (keys.hasMoreElements()) { json.append(","); }
-                json.append("\n");
-            }
-
-            json.append(pad + "}");
-        }
-
-        else if (obj instanceof Vector) {
-            Vector list = (Vector) obj;
-            json.append("[\n");
-            for (int i = 0; i < list.size(); i++) {
-                json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1));
-
-                if (i < list.size() - 1) json.append(",");
-                
-                json.append("\n");
-            }
-            json.append(pad + "]");
-        }
-        else if (obj instanceof String) {
-            String s = (String) obj;
-            s = replace(s, "\n", "\\n");
-            s = replace(s, "\r", "\\r");
-            s = replace(s, "\t", "\\t");
-            json.append("\"" + s + "\"");
-        }
-
-        else { json.append(String.valueOf(obj)); }
-
-        return json.toString();
-    }
+    private String renderJSON(Object obj, int indent) { StringBuffer json = new StringBuffer(); String pad = ""; for (int i = 0; i < indent; i++) { pad += "  "; } if (obj instanceof Hashtable) { Hashtable map = (Hashtable) obj; json.append("{\n"); Enumeration keys = map.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); Object val = map.get(key); json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1)); if (keys.hasMoreElements()) { json.append(","); } json.append("\n"); } json.append(pad + "}"); } else if (obj instanceof Vector) { Vector list = (Vector) obj; json.append("[\n"); for (int i = 0; i < list.size(); i++) { json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1)); if (i < list.size() - 1) { json.append(","); } json.append("\n"); } json.append(pad + "]"); } else if (obj instanceof String) { String s = (String) obj; s = replace(s, "\n", "\\n"); s = replace(s, "\r", "\\r"); s = replace(s, "\t", "\\t"); json.append("\"" + s + "\""); } else { json.append(String.valueOf(obj)); } return json.toString(); }
 
     // API 008 - (Logic I/O) Text
     // |
@@ -1969,7 +1926,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // OpenTTY Packages
     private void about(String script) { if (script == null || script.length() == 0) { warnCommand("About", env("OpenTTY $VERSION\n(C) 2025 - Mr. Lima")); return; } Hashtable PKG = parseProperties(getcontent(script)); if (PKG.containsKey("name")) { echoCommand((String) PKG.get("name") + " " + (String) PKG.get("version")); } if (PKG.containsKey("description")) { echoCommand((String) PKG.get("description")); } }
-    private int importScript(String script) { return importScript(script, username.equals("root") ? 0 : 1000); }
     private int importScript(String script, int id) {
         if (script == null || script.length() == 0) { return 2; }
 
@@ -2034,10 +1990,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    private int runScript(String script, int id) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } return 0; }
-    private int runScript(String script) { return runScript(script, username.equals("root") ? 0 : 1000); }
-    // |
-    private int run(String argument, String[] args, int id) { String content = argument.equals("") ? nanoContent : getcontent(args[0]); return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, id) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, false, id, pid, stdout, scope) : importScript(content, id)) : runScript(content, id); }
+    private int runScript(String script, int id, String pid, String stdout, Hashtable scope) { String[] CMDS = split(script, '\n'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), true, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } return 0; }
+    private int run(String argument, String[] args, int id, String pid, String stdout, Hashtable scope) { String content = argument.equals("") ? nanoContent : getcontent(args[0]); return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, id) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, false, id, pid, stdout, scope) : importScript(content, id)) : runScript(content, id); }
 }
 // |
 // EOF
