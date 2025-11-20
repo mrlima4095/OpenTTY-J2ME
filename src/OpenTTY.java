@@ -608,7 +608,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     // MIDlet Shell
-    public int processCommand(String command, boolean ignore, int id, int pid, String stdout, Hashtable scope) { 
+    public int processCommand(String command, boolean ignore, String id, String pid, String stdout, Hashtable scope) { 
         command = command.startsWith("exec") ? command.trim() : env(command.trim());
         String mainCommand = getCommand(command), argument = getpattern(getArgument(command));
         String[] args = splitArgs(getArgument(command));
@@ -1343,7 +1343,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 004 - (LCDUI Interface)
     // |
     // System UI
-    public int xserver(String command, int id) {
+    public int xserver(String command, int id, String pid, String stdout, Hashtable scope) {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
         String[] args = splitArgs(getArgument(command));
@@ -1417,9 +1417,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 005 - (Operators)
     // |
     // Operators
-    private int ifCommand(String argument, boolean ignore, int id) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return 2; } String EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); String[] PARTS = split(EXPR, ' '); if (PARTS.length == 3) { boolean CONDITION = false; boolean NEGATED = PARTS[1].startsWith("!") && !PARTS[1].equals("!="); if (NEGATED) { PARTS[1] = PARTS[1].substring(1); } Double N1 = getNumber(PARTS[0]), N2 = getNumber(PARTS[2]); if (N1 != null && N2 != null) { if (PARTS[1].equals("==")) { CONDITION = N1.doubleValue() == N2.doubleValue(); } else if (PARTS[1].equals("!=")) { CONDITION = N1.doubleValue() != N2.doubleValue(); } else if (PARTS[1].equals(">")) { CONDITION = N1.doubleValue() > N2.doubleValue(); } else if (PARTS[1].equals("<")) { CONDITION = N1.doubleValue() < N2.doubleValue(); } else if (PARTS[1].equals(">=")) { CONDITION = N1.doubleValue() >= N2.doubleValue(); } else if (PARTS[1].equals("<=")) { CONDITION = N1.doubleValue() <= N2.doubleValue(); } } else { if (PARTS[1].equals("startswith")) { CONDITION = PARTS[0].startsWith(PARTS[2]); } else if (PARTS[1].equals("endswith")) { CONDITION = PARTS[0].endsWith(PARTS[2]); } else if (PARTS[1].equals("contains")) { CONDITION = PARTS[0].indexOf(PARTS[2]) != -1; } else if (PARTS[1].equals("==")) { CONDITION = PARTS[0].equals(PARTS[2]); } else if (PARTS[1].equals("!=")) { CONDITION = !PARTS[0].equals(PARTS[2]); } } if (CONDITION != NEGATED) { return processCommand(CMD, ignore, id); } } else if (PARTS.length == 2) { if (PARTS[0].equals(PARTS[1])) { return processCommand(CMD, ignore, id); } } else if (PARTS.length == 1) { if (!PARTS[0].equals("")) { return processCommand(CMD, ignore, id, pid, stdout, scope); } } return 0; }
-    private int forCommand(String argument, boolean ignore, int id) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } String KEY = getCommand(argument), FILE = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()), CMD = argument.substring(lastParenthesis + 1).trim(); if (KEY.startsWith("(")) { return 2; } if (KEY.startsWith("$")) { KEY = replace(KEY, "$", ""); } String[] LINES = split(FILE, '\n'); for (int i = 0; i < LINES.length; i++) { if (LINES[i] != null || LINES[i].length() != 0) { processCommand("set " + KEY + "=" + LINES[i], false, id, pid, stdout, scope); int STATUS = processCommand(CMD, ignore, id, pid, stdout, scope); processCommand("unset " + KEY, false, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } } return 0; }
-    private int caseCommand(String argument, boolean ignore, int id) { 
+    private int ifCommand(String argument, boolean ignore, int id, String pid, String stdout, Hashtable scope) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return 2; } String EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); String[] PARTS = split(EXPR, ' '); if (PARTS.length == 3) { boolean CONDITION = false; boolean NEGATED = PARTS[1].startsWith("!") && !PARTS[1].equals("!="); if (NEGATED) { PARTS[1] = PARTS[1].substring(1); } Double N1 = getNumber(PARTS[0]), N2 = getNumber(PARTS[2]); if (N1 != null && N2 != null) { if (PARTS[1].equals("==")) { CONDITION = N1.doubleValue() == N2.doubleValue(); } else if (PARTS[1].equals("!=")) { CONDITION = N1.doubleValue() != N2.doubleValue(); } else if (PARTS[1].equals(">")) { CONDITION = N1.doubleValue() > N2.doubleValue(); } else if (PARTS[1].equals("<")) { CONDITION = N1.doubleValue() < N2.doubleValue(); } else if (PARTS[1].equals(">=")) { CONDITION = N1.doubleValue() >= N2.doubleValue(); } else if (PARTS[1].equals("<=")) { CONDITION = N1.doubleValue() <= N2.doubleValue(); } } else { if (PARTS[1].equals("startswith")) { CONDITION = PARTS[0].startsWith(PARTS[2]); } else if (PARTS[1].equals("endswith")) { CONDITION = PARTS[0].endsWith(PARTS[2]); } else if (PARTS[1].equals("contains")) { CONDITION = PARTS[0].indexOf(PARTS[2]) != -1; } else if (PARTS[1].equals("==")) { CONDITION = PARTS[0].equals(PARTS[2]); } else if (PARTS[1].equals("!=")) { CONDITION = !PARTS[0].equals(PARTS[2]); } } if (CONDITION != NEGATED) { return processCommand(CMD, ignore, id); } } else if (PARTS.length == 2) { if (PARTS[0].equals(PARTS[1])) { return processCommand(CMD, ignore, id); } } else if (PARTS.length == 1) { if (!PARTS[0].equals("")) { return processCommand(CMD, ignore, id, pid, stdout, scope); } } return 0; }
+    private int forCommand(String argument, boolean ignore, int id, String pid, String stdout, Hashtable scope) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } String KEY = getCommand(argument), FILE = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()), CMD = argument.substring(lastParenthesis + 1).trim(); if (KEY.startsWith("(")) { return 2; } if (KEY.startsWith("$")) { KEY = replace(KEY, "$", ""); } String[] LINES = split(FILE, '\n'); for (int i = 0; i < LINES.length; i++) { if (LINES[i] != null || LINES[i].length() != 0) { processCommand("set " + KEY + "=" + LINES[i], false, id, pid, stdout, scope); int STATUS = processCommand(CMD, ignore, id, pid, stdout, scope); processCommand("unset " + KEY, false, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } } return 0; }
+    private int caseCommand(String argument, boolean ignore, int id, String pid, String stdout, Hashtable scope) { 
         argument = argument.trim(); 
         int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); 
         if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } 
@@ -1450,7 +1450,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Process
     public int sendSignal(String pid, String signal, int id) { }
-    public int kill(String pid, boolean print, int id) {
+    public int kill(String pid, boolean print, int id, String stdout, Hashtable scope) {
         if (pid == null || pid.length() == 0) { return 2; }
 
         Hashtable proc = (Hashtable) trace.get(pid);
@@ -1467,7 +1467,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    public int start(String app, String pid, String collector, int id) {
+    public int start(String app, String pid, String collector, int id, String stdout, Hashtable scope) {
         if (app == null || app.length() == 0) { return 2; }
 
         Hashtable proc = genprocess(app, id, collector);
@@ -1531,10 +1531,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         return 0;
     }
-    public int stop(String app, int id) { if (app == null || app.length() == 0) { return 2; } int STATUS = 0; for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), NAME = (String) ((Hashtable) trace.get(PID)).get("name"); if (app.equals(NAME)) { if ((STATUS = kill(PID, false, id)) != 0) { break; } } } return STATUS; }
+    public int stop(String app, int id, String pid, String stdout, Hashtable scope) { 
+        if (app == null || app.length() == 0) { return 2; } 
+        int STATUS = 0; 
+        
+        for (Enumeration keys = trace.keys(); keys.hasMoreElements();) { 
+            String PID = (String) keys.nextElement(), NAME = (String) ((Hashtable) trace.get(PID)).get("name"); 
+            
+            if (app.equals(NAME)) { if ((STATUS = kill(PID, false, id, stdout, scope)) != 0) { break; } } } return STATUS; }
     // | 
     // Kernel
-    private int kernel(String command, int id) {
+    private int kernel(String command, int id, String stdout, Hashtable scope) {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
         String[] args = splitArgs(argument);
