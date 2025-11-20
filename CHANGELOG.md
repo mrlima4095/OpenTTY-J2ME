@@ -103,4 +103,4 @@ Copyright (C) 2025 - Mr. Lima
 ## 📦 Available Packages
 
 - `Default`: All OpenTTY features
-- `Lite`: **Lua Runtime**, **GoBuster**, **Port Scanner** and **X11 Canvas Service** not available
+- `Lite`: **Lua Runtime**, and **X11 Canvas Service** not available
