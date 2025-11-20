@@ -12,6 +12,7 @@ import java.io.*;
 // OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
     public int TTY_MAX_LEN = 0, cursorX = 10, cursorY = 10;
+    public long uptime = System.currentTimeMillis();
     public boolean classpath = true, useCache = true;
     // |
     public Random random = new Random();
