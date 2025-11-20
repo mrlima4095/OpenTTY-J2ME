@@ -39,11 +39,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
             // |
             Command[] NANO_CMDS = { BACK, CLEAR, RUNS, VIEW }; for (int i = 0; i < NANO_CMDS.length; i++) { nano.addCommand(NANO_CMDS[i]); } nano.setCommandListener(this);
             // |
-            if (runScript(read("/etc/init"), 0) != 0) { destroyApp(true); }
-            setLabel();
+            if (runScript(read("/etc/init"), 0, "1", "/dev/stdout", global) != 0) { destroyApp(true); }
+            setLabel(); String script, int id, String pid, String stdout, Hashtable scope
             // |
             if (username.equals("") || MIDletControl.passwd().equals("")) { new MIDletControl(null); }
-            else { run("/home/.initrc", new String[] { "/home/.initrc" }, 1000); }
+            else { run("/home/.initrc", new String[] { "/home/.initrc" }, 1000, "1", "/dev/stdout", global); }
         }
     }
     // |
