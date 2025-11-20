@@ -9,6 +9,7 @@ Copyright (C) 2025 - Mr. Lima
 - `id [user]`: Shows user ID
 - `rmsfix [option]`: Fixes RMS archive structure
 - `svchost [pid] [request]`: Make a request for a process from shell
+- `uptime`: Prints MIDlet uptime
 
 ---
 
