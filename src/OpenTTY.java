@@ -27,7 +27,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Form xterm = new Form(null);
     public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     public StringItem stdout = new StringItem("", "");
-    public Command EXECUTE = new Command("Run", Command.OK, 0);
+    public Command BACK = new Command("Back", Command.BACK, 1), EXECUTE = new Command("Run", Command.OK, 0);
     // |
     // MIDlet Loader
     public void startApp() {
@@ -909,10 +909,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     // |
-    public int warn(String title, String message) { }
-    public int viewer(String title, String text) { }
+    public int warn(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); return 0; }
+    public int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(env(text)); viewer.addCommand(BACK); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
     // |
-    public Font genFont(String params) { }
+    public Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
 
     // Process
     public int start(String app, int id, String pid, Hashtable signals, Object stdout, Hashtable scope) { }
