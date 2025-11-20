@@ -68,6 +68,7 @@ Copyright (C) 2025 - Mr. Lima
 - Functions and Shells removed
 - Tools `prscan` and `gobuster` have been removed
 - Command `exec` and `execute` have been rewrote
+- Alias `raw` to `cat` disabled and `rraw` removed
 
 ### 📦 Packages
 - **JBuntu** updated to _1.4_
