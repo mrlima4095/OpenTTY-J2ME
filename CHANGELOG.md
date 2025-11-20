@@ -64,7 +64,10 @@ Copyright (C) 2025 - Mr. Lima
 - `query` command no longer consuming until connection end
 - Added button **Refresh** in _Process Viewer_
 - Command `start` can start services installed on `/etc/services`
-- Command `netstat` have been rewrited
+- Command `netstat` have been rewrote
+- Functions and Shells removed
+- Tools `prscan` and `gobuster` have been removed
+- Command `exec` and `execute` have been rewrote
 
 ### 📦 Packages
 - **JBuntu** updated to _1.4_

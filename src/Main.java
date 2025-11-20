@@ -639,20 +639,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 002 - (Logs)
         // |
         // OpenTTY Logging Manager
-        else if (mainCommand.equals("log")) { return MIDletLogs(argument); } 
-        else if (mainCommand.equals("logcat")) { echoCommand(logs); }
+        //else if (mainCommand.equals("log")) { return MIDletLogs(argument); } 
+        //else if (mainCommand.equals("logcat")) { echoCommand(logs); }
 
         // API 003 - (User-Integration)
         // |
         // Session
-        else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(id == 0 ? "root" : username); }
-        else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (id == 0) { return processCommand(argument, ignore, id, pid, stdout, scope); } else { new MIDletControl(argument); } }
-        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return argument.equals("") ? processCommand(". /bin/sh", false, id, pid, stdout, scope) : runScript(getcontent(argument), id); }
-        else if (mainCommand.equals("id")) { echoCommand(argument.equals("") ? ("" + id) : argument.equals("root") ? "0" : argument.equals(loadRMS("OpenRMS")) ? "1" : ("id: " + argument + ": no such user")); }
-        else if (mainCommand.equals("su")) { if (id == 0) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; processCommand("sh", false, id, pid, stdout, scope); } else { echoCommand("Permission denied!"); return 13; } }
-        else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else { if (id == 0) { writeRMS("OpenRMS", String.valueOf(argument.hashCode()).getBytes(), 2, id); } else { echoCommand("Permission denied!"); return 13; } } }
-        else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (id == 0) { writeRMS("/home/OpenRMS", "", id); processCommand("exit", false, id, pid, stdout, scope); } else { echoCommand("Permission denied!"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false, id, pid, stdout, scope); } }
-        else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (loadRMS("OpenRMS").equals(username)) { destroyApp(false); } else { username = loadRMS("OpenRMS"); processCommand("sh", false, id, pid, stdout, scope); } }
+        //else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { echoCommand(id == 0 ? "root" : username); }
+        //else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (id == 0) { return processCommand(argument, ignore, id, pid, stdout, scope); } else { new MIDletControl(argument); } }
+        //else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return argument.equals("") ? processCommand(". /bin/sh", false, id, pid, stdout, scope) : runScript(getcontent(argument), id); }
+        //else if (mainCommand.equals("id")) { echoCommand(argument.equals("") ? ("" + id) : argument.equals("root") ? "0" : argument.equals(loadRMS("OpenRMS")) ? "1" : ("id: " + argument + ": no such user")); }
+        //else if (mainCommand.equals("su")) { if (id == 0) { username = username.equals("root") ? loadRMS("OpenRMS") : "root"; processCommand("sh", false, id, pid, stdout, scope); } else { echoCommand("Permission denied!"); return 13; } }
+        //else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else { if (id == 0) { writeRMS("OpenRMS", String.valueOf(argument.hashCode()).getBytes(), 2, id); } else { echoCommand("Permission denied!"); return 13; } } }
+        //else if (mainCommand.equals("logout")) { if (loadRMS("OpenRMS").equals(username)) { if (id == 0) { writeRMS("/home/OpenRMS", "", id); processCommand("exit", false, id, pid, stdout, scope); } else { echoCommand("Permission denied!"); return 13; } } else { username = loadRMS("OpenRMS"); processCommand("sh", false, id, pid, stdout, scope); } }
+        //else if (mainCommand.equals("exit") || mainCommand.equals("quit")) { if (loadRMS("OpenRMS").equals(username)) { destroyApp(false); } else { username = loadRMS("OpenRMS"); processCommand("sh", false, id, pid, stdout, scope); } }
         
         // API 004 - (LCDUI Interface)
         // |
@@ -669,19 +669,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, ignore, id) : mainCommand.equals("for") ? forCommand(argument, ignore, id) : caseCommand(argument, ignore, id); }
         // |
         // Long executors
-        else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, id, pid, stdout, scope); }
-        else if (mainCommand.equals("bruteforce")) { String PID = genpid(); start("bruteforce", PID, null, id); while (trace.containsKey(PID)) { int STATUS = processCommand(argument, ignore, id, pid, stdout, scope); if (STATUS != 0) { kill(PID, false, id); return STATUS; } } }
-        else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, id, pid, stdout, scope); } }
-        else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { echoCommand(getCatch(e)); return 2; } } }
-        else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore, id, pid, stdout, scope); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } }
+        //else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, id, pid, stdout, scope); }
+        //else if (mainCommand.equals("bruteforce")) { String PID = genpid(); start("bruteforce", PID, null, id); while (trace.containsKey(PID)) { int STATUS = processCommand(argument, ignore, id, pid, stdout, scope); if (STATUS != 0) { kill(PID, false, id); return STATUS; } } }
+        //else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), ignore, id, pid, stdout, scope); } }
+        //else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { echoCommand(getCatch(e)); return 2; } } }
+        //else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, ignore, id, pid, stdout, scope); echoCommand("at " + (System.currentTimeMillis() - START) + "ms"); return STATUS; } }
         // |
         // Chain executors
-        else if (mainCommand.startsWith("exec")) { String[] CMDS = split(argument, mainCommand.equals("exec") ? '&' : ';'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), ignore, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } }
+        // else if (mainCommand.startsWith("exec")) { String[] CMDS = split(argument, mainCommand.equals("exec") ? '&' : ';'); for (int i = 0; i < CMDS.length; i++) { int STATUS = processCommand(CMDS[i].trim(), ignore, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } }
 
         // API 006 - (Process)
         // |
         // Memory
-        else if (mainCommand.equals("gc")) { System.gc(); } 
+        //else if (mainCommand.equals("gc")) { System.gc(); } 
         else if (mainCommand.equals("htop")) { new MIDletControl(MIDletControl.LIST, "list.content=Monitor,Process\nlist.button=Open\nMonitor=execute top;\nProcess=execute top process;", id); }
         else if (mainCommand.equals("top") || mainCommand.equals("trace")) { return kernel(argument, id); }
         // |

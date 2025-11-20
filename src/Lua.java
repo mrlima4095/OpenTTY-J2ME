@@ -22,7 +22,7 @@ public class Lua {
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |
     // Main
-    public Lua(OpenTTY midlet, int id) {
+    public Lua(OpenTTY midlet, int id, Object stdout, Hashtable scope) {
         this.midlet = midlet; this.id = id;
         this.tokenIndex = 0; this.PID = midlet.genpid();
         this.proc = midlet.genprocess("lua", id, null);
