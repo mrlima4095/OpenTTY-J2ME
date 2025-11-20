@@ -17,7 +17,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
-    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable();
+    public Hashtable attributes = new Hashtable(), paths = new Hashtable(), trace = new Hashtable(), filetypes = null, aliases = new Hashtable(), shell = new Hashtable(), functions = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), global = new Hashtable();
     public String username = loadRMS("OpenRMS"), nanoContent = loadRMS("nano");
     public String logs = "", path = "/home/", build = "2025-1.17-03x01";
     public Display display = Display.getDisplay(this);
@@ -613,7 +613,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command), argument = getpattern(getArgument(command));
         String[] args = splitArgs(getArgument(command));
 
-        if (username.equals("root")) { id = 0; } if (scope == null) { scope =  }
+        if (username.equals("root")) { id = 0; } if (scope == null) { scope = global; }
         if (command.endsWith("&")) { return processCommand("bg " + command.substring(0, command.length() - 1), ignore, id, pid, stdout, scope); }
 
         if (mainCommand.equals("")) { }
