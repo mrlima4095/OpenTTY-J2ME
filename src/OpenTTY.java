@@ -815,7 +815,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int getNumber(String s, int fallback, Object stdout) { try { return Integer.valueOf(s); } catch (Exception e) { if (stdout != null) { print(getCatch(e), stdout); } return fallback; } }
     public Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     
-
     // Logging Manager
     public int MIDletLogs(String command) { }
 
@@ -824,7 +823,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     public void print(String message, Object stdout) { print(message, stdout, true); }
     public void print(String message, Object stdout, boolean log) {
+        if (log) { attributes.put("OUTPUT", message); }
 
+        if (stdout == null) { }
+        else if (stdout instanceof StringItem) { String current = stdout.getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; stdout.setText(TTY_MAX_LEN >= 0 && output.length() > TTY_MAX_LEN ? output.substring(output.length() - TTY_MAX_LEN) : output); }
+        else if (stdout instanceof String) { write(stdout, message, 1000); }
+        else if (stdout instanceof OutputStream) {
+            try { stdout.write((message + "\n").getBytes()); stdout.flush(); } 
+            catch (Exception e) { }
+        }
     }
     // |
     public int warn(String title, String message) { }
