@@ -412,14 +412,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("exit")) { if (read("/home/OpenRMS").equals(username)) { if (pid.equals("1")) { destroyApp(false); } else { return 254; } } else { username = read("/home/OpenRMS"); return processCommand(". /bin/sh", false, id, pid, stdout, scope); } }
         else if (mainCommand.equals("quit")) { destroyApp(false); }
         // |
-        else if (mainCommand.equals("pkg")) {  }
-        else if (mainCommand.equals("uname")) {  }
-        else if (mainCommand.equals("hostname")) {  }
-        else if (mainCommand.equals("hostid")) {  }
+        else if (mainCommand.equals("pkg")) { print(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument), stdout); }
+        else if (mainCommand.equals("uname")) { String INFO = argument.equals("") || argument.equals("-i") ? "$TYPE" : argument.equals("-a") || argument.equals("--all") ? "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE" : argument.equals("-r") || argument.equals("--release") ? "$VERSION" : argument.equals("-v") || argument.equals("--build") ? build : argument.equals("-s") ? "J2ME" : argument.equals("-m") ? "$PROFILE" : argument.equals("-p") ? "$CONFIG" : argument.equals("-n") ? "$HOSTNAME" : null; if (INFO == null) { print("uname: " + argument + ": not found", stdout); return 127; } else { print(env(INFO), stdout); } }
+        else if (mainCommand.equals("hostname")) { return processCommand(argument.equals("") ? "echo $HOSTNAME" : "set HOSTNAME=" + getCommand(argument), false, id, pid, stdout, scope); }
+        else if (mainCommand.equals("hostid")) { String DATA = env("$TYPE$CONFIG$PROFILE") int HASH = 7; for (int i = 0; i < DATA.length(); i++) { HASH = HASH * 31 + DATA.charAt(i); } print(Integer.toHexString(HASH).toLowerCase(), stdout); }
         // |
         else if (mainCommand.equals("tty")) { print((String) attributes.get("TTY"), stdout); }
-        else if (mainCommand.equals("ttysize")) {  }
-        else if (mainCommand.equals("stty")) {  }
+        else if (mainCommand.equals("ttysize")) { print(stdout instanceof StringItem ? stdout.getText().length() : stdout instanceof String ? read(stdout).length() : "-1", stdout); }
+        else if (mainCommand.equals("stty")) {
+            if (argument.equals("")) { print("" + TTY_MAX_LEN, stdout); }
+            else {
+                String source = argument;
+                if (argument.indexOf("=") == -1) { source = getcontent(argument); }
+
+                Hashtable TTY = parseProperties(source);
+
+                if (TTY.containsKey("max-length")) { try { TTY_MAX_LEN = Integer.parseInt((String) TTY.get("max-length")); } catch (Exception e) { destroyApp(false); } }
+                if (TTY.containsKey("classpath")) { classpath = ((String) TTY.get("classpath")).equals("true"); }
+            }
+        }
         // |
         else if (mainCommand.equals("about")) { if (argument.equals("")) { } else { about(argument); } }
         else if (mainCommand.equals("import")) { return importScript(getcontent(argument), id, stdout, scope); }
