@@ -967,6 +967,35 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Audio Manager
     public int audio(String command, int id, String pid, Object stdout, Hashtable scope) { }
 
+    private int ifCommand(String argument, boolean enable, int id, String pid, String stdout, Hashtable scope) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { echoCommand("if (expr) [command]"); return 2; } String EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); String[] PARTS = split(EXPR, ' '); if (PARTS.length == 3) { boolean CONDITION = false; boolean NEGATED = PARTS[1].startsWith("!") && !PARTS[1].equals("!="); if (NEGATED) { PARTS[1] = PARTS[1].substring(1); } Double N1 = getNumber(PARTS[0]), N2 = getNumber(PARTS[2]); if (N1 != null && N2 != null) { if (PARTS[1].equals("==")) { CONDITION = N1.doubleValue() == N2.doubleValue(); } else if (PARTS[1].equals("!=")) { CONDITION = N1.doubleValue() != N2.doubleValue(); } else if (PARTS[1].equals(">")) { CONDITION = N1.doubleValue() > N2.doubleValue(); } else if (PARTS[1].equals("<")) { CONDITION = N1.doubleValue() < N2.doubleValue(); } else if (PARTS[1].equals(">=")) { CONDITION = N1.doubleValue() >= N2.doubleValue(); } else if (PARTS[1].equals("<=")) { CONDITION = N1.doubleValue() <= N2.doubleValue(); } } else { if (PARTS[1].equals("startswith")) { CONDITION = PARTS[0].startsWith(PARTS[2]); } else if (PARTS[1].equals("endswith")) { CONDITION = PARTS[0].endsWith(PARTS[2]); } else if (PARTS[1].equals("contains")) { CONDITION = PARTS[0].indexOf(PARTS[2]) != -1; } else if (PARTS[1].equals("==")) { CONDITION = PARTS[0].equals(PARTS[2]); } else if (PARTS[1].equals("!=")) { CONDITION = !PARTS[0].equals(PARTS[2]); } } if (CONDITION != NEGATED) { return processCommand(CMD, ignore, id); } } else if (PARTS.length == 2) { if (PARTS[0].equals(PARTS[1])) { return processCommand(CMD, ignore, id); } } else if (PARTS.length == 1) { if (!PARTS[0].equals("")) { return processCommand(CMD, enable, id, pid, stdout, scope); } } return 0; }
+    private int forCommand(String argument, boolean enable, int id, String pid, String stdout, Hashtable scope) { argument = argument.trim(); int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } String KEY = getCommand(argument), FILE = getcontent(argument.substring(firstParenthesis + 1, lastParenthesis).trim()), CMD = argument.substring(lastParenthesis + 1).trim(); if (KEY.startsWith("(")) { return 2; } if (KEY.startsWith("$")) { KEY = replace(KEY, "$", ""); } String[] LINES = split(FILE, '\n'); for (int i = 0; i < LINES.length; i++) { if (LINES[i] != null || LINES[i].length() != 0) { attributes.put(KEY, LINES[i]); int STATUS = processCommand(CMD, ignore, id, pid, stdout, scope); attributes.remove(KEY) if (STATUS != 0) { return STATUS; } } } return 0; }
+    private int caseCommand(String argument, boolean enable, int id, String pid, String stdout, Hashtable scope) { 
+        argument = argument.trim(); 
+        int firstParenthesis = argument.indexOf('('), lastParenthesis = argument.indexOf(')'); 
+        if (firstParenthesis == -1 || lastParenthesis == -1 || firstParenthesis > lastParenthesis) { return 2; } 
+        
+        String METHOD = getCommand(argument), EXPR = argument.substring(firstParenthesis + 1, lastParenthesis).trim(), CMD = argument.substring(lastParenthesis + 1).trim(); 
+        boolean CONDITION = false, NEGATED = METHOD.startsWith("!"); 
+        
+        if (NEGATED) { METHOD = METHOD.substring(1); } 
+        if (METHOD.equals("file")) { CONDITION = file(EXPR); } 
+        else if (METHOD.equals("root")) { Enumeration roots = FileSystemRegistry.listRoots(); while (roots.hasMoreElements()) { if (((String) roots.nextElement()).equals(EXPR)) { CONDITION = true; break; } } } 
+        else if (METHOD.equals("thread")) { CONDITION = getThreadName(Thread.currentThread()).equals(EXPR); } 
+        else if (METHOD.equals("screen")) { CONDITION = ((Hashtable) getobject("2", "saves")).containsKey(EXPR); } 
+        else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } 
+        else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } 
+        else if (METHOD.equals("trace")) { CONDITION = getpid(EXPR) != null ? true : false; } 
+        else if (METHOD.equals("passwd")) { CONDITION = String.valueOf(EXPR.hashCode()).equals(MIDletControl.passwd()); } 
+        else if (METHOD.equals("user")) { 
+            CONDITION = username.equals(EXPR); 
+            if (EXPR.equals("root") && id == 0) { CONDITION = true; } 
+        } 
+        if (CONDITION != NEGATED) { return processCommand(CMD, enable, id, pid, stdout, scope); } 
+        
+        return 0; 
+    
+    }
+
     // Java Virtual Machine
     public int java(String command, int id, String pid, Object stdout, Hashtable scope) {
         command = env(command.trim());
