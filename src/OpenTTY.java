@@ -812,7 +812,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (id == 0) {
                     if (args.length < 2) { print("svchost: set: missing module", stdout); return 2; }
 
-                    Lua lua = new Lua(this, id);
+                    Lua lua = new Lua(this, id, stdout, scope);
                     Hashtable proc = getprocess("1"), arg = new Hashtable(); arg.put(new Double(0), source); arg.put(new Double(1), "--deamon");
                     Hashtable host = lua.run(pid, app, proc, getcontent(source), arg); 
                     int STATUS = (Integer) host.get("status");
