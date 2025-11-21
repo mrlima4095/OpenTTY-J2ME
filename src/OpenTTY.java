@@ -522,7 +522,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (sys.containsKey(args[1])) {
                     
                 } else {
-                    print("netstat: " + args[1] + ": not found");
+                    print("netstat: " + args[1] + ": not found", stdout);
                 }
             } else {
                 int STATUS = 0; 
