@@ -1961,7 +1961,7 @@ public class Lua {
 
                     Command RUN = new Command(label, Command.ITEM, 1); 
                     StringItem s = new StringItem(null, label, StringItem.BUTTON); 
-                    s.setFont(midlet.newFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
+                    s.setFont(midlet.genFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
                     s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
                     s.addCommand(RUN); 
                     s.setDefaultCommand(RUN); 
