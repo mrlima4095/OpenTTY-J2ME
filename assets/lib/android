@@ -1,25 +1,4 @@
---[[
-
-[ Config ]
-
-name=Android
-version=1.0
-description=API for Android
-
-api.version=1.16
-api.error=execute log add error Android API requires OpenTTY 1.16; echo [ Android ] Required 1.16 OpenTTY API;
-api.match=minimum
-
-include=/java/bin/yang,/java/bin/jauth2,forge
-
-config=execute set DROID_VERSION=1.0; log add info Running Android API $DROID_VERSION; echo [ Android ] Running Android API $DROID_VERSION; x11 item android;
-
-[ COMMAND ]
-
-item.label=Android API
-item.cmd=execute droid menu
-
-]]
+#!/bin/lua
 
 local version = os.getenv("DROID_VERSION")
 
