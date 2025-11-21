@@ -97,28 +97,27 @@ if arg[1] == nil or arg[1] == "help" then
     print("")
 elseif arg[1] == "install" then
     if os.getuid() > 0 then
-        print("Permission denied!") return 13
+        print("Permission denied!")
+        return
     end
 
     if #arg > 1 then
         for i = 2, #arg do
             local pkg_name = arg[i]
             if mirror[pkg_name] then
-                if install_dependencies(pkg_name) then
-                    print(":: Downloading " .. mirror[pkg_name].remote .. "...")
-                    local content = download(pkg_name, false)
-                    if content then
-                        local result = io.write(content, mirror[pkg_name].here)
-                        if result then
-                            print(":: Installed " .. pkg_name .. " to " .. mirror[pkg_name].here)
-                        else
-                            print(":: Installation failed for " .. pkg_name)
-                        end
-                    else
-                        print(":: Download failed for " .. pkg_name)
-                    end
+                print(":: Installing " .. pkg_name .. "...")
+
+                if not install_dependencies(pkg_name) then
+                    print(":: Aborting installation due to dependency failure")
+                    break
+                end
+
+                local content = download(pkg_name, false)
+                if content then
+                    io.write(content, mirror[pkg_name].here)
+                    print(":: Installed " .. pkg_name .. " to " .. mirror[pkg_name].here)
                 else
-                    print(":: Failed to install dependencies for " .. pkg_name)
+                    print(":: Download failed for " .. pkg_name)
                 end
             else
                 print(":: Package not found: " .. pkg_name)
