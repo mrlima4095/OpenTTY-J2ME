@@ -1113,7 +1113,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     
     // | (Kernel)
-    public int kernel(String command, int id, Object stdout, Hashtable scope) { return 0; }
+    public int kernel(String command, int id, Object stdout, Hashtable scope) {
+        
+    }
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
     public Hashtable genprocess(String name, int id, Hashtable signal) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", id == 0 ? "root" : username); if (signal != null) { proc.put("signals", signal); } return proc; }
