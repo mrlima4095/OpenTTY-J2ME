@@ -44,7 +44,7 @@ local function download(pkg, proxy)
             return nil
         end
 
-        io.write("get " .. mirror[pkg].remote, o)
+        io.write("get lib/" .. mirror[pkg].remote, o)
 
         local ok, content = pcall(io.read, i)
         pcall(socket.close, conn)
