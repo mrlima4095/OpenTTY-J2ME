@@ -1468,7 +1468,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return STATUS;
     }
     // |
-    public int run(String argument, String[] args, int id, String pid, String stdout, Hashtable scope) { 
+    public int run(String argument, String[] args, int id, String pid, Object stdout, Hashtable scope) { 
         String content = argument.equals("") ? buffer : getcontent(args[0]); 
 
         if (content.startsWith("#!/bin/lua")) {
@@ -1485,7 +1485,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } else if (content.startsWith("[ Config ]")) { return importScript(content, id, stdout, scope);
         } else { return runScript(content, id, pid, stdout, scope); }
     }
-    public Object goLua(String argument, String[] args, int id, String pid, String stdout, Hashtable scope) { }
+    public Object goLua(String argument, String[] args, int id, String pid, Object stdout, Hashtable scope) { }
 }            
 // |
 // EOF
