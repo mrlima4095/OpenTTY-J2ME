@@ -412,7 +412,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
 
         private void back() { if (sys.containsKey(PID) && !asked) { confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING); confirm.addCommand(YES = new Command("Yes", Command.OK, 1)); confirm.addCommand(NO = new Command("No", Command.BACK, 1)); confirm.setCommandListener(this); asked = true; display.setCurrent(confirm); } else { goback(); } }
-        private void goback() { processCommand("xterm", enable, id, pid, stdout, scope); }
+        private void goback() { processCommand("xterm", enable, id, PID, stdout, scope); }
 
         public static String passwd() { return loadRMS("OpenRMS", 2); }
         private String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } 
