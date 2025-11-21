@@ -1,27 +1,4 @@
---[[
-
-[ Config ]
-
-name=WebProxy
-version=1.0
-description=Global Bind
-
-api.version=1.16
-api.require=lua
-api.error=execute echo [ WebProxy ] OpenTTY 1.16 and Lua is required!; true
-api.match=minimum
-
-config=execute x11 quest /bin/shprxy
-
-[ DISPLAY ]
-
-quest.title=WebProxy
-quest.label=Password
-quest.type=password
-quest.key=PASSWD
-quest.cmd=execute bg lua /bin/shprxy $PASSWD; unset PASSWD
-
-]]
+#!/bin/lua
 
 if os.execute("case thread (MIDlet) false") == 255 then error("WebProxy cannot run in Main Thread") end
 if #arg > 1 then
