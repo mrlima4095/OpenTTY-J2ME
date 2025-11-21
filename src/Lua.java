@@ -63,7 +63,7 @@ public class Lua {
     // | (Run Source code)
     public Hashtable run(String source, String code, Hashtable args) { 
         proc.put("name", ("lua " + source).trim());
-        midlet.trace.put(PID, proc); globals.put("arg", args);
+        midlet.sys.put(PID, proc); globals.put("arg", args);
 
         Hashtable ITEM = new Hashtable(); 
         
@@ -75,7 +75,7 @@ public class Lua {
         catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); status = 1; } 
         catch (Error e) { if (e.getMessage() != null) { midlet.echoCommand(e.getMessage()); } status = 1; }
 
-        if (kill) { midlet.trace.remove(PID); }
+        if (kill) { midlet.sys.remove(PID); }
         ITEM.put("status", status);
         return ITEM;
     }
@@ -201,8 +201,8 @@ public class Lua {
     private Object statement(Hashtable scope) throws Exception {
         Token current = peek();
 
-        if (status != 0) { midlet.trace.remove(PID); throw new Error(); }
-        if (midlet.trace.containsKey(PID)) { } else { throw new Error("Process killed"); } 
+        if (status != 0) { midlet.sys.remove(PID); throw new Error(); }
+        if (midlet.sys.containsKey(PID)) { } else { throw new Error("Process killed"); } 
 
         if (current.type == IDENTIFIER) {
             int la = 0;
@@ -1346,7 +1346,7 @@ public class Lua {
             else if (MOD == GETENV) { return args.isEmpty() ? gotbad(1, "getenv", "string expected, got no value") : midlet.attributes.get(toLuaString(args.elementAt(0))); }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
-            else if (MOD == EXIT) { midlet.trace.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
+            else if (MOD == EXIT) { midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, false); } }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
             else if (MOD == GETPID) { return args.isEmpty() ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
             else if (MOD == SETPROC) {
@@ -1372,7 +1372,7 @@ public class Lua {
                 else {
                     String process = toLuaString(args.elementAt(0)).trim();
 
-                    if (midlet.trace.containsKey(process)) {
+                    if (midlet.sys.containsKey(process)) {
                         if (!((String) midlet.getobject(process, "owner")).equals(midlet.username) && id != 0) { return gotbad(1, "getproc", "permissiond denied"); }
 
                         if (args.size() > 1) { return (midlet.getprocess(process)).get(toLuaString(args.elementAt(1)).trim()); } 
@@ -1384,8 +1384,8 @@ public class Lua {
             else if (MOD == REQUEST) {
                 if (args.isEmpty()) { return gotbad(1, "request", "string expected, got no value"); }
                 else if (args.size() < 2) { return gotbad(2, "request", "value expected, got no value"); }
-                else if (midlet.trace.containsKey(toLuaString(args.elementAt(0)))) {
-                    Hashtable proc = (Hashtable) midlet.trace.get(toLuaString(args.elementAt(0)));
+                else if (midlet.sys.containsKey(toLuaString(args.elementAt(0)))) {
+                    Hashtable proc = (Hashtable) midlet.sys.get(toLuaString(args.elementAt(0)));
                     if (proc.containsKey("lua") && proc.containsKey("handler")) {
                         Lua lua = (Lua) proc.get("lua");
                         Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement("lua"); arg.addElement(PID); arg.addElement(id);
@@ -2231,10 +2231,10 @@ public class Lua {
                     }
                 }
             }
-            catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.trace.remove(PID); } 
-            catch (Error e) { midlet.trace.remove(PID); }
+            catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.sys.remove(PID); } 
+            catch (Error e) { midlet.sys.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { Object fire = ITEM.get(item); if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id); } } catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.trace.remove(PID); } catch (Error e) { midlet.trace.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { Object fire = ITEM.get(item); if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id); } } catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 Object fire = STATE.get(item); 
@@ -2254,7 +2254,7 @@ public class Lua {
                     ((LuaFunction) fire).call(args); 
                 } 
                 else if (fire != null) { midlet.echoCommand(toLuaString(fire)); } 
-            } catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.trace.remove(PID); } catch (Error e) { midlet.trace.remove(PID); } 
+            } catch (Exception e) { midlet.echoCommand(midlet.getCatch(e)); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
         }
     }
 } 
