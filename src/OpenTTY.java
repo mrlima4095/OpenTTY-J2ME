@@ -952,6 +952,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { xterm.deleteAll(); xterm.append(this.stdout); xterm.append(stdin); } else { new MIDletControl(xterm, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), id, stdout, scope); } }
 
         else { print("x11: " + mainCommand + ": not found", stdout); return 127; }
+
+        return 0;
     }
     // |
     public void print(String message, Object stdout) { print(message, stdout, true); }
