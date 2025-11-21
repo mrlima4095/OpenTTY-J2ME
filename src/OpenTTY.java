@@ -246,7 +246,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String PID = split(preview.getString(index), '\t')[0];
                     int STATUS = 0;
 
-                    if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, id); } 
+                    if (c == KILL || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { STATUS = kill(PID, false, id, stdout, scope); } 
                     else if (c == VIEW) { processCommand("top view " + PID, false, id, PID, stdout, scope); } 
                     else if (c == LOAD) {
                         if (!getobject(PID, "owner").equals(username) && id != 0) { STATUS = 13; }
