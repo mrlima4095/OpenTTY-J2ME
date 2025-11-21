@@ -1086,7 +1086,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Trackers)
     public Hashtable getprocess(String pid) { return sys.containsKey(pid) ? (Hashtable) sys.get(pid) : null; }
     public Object getobject(String pid, String item) { return sys.containsKey(pid) ? ((Hashtable) sys.get(pid)).get(item) : null; }
-    public String getsignal(String pid, Object signal) { if (sys.containsKey(pid)) { Hashtable signals = getobject(pid, "signals"); if (signals != null && signals.containsKey(signal)) { return (String) signals.get(signal); } else { return null; } } else { return null; } } 
+    public String getsignal(String pid, Object signal) { if (sys.containsKey(pid)) { Hashtable signals = (Hashtable) getobject(pid, "signals"); if (signals != null && signals.containsKey(signal)) { return (String) signals.get(signal); } else { return null; } } else { return null; } } 
     public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) sys.get(PID)).get("name"))) { return PID; } } return null; } 
     
     // | (Renders)
