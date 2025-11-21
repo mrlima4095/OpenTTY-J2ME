@@ -1,21 +1,5 @@
 #!/bin/lua
 
---[[
-
-[ Config ]
-
-name=SmartME
-version=1.1
-description=OpenTTY Toolkit
-
-api.version=1.16
-api.error=execute log add error SmartME requires OpenTTY 1.16 or newer; echo [ SmartME ] Required OpenTTY 1.16 or newer;
-api.match=minimum
-
-include=/bin/forge
-
-]]
-
 local app = {
     version = "1.2",
     proxy = "http://opentty.xyz/proxy.php?",
