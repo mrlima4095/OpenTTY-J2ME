@@ -98,7 +98,7 @@ if arg[1] == nil or arg[1] == "help" then
 elseif arg[1] == "install" then
     if os.getuid() > 0 then
         print("Permission denied!")
-        return
+        os.exit(13)
     end
 
     if #arg > 1 then
@@ -128,18 +128,16 @@ elseif arg[1] == "install" then
     end
 elseif arg[1] == "remove" then
     if os.getuid() > 0 then
-        print("Permission denied!") return 13
+        print("Permission denied!")
+        return
     end
+    
     if #arg > 1 then
         for i = 2, #arg do
             local pkg_name = arg[i]
             if mirror[pkg_name] then
-                local result = os.execute("rm " .. mirror[pkg_name].here)
-                if result == 0 then
-                    print(":: Removed " .. pkg_name)
-                else
-                    print(":: Failed to remove " .. pkg_name)
-                end
+                os.execute("rm " .. mirror[pkg_name].here)
+                print(":: Removed " .. pkg_name)
             else
                 print(":: Package not found: " .. pkg_name)
             end
