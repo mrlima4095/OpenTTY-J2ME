@@ -196,7 +196,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             monitor.addCommand(SAVE = new Command("Save", Command.OK, 1));
                             monitor.setCommandListener(this);
                             display.setCurrent(monitor);
-                        } else { write(filename, box.getString(), id); }
+                        } else { write(filename, box.getString(), id); goback(); }
                     }
                     else { goback(); }
                 }
