@@ -184,7 +184,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 return; 
             }
-            if (d == box) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
+            if (d == box && MOD == PROCESS) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
             if (d == confirm) {
                 if (MOD == NC) { if (c == YES) { keep = true; } else { sys.remove(PID); } goback(); }
                 else if (MOD == NANO) {
@@ -325,6 +325,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == NANO) {
                 if (c == CLEAR) { box.setString(""); }
                 else if (c == SAVE) { if (USER == null) { } else { String file = USER.getString().trim(); write(file, box.getString(), id); } }
+                else if (c == VIEW) { String html = box.getString(); monitor = new Form(extractTitle(html, "HTML Viewer")); monitor.append(html2text(html)); monitor.addCommand(BACK); monitor.setCommandListener(this); display.setCurrent(monitor); }
             }
         }
 
