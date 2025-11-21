@@ -1,7 +1,2 @@
-[ Config ]
-
-name=OpenTTY
-version=$VERSION
-description=MIDlet Shell
-
-config=execute title; cd; buff; clear; cat /etc/motd; clear history;
+#!/bin/sh
+exec title cd buff clear "cat /etc/motd" "clear history"
