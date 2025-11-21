@@ -1476,6 +1476,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getLastHistory() { Vector history = (Vector) getobject("1", "history"); return history.size() > 0 ? (String) history.elementAt(history.size() - 1) : ""; }
 
     // Packages
+    public int importScript(String script, int id, Object stdout, Hashtable scope) { return 0; }
     public int runScript(String script, int id, String pid, Object stdout, Hashtable scope) {
         if (script == null || script.length() == 0) { return 2; }
         
