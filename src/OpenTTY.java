@@ -731,7 +731,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("xterm")) { display.setCurrent(xterm); }
         else if (mainCommand.equals("x11")) { return xcli(argument, id, stdout, scope); }
         else if (mainCommand.equals("warn")) { return warn(xterm.getTitle(), argument); }
-        else if (mainCommand.equals("title")) { xterm.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument.equals("hide") ? null : argument) }
+        else if (mainCommand.equals("title")) { xterm.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument.equals("hide") ? null : argument); }
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { print(display.getCurrent().getTicker().getString(), stdout); } else { return xcli("tick " + argument, id, stdout, scope); } }
         // |
         else if (mainCommand.equals("log")) { return MIDletLogs(argument, id, stdout); }
