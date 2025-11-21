@@ -657,16 +657,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 004 - (LCDUI Interface)
         // |
         // System UI
-        else if (mainCommand.equals("xterm")) { display.setCurrent(form); }
-        else if (mainCommand.equals("x11")) { return xserver(argument, id); }
-        else if (mainCommand.equals("warn")) { return warnCommand(form.getTitle(), argument); }
-        else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument.equals("hide") ? null : argument); }
-        else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { return xserver("tick " + argument, id); } }
+        //else if (mainCommand.equals("xterm")) { display.setCurrent(form); }
+        //else if (mainCommand.equals("x11")) { return xserver(argument, id); }
+        //else if (mainCommand.equals("warn")) { return warnCommand(form.getTitle(), argument); }
+        //else if (mainCommand.equals("title")) { form.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument.equals("hide") ? null : argument); }
+        //else if (mainCommand.equals("tick")) { if (argument.equals("label")) { echoCommand(display.getCurrent().getTicker().getString()); } else { return xserver("tick " + argument, id); } }
 
         // API 005 - (Operators)
         // |
         // Operators
-        else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, ignore, id) : mainCommand.equals("for") ? forCommand(argument, ignore, id) : caseCommand(argument, ignore, id); }
+        //else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, ignore, id) : mainCommand.equals("for") ? forCommand(argument, ignore, id) : caseCommand(argument, ignore, id); }
         // |
         // Long executors
         //else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { return processCommand(argument, false, id, pid, stdout, scope); }
@@ -686,8 +686,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("top") || mainCommand.equals("trace")) { return kernel(argument, id); }
         // |
         // Process 
-        else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], genpid(), null, id) : mainCommand.equals("stop") ? stop(args[i], id) : kill(args[i], true, id); if (STATUS != 0) { return STATUS; } } } 
-        else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); echoCommand(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name")); } }
+        //else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], genpid(), null, id) : mainCommand.equals("stop") ? stop(args[i], id) : kill(args[i], true, id); if (STATUS != 0) { return STATUS; } } } 
+        //else if (mainCommand.equals("ps")) { echoCommand("PID\tPROCESS"); for (Enumeration KEYS = trace.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); echoCommand(PID + "\t" + (String) ((Hashtable) trace.get(PID)).get("name")); } }
 
         // API 007 - (Bundle)
         // |
@@ -755,14 +755,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 011 - (Network)
         // |
         // HTTP Interfaces
-        else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } } }
-        else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + getCatch(e)); return 101; } } }
+        //else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); echoCommand("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Pong to " + argument + " failed: " + getCatch(e)); return 101; } } }
+        //else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); echoCommand("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms"); } catch (IOException e) { echoCommand("Ping to " + argument + " failed: " + getCatch(e)); return 101; } } }
         else if (mainCommand.equals("curl") || mainCommand.equals("wget") || mainCommand.equals("clone") || mainCommand.equals("proxy")) { if (argument.equals("")) { } else { String URL = getCommand(argument); if (mainCommand.equals("clone") || mainCommand.equals("proxy")) { URL = getAppProperty("MIDlet-Proxy") + URL; } Hashtable HEADERS = getArgument(argument).equals("") ? null : parseProperties(getcontent(getArgument(argument))); String RESPONSE = request(URL, HEADERS); if (mainCommand.equals("curl")) { echoCommand(RESPONSE); } else if (mainCommand.equals("wget") || mainCommand.equals("proxy")) { nanoContent = RESPONSE; } else if (mainCommand.equals("clone")) { return runScript(RESPONSE, id); } } } 
         // |
         // Socket Interfaces
         //else if (mainCommand.equals("query")) { return query(argument, id); }
         //else if (mainCommand.equals("gaddr")) { return GetAddress(argument); }
-        else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster") || mainCommand.equals("bind")) { new MIDletControl(mainCommand, argument, id); }
+        //else if (mainCommand.equals("nc") || mainCommand.equals("prscan") || mainCommand.equals("gobuster") || mainCommand.equals("bind")) { new MIDletControl(mainCommand, argument, id); }
         // |
         //else if (mainCommand.equals("wrl")) { String ID = System.getProperty("wireless.messaging.sms.smsc"); if (ID == null) { echoCommand("Unsupported API"); return 3; } else { echoCommand(ID); } }
         //else if (mainCommand.equals("who")) { echoCommand("PORT\tADDRESS"); Hashtable sessions = (Hashtable) getobject("1", "sessions"); boolean all = argument.indexOf("-a") != -1; for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); if (!all && (ADDR.equals("http-cli") || ADDR.equals("nobody"))) { } else { echoCommand(PORT + "\t" + ADDR); } } }
@@ -1044,12 +1044,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("ph2s")) { Vector history = (Vector) getobject("1", "history"); StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script, id); } }
         // |
         // Interfaces
-        else if (mainCommand.equals("nano")) { nano.setString(argument.equals("") ? nanoContent : getcontent(argument)); display.setCurrent(nano); }
-        else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument), form.getTitle()), html2text(env(argument))); } }
-        else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent), "HTML Viewer"), html2text(env(nanoContent))); }
+        //else if (mainCommand.equals("nano")) { nano.setString(argument.equals("") ? nanoContent : getcontent(argument)); display.setCurrent(nano); }
+        //else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument), form.getTitle()), html2text(env(argument))); } }
+        //else if (mainCommand.equals("html")) { viewer(extractTitle(env(nanoContent), "HTML Viewer"), html2text(env(nanoContent))); }
         // |
         // Audio Manager
-        else if (mainCommand.equals("audio")) { return audio(argument, id); }
+        ///else if (mainCommand.equals("audio")) { return audio(argument, id); }
         
         // API 013 - (MIDlet)
         // |
@@ -1131,21 +1131,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@name")) { echoCommand(this.toString()); }
         //else if (mainCommand.startsWith("@")) { echoCommand("mod: " + mainCommand.substring(1) + ": not found"); } 
         
-        else if (mainCommand.equals("lua")) { 
-            if (javaClass("Lua") == 0) { 
-                Lua lua = new Lua(this, id); 
-                
-                Hashtable arg = new Hashtable();
-                String source, code;
-                if (argument.equals("")) { source = "nano"; code = nanoContent; arg.put(new Double(0), "nano"); } 
-                else if (args[0].equals("-e")) { source = "stdin"; code = argument.substring(3).trim(); arg.put(new Double(0), "/dev/stdin"); } 
-                else { source = args[0]; code = getcontent(source); arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
-                
-                return (Integer) lua.run(source, code, arg).get("status"); 
-            } 
-            else { echoCommand("This MIDlet Build don't have Lua"); return 3; } 
-        }
-        else if (mainCommand.equals("file")) {
+        
+        /*else if (mainCommand.equals("file")) {
             if (argument.equals("")) { }
             else {
                 for (int i = 0; i < args.length; i++) {
@@ -1180,7 +1167,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; }
                 }
             }
-        }
+        }*/
 
         else if (mainCommand.equals("svchost")) {
             if (argument.equals("")) { }
