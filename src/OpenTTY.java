@@ -133,7 +133,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 new Thread(this, "Remote").start();
             }
         }
-        public MIDletControl(Form screen, String node, String code, int id, Object stdout) { if (code == null || code.length() == 0) { return; } this.PKG = parseProperties(code); this.node = node; this.id = id; if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params", id, stdout); return; } RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); s.setFont(newFont(getenv(node + ".style", "default"))); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(RUN); s.setDefaultCommand(RUN); s.setItemCommandListener(this); screen.append(s); }
+        public MIDletControl(Form screen, String node, String code, int id, Object stdout, Hashtable scope) { if (code == null || code.length() == 0) { return; } this.PKG = parseProperties(code); this.node = node; this.id = id; if (!PKG.containsKey(node + ".label") || !PKG.containsKey(node + ".cmd")) { MIDletLogs("add error Malformed ITEM, missing params", id, stdout); return; } RUN = new Command(getenv(node + ".label"), Command.ITEM, 1); s = new StringItem(null, getenv(node + ".label"), StringItem.BUTTON); s.setFont(newFont(getenv(node + ".style", "default"))); s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); s.addCommand(RUN); s.setDefaultCommand(RUN); s.setItemCommandListener(this); screen.append(s); }
         public MIDletControl(String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = BG; this.command = command; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
         public MIDletControl(String pid, String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = ADDON; this.PID = pid; this.command = command; this.enable = enable; this.id = id;  this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
     
@@ -949,7 +949,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
         }
         // |
-        else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { xterm.deleteAll(); xterm.append(this.stdout); xterm.append(stdin); } else { new MIDletControl(xterm, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), id); } }
+        else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { xterm.deleteAll(); xterm.append(this.stdout); xterm.append(stdin); } else { new MIDletControl(xterm, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), id, stdout, scope); } }
 
         else { print("x11: " + mainCommand + ": not found", stdou); return 127; }
     }
