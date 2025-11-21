@@ -881,7 +881,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (mainCommand.equals("")) { } 
         else if (mainCommand.equals("clear")) { logs = ""; } 
         else if (mainCommand.equals("swap")) { write(argument.equals("") ? "logs" : argument, logs, 1000); } 
-        else if (mainCommand.equals("view")) { viewer(form.getTitle(), logs); } 
+        else if (mainCommand.equals("view")) { viewer(xterm.getTitle(), logs); } 
         else if (mainCommand.equals("add")) { 
             String level = getCommand(argument).toLowerCase(), message = getArgument(argument); 
             
@@ -994,7 +994,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (app.equals("x11-wm")) { 
                 proc.put("saves", new Hashtable()); 
 
-                xterm.append(stdout); form.append(xterm); xterm.addCommand(EXECUTE); 
+                xterm.append(stdout); xterm.append(stdin); xterm.addCommand(EXECUTE); 
                 xterm.setTitle("OpenTTY " + ((String) attributes.get("VERSION")));
                 xterm.setCommandListener(this); 
             }
