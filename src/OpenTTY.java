@@ -960,10 +960,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (log) { attributes.put("OUTPUT", message); }
 
         if (stdout == null) { }
-        else if (stdout instanceof StringItem) { String current = stdout.getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; stdout.setText(TTY_MAX_LEN >= 0 && output.length() > TTY_MAX_LEN ? output.substring(output.length() - TTY_MAX_LEN) : output); }
-        else if (stdout instanceof String) { write(stdout, read(stdout) + "\n" + message, 1000); }
+        else if (stdout instanceof StringItem) { String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; ((StringItem) stdout).setText(TTY_MAX_LEN >= 0 && output.length() > TTY_MAX_LEN ? output.substring(output.length() - TTY_MAX_LEN) : output); }
+        else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append("\n").append(message); }
+        else if (stdout instanceof String) { write((String) stdout, read((String) stdout) + "\n" + message, 1000); }
         else if (stdout instanceof OutputStream) {
-            try { stdout.write((message + "\n").getBytes()); stdout.flush(); } 
+            try { ((OutputStream) stdout).write((message + "\n").getBytes());  ((OutputStream) stdout).flush(); } 
             catch (Exception e) { }
         }
     }
