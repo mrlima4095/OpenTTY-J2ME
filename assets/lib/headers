@@ -1,8 +1,0 @@
-User-Agent=Mozilla/5.0 (OpenTTY $VERSION)
-Content-Type=text/html,application/json,*/*
-Accept-Encoding=gzip, deflate, br
-Accept-Language=$LOCALE,en;q=0.9
-Accept-Charset=utf-8, iso-8859-1;q=0.8
-Referer=https://github.com/mrlima4095/OpenTTY-J2ME
-Cache-Control=no-cache
-Connection=keep-alive
