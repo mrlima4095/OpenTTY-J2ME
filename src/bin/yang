@@ -208,12 +208,11 @@ elseif arg[1] == "download" then
     end
 elseif arg[1] == "search" then
     if #arg > 1 then
-        local pkg = arg[2]
-        local term = pkg:lower()
+        local term = string.lower(arg[2])
         print("Search results for '" .. term .. "':\n")
         local found = false
         for name, info in pairs(mirror) do
-            if name:lower():find(term, 1, true) or info.description:lower():find(term, 1, true) then
+            if string.find(string.lower(name), 1) or string.find(string.lower(info.description), 1) then
                 print("- " .. name .. info.description)
                 found = true
             end
