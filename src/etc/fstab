@@ -1,5 +1,5 @@
 /=bin/,dev/,etc/,home/,lib/,mnt/,res/,tmp/
-/bin/=sh
+/bin/=sh,curl,wget
 /dev/=null,random,stdin,stdout,tty,zero
 /etc/=fstab,init,motd,os-release
 /lib/=settings,yang
