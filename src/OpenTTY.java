@@ -1051,7 +1051,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         return 0;
     }
-    public int kill(String pid, boolean log, int id, String stdout, Hashtable scope) {
+    public int kill(String pid, boolean log, int id, Object stdout, Hashtable scope) {
         if (pid == null || pid.length() == 0) { return 2; }
 
         Hashtable proc = (Hashtable) sys.get(pid);
