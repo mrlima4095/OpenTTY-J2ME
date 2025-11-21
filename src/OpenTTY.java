@@ -413,10 +413,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("expr")) { print(expression(argument), stdout); }
         else if (mainCommand.equals("basename")) { print(basename(argument), stdout); }
         else if (mainCommand.equals("getopt")) { print(getArgument(argument), stdout); }
-        else if (mainCommand.equals("trim")) { this.stdout.setText(stdout.getText().trim()); }
+        else if (mainCommand.equals("trim")) { this.stdout.setText(this.stdout.getText().trim()); }
         else if (mainCommand.equals("locale")) { print((String) attributes.get("LOCALE"), stdout); }
         else if (mainCommand.equals("date")) { print(new java.util.Date().toString(), stdout); }
-        else if (mainCommand.equals("clear")) { if (argument.equals("")) { this.stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { print("clear: " + args[i] + ": not found", stdout); return 127; } } } }
+        else if (mainCommand.equals("clear")) { if (argument.equals("")) { this.stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { this.stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { print("clear: " + args[i] + ": not found", stdout); return 127; } } } }
         else if (mainCommand.equals("seed")) { try { print("" + random.nextInt(Integer.parseInt(argument)) + "", stdout); } catch (NumberFormatException e) { print(getCatch(e), stdout); return 2; } }
         // | (Device API)
         else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
