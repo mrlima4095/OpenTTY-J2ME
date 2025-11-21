@@ -225,7 +225,7 @@ elseif arg[1] == "info" then
             print("Description: " .. info.description)
             print("Remote: " .. info.remote)
             print("Location: " .. info.here)
-            if info.depends and #info.depends > 0 then
+            if info.depends then
                 print("Dependencies: " .. table.concat(info.depends, ", "))
             end
         else
