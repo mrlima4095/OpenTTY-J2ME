@@ -1,22 +1,4 @@
---[[
-
-[ Config ]
-
-name=BoxME
-version=1.0
-description=Virtual Machines
-
-api.version=1.16
-api.error=execute log add error BoxME requires OpenTTY API 1.16; echo [ BoxME ] Loading failed!; echo [ BoxME ] See logs to more info.;
-api.match=minimum
-
-process.name=boxhost2
-process.exit=execute log add BoxME have been killed; echo [ BoxME ] Host service killed; true
-
-command=boxme
-boxme=lua /bin/boxme
-
-]]
+#!/bin/lua
 
 local host = os.getpid("boxhost2")
 
