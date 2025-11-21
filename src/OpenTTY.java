@@ -270,7 +270,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     else if (username.equals("root")) { USER.setString(""); warn(xterm.getTitle(), "Invalid username!"); } 
                     else {
                         if (asking_user) { write("/home/OpenRMS", username.getBytes(), 0); }
-                        if (asking_passwd) { writeRMS("OpenRMS", password.getBytes(), 2); }
+                        if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
 
                         display.setCurrent(xterm);
                         getInstance().run("/home/.initrc", new String[] { "/home/.initrc" }, 1000, "1", getInstance().stdout, globals);
@@ -283,7 +283,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String password = PASSWD.getString().trim();
 
                 if (password.equals("")) { } 
-                else if (password.equals(passwd())) { goback(); processCommand(command, enable, 0, PID, stdout, scope); setLabel(); } 
+                else if (String.valueOf(password.hashCode()).equals(passwd())) { goback(); processCommand(command, enable, 0, PID, stdout, scope); setLabel(); } 
                 else { PASSWD.setString(""); warn(xterm.getTitle(), "Wrong password"); }
             }
 
