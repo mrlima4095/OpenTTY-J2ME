@@ -7,7 +7,6 @@ local proxy_url = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.ph
 local repo = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/"
 
 local mirror = {
-    ["android"] = { remote = "android", here = "/bin/droid", depends = { "forge" }, description = "OpenTTY API for Emulator" },
     ["armitage"] = { remote = "armitage", here = "/bin/armitage", description = "OpenTTY Network Tools" },
     ["autogc"] = { remote = "autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
     ["bprev"] = { remote = "bprevious", here = "/lib/bprevious", description = "Back to Previous Screen" },
