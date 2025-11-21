@@ -8,10 +8,9 @@ local function cmatrix()
     local thr = os.execute("case thread (MIDlet) false")
     if tonumber(thr) == 255 then return os.execute("bg lua " .. arg[0]) end
 
-    os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 xfinit stdout; clear; bg cron 20 unset CMATRIX; true")
+    os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 init /dev/stdout; clear; bg cron 20 unset CMATRIX; true")
 
     while os.getenv("CMATRIX") do
-
         io.write(math.random(10) .. " ", "/dev/stdout", "a")
 
         if string.len(io.read()) > 200 then os.execute("clear") end
