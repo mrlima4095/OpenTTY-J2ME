@@ -1262,6 +1262,8 @@ public class Lua {
 
                     if (opt.equals("stop")) { gc = false; }
                     else if (opt.equals("collect") || opt.equals("restart")) { System.gc(); }
+                    else if (opt.equals("free")) { return new Double(midlet.runtime.totalMemory() / 1024); }
+                    else if (opt.equals("total")) { return new Double(midlet.runtime.freeMemory() / 1024); }
                     else if (opt.equals("count")) { return new Double((midlet.runtime.totalMemory() - midlet.runtime.freeMemory()) / 1024); }
                     else if (opt.equals("step")) { return Boolean.FALSE; }
                     else if (opt.equals("isrunning")) { return new Boolean(gc); }
