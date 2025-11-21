@@ -98,7 +98,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public MIDletControl(String command, int id, Object stdout, Hashtable scope) { MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1; this.id = id; this.stdout = stdout; this.scope = scope; if (MOD == MONITOR) { monitor = new Form(xterm.getTitle()); monitor.append(console = new StringItem("Memory Status:", "")); monitor.addCommand(BACK); monitor.addCommand(MENU = new Command("Menu", Command.SCREEN, 1)); monitor.addCommand(REFRESH = new Command("Refresh", Command.SCREEN, 2)); monitor.setCommandListener(this); load(); display.setCurrent(monitor); } else { preview = new List(xterm.getTitle(), List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(MOD == EXPLORER ? (OPEN = new Command("Open", Command.OK, 1)) : MOD == PROCESS ? (KILL = new Command("Kill", Command.OK, 1)) : (RUN = new Command("Run", Command.OK, 1))); if (MOD == HISTORY) { preview.addCommand(EDIT = new Command("Edit", Command.OK, 1)); } if (MOD == PROCESS) { preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1)); preview.addCommand(VIEW = new Command("View info", Command.OK, 1)); preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1)); preview.addCommand(FILTER = new Command("Filter", Command.OK, 1)); } else if (MOD == EXPLORER) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); preview.addCommand(RUNS = new Command("Run Script", Command.OK, 1)); preview.addCommand(PROPERTY = new Command("Properties", Command.OK, 1)); preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1)); } preview.setCommandListener(this); load(); display.setCurrent(preview); } }
         public MIDletControl(String mode, String args, int id, Object stdout, Hashtable scope) {
             MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : BIND;
-            this.id = id;
+            this.id = id; this.stdout = stdout; this.scope = scope;
 
             if (args == null || args.length() == 0) { return; }
             else if (MOD == BIND) {
@@ -306,6 +306,48 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         public void commandAction(Command c, Item item) { if (c == RUN) { goback(); processCommand((String) PKG.get(node + ".cmd"), true, id, PID, stdout, scope); } }
+
+        public void run() {
+            if (MOD == NC) { while (sys.containsKey(PID)) { try { if (IN.available() > 0) { byte[] BUFFER = new byte[IN.available()]; int LENGTH = IN.read(BUFFER); if (LENGTH > 0) { print((new String(BUFFER, 0, LENGTH)).trim(), console, false); } } } catch (Exception e) { warn(form.getTitle(), getCatch(e)); if (keep) { } else { sys.remove(PID); } } } try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } return; }
+            else if (MOD == BIND) {
+                if (sessions.containsKey(port)) { print("[-] Port '" + port + "' is unavailable", stdout); return; }
+
+                Hashtable proc = genprocess(proc_name, id, null), scope = new Hashtable();
+                proc.put("port", port); sys.put(PID, proc); sessions.put(port, "nobody");
+
+                while (sys.containsKey(PID)) {
+                    try {
+                        server = (ServerSocketConnection) Connector.open("socket://:" + port); proc.put("server", server); 
+                        if (COUNT == 1) { print("[+] listening on port " + port, stdout); MIDletLogs("add info Server listening on port " + port, id, stdout); COUNT++; }
+
+                        CONN = (SocketConnection) server.acceptAndOpen();
+                        address = CONN.getAddress(); print("[+] " + address + " connected", scope);
+
+                        IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
+                        proc.put("socket", CONN); proc.put("in", IN); proc.put("out", OUT);
+
+                        sessions.put(port, address);
+                        while (sys.containsKey(PID)) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead = IN.read(buffer);
+                            if (bytesRead == -1) { print("[-] " + address + " disconnected", scope); break; }
+                            String PAYLOAD = new String(buffer, 0, bytesRead).trim();
+                            print("[+] " + address + " -> " + env(PAYLOAD), scope);
+
+                            String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
+
+                            processCommand(command, true, id, PID, OUT, scope);
+                        }
+                    } 
+                    catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
+                    finally { try { if (IN != null) IN.close(); } catch (IOException e) { } try { if (OUT != null) OUT.close(); } catch (IOException e) { } try { if (CONN != null) CONN.close(); } catch (IOException e) { } try { if (server != null) server.close(); } catch (IOException e) { } sessions.put(port, "nobody"); }
+                } 
+                sys.remove(PID); sessions.remove(port);
+                if (COUNT > 1) { print("[-] Server stopped", stdout); MIDletLogs("add info Server was stopped", id, stdout); }
+            }
+            else if (MOD == BG) { processCommand(command, enable, id, PID, stdout, scope); }
+            else if (MOD == ADDON) { while (sys.containsKey(PID)) { if (processCommand(command, true, id, PID, stdout, scope) != 0) { kill(PID, false, id, stdout, scope); } } }
+        }
 
         private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id, stdout, scope); } else { load(); } }
         private void load() {
@@ -880,7 +922,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         if (mainCommand.equals("")) { } 
         else if (mainCommand.equals("clear")) { logs = ""; } 
-        else if (mainCommand.equals("swap")) { write(argument.equals("") ? "logs" : argument, logs, 1000); } 
+        else if (mainCommand.equals("swap")) { write(argument.equals("") ? "logs" : argument, logs, id); } 
         else if (mainCommand.equals("view")) { viewer(xterm.getTitle(), logs); } 
         else if (mainCommand.equals("add")) { 
             String level = getCommand(argument).toLowerCase(), message = getArgument(argument); 
