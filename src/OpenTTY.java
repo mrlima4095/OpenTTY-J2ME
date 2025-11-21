@@ -1188,7 +1188,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             if (filename.startsWith("/dev/")) {
                 filename = filename.substring(5);
-                String content = filename.equals("random") ? String.valueOf(random.nextInt(256)) : filename.equals("stdin") ? stdin.getString() : filename.equals("stdout") ? stdout.getText() : filename.equals("null") ? "\r" : filename.equals("zero") ? "\0" : null;
+                String content = filename.equals("random") ? buffer : filename.equals("random") ? String.valueOf(random.nextInt(256)) : filename.equals("stdin") ? stdin.getString() : filename.equals("stdout") ? stdout.getText() : filename.equals("null") ? "\r" : filename.equals("zero") ? "\0" : null;
                 if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/dev/" + filename;
