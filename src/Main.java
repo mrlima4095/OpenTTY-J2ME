@@ -1037,12 +1037,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         //else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { int MODE = args[0].indexOf("-c") != -1 ? 1 : args[0].indexOf("-w") != -1 ? 2 : args[0].indexOf("-l") != -1 ? 3 : 0; if (MODE != 0) { argument = join(args, " ", 1); } String CONTENT = getcontent(argument), FILENAME = basename(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } echoCommand(MODE == 0 ? LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME : MODE == 1 ? CHARS + "\t" + FILENAME : MODE == 2 ? WORDS + "\t" + FILENAME : LINES + "\t" + FILENAME); } }
         // |
         // Text Parsers
-        else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
-        else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
-        else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
-        else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
-        else if (mainCommand.equals("ph2s")) { Vector history = (Vector) getobject("1", "history"); StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script, id); } }
-        // |
+        //else if (mainCommand.equals("pjnc")) { nanoContent = parseJson(nanoContent); }
+       // else if (mainCommand.equals("pinc")) { nanoContent = parseConf(nanoContent); }
+     //   else if (mainCommand.equals("conf")) { echoCommand(parseConf(argument.equals("") ? nanoContent : getcontent(argument))); }
+ //     else if (mainCommand.equals("json")) { echoCommand(parseJson(argument.equals("") ? nanoContent : getcontent(argument))); }
+//        else if (mainCommand.equals("ph2s")) { Vector history = (Vector) getobject("1", "history"); StringBuffer BUFFER = new StringBuffer(); for (int i = 0; i < history.size() - 1; i++) { BUFFER.append(history.elementAt(i)); if (i < history.size() - 1) { BUFFER.append("\n"); } } String script = "#!/bin/sh\n\n" + BUFFER.toString(); if (argument.equals("") || argument.equals("nano")) { nanoContent = script; } else { writeRMS(argument, script, id); } }
+//        // |
         // Interfaces
         //else if (mainCommand.equals("nano")) { nano.setString(argument.equals("") ? nanoContent : getcontent(argument)); display.setCurrent(nano); }
         //else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument), form.getTitle()), html2text(env(argument))); } }
