@@ -2124,49 +2124,49 @@ public class Lua {
         public void commandAction(Command c, Displayable d) {
             try {
                 if (c == BACK) {
-                    midlet.processCommand("xterm", true, id, PID, stdout, scope);
+                    midlet.processCommand("xterm", true, id, PID, stdout, father);
     
                     Hashtable backTable = (Hashtable) PKG.get("back");
                     if (backTable != null) {
                         Object back = backTable.get("root");
                         if (back instanceof LuaFunction) { ((LuaFunction) back).call(new Vector()); } 
-                        else if (back != null) { midlet.processCommand(toLuaString(back), true, id, PID, stdout, scope); }
+                        else if (back != null) { midlet.processCommand(toLuaString(back), true, id, PID, stdout, father); }
                     }
                 } 
                 else if (c == USER || c == List.SELECT_COMMAND) {
                     Object fire = PKG.get("button") == null ? null : ((Hashtable) PKG.get("button")).get("root");
     
                     if (MOD == ALERT) {
-                        midlet.processCommand("xterm", true, id, PID, stdout, scope);
+                        midlet.processCommand("xterm", true, id, PID, stdout, father);
     
                         if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
-                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, scope); }
+                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father); }
                     } 
                     else if (MOD == QUEST) {
                         String value = INPUT.getString().trim();
                         if (!value.equals("")) {
-                            midlet.processCommand("xterm", true, id, PID, stdout, scope);
+                            midlet.processCommand("xterm", true, id, PID, stdout, father);
                             if (fire instanceof LuaFunction) {
                                 Vector result = new Vector();
                                 result.addElement(midlet.env(value));
                                 ((LuaFunction) fire).call(result);
                             } else if (fire != null) {
                                 midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
-                                midlet.processCommand(toLuaString(fire), true, id, PID, stdout, scope);
+                                midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father);
                             }
                         }
                     } 
                     else if (MOD == EDIT) {
                         String value = ((TextBox) screen).getString().trim();
                         if (!value.equals("")) {
-                            midlet.processCommand("xterm", true, id, PID, stdout, scope);
+                            midlet.processCommand("xterm", true, id, PID, stdout, father);
                             if (fire instanceof LuaFunction) {
                                 Vector result = new Vector();
                                 result.addElement(midlet.env(value));
                                 ((LuaFunction) fire).call(result);
                             } else if (fire != null) {
                                 midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
-                                midlet.processCommand(toLuaString(fire), true, id, PID, stdout, scope);
+                                midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father);
                             }
                         }
                     } 
@@ -2178,26 +2178,26 @@ public class Lua {
                             for (int i = 0; i < list.size(); i++) { if (list.isSelected(i)) { args.addElement(midlet.env(list.getString(i))); } }
     
                             if (args.size() > 0) {
-                                midlet.processCommand("xterm", true, id, PID, stdout, scope);
+                                midlet.processCommand("xterm", true, id, PID, stdout, father);
                                 if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(args); } 
                                 else {
                                     for (int i = 0; i < args.size(); i++) {
                                         String key = args.elementAt(i).toString();
-                                        midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, id, PID, stdout, scope);
+                                        midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, id, PID, stdout, father);
                                     }
                                 }
                             }
                         } else {
                             int index = list.getSelectedIndex();
                             if (index >= 0) {
-                                midlet.processCommand("xterm", true, id, PID, stdout, scope);
+                                midlet.processCommand("xterm", true, id, PID, stdout, father);
                                 String key = list.getString(index);
     
                                 if (fire instanceof LuaFunction) {
                                     Vector args = new Vector();
                                     args.addElement(midlet.env(key));
                                     ((LuaFunction) fire).call(args);
-                                } else if (fire != null) { midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, id, PID, stdout, scope); }
+                                } else if (fire != null) { midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, id, PID, stdout, father); }
                             }
                         }
                     }
@@ -2226,16 +2226,16 @@ public class Lua {
                             }
                         }
                         
-                        midlet.processCommand("xterm", true, id, PID, stdout, scope);
+                        midlet.processCommand("xterm", true, id, PID, stdout, father);
                         if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(formData); } 
-                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, scope); }
+                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father); }
                     }
                 }
             }
             catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } 
             catch (Error e) { midlet.sys.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { Object fire = ITEM.get(item); if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, scope); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { Object fire = ITEM.get(item); if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 Object fire = STATE.get(item); 
