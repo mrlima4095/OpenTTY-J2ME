@@ -1072,7 +1072,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     
     // | (Kernel)
-    public int kernel(String command, int id, Object stdout, Hashtable scope) { }
+    public int kernel(String command, int id, Object stdout, Hashtable scope) { return 0; }
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
     public Hashtable genprocess(String name, int id, Hashtable signal) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", id == 0 ? "root" : username); if (signal != null) { proc.put("signals", signal); } return proc; }
@@ -1402,12 +1402,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getLastHistory() { Vector history = (Vector) getobject("1", "history"); return history.size() > 0 ? (String) history.elementAt(history.size() - 1) : ""; }
 
     // Packages
-    public int importScript(String script, int id, Object stdout, Hashtable scope) { }
-    public int runScript(String script, int id, String pid, Object stdout, Hashtable scope) { }
+    public int importScript(String script, int id, Object stdout, Hashtable scope) { return 0; }
+    public int runScript(String script, int id, String pid, Object stdout, Hashtable scope) { return 0; }
     // |
-    public int run(String script, String[] args, int id, String pid, Object stdout, Hashtable scope) { }
+    public int run(String script, String[] args, int id, String pid, Object stdout, Hashtable scope) { return 0; }
 
-    private Object goLua(String script, int id, Object stdout, Hashtable scope) { }
+    private Object goLua(String script, int id, Object stdout, Hashtable scope) { return 0; }
 }
 // |
 // EOF
