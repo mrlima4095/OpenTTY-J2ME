@@ -148,7 +148,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 monitor.addCommand(VIEW = new Command("View info", Command.SCREEN, 2));
                 monitor.setCommandListener(this);
 
-                if (CONN == null || IN == null || OUT == null) { print("nc: null object detected", stdout); } else { proc.put("socket", CONN); proc.put("in", IN); proc.put("out", OUT); proc.put("screen", monitor); }
+                proc.put("socket", CONN); proc.put("in", IN); proc.put("out", OUT); proc.put("screen", monitor);
                 display.setCurrent(monitor);
 
                 sys.put(PID, proc);
