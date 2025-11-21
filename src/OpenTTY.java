@@ -1444,11 +1444,48 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     // Packages
     public int importScript(String script, int id, Object stdout, Hashtable scope) { return 0; }
-    public int runScript(String script, int id, String pid, Object stdout, Hashtable scope) { return 0; }
+    public int runScript(String script, int id, String pid, Object stdout, Hashtable scope) {
+        if (script == null || script.length() == 0) { return 2; }
+        
+        Hashtable scriptScope = new Hashtable();
+        if (scope != null) {
+            for (Enumeration keys = scope.keys(); keys.hasMoreElements();) {
+                String key = (String) keys.nextElement();
+                scriptScope.put(key, scope.get(key));
+            }
+        }
+        
+        String[] lines = split(script, '\n');
+        int STATUS = 0;
+        
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            
+            if (line.equals("") || line.startsWith("#")) { }
+            else if ((STATUS = processCommand(line, true, id, pid, stdout, scriptScope)) != 0) { break; }
+        }
+        
+        return STATUS;
+    }
     // |
-    public int run(String script, String[] args, int id, String pid, Object stdout, Hashtable scope) { return 0; }
+    public int run(String argument, String[] args, int id, String pid, String stdout, Hashtable scope) { 
+        String content = argument.equals("") ? buffer : getcontent(args[0]); 
 
-    private Object goLua(String script, int id, Object stdout, Hashtable scope) { return 0; }
-}
+        if (content.startsWith("#!/bin/lua")) {
+            if (javaClass("Lua") == 0) { 
+                Lua lua = new Lua(this, id, stdout, scope); 
+
+                Hashtable arg = new Hashtable();
+                if (argument.equals("")) { source = ""; arg.put(new Double(0), "/dev/null"); } 
+                else { source = args[0]; arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
+                
+                return (Integer) lua.run(source, content, arg).get("status"); 
+            } 
+            else { return importScript(content, id, stdout, scope); } 
+        } else if (content.startsWith("[ Config ]")) { return importScript(content, id, stdout, scope);
+        } else { return runScript(content, id, pid, stdout, scope); }
+    }
+    public Object goLua(String argument, String[] args, int id, String pid, String stdout, Hashtable scope)
+}            
 // |
 // EOF
