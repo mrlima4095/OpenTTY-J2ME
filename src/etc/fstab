@@ -2,6 +2,5 @@
 /bin/=sh,curl,wget
 /dev/=null,random,stdin,stdout,tty,zero
 /etc/=fstab,init,motd,os-release
-/lib/=settings,yang
 /res/=docs,filetypes,img/
 /res/img/=app.png,cursor.png,dir.png,file.png,sh.png,up.png

@@ -1,3 +1,6 @@
+#!/bin/lua
+
+--[[
 [ Config ]
 
 name=PackJ
@@ -59,3 +62,4 @@ SmartME SDK=execute set RESOURCE=sdkme; set PKJOUT=/bin/sdk; yang install; set R
 Updater=execute set RESOURCE=sync; set PKJOUT=/bin/sync; yang install;
 ViaVersion=execute set RESOURCE=viaversion; set PKJOUT=/lib/viaversion; yang install;
 WebProxy=execute set RESOURCE=proxy.lua; set PKJOUT=/bin/shprxy; yang install
+]]
