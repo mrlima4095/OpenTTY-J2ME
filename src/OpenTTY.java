@@ -196,7 +196,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             monitor.addCommand(SAVE = new Command("Save", Command.OK, 1));
                             monitor.setCommandListener(this);
                             display.setCurrent(monitor);
-                        } else { write(filename, box.getString(), id); goback(); }
+                        } else { int STATUS = write(filename, box.getString(), id); if (STATUS == 0) { goback(); } else { warn("Nano Editor", "Status: " + STATUS); } }
                     }
                     else { goback(); }
                 }
@@ -324,7 +324,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             else if (MOD == NANO) {
                 if (c == CLEAR) { box.setString(""); }
-                else if (c == SAVE) { if (USER == null) { } else { String file = USER.getString().trim(); if (file.equals("")) { } else { write(file, box.getString(), id); goback(); } } }
+                else if (c == SAVE) { if (USER == null) { } else { String file = USER.getString().trim(); if (file.equals("")) { } else { if (STATUS == 0) { goback(); } else { warn("Nano Editor", "Status: " + STATUS); } } } }
                 else if (c == VIEW) { String html = box.getString(); monitor = new Form(extractTitle(html, "HTML Viewer")); monitor.append(html2text(html)); monitor.addCommand(BACK); monitor.setCommandListener(this); display.setCurrent(monitor); }
             }
         }
