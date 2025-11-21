@@ -12,7 +12,7 @@ public class Lua {
     private String PID = null;
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    private Hashtable globals = new Hashtable(), proc = new Hashtable(), requireCache = new Hashtable();
+    private Hashtable globals = new Hashtable(), proc = new Hashtable(), father, requireCache = new Hashtable();
     private Vector tokens;
     // |
     public int status = 0;
@@ -24,7 +24,7 @@ public class Lua {
     // |
     // Main
     public Lua(OpenTTY midlet, int id, Object stdout, Hashtable scope) {
-        this.midlet = midlet; this.id = id; this.stdout = stdout;
+        this.midlet = midlet; this.id = id; this.stdout = stdout; this.father = scope;
         this.tokenIndex = 0; this.PID = midlet.genpid();
         this.proc = midlet.genprocess("lua", id, null);
         
