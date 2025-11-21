@@ -826,7 +826,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else { print("svchost: " + args[0] + ": not found", stdout); return 127; }
             }
         }
-        else if (mainCommand.equals("uptime")) { print("" + System.currentTimeMillis() - uptime, stdout); }
+        else if (mainCommand.equals("uptime")) { print("" + (System.currentTimeMillis() - uptime), stdout); }
         // |
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, stdout) * 100); }
