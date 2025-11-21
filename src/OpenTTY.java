@@ -1141,12 +1141,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
 
-
     // Logging Manager
     public int MIDletLogs(String command, int id, Object stdout) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { write(argument.equals("") ? "logs" : argument, logs, id); } else if (mainCommand.equals("view")) { viewer(xterm.getTitle(), logs); } else if (mainCommand.equals("add")) { String level = getCommand(argument).toLowerCase(), message = getArgument(argument); if (message.equals("")) { } else { if (level.equals("info") || level.equals("warn") || level.equals("debug") || level.equals("error")) { logs += "[" + level.toUpperCase() + "] " + split(new java.util.Date().toString(), ' ')[3] + " " + message + "\n"; } else { print("log: add: " + level + ": not found", stdout); return 127; } } } else { print("log: " + mainCommand + ": not found", stdout); return 127; } return 0; }
 
-    // | (Kernel)
-    
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
     public Hashtable genprocess(String name, int id, Hashtable signal) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", id == 0 ? "root" : username); if (signal != null) { proc.put("signals", signal); } return proc; }
