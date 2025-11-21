@@ -172,7 +172,7 @@ elseif arg[1] == "upgrade" then
     if os.getuid() > 0 then
         print("Permission denied!") os.exit(13)
     end
-    
+
     print(":: Upgrading all packages...")
     local upgraded = 0
     for pkg_name, info in pairs(mirror) do
@@ -246,7 +246,6 @@ elseif arg[1] == "info" then
         print("Usage: yang info <package>")
     end
 else
-    print("yang: " .. arg[1] .. ": command not found")
-    print("Try 'yang help' for usage information")
+    print("yang: " .. arg[1] .. ": not found")
     os.exit(127)
 end
