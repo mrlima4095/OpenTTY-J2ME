@@ -284,7 +284,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String password = PASSWD.getString().trim();
 
                 if (password.equals("")) { } 
-                else if (password.equals(passwd())) { goback(); processCommand(command, enable, 0, pid, stdout, scope); setLabel(); } 
+                else if (password.equals(passwd())) { goback(); processCommand(command, enable, 0, PID, stdout, scope); setLabel(); } 
                 else { PASSWD.setString(""); warn(xterm.getTitle(), "Wrong password"); }
             }
 
