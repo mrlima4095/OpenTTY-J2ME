@@ -33,7 +33,7 @@ public class Lua {
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
         funcs = new String[] { "read", "write", "close", "open", "popen" }; loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN };
-        for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("io", io);
+        for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } io.put("stdout", midlet.stdout); io.put("stdin", midlet.stdin); globals.put("io", io);
 
         funcs = new String[] { "insert", "concat", "remove", "sort", "move", "unpack", "pack", "decode" }; loaders = new int[] { TB_INSERT, TB_CONCAT, TB_REMOVE, TB_SORT, TB_MOVE, TB_UNPACK, TB_PACK, TB_DECODE };
         for (int i = 0; i < funcs.length; i++) { table.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("table", table);
@@ -1345,8 +1345,7 @@ public class Lua {
                 return (mt == LUA_NIL || mt == null) ? null : mt;
             }
             // Package: os
-            else if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + 
-            type(args.elementAt(1)))), PID, stdout, father)); } }
+            else if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, stdout, father)); } }
             else if (MOD == GETENV) { return args.isEmpty() ? gotbad(1, "getenv", "string expected, got no value") : midlet.attributes.get(toLuaString(args.elementAt(0))); }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
@@ -1435,6 +1434,7 @@ public class Lua {
                     if (args.size() > 1 && args.elementAt(1) instanceof InputStream) { return gotbad(2, "write", "output stream expected, got input"); }  
                     else if (args.size() > 1 && args.elementAt(1) instanceof OutputStream) { OutputStream out = (OutputStream) args.elementAt(1); out.write(content.getBytes("UTF-8")); out.flush(); return 0; }
                     else if (args.elementAt(0) instanceof OutputStream) { OutputStream o = (OutputStream) args.elementAt(0); o.write(out.getBytes("UTF-8")); o.flush(); return 0; }
+                    else if (args.size() > 1 && args.elementAt(1) instanceof StringBuffer) { ((OutputStream) args.elementAt(1)).append(content); return 0; }
                     else {
                         return midlet.write(out, mode ? midlet.getcontent(out) + content : content, id);
                     }
