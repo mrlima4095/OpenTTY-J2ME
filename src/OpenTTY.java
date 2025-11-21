@@ -949,7 +949,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
         }
         // |
-        else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { xterm.deleteAll(); xterm.append(stdout); xterm.append(stdin); } else { new MIDletControl(xterm, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), id); } }
+        else if (mainCommand.equals("item")) { if (argument.equals("") || argument.equals("clear")) { xterm.deleteAll(); xterm.append(this.stdout); xterm.append(stdin); } else { new MIDletControl(xterm, "item", argument.startsWith("-e") ? argument.substring(2).trim() : getcontent(argument), id); } }
 
         else { print("x11: " + mainCommand + ": not found", stdou); return 127; }
     }
