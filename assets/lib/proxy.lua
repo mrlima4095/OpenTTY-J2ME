@@ -26,11 +26,9 @@ if #arg > 1 then
 
                 if cmd == "/exit" then break
                 else
-                    local before = io.read()
-                    os.execute(cmd)
-                    local after = io.read()
+                    local status, output = io.popen(cmd)
 
-                    io.write(string.sub(after, #before + 2, #after) .. "\n", o)
+                    io.write(output, o)
                 end
             else break end
         end
