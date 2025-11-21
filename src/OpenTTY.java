@@ -832,7 +832,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, stdout) * 100); }
         else if (mainCommand.startsWith("@")) { print("mod: " + mainCommand.substring(1) + ": not found", stdout); }
         // |
-        else if (mainCommand.equals("!")) { print(env("main/$RELEASE")); }
+        else if (mainCommand.equals("!")) { print(env("main/$RELEASE"), stdout); }
         else if (mainCommand.equals("!!")) { stdin.setString((argument.equals("") ? "" : argument + " ") + getLastHistory()); } 
         else if (mainCommand.equals(".")) { return run(argument, args, id, stdout, scope); }
         // |
