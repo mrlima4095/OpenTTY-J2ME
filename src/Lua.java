@@ -1458,7 +1458,7 @@ public class Lua {
             else if (MOD == POPEN) {
                 if (args.isEmpty()) { } 
                 else { 
-                    StirngBuffer out = new StringBuffer();
+                    StringBuffer out = new StringBuffer();
                     int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, stdout, father);
 
                     Vector result = new Vector();
