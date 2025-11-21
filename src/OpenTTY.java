@@ -889,7 +889,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Hashtable proc = (Hashtable) sys.get(args[0]);
                     if (proc.containsKey("lua") && proc.containsKey("handler")) {
                         Lua lua = (Lua) proc.get("lua");
-                        Vector arg = new Vector(); arg.addElement(args[1]); arg.addElement("shell"); arg.addElement("1"); arg.addElement(id);
+                        Vector arg = new Vector(); arg.addElement(args[1]); arg.addElement("shell"); arg.addElement(pid); arg.addElement(id);
                         Object response = null;
 
                         try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
