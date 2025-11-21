@@ -23,7 +23,6 @@
             Personal Headers
             Emulate DOM Content Loader
     Add support for SheBangs in 1.16.x
-    Yang - Lua Edition
     MIDletCanvas Build from Lua Table
     Release 1.16.2 LTS
     Release 1.17 -> main
