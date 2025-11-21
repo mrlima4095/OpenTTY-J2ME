@@ -771,7 +771,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("hostid")) { String DATA = env("$TYPE$CONFIG$PROFILE"); int HASH = 7; for (int i = 0; i < DATA.length(); i++) { HASH = HASH * 31 + DATA.charAt(i); } print(Integer.toHexString(HASH).toLowerCase(), stdout); }
         // |
         else if (mainCommand.equals("tty")) { print((String) attributes.get("TTY"), stdout); }
-        else if (mainCommand.equals("ttysize")) { print((stdout instanceof StringItem ? ((StringItem) stdout).getText().length() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString().length() : stdout instanceof String ? read((String) stdout).length() : "-1") + " B", stdout); }
+        else if (mainCommand.equals("ttysize")) { print((stdout instanceof StringItem ? ((StringItem) stdout).getText().length() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString().length() : stdout instanceof String ? read((String) stdout).length() : -1) + " B", stdout); }
         else if (mainCommand.equals("stty")) {
             if (argument.equals("")) { print("" + TTY_MAX_LEN, stdout); }
             else {
