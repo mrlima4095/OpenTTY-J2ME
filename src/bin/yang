@@ -1,65 +1,240 @@
 #!/bin/lua
 
---[[
-[ Config ]
+local version = "1.5"
 
-name=PackJ
-version=1.5
-description=OpenTTY Package Manager
+local server = "socket://opentty.xyz:31522"
+local proxy_url = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?"
+local repo = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/"
 
-include=/lib/settings
+local mirror = {
+    ["android"] = { remote = "android", here = "/bin/droid", depends = { "forge" }, description = "OpenTTY API for Emulator" },
+    ["armitage"] = { remote = "armitage", here = "/bin/armitage", description = "OpenTTY Network Tools" },
+    ["autogc"] = { remote = "autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
+    ["bprev"] = { remote = "bprevious", here = "/lib/bprevious", description = "Back to Previous Screen" },
+    ["cmatrix"] = { remote = "cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
+    ["darkdm"] = { remote = "darkdm.lua", here = "/bin/ddm", description = "Reverse of LightDM" },
+    ["forge"] = { remote = "forge", here = "/bin/forge", description = "Additional API for OpenTTY" },
+    ["jbuntu"] = { remote = "jbuntu", here = "/bin/jbuntu", description = "Lightweith Desktop for OpenTTY" },
+    ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
+    ["mobix"] = { remote = "mxos", here = "/bin/mxos", description = "MobiX Loader" },
+    ["pastebin"] = { remote = "pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
+    ["sed"] = { remote = "sed.lua", here = "/bin/sed", description = "String Editor" },
+    ["sdk"] = { remote = "sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
+    ["sync"] = { remote = "sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
+    ["viaversion"] = { remote = "viaversion", here = "/bin/axrz", description = "Change OpenTTY API on Runtime" },
+    ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
+}
 
-config=case !key (REPO) set REPO=opentty.xyz:31522
-command=yang,setrepo
+local function download(pkg, proxy)
+    if proxy then
+        local ok, content, status = pcall(socket.http.get, proxy_url .. repo .. mirror[pkg].remote)
 
-yang=execute x11 list /lib/yang;
-setrepo=execute set VALUE=REPO; set LABEL=IP Address (OpenTTY Server); export RETURN; cfg run;
+        if ok then
+            if status == 200 then return content
+            elseif status == 404 then
+                print(":: Package " .. pkg .. " not found on repository")
+            end
+        else
+            print(":: Download failed: " .. tostring(content))
+        end
+    else
+        local conn, i, o = socket.connect(server)
+        if not conn then
+            print(":: Connection failed to server")
+            return nil
+        end
 
-shell.name=yang
-shell.args=install,update,setrepo,get,chkrun,info
+        io.write("get " .. mirror[pkg].remote, o)
 
-install=sudo bg execute yang chkrun; set OLD_QUERY=$QUERY; set QUERY=$PKJOUT; echo ":: Downloading $RESOURCE"; query socket://$REPO get lib/$RESOURCE; echo ":: Installed [ $PKJOUT ]"; set QUERY=$OLD_QUERY; unset OLD_QUERY RESOURCE PKJOUT; 
-update=sudo bg execute yang chkrun; set OLD_QUERY=$QUERY; set QUERY=/lib/yang; echo ":: Downloading..."; query socket://$REPO get lib/yang; echo ":: Yang updated!"; set QUERY=$OLD_QUERY; unset OLD_QUERY RESOURCE;
+        local ok, content = pcall(io.read, i)
+        pcall(socket.close, conn)
 
-chkrun=execute case file (/tmp/.yang-lock) exec echo ":: Another yang instance is running!" & return 68; 
-get=execute x11 quest /lib/yang; true
+        if ok then return content else print(":: Read failed: " .. tostring(content)) end
+    end
+    return nil
+end
 
-info=execute echo "PackJ 1.5 (Default)"
+local function install_dependencies(pkg_name)
+    if mirror[pkg_name] and mirror[pkg_name].depends then
+        for _, dep in ipairs(mirror[pkg_name].depends) do
+            if mirror[dep] then
+                print(":: Installing dependency: " .. dep)
+                local content = download(dep, false)
+                if content then
+                    local result = io.write(content, mirror[dep].here)
+                    if result then
+                        print(":: Dependency installed: " .. dep)
+                    else
+                        print(":: Failed to install dependency: " .. dep)
+                        return false
+                    end
+                else
+                    print(":: Failed to download dependency: " .. dep)
+                    return false
+                end
+            end
+        end
+    end
+    return true
+end
 
-[ DISPLAY ]
+local function list_packages()
+    print("Available packages:\n")
+    for name, info in pairs(mirror) do
+        print("- " .. name .. ": " .. info.description)
+    end
+end
 
-quest.title=PackJ Query
-quest.label=Package
-quest.key=RESOURCE
-quest.cmd=execute set OLD_QUERY=$QUERY; set QUERY=$RESOURCE; echo ":: Downloading $RESOURCE"; query socket://$REPO get lib/$RESOURCE; echo ":: Download complete!"; set QUERY=$OLD_QUERY; unset OLD_QUERY; true
-
-[ Index ]
-
-list.title=Repository
-list.content=Android ME,Armitage,Auto Clean,Back Previous,BoxME,Browser,CMatrix,DarkDM+,Discord (MIDlet),Forge,Github (MIDlet),GoBuster (Word list),ImmersiveShell,JBuntu,JBenchmark,J2ME Loader,MobiX UI,PasteBin,StringEditor,SmartME SDK,Updater,ViaVersion,WebProxy
-list.button=Install
-
-Android ME=execute set RESOURCE=android; set PKJOUT=/bin/droid; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
-Armitage=execute set RESOURCE=armitage; set PKJOUT=/bin/armitage; yang install;
-Auto Clean=execute set RESOURCE=autogc; set PKJOUT=/lib/autogc; yang install;
-Back Previous=execute set RESOURCE=bprevious; set PKJOUT=/lib/bprevious; yang install;
-BoxME=execute set RESOURCE=boxme; set PKJOUT=/bin/boxme; yang install;
-Browser=execute set RESOURCE=browser.lua; set PKJOUT=/bin/web; yang install;
-CMatrix=execute set RESOURCE=cmatrix; set PKJOUT=/bin/cmatrix; yang install;
-DarkDM+=execute set RESOURCE=darkdm.lua; set PKJOUT=/bin/ddm; yang install
-Discord (MIDlet)=execute warn "This is a 3rd MIDlet from 'gtrxac'"; bg exec sleep 3 & open http://146.59.80.3/discord_midp2_beta.jar;
-Forge=execute set RESOURCE=forge; set PKJOUT=/bin/forge; yang install;
-Github (MIDlet)=execute warn "This is a 3rd MIDlet from 'shinovon'"; bg exec sleep 3 & open http://nnp.nnchan.ru/dl/GH2ME.jar;
-GoBuster (Word list)=execute set RESOURCE=gobuster; set PKJOUT=/home/gobuster; yang install;
-ImmersiveShell=execute set RESOURCE=sh2me; set PKJOUT=/lib/sh2me; yang install;
-JBuntu=execute set RESOURCE=jbuntu; set PKJOUT=/bin/jbuntu; yang install;
-JBenchmark=execute set RESOURCE=debuggers; set PKJOUT=/bin/jdb; yang install;
-J2ME Loader=execute set RESOURCE=modme; set PKJOUT=/bin/modme; yang install;
-MobiX UI=execute set RESOURCE=mxos; set PKJOUT=/bin/mxos; yang install;
-PasteBin=execute set RESOURCE=pastebin; set PKJOUT=/bin/pastebin; yang install;
-StringEditor=execute set RESOURCE=sed.lua; set PKJOUT=/bin/sed; yang install;
-SmartME SDK=execute set RESOURCE=sdkme; set PKJOUT=/bin/sdk; yang install; set RESOURCE=forge; set LOCAL=/bin/forge; yang install;
-Updater=execute set RESOURCE=sync; set PKJOUT=/bin/sync; yang install;
-ViaVersion=execute set RESOURCE=viaversion; set PKJOUT=/lib/viaversion; yang install;
-WebProxy=execute set RESOURCE=proxy.lua; set PKJOUT=/bin/shprxy; yang install
-]]
+if arg[1] == nil or arg[1] == "help" then
+    print("Yang " .. version .. " - OpenTTY Package Manager")
+    print("")
+    print("Usage: yang <command> [options]")
+    print("")
+    print("Commands:")
+    print("  install <pkg...>    Install packages")
+    print("  remove <pkg...>     Remove packages")
+    print("  update              Update package list")
+    print("  upgrade             Upgrade all packages")
+    print("  download <pkg>      Download package without installing")
+    print("  fetch               Fetch package information")
+    print("  search <term>       Search for packages")
+    print("  list                List available packages")
+    print("  info <pkg>          Show package information")
+    print("")
+elseif arg[1] == "install" then
+    if #arg > 1 then
+        for i = 2, #arg do
+            local pkg_name = arg[i]
+            if mirror[pkg_name] then
+                if install_dependencies(pkg_name) then
+                    print(":: Downloading " .. mirror[pkg_name].remote .. "...")
+                    local content = download(pkg_name, false)
+                    if content then
+                        local result = io.write(content, mirror[pkg_name].here)
+                        if result then
+                            print(":: Installed " .. pkg_name .. " to " .. mirror[pkg_name].here)
+                        else
+                            print(":: Installation failed for " .. pkg_name)
+                        end
+                    else
+                        print(":: Download failed for " .. pkg_name)
+                    end
+                else
+                    print(":: Failed to install dependencies for " .. pkg_name)
+                end
+            else
+                print(":: Package not found: " .. pkg_name)
+            end
+        end
+    else
+        print("Usage: yang install <package1> [package2...]")
+    end
+elseif arg[1] == "remove" then
+    if #arg > 1 then
+        for i = 2, #arg do
+            local pkg_name = arg[i]
+            if mirror[pkg_name] then
+                local result = os.execute("rm " .. mirror[pkg_name].here)
+                if result == 0 then
+                    print(":: Removed " .. pkg_name)
+                else
+                    print(":: Failed to remove " .. pkg_name)
+                end
+            else
+                print(":: Package not found: " .. pkg_name)
+            end
+        end
+    else
+        print("Usage: yang remove <package1> [package2...]")
+    end
+elseif arg[1] == "update" then
+    local ok, conn, i, o, response = pcall(socket.connect, server)
+    if ok then
+        io.write("fetch", o)
+        ok, response = pcall(io.read, i)
+        if ok then
+            print(":: " .. response)
+        else
+            print(":: Failed to fetch update information")
+        end
+        pcall(socket.close, conn)
+    else
+        print(":: Connection failed")
+    end
+elseif arg[1] == "upgrade" then
+    print(":: Upgrading all packages...")
+    local upgraded = 0
+    for pkg_name, info in pairs(mirror) do
+        print(":: Checking " .. pkg_name .. "...")
+        local content = download(pkg_name, false)
+        if content then
+            local current_content = io.read(info.here)
+            if current_content ~= content then
+                local result = io.write(content, info.here)
+                if result then
+                    print(":: Upgraded " .. pkg_name)
+                    upgraded = upgraded + 1
+                end
+            end
+        end
+    end
+    print(":: Upgrade completed. " .. upgraded .. " packages upgraded.")
+elseif arg[1] == "download" then
+    if #arg > 1 then
+        local pkg_name = arg[2]
+        if mirror[pkg_name] then
+            print(":: Downloading " .. pkg_name .. "...")
+            local content = download(pkg_name, false)
+            if content then
+                io.write(content, pkg_name)
+            else
+                print(":: Download failed")
+            end
+        else
+            print(":: Package not found: " .. pkg_name)
+        end
+    else
+        print("Usage: yang download <package>")
+    end
+elseif arg[1] == "search" then
+    if #arg > 1 then
+        local term = arg[2]:lower()
+        print("Search results for '" .. term .. "':\n")
+        local found = false
+        for name, info in pairs(mirror) do
+            if name:lower():find(term, 1, true) or info.description:lower():find(term, 1, true) then
+                print("- " .. name .. info.description)
+                found = true
+            end
+        end
+        if not found then
+            print(":: No packages found matching '" .. term .. "'")
+        end
+    else
+        print("Usage: yang search <term>")
+    end
+elseif arg[1] == "list" then
+    list_packages()
+elseif arg[1] == "info" then
+    if #arg > 1 then
+        local pkg_name = arg[2]
+        if mirror[pkg_name] then
+            local info = mirror[pkg_name]
+            print("Package: " .. pkg_name)
+            print("Description: " .. info.description)
+            print("Remote: " .. info.remote)
+            print("Location: " .. info.here)
+            if info.depends and #info.depends > 0 then
+                print("Dependencies: " .. table.concat(info.depends, ", "))
+            end
+        else
+            print(":: Package not found: " .. pkg_name)
+        end
+    else
+        print("Usage: yang info <package>")
+    end
+else 
+    print("yang: " .. arg[1] .. ": command not found")
+    print("Try 'yang help' for usage information")
+    os.exit(127)
+end
