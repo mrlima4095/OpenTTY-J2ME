@@ -169,3 +169,4 @@
 [2025-1.17-02x99] Basic Project of services hosting
 [2025-1.17-03x00] Added Command 'SVCHOST' - Services Host
 [2025-1.17-03x01] Reading pid from dad process
+[2025-1.17-03x02] Rewrote OpenTTY
