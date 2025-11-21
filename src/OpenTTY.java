@@ -136,7 +136,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public MIDletControl(String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = BG; this.command = command; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
         public MIDletControl(String pid, String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = ADDON; this.PID = pid; this.command = command; this.enable = enable; this.id = id;  this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
     
-        public MIDletControl(String file, boolean enable int id, Object stdout, Hashtable scope) {
+        public MIDletControl(String file, boolean enable, int id, Object stdout, Hashtable scope) {
             MOD = NANO; this.filename = file; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope;
             
             box = new TextBox("Nano - " + (file == null || file.equals("") ? "New Buffer" : file), (file == null || file.equals("")) ? "" : getcontent(file), 31522, TextField.ANY);
