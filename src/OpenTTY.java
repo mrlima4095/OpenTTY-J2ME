@@ -666,7 +666,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("add")) { buffer = buffer.equals("") ? argument : buffer + "\n" + argument; }
         else if (mainCommand.equals("getty")) { buffer = stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? read((String) stdout) : ""; }
-        else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { InputStream in = getInputStream(argument); if (in == null) { print("du: " + basename(argument) + ": not found"); return 127; } else { print("" + in.available(), stdout); } } }
+        else if (mainCommand.equals("du")) { 
+            if (argument.equals("")) { } 
+            else { 
+                try {
+                    InputStream in = getInputStream(argument); 
+                    if (in == null) { print("du: " + basename(argument) + ": not found"); return 127; } 
+                    else { print("" + in.available(), stdout); } 
+                } catch (Exception e) {
+                    print("du: " + getCatch(e), stdout);
+                    return e instanceof SecurityException ? 13 : 1;
+                }
+            } 
+        }
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { print(buffer, stdout); } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i]), stdout); } } }
         else if (mainCommand.equals("get")) { buffer = argument.equals("") ? "" : getcontent(argument); }
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { print("" + getcontent(argument).hashCode(), stdout); } }
