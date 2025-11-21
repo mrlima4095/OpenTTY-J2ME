@@ -397,7 +397,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false, id, pid, stdout, scope); }
         else if (mainCommand.equals("env")) { if (argument.equals("")) { for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { print(KEY + "=" + VALUE.trim(), stdout); } } } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { print(args[i] + "=" + (String) attributes.get(args[i]), stdout); } else { print("env: " + args[i] + ": not found", stdout); return 127; } } } }
 
-        else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, enable, id, stdout, scope) : mainCommand.equals("for") ? forCommand(argument, enable, id, stdout, scope) : caseCommand(argument, enable, id, stdout, scope); }
+        else if (mainCommand.equals("if") || 
+        mainCommand.equals("for") || 
+        mainCommand.equals("case")) { 
+            return mainCommand.equals("if") ? 
+            ifCommand(argument, enable, id, stdout, scope) : 
+            mainCommand.equals("for") ? 
+            forCommand(argument, enable, id, stdout, scope) : 
+            caseCommand(argument, enable, id, stdout, scope); 
+        }
         // |
         else if (mainCommand.equals("echo")) { print(argument, stdout); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
