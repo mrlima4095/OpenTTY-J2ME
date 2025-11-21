@@ -1,19 +1,5 @@
 #!/bin/lua
 
---[[
-
-[ Config ]
-
-name=MobiX
-version=1.0
-description=Java Mobile
-
-api.version=1.16
-api.require=lua
-api.error=execute log add error MobiX requires OpenTTY API 1.16; echo [ MobiX ] Loading failed!; echo [ MobiX ] See logs to more info.;
-api.match=minimum
-
-]]
 
 local proc = os.getpid()
 
