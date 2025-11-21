@@ -1056,7 +1056,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    public int stop(String pid, int id, Object stdout, Hashtable scope) { }
+    public int stop(String app, int id, Object stdout, Hashtable scope) {
+        if (app == null || app.length() == 0) { return 2; }
+        int STATUS = 0;
+
+        for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
+            String PID = (String) keys.nextElement(); name = getobject(PID, "name");
+
+            if (app.equals(name)) {
+                if ((STATUS = kill(PID, false, id, stdout, scope)) != 0) { break; } 
+            }
+        }
+
+        return STATUS;
+    }
+    
     // | (Kernel)
     public int kernel(String command, int id, Object stdout, Hashtable scope) { }
     // | (Generators)
