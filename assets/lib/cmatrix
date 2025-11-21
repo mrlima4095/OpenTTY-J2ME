@@ -1,19 +1,5 @@
 #!/bin/lua
 
---[[
-
-[ Config ]
-
-name=cmatrix
-version=1.0
-description=Matrix Effect
-
-api.version=1.17
-api.error=execute echo [ Matrix Effect ] This program requires OpenTTY 1.1 (Lua Runtime)
-api.match=minimum 
-api.require=lua 
-
-]]
 
 local collector = "execute unset CMATRIX; x11 stop; x11 init; case key (OLD_TITLE) exec title $OLD_TITLE & unset OLD_TITLE; clear; true"
 local function cmatrix()
