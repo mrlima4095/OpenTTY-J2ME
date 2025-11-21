@@ -54,20 +54,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // | (Main Listener)
     public void commandAction(Command c, Displayable d) {
-        if (c == EXECUTE) { 
+        if (c == BACK) { processCommand("xterm", true, 1000, "1", stdout, globals); }
+        else if (c == EXECUTE) { 
             String command = stdin.getString().trim(); 
             add2History(command); 
             stdin.setString(""); 
             processCommand(command, true, 1000, "1", stdout, globals); 
             setLabel();
-        } 
+        }
     }
     // |
     // Control Thread
     public OpenTTY getInstance() { return this; }
     public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
     public int setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); return 0; }
-    public class MIDletControl implements ItemCommandListener, CommandListener, Runnable {
+    public class MIDletControl implements CommandListener, Runnable {
         public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 6, LOCK = 7, NC = 8, BIND = 11, BG = 12, ADDON = 13, NANO = 14;
         public static final String impl = "full";
 
@@ -326,7 +327,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == SAVE) { if (USER == null) { } else { String file = USER.getString().trim(); write(file, box.getString(), id); } }
             }
         }
-        public void commandAction(Command c, Item item) { if (c == RUN) { goback(); processCommand((String) PKG.get(node + ".cmd"), true, id, PID, stdout, scope); } }
 
         public void run() {
             if (MOD == NC) { while (sys.containsKey(PID)) { try { if (IN.available() > 0) { byte[] BUFFER = new byte[IN.available()]; int LENGTH = IN.read(BUFFER); if (LENGTH > 0) { print((new String(BUFFER, 0, LENGTH)).trim(), console, false); } } } catch (Exception e) { warn(xterm.getTitle(), getCatch(e)); if (keep) { } else { sys.remove(PID); } } } try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } return; }
@@ -937,107 +937,43 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int getNumber(String s, int fallback, Object stdout) { try { return Integer.valueOf(s); } catch (Exception e) { if (stdout != null) { print(getCatch(e), stdout); } return fallback; } }
     public Double getNumber(String s) { try { return Double.valueOf(s); } catch (NumberFormatException e) { return null; } }
     
-    // Logging Manager
-    public int MIDletLogs(String command, int id, Object stdout) { 
-        command = env(command.trim()); 
-        String mainCommand = getCommand(command), argument = getArgument(command); 
-        
-        if (mainCommand.equals("")) { } 
-        else if (mainCommand.equals("clear")) { logs = ""; } 
-        else if (mainCommand.equals("swap")) { write(argument.equals("") ? "logs" : argument, logs, id); } 
-        else if (mainCommand.equals("view")) { viewer(xterm.getTitle(), logs); } 
-        else if (mainCommand.equals("add")) { 
-            String level = getCommand(argument).toLowerCase(), message = getArgument(argument); 
-            
-            if (message.equals("")) { }
-            else {
-                if (level.equals("info") || level.equals("warn") || level.equals("debug") || level.equals("error")) { 
-                    logs += "[" + level.toUpperCase() + "] " + split(new java.util.Date().toString(), ' ')[3] + " " + message + "\n"; 
-                }
-                else { print("log: add: " + level + ": not found", stdout); return 127; } 
-            } 
-        } else { print("log: " + mainCommand + ": not found", stdout); return 127; } 
-
-        return 0; 
-    }
-
-    // Graphics
-    public int xcli(String command, int id, Object stdout, Hashtable scope) {
+    // API 001 - Kernel
+    // | (Client)
+    public int kernel(String command, int id, String pid, Object stdout, Hashtable scope) {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
-        String[] args = splitArgs(getArgument(command));
+        String[] args = splitArgs(argument);
 
-        if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2025-05-04\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); }
-        else if (mainCommand.equals("version")) { print("X Server " + ((String) attributes.get("XVERSION")), stdout); }
-        else if (mainCommand.equals("buffer")) { print(display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight(), stdout); }
-        // |
-        else if (mainCommand.equals("term")) { display.setCurrent(xterm); }
-        else if (mainCommand.equals("init")) { if (argument.equals("/dev/stdin")) { xterm.append(stdin); } else if (argument.equals("/dev/stdout")) { xterm.append(this.stdout); } else { start("x11-wm", id, null, null, stdout, globals); } }
-        else if (mainCommand.equals("stop")) { xterm.setTitle(""); xterm.setTicker(null); xterm.deleteAll(); xcli("cmd hide", id, stdout, scope); xterm.removeCommand(EXECUTE); sys.remove("2"); }
-        else if (mainCommand.equals("cmd")) {  }
-        // |
-        else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
-        else if (mainCommand.equals("font")) { this.stdout.setFont(genFont(argument.equals("") ? "default" : argument)); }
-        else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
-        else if (mainCommand.equals("gauge")) { Alert alert = new Alert(xterm.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
-        // |
-        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else if (sys.containsKey("2")) { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); } else { return 69; } }
-        else if (mainCommand.equals("load") || mainCommand.equals("unset")) {
-            if (argument.equals("")) { }
-            else if (sys.containsKey("2")) {
-                Hashtable desktops = (Hashtable) getobject("2", "saves");
-
-                if (desktops.containsKey(argument)) {
-                    if (mainCommand.equals("load")) { display.setCurrent((Displayable) desktops.get(argument)); }
-                    else { desktops.remove(argument); }
-                } 
-                else { print("x11: " + mainCommand + ": " + argument + ": not found", stdout); return 127; }
-            } 
-            else { return 69; }
-        }
-        else if (mainCommand.equals("import") || mainCommand.equals("export")) { 
-            if (argument.equals("")) { } 
-            else {
-                if (sys.containsKey(argument)) {
-                    if (!getobject(argument, "owner").equals(username) && id != 0) { print("Permission denied!", stdout); return 13; }
-
-                    if (mainCommand.equals("import")) {
-                        Displayable screen = (Displayable) getobject(argument, "screen");
-
-                        if (screen == null) { print("x11: import: " + argument + ": no screens", stdout); return 69; }
-                        else { display.setCurrent(screen); }
-                    } 
-                    else { ((Hashtable) getprocess(argument)).put("screen", display.getCurrent()); }
-                } 
-                else { print("x11: " + mainCommand + ": " + argument + ": not found", stdout); return 127; }
-            } 
-        }
-        // |
-        else { print("x11: " + mainCommand + ": not found", stdout); return 127; }
+        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, id, stdout, scope); }
+        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { print(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? (String) getobject(getArgument(argument), "owner") : (getpid(getArgument(argument)) != null ? "true" : "false"), stdout); } } 
+        else if (mainCommand.equals("used")) { print("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024, stdout); } 
+        else if (mainCommand.equals("free")) { print("" + runtime.freeMemory() / 1024, stdout); } 
+        else if (mainCommand.equals("total")) { print("" + runtime.totalMemory() / 1024, stdout); }
+        else if (mainCommand.equals("view") || mainCommand.equals("read")) {
+            Hashtable ITEM = argument.equals("") ? sys : getprocess(argument);
+                
+            if (ITEM == null) {
+                if (mainCommand.equals("view")) { warn(xterm.getTitle(), "PID '" + argument + "' not found"); }
+                else { print("PID '" + argument + "' not found", stdout); }
+                    
+                return 127;
+            } else {
+                if (!ITEM.get("owner").equals(username) && id != 0) {
+                    if (mainCommand.equals("view")) { warn(xterm.getTitle(), "Permission denied!"); }
+                    else { print("Permission denied!", stdout); }
+                        
+                    return 13;
+                }
+                    
+                if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
+                else { print(renderJSON(ITEM, 0), stdout); }
+            }       
+        }   
+        else { print("top: " + mainCommand + ": not found", stdout); return 127; } 
 
         return 0;
     }
-    // |
-    public void print(String message, Object stdout) { print(message, stdout, true); }
-    public void print(String message, Object stdout, boolean log) {
-        if (log) { attributes.put("OUTPUT", message); }
-
-        if (stdout == null) { }
-        else if (stdout instanceof StringItem) { String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; ((StringItem) stdout).setText(TTY_MAX_LEN >= 0 && output.length() > TTY_MAX_LEN ? output.substring(output.length() - TTY_MAX_LEN) : output); }
-        else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append("\n").append(message); }
-        else if (stdout instanceof String) { write((String) stdout, read((String) stdout) + "\n" + message, 1000); }
-        else if (stdout instanceof OutputStream) {
-            try { ((OutputStream) stdout).write((message + "\n").getBytes());  ((OutputStream) stdout).flush(); } 
-            catch (Exception e) { }
-        }
-    }
-    // |
-    public int warn(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); return 0; }
-    public int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(env(text)); viewer.addCommand(BACK); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
-    // |
-    public Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
-
-    // Process
+    // | (Process Manager)
     public int start(String app, int id, String pid, Hashtable signals, Object stdout, Hashtable scope) {
         if (app == null || app.length() == 0) { return 2; }
 
@@ -1049,14 +985,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             proc.put("signals", gensignals(app.equals("sh") ? "exit" : "x11 stop")); proc.put("screen", xterm); 
 
             if (sys.containsKey(pid)) { return 68; }
-            else if (app.equals("sh")) { 
-                Hashtable sessions = new Hashtable(); sessions.put(pid, "127.0.0.1");
-
-                proc.put("stack", new Vector()); proc.put("history", new Vector()); 
-                proc.put("sessions", sessions); proc.put("servers", new Hashtable());
-            }
+            else if (app.equals("sh")) { Hashtable sessions = new Hashtable(); sessions.put(pid, "127.0.0.1"); proc.put("stack", new Vector()); proc.put("history", new Vector()); proc.put("sessions", sessions); proc.put("servers", new Hashtable()); }
             else if (app.equals("x11-wm")) { 
-                proc.put("saves", new Hashtable()); 
+                proc.put("saves", new Hashtable()); proc.put("buttons", new Hashtable());
 
                 xterm.append(this.stdout); xterm.append(stdin); xterm.addCommand(EXECUTE); 
                 xterm.setTitle("OpenTTY " + ((String) attributes.get("VERSION")));
@@ -1118,56 +1049,103 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return 0;
     }
-    public int stop(String app, int id, Object stdout, Hashtable scope) {
-        if (app == null || app.length() == 0) { return 2; }
-        int STATUS = 0;
+    public int stop(String app, int id, Object stdout, Hashtable scope) { if (app == null || app.length() == 0) { return 2; } int STATUS = 0; for (Enumeration keys = sys.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) getobject(PID, "name"); if (app.equals(name)) { if ((STATUS = kill(PID, false, id, stdout, scope)) != 0) { break; } } } return STATUS; }
 
-        for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
-            String PID = (String) keys.nextElement(), name = (String) getobject(PID, "name");
-
-            if (app.equals(name)) {
-                if ((STATUS = kill(PID, false, id, stdout, scope)) != 0) { break; } 
-            }
-        }
-
-        return STATUS;
-    }
     
-    // | (Kernel)
-    public int kernel(String command, int id, String pid, Object stdout, Hashtable scope) {
+    // API 002 - Graphics
+    // | (Client)
+    public int xcli(String command, int id, Object stdout, Hashtable scope) {
         command = env(command.trim());
         String mainCommand = getCommand(command), argument = getArgument(command);
-        String[] args = splitArgs(argument);
+        String[] args = splitArgs(getArgument(command));
 
-        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, id, stdout, scope); }
-        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { print(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? (String) getobject(getArgument(argument), "owner") : (getpid(getArgument(argument)) != null ? "true" : "false"), stdout); } } 
-        else if (mainCommand.equals("used")) { print("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024, stdout); } 
-        else if (mainCommand.equals("free")) { print("" + runtime.freeMemory() / 1024, stdout); } 
-        else if (mainCommand.equals("total")) { print("" + runtime.totalMemory() / 1024, stdout); }
-        else if (mainCommand.equals("view") || mainCommand.equals("read")) {
-            Hashtable ITEM = argument.equals("") ? sys : getprocess(argument);
-                
-            if (ITEM == null) {
-                if (mainCommand.equals("view")) { warn(xterm.getTitle(), "PID '" + argument + "' not found"); }
-                else { print("PID '" + argument + "' not found", stdout); }
-                    
-                return 127;
-            } else {
-                if (!ITEM.get("owner").equals(username) && id != 0) {
-                    if (mainCommand.equals("view")) { warn(xterm.getTitle(), "Permission denied!"); }
-                    else { print("Permission denied!", stdout); }
-                        
-                    return 13;
+        if (mainCommand.equals("")) { viewer("OpenTTY X.Org", env("OpenTTY X.Org - X Server $XVERSION\nRelease Date: 2025-05-04\nX Protocol Version 1, Revision 3\nBuild OS: $TYPE")); }
+        else if (mainCommand.equals("version")) { print("X Server " + ((String) attributes.get("XVERSION")), stdout); }
+        else if (mainCommand.equals("buffer")) { print(display.getCurrent().getWidth() + "x" + display.getCurrent().getHeight(), stdout); }
+        // |
+        else if (mainCommand.equals("term")) { display.setCurrent(xterm); }
+        else if (mainCommand.equals("init")) { if (argument.equals("/dev/stdin")) { xterm.append(stdin); } else if (argument.equals("/dev/stdout")) { xterm.append(this.stdout); } else { start("x11-wm", id, null, null, stdout, globals); } }
+        else if (mainCommand.equals("stop")) { xterm.setTitle(""); xterm.setTicker(null); xterm.deleteAll(); xcli("cmd hide", id, stdout, scope); xterm.removeCommand(EXECUTE); sys.remove("2"); }
+        else if (mainCommand.equals("cmd")) {
+            if (sys.containsKey("2")) {
+                Hashtable cmds = (Hashtable) getobject("2", "buttons");
+
+                if (argument.equals("")) { for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) { xterm.removeCommand((Command) keys.nextElement()); } }
+                else if (argument.indexOf("=") != -1) {
+
+                } else {
+
                 }
-                    
-                if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
-                else { print(renderJSON(ITEM, 0), stdout); }
-            }       
-        }   
-        else { print("top: " + mainCommand + ": not found", stdout); return 127; } 
+            } else { return 69; }
+        }
+        // |
+        else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
+        else if (mainCommand.equals("font")) { this.stdout.setFont(genFont(argument.equals("") ? "default" : argument)); }
+        else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
+        else if (mainCommand.equals("gauge")) { Alert alert = new Alert(xterm.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
+        // |
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else if (sys.containsKey("2")) { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); } else { return 69; } }
+        else if (mainCommand.equals("load") || mainCommand.equals("unset")) {
+            if (argument.equals("")) { }
+            else if (sys.containsKey("2")) {
+                Hashtable desktops = (Hashtable) getobject("2", "saves");
+
+                if (desktops.containsKey(argument)) {
+                    if (mainCommand.equals("load")) { display.setCurrent((Displayable) desktops.get(argument)); }
+                    else { desktops.remove(argument); }
+                } 
+                else { print("x11: " + mainCommand + ": " + argument + ": not found", stdout); return 127; }
+            } 
+            else { return 69; }
+        }
+        else if (mainCommand.equals("import") || mainCommand.equals("export")) { 
+            if (argument.equals("")) { } 
+            else {
+                if (sys.containsKey(argument)) {
+                    if (!getobject(argument, "owner").equals(username) && id != 0) { print("Permission denied!", stdout); return 13; }
+
+                    if (mainCommand.equals("import")) {
+                        Displayable screen = (Displayable) getobject(argument, "screen");
+
+                        if (screen == null) { print("x11: import: " + argument + ": no screens", stdout); return 69; }
+                        else { display.setCurrent(screen); }
+                    } 
+                    else { ((Hashtable) getprocess(argument)).put("screen", display.getCurrent()); }
+                } 
+                else { print("x11: " + mainCommand + ": " + argument + ": not found", stdout); return 127; }
+            } 
+        }
+        // |
+        else { print("x11: " + mainCommand + ": not found", stdout); return 127; }
 
         return 0;
     }
+    // | (Window-Based Interfaces)
+    public int warn(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); return 0; }
+    public int viewer(String title, String text) { Form viewer = new Form(env(title)); viewer.append(env(text)); viewer.addCommand(BACK); viewer.setCommandListener(this); display.setCurrent(viewer); return 0; }
+    // | (Font Generator)
+    public Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
+    // |
+    public void print(String message, Object stdout) { print(message, stdout, true); }
+    public void print(String message, Object stdout, boolean log) {
+        if (log) { attributes.put("OUTPUT", message); }
+
+        if (stdout == null) { }
+        else if (stdout instanceof StringItem) { String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; ((StringItem) stdout).setText(TTY_MAX_LEN >= 0 && output.length() > TTY_MAX_LEN ? output.substring(output.length() - TTY_MAX_LEN) : output); }
+        else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append("\n").append(message); }
+        else if (stdout instanceof String) { write((String) stdout, read((String) stdout) + "\n" + message, 1000); }
+        else if (stdout instanceof OutputStream) {
+            try { ((OutputStream) stdout).write((message + "\n").getBytes());  ((OutputStream) stdout).flush(); } 
+            catch (Exception e) { }
+        }
+    }
+
+
+    // Logging Manager
+    public int MIDletLogs(String command, int id, Object stdout) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { write(argument.equals("") ? "logs" : argument, logs, id); } else if (mainCommand.equals("view")) { viewer(xterm.getTitle(), logs); } else if (mainCommand.equals("add")) { String level = getCommand(argument).toLowerCase(), message = getArgument(argument); if (message.equals("")) { } else { if (level.equals("info") || level.equals("warn") || level.equals("debug") || level.equals("error")) { logs += "[" + level.toUpperCase() + "] " + split(new java.util.Date().toString(), ' ')[3] + " " + message + "\n"; } else { print("log: add: " + level + ": not found", stdout); return 127; } } } else { print("log: " + mainCommand + ": not found", stdout); return 127; } return 0; }
+
+    // | (Kernel)
+    
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
     public Hashtable genprocess(String name, int id, Hashtable signal) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", id == 0 ? "root" : username); if (signal != null) { proc.put("signals", signal); } return proc; }
