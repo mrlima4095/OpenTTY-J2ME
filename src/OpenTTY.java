@@ -308,7 +308,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public void commandAction(Command c, Item item) { if (c == RUN) { goback(); processCommand((String) PKG.get(node + ".cmd"), true, id, PID, stdout, scope); } }
 
         public void run() {
-            if (MOD == NC) { while (sys.containsKey(PID)) { try { if (IN.available() > 0) { byte[] BUFFER = new byte[IN.available()]; int LENGTH = IN.read(BUFFER); if (LENGTH > 0) { print((new String(BUFFER, 0, LENGTH)).trim(), console, false); } } } catch (Exception e) { warn(form.getTitle(), getCatch(e)); if (keep) { } else { sys.remove(PID); } } } try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } return; }
+            if (MOD == NC) { while (sys.containsKey(PID)) { try { if (IN.available() > 0) { byte[] BUFFER = new byte[IN.available()]; int LENGTH = IN.read(BUFFER); if (LENGTH > 0) { print((new String(BUFFER, 0, LENGTH)).trim(), console, false); } } } catch (Exception e) { warn(xterm.getTitle(), getCatch(e)); if (keep) { } else { sys.remove(PID); } } } try { IN.close(); OUT.close(); CONN.close(); } catch (Exception e) { } return; }
             else if (MOD == BIND) {
                 if (sessions.containsKey(port)) { print("[-] Port '" + port + "' is unavailable", stdout); return; }
 
