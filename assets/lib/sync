@@ -1,19 +1,18 @@
-[ Config ]
+#!/bin/lua
 
-name=Sync
-version=1.2
-description=Update Checker
+graphics.display(graphics.BuildList({
+    title = "MIDlet Updater",
+    back = { label = "Back", root = os.exit },
+    button = {
+        label = "Go",
+        root = function (opt)
+            if opt == "Check for Updates" then
+                
+            elseif opt == "Go to releases archive" then os.execute("open http://opentty.xyz/dist/versions") os.exit()
+            elseif opt == "Download 1.16 (LTS)" then os.execute("open http://opentty.xyz/dist/versions/OpenTTY-1.16.jar") os.exit()
+            else os.execute("open http://opentty.xyz/dist/OpenTTY.jar") os.exit() end
+        end
+    },
 
-config=execute x11 list /bin/sync; warn Select a Mirror to Connect with GitHub!;
-
-[ DISPLAY ]
-
-list.title=MIDlet Updater
-list.content=OpenTTY Server,MIDlet Proxy,---,OpenTTY 1.16 LTS,---,Download (Beta)
-
-OpenTTY Server=execute set OLD_QUERY=$QUERY; set QUERY=latest.sh; query socket://$REPO get scripts/latest.sh; run latest.sh; rm latest.sh; set QUERY=$OLD_QUERY; unset $OLD_QUERY;
-MIDlet Proxy=execute clone raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/latest.sh;
----=execute x11 list /bin/sync
-OpenTTY 1.16 LTS=execute open http://opentty.xyz/dist/versions/OpenTTY-1.16.jar
----=execute x11 list /bin/sync
-Download (Beta)=execute open http://opentty.xyz/dist/OpenTTY.jar
+    fields = { "Check for Updates", "Go to releases archive", "Download 1.16 (LTS)", "Download (Beta)" }
+}))
