@@ -671,7 +671,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 try {
                     InputStream in = getInputStream(argument); 
-                    if (in == null) { print("du: " + basename(argument) + ": not found"); return 127; } 
+                    if (in == null) { print("du: " + basename(argument) + ": not found", stdout); return 127; } 
                     else { print("" + in.available(), stdout); } 
                 } catch (Exception e) {
                     print("du: " + getCatch(e), stdout);
