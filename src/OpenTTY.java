@@ -808,7 +808,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), enable, id, pid, stdout, scope); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { print(getCatch(e), stdout); return 2; } } }
         else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, enable, id, pid, stdout, scope); print("at " + (System.currentTimeMillis() - START) + "ms", stdout); return STATUS; } }
-        else if (mainCommand.equals("exec")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = processCommand(args[i].trim(), enable, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } } }
+        else if (mainCommand.startsWith("exec")) { if (argument.equals("")) { } else { if (mainCommand.equals("execute")) { args = split(argument, ';'); } for (int i = 0; i < args.length; i++) { int STATUS = processCommand(args[i].trim(), enable, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } } }
         // |
         else if (mainCommand.equals("xterm")) { display.setCurrent(xterm); }
         else if (mainCommand.equals("x11")) { return xcli(argument, id, stdout, scope); }
@@ -850,7 +850,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // |
         else if (mainCommand.equals("about")) { warn("OpenTTY", env("OpenTTY $VERSION\n(C) 2025 - Mr Lima")); }
-        else if (mainCommand.equals("import")) { return importScript(getcontent(argument), id, stdout, scope); }
         // |
         else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { print("" + processCommand(argument, enable, id, pid, stdout, scope), stdout); } }
         else if (mainCommand.equals("catch")) { if (argument.equals("")) { } else { try { processCommand(argument, enable, id, pid, stdout, scope); } catch (Throwable e) { print(getCatch(e), stdout); } } }
@@ -1498,7 +1497,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getLastHistory() { Vector history = (Vector) getobject("1", "history"); return history.size() > 0 ? (String) history.elementAt(history.size() - 1) : ""; }
 
     // Packages
-    public int importScript(String script, int id, Object stdout, Hashtable scope) { return 0; }
     public int runScript(String script, int id, String pid, Object stdout, Hashtable scope) {
         if (script == null || script.length() == 0) { return 2; }
         
