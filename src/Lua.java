@@ -73,7 +73,7 @@ public class Lua {
             
             while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
-        catch (Exception e) { midlet.print(midlet.getCatch(e)), stdout; status = 1; } 
+        catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); status = 1; } 
         catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout); } status = 1; }
 
         if (kill) { midlet.sys.remove(PID); }
