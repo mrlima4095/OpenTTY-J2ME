@@ -46,7 +46,7 @@ local function download(pkg, proxy)
 
         io.write("get lib/" .. mirror[pkg].remote, o)
 
-        local ok, content = pcall(io.read, i)
+        local ok, content = pcall(io.read, i, 8192)
         pcall(socket.close, conn)
 
         if ok then return content else print(":: Read failed: " .. tostring(content)) end
@@ -234,7 +234,7 @@ elseif arg[1] == "info" then
     else
         print("Usage: yang info <package>")
     end
-else 
+else
     print("yang: " .. arg[1] .. ": command not found")
     print("Try 'yang help' for usage information")
     os.exit(127)
