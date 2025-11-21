@@ -1451,7 +1451,7 @@ public class Lua {
                     }
                 } 
             }
-            else if (MOD == OPEN) { return args.isEmpty() ? gotbad(1, "open", "string expected, got no value") : midlet.readRaw(toLuaString(args.elementAt(0))); }
+            else if (MOD == OPEN) { return args.isEmpty() ? gotbad(1, "open", "string expected, got no value") : midlet.getInputStream(toLuaString(args.elementAt(0))); }
             // Package: table
             else if (MOD == TB_INSERT) {
                 if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
