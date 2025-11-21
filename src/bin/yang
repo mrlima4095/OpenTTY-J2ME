@@ -198,7 +198,8 @@ elseif arg[1] == "download" then
     end
 elseif arg[1] == "search" then
     if #arg > 1 then
-        local term = arg[2]:lower()
+        local pkg = arg[2]
+        local term = pkg:lower()
         print("Search results for '" .. term .. "':\n")
         local found = false
         for name, info in pairs(mirror) do
