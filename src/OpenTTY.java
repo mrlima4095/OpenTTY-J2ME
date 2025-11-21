@@ -840,9 +840,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 Hashtable arg = new Hashtable();
                 String source, code;
-                if (argument.equals("")) { source = "nano"; code = buffer; arg.put(new Double(0), "nano"); } 
+                if (argument.equals("")) { source = ""; code = buffer; arg.put(new Double(0), "/dev/null"); } 
                 else if (args[0].equals("-e")) { source = "stdin"; code = argument.substring(3).trim(); arg.put(new Double(0), "/dev/stdin"); } 
                 else { source = args[0]; code = getcontent(source); arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
+
+                if (code.trim().equals("")) { return 0; }
                 
                 return (Integer) lua.run(source, code, arg).get("status"); 
             } 
