@@ -664,8 +664,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { print("rmsfix: " + args[0] + ": not found", stdout); return 127; }
         }
         // |
-        else if (mainCommand.equals("getty")) { buffer = stdout.getText(); }
         else if (mainCommand.equals("add")) { buffer = buffer.equals("") ? argument : buffer + "\n" + argument; }
+        else if (mainCommand.equals("getty")) { buffer = stdout instanceof StringItem ? stdout.getText() : stdout instanceof StringBuffer ? stdout.toString() : ""; }
         else if (mainCommand.equals("du")) { if (argument.equals("")) { } else { InputStream in = getInputStream(argument); if (in == null) { print("du: " + basename(argument) + ": not found"); return 127; } else { print("" + in.available(), stdout); } } }
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { print(buffer, stdout); } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i]), stdout); } } }
         else if (mainCommand.equals("get")) { buffer = argument.equals("") ? "" : getcontent(argument); }
@@ -786,7 +786,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 Hashtable arg = new Hashtable();
                 String source, code;
-                if (argument.equals("")) { source = "nano"; code = nanoContent; arg.put(new Double(0), "nano"); } 
+                if (argument.equals("")) { source = "nano"; code = buffer; arg.put(new Double(0), "nano"); } 
                 else if (args[0].equals("-e")) { source = "stdin"; code = argument.substring(3).trim(); arg.put(new Double(0), "/dev/stdin"); } 
                 else { source = args[0]; code = getcontent(source); arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
                 
@@ -861,7 +861,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String extractTag(String htmlContent, String tag, String fallback) { String startTag = "<" + tag + ">", endTag = "</" + tag + ">"; int start = htmlContent.indexOf(startTag), end = htmlContent.indexOf(endTag); if (start != -1 && end != -1 && end > start) { return htmlContent.substring(start + startTag.length(), end).trim(); } else { return fallback; } }
     private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
     // |
-    public String getcontent(String file) { return file.startsWith("/") ? read(file) : file.equals("nano") ? nanoContent : read(path + file); }
+    public String getcontent(String file) { return file.startsWith("/") ? read(file) : read(path + file); }
     public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // | (Arrays)
     public String join(String[] array, String spacer, int start) { if (array == null || array.length == 0 || start >= array.length) { return ""; } StringBuffer sb = new StringBuffer(); for (int i = start; i < array.length; i++) { sb.append(array[i]).append(spacer); } return sb.toString().trim(); }
