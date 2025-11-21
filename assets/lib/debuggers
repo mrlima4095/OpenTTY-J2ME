@@ -1,22 +1,5 @@
 #!/bin/lua
 
---[[
-
-[ Config ]
-
-name=JBenchmark
-version=1.3
-description=Debuggers
-
-api.version=1.16
-api.require=lua 
-api.error=execute [ JBenchmark ] Required OpenTTY API 1.16 or newer and Lua Runtime
-api.match=minimum
-
-config=execute 
-
-]]
-
 local app, args = {}, {}
 local services = {
     ["x11-wm"] = {
