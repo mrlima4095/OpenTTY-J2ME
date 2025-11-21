@@ -1,6 +1,6 @@
 #!/bin/lua
 
-if os.execute("case thread (MIDlet) false") == 255 then
+if tonumber(os.execute("case thread (MIDlet) false")) == 255 then
     print("Cannot run in Main Thread") os.exit(1)
 end
 
