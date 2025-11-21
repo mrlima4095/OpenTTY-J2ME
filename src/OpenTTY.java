@@ -810,7 +810,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { }
             else if (argument.equals("set")) { print("svchost: set: in dev", stdout); }
             else {
-                if (args.length < 2) { print("svchost [pid] [request]"); return 2; }
+                if (args.length < 2) { print("svchost [pid] [request]", stdout); return 2; }
                 else if (sys.containsKey(args[0])) {
                     Hashtable proc = (Hashtable) sys.get(args[0]);
                     if (proc.containsKey("lua") && proc.containsKey("handler")) {
@@ -821,7 +821,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
                         catch (Exception e) { print(getCatch(e), stdout); return 1; } 
                         catch (Error e) { if (e.getMessage() != null) { print(e.getMessage(), stdout); } return lua.status; }
-                    } else { print("svchost: " + args[0] + ": not a service", print); return 2; }
+                    } else { print("svchost: " + args[0] + ": not a service", stdout); return 2; }
                 } else { print("svchost: " + args[0] + ": not found", stdout); return 127; }
             }
         }
