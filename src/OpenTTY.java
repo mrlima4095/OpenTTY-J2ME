@@ -43,7 +43,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             setLabel();
             // |
             if (username.equals("") || MIDletControl.passwd().equals("")) { new MIDletControl(); }
-            else { run("/home/.initrc", new String[] { "/home/.initrc" }, 1000, "1", this.stdout, global); }
+            else { run("/home/.initrc", new String[] { "/home/.initrc" }, 1000, "1", this.stdout, globals); }
         }
     }
     // |
