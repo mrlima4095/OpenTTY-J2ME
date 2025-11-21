@@ -49,7 +49,7 @@ public class Lua {
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
         funcs = new String[] { "Alert", "BuildScreen", "BuildList", "BuildQuest", "BuildEdit", "SetTitle", "SetTicker", "WindowTitle", "display", "append", "getCurrent", "render" }; loaders = new int[] { ALERT, SCREEN, LIST, QUEST, EDIT, TITLE, TICKER, WTITLE, DISPLAY, APPEND, GETCURRENT, IMG };
-        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("xterm", midlet.form); globals.put("graphics", graphics);
+        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("xterm", midlet.xterm); globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim" }; loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
@@ -1710,7 +1710,7 @@ public class Lua {
             else if (MOD == TITLE || MOD == WTITLE || MOD == TICKER) {
                 String label = args.isEmpty() || args.elementAt(0) == null ? null : toLuaString(args.elementAt(0));
 
-                if (MOD == TITLE) { midlet.form.setTitle(label); }
+                if (MOD == TITLE) { midlet.xterm.setTitle(label); }
                 else if (MOD == WTITLE) { if (args.size() > 1) { Object obj2 = args.elementAt(1); if (obj2 instanceof Displayable) { } else { return gotbad(2, "WindowTitle", "screen expected, got" + type(obj2)); } } else { midlet.display.getCurrent().setTitle(label); } }
                 else { midlet.display.getCurrent().setTicker(label == null ? null : new Ticker(label)); }
             }
@@ -2019,7 +2019,7 @@ public class Lua {
 
         private Object BuildScreen() throws Exception {
             if (MOD == ALERT) {
-                Alert alert = new Alert(getenv(PKG, "title", midlet.form.getTitle()), getenv(PKG, "message", ""), null, null);
+                Alert alert = new Alert(getenv(PKG, "title", midlet.xterm.getTitle()), getenv(PKG, "message", ""), null, null);
                 if (PKG.containsKey("indicator")) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
 
                 Object backObj = PKG.get("back");
@@ -2037,7 +2037,7 @@ public class Lua {
                 this.screen = alert;
             } 
             else if (MOD == SCREEN) {
-                Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
+                Form form = new Form(getenv(PKG, "title", midlet.xterm.getTitle()));
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
@@ -2061,7 +2061,7 @@ public class Lua {
             } 
             else if (MOD == LIST) {
                 String ListType = getenv(PKG, "type", "implict");
-                List list = new List(getenv(PKG, "title", midlet.form.getTitle()), (LTYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT));
+                List list = new List(getenv(PKG, "title", midlet.xterm.getTitle()), (LTYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT));
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
@@ -2108,7 +2108,7 @@ public class Lua {
                 this.screen = form;
             } 
             else if (MOD == EDIT) {
-                TextBox box = new TextBox(getenv(PKG, "title", midlet.form.getTitle()), getenv(PKG, "content", ""), 31522, getQuest(getenv(PKG, "type", "default")));
+                TextBox box = new TextBox(getenv(PKG, "title", midlet.xterm.getTitle()), getenv(PKG, "content", ""), 31522, getQuest(getenv(PKG, "type", "default")));
 
                 Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
                 Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildEdit", "button", "table expected, got " + type(buttonObj));
