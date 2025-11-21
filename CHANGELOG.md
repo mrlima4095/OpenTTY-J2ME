@@ -34,6 +34,8 @@ Copyright (C) 2025 - Mr. Lima
 - **Font Generator** enhanced
 - Process viewer added new **Refresh** button
 - **File Explorer** Delete button no longer requests to remove `..` directory
+- **X Server** updated to *0.7*
+- Support for **Screen**, **List**, **Quest** and **Canvas** removed, usage **Lua Graphics API**
 
 ### ⚙️ Features & API
 - **Lua** added function `ipairs`
@@ -45,7 +47,6 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** function `random(max)` moved to `math.random()` by default
 - **Lua** function `require` searching module on `/lib/` if file not found in current working directory 
 - **Lua** added new _type_ **Image**
-- **Screens** event listeners no longer passing root to `xterm` command call
 - **Lua** added support for **methods** and `:` token
 - **Lua** added minimal support for **metatables**
 - **Lua** fixed `break` token not working in `while` and `repeat` loops
@@ -69,6 +70,7 @@ Copyright (C) 2025 - Mr. Lima
 - Tools `prscan` and `gobuster` have been removed
 - Command `exec` and `execute` have been rewrote
 - Alias `raw` to `cat` disabled and `rraw` removed
+- **Nano** now requires a file and a *buffer* can be used as clipboard with commands **add**, **install** and **touch** without args
 
 ### 📦 Packages
 - **JBuntu** updated to _1.4_
