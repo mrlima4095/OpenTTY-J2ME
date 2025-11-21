@@ -14,6 +14,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Behavior Settings
     public int TTY_MAX_LEN = 0, cursorX = 10, cursorY = 10;
     public boolean classpath = true, useCache = true;
+    public long uptime = System.currentTimeMillis();
     // |
     // System Objects
     public Random random = new Random();
