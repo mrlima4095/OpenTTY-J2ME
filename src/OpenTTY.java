@@ -58,7 +58,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String command = stdin.getString().trim(); 
             add2History(command); 
             stdin.setString(""); 
-            processCommand(command, true, 1000, "0", stdout, globals); 
+            processCommand(command, true, 1000, "1", stdout, globals); 
             setLabel();
         } 
     }
