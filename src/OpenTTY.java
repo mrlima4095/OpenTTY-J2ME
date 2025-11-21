@@ -1146,7 +1146,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("free")) { print("" + runtime.freeMemory() / 1024, stdout); } 
         else if (mainCommand.equals("total")) { print("" + runtime.totalMemory() / 1024, stdout); }
         else if (mainCommand.equals("view") || mainCommand.equals("read")) {
-            Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
+            Hashtable ITEM = argument.equals("") ? sys : getprocess(argument);
                 
             if (ITEM == null) {
                 if (mainCommand.equals("view")) { warn(xterm.getTitle(), "PID '" + argument + "' not found"); }
@@ -1466,7 +1466,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (METHOD.equals("screen")) { CONDITION = ((Hashtable) getobject("2", "saves")).containsKey(EXPR); } 
         else if (METHOD.equals("key")) { CONDITION = attributes.containsKey(EXPR); } 
         else if (METHOD.equals("alias")) { CONDITION = aliases.containsKey(EXPR); } 
-        else if (METHOD.equals("trace")) { CONDITION = getpid(EXPR) != null ? true : false; } 
+        else if (METHOD.equals("sys")) { CONDITION = getpid(EXPR) != null ? true : false; } 
         else if (METHOD.equals("passwd")) { CONDITION = String.valueOf(EXPR.hashCode()).equals(MIDletControl.passwd()); } 
         else if (METHOD.equals("user")) { 
             CONDITION = username.equals(EXPR); 
