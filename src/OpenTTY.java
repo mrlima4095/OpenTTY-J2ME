@@ -140,7 +140,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public MIDletControl(String file, int id, Object stdout, Hashtable scope) {
             MOD = NANO; this.filename = file; this.id = id; this.stdout = stdout; this.scope = scope;
             
-            box = new TextBox("Nano - " + (file == null || file.equals("") ? "New Buffer" : file), (file == null || file.equals("")) ? "" : getcontent(file), 31522, TextField.ANY);
+            box = new TextBox("Nano - " + 
+            (file == null || file.equals("") ? "New Buffer" : file), 
+            (file == null || file.equals("")) ? "" : getcontent(file), 
+            31522, 
+            TextField.ANY);
             box.addCommand(BACK);
             box.addCommand(CLEAR = new Command("Clear", Command.SCREEN, 1));
             box.addCommand(VIEW = new Command("View as HTML", Command.SCREEN, 2));
