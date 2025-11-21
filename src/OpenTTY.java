@@ -913,7 +913,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cmd")) {  }
         // |
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
-        else if (mainCommand.equals("font")) { stdout.setFont(genFont(argument.equals("") ? "default" : argument)); }
+        else if (mainCommand.equals("font")) { this.stdout.setFont(genFont(argument.equals("") ? "default" : argument)); }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
         else if (mainCommand.equals("gauge")) { Alert alert = new Alert(xterm.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
         // |
