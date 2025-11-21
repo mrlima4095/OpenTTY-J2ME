@@ -1434,7 +1434,7 @@ public class Lua {
                     if (args.size() > 1 && args.elementAt(1) instanceof InputStream) { return gotbad(2, "write", "output stream expected, got input"); }  
                     else if (args.size() > 1 && args.elementAt(1) instanceof OutputStream) { OutputStream out = (OutputStream) args.elementAt(1); out.write(content.getBytes("UTF-8")); out.flush(); return 0; }
                     else if (args.elementAt(0) instanceof OutputStream) { OutputStream o = (OutputStream) args.elementAt(0); o.write(out.getBytes("UTF-8")); o.flush(); return 0; }
-                    else if (args.size() > 1 && args.elementAt(1) instanceof StringBuffer) { ((OutputStream) args.elementAt(1)).append(content); return 0; }
+                    else if (args.size() > 1 && args.elementAt(1) instanceof StringBuffer) { ((StringBuffer) args.elementAt(1)).append(content); return 0; }
                     else {
                         return midlet.write(out, mode ? midlet.getcontent(out) + content : content, id);
                     }
