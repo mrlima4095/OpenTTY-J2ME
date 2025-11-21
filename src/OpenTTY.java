@@ -177,7 +177,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     confirm.addCommand(YES = new Command("Yes", Command.OK, 1)); confirm.addCommand(NO = new Command("No", Command.BACK, 1)); 
                     confirm.setCommandListener(this); display.setCurrent(confirm);
                 }
-                if (d == monitor && MOD == EXPLORER) { display.setCurrent(preview); }
+                else if (d == monitor && MOD == EXPLORER) { display.setCurrent(preview); }
                 else if (d == monitor && MOD == NANO) { display.setCurrent(box); }
                 else if (MOD == NC) { back(); } 
                 else { goback(); } 
