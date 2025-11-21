@@ -161,7 +161,8 @@ elseif arg[1] == "update" then
     end
 elseif arg[1] == "upgrade" then
     if os.getuid() > 0 then
-        print("Permission denied!") return 13
+        print("Permission denied!")
+        return
     end
 
     print(":: Upgrading all packages...")
@@ -172,11 +173,9 @@ elseif arg[1] == "upgrade" then
         if content then
             local current_content = io.read(info.here)
             if current_content ~= content then
-                local result = io.write(content, info.here)
-                if result then
-                    print(":: Upgraded " .. pkg_name)
-                    upgraded = upgraded + 1
-                end
+                io.write(content, info.here)
+                print(":: Upgraded " .. pkg_name)
+                upgraded = upgraded + 1
             end
         end
     end
