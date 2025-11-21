@@ -95,8 +95,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public MIDletControl() { MOD = SIGNUP; monitor = new Form("Login"); monitor.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); if (asking_user) { monitor.append(USER = new TextField("Username", "", 256, TextField.ANY)); } if (asking_passwd) { monitor.append(PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); } monitor.addCommand(LOGIN = new Command("Login", Command.OK, 1)); monitor.addCommand(EXIT = new Command("Exit", Command.SCREEN, 2)); monitor.setCommandListener(this); display.setCurrent(monitor); }
         public MIDletControl(String command, boolean enable, String pid, Object stdout, Hashtable scope) { MOD = REQUEST; this.enable = enable; this.PID = pid; this.stdout = stdout; this.scope = scope; this.command = command; if (asking_passwd) { new MIDletControl(); return; } monitor = new Form(xterm.getTitle()); monitor.append(PASSWD = new TextField("[sudo] password for " + read("/home/OpenRMS"), "", 256, TextField.ANY | TextField.PASSWORD)); monitor.addCommand(EXECUTE); monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2)); monitor.setCommandListener(this); display.setCurrent(monitor); }
 
-        public MIDletControl(String command, int id, Object stdout, Hashtable scope) { MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1; this.id = id; this.stdout = stdout; this.scope = scope; if (MOD == MONITOR) { monitor = new Form(xterm.getTitle()); monitor.append(console = new StringItem("Memory Status:", "")); monitor.addCommand(BACK); monitor.addCommand(MENU = new Command("Menu", Command.SCREEN, 1)); monitor.addCommand(REFRESH = new Command("Refresh", Command.SCREEN, 2)); monitor.setCommandListener(this); load(); display.setCurrent(monitor); } else { preview = new List(xterm.getTitle(), List.IMPLICIT); preview.addCommand(BACK); preview.addCommand(MOD == EXPLORER ? (OPEN = new Command("Open", Command.OK, 1)) : MOD == PROCESS ? (KILL = new Command("Kill", Command.OK, 1)) : (RUN = new Command("Run", Command.OK, 1))); if (MOD == HISTORY) { preview.addCommand(EDIT = new Command("Edit", Command.OK, 1)); } if (MOD == PROCESS) { preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1)); preview.addCommand(VIEW = new Command("View info", Command.OK, 1)); preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1)); preview.addCommand(FILTER = new Command("Filter", Command.OK, 1)); } else if (MOD == EXPLORER) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); preview.addCommand(RUNS = new Command("Run Script", Command.OK, 1)); preview.addCommand(PROPERTY = new Command("Properties", Command.OK, 1)); preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1)); } preview.setCommandListener(this); load(); display.setCurrent(preview); } }
-        public MIDletControl(String mode, String args, int id, Object stdout, Hashtable scope) {
+        public MIDletControl(String command, int id, Object stdout, Hashtable scope) { 
+            MOD = command == null || command.length() == 0 || command.equals("monitor") ? MONITOR : command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1; 
+            this.id = id; this.stdout = stdout; this.scope = scope; 
+            
+            if (MOD == MONITOR) { 
+                monitor = new Form(xterm.getTitle()); 
+                monitor.append(console = new StringItem("Memory Status:", "")); 
+                monitor.addCommand(BACK); monitor.addCommand(REFRESH = new Command("Refresh", Command.SCREEN, 2)); 
+                monitor.setCommandListener(this); load(); display.setCurrent(monitor); 
+            } 
+            else { 
+                preview = new List(xterm.getTitle(), List.IMPLICIT); 
+                
+                preview.addCommand(BACK); 
+                preview.addCommand(MOD == EXPLORER ? (OPEN = new Command("Open", Command.OK, 1)) : MOD == PROCESS ? (KILL = new Command("Kill", Command.OK, 1)) : (RUN = new Command("Run", Command.OK, 1))); 
+                
+                if (MOD == HISTORY) { preview.addCommand(EDIT = new Command("Edit", Command.OK, 1)); } 
+                else if (MOD == PROCESS) { preview.addCommand(LOAD = new Command("Load Screen", Command.OK, 1)); preview.addCommand(VIEW = new Command("View info", Command.OK, 1)); preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1)); preview.addCommand(FILTER = new Command("Filter", Command.OK, 1)); } 
+                else if (MOD == EXPLORER) { preview.addCommand(DELETE = new Command("Delete", Command.OK, 1)); preview.addCommand(RUNS = new Command("Run Script", Command.OK, 1)); preview.addCommand(PROPERTY = new Command("Properties", Command.OK, 1)); preview.addCommand(REFRESH = new Command("Refresh", Command.OK, 1)); } 
+                
+                preview.setCommandListener(this); load(); display.setCurrent(preview); 
+            } 
+        }
+        public MIDletControl(String mode, String args, int id, Object stdout, Hashtable scope) { 
             MOD = mode == null || mode.length() == 0 || mode.equals("nc") ? NC : BIND;
             this.id = id; this.stdout = stdout; this.scope = scope;
 
@@ -732,7 +754,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("diff")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] LINES1 = split(getcontent(args[0]), '\n'), LINES2 = split(getcontent(args[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { print("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2, stdout); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
         else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { int MODE = args[0].indexOf("-c") != -1 ? 1 : args[0].indexOf("-w") != -1 ? 2 : args[0].indexOf("-l") != -1 ? 3 : 0; if (MODE != 0) { argument = join(args, " ", 1); } String CONTENT = getcontent(argument), FILENAME = basename(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } print(MODE == 0 ? LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME : MODE == 1 ? CHARS + "\t" + FILENAME : MODE == 2 ? WORDS + "\t" + FILENAME : LINES + "\t" + FILENAME, stdout); } }
         // |
-        else if (mainCommand.equals("nano")) { new MIDletControl(argument, id, pid, stdout, scope); }
+        else if (mainCommand.equals("nano")) { new MIDletControl(argument, enable, id, pid, stdout, scope); }
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument), xterm.getTitle()), html2text(env(argument))); } }
         else if (mainCommand.equals("html")) { String content = argument.equals("") ? buffer : getcontent(argument); viewer(extractTitle(env(content), "HTML Viewer"), html2text(env(content))); }
         // |
@@ -1118,93 +1140,33 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String mainCommand = getCommand(command), argument = getArgument(command);
         String[] args = splitArgs(argument);
 
-        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, id); } 
-    }
-        private int kernel(String command, int id, String stdout, Hashtable scope) {
-        command = env(command.trim());
-        String mainCommand = getCommand(command), argument = getArgument(command);
-        String[] args = splitArgs(argument);
-
-        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, id); } 
-        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); } } 
-        else if (mainCommand.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
-        else if (mainCommand.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
-        else if (mainCommand.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); }
+        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, id); }
+        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { print(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false"), stdout); } } 
+        else if (mainCommand.equals("used")) { print("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024, stdout); } 
+        else if (mainCommand.equals("free")) { print("" + runtime.freeMemory() / 1024, stdout); } 
+        else if (mainCommand.equals("total")) { print("" + runtime.totalMemory() / 1024, stdout); }
         else if (mainCommand.equals("view") || mainCommand.equals("read")) {
             Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
                 
             if (ITEM == null) {
-                if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
-                else { echoCommand("PID '" + argument + "' not found"); }
+                if (mainCommand.equals("view")) { warn(xterm.getTitle(), "PID '" + argument + "' not found"); }
+                else { print("PID '" + argument + "' not found", stdout); }
                     
                 return 127;
             } else {
                 if (!ITEM.get("owner").equals(username) && id != 0) {
-                    if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "Permission denied!"); }
-                    else { echoCommand("Permission denied!"); }
+                    if (mainCommand.equals("view")) { warn(xterm.getTitle(), "Permission denied!"); }
+                    else { print("Permission denied!", stdout); }
                         
                     return 13;
                 }
                     
                 if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
-                else { echoCommand(renderJSON(ITEM, 0)); }
+                else { print(renderJSON(ITEM, 0), stdout); }
             }       
-        }  
-        else if (mainCommand.equals("clean")) {
-            if (argument.equals("")) { }
-            else {
-                if (id == 0) {
-                    String PID = getCommand(argument), collector = getArgument(argument);
+        }   
+        else { print("top: " + mainCommand + ": not found", stdout); return 127; } 
 
-                    if (PID.equals("")) { }
-                    else if (PID.equals("1") || PID.equals("2")) { return 13; }
-                    else if (trace.containsKey(PID)) { if (collector.equals("")) { ((Hashtable) getprocess(PID)).remove("collector"); } else { ((Hashtable) getprocess(PID)).put("collector", collector); } }
-                    else { echoCommand("top: clean: " + PID + ": not found"); return 127; }
-                } else { echoCommand("Permission denied!"); return 13; }
-            }
-        }
-        else if (mainCommand.equals("get")) {
-            if (argument.equals("") || args.length < 2) { }
-            else {
-                if (trace.containsKey(args[0])) {
-                    if (args[1].equals("name") || args[1].equals("owner") || args[1].equals("collector")) { echoCommand("Permission denied!"); return 13; }
-
-                    Object hand = getobject(args[0], args[1]);
-
-                    if (hand == null) { echoCommand("top: get: " + args[0] + "." + args[1] + ": not found"); return 127; }
-                    else { getprocess("1").put("hand", hand); getprocess("1").put("hand.from", args[0]); }
-                } 
-                else { echoCommand("top: get: " + args[0] + ": not found"); return 127; }
-            }
-        }
-        else if (mainCommand.equals("drop")) { getprocess("1").remove("hand"); getprocess("1").remove("hand.from"); }
-        else if (mainCommand.equals("hand")) {
-            if (argument.equals("")) { echoCommand(getobject("1", "hand") == null ? "hand empty" : getobject("1", "hand").toString()); }
-            else if (getobject("1", "hand") == null) { echoCommand("top: hand: no itens on hand"); return 1; }
-            else {
-                Object hand = getobject("1", "hand");
-
-                if (argument.equals("close")) {
-                    try {
-                        if (hand instanceof StreamConnection) { ((StreamConnection) hand).close(); }
-                        else if (hand instanceof ServerSocketConnection) { ((ServerSocketConnection) hand).close(); }
-                        else if (hand instanceof InputStream) { ((InputStream) hand).close(); } 
-                        else if (hand instanceof OutputStream) { ((OutputStream) hand).close(); }
-                        else { echoCommand("top: hand: item cannot be closed"); return 69; }
-                    } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
-                } 
-                else if (argument.indexOf('=') != -1 || args[0].equals("remove")) {
-                    if (hand instanceof Hashtable) {
-                        int INDEX = argument.indexOf('='); 
-                        if (INDEX == -1) { if (args.length > 1) { ((Hashtable) hand).remove(args[1]); } else { return 2; } }
-                        else { ((Hashtable) hand).put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } 
-                    } 
-                } 
-                else { echoCommand("top: hand: item need to be a table"); return 69; }
-            }
-        }
-        else { echoCommand("top: " + mainCommand + ": not found"); return 127; } 
-        
         return 0;
     }
     // | (Generators)
