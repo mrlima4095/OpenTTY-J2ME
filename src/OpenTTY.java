@@ -360,7 +360,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                     else if (path.startsWith("/home/")) { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); } } }
 
-                    Vector files = (Vector) paths.get(path);
+                    Vector files = (Vector) fs.get(path);
                     if (files != null) { for (int i = 0; i < files.size(); i++) { String f = (String) files.elementAt(i); if (f != null && !f.equals("..") && !f.equals("/") && !stack.contains(f)) { preview.append(f, null); stack.addElement(f); } } }
                 } catch (IOException e) { }
             } 
@@ -476,7 +476,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("pwd")) { print(path, stdout); }
         else if (mainCommand.equals("dir") || mainCommand.equals("history")) { new MIDletControl(mainCommand, id, stdout, scope); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
-        else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
+        else if (mainCommand.equals("umount")) { fs = new Hashtable(); }
         else if (mainCommand.equals("popd")) { Vector stack = (Vector) getobject("1", "stack"); if (stack.isEmpty()) { print("popd: empty stack", stdout); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); print(readStack(), stdout); } }
         else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
             String old_pwd = path;
@@ -491,7 +491,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else { 
                 String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
                 if (!TARGET.endsWith("/")) { TARGET += "/"; } 
-                if (paths.containsKey(TARGET)) { path = TARGET; } 
+                if (fs.containsKey(TARGET)) { path = TARGET; } 
 
                 else if (TARGET.startsWith("/mnt/")) { 
                     try { 
@@ -604,7 +604,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (PWD.equals("/home/")) { return processCommand("dir", false, id, pid, stdout, scope); }
             } catch (IOException e) { } 
 
-            Vector FILES = (Vector) paths.get(PWD); 
+            Vector FILES = (Vector) fs.get(PWD); 
             if (FILES != null) { 
                 for (int i = 0; i < FILES.size(); i++) { 
                     String file = ((String) FILES.elementAt(i)).trim(); 
@@ -1081,7 +1081,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int GetAddress(String command, int id, String pid, Object stdout, Hashtable scope) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig", false, id, pid, stdout, scope); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { print("not found", stdout); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } print(BUFFER.toString(), stdout); } else { print("not found", stdout); return 127; } } catch (IOException e) { print(getCatch(e), stdout); return 1; } } return 0; }
 
     // File System
-    private int mount(String struct) { if (struct == null || struct.length() == 0) { return 2; } String[] lines = split(struct, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); int div = line.indexOf('='); if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } else { String base = line.substring(0, div).trim(); String[] files = split(line.substring(div + 1).trim(), ','); Vector content = new Vector(); content.addElement(".."); for (int j = 0; j < files.length; j++) { if (!content.contains(files[j])) { if (files[j].endsWith("/")) { Vector dir = new Vector(); dir.addElement(".."); paths.put(base + files[j], dir); } content.addElement(files[j]); } } paths.put(base, content); } } return 0; }
+    private int mount(String struct) { if (struct == null || struct.length() == 0) { return 2; } String[] lines = split(struct, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); int div = line.indexOf('='); if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } else { String base = line.substring(0, div).trim(); String[] files = split(line.substring(div + 1).trim(), ','); Vector content = new Vector(); content.addElement(".."); for (int j = 0; j < files.length; j++) { if (!content.contains(files[j])) { if (files[j].endsWith("/")) { Vector dir = new Vector(); dir.addElement(".."); fs.put(base + files[j], dir); } content.addElement(files[j]); } } fs.put(base, content); } } return 0; }
     private String readStack() { Vector stack = (Vector) getobject("1", "stack"); StringBuffer sb = new StringBuffer(); sb.append(path); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // | (Read) 
     public InputStream getInputStream(String filename) throws Exception {
