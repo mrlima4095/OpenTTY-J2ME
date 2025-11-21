@@ -1344,7 +1344,7 @@ public class Lua {
             }
             // Package: os
             else if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ?  new Integer((Boolean) args.elementAt(1) ? 1000 : id) : new Integer(gotbad(2, "execute", "boolean expected, got " + 
-            type(args.elementAt(1))))), PID, stdout, scope)); } }
+            type(args.elementAt(1))))), PID, stdout, father)); } }
             else if (MOD == GETENV) { return args.isEmpty() ? gotbad(1, "getenv", "string expected, got no value") : midlet.attributes.get(toLuaString(args.elementAt(0))); }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
