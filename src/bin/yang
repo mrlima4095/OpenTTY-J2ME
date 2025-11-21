@@ -61,13 +61,8 @@ local function install_dependencies(pkg_name)
                 print(":: Installing dependency: " .. dep)
                 local content = download(dep, false)
                 if content then
-                    local result = io.write(content, mirror[dep].here)
-                    if result then
-                        print(":: Dependency installed: " .. dep)
-                    else
-                        print(":: Failed to install dependency: " .. dep)
-                        return false
-                    end
+                    io.write(content, mirror[dep].here)
+                    print(":: Dependency installed: " .. dep)
                 else
                     print(":: Failed to download dependency: " .. dep)
                     return false
