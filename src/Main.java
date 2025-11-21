@@ -1,4 +1,4 @@
-import javax.microedition.lcdui.*;
+/*import javax.microedition.lcdui.*;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.media.control.*;
 import javax.microedition.io.file.*;
@@ -1087,7 +1087,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 return STATUS; 
             } 
-        }*/
+        }
         // |
         // General Utilities
         //else if (mainCommand.equals("history")) { new MIDletControl("history", id); }
@@ -1167,7 +1167,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     } catch (Exception e) { echoCommand(getCatch(e)); return e instanceof SecurityException ? 13 : 1; }
                 }
             }
-        }*/
+        }
 
         else if (mainCommand.equals("svchost")) {
             if (argument.equals("")) { }
@@ -1985,4 +1985,4 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private int run(String argument, String[] args, int id, String pid, String stdout, Hashtable scope) { String content = argument.equals("") ? nanoContent : getcontent(args[0]); return (content.startsWith("[ Config ]") || content.startsWith("--[[\n\n[ Config ]")) ? importScript(content, id) : content.startsWith("#!/bin/lua") ? (javaClass("Lua") == 0 ? processCommand("lua " + argument, false, id, pid, stdout, scope) : importScript(content, id)) : runScript(content, id); }
 }
 // |
-// EOF
+// EOF*/
