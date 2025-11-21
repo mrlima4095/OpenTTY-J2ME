@@ -483,7 +483,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("bind") || mainCommand.equals("nc")) { new MIDletControl(mainCommand, argument, id, stdout, scope); }
         // | (Files)
         else if (mainCommand.equals("pwd")) { print(path, stdout); }
-        else if (mainCommand.equals("dir")) { new MIDletControl("dir", id, stdout, scope); }
+        else if (mainCommand.equals("dir") || mainCommand.equals("history")) { new MIDletControl(mainCommand, id, stdout, scope); }
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("umount")) { paths = new Hashtable(); }
         else if (mainCommand.equals("popd")) { Vector stack = (Vector) getobject("1", "stack"); if (stack.isEmpty()) { print("popd: empty stack", stdout); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); print(readStack(), stdout); } }
@@ -724,7 +724,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return STATUS; 
             } 
         }
-        else if (mainCommand.equals("dir") || mainCommand.equals("history")) { new MIDletControl(mainCommand, id, stdout, scope); }
         else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { print(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : file("/bin/" + mainCommand) ? "application" : "")), stdout); } }
         // |
         else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
