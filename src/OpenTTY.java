@@ -339,7 +339,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             processCommand(command, true, id, PID, OUT, scope);
                         }
                     } 
-                    catch (IOException e) { echoCommand("[-] " + getCatch(e)); if (COUNT == 1) { echoCommand("[-] Server crashed"); break; } } 
+                    catch (IOException e) { print("[-] " + getCatch(e), stdout); if (COUNT == 1) { print("[-] Server crashed", stdout); break; } } 
                     finally { try { if (IN != null) IN.close(); } catch (IOException e) { } try { if (OUT != null) OUT.close(); } catch (IOException e) { } try { if (CONN != null) CONN.close(); } catch (IOException e) { } try { if (server != null) server.close(); } catch (IOException e) { } sessions.put(port, "nobody"); }
                 } 
                 sys.remove(PID); sessions.remove(port);
