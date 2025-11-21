@@ -9,7 +9,8 @@ os = {
     getproc = function (pid, field) return {} end,
     setproc = function (field, value) end,
     getcwd = function () return "/home/" end,
-    request = function(pid, payload) return {} end
+    request = function(pid, payload) return {} end,
+    getuid = function () return 1000 end
 }
 
 package = { loadlib = function (libname, funcname) end, loaded = {} }
