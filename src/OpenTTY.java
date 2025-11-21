@@ -383,7 +383,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String[] args = splitArgs(getArgument(command));
 
         if (username.equals("root")) { id = 0; } if (scope == null) { scope = globals; }
-        if (command.endswith("&")) { return processCommand("bg " + command.substring(0, command.length() - 1), enable, id, pid, stdout, scope); }
+        if (command.endsWith("&")) { return processCommand("bg " + command.substring(0, command.length() - 1), enable, id, pid, stdout, scope); }
 
         if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.equals("#")) { }
         else if (aliases.containsKey(mainCommand)) { return processCommand(((String) aliases.get(mainCommand)) + " " + argument, enable, id, pid, stdout, scope); }
