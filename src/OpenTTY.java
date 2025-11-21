@@ -996,7 +996,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (app.equals("x11-wm")) { 
                 proc.put("saves", new Hashtable()); 
 
-                xterm.append(stdout); xterm.append(stdin); xterm.addCommand(EXECUTE); 
+                xterm.append(this.stdout); xterm.append(stdin); xterm.addCommand(EXECUTE); 
                 xterm.setTitle("OpenTTY " + ((String) attributes.get("VERSION")));
                 xterm.setCommandListener(this); 
             }
