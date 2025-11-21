@@ -727,7 +727,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return STATUS; 
             } 
         }
-        else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { print(shell.containsKey(argument) ? "shell" : (aliases.containsKey(argument) ? "alias" : (functions.containsKey(argument) ? "function" : file("/bin/" + mainCommand) ? "application" : "")), stdout); } }
+        else if (mainCommand.equals("which")) { if (argument.equals("")) { } else { print(aliases.containsKey(argument) ? "alias" : file("/bin/" + argument) ? "application" : "", stdout); } }
         // |
         else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
         else if (mainCommand.equals("mmspt") || mainCommand.equals("chrt")) { if (argument.equals("")) { print(getThreadName(Thread.currentThread()), stdout); } else if (argument.equals("priority")) { print("" + Thread.currentThread().getPriority(), stdout); } else { int value = getNumber(argument, Thread.NORM_PRIORITY, null); if (value > 10 || value < 1) { return 2; } else { Thread.currentThread().setPriority(value); } } }
