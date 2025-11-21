@@ -776,7 +776,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("bg")) { if (argument.equals("")) { } else { new MIDletControl("Background", argument, enable, id, stdout, scope); } }
         // |
         else if (mainCommand.equals("gc")) { System.gc(); }
-        else if (mainCommand.equals("top")) { return kernel(argument, id, stdout, scope);  }
+        else if (mainCommand.equals("top")) { return kernel(argument, id, pid, stdout, scope);  }
         // |
         else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], id, genpid(), null, stdout, scope) : mainCommand.equals("stop") ? stop(args[i], id, stdout, scope) : kill(args[i], true, id, stdout, scope); if (STATUS != 0) { return STATUS; } } } 
         else if (mainCommand.equals("ps")) { print("PID\tPROCESS", stdout); for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); print(PID + "\t" + (String) ((Hashtable) sys.get(PID)).get("name"), stdout); } }
@@ -1113,8 +1113,99 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     
     // | (Kernel)
-    public int kernel(String command, int id, Object stdout, Hashtable scope) {
+    public int kernel(String command, int id, String pid, Object stdout, Hashtable scope) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command), argument = getArgument(command);
+        String[] args = splitArgs(argument);
+
+        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, id); } 
+    }
+        private int kernel(String command, int id, String stdout, Hashtable scope) {
+        command = env(command.trim());
+        String mainCommand = getCommand(command), argument = getArgument(command);
+        String[] args = splitArgs(argument);
+
+        if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, id); } 
+        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { echoCommand(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false")); } } 
+        else if (mainCommand.equals("used")) { echoCommand("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024); } 
+        else if (mainCommand.equals("free")) { echoCommand("" + runtime.freeMemory() / 1024); } 
+        else if (mainCommand.equals("total")) { echoCommand("" + runtime.totalMemory() / 1024); }
+        else if (mainCommand.equals("view") || mainCommand.equals("read")) {
+            Hashtable ITEM = argument.equals("") ? trace : getprocess(argument);
+                
+            if (ITEM == null) {
+                if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "PID '" + argument + "' not found"); }
+                else { echoCommand("PID '" + argument + "' not found"); }
+                    
+                return 127;
+            } else {
+                if (!ITEM.get("owner").equals(username) && id != 0) {
+                    if (mainCommand.equals("view")) { warnCommand(form.getTitle(), "Permission denied!"); }
+                    else { echoCommand("Permission denied!"); }
+                        
+                    return 13;
+                }
+                    
+                if (mainCommand.equals("view")) { viewer("Process Viewer", renderJSON(ITEM, 0)); }
+                else { echoCommand(renderJSON(ITEM, 0)); }
+            }       
+        }  
+        else if (mainCommand.equals("clean")) {
+            if (argument.equals("")) { }
+            else {
+                if (id == 0) {
+                    String PID = getCommand(argument), collector = getArgument(argument);
+
+                    if (PID.equals("")) { }
+                    else if (PID.equals("1") || PID.equals("2")) { return 13; }
+                    else if (trace.containsKey(PID)) { if (collector.equals("")) { ((Hashtable) getprocess(PID)).remove("collector"); } else { ((Hashtable) getprocess(PID)).put("collector", collector); } }
+                    else { echoCommand("top: clean: " + PID + ": not found"); return 127; }
+                } else { echoCommand("Permission denied!"); return 13; }
+            }
+        }
+        else if (mainCommand.equals("get")) {
+            if (argument.equals("") || args.length < 2) { }
+            else {
+                if (trace.containsKey(args[0])) {
+                    if (args[1].equals("name") || args[1].equals("owner") || args[1].equals("collector")) { echoCommand("Permission denied!"); return 13; }
+
+                    Object hand = getobject(args[0], args[1]);
+
+                    if (hand == null) { echoCommand("top: get: " + args[0] + "." + args[1] + ": not found"); return 127; }
+                    else { getprocess("1").put("hand", hand); getprocess("1").put("hand.from", args[0]); }
+                } 
+                else { echoCommand("top: get: " + args[0] + ": not found"); return 127; }
+            }
+        }
+        else if (mainCommand.equals("drop")) { getprocess("1").remove("hand"); getprocess("1").remove("hand.from"); }
+        else if (mainCommand.equals("hand")) {
+            if (argument.equals("")) { echoCommand(getobject("1", "hand") == null ? "hand empty" : getobject("1", "hand").toString()); }
+            else if (getobject("1", "hand") == null) { echoCommand("top: hand: no itens on hand"); return 1; }
+            else {
+                Object hand = getobject("1", "hand");
+
+                if (argument.equals("close")) {
+                    try {
+                        if (hand instanceof StreamConnection) { ((StreamConnection) hand).close(); }
+                        else if (hand instanceof ServerSocketConnection) { ((ServerSocketConnection) hand).close(); }
+                        else if (hand instanceof InputStream) { ((InputStream) hand).close(); } 
+                        else if (hand instanceof OutputStream) { ((OutputStream) hand).close(); }
+                        else { echoCommand("top: hand: item cannot be closed"); return 69; }
+                    } catch (Exception e) { echoCommand(getCatch(e)); return 1; }
+                } 
+                else if (argument.indexOf('=') != -1 || args[0].equals("remove")) {
+                    if (hand instanceof Hashtable) {
+                        int INDEX = argument.indexOf('='); 
+                        if (INDEX == -1) { if (args.length > 1) { ((Hashtable) hand).remove(args[1]); } else { return 2; } }
+                        else { ((Hashtable) hand).put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } 
+                    } 
+                } 
+                else { echoCommand("top: hand: item need to be a table"); return 69; }
+            }
+        }
+        else { echoCommand("top: " + mainCommand + ": not found"); return 127; } 
         
+        return 0;
     }
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
