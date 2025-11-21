@@ -1174,7 +1174,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int write(String filename, byte[] data, int id) { 
         if (filename == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); OUT.close(); CONN.close(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } } 
-        else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1, id); } 
+        else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
         else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
             String base = filename.substring(1, 4); filename = filename.substring(5);
 
