@@ -808,7 +808,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("svchost")) {
             if (argument.equals("")) { }
-            else if (argument.equals("set")) { print("svchost: set: in dev"); }
+            else if (argument.equals("set")) { print("svchost: set: in dev", stdout); }
             else {
                 if (args.length < 2) { print("svchost [pid] [request]"); return 2; }
                 else if (sys.containsKey(args[0])) {
