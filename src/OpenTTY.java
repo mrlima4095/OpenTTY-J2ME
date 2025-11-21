@@ -1482,8 +1482,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 return (Integer) lua.run(args[0], content, arg).get("status"); 
             } 
             else { return importScript(content, id, stdout, scope); } 
-        } else if (content.startsWith("[ Config ]")) { return importScript(content, id, stdout, scope);
-        } else { return runScript(content, id, pid, stdout, scope); }
+        } 
+        else if (content.startsWith("[ Config ]")) { return importScript(content, id, stdout, scope); } 
+        else { return runScript(content, id, pid, stdout, scope); }
+        
+        return 0;
     }
     public Object goLua(String argument, String[] args, int id, String pid, Object stdout, Hashtable scope) { }
 }            
