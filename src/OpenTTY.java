@@ -1141,7 +1141,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String[] args = splitArgs(argument);
 
         if (mainCommand.equals("") || mainCommand.equals("monitor") || mainCommand.equals("process")) { new MIDletControl(mainCommand, id, stdout, scope); }
-        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { print(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? getowner(getArgument(argument)) : (getpid(getArgument(argument)) != null ? "true" : "false"), stdout); } } 
+        else if (mainCommand.equals("pid") || mainCommand.equals("owner") || mainCommand.equals("check")) { if (argument.equals("")) { } else { print(mainCommand.equals("pid") ? getpid(argument) : mainCommand.equals("owner") ? (String) getobject(getArgument(argument), "owner") : (getpid(getArgument(argument)) != null ? "true" : "false"), stdout); } } 
         else if (mainCommand.equals("used")) { print("" + (runtime.totalMemory() - runtime.freeMemory()) / 1024, stdout); } 
         else if (mainCommand.equals("free")) { print("" + runtime.freeMemory() / 1024, stdout); } 
         else if (mainCommand.equals("total")) { print("" + runtime.totalMemory() / 1024, stdout); }
