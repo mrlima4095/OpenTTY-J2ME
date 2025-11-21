@@ -96,7 +96,6 @@ if arg[1] == nil or arg[1] == "help" then
     print("  update              Update package list")
     print("  upgrade             Upgrade all packages")
     print("  download <pkg>      Download package without installing")
-    print("  fetch               Fetch package information")
     print("  search <term>       Search for packages")
     print("  list                List available packages")
     print("  info <pkg>          Show package information")
