@@ -1476,10 +1476,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Lua lua = new Lua(this, id, stdout, scope); 
 
                 Hashtable arg = new Hashtable();
-                if (argument.equals("")) { source = ""; arg.put(new Double(0), "/dev/null"); } 
-                else { source = args[0]; arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
+                if (argument.equals("")) { args[0] = ""; arg.put(new Double(0), "/dev/null"); } 
+                else { arg.put(new Double(0), args[0]); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
                 
-                return (Integer) lua.run(source, content, arg).get("status"); 
+                return (Integer) lua.run(args[0], content, arg).get("status"); 
             } 
             else { return importScript(content, id, stdout, scope); } 
         } else if (content.startsWith("[ Config ]")) { return importScript(content, id, stdout, scope);
