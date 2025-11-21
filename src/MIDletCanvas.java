@@ -1,4 +1,4 @@
-import javax.microedition.lcdui.*;
+/*import javax.microedition.lcdui.*;
 import java.util.*;
 // |
 // MIDletCanvas
@@ -168,4 +168,4 @@ public class MIDletCanvas extends Canvas implements CommandListener {
     }
 }
 // |
-// EOF
+// EOF*/
