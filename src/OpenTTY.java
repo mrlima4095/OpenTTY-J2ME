@@ -410,7 +410,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("echo")) { print(argument, stdout); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
         else if (mainCommand.equals("uuid")) { print(generateUUID(), stdout); }
-        else if (mainCommand.equals("expr")) { print(expr(argument), stdout); }
+        else if (mainCommand.equals("expr")) { print(expression(argument), stdout); }
         else if (mainCommand.equals("basename")) { print(basename(argument), stdout); }
         else if (mainCommand.equals("getopt")) { print(getArgument(argument), stdout); }
         else if (mainCommand.equals("trim")) { stdout.setText(stdout.getText().trim()); }
