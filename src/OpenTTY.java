@@ -50,7 +50,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // | (Triggers)
     public void pauseApp() { }
-    public void destroyApp(boolean unconditional) { } // false = user | true = system
+    public void destroyApp(boolean unconditional) { notifyDestroyed(); } // false = user | true = system
     // |
     // | (Main Listener)
     public void commandAction(Command c, Displayable d) {
