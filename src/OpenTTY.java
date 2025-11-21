@@ -1061,7 +1061,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         int STATUS = 0;
 
         for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
-            String PID = (String) keys.nextElement(); name = getobject(PID, "name");
+            String PID = (String) keys.nextElement(), name = getobject(PID, "name");
 
             if (app.equals(name)) {
                 if ((STATUS = kill(PID, false, id, stdout, scope)) != 0) { break; } 
