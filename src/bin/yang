@@ -102,6 +102,10 @@ if arg[1] == nil or arg[1] == "help" then
     print("  info <pkg>          Show package information")
     print("")
 elseif arg[1] == "install" then
+    if os.getuid() > 0 then
+        print("Permission denied!") os.exit(13)
+    end
+
     if #arg > 1 then
         for i = 2, #arg do
             local pkg_name = arg[i]
@@ -130,6 +134,9 @@ elseif arg[1] == "install" then
         print("Usage: yang install <package1> [package2...]")
     end
 elseif arg[1] == "remove" then
+    if os.getuid() > 0 then
+        print("Permission denied!") os.exit(13)
+    end
     if #arg > 1 then
         for i = 2, #arg do
             local pkg_name = arg[i]
@@ -162,6 +169,10 @@ elseif arg[1] == "update" then
         print(":: Connection failed")
     end
 elseif arg[1] == "upgrade" then
+    if os.getuid() > 0 then
+        print("Permission denied!") os.exit(13)
+    end
+    
     print(":: Upgrading all packages...")
     local upgraded = 0
     for pkg_name, info in pairs(mirror) do
