@@ -655,7 +655,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (argument.equals("")) { }
             else if (id != 0) { print("Permission denied!", stdout); return 13; }
             else if (args[0].equals("read")) { if (args.length < 2) { return 2; } else { print(loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : args[1].equals("/etc/") ? 5 : 4), stdout); } }
-            else if (args[0].equals("swap")) { if (args.length < 3) { return 2; } else { writeRMS(args[2].startsWith("/") ? args[2] : path + args[2], loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : 4)); } }
+            else if (args[0].equals("swap")) { if (args.length < 3) { return 2; } else { write(args[2].startsWith("/") ? args[2] : path + args[2], loadRMS("OpenRMS", args[1].equals("/bin/") ? 3 : 4), id); } }
             else if (args[0].startsWith("/")) {
                 args[0] = args[0].endsWith("/") ? args[0] : args[0] + "/";
                 if (args[0].equals("/bin/") || args[0].equals("/etc/") || args[0].equals("/lib/")) { return writeRMS("OpenRMS", new byte[0], args[0].equals("/bin/") ? 3 : args[1].equals("/etc/") ? 5 : 4, 0); }
