@@ -1052,7 +1052,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (collector != null) { if (collector.equals("exit")) { destroyApp(true); } processCommand((String) collector, true, id, pid, stdout, scope); }
 
         sys.remove(pid);
-        if (print) { print("Process with PID " + pid + " terminated", stdout); }
+        if (log) { print("Process with PID " + pid + " terminated", stdout); }
 
         return 0;
     }
