@@ -1,9 +1,0 @@
-#!/bin/lua
-
-local version = os.getenv("DROID_VERSION")
-
-local function Android()
-    if version == nil then return os.execute("import /bin/droid") end
-end
-
-Android()
