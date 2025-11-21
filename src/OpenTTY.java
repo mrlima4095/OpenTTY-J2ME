@@ -1046,11 +1046,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable proc = (Hashtable) sys.get(pid);
         if (proc == null) { if (log) { print("PID '" + pid + "' not found", stdout); } return 127; }
 
-        String owner = (String) proc.get("owner");
-        Object collector = (String) proc.get("collector");
+        String owner = (String) proc.get("owner"), collector = getsignal(pid, "TERM");
 
         if (!owner.equals(username) && id != 0) { if (log) { print("Permission denied!", stdout); } return 13; }
-        if (collector != null && collector instanceof String) { if (collector.equals("exit")) { destroyApp(true); } processCommand((String) collector, true, id, pid, stdout, scope); }
+        if (collector != null) { if (collector.equals("exit")) { destroyApp(true); } processCommand((String) collector, true, id, pid, stdout, scope); }
 
         sys.remove(pid);
         if (print) { print("Process with PID " + pid + " terminated", stdout); }
