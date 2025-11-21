@@ -2094,7 +2094,7 @@ public class Lua {
                 this.screen = list;
             } 
             else if (MOD == QUEST) {
-                Form form = new Form(getenv(PKG, "title", midlet.form.getTitle()));
+                Form form = new Form(getenv(PKG, "title", midlet.xterm.getTitle()));
                 TextField field = new TextField(getenv(PKG, "label", midlet.stdin.getLabel()), getenv(PKG, "content", ""), 256, getQuest(getenv(PKG, "type", "default")));
                 form.append(field);
 
