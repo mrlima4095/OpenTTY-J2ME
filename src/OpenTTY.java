@@ -516,6 +516,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (proc.get("port") != null && proc.get("port").equals(port)) { print(pid + "\tbind\t" + port + "\t" + status, stdout); }
                     }
                 }
+            } else if (args[0].equals("-c")) {
+                if (args.length < 2) { return 2; }
+
+                if (sys.containsKey(args[1])) {
+                    
+                } else {
+                    print("netstat: " .. args[1] .. ": not found")
+                }
             } else {
                 int STATUS = 0; 
                 try { 
