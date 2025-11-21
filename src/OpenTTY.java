@@ -1281,7 +1281,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (filename.endsWith("/")) { return fs.containsKey(filename); }
         else { 
-            String dir = diirname(filename); 
+            String dir = dirname(filename); 
             if (dir.equals("/bin/") || dir.equals("/etc/") || dir.equals("/lib/")) {
                 String content = loadRMS("OpenRMS", dir.equals("/bin/") ? 3 : dir.equals("/etc/") ? 5 : 4);
                 if (content.indexOf("[\0BEGIN:" + basename(filename) + "\0]") != -1) { return true; }
