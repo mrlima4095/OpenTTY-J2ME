@@ -1,10 +1,10 @@
-[ Config ] 
+#!/bin/lua
 
-name=AutoClean
-version=1.0
-description=Auto Garbage Collector
+if os.execute("case thread (MIDlet) false") == 255 then
+    print("Cannot run in Main Thread") os.exit(1)
+end
 
-process.name=autogc
-mod=cron $TIMEOUT_GC gc
-
-config=execute log add info Running Auto Clean 1.0; set TIMEOUT_GC=10;
+while true do
+    os.execute("gc")
+    os.execute("sleep " .. (os.getenv("TIMEOUT_GC") or 10))
+end
