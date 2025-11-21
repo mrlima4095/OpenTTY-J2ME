@@ -144,7 +144,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 monitor.append(remotein = new TextField("Remote (" + split(address, ':')[0] + ")", "", 256, TextField.ANY));
                 monitor.addCommand(EXECUTE);
                 monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2));
-                monitor.addCommand(CLEAR);
+                monitor.addCommand(CLEAR = new Command("Clear", Command.SCREEN, 2));
                 monitor.addCommand(VIEW = new Command("View info", Command.SCREEN, 2));
                 monitor.setCommandListener(this);
 
