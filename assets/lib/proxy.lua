@@ -1,6 +1,6 @@
 #!/bin/lua
 
-if os.execute("case thread (MIDlet) false") == 255 then error("WebProxy cannot run in Main Thread") end
+if tonumber(os.execute("case thread (MIDlet) false")) == 255 then error("WebProxy cannot run in Main Thread") end
 if #arg > 1 then
     local conn, i, o = socket.connect("socket://opentty.xyz:4096")
     local address, port = socket.device(conn)
