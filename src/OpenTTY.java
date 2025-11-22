@@ -925,7 +925,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (signals.isEmpty()) { getprocess(pid).remove("signals"); }
                     } else { signals.put(args[1], args[0]); }
                 } else {
-                    print("trap: " + args[1] + ": invalid signal specification")
+                    print("trap: " + args[1] + ": invalid signal specification");
                 }
             }
         }
