@@ -14,6 +14,7 @@ local mirror = {
     ["darkdm"] = { remote = "darkdm.lua", here = "/bin/ddm", description = "Reverse of LightDM" },
     ["docker"] = { remote = "docker.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
     ["forge"] = { remote = "forge", here = "/lib/forge", description = "Additional API for OpenTTY" },
+    ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
     ["jbuntu"] = { remote = "jbuntu", here = "/bin/jbuntu", description = "Lightweith Desktop for OpenTTY" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
     ["mobix"] = { remote = "mxos", here = "/bin/mxos", description = "MobiX Loader" },
