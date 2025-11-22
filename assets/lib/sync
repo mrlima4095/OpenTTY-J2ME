@@ -1,5 +1,10 @@
 #!/bin/lua
 
+
+local proxy = getAppProperty("MIDlet-Proxy") or "http://nnp.nnchan.ru/proxy.php?"
+
+os.setproc("name", "sync")
+
 graphics.display(graphics.BuildList({
     title = "MIDlet Updater",
     back = { label = "Back", root = os.exit },
@@ -7,7 +12,22 @@ graphics.display(graphics.BuildList({
         label = "Go",
         root = function (opt)
             if opt == "Check for Updates" then
-                
+                local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/latest.sh")
+                if ok then
+                    if status == 200 then
+                        if body == os.getenv("VERSION") then
+                            os.execute("warn OpenTTY is updated!")
+                        else
+                            os.execute("open http://opentty.xyz/dist/versions/OpenTTY-" .. body .. ".jar")
+                        end
+                    else
+                        os.execute("warn Fetching error")
+                    end
+                else
+                    os.execute("warn Connection error")
+                end
+
+                os.exit()
             elseif opt == "Go to releases archive" then os.execute("open http://opentty.xyz/dist/versions") os.exit()
             elseif opt == "Download 1.16 (LTS)" then os.execute("open http://opentty.xyz/dist/versions/OpenTTY-1.16.jar") os.exit()
             else os.execute("open http://opentty.xyz/dist/OpenTTY.jar") os.exit() end
