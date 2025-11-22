@@ -20,7 +20,7 @@ end
 
 app.monitor = function()
     graphics.display(graphics.BuildScreen({
-        back = { label = "Back", root = os.exit },
+        back = { label = "Back", root = app.menu },
         button = { label = "Refresh", root = function () os.execute("gc") app.monitor() end },
 
         fields = {
