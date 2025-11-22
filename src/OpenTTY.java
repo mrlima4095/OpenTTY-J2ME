@@ -1104,7 +1104,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("term")) { display.setCurrent(xterm); }
         else if (mainCommand.equals("init")) { if (argument.equals("/dev/stdin")) { xterm.append(stdin); } else if (argument.equals("/dev/stdout")) { xterm.append(this.stdout); } else { start("x11-wm", id, null, null, stdout, globals); } }
-        else if (mainCommand.equals("stop")) { xterm.setTitle(""); xterm.setTicker(null); xterm.deleteAll(); xcli("cmd hide", id, stdout, scope); xterm.removeCommand(EXECUTE); sys.remove("2"); }
+        else if (mainCommand.equals("stop")) { xterm.setTitle(""); xterm.setTicker(null); xterm.deleteAll(); xcli("cmd", id, stdout, scope); xterm.removeCommand(EXECUTE); sys.remove("2"); }
         else if (mainCommand.equals("cmd")) {
             if (sys.containsKey("2")) {
                 Hashtable cmds = (Hashtable) getobject("2", "buttons");
