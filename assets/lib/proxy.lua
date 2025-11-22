@@ -28,6 +28,8 @@ if #arg > 1 then
                 else
                     local status, output = io.popen(cmd)
 
+                    print("Status: " .. status .. "\nOutput: " .. output)
+
                     io.write(output .. "\n", o)
                 end
             else break end
