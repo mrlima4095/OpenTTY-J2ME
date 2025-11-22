@@ -7,6 +7,7 @@ local function whois(domain)
     if ok then
         pcall(io.write, domain, o)
         ok, response = pcall(io.read, i)
+        pcall(io.close, conn, i, o)
         
         if ok then
             return response
