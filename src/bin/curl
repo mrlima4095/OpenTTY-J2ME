@@ -5,21 +5,20 @@ local function parse_url(url)
     return "http://" .. url
 end
 
-if arg[1] then
-    local url = parse_url(arg[1])
-
-    local ok, body, status = pcall(socket.http.get, url)
-    if ok then print(body)
-    else print("curl: (6) Could not resolve host: " .. arg[1]) end
-else print("Usage: curl [url]") end
-
 os.setproc("name", "curl")
 
 if arg[1] == "-o" then
     if arg[2] and arg[3] then
         local url = parse_url(arg[3])
-        local ok, body, status = pcall(socket.http.get, parse_url)
+        local ok, body, status = pcall(socket.http.get, url)
         if ok then
+            if status ~= 200 then
+                print("status: " .. status)
+                print("---")
+                print(body)
+                print("---")
+            end
+
             local code = io.write(body, arg[2])
             if code == 13 then
                 print("curl: permission denied")
@@ -37,6 +36,13 @@ if arg[1] == "-o" then
         print("Usage: curl -o [file] [url]")
     end
 elseif arg[1] then
+    local url = parse_url(arg[1])
+    local ok, body, status = pcall(socket.http.get, url)
+    if ok then
+        print(body)
+    else
+        print("curl: (6) Could not resolve host: " .. arg[1])
+    end
 else
-    print()
+    print("curl [url]")
 end
