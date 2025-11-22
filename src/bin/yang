@@ -47,7 +47,7 @@ local function download(pkg, proxy)
         io.write("get lib/" .. mirror[pkg].remote, o)
 
         local ok, content = pcall(io.read, i, 8192)
-        pcall(socket.close, conn)
+        pcall(io.close, conn)
 
         if ok then return content else print(":: Read failed: " .. tostring(content)) end
     end
