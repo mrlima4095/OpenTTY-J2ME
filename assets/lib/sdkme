@@ -19,7 +19,7 @@ app.xcfg = {
     back = { root = os.exit },
     button = { label = "Select", root = function(opt) app.handler(opt) end },
 
-    fields = { "Nano Editor", "---", "New", "Save", "File Explorer", "Build Project", "---", "Download Libraries", "Documentation", "About" }
+    fields = { "Nano Editor", "---", "File Explorer", "Build Project", "---", "Download Libraries", "Documentation", "About" }
 }
 
 function app.new()
