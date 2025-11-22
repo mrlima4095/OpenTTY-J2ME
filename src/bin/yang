@@ -58,65 +58,20 @@ end
 
 local function main()
     if arg[1] == nil or arg[1] == "help" then
-        print("Yang " .. version .. " - OpenTTY Package Manager")
-        print("")
-        print("Usage: yang <command> [options]")
-        print("")
-        print("Commands:")
-        print("  install <pkg...>    Install packages")
-        print("  remove <pkg...>     Remove packages")
-        print("  update              Update package list")
-        print("  upgrade             Upgrade all packages")
-        print("  download <pkg>      Download package without installing")
-        print("  search <term>       Search for packages")
-        print("  list                List available packages")
-        print("  info <pkg>          Show package information")
-        print("")
+        
     elseif arg[1] == "install" then
         if os.getuid() > 0 then
             print("Permission denied!")
             os.exit(13)
         end
 
-        local pkg = arg[2]
-        if mirror[pkg] then
-            print(":: Installing " .. mirror[pkg].remote .. "...")
-    
-            local content = download(pkg)
-            if content then
-                local status = io.write(content, mirror[pkg].here)
-                if status == 0 then
-                    print(":: Package " .. pkg .. " installed")
-                else
-                    print(":: Installation failed: writing error (Status: " .. status .. ")")
-                end
-            end
-        elseif pkg == nil then
-            print("Usage: yang install <package>")
-        else
-            print(":: Package " .. pkg .. " not found")
-        end
-
+        
     elseif arg[1] == "remove" then
         if os.getuid() > 0 then
             print("Permission denied!")
             os.exit(13)
         end
 
-        local pkg = arg[2]
-        if mirror[pkg] then
-            print(":: Removing " .. pkg + "...")
-            local status = os.execute("rm " .. mirror[pkg].here)
-            if status then
-                print(":: Package " .. pkg .. " removed successfully")
-            else
-                print(":: Removal failed (Status: " .. status .. ")")
-            end
-        elseif pkg == nil then
-            print("Usage: yang remove <package>")
-        else
-            print(":: Package " .. pkg .. " not found")
-        end
     elseif arg[1] == "update" then
         local ok, conn, i, o, response = pcall(socket.connect, server)
         if ok then
@@ -132,58 +87,7 @@ local function main()
             print(":: Connection failed")
         end
         
-    elseif arg[1] == "upgrade" then
-        if os.getuid() > 0 then
-            print("Permission denied!")
-            return
-        end
-        
-        print(":: Checking for available upgrades...")
-        local upgraded = 0
-        
-        for pkg, info in pairs(mirror) do
-            local current_content = io.read(info.here)
-            if current_content and current_content ~= "" then
-                print(":: Checking " .. pkg + "...")
-                local new_content = download(pkg, true)
-                if new_content and new_content ~= current_content then
-                    local ok, err = pcall(io.write, new_content, info.here)
-                    if ok then
-                        print(":: Upgraded " .. pkg)
-                        upgraded = upgraded + 1
-                    else
-                        print(":: Failed to upgrade " .. pkg .. ": " .. tostring(err))
-                    end
-                end
-            end
-        end
-        
-        if upgraded > 0 then
-            print(":: Successfully upgraded " .. upgraded .. " packages")
-        else
-            print(":: All packages are up to date")
-        end
-    elseif arg[1] == "search" then
-        if #arg > 1 then
-            local term = string.lower(arg[2])
-            local found = false
-            print("Search results for '" .. term + "':")
-            print("")
-            
-            for name, info in pairs(mirror) do
-                if string.find(string.lower(name)) or string.find(string.lower(info.description)) then
-                    print("- " .. name .. ": " .. info.description)
-                    found = true
-                end
-            end
-            
-            if not found then
-                print("No packages found matching '" .. term + "'")
-            end
-        else
-            print("Usage: yang search <term>")
-        end
-        
+    
     elseif arg[1] == "list" then
         list_packages()
         
