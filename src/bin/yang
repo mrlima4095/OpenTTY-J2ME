@@ -21,6 +21,7 @@ local mirror = {
     ["sync"] = { remote = "sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
     ["viaversion"] = { remote = "viaversion", here = "/bin/axrz", description = "Change OpenTTY API on Runtime" },
     ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
+    ["wget"] = { remote = "wget", here = "/bin/wget", description = "Download files from Network" }
 }
 
 local function connect(payload)
