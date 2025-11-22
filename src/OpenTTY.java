@@ -916,6 +916,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (pid.equals("1")) { print("Permission denied!", stdout); return 13; } 
             else {
                 if (args.length < 2) { print("trap: usage: trap \"command\" SIGNAL", stdout); return 2; }
+                
+                args[1] = args[1].toUpperCase();
                 if (args[1].equals("TERM")) {
                     Hashtable signals = (Hashtable) getobject(pid, "signals");
                     if (signals == null) { signals = new Hashtable(); getprocess(pid).put("signals", signals); }
