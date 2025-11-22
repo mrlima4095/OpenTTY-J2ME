@@ -1,20 +1,5 @@
 #!/bin/lua
 
---[[
-
-[ Config ]
-
-name=DarkDM+
-version=1.0
-description=Login API
-
-api.version=1.17
-api.require=lua
-api.error=execute log add DarkDM+ requires OpenTTY 1.17 or newer and Lua Runtime
-api.match=minimum
-
-]]
-
 local version = "1.0"
 
 local function lock()
