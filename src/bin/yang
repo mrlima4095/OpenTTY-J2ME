@@ -10,6 +10,7 @@ local mirror = {
     ["cmatrix"] = { remote = "cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
     ["darkdm"] = { remote = "darkdm.lua", here = "/bin/ddm", description = "Reverse of LightDM" },
     ["docker"] = { remote = "docker.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
+    ["expr"] = { remote = "expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
     ["forge"] = { remote = "forge", here = "/lib/forge", description = "Additional API for OpenTTY" },
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
