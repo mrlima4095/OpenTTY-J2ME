@@ -1,19 +1,3 @@
-[ Config ]
-
-name=BackPrevious
-version=1.0
-description=Auto Save Screens
-
-api.version=1.14
-api.error=execute log add error BackPrevious requires OpenTTY 1.14 or newer!; echo [ BackPrevious ] Required OpenTTY 1.14 or newer;
-api.match=minimum
-
-command=xterm,back
-
-xterm=execute x11 set bp.back; x11 term;
-back=execute case screen (bp.back) execute x11 load bp.back;
-
-[ COMMAND ]
-
-item.label=Previous
-item.cmd=execute back;
+#!/bin/sh
+alias xterm=exec "x11 set bp.back" "x11 term"
+alias back="case screen (bp.back) x11 load bp.back;
