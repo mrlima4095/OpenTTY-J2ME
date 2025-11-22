@@ -106,14 +106,53 @@ local function main()
             print("Usage: yang remove <package>")
         end
     elseif arg[1] == "update" then
-        
+        local response = connect("fetch")
+        if response then
+            print(":: " .. response)
+        else
+            print(":: Fetching error")
+            os.exit(1)
+        end
     elseif arg[1] == "list" then
-
+        print("Available packages:\n")
+        for name, info in pairs(mirror) do
+            local status = ""
+            local content = io.read(info.here)
+            if content and content ~= "" then
+                status = " [INSTALLED]"
+            end
+            print("- " .. name .. ": " .. info.description .. status)
+        end
     elseif arg[1] == "info" then
-
+        if #arg > 1 then
+            local pkg = arg[2]
+            if mirror[pkg] then
+                local info = mirror[pkg]
+                print("Package: " .. pkg)
+                print("Description: " .. info.description)
+                print("Install path: " .. info.here)
+                print("Remote: " .. info.remote)
+                
+                if info.depends then
+                    print("Dependencies: " .. table.concat(info.depends, ", "))
+                end
+                
+                -- Check if installed
+                local content = io.read(info.here)
+                if content and content ~= "" then
+                    print("Status: Installed")
+                else
+                    print("Status: Not installed")
+                end
+            else
+                print(":: Package " .. pkg .. " not found")
+            end
+        else
+            print("Usage: yang info <package>")
+        end
     else
         print("yang: " .. arg[1] .. ": not found")
-        os.exit(127) 
+        os.exit(127)
     end
 end
 
