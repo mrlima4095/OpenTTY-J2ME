@@ -6,7 +6,10 @@ local forge = {
 
 
 if arg[1] == "--deamon" then
-    
+    os.setproc("name", "forge")
+    return function (payload, source, pid, id)
+
+    end
 end
 if arg[0] == "/lib/forge" then
     print("Forge v" .. forge.version .. " API")
