@@ -21,7 +21,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), filetypes = null, aliases = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), globals = new Hashtable();
-    public String username = read("/home/OpenRMS"), buffer = "", logs = "", path = "/home/", build = "2025-1.17-03x02"; 
+    public String username = read("/home/OpenRMS"), buffer = "", logs = "", path = "/home/", build = "2025-1.17-03x03"; 
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -61,6 +61,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             stdin.setString(""); 
             processCommand(command, true, 1000, "1", stdout, globals); 
             setLabel();
+        } else {
+            if (sys.containsKey("2")) {
+                Hashtable cmds = getobject("2", "buttons");
+                if (cmds.containsKey(c)) {
+                    processCommand((String) cmds.get(c), true, 1000, "1", stdout, globals);
+                }
+            }
         }
     }
     // |
@@ -906,6 +913,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             print((hours > 0 ? hours + "h " : "") + (minutes > 0 || hours > 0 ? minutes + "m " : "") + seconds + "s", stdout);
         }
+        else if (mainCommand.equals("trap")) {
+            if (argument.equals("")) { }
+            else if (pid.equals("1")) { print("Permission denied!", stdout); }
+            else {
+                
+            }
+        }
         // |
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, stdout) * 100); }
@@ -1103,47 +1117,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Hashtable cmds = (Hashtable) getobject("2", "buttons");
 
                 if (argument.equals("")) {
-                    // Remove todos os comandos personalizados
                     for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) {
                         Command cmd = (Command) keys.nextElement();
                         xterm.removeCommand(cmd);
                     }
                     cmds.clear();
                 } else if (argument.indexOf("=") != -1) {
-                    // Adiciona novo comando: cmd [Nome]=[Comando]
                     String[] parts = split(argument, '=');
                     if (parts.length >= 2) {
                         String buttonName = parts[0].trim();
                         String commandToExecute = join(parts, "=", 1).trim();
                         
-                        // Cria novo comando
                         Command newCmd = new Command(buttonName, Command.SCREEN, 2);
                         
-                        // Adiciona ao xterm e à tabela de comandos
                         xterm.addCommand(newCmd);
                         cmds.put(newCmd, commandToExecute);
                         
-                        // Atualiza o commandListener para lidar com o novo comando
                         xterm.setCommandListener(new CommandListener() {
-                            public void commandAction(Command c, Displayable d) {
-                                if (c == BACK) {
-                                    processCommand("xterm", true, id, pid, stdout, scope);
-                                } else if (c == EXECUTE) {
-                                    String command = stdin.getString().trim();
-                                    add2History(command);
-                                    stdin.setString("");
-                                    processCommand(command, true, id, pid, stdout, scope);
-                                    setLabel();
-                                } else if (cmds.containsKey(c)) {
-                                    // Executa o comando associado ao botão
-                                    String cmd = (String) cmds.get(c);
-                                    processCommand(cmd, true, id, pid, stdout, scope);
-                                }
-                            }
+                            
                         });
                     }
                 } else {
-                    // Remove comando específico
                     Command toRemove = null;
                     for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) {
                         Command cmd = (Command) keys.nextElement();
