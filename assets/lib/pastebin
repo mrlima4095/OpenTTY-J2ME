@@ -48,7 +48,7 @@ function app.paste(content)
     pcall(io.close, conn, i, o)
 end
 
-function app.GetFile() graphics.display(graphics.BuildQuest({ title = "PasteBin", label = "File to Send", back = { root = app.main }, button = { label = "Upload", root = function (filename) local content = io.read(filename) if content == "" then graphics.display(graphics.Alert({ title = "PasteBin", message = "File '" .. filename .. "' is empty!", back = { root = function () app.GetFile() end } })) else app.paste(content) end end } })) end
+function app.GetFile() graphics.display(graphics.BuildQuest({ title = "PasteBin", label = "File to Send", back = { label = "Back", root = app.main }, button = { label = "Upload", root = function (filename) local content = io.read(filename) if content == "" then graphics.display(graphics.Alert({ title = "PasteBin", message = "File '" .. filename .. "' is empty!", back = { label = "Back", root = app.GetFile } })) else app.paste(content) end end } })) end
 function app.GetPaste() graphics.display(graphics.BuildEdit({ title = "Paste Content", back = { root = app.main }, button = { label = "Create", root = app.paste } })) end
 function app.SaveFile(content, screen) graphics.display(graphics.BuildQuest({ title = "PasteBin", label = "File to Save", back = { root = function () graphics.display(graphics.BuildScreen(screen)) end }, button = { label = "Save", root = function (filename) io.write(content, filename) graphics.display(graphics.BuildScreen(screen)) end } })) end
 
