@@ -1115,11 +1115,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } else if (argument.indexOf("=") != -1) {
                     String[] parts = split(argument, '=');
                     if (parts.length >= 2) {
-                        String label = parts[0].trim(), cmd = join(parts, "=", 1).trim();
+                        String label = parts[0].trim();
                         
                         Command button = new Command(label, Command.SCREEN, 1);
                         
-                        xterm.addCommand(button); cmds.put(button, label);
+                        xterm.addCommand(button); cmds.put(button, join(parts, "=", 1).trim());
                     }
                 } else {
                     for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) {
