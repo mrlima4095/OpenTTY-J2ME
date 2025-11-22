@@ -1065,7 +1065,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0;
     }
     public int stop(String app, int id, Object stdout, Hashtable scope) { if (app == null || app.length() == 0) { return 2; } int STATUS = 0; for (Enumeration keys = sys.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) getobject(PID, "name"); if (app.equals(name)) { if ((STATUS = kill(PID, false, id, stdout, scope)) != 0) { break; } } } return STATUS; }
+    // |
+    // | (Generators)
+    public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
+    public Hashtable genprocess(String name, int id, Hashtable signal) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", id == 0 ? "root" : username); if (signal != null) { proc.put("signals", signal); } return proc; }
+    public Hashtable gensignals(String collector) {
+        Hashtable signal = new Hashtable();
 
+        if (collector != null) { signal.put("TERM", collector); }
+
+        return signal;
+    }
+    // | (Trackers)
+    public Hashtable getprocess(String pid) { return sys.containsKey(pid) ? (Hashtable) sys.get(pid) : null; }
+    public Object getobject(String pid, String item) { return sys.containsKey(pid) ? ((Hashtable) sys.get(pid)).get(item) : null; }
+    public String getsignal(String pid, Object signal) { if (sys.containsKey(pid)) { Hashtable signals = (Hashtable) getobject(pid, "signals"); if (signals != null && signals.containsKey(signal)) { return (String) signals.get(signal); } else { return null; } } else { return null; } } 
+    public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) sys.get(PID)).get("name"))) { return PID; } } return null; } 
+    // | (Renders)
+    private String renderJSON(Object obj, int indent) { StringBuffer json = new StringBuffer(); String pad = ""; for (int i = 0; i < indent; i++) { pad += "  "; } if (obj instanceof Hashtable) { Hashtable map = (Hashtable) obj; json.append("{\n"); Enumeration keys = map.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); Object val = map.get(key); json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1)); if (keys.hasMoreElements()) { json.append(","); } json.append("\n"); } json.append(pad + "}"); } else if (obj instanceof Vector) { Vector list = (Vector) obj; json.append("[\n"); for (int i = 0; i < list.size(); i++) { json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1)); if (i < list.size() - 1) { json.append(","); } json.append("\n"); } json.append(pad + "]"); } else if (obj instanceof String) { String s = (String) obj; s = replace(s, "\n", "\\n"); s = replace(s, "\r", "\\r"); s = replace(s, "\t", "\\t"); json.append("\"" + s + "\""); } else { json.append(String.valueOf(obj)); } return json.toString(); }
     
     // API 002 - Graphics
     // | (Client)
@@ -1085,13 +1102,64 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (sys.containsKey("2")) {
                 Hashtable cmds = (Hashtable) getobject("2", "buttons");
 
-                if (argument.equals("")) { for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) { xterm.removeCommand((Command) keys.nextElement()); } }
-                else if (argument.indexOf("=") != -1) {
-
+                if (argument.equals("")) {
+                    // Remove todos os comandos personalizados
+                    for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) {
+                        Command cmd = (Command) keys.nextElement();
+                        xterm.removeCommand(cmd);
+                    }
+                    cmds.clear();
+                } else if (argument.indexOf("=") != -1) {
+                    // Adiciona novo comando: cmd [Nome]=[Comando]
+                    String[] parts = split(argument, '=');
+                    if (parts.length >= 2) {
+                        String buttonName = parts[0].trim();
+                        String commandToExecute = join(parts, "=", 1).trim();
+                        
+                        // Cria novo comando
+                        Command newCmd = new Command(buttonName, Command.SCREEN, 2);
+                        
+                        // Adiciona ao xterm e à tabela de comandos
+                        xterm.addCommand(newCmd);
+                        cmds.put(newCmd, commandToExecute);
+                        
+                        // Atualiza o commandListener para lidar com o novo comando
+                        xterm.setCommandListener(new CommandListener() {
+                            public void commandAction(Command c, Displayable d) {
+                                if (c == BACK) {
+                                    processCommand("xterm", true, id, pid, stdout, scope);
+                                } else if (c == EXECUTE) {
+                                    String command = stdin.getString().trim();
+                                    add2History(command);
+                                    stdin.setString("");
+                                    processCommand(command, true, id, pid, stdout, scope);
+                                    setLabel();
+                                } else if (cmds.containsKey(c)) {
+                                    // Executa o comando associado ao botão
+                                    String cmd = (String) cmds.get(c);
+                                    processCommand(cmd, true, id, pid, stdout, scope);
+                                }
+                            }
+                        });
+                    }
                 } else {
-
+                    // Remove comando específico
+                    Command toRemove = null;
+                    for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) {
+                        Command cmd = (Command) keys.nextElement();
+                        if (cmd.getLabel().equals(argument)) {
+                            toRemove = cmd;
+                            break;
+                        }
+                    }
+                    if (toRemove != null) {
+                        xterm.removeCommand(toRemove);
+                        cmds.remove(toRemove);
+                    }
                 }
-            } else { return 69; }
+            } else {
+                return 69;
+            }
         }
         // |
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
@@ -1157,25 +1225,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
     // Logging Manager
     public int MIDletLogs(String command, int id, Object stdout) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { } else if (mainCommand.equals("clear")) { logs = ""; } else if (mainCommand.equals("swap")) { write(argument.equals("") ? "logs" : argument, logs, id); } else if (mainCommand.equals("view")) { viewer(xterm.getTitle(), logs); } else if (mainCommand.equals("add")) { String level = getCommand(argument).toLowerCase(), message = getArgument(argument); if (message.equals("")) { } else { if (level.equals("info") || level.equals("warn") || level.equals("debug") || level.equals("error")) { logs += "[" + level.toUpperCase() + "] " + split(new java.util.Date().toString(), ' ')[3] + " " + message + "\n"; } else { print("log: add: " + level + ": not found", stdout); return 127; } } } else { print("log: " + mainCommand + ": not found", stdout); return 127; } return 0; }
-
-    // | (Generators)
-    public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
-    public Hashtable genprocess(String name, int id, Hashtable signal) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", id == 0 ? "root" : username); if (signal != null) { proc.put("signals", signal); } return proc; }
-    public Hashtable gensignals(String collector) {
-        Hashtable signal = new Hashtable();
-
-        if (collector != null) { signal.put("TERM", collector); }
-
-        return signal;
-    }
-    // | (Trackers)
-    public Hashtable getprocess(String pid) { return sys.containsKey(pid) ? (Hashtable) sys.get(pid) : null; }
-    public Object getobject(String pid, String item) { return sys.containsKey(pid) ? ((Hashtable) sys.get(pid)).get(item) : null; }
-    public String getsignal(String pid, Object signal) { if (sys.containsKey(pid)) { Hashtable signals = (Hashtable) getobject(pid, "signals"); if (signals != null && signals.containsKey(signal)) { return (String) signals.get(signal); } else { return null; } } else { return null; } } 
-    public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) sys.get(PID)).get("name"))) { return PID; } } return null; } 
-    
-    // | (Renders)
-    private String renderJSON(Object obj, int indent) { StringBuffer json = new StringBuffer(); String pad = ""; for (int i = 0; i < indent; i++) { pad += "  "; } if (obj instanceof Hashtable) { Hashtable map = (Hashtable) obj; json.append("{\n"); Enumeration keys = map.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); Object val = map.get(key); json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1)); if (keys.hasMoreElements()) { json.append(","); } json.append("\n"); } json.append(pad + "}"); } else if (obj instanceof Vector) { Vector list = (Vector) obj; json.append("[\n"); for (int i = 0; i < list.size(); i++) { json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1)); if (i < list.size() - 1) { json.append(","); } json.append("\n"); } json.append(pad + "]"); } else if (obj instanceof String) { String s = (String) obj; s = replace(s, "\n", "\\n"); s = replace(s, "\r", "\\r"); s = replace(s, "\t", "\\t"); json.append("\"" + s + "\""); } else { json.append(String.valueOf(obj)); } return json.toString(); }
 
     // Connections
     private int GetAddress(String command, int id, String pid, Object stdout, Hashtable scope) { command = env(command.trim()); String mainCommand = getCommand(command), argument = getArgument(command); if (mainCommand.equals("")) { return processCommand("ifconfig", false, id, pid, stdout, scope); } else { try { DatagramConnection CONN = (DatagramConnection) Connector.open("datagram://" + (argument.equals("") ? "1.1.1.1:53" : argument)); ByteArrayOutputStream OUT = new ByteArrayOutputStream(); OUT.write(0x12); OUT.write(0x34); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); OUT.write(0x00); String[] parts = split(mainCommand, '.'); for (int i = 0; i < parts.length; i++) { OUT.write(parts[i].length()); OUT.write(parts[i].getBytes()); } OUT.write(0x00); OUT.write(0x00); OUT.write(0x01); OUT.write(0x00); OUT.write(0x01); byte[] query = OUT.toByteArray(); Datagram REQUEST = CONN.newDatagram(query, query.length); CONN.send(REQUEST); Datagram RESPONSE = CONN.newDatagram(512); CONN.receive(RESPONSE); CONN.close(); byte[] data = RESPONSE.getData(); if ((data[3] & 0x0F) != 0) { print("not found", stdout); return 127; } int offset = 12; while (data[offset] != 0) { offset++; } offset += 5; if (data[offset + 2] == 0x00 && data[offset + 3] == 0x01) { StringBuffer BUFFER = new StringBuffer(); for (int i = offset + 12; i < offset + 16; i++) { BUFFER.append(data[i] & 0xFF); if (i < offset + 15) BUFFER.append("."); } print(BUFFER.toString(), stdout); } else { print("not found", stdout); return 127; } } catch (IOException e) { print(getCatch(e), stdout); return 1; } } return 0; }
