@@ -907,10 +907,26 @@ public class OpenTTY extends MIDlet implements CommandListener {
             print((hours > 0 ? hours + "h " : "") + (minutes > 0 || hours > 0 ? minutes + "m " : "") + seconds + "s", stdout);
         }
         else if (mainCommand.equals("trap")) {
-            if (argument.equals("")) { }
-            else if (pid.equals("1")) { print("Permission denied!", stdout); return 13; }
+            if (argument.equals("")) {
+                Hashtable signals = (Hashtable) getobject(pid, "signals");
+                if (signals != null && !signals.isEmpty()) {
+                    for (Enumeration signalKeys = signals.keys(); signalKeys.hasMoreElements();) {
+                        String signal = (String) signalKeys.nextElement();
+                        print(signal + "\t" + ((String) signals.get(signal)), stdout);
+                    }
+                } else { print("No traps defined", stdout); }
+            } 
+            else if (pid.equals("1")) { print("Permission denied!", stdout); return 13; } 
             else {
+                if (args.length < 2) { print("trap: usage: trap \"command\" SIGNAL", stdout); return 2; }
                 
+                Hashtable signals = (Hashtable) getobject(pid, "signals");
+                if (signals == null) { signals = new Hashtable(); getprocess(pid).put("signals", signals); }
+                
+                if (args[0].equals("-") || args[0].equals("true") || args[0].equals("")) {
+                    signals.remove(args[1]);
+                    if (signals.isEmpty()) { getprocess(pid).remove("signals"); }
+                } else { signals.put(args[1], args[0]); }
             }
         }
         // |
