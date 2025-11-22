@@ -27,7 +27,7 @@ app.monitor = function()
             {
                 type = "text",
                 label = "Memory Status:",
-                value = "Used Memory: " .. collectgarbage("count") .. "\nFree Memory:" .. collectgarbage("free") .. "\nTotal Memory: " .. collectgarbage("total")
+                value = "Used Memory: " .. collectgarbage("count") .. "\\nFree Memory:" .. collectgarbage("free") .. "\\nTotal Memory: " .. collectgarbage("total")
             }
         }
     }))
