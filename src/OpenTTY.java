@@ -908,7 +908,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         else if (mainCommand.equals("trap")) {
             if (argument.equals("")) { }
-            else if (pid.equals("1")) { print("Permission denied!", stdout); }
+            else if (pid.equals("1")) { print("Permission denied!", stdout); return 13; }
             else {
                 
             }
