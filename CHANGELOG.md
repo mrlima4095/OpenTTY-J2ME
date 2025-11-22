@@ -63,13 +63,13 @@ Copyright (C) 2025 - Mr. Lima
 - Fixed a bug that when you kill process `sh` as user `root` MIDlet doesn't closes
 - Fixed **MIDlet** login for user-only prompt
 - Added support for `list.default` that runs by default on all List choices
-- `query` command no longer consuming until connection end
 - Added button **Refresh** in _Process Viewer_
 - Command `start` can start services installed on `/etc/services`
 - Command `netstat` have been rewrote
 - Functions and Shells removed
 - Tools `prscan` and `gobuster` have been removed
 - Command `exec` and `execute` have been rewrote
+- Command `query` and `wget` can be installed from yang
 - Alias `raw` to `cat` disabled and `rraw` removed
 - **Nano** now requires a file and a *buffer* can be used as clipboard with commands **add**, **install** and **touch** without args
 
@@ -93,10 +93,3 @@ Copyright (C) 2025 - Mr. Lima
 - In limited memory devices you can disable shell **PATH** search by running `stty classpath=false`
 - To use command `sed` download it in **PackJ**, this package is named _StringEditor_
 - Documentation available on Github Wiki page
-
----
-
-## 🔌 API Nodes
-
-- `devicefs`: Checks if device supports **JSR-75** (_Access to Device File System on `/mnt/`_)
-- `prg`: Checks if device supports **JSR-118** (PushRegistry)
