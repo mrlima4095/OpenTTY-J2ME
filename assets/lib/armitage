@@ -1,4 +1,7 @@
-[ Config ]
+#!/bin/lua
+
+--[[
+    [ Config ]
 
 name=Armitage
 version=1.1
@@ -47,3 +50,32 @@ HTTPS Requester=execute set TOOL=query socket://$REPO http; set LABEL=URL (HTTPS
 HTTPS (Via Proxy)=execute set TOOL=proxy; set LABEL=URL (HTTPS Proxy); x11 quest /bin/armitage;
 Charge Server IP=execute set VALUE=REPO; set LABEL=IP Adress (OpenTTY Server); export RETURN; cfg run;
 
+
+]]
+
+
+local function main()
+    graphics.display(graphics.BuildList({
+        title = "Armitage Tools",
+        back = { label = "Back", root = os.exit },
+        button = {
+            label = "Open",
+            root = function (opt)
+                
+            end
+        },
+
+        fields = {
+            "Connect",
+            "Get Local Address",
+            "WhoIS Search",
+            "Port Scanner",
+            "Ping a WebSite",
+            "Ping a Server",
+            "HTTPS Requester"
+        }
+    }))
+end
+
+os.setproc("name", "armitage")
+main()
