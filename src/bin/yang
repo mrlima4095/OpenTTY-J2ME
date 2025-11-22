@@ -78,24 +78,23 @@ local function main()
             os.exit(13)
         end
 
+        local pkg = arg[2]
         if mirror[pkg] then
             print(":: Installing " .. mirror[pkg].remote .. "...")
     
             local content = download(pkg)
-                if content then
-                    int status = io.write(content, mirror[pkg].here)
-                    if status == 0 then
-                        print(":: Package " .. pkg .. " installed")
-                    else
-                        print(":: Installation failed: writing error (Status: " .. status .. ")")
-                    end
+            if content then
+                local status = io.write(content, mirror[pkg].here)
+                if status == 0 then
+                    print(":: Package " .. pkg .. " installed")
                 else
-                    print(":: Download failed ")
+                    print(":: Installation failed: writing error (Status: " .. status .. ")")
                 end
-                    
             end
+        elseif pkg == nil then
+            print("Usage: yang install <package1>")
         else
-            print("Usage: yang install <package1> [package2...]")
+            print("yang: install: " .. pkg .. ": not found")
         end
     elseif arg[1] == "remove" then
         if os.getuid() > 0 then
@@ -103,25 +102,18 @@ local function main()
             os.exit(13)
         end
 
-        if #arg > 1 then
-            for i = 2, #arg do
-                local pkg = arg[i]
-                if mirror[pkg] then
-                    print(":: Removing " .. pkg + "...")
-                    local ok, err = pcall(os.execute, "rm " .. mirror[pkg].here)
-                    if ok then
+        
+        if mirror[pkg] then
+            print(":: Removing " .. pkg + "...")
+            local ok, err = pcall(os.execute, "rm " .. mirror[pkg].here)
+            if ok then
                         print(":: Package " .. pkg .. " removed successfully")
-                    else
+                   else
                         print(":: Removal failed: " .. tostring(err))
                     end
                 else
                     print(":: Package " .. pkg .. " not found")
                 end
-            end
-        else 
-            print("Usage: yang remove <package1> [package2...]") 
-        end
-        
     elseif arg[1] == "update" then
         local ok, conn, i, o, response = pcall(socket.connect, server)
         if ok then
