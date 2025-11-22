@@ -27,9 +27,6 @@ if #arg > 1 then
                 if cmd == "/exit" then break
                 else
                     local status, output = io.popen(cmd)
-
-                    print("Status: " .. status .. "\nOutput: " .. output)
-
                     io.write(string.trim(output) .. "\n", o)
                 end
             else break end
