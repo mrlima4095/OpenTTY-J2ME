@@ -30,7 +30,7 @@ if #arg > 1 then
 
                     print("Status: " .. status .. "\nOutput: " .. output)
 
-                    io.write(output .. "\n", o)
+                    io.write(string.trim(output) .. "\n", o)
                 end
             else break end
         end
