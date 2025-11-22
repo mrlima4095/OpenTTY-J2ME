@@ -1265,7 +1265,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { buffer = new String(data); } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { return 5; } }
         else if (filename.startsWith("/tmp/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else { tmp.put(filename, new String(data)); } }
         else if (filename.startsWith("/")) { return 5; } 
-        else { return writeRMS(path + filename, data, id); } 
+        else { return write(path + filename, data, id); } 
         
         return 0; 
     }
