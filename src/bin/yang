@@ -114,7 +114,7 @@ local function main()
             os.exit(1)
         end
     elseif arg[1] == "list" then
-        print("Available packages:\n")
+        print("Available packages:")
         for name, info in pairs(mirror) do
             local status = ""
             local content = io.read(info.here)
