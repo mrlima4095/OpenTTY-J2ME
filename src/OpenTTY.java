@@ -1109,24 +1109,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (sys.containsKey("2")) {
                 Hashtable cmds = (Hashtable) getobject("2", "buttons");
 
-                if (argument.equals("")) {
-                    for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) { xterm.removeCommand((Command) keys.nextElement()); }
-                    cmds.clear();
-                } else if (argument.indexOf("=") != -1) {
+                if (argument.equals("")) { for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) { xterm.removeCommand((Command) keys.nextElement()); } cmds.clear(); } 
+                else if (argument.indexOf("=") != -1) {
                     int index = argument.indexOf("=");
                     String label = argument.substring(0, index).trim(), cmd = getpattern(argument.substring(index + 1).trim());
 
                     if (cmd.equals("")) { }
                     else { Command button = new Command(label, Command.SCREEN, 1); xterm.addCommand(button); cmds.put(button, cmd); }
-                } else {
-                    for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) {
-                        Command cmd = (Command) keys.nextElement();
-                        if (cmd.getLabel().equals(argument)) { xterm.removeCommand(cmd); cmds.remove(cmd); }
-                    }
-                }
-            } else {
-                return 69;
-            }
+                } 
+                else { for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) { Command cmd = (Command) keys.nextElement(); if (cmd.getLabel().equals(argument)) { xterm.removeCommand(cmd); cmds.remove(cmd); } } }
+            } else { return 69; }
         }
         // |
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
