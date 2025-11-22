@@ -92,7 +92,7 @@ local function main()
                     print(":: Removing " .. arg[2])
                     local status = os.execute("rm " .. here)
                     if status == 0 then
-                        print(":: Removed " .. here)
+                        print(":: Removed " .. here .. "...")
                     else
                         print(":: Removing error")
                         os.exit(1)
