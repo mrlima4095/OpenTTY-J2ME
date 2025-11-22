@@ -132,12 +132,11 @@ local function main()
                 print("Description: " .. info.description)
                 print("Install path: " .. info.here)
                 print("Remote: " .. info.remote)
-                
+
                 if info.depends then
                     print("Dependencies: " .. table.concat(info.depends, ", "))
                 end
-                
-                -- Check if installed
+
                 local content = io.read(info.here)
                 if content and content ~= "" then
                     print("Status: Installed")
