@@ -69,7 +69,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
     public int setLabel() { stdin.setLabel(username + " " + path + " " + (username.equals("root") ? "#" : "$")); return 0; }
     public class MIDletControl implements CommandListener, Runnable {
-        public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 6, LOCK = 7, NC = 8, BIND = 11, BG = 12, ADDON = 13, NANO = 14;
+        public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 6, LOCK = 7, NC = 8, BIND = 11, BG = 12, NANO = 13;
         public static final String impl = "full";
 
         private int MOD = -1, COUNT = 1, id = 1000, start;
@@ -157,8 +157,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         public MIDletControl(String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = BG; this.command = command; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
-        public MIDletControl(String pid, String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = ADDON; this.PID = pid; this.command = command; this.enable = enable; this.id = id;  this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
-    
+        
         public MIDletControl(String file, boolean enable, int id, Object stdout, Hashtable scope) {
             MOD = NANO; this.filename = file; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope;
             
@@ -358,7 +357,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                             String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
 
-                            processCommand(command, true, id, PID, OUT, scope);
+                            int STATUS = processCommand(command, true, id, PID, OUT, scope);
+                            if (STATUS == 254) { break; }
                         }
                     } 
                     catch (IOException e) { print("[-] " + getCatch(e), stdout); if (COUNT == 1) { print("[-] Server crashed", stdout); break; } } 
@@ -371,7 +371,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 try { if (OUT != null) OUT.close(); } catch (IOException e) { } try { if (CONN != null) CONN.close(); } catch (IOException e) { } try { if (server != null) server.close(); } catch (IOException e) { }
             }
             else if (MOD == BG) { processCommand(command, enable, id, PID, stdout, scope); }
-            else if (MOD == ADDON) { while (sys.containsKey(PID)) { if (processCommand(command, true, id, PID, stdout, scope) != 0) { kill(PID, false, id, stdout, scope); } } }
         }
 
         private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id, stdout, scope); } else { load(); } }
