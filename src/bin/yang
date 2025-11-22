@@ -46,13 +46,12 @@ local function main()
         print("  list               - List available packages")
         print("  info <package>     - Show package information")
         print("  help               - Show this help")
-        
     elseif arg[1] == "install" then
         if os.getuid() > 0 then
             print("Permission denied!")
             os.exit(13)
         end
-        
+
         if arg[2] then
             if mirror[arg[2]] then
                 local remote, here = mirror[arg[2]].remote, mirror[arg[2]].here
