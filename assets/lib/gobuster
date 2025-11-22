@@ -1,3 +1,6 @@
+#!/bin/lua
+
+--[[
 admin
 admin.php
 admin.html
@@ -103,3 +106,4 @@ wp-content
 wp-login.php
 wp-includes
 xmlrpc.php
+]]
