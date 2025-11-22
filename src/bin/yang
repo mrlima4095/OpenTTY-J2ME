@@ -92,28 +92,31 @@ local function main()
                 end
             end
         elseif pkg == nil then
-            print("Usage: yang install <package1>")
+            print("Usage: yang install <package>")
         else
-            print("yang: install: " .. pkg .. ": not found")
+            print(":: Package " .. pkg .. " not found")
         end
+
     elseif arg[1] == "remove" then
         if os.getuid() > 0 then
             print("Permission denied!")
             os.exit(13)
         end
 
-        
+        local pkg = arg[2]
         if mirror[pkg] then
             print(":: Removing " .. pkg + "...")
-            local ok, err = pcall(os.execute, "rm " .. mirror[pkg].here)
-            if ok then
-                        print(":: Package " .. pkg .. " removed successfully")
-                   else
-                        print(":: Removal failed: " .. tostring(err))
-                    end
-                else
-                    print(":: Package " .. pkg .. " not found")
-                end
+            local status = os.execute("rm " .. mirror[pkg].here)
+            if status then
+                print(":: Package " .. pkg .. " removed successfully")
+            else
+                print(":: Removal failed (Status: " .. status .. ")")
+            end
+        elseif pkg == nil then
+            print("Usage: yang remove <package>")
+        else
+            print(":: Package " .. pkg .. " not found")
+        end
     elseif arg[1] == "update" then
         local ok, conn, i, o, response = pcall(socket.connect, server)
         if ok then
@@ -160,38 +163,15 @@ local function main()
         else
             print(":: All packages are up to date")
         end
-        
-    elseif arg[1] == "download" then
-        if #arg > 1 then
-            local pkg = arg[2]
-            if mirror[pkg] then
-                print(":: Downloading " .. pkg + "...")
-                local content = download(pkg, true)
-                if content then
-                    print(":: Package content:")
-                    print("")
-                    print(content)
-                    print("")
-                    print(":: Download completed")
-                else
-                    print(":: Download failed")
-                end
-            else
-                print(":: Package " .. pkg .. " not found")
-            end
-        else
-            print("Usage: yang download <package>")
-        end
-        
     elseif arg[1] == "search" then
         if #arg > 1 then
-            local term = arg[2]:lower()
+            local term = string.lower(arg[2])
             local found = false
             print("Search results for '" .. term + "':")
             print("")
             
             for name, info in pairs(mirror) do
-                if name:lower():find(term) or info.description:lower():find(term) then
+                if string.find(string.lower(name)) or string.find(string.lower(info.description)) then
                     print("- " .. name .. ": " .. info.description)
                     found = true
                 end
