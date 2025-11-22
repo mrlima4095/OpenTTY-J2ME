@@ -3,8 +3,7 @@
 os.setproc("name", "expr")
 
 if arg[1] then
-    local expr = load("return " .. expr)
-    print(expr)
+    print(load("return " .. expr))
 else
     print("expr [expression]")
 end
