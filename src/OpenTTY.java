@@ -342,7 +342,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         if (COUNT == 1) { print("[+] listening on port " + port, stdout); MIDletLogs("add info Server listening on port " + port, id, stdout); COUNT++; }
 
                         CONN = (SocketConnection) server.acceptAndOpen();
-                        address = CONN.getAddress(); print("[+] " + address + " connected", scope);
+                        address = CONN.getAddress(); print("[+] " + address + " connected", stdout);
 
                         IN = CONN.openInputStream(); OUT = CONN.openOutputStream();
                         proc.put("socket", CONN); proc.put("in", IN); proc.put("out", OUT);
@@ -351,11 +351,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         while (sys.containsKey(PID)) {
                             byte[] buffer = new byte[4096];
                             int bytesRead = IN.read(buffer);
-                            if (bytesRead == -1) { print("[-] " + address + " disconnected", scope); break; }
-                            String PAYLOAD = new String(buffer, 0, bytesRead).trim();
-                            print("[+] " + address + " -> " + env(PAYLOAD), scope);
-
-                            String command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
+                            if (bytesRead == -1) { print("[-] " + address + " disconnected", stdout); break; }
+                            String PAYLOAD = new String(buffer, 0, bytesRead).trim(), command = (DB == null || DB.length() == 0 || DB.equals("null")) ? PAYLOAD : DB + " " + PAYLOAD;
 
                             int STATUS = processCommand(command, true, id, PID, OUT, scope);
                             if (STATUS == 254) { break; }
