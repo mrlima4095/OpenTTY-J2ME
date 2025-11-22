@@ -13,8 +13,8 @@ import java.io.*;
 public class OpenTTY extends MIDlet implements CommandListener {
     // Behavior Settings
     public int TTY_MAX_LEN = 0;
-    public boolean classpath = true, useCache = true;
     public long uptime = System.currentTimeMillis();
+    public boolean classpath = true, useCache = true;
     // |
     // System Objects
     public Random random = new Random();
