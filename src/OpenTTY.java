@@ -362,10 +362,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         }
                     } 
                     catch (IOException e) { print("[-] " + getCatch(e), stdout); if (COUNT == 1) { print("[-] Server crashed", stdout); break; } } 
-                    finally { try { if (IN != null) IN.close(); } catch (IOException e) { } try { if (OUT != null) OUT.close(); } catch (IOException e) { } try { if (CONN != null) CONN.close(); } catch (IOException e) { } try { if (server != null) server.close(); } catch (IOException e) { } sessions.put(port, "nobody"); }
+                    finally { try { if (IN != null) IN.close(); } catch (IOException e) { } 
+                    
+                    try { if (OUT != null) OUT.close(); } catch (IOException e) { } try { if (CONN != null) CONN.close(); } catch (IOException e) { } try { if (server != null) server.close(); } catch (IOException e) { } sessions.put(port, "nobody"); }
                 } 
                 sys.remove(PID); sessions.remove(port);
                 if (COUNT > 1) { print("[-] Server stopped", stdout); MIDletLogs("add info Server was stopped", id, stdout); }
+                try { if (OUT != null) OUT.close(); } catch (IOException e) { } try { if (CONN != null) CONN.close(); } catch (IOException e) { } try { if (server != null) server.close(); } catch (IOException e) { }
             }
             else if (MOD == BG) { processCommand(command, enable, id, PID, stdout, scope); }
             else if (MOD == ADDON) { while (sys.containsKey(PID)) { if (processCommand(command, true, id, PID, stdout, scope) != 0) { kill(PID, false, id, stdout, scope); } } }
