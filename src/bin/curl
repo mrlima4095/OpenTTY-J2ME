@@ -11,8 +11,32 @@ if arg[1] then
     local ok, body, status = pcall(socket.http.get, url)
     if ok then print(body)
     else print("curl: (6) Could not resolve host: " .. arg[1]) end
-else print("curl [url]") end
+else print("Usage: curl [url]") end
 
+os.setproc("name", "curl")
 
+if arg[1] == "-o" then
+    if arg[2] and arg[3] then
+        local url = parse_url(arg[3])
+        local ok, body, status = pcall(socket.http.get, parse_url)
+        if ok then
+            local code = io.write(body, arg[2])
+            if code == 13 then
+                print("curl: permission denied")
+            elseif code == 5 then
+                print("curl: read-only storage")
+            elseif code == 1 then
+                print("curl: java.io.IOException")
+            end
 
-
+            os.exit(tonumber(code))
+        else
+            print("curl: (6) Could not resolve host: " .. arg[3])
+        end
+    else
+        print("Usage: curl -o [file] [url]")
+    end
+elseif arg[1] then
+else
+    print()
+end
