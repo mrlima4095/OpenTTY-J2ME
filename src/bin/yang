@@ -23,13 +23,25 @@ local mirror = {
     ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
 }
 
+local function connect(payload)
+    local ok, conn, i, o = pcall(socket.connect, server)
+    if ok then
+        ok = pcall(io.write, payload, o)
+        if ok then
+            local content = io.read(i, 8192)
+            pcall(io.close, conn, i, o)
+            return content
+        end
+    end
+end
+
 local function main()
     if arg[1] == nil or arg[1] == "help" then
         print("Yang Package Manager v" .. version)
         print("Usage: yang <command> [package]")
         print("Commands:")
         print("  install <package>  - Install a package")
-        print("  remove <package>   - Remove a package") 
+        print("  remove <package>   - Remove a package")
         print("  update             - Check for updates")
         print("  list               - List available packages")
         print("  info <package>     - Show package information")
@@ -40,166 +52,67 @@ local function main()
             print("Permission denied!")
             os.exit(13)
         end
-
-        if #arg > 1 then
-            local pkg = arg[2]
-            if mirror[pkg] then
-                print(":: Installing " .. pkg .. "...")
-                
-                -- Check dependencies
-                if mirror[pkg].depends then
-                    for _, dep in ipairs(mirror[pkg].depends) do
-                        local dep_content = io.read(mirror[dep].here)
-                        if not dep_content or dep_content == "" then
-                            print(":: Installing dependency: " .. dep)
-                            local ok, conn, i, o = pcall(socket.connect, server)
-                            if ok then
-                                io.write("get lib/" .. mirror[dep].remote, o)
-                                local ok2, content = pcall(io.read, i, 8192)
-                                pcall(io.close, conn, i, o)
-                                if ok2 and content and content ~= "File 'lib/" .. mirror[dep].remote .. "' not found." then
-                                    local written = io.write(mirror[dep].here, content)
-                                    if written then
-                                        print(":: Dependency " .. dep .. " installed successfully")
-                                    else
-                                        print(":: Failed to install dependency: " .. dep)
-                                        return
-                                    end
-                                else
-                                    print(":: Failed to download dependency: " .. dep)
-                                    return
-                                end
-                            else
-                                print(":: Connection failed for dependency: " .. dep)
-                                return
-                            end
-                        end
-                    end
-                end
-                
-                -- Download main package
-                local ok, conn, i, o = pcall(socket.connect, server)
-                if ok then
-                    io.write("get lib/" .. mirror[pkg].remote, o)
-                    local ok2, content = pcall(io.read, i, 8192)
-                    pcall(io.close, conn, i, o)
-                    if ok2 and content and content ~= "File 'lib/" .. mirror[pkg].remote .. "' not found." then
-                        local written = io.write(mirror[pkg].here, content)
-                        if written then
-                            print(":: Package " .. pkg .. " installed successfully")
-                        else
-                            print(":: Failed to install package: " .. pkg)
-                        end
+        
+        if arg[2] then
+            if mirror[arg[2]] then
+                local remote, here = mirror[arg[2]].remote, mirror[arg[2]].here
+                print(":: Downloading " .. remote .. "...")
+                local content = connect("get lib/" .. remote)
+                if content then
+                    local status = io.write(content, here)
+                    if status == 0 then
+                        print(":: Installed " .. here)
                     else
-                        print(":: Package " .. pkg .. " not found on repository")
+                        print(":: Installation error")
+                        os.exit(1)
                     end
                 else
-                    print(":: Connection failed to server")
+                    print(":: Connection error")
+                    os.exit(1)
                 end
             else
-                print(":: Package " .. pkg .. " not found")
+                print("yang: install: " .. arg[2] .. ": not found")
+                os.exit(127)
             end
         else
             print("Usage: yang install <package>")
         end
-        
     elseif arg[1] == "remove" then
         if os.getuid() > 0 then
             print("Permission denied!")
             os.exit(13)
         end
 
-        if #arg > 1 then
-            local pkg = arg[2]
-            if mirror[pkg] then
-                print(":: Removing " .. pkg .. "...")
-                local written = io.write(mirror[pkg].here, "")
-                if written then
-                    print(":: Package " .. pkg .. " removed successfully")
+        if arg[2] then
+            if mirror[arg[2]] then
+                local here = mirror[arg[2]].here
+                local file = io.open(here)
+
+                if file then
+                    print(":: Removing " .. arg[2])
+                    local status = os.execute("rm " .. here)
+                    if status == 0 then
+                        print(":: Removed " .. here)
+                    else
+                        print(":: Removing error")
+                        os.exit(1)
+                    end
                 else
-                    print(":: Failed to remove package: " .. pkg)
+                    print(":: Package '" .. arg[2] .. "' not installed")
+                    os.exit(2)
                 end
-            else
-                print(":: Package " .. pkg .. " not found")
             end
         else
             print("Usage: yang remove <package>")
         end
-        
     elseif arg[1] == "update" then
-        local ok, conn, i, o, response = pcall(socket.connect, server)
-        if ok then
-            io.write("fetch", o)
-            ok, response = pcall(io.read, i)
-            if ok then
-                print(":: " .. response)
-                
-                -- Check if yang itself needs update
-                io.write("get lib/yang", o)
-                ok, response = pcall(io.read, i, 8192)
-                if ok and response and response ~= "File 'lib/yang' not found." then
-                    local current_content = io.read("/bin/yang")
-                    if current_content ~= response then
-                        print(":: Updating yang...")
-                        local written = io.write("/bin/yang", response)
-                        if written then
-                            print(":: Yang updated successfully")
-                        else
-                            print(":: Failed to update yang")
-                        end
-                    else
-                        print(":: Yang is already up to date")
-                    end
-                end
-            else
-                print(":: Failed to fetch update information")
-            end
-            pcall(io.close, conn, i, o)
-        else
-            print(":: Connection failed")
-        end
         
     elseif arg[1] == "list" then
-        print("Available packages:\n")
-        for name, info in pairs(mirror) do
-            local status = ""
-            local content = io.read(info.here)
-            if content and content ~= "" then
-                status = " [INSTALLED]"
-            end
-            print("- " .. name .. ": " .. info.description .. status)
-        end
-        
+
     elseif arg[1] == "info" then
-        if #arg > 1 then
-            local pkg = arg[2]
-            if mirror[pkg] then
-                local info = mirror[pkg]
-                print("Package: " .. pkg)
-                print("Description: " .. info.description)
-                print("Install path: " .. info.here)
-                print("Remote: " .. info.remote)
-                
-                if info.depends then
-                    print("Dependencies: " .. table.concat(info.depends, ", "))
-                end
-                
-                -- Check if installed
-                local content = io.read(info.here)
-                if content and content ~= "" then
-                    print("Status: Installed")
-                else
-                    print("Status: Not installed")
-                end
-            else
-                print(":: Package " .. pkg .. " not found")
-            end
-        else
-            print("Usage: yang info <package>")
-        end
-        
-    else 
-        print("yang: " .. arg[1] .. ": command not found") 
+
+    else
+        print("yang: " .. arg[1] .. ": not found")
         os.exit(127) 
     end
 end
