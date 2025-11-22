@@ -3,9 +3,6 @@
 local version = "1.5"
 
 local server = "socket://opentty.xyz:31522"
-local proxy_url = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?"
-local repo = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/"
-
 local mirror = {
     ["armitage"] = { remote = "armitage", here = "/bin/armitage", description = "OpenTTY Network Tools" },
     ["autogc"] = { remote = "autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
@@ -26,36 +23,27 @@ local mirror = {
     ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
 }
 
-local function download(pkg, proxy)
-    if proxy then
-        local ok, content, status = pcall(socket.http.get, proxy_url .. repo .. mirror[pkg].remote)
+local function download(pkg)
+    local conn, i, o = socket.connect(server)
+    if not conn then
+        print(":: Connection failed to server")
+        return
+    end
 
-        if ok then
-            if status == 200 then return content
-            elseif status == 404 then
-                print(":: Package " .. pkg .. " not found on repository")
-            end
-        else
-            print(":: Download failed: " .. tostring(content))
-        end
+    io.write("get lib/" .. mirror[pkg].remote, o)
+
+    local ok, content = pcall(io.read, i, 8192)
+    pcall(io.close, conn, i, o)
+    
+    if content == "File 'lib/" .. mirror[pkg].remote .. "' not found." then
+        print(":: Package " .. pkg .. " not found on repository")
+        return nil
+    end
+
+    if ok then
+        return content 
     else
-        local conn, i, o = socket.connect(server)
-        if not conn then
-            print(":: Connection failed to server")
-            return nil
-        end
-
-        io.write("get lib/" .. mirror[pkg].remote, o)
-
-        local ok, content = pcall(io.read, i, 8192)
-
-        if content == "File 'lib/" .. mirror[pkg].remote .. "' not found." then
-            print(":: Package " .. pkg .. " not found on repository")
-        end
-
-        pcall(io.close, conn, i, o)
-
-        if ok then return content else print(":: Read failed: " .. tostring(content)) end
+        print(":: Read failed: " .. tostring(content)) end
     end
     return nil
 end
@@ -90,44 +78,21 @@ local function main()
             os.exit(13)
         end
 
-        if #arg > 1 then
-            for i = 2, #arg do
-                local pkg = arg[i]
-                if mirror[pkg] then
-                    print(":: Installing " .. pkg .. "...")
-
-                    if mirror[pkg].depends then
-                        for _, dep in ipairs(mirror[pkg].depends) do
-                            local dep_content = io.read(mirror[dep].here)
-                            if not dep_content or dep_content == "" then
-                                print(":: Installing dependency: " .. dep)
-                                local dep_data = download(dep, true)
-                                if dep_data then
-                                    local ok, err = pcall(io.write, dep_data, mirror[dep].here)
-                                    if ok then
-                                        print(":: Dependency " .. dep .. " installed successfully")
-                                    else
-                                        print(":: Failed to install dependency " .. dep .. ": " .. tostring(err))
-                                    end
-                                end
-                            end
-                        end
-                    end
-
-                    local content = download(pkg, true)
-                    if content then
-                        local ok, err = pcall(io.write, content, mirror[pkg].here)
-                        if ok then
-                            print(":: Package " .. pkg .. " installed successfully")
-                        else
-                            print(":: Installation failed: " .. tostring(err))
-                        end
+        if mirror[pkg] then
+            print(":: Installing " .. mirror[pkg].remote .. "...")
+    
+            local content = download(pkg)
+                if content then
+                    int status = io.write(content, mirror[pkg].here)
+                    if status == 0 then
+                        print(":: Package " .. pkg .. " installed")
                     else
-                        print(":: Failed to download package " .. pkg)
+                        print(":: Installation failed: writing error (Status: " .. status .. ")")
                     end
                 else
-                    print(":: Package " .. pkg .. " not found in repository")
+                    print(":: Download failed ")
                 end
+                    
             end
         else
             print("Usage: yang install <package1> [package2...]")
