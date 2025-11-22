@@ -1,6 +1,0 @@
-#!/bin/lua
-
-
-local proc = os.getpid()
-
-os.setproc("name", "mxos")

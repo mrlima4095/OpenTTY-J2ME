@@ -13,7 +13,6 @@ local mirror = {
     ["forge"] = { remote = "forge", here = "/lib/forge", description = "Additional API for OpenTTY" },
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
-    ["mobix"] = { remote = "mxos", here = "/bin/mxos", description = "MobiX Loader" },
     ["pastebin"] = { remote = "pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
     ["sed"] = { remote = "sed.lua", here = "/bin/sed", description = "String Editor" },
     ["sdk"] = { remote = "sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
