@@ -919,14 +919,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (pid.equals("1")) { print("Permission denied!", stdout); return 13; } 
             else {
                 if (args.length < 2) { print("trap: usage: trap \"command\" SIGNAL", stdout); return 2; }
-                
-                Hashtable signals = (Hashtable) getobject(pid, "signals");
-                if (signals == null) { signals = new Hashtable(); getprocess(pid).put("signals", signals); }
-                
-                if (args[0].equals("-") || args[0].equals("true") || args[0].equals("")) {
-                    signals.remove(args[1]);
-                    if (signals.isEmpty()) { getprocess(pid).remove("signals"); }
-                } else { signals.put(args[1], args[0]); }
+                if (args[1].equals("TERM")) {
+                    Hashtable signals = (Hashtable) getobject(pid, "signals");
+                    if (signals == null) { signals = new Hashtable(); getprocess(pid).put("signals", signals); }
+                    
+                    if (args[0].equals("-") || args[0].equals("true") || args[0].equals("")) {
+                        signals.remove(args[1]);
+                        if (signals.isEmpty()) { getprocess(pid).remove("signals"); }
+                    } else { signals.put(args[1], args[0]); }
+                } else {
+                    print("trap: " + args[1] + ": invalid signal specification")
+                }
             }
         }
         // |
