@@ -80,161 +80,165 @@ local function list_packages()
     end
 end
 
-if arg[1] == nil or arg[1] == "help" then
-    print("Yang " .. version .. " - OpenTTY Package Manager")
-    print("")
-    print("Usage: yang <command> [options]")
-    print("")
-    print("Commands:")
-    print("  install <pkg...>    Install packages")
-    print("  remove <pkg...>     Remove packages")
-    print("  update              Update package list")
-    print("  upgrade             Upgrade all packages")
-    print("  download <pkg>      Download package without installing")
-    print("  search <term>       Search for packages")
-    print("  list                List available packages")
-    print("  info <pkg>          Show package information")
-    print("")
-elseif arg[1] == "install" then
-    if os.getuid() > 0 then
-        print("Permission denied!")
-        os.exit(13)
-    end
+local function main()
+    if arg[1] == nil or arg[1] == "help" then
+        print("Yang " .. version .. " - OpenTTY Package Manager")
+        print("")
+        print("Usage: yang <command> [options]")
+        print("")
+        print("Commands:")
+        print("  install <pkg...>    Install packages")
+        print("  remove <pkg...>     Remove packages")
+        print("  update              Update package list")
+        print("  upgrade             Upgrade all packages")
+        print("  download <pkg>      Download package without installing")
+        print("  search <term>       Search for packages")
+        print("  list                List available packages")
+        print("  info <pkg>          Show package information")
+        print("")
+    elseif arg[1] == "install" then
+        if os.getuid() > 0 then
+            print("Permission denied!")
+            os.exit(13)
+        end
 
-    if #arg > 1 then
-        for i = 2, #arg do
-            local pkg_name = arg[i]
-            if mirror[pkg_name] then
-                print(":: Installing " .. pkg_name .. "...")
+        if #arg > 1 then
+            for i = 2, #arg do
+                local pkg_name = arg[i]
+                if mirror[pkg_name] then
+                    print(":: Installing " .. pkg_name .. "...")
 
-                if not install_dependencies(pkg_name) then
-                    print(":: Aborting installation due to dependency failure")
-                    break
-                end
+                    if not install_dependencies(pkg_name) then
+                        print(":: Aborting installation due to dependency failure")
+                        break
+                    end
 
-                local content = download(pkg_name, false)
-                if content then
-                    io.write(content, mirror[pkg_name].here)
-                    print(":: Installed " .. pkg_name .. " to " .. mirror[pkg_name].here)
+                    local content = download(pkg_name, false)
+                    if content then
+                        io.write(content, mirror[pkg_name].here)
+                        print(":: Installed " .. pkg_name .. " to " .. mirror[pkg_name].here)
+                    else
+                        print(":: Download failed for " .. pkg_name)
+                    end
                 else
-                    print(":: Download failed for " .. pkg_name)
+                    print(":: Package not found: " .. pkg_name)
                 end
-            else
-                print(":: Package not found: " .. pkg_name)
             end
-        end
-    else
-        print("Usage: yang install <package1> [package2...]")
-    end
-elseif arg[1] == "remove" then
-    if os.getuid() > 0 then
-        print("Permission denied!")
-        return
-    end
-    
-    if #arg > 1 then
-        for i = 2, #arg do
-            local pkg_name = arg[i]
-            if mirror[pkg_name] then
-                os.execute("rm " .. mirror[pkg_name].here)
-                print(":: Removed " .. pkg_name)
-            else
-                print(":: Package not found: " .. pkg_name)
-            end
-        end
-    else
-        print("Usage: yang remove <package1> [package2...]")
-    end
-elseif arg[1] == "update" then
-    local ok, conn, i, o, response = pcall(socket.connect, server)
-    if ok then
-        io.write("fetch", o)
-        ok, response = pcall(io.read, i)
-        if ok then
-            print(":: " .. response)
         else
-            print(":: Failed to fetch update information")
+            print("Usage: yang install <package1> [package2...]")
         end
-        pcall(socket.close, conn)
-    else
-        print(":: Connection failed")
-    end
-elseif arg[1] == "upgrade" then
-    if os.getuid() > 0 then
-        print("Permission denied!")
-        return
-    end
-
-    print(":: Upgrading all packages...")
-    local upgraded = 0
-    for pkg_name, info in pairs(mirror) do
-        print(":: Checking " .. pkg_name .. "...")
-        local content = download(pkg_name, false)
-        if content then
-            local current_content = io.read(info.here)
-            if current_content ~= content then
-                io.write(content, info.here)
-                print(":: Upgraded " .. pkg_name)
-                upgraded = upgraded + 1
+    elseif arg[1] == "remove" then
+        if os.getuid() > 0 then
+            print("Permission denied!")
+            return
+        end
+        
+        if #arg > 1 then
+            for i = 2, #arg do
+                local pkg_name = arg[i]
+                if mirror[pkg_name] then
+                    os.execute("rm " .. mirror[pkg_name].here)
+                    print(":: Removed " .. pkg_name)
+                else
+                    print(":: Package not found: " .. pkg_name)
+                end
             end
+        else
+            print("Usage: yang remove <package1> [package2...]")
         end
-    end
-    print(":: Upgrade completed. " .. upgraded .. " packages upgraded.")
-elseif arg[1] == "download" then
-    if #arg > 1 then
-        local pkg_name = arg[2]
-        if mirror[pkg_name] then
-            print(":: Downloading " .. pkg_name .. "...")
+    elseif arg[1] == "update" then
+        local ok, conn, i, o, response = pcall(socket.connect, server)
+        if ok then
+            io.write("fetch", o)
+            ok, response = pcall(io.read, i)
+            if ok then
+                print(":: " .. response)
+            else
+                print(":: Failed to fetch update information")
+            end
+            pcall(socket.close, conn)
+        else
+            print(":: Connection failed")
+        end
+    elseif arg[1] == "upgrade" then
+        if os.getuid() > 0 then
+            print("Permission denied!")
+            return
+        end
+
+        print(":: Upgrading all packages...")
+        local upgraded = 0
+        for pkg_name, info in pairs(mirror) do
+            print(":: Checking " .. pkg_name .. "...")
             local content = download(pkg_name, false)
             if content then
-                io.write(content, pkg_name)
+                local current_content = io.read(info.here)
+                if current_content ~= content then
+                    io.write(content, info.here)
+                    print(":: Upgraded " .. pkg_name)
+                    upgraded = upgraded + 1
+                end
+            end
+        end
+        print(":: Upgrade completed. " .. upgraded .. " packages upgraded.")
+    elseif arg[1] == "download" then
+        if #arg > 1 then
+            local pkg_name = arg[2]
+            if mirror[pkg_name] then
+                print(":: Downloading " .. pkg_name .. "...")
+                local content = download(pkg_name, false)
+                if content then
+                    io.write(content, pkg_name)
+                else
+                    print(":: Download failed")
+                end
             else
-                print(":: Download failed")
+                print(":: Package not found: " .. pkg_name)
             end
         else
-            print(":: Package not found: " .. pkg_name)
+            print("Usage: yang download <package>")
         end
-    else
-        print("Usage: yang download <package>")
-    end
-elseif arg[1] == "search" then
-    if #arg > 1 then
-        local term = string.lower(arg[2])
-        print("Search results for '" .. term .. "':\n")
-        local found = false
-        for name, info in pairs(mirror) do
-            if string.find(string.lower(name), 1) or string.find(string.lower(info.description), 1) then
-                print("- " .. name .. info.description)
-                found = true
+    elseif arg[1] == "search" then
+        if #arg > 1 then
+            local term = string.lower(arg[2])
+            print("Search results for '" .. term .. "':\n")
+            local found = false
+            for name, info in pairs(mirror) do
+                if string.find(string.lower(name), 1) or string.find(string.lower(info.description), 1) then
+                    print("- " .. name .. info.description)
+                    found = true
+                end
             end
-        end
-        if not found then
-            print(":: No packages found matching '" .. term .. "'")
-        end
-    else
-        print("Usage: yang search <term>")
-    end
-elseif arg[1] == "list" then
-    list_packages()
-elseif arg[1] == "info" then
-    if #arg > 1 then
-        local pkg_name = arg[2]
-        if mirror[pkg_name] then
-            local info = mirror[pkg_name]
-            print("Package: " .. pkg_name)
-            print("Description: " .. info.description)
-            print("Remote: " .. info.remote)
-            print("Location: " .. info.here)
-            if info.depends then
-                print("Dependencies: " .. table.concat(info.depends, ", "))
+            if not found then
+                print(":: No packages found matching '" .. term .. "'")
             end
         else
-            print(":: Package not found: " .. pkg_name)
+            print("Usage: yang search <term>")
+        end
+    elseif arg[1] == "list" then
+        list_packages()
+    elseif arg[1] == "info" then
+        if #arg > 1 then
+            local pkg_name = arg[2]
+            if mirror[pkg_name] then
+                local info = mirror[pkg_name]
+                print("Package: " .. pkg_name)
+                print("Description: " .. info.description)
+                print("Remote: " .. info.remote)
+                print("Location: " .. info.here)
+                if info.depends then
+                    print("Dependencies: " .. table.concat(info.depends, ", "))
+                end
+            else
+                print(":: Package not found: " .. pkg_name)
+            end
+        else
+            print("Usage: yang info <package>")
         end
     else
-        print("Usage: yang info <package>")
+        print("yang: " .. arg[1] .. ": not found")
+        os.exit(127)
     end
-else
-    print("yang: " .. arg[1] .. ": not found")
-    os.exit(127)
 end
+
+os.setproc("name", "yang")
