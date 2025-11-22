@@ -1117,38 +1117,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Hashtable cmds = (Hashtable) getobject("2", "buttons");
 
                 if (argument.equals("")) {
-                    for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) {
-                        Command cmd = (Command) keys.nextElement();
-                        xterm.removeCommand(cmd);
-                    }
+                    for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) { xterm.removeCommand((Command) keys.nextElement()); }
                     cmds.clear();
                 } else if (argument.indexOf("=") != -1) {
                     String[] parts = split(argument, '=');
                     if (parts.length >= 2) {
-                        String buttonName = parts[0].trim();
-                        String commandToExecute = join(parts, "=", 1).trim();
+                        String label = parts[0].trim(), cmd = join(parts, "=", 1).trim();
                         
-                        Command newCmd = new Command(buttonName, Command.SCREEN, 2);
+                        Command button = new Command(label, Command.SCREEN, 1);
                         
-                        xterm.addCommand(newCmd);
-                        cmds.put(newCmd, commandToExecute);
-                        
-                        xterm.setCommandListener(new CommandListener() {
-                            
-                        });
+                        xterm.addCommand(button); cmds.put(button, label);
                     }
                 } else {
-                    Command toRemove = null;
                     for (Enumeration keys = cmds.keys(); keys.hasMoreElements();) {
                         Command cmd = (Command) keys.nextElement();
-                        if (cmd.getLabel().equals(argument)) {
-                            toRemove = cmd;
-                            break;
-                        }
-                    }
-                    if (toRemove != null) {
-                        xterm.removeCommand(toRemove);
-                        cmds.remove(toRemove);
+                        if (cmd.getLabel().equals(argument)) { xterm.removeCommand(cmd); cmds.remove(cmd); }
                     }
                 }
             } else {
