@@ -2,7 +2,7 @@
 
 local version = "1.5"
 
-local server = "socket://opentty.xyz:31522"
+local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
     ["armitage"] = { remote = "armitage", here = "/bin/armitage", description = "OpenTTY Network Tools" },
     ["autogc"] = { remote = "autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
