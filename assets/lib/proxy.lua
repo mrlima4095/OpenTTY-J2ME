@@ -24,14 +24,8 @@ if #arg > 1 then
             if cmd then
                 print("WebProxy -> [" .. cmd .. "]")
 
-                if cmd == "/exit" then break
-                else
-                    local before = io.read()
-                    os.execute(cmd)
-                    local after = io.read()
-
-                    io.write(string.sub(after, #before + 2, #after) .. "\n", o)
-                end
+                local status, output = io.popen(cmd)
+                io.write(string.trim(output) .. "\n", o)
             else break end
         end
     end)
