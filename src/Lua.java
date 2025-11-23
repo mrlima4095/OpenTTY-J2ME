@@ -1488,7 +1488,7 @@ public class Lua {
                     }
                 } 
             }
-            else if (MOD == OPEN) { return args.isEmpty() ? new ByteArrayOutputStream() : midlet.getInputStream(toLuaString(args.elementAt(0))); }
+            else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
             else if (MOD == POPEN) { if (args.isEmpty()) { } else { StringBuffer out = new StringBuffer(); int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, out, father); Vector result = new Vector(); result.addElement(new Double(STATUS)); result.addElement(out.toString()); return result; } } 
             // Package: table
             else if (MOD == TB_INSERT) {
