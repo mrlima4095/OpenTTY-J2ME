@@ -1492,10 +1492,94 @@ public class Lua {
             else if (MOD == POPEN) { if (args.isEmpty()) { } else { StringBuffer out = new StringBuffer(); int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, out, father); Vector result = new Vector(); result.addElement(new Double(STATUS)); result.addElement(out.toString()); return result; } } 
             else if (MOD == DIRS) {
                 String pwd = args.isEmpty() ? midlet.path : toLuaString(args.elementAt(0));
-                boolean all = (Boolean) args.elementAt(1)
+                boolean all = (Boolean) args.elementAt(1); int index = 1;
                 
                 Hashtable list = new Hashtable();
+                if (pwd.startsWith("/")) { }
+                else { pwd = midlet.path + pwd; }
+                if (pwd.endsWith("/")) { } 
+                else { pwd = pwd + "/" }
                 
+                for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) {
+                    String KEY = (String) KEYS.nextElement();
+                    if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { list.put(new Double(index) KEY); } 
+                }
+
+            
+                if (PWD.equals("/tmp/")) {
+                    for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) {
+                        String KEY = (String) KEYS.nextElement();
+                        if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } 
+                    }
+                }
+                else if (PWD.equals("/mnt/")) { 
+                    for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
+                        String ROOT = (String) ROOTS.nextElement(); if ((all || !ROOT.startsWith(".")) && !BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
+                    }
+                } 
+                else if (PWD.startsWith("/mnt/")) { 
+                    String REALPWD = "file:///" + PWD.substring(5); 
+                    if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
+                    FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
+                    for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { 
+                        String ITEM = (String) CONTENT.nextElement();
+                        if ((all || !ITEM.startsWith(".")) && !BUFFER.contains(ITEM)) {
+                            BUFFER.addElement(ITEM); 
+                        }
+                    } 
+                    CONN.close(); 
+                } 
+                else if (PWD.equals("/bin/") || PWD.equals("/etc/") || PWD.equals("/lib/")) {
+                    String content = loadRMS("OpenRMS", PWD.equals("/bin/") ? 3 : PWD.equals("/etc/") ? 5 : 4);
+                    int index = 0;
+
+                    while (true) {
+                        int start = content.indexOf("[\1BEGIN:", index);
+                        if (start == -1) { break; }
+
+                        int end = content.indexOf("\1]", start);
+                        if (end == -1) { break; }
+
+                        String filename = content.substring(start + "[\1BEGIN:".length(), end);
+                        if (filename.startsWith(".")) { } else { BUFFER.addElement(filename); }
+
+                        index = content.indexOf("[\1END\1]", end);
+                        if (index == -1) { break; }
+
+                        index += "[\1END\1]".length();
+                    }
+                }
+                else if (PWD.equals("/home/") && verbose) { 
+                    String[] FILES = RecordStore.listRecordStores(); 
+                    if (FILES != null) { 
+                        for (int i = 0; i < FILES.length; i++) { 
+                            String NAME = FILES[i]; 
+                            if ((all || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } 
+                        } 
+                    } 
+                } 
+                else if (PWD.equals("/home/")) { return processCommand("dir", false, id, pid, stdout, scope); }
+            } catch (IOException e) { } 
+
+            Vector FILES = (Vector) fs.get(PWD); 
+            if (FILES != null) { 
+                for (int i = 0; i < FILES.size(); i++) { 
+                    String file = ((String) FILES.elementAt(i)).trim(); 
+                    if (file == null || file.equals("..") || file.equals("/")) { continue; }
+                    if ((all || !file.startsWith(".")) && !BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } 
+                } 
+            } 
+
+            if (!BUFFER.isEmpty()) { 
+                String formatted = "";
+                for (int i = 0; i < BUFFER.size(); i++) { 
+                    String ITEM = (String) BUFFER.elementAt(i); 
+                    if (!ITEM.equals("/")) { 
+                        formatted += ITEM + (PWD.startsWith("/home/") ? "\n" : "\t"); 
+                    } 
+                } 
+                print(formatted.trim(), stdout); 
+            }
             }
             // Package: table
             else if (MOD == TB_INSERT) {
