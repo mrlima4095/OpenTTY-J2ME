@@ -171,3 +171,4 @@
 [2025-1.17-03x01] Reading pid from dad process
 [2025-1.17-03x02] Rewrote OpenTTY
 [2025-1.17-03x03] Added Command 'TRAP'
+[2025-1.17-03x04] Removed buffer

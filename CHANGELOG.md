@@ -72,7 +72,7 @@ Copyright (C) 2025 - Mr. Lima
 - Command `expr`, `ping`, `pong`, `query` and `wget` can be installed from yang
 - Alias `raw` to `cat` disabled and `rraw` removed
 - Removed commands `seed`, `genip`
-- **Nano** now requires a file and a *buffer* can be used as clipboard with commands **add**, **install** and **touch** without args
+- **Nano** now requires a file and commands `add`, `install`, `get`, `getty` and other related have been removed too
 
 ### 📦 Packages
 - **JBuntu** updated to _1.4_

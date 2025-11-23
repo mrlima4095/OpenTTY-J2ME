@@ -21,7 +21,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), filetypes = null, aliases = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), globals = new Hashtable();
-    public String username = read("/home/OpenRMS"), buffer = "", logs = "", path = "/home/", build = "2025-1.17-03x03"; 
+    public String username = read("/home/OpenRMS"), logs = "", path = "/home/", build = "2025-1.17-03x04"; 
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -432,6 +432,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (aliases.containsKey(mainCommand)) { return processCommand(((String) aliases.get(mainCommand)) + " " + argument, enable, id, pid, stdout, scope); }
         else if (classpath && file("/bin/" + mainCommand) && !mainCommand.equals("sh") && !mainCommand.equals("lua") && !mainCommand.startsWith(".")) { return processCommand(". /bin/" + command, enable, id, pid, stdout, scope); }
 
+        // Shell Utilities
+        // | (Aliases)
+        else if (mainCommand.equals("alias")) { if (argument.equals("")) { for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { print("alias " + KEY + "='" + VALUE.trim() + "'", stdout); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { print("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'", stdout); } else { print("alias: " + argument + ": not found", stdout); return 127; } } } else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } }  
+        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { aliases.remove(args[i]); } else { print("unalias: "+ args[i] + ": not found", stdout); return 127; } } } }
+        // | (Environment Keys)
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); } } else { attributes.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } } 
+        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { attributes.remove(args[i]); } else { } } } }
+        else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false, id, pid, stdout, scope); }
+        else if (mainCommand.equals("env")) { if (argument.equals("")) { for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { print(KEY + "=" + VALUE.trim(), stdout); } } } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { print(args[i] + "=" + (String) attributes.get(args[i]), stdout); } else { print("env: " + args[i] + ": not found", stdout); return 127; } } } }
+        // | (Scope Management)
+    
+
         // API 001 - Kernel
         // | (Client)
         else if (mainCommand.equals("top")) { return kernel(argument, id, pid, stdout, scope);  }
@@ -614,8 +626,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // | (Tools)
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = deleteFile(args[i], id, stdout); if (STATUS != 0) { return STATUS; } } } }
-        else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { int STATUS = write(argument, buffer, id); if (STATUS != 0) { print(STATUS == 13 ? "Permission denied" : STATUS == 5 ? "read-only storage" : "java.io.IOException", stdout); } return STATUS; } }
-        else if (mainCommand.equals("touch")) { if (argument.equals("")) { buffer = ""; } else { for (int i = 0; i < args.length; i++) { int STATUS = write(argument, "", id); if (STATUS != 0) { return STATUS; } } } }
+        else if (mainCommand.equals("touch")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = write(argument, "", id); if (STATUS != 0) { return STATUS; } } } }
         else if (mainCommand.equals("mkdir")) { if (argument.equals("")) { } else { argument = argument.endsWith("/") ? argument : argument + "/"; argument = argument.startsWith("/") ? argument : path + argument; if (argument.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + argument.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.mkdir(); CONN.close(); } else { print("mkdir: " + basename(argument) + ": found", stdout); } CONN.close(); } catch (Exception e) { print(getCatch(e), stdout); return (e instanceof SecurityException) ? 13 : 1; } } else if (argument.startsWith("/home/") || argument.startsWith("/tmp/")) { print("Unsupported API", stdout); return 3; } else if (argument.startsWith("/")) { print("read-only storage", stdout); return 5; } } }
         else if (mainCommand.equals("cp")) {
             if (argument.equals("")) { print("cp: missing [origin]", stdout); } 
@@ -636,7 +647,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (Exception e) { print(getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; }
             }
         }
-        
+        // | (File )
         // | (Utilities)
         else if (mainCommand.equals("basename")) { print(basename(argument), stdout); }
         // | (Informations)
@@ -658,7 +669,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // | ()
 
-        else if (mainCommand.equals("add")) { buffer = buffer.equals("") ? argument : buffer + "\n" + argument; }
         else if (mainCommand.equals("du")) { 
             if (argument.equals("")) { } 
             else { 
@@ -669,21 +679,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (Exception e) { print(getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; }
             } 
         }
-        else if (mainCommand.equals("cat")) { if (argument.equals("")) { print(buffer, stdout); } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i]), stdout); } } }
-        else if (mainCommand.equals("get")) { buffer = argument.equals("") ? "" : getcontent(argument); }
+        else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i]), stdout); } } }
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { print("" + getcontent(argument).hashCode(), stdout); } }
         else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
         
         
         
-        else if (mainCommand.equals("alias")) { if (argument.equals("")) { for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { print("alias " + KEY + "='" + VALUE.trim() + "'", stdout); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { print("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'", stdout); } else { print("alias: " + argument + ": not found", stdout); return 127; } } } else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } }  
-        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { aliases.remove(args[i]); } else { print("unalias: "+ args[i] + ": not found", stdout); return 127; } } } }
-        // |
-        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); } } else { attributes.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } } 
-        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { attributes.remove(args[i]); } else { } } } }
-        else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false, id, pid, stdout, scope); }
-        else if (mainCommand.equals("env")) { if (argument.equals("")) { for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { print(KEY + "=" + VALUE.trim(), stdout); } } } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { print(args[i] + "=" + (String) attributes.get(args[i]), stdout); } else { print("env: " + args[i] + ": not found", stdout); return 127; } } } }
-
+        
         else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, enable, id, pid, stdout, scope) : mainCommand.equals("for") ? forCommand(argument, enable, id, pid, stdout, scope) : caseCommand(argument, enable, id, pid, stdout, scope); }
         // |
         else if (mainCommand.equals("echo")) { print(argument, stdout); }
@@ -788,7 +790,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         // |
         else if (mainCommand.equals("nano")) { new MIDletControl(argument, enable, id, stdout, scope); }
-        else if (mainCommand.equals("html")) { String content = argument.equals("") ? buffer : getcontent(argument); viewer(extractTitle(env(content), "HTML Viewer"), html2text(env(content))); }
         // |
         else if (mainCommand.equals("audio")) { return audio(argument, id, pid, stdout, scope); }
         else if (mainCommand.equals("java")) { return java(argument, id, pid, stdout, scope); }
@@ -873,13 +874,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("false")) { return 255; }
         // |
         else if (mainCommand.equals("lua")) { 
+            if (argument.equals("")) { }
             if (javaClass("Lua") == 0) { 
                 Lua lua = new Lua(this, id, stdout, scope); 
 
                 Hashtable arg = new Hashtable();
                 String source, code;
-                if (argument.equals("")) { source = ""; code = buffer; arg.put(new Double(0), "/dev/null"); } 
-                else if (args[0].equals("-e")) { source = "stdin"; code = argument.substring(3).trim(); arg.put(new Double(0), "/dev/stdin"); } 
+                if (args[0].equals("-e")) { source = "stdin"; code = argument.substring(3).trim(); arg.put(new Double(0), "/dev/stdin"); } 
                 else { source = args[0]; code = getcontent(source); arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
 
                 if (code.trim().equals("")) { return 0; }
@@ -1259,7 +1260,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             if (filename.startsWith("/dev/")) {
                 filename = filename.substring(5);
-                String content = filename.equals("random") ? buffer : filename.equals("random") ? String.valueOf(random.nextInt(256)) : filename.equals("stdin") ? stdin.getString() : filename.equals("stdout") ? stdout.getText() : filename.equals("null") ? "\r" : filename.equals("zero") ? "\0" : null;
+                String content = filename.equals("random") ? String.valueOf(random.nextInt(256)) : filename.equals("stdin") ? stdin.getString() : filename.equals("stdout") ? stdout.getText() : filename.equals("null") ? "\r" : filename.equals("zero") ? "\0" : null;
                 if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/dev/" + filename;
@@ -1328,7 +1329,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (filename.equals("sh") || filename.equals("lua")) { return 5; }
             else { if (useCache) { cache.put("/" + base + "/" + filename, new String(data)); } return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4), base); }
         }
-        else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { buffer = new String(data); } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { return 5; } }
+        else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { return 5; } }
         else if (filename.startsWith("/tmp/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else { tmp.put(filename, new String(data)); } }
         else if (filename.startsWith("/")) { return 5; } 
         else { return write(path + filename, data, id); } 
@@ -1549,9 +1550,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // |
     public int run(String argument, String[] args, int id, String pid, Object stdout, Hashtable scope) { 
-        String content = argument.equals("") ? buffer : getcontent(args[0]); 
+        String content = argument.equals("") ? "" : getcontent(args[0]); 
 
-        if (content.startsWith("#!/bin/lua")) {
+        if (content.equals("")) { return 0; }
+        else if (content.startsWith("#!/bin/lua")) {
             if (javaClass("Lua") == 0) { 
                 Lua lua = new Lua(this, id, stdout, scope); 
 
