@@ -72,7 +72,7 @@ Copyright (C) 2025 - Mr. Lima
 - Command `exec` and `execute` have been rewrote
 - Command `expr`, `hash`, `ping`, `pong`, `query` and `wget` can be installed from yang
 - Alias `raw` to `cat` disabled and `rraw` removed
-- Removed commands `seed`, `genip`, `
+- Removed commands `seed`, `genip`, `about`, `
 - **Nano** now requires a file and commands `add`, `install`, `get`, `getty` and other related have been removed too
 
 ### 📦 Packages

@@ -446,13 +446,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // | (Tools)
         else if (mainCommand.equals("echo")) { print(argument, stdout); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
+        else if (mainCommand.equals("help")) { print(read("/res/docs"), stdout); }
         else if (mainCommand.equals("date")) { print(new java.util.Date().toString(), stdout); }
         else if (mainCommand.equals("locale")) { print((String) attributes.get("LOCALE"), stdout); }
         else if (mainCommand.equals("clear")) { if (argument.equals("")) { this.stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { this.stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { print("clear: " + args[i] + ": not found", stdout); return 127; } } } }
         // | (Chain)
         else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, enable, id, pid, stdout, scope) : mainCommand.equals("for") ? forCommand(argument, enable, id, pid, stdout, scope) : caseCommand(argument, enable, id, pid, stdout, scope); }
         else if (mainCommand.startsWith("exec")) { if (argument.equals("")) { } else { if (mainCommand.equals("execute")) { args = split(argument, ';'); } for (int i = 0; i < args.length; i++) { int STATUS = processCommand(args[i].trim(), enable, id, pid, stdout, scope); if (STATUS != 0) { return STATUS; } } } }
+        else if (mainCommand.equals("catch")) { if (argument.equals("")) { } else { try { processCommand(argument, enable, id, pid, stdout, scope); } catch (Throwable e) { print(getCatch(e), stdout); } } }
         else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { if (argument.equals("")) { } else { return processCommand(argument, false, id, pid, stdout, scope); } }
+        else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { print("" + processCommand(argument, enable, id, pid, stdout, scope), stdout); } }
+        // | (Sessions)
+        else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { print(id == 0 ? "root" : username, stdout); }
+        else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (id == 0) { return processCommand(argument, enable, id, pid, stdout, scope); } else { new MIDletControl(argument, enable, pid, stdout, scope); } }
+        else if (mainCommand.equals("su")) { if (id == 0) { username = username.equals("root") ? read("/home/OpenRMS") : "root"; return processCommand(". /bin/sh", false, id, pid, stdout, scope); } else { print("Permission denied!", stdout); return 13; } }
+        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return argument.equals("") ? processCommand(". /bin/sh", false, id, pid, stdout, scope) : runScript(argument, id, pid, stdout, scope); }
+        else if (mainCommand.equals("id")) { String ID = argument.equals("") ? String.valueOf(id) : argument.equals("root") ? "0" : argument.equals(read("/home/OpenRMS")) ? "1000" : null; if (ID == null) { print("id: '" + argument + "': no such user", stdout); return 127; } print(ID, stdout); }
+        else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else if (id == 0) { writeRMS("OpenRMS", argument.getBytes(), 2); } else { print("Permission denied!", stdout); return 13; } }
+        else if (mainCommand.equals("logout")) { if (read("/home/OpenRMS").equals(username)) { if (id == 0) { writeRMS("/home/OpenRMS", "".getBytes(), id); destroyApp(false); } else { print("Permission denied!", stdout); return 13; } } else { username = read("/home/OpenRMS"); return processCommand(". /bin/sh", false, id, pid, stdout, scope); } }
+        else if (mainCommand.equals("exit")) { if (read("/home/OpenRMS").equals(username)) { destroyApp(false); } else { username = read("/home/OpenRMS"); return processCommand(". /bin/sh", false, id, pid, stdout, scope); } }
+        else if (mainCommand.equals("quit")) { destroyApp(false); }
+        else if (mainCommand.equals("false")) { return 255; }
         // |
         // |
         // -=-=-=-=-=-=-=-=-=-=-=-
@@ -469,6 +483,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("bg")) { if (argument.equals("")) { } else { new MIDletControl("Background", argument, enable, id, stdout, scope); } }
         else if (mainCommand.equals("time")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); int STATUS = processCommand(argument, enable, id, pid, stdout, scope); print("at " + (System.currentTimeMillis() - START) + "ms", stdout); return STATUS; } }
         else if (mainCommand.equals("mmspt") || mainCommand.equals("chrt")) { if (argument.equals("")) { print(getThreadName(Thread.currentThread()), stdout); } else if (argument.equals("priority")) { print("" + Thread.currentThread().getPriority(), stdout); } else { int value = getNumber(argument, Thread.NORM_PRIORITY, null); if (value > 10 || value < 1) { return 2; } else { Thread.currentThread().setPriority(value); } } }
+        else if (mainCommand.equals("uptime")) {
+            long totalSeconds = (System.currentTimeMillis() - uptime) / 1000, hours = totalSeconds / 3600, minutes = (totalSeconds % 3600) / 60, seconds = totalSeconds % 60;
+            
+            print((hours > 0 ? hours + "h " : "") + (minutes > 0 || hours > 0 ? minutes + "m " : "") + seconds + "s", stdout);
+        }
         // |
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), enable, id, pid, stdout, scope); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { print(getCatch(e), stdout); return 2; } } }
@@ -490,6 +509,92 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // | (Logging)
         else if (mainCommand.equals("log")) { return MIDletLogs(argument, id, stdout); }
         else if (mainCommand.equals("logcat")) { print(logs, stdout); }
+        // | (Permission Nodes)
+        else if (mainCommand.equals("chmod")) { 
+            if (argument.equals("")) { } 
+            else if (argument.equals("*")) { return processCommand("chmod http socket file prg", false, id, pid, stdout, scope); }
+            else { 
+                Hashtable NODES = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); 
+                
+                int STATUS = 0; 
+                for (int i = 0; i < args.length; i++) {
+                    String NODE = (String) NODES.get(args[i]);
+                    
+                    if (NODES.containsKey(args[i])) { 
+                        try { 
+                            if (args[i].equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
+                            else if (args[i].equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + ((attributes.containsKey("REPO") && !(env("$REPO").equals("") && !(env("$REPO").equals("$REPO"))) ? "$REPO" : "1.1.1.1:53"))))).close(); } 
+                            else if (args[i].equals("file")) { FileSystemRegistry.listRoots(); } 
+                            else if (args[i].equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
+                        } 
+                        catch (Exception e) { STATUS = (e instanceof SecurityException) ? 13 : (e instanceof IOException) ? 1 : 3; } 
+                    } 
+                    else { print("chmod: " + args[i] + ": not found", stdout); return 127; } 
+                    
+                    if (STATUS == 0) { MIDletLogs("add info Permission '" + NODE + "' granted", id, stdout); } 
+                    else if (STATUS == 1) { MIDletLogs("add debug Permission '" + NODE + "' granted with exceptions", id, stdout); } 
+                    else if (STATUS == 13) { MIDletLogs("add error Permission '" + NODE + "' denied", id, stdout); } 
+                    else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + NODE + "'", id, stdout); } 
+                    
+                    if (STATUS > 1) { break; } 
+                }
+
+                return STATUS; 
+            } 
+        }
+        // | (Services)
+        else if (mainCommand.equals("trap")) {
+            if (argument.equals("")) {
+                Hashtable signals = (Hashtable) getobject(pid, "signals");
+                if (signals != null && !signals.isEmpty()) {
+                    for (Enumeration signalKeys = signals.keys(); signalKeys.hasMoreElements();) {
+                        String signal = (String) signalKeys.nextElement();
+                        print(signal + "\t" + ((String) signals.get(signal)), stdout);
+                    }
+                } else { print("No traps defined", stdout); }
+            } 
+            else if (pid.equals("1")) { print("Permission denied!", stdout); return 13; } 
+            else {
+                if (args.length < 2) { print("trap: usage: trap \"command\" SIGNAL", stdout); return 2; }
+                
+                args[1] = args[1].toUpperCase();
+                if (args[1].equals("TERM")) {
+                    Hashtable signals = (Hashtable) getobject(pid, "signals");
+                    if (signals == null) { signals = new Hashtable(); getprocess(pid).put("signals", signals); }
+                    
+                    if (args[0].equals("-") || args[0].equals("true") || args[0].equals("")) {
+                        signals.remove(args[1]);
+                        if (signals.isEmpty()) { getprocess(pid).remove("signals"); }
+                    } else { signals.put(args[1], args[0]); }
+                } else {
+                    print("trap: " + args[1] + ": invalid signal specification", stdout);
+                }
+            }
+        }
+        else if (mainCommand.equals("svchost")) {
+            if (argument.equals("")) { }
+            else if (argument.equals("set")) { print("svchost: set: in dev", stdout); }
+            else {
+                if (args.length < 2) { print("svchost [pid] [request]", stdout); return 2; }
+                else if (sys.containsKey(args[0])) {
+                    Hashtable proc = (Hashtable) sys.get(args[0]);
+                    if (proc.containsKey("lua") && proc.containsKey("handler")) {
+                        Lua lua = (Lua) proc.get("lua");
+                        Vector arg = new Vector(); arg.addElement(args[1]); arg.addElement("shell"); arg.addElement(pid); arg.addElement(id);
+                        Object response = null;
+
+                        try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
+                        catch (Exception e) { print(getCatch(e), stdout); return 1; } 
+                        catch (Error e) { if (e.getMessage() != null) { print(e.getMessage(), stdout); } return lua.status; }
+                    } else { print("svchost: " + args[0] + ": not a service", stdout); return 2; }
+                } else { print("svchost: " + args[0] + ": not found", stdout); return 127; }
+            }
+        }
+        // | (Informations)
+        else if (mainCommand.equals("pkg")) { print(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument), stdout); }
+        else if (mainCommand.equals("uname")) { String INFO = argument.equals("") || argument.equals("-i") ? "$TYPE" : argument.equals("-a") || argument.equals("--all") ? "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE" : argument.equals("-r") || argument.equals("--release") ? "$VERSION" : argument.equals("-v") || argument.equals("--build") ? build : argument.equals("-s") ? "J2ME" : argument.equals("-m") ? "$PROFILE" : argument.equals("-p") ? "$CONFIG" : argument.equals("-n") ? "$HOSTNAME" : null; if (INFO == null) { print("uname: " + argument + ": not found", stdout); return 127; } else { print(env(INFO), stdout); } }
+        else if (mainCommand.equals("hostname")) { return processCommand(argument.equals("") ? "echo $HOSTNAME" : "set HOSTNAME=" + getCommand(argument), false, id, pid, stdout, scope); }
+        else if (mainCommand.equals("hostid")) { String DATA = env("$TYPE$CONFIG$PROFILE"); int HASH = 7; for (int i = 0; i < DATA.length(); i++) { HASH = HASH * 31 + DATA.charAt(i); } print(Integer.toHexString(HASH).toLowerCase(), stdout); }
         // |
         // | -=-=-=-=-=-=-=-=-=-=-
         // API 002 - X Server
@@ -794,76 +899,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // | (PushRegistry & Wireless)
         else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (ClassNotFoundException e) { print("prg: " + getArgument(argument) + ": not found", stdout); return 127; } catch (NumberFormatException e) { print(getCatch(e), stdout); return 2; } catch (Exception e) { print(getCatch(e), stdout); return 3; } }
         else if (mainCommand.equals("wrl")) { String ID = System.getProperty("wireless.messaging.sms.smsc"); if (ID == null) { print("Unsupported API", stdout); return 3; } else { print(ID, stdout); } }
-        // | ()
-        // | ()
-        // | ()
-        // | ()
-        // | ()
-
-        
-        
         // |
-        // |
-        // |
-        else if (mainCommand.equals("chmod")) { 
-            if (argument.equals("")) { } 
-            else if (argument.equals("*")) { return processCommand("chmod http socket file prg", false, id, pid, stdout, scope); }
-            else { 
-                Hashtable NODES = parseProperties("http=javax.microedition.io.Connector.http\nsocket=javax.microedition.io.Connector.socket\nfile=javax.microedition.io.Connector.file\nprg=javax.microedition.io.PushRegistry"); 
-                
-                int STATUS = 0; 
-                for (int i = 0; i < args.length; i++) {
-                    String NODE = (String) NODES.get(args[i]);
-                    
-                    if (NODES.containsKey(args[i])) { 
-                        try { 
-                            if (args[i].equals("http")) { ((HttpConnection) Connector.open("http://google.com")).close(); } 
-                            else if (args[i].equals("socket")) { ((SocketConnection) Connector.open(env("socket://" + ((attributes.containsKey("REPO") && !(env("$REPO").equals("") && !(env("$REPO").equals("$REPO"))) ? "$REPO" : "1.1.1.1:53"))))).close(); } 
-                            else if (args[i].equals("file")) { FileSystemRegistry.listRoots(); } 
-                            else if (args[i].equals("prg")) { PushRegistry.registerAlarm(getClass().getName(), System.currentTimeMillis() + 1000); } 
-                        } 
-                        catch (Exception e) { STATUS = (e instanceof SecurityException) ? 13 : (e instanceof IOException) ? 1 : 3; } 
-                    } 
-                    else { print("chmod: " + args[i] + ": not found", stdout); return 127; } 
-                    
-                    if (STATUS == 0) { MIDletLogs("add info Permission '" + NODE + "' granted", id, stdout); } 
-                    else if (STATUS == 1) { MIDletLogs("add debug Permission '" + NODE + "' granted with exceptions", id, stdout); } 
-                    else if (STATUS == 13) { MIDletLogs("add error Permission '" + NODE + "' denied", id, stdout); } 
-                    else if (STATUS == 3) { MIDletLogs("add warn Unsupported API '" + NODE + "'", id, stdout); } 
-                    
-                    if (STATUS > 1) { break; } 
-                }
-
-                return STATUS; 
-            } 
-        }
-        // |
-        // |
-        
-        // |
-        else if (mainCommand.equals("whoami") || mainCommand.equals("logname")) { print(id == 0 ? "root" : username, stdout); }
-        else if (mainCommand.equals("sudo")) { if (argument.equals("")) { } else if (id == 0) { return processCommand(argument, enable, id, pid, stdout, scope); } else { new MIDletControl(argument, enable, pid, stdout, scope); } }
-        else if (mainCommand.equals("su")) { if (id == 0) { username = username.equals("root") ? read("/home/OpenRMS") : "root"; return processCommand(". /bin/sh", false, id, pid, stdout, scope); } else { print("Permission denied!", stdout); return 13; } }
-        else if (mainCommand.equals("sh") || mainCommand.equals("login")) { return argument.equals("") ? processCommand(". /bin/sh", false, id, pid, stdout, scope) : runScript(argument, id, pid, stdout, scope); }
-        else if (mainCommand.equals("id")) { String ID = argument.equals("") ? String.valueOf(id) : argument.equals("root") ? "0" : argument.equals(read("/home/OpenRMS")) ? "1000" : null; if (ID == null) { print("id: '" + argument + "': no such user", stdout); return 127; } print(ID, stdout); }
-        else if (mainCommand.equals("passwd")) { if (argument.equals("")) { } else if (id == 0) { writeRMS("OpenRMS", argument.getBytes(), 2); } else { print("Permission denied!", stdout); return 13; } }
-        else if (mainCommand.equals("logout")) { if (read("/home/OpenRMS").equals(username)) { if (id == 0) { writeRMS("/home/OpenRMS", "".getBytes(), id); destroyApp(false); } else { print("Permission denied!", stdout); return 13; } } else { username = read("/home/OpenRMS"); return processCommand(". /bin/sh", false, id, pid, stdout, scope); } }
-        else if (mainCommand.equals("exit")) { if (read("/home/OpenRMS").equals(username)) { if (pid.equals("1")) { destroyApp(false); } else { return 254; } } else { username = read("/home/OpenRMS"); return processCommand(". /bin/sh", false, id, pid, stdout, scope); } }
-        else if (mainCommand.equals("quit")) { destroyApp(false); }
-        // |
-        else if (mainCommand.equals("pkg")) { print(argument.equals("") ? getAppProperty("MIDlet-Name") : argument.startsWith("/") ? System.getProperty(replace(argument, "/", "")) : getAppProperty(argument), stdout); }
-        else if (mainCommand.equals("uname")) { String INFO = argument.equals("") || argument.equals("-i") ? "$TYPE" : argument.equals("-a") || argument.equals("--all") ? "$TYPE (OpenTTY $VERSION) main/$RELEASE " + build + " - $CONFIG $PROFILE" : argument.equals("-r") || argument.equals("--release") ? "$VERSION" : argument.equals("-v") || argument.equals("--build") ? build : argument.equals("-s") ? "J2ME" : argument.equals("-m") ? "$PROFILE" : argument.equals("-p") ? "$CONFIG" : argument.equals("-n") ? "$HOSTNAME" : null; if (INFO == null) { print("uname: " + argument + ": not found", stdout); return 127; } else { print(env(INFO), stdout); } }
-        else if (mainCommand.equals("hostname")) { return processCommand(argument.equals("") ? "echo $HOSTNAME" : "set HOSTNAME=" + getCommand(argument), false, id, pid, stdout, scope); }
-        else if (mainCommand.equals("hostid")) { String DATA = env("$TYPE$CONFIG$PROFILE"); int HASH = 7; for (int i = 0; i < DATA.length(); i++) { HASH = HASH * 31 + DATA.charAt(i); } print(Integer.toHexString(HASH).toLowerCase(), stdout); }
-        // |
-
-        // |
-        else if (mainCommand.equals("about")) { warn("OpenTTY", env("OpenTTY $VERSION\n(C) 2025 - Mr Lima")); }
-        // |
-        else if (mainCommand.equals("eval")) { if (argument.equals("")) { } else { print("" + processCommand(argument, enable, id, pid, stdout, scope), stdout); } }
-        else if (mainCommand.equals("catch")) { if (argument.equals("")) { } else { try { processCommand(argument, enable, id, pid, stdout, scope); } catch (Throwable e) { print(getCatch(e), stdout); } } }
-        else if (mainCommand.equals("false")) { return 255; }
-        // |
+        // | -=-=-=-=-=-=-=-=-=-=-
+        // Lua J2ME
         else if (mainCommand.equals("lua")) { 
             if (argument.equals("")) { }
             if (javaClass("Lua") == 0) { 
@@ -880,59 +918,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             else { print("This MIDlet Build don't have Lua", stdout); return 3; } 
         }
-        else if (mainCommand.equals("svchost")) {
-            if (argument.equals("")) { }
-            else if (argument.equals("set")) { print("svchost: set: in dev", stdout); }
-            else {
-                if (args.length < 2) { print("svchost [pid] [request]", stdout); return 2; }
-                else if (sys.containsKey(args[0])) {
-                    Hashtable proc = (Hashtable) sys.get(args[0]);
-                    if (proc.containsKey("lua") && proc.containsKey("handler")) {
-                        Lua lua = (Lua) proc.get("lua");
-                        Vector arg = new Vector(); arg.addElement(args[1]); arg.addElement("shell"); arg.addElement(pid); arg.addElement(id);
-                        Object response = null;
-
-                        try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
-                        catch (Exception e) { print(getCatch(e), stdout); return 1; } 
-                        catch (Error e) { if (e.getMessage() != null) { print(e.getMessage(), stdout); } return lua.status; }
-                    } else { print("svchost: " + args[0] + ": not a service", stdout); return 2; }
-                } else { print("svchost: " + args[0] + ": not found", stdout); return 127; }
-            }
-        }
-        else if (mainCommand.equals("uptime")) {
-            long totalSeconds = (System.currentTimeMillis() - uptime) / 1000, hours = totalSeconds / 3600, minutes = (totalSeconds % 3600) / 60, seconds = totalSeconds % 60;
-            
-            print((hours > 0 ? hours + "h " : "") + (minutes > 0 || hours > 0 ? minutes + "m " : "") + seconds + "s", stdout);
-        }
-        else if (mainCommand.equals("trap")) {
-            if (argument.equals("")) {
-                Hashtable signals = (Hashtable) getobject(pid, "signals");
-                if (signals != null && !signals.isEmpty()) {
-                    for (Enumeration signalKeys = signals.keys(); signalKeys.hasMoreElements();) {
-                        String signal = (String) signalKeys.nextElement();
-                        print(signal + "\t" + ((String) signals.get(signal)), stdout);
-                    }
-                } else { print("No traps defined", stdout); }
-            } 
-            else if (pid.equals("1")) { print("Permission denied!", stdout); return 13; } 
-            else {
-                if (args.length < 2) { print("trap: usage: trap \"command\" SIGNAL", stdout); return 2; }
-                
-                args[1] = args[1].toUpperCase();
-                if (args[1].equals("TERM")) {
-                    Hashtable signals = (Hashtable) getobject(pid, "signals");
-                    if (signals == null) { signals = new Hashtable(); getprocess(pid).put("signals", signals); }
-                    
-                    if (args[0].equals("-") || args[0].equals("true") || args[0].equals("")) {
-                        signals.remove(args[1]);
-                        if (signals.isEmpty()) { getprocess(pid).remove("signals"); }
-                    } else { signals.put(args[1], args[0]); }
-                } else {
-                    print("trap: " + args[1] + ": invalid signal specification", stdout);
-                }
-            }
-        }
-        else if (mainCommand.equals("help")) { print(read("/res/docs"), stdout); }
+        // |
         // |
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, stdout) * 100); }
