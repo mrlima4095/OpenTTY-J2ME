@@ -1357,7 +1357,7 @@ public class Lua {
             else if (MOD == SETPROC) {
                 if (args.isEmpty()) { }
                 else if (args.elementAt(0) instanceof Boolean) { kill = ((Boolean) args.elementAt(0)).booleanValue(); }
-                else {                    
+                else {
                     String attribute = toLuaString(args.elementAt(0)).trim().toLowerCase();
                     Object value = args.size() < 2 ? null : args.elementAt(1);
 
