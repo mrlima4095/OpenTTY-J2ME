@@ -28,9 +28,12 @@ graphics.display(graphics.BuildList({
                 end
 
                 os.exit()
-            elseif opt == "Go to releases archive" then os.execute("open http://opentty.xyz/dist/versions") os.exit()
-            elseif opt == "Download 1.16 (LTS)" then os.execute("open http://opentty.xyz/dist/versions/OpenTTY-1.16.jar") os.exit()
-            else os.execute("open http://opentty.xyz/dist/OpenTTY.jar") os.exit() end
+            elseif opt == "Go to releases archive" then 
+                os.execute("open http://opentty.xyz/dist/versions") os.exit()
+            elseif opt == "Download 1.16 (LTS)" then 
+                os.execute("open http://opentty.xyz/dist/versions/OpenTTY-1.16.jar") os.exit()
+            else 
+                os.execute("open http://opentty.xyz/dist/OpenTTY.jar") os.exit() end
         end
     },
 
