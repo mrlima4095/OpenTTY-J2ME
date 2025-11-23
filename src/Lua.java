@@ -1429,7 +1429,7 @@ public class Lua {
                     Object target = args.size() > 1 ? args.elementAt(1) : null;
                     Object how = args.size() > 2 ? args.elementAt(2) : null;
                     
-                    boolean mode = thirdArg != null && toLuaString(thirdArg).equals("a");
+                    boolean mode = how != null && toLuaString(how).equals("a");
 
                     if (target instanceof OutputStream) {
                         OutputStream outputStream = (OutputStream) target;
