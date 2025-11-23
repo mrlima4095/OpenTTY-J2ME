@@ -761,23 +761,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
         }
         // |
-        else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); print("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms", stdout); } catch (IOException e) { print("Pong to " + argument + " failed: " + getCatch(e), stdout); return 101; } } }
-        else if (mainCommand.equals("ping")) { 
-            if (argument.equals("")) { } 
-            else { 
-                long START = System.currentTimeMillis(); 
-                try { 
-                    HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); 
-                    CONN.setRequestMethod(HttpConnection.GET); 
-                    int responseCode = CONN.getResponseCode(); 
-                    CONN.close(); 
-                    print("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms", stdout); 
-                } catch (IOException e) { 
-                    print("Ping to " + argument + " failed: " + getCatch(e), stdout); return 101; 
-                } 
-            } 
-        }
-        // |
         else if (mainCommand.equals("bind") || mainCommand.equals("nc")) { new MIDletControl(mainCommand, argument, id, stdout, scope); }
         // | (Files)
         
