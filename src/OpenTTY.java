@@ -647,7 +647,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } catch (Exception e) { print(getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; }
             }
         }
-        // | (File )
+        else if (mainCommand.equals("du")) { 
+            if (argument.equals("")) { } 
+            else { 
+                try {
+                    InputStream in = getInputStream(argument); 
+                    if (in == null) { print("du: " + basename(argument) + ": not found", stdout); return 127; } 
+                    else { print("" + in.available(), stdout); } 
+                } catch (Exception e) { print(getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; }
+            } 
+        }
+        // | (File)
+        else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i]), stdout); } } }
+        else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
         // | (Utilities)
         else if (mainCommand.equals("basename")) { print(basename(argument), stdout); }
         // | (Informations)
@@ -669,23 +681,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // | ()
 
-        else if (mainCommand.equals("du")) { 
-            if (argument.equals("")) { } 
-            else { 
-                try {
-                    InputStream in = getInputStream(argument); 
-                    if (in == null) { print("du: " + basename(argument) + ": not found", stdout); return 127; } 
-                    else { print("" + in.available(), stdout); } 
-                } catch (Exception e) { print(getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; }
-            } 
-        }
-        else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i]), stdout); } } }
-        else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { print("" + getcontent(argument).hashCode(), stdout); } }
-        else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
         
         
         
-        
+    
         else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, enable, id, pid, stdout, scope) : mainCommand.equals("for") ? forCommand(argument, enable, id, pid, stdout, scope) : caseCommand(argument, enable, id, pid, stdout, scope); }
         // |
         else if (mainCommand.equals("echo")) { print(argument, stdout); }

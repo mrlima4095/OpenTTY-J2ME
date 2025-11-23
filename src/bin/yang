@@ -15,6 +15,7 @@ local mirror = {
     ["forge"] = { remote = "forge", here = "/lib/forge", description = "Additional API for OpenTTY" },
     ["find"] = { remote = "find", here = "/bin/find", description = "" },
     ["grep"] = { remote = "grep", here = "/bin/grep", description = "" },
+    ["hash"] = { remote = "hash.lua", here = "/bin/hash", description = "Prints file hash" },
     ["head"] = { remote = "head", here = "/bin/head", description = "Prints first lines of a file" },
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
