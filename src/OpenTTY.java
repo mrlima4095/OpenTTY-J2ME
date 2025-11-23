@@ -55,12 +55,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void commandAction(Command c, Displayable d) {
         if (c == BACK) { processCommand("xterm", true, 1000, "1", stdout, globals); }
         else if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command, true, 1000, "1", stdout, globals); setLabel(); } 
-        else {
-            if (sys.containsKey("2")) {
-                Hashtable cmds = (Hashtable) getobject("2", "buttons");
-                if (cmds.containsKey(c)) { processCommand((String) cmds.get(c), true, 1000, "1", stdout, globals); }
-            }
-        }
+        else { if (sys.containsKey("2")) { Hashtable cmds = (Hashtable) getobject("2", "buttons"); if (cmds.containsKey(c)) { processCommand((String) cmds.get(c), true, 1000, "1", stdout, globals); } } }
     }
     // |
     // Control Thread
