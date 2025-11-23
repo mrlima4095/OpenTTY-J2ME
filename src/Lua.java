@@ -1437,9 +1437,7 @@ public class Lua {
                     else if (args.size() > 1 && args.elementAt(1) instanceof OutputStream) { OutputStream out = (OutputStream) args.elementAt(1); out.write(content.getBytes("UTF-8")); out.flush(); return new Double(0); }
                     else if (args.elementAt(0) instanceof OutputStream) { OutputStream o = (OutputStream) args.elementAt(0); o.write(out.getBytes("UTF-8")); o.flush(); return new Double(0); }
                     else if (args.size() > 1 && args.elementAt(1) instanceof StringBuffer) { ((StringBuffer) args.elementAt(1)).append(content); return new Double(0); }
-                    else {
-                        return new Double(midlet.write(out, mode ? midlet.getcontent(out) + content : content, id));
-                    }
+                    else { return new Double(midlet.write(out, mode ? midlet.getcontent(out) + content : content, id)); }
                 }
             }
             else if (MOD == CLOSE) {
@@ -1456,7 +1454,7 @@ public class Lua {
                     }
                 } 
             }
-            else if (MOD == OPEN) { return args.isEmpty() ? gotbad(1, "open", "string expected, got no value") : midlet.getInputStream(toLuaString(args.elementAt(0))); }
+            else if (MOD == OPEN) { return args.isEmpty() ? new ByteArrayOutputStream() : midlet.getInputStream(toLuaString(args.elementAt(0))); }
             else if (MOD == POPEN) {
                 if (args.isEmpty()) { } 
                 else { 
