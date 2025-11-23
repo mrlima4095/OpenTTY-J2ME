@@ -188,7 +188,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             monitor.addCommand(SAVE = new Command("Save", Command.OK, 1));
                             monitor.setCommandListener(this);
                             display.setCurrent(monitor);
-                        } else { int STATUS = write(filename, box.getString(), id); if (STATUS == 0) { display.setCurrent(previous); } else { warn("Nano Editor", "Status: " + STATUS); } }
+                        } else { int STATUS = write(filename, box.getString(), id); if (STATUS == 0) { goback(); } else { warn("Nano Editor", "Status: " + STATUS); } }
                     }
                     else { goback(); }
                 }
