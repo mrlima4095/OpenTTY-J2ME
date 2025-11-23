@@ -1498,7 +1498,7 @@ public class Lua {
                 if (pwd.startsWith("/")) { }
                 else { pwd = midlet.path + pwd; }
                 if (pwd.endsWith("/")) { } 
-                else { pwd = pwd + "/" }
+                else { pwd = pwd + "/"; }
                 
                 if (pwd.equals("/tmp/")) {
                     for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) {
