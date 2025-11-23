@@ -70,9 +70,9 @@ Copyright (C) 2025 - Mr. Lima
 - Functions and Shells removed
 - Tools `prscan` and `gobuster` have been removed
 - Command `exec` and `execute` have been rewrote
-- Command `expr`, `ping`, `pong`, `query` and `wget` can be installed from yang
+- Command `expr`, `hash`, `ping`, `pong`, `query` and `wget` can be installed from yang
 - Alias `raw` to `cat` disabled and `rraw` removed
-- Removed commands `seed`, `genip`
+- Removed commands `seed`, `genip`, `
 - **Nano** now requires a file and commands `add`, `install`, `get`, `getty` and other related have been removed too
 
 ### 📦 Packages

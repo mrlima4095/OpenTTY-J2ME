@@ -58,7 +58,8 @@ string = {
     hash = function (s) end,
     byte = function (s, x, y) end,
     char = function (...) end,
-    trim = function (s) return "" end
+    trim = function (s) return "" end,
+    uuid = function () return "" end
 }
 
 graphics = {
