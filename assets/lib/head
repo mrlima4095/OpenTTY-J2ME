@@ -14,7 +14,7 @@ if arg[1] then
 
     for i = 1, #content do
         if string.sub(content, i, i) == "\n" then
-            table.insert(lines_table, string.sub(content, start, i-1))
+            table.insert(lines_table, string.sub(content, start, i - 1))
             start = i + 1
         end
     end
