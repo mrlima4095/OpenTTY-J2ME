@@ -1276,8 +1276,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
         } catch (Exception e) { return ""; }
     }
-    public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
-    // | (Write)
+    //public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
+    // Modifique o método loadRMS
+public static String loadRMS(String filename, int index) {
+    try {
+        RecordStore RMS = RecordStore.openRecordStore(filename, true);
+        if (RMS.getNumRecords() >= index) {
+            byte[] data = RMS.getRecord(index);
+            if (data != null) {
+                // Tenta diferentes encodings
+                try {
+                    return new String(data, "UTF-8");
+                } catch (Exception e) {
+                    return new String(data); // Encoding padrão
+                }
+            }
+        }
+        if (RMS != null) RMS.closeRecordStore();
+    } catch (RecordStoreException e) {
+        System.out.println("Erro RMS: " + e.getMessage());
+    }
+    return "";
+}
+// | (Write)
     public int write(String filename, String data, int id) { return write(filename, data.getBytes(), id); }
     public int write(String filename, byte[] data, int id) { 
         if (filename == null || filename.length() == 0) { return 2; } 
