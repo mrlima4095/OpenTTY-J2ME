@@ -1,22 +1,30 @@
 #!/bin/lua
 
+local lines = 10
+
 if arg[1] then
     local content = io.read(arg[1])
-    local len = tonumber(arg[2]) or 10
-    local lines, index, last = {}, 1, 1
+    if content == nil then
+        io.write("head: " .. arg[1] .. ": not found")
+        os.exit(127)
+    end
+
+    local lines_table = {}
+    local start = 1
 
     for i = 1, #content do
         if string.sub(content, i, i) == "\n" then
-            lines[index] = string.sub(content, last, i)
+            table.insert(lines_table, string.sub(content, start, i-1))
+            start = i + 1
         end
     end
 
-    if #content <= len then
-        print(content)
-    else
-        for i = 1, len do
-            print(lines[i])
-        end
+    if start <= #content then
+        table.insert(lines_table, string.sub(content, start))
+    end
+
+    for i = 1, math.min(lines, #lines_table) do
+        print(lines_table[i])
     end
 else
     print("head [file]")
