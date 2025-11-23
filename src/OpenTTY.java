@@ -409,7 +409,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                             int start = content.indexOf("[\1BEGIN:", index);
                             if (start == -1) { break; }
 
-                            int end = content.indexOf("\0]", start);
+                            int end = content.indexOf("\1]", start);
                             if (end == -1) { break; }
 
                             String filename = content.substring(start + "[\1BEGIN:".length(), end);
@@ -650,7 +650,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         int start = content.indexOf("[\1BEGIN:", index);
                         if (start == -1) { break; }
 
-                        int end = content.indexOf("\0]", start);
+                        int end = content.indexOf("\1]", start);
                         if (end == -1) { break; }
 
                         String filename = content.substring(start + "[\1BEGIN:".length(), end);
