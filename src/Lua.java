@@ -1403,7 +1403,7 @@ public class Lua {
             else if (MOD == GETUID) { return new Double(id); }
             // Package: io
             else if (MOD == READ) {
-                if (args.isEmpty()) { return midlet.stdout.getText(); }
+                if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? getcontent((String) stdout) : ""; }
                 else {
                     Object arg = args.elementAt(0);
 
@@ -1419,12 +1419,7 @@ public class Lua {
                         return new String(buffer, 0, bytesRead, "UTF-8");
                     }
                     else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
-                    else {
-                        String target = toLuaString(arg);
-                        return target.equals("stdout") ? midlet.stdout.getText() : target.equals("stdin") ? midlet.stdin.getString() : midlet.getcontent(target);
-                    }
-                    //else if (mainCommand.equals("getty")) { buffer = stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? read((String) stdout) : ""; }
-        
+                    else { return midlet.getcontent(toLuaString(arg)); } 
                 }
             }
             else if (MOD == WRITE) {
