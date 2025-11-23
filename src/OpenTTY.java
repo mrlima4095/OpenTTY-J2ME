@@ -76,6 +76,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private String command = null, pfilter = "", PID = genpid(), DB, address, port, node, proc_name, filename;
         private Vector history = (Vector) getobject("1", "history");
         private Hashtable sessions = (Hashtable) getobject("1", "sessions"), PKG, scope;
+        private Displayable previous;
         private Alert confirm;
         private Form monitor;
         private List preview;
