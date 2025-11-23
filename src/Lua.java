@@ -1434,12 +1434,11 @@ public class Lua {
                     if (target instanceof OutputStream) {
                         OutputStream outputStream = (OutputStream) target;
 
-                        if (firstArg instanceof ByteArrayOutputStream) {
-                            ByteArrayOutputStream baos = (ByteArrayOutputStream) firstArg;
+                        if (buffer instanceof ByteArrayOutputStream) {
+                            ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
                             baos.writeTo(outputStream);
                         } else {
-                            String content = toLuaString(firstArg);
-                            outputStream.write(content.getBytes("UTF-8"));
+                            outputStream.write(toLuaString(buffer).getBytes("UTF-8"));
                         }
                         outputStream.flush();
                         return new Double(0);
@@ -1451,8 +1450,7 @@ public class Lua {
                             ByteArrayOutputStream baos = (ByteArrayOutputStream) target;
                             baos.writeTo(outputStream);
                         } else {
-                            String content = toLuaString(target);
-                            outputStream.write(content.getBytes("UTF-8"));
+                            outputStream.write(toLuaString(target).getBytes("UTF-8"));
                         }
                         outputStream.flush();
                         return new Double(0);
