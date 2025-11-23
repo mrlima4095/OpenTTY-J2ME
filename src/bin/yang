@@ -19,6 +19,7 @@ local mirror = {
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
     ["pastebin"] = { remote = "pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
+    ["ping"] = { remote = "ping.lua", here = "/bin/ping", description = "Test connection delay" },
     ["sed"] = { remote = "sed.lua", here = "/bin/sed", description = "String Editor" },
     ["sdk"] = { remote = "sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
     ["sync"] = { remote = "sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
