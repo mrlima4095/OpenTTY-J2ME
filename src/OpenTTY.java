@@ -689,7 +689,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // |
         else if (mainCommand.equals("echo")) { print(argument, stdout); }
         else if (mainCommand.equals("buff")) { stdin.setString(argument); }
-        else if (mainCommand.equals("uuid")) { print(generateUUID(), stdout); }
         else if (mainCommand.equals("getopt")) { print(getArgument(argument), stdout); }
         else if (mainCommand.equals("trim")) { this.stdout.setText(this.stdout.getText().trim()); }
         else if (mainCommand.equals("locale")) { print((String) attributes.get("LOCALE"), stdout); }
@@ -968,7 +967,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     private String basename(String path) { if (path == null || path.length() == 0) { return ""; } if (path.endsWith("/")) { path = path.substring(0, path.length() - 1); } int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == -1) { return path; } return path.substring(lastSlashIndex + 1); }
     private String dirname(String path) { if (path == null || path.length() == 0) { return ""; } if (path.endsWith("/")) { path = path.substring(0, path.length() - 1); } int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == -1) { return path; } return path.substring(0, lastSlashIndex + 1); }
-    private String generateUUID() { String chars = "0123456789abcdef"; StringBuffer uuid = new StringBuffer(); for (int i = 0; i < 36; i++) { if (i == 8 || i == 13 || i == 18 || i == 23) { uuid.append('-'); } else if (i == 14) { uuid.append('4'); } else if (i == 19) { uuid.append(chars.charAt(8 + random.nextInt(4))); } else { uuid.append(chars.charAt(random.nextInt(16))); } } return uuid.toString(); }
     // | 
     private String extractTitle(String htmlContent, String fallback) { return extractTag(htmlContent, "title", fallback); }
     private String extractTag(String htmlContent, String tag, String fallback) { String startTag = "<" + tag + ">", endTag = "</" + tag + ">"; int start = htmlContent.indexOf(startTag), end = htmlContent.indexOf(endTag); if (start != -1 && end != -1 && end > start) { return htmlContent.substring(start + startTag.length(), end).trim(); } else { return fallback; } }
