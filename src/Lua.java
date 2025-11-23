@@ -1425,10 +1425,7 @@ public class Lua {
             else if (MOD == WRITE) {
                 if (args.isEmpty()) { }
                 else {
-                    Object buffer = args.elementAt(0);
-                    Object target = args.size() > 1 ? args.elementAt(1) : null;
-                    Object how = args.size() > 2 ? args.elementAt(2) : null;
-                    
+                    Object buffer = args.elementAt(0), target = args.size() > 1 ? args.elementAt(1) : null, how = args.size() > 2 ? args.elementAt(2) : null;
                     boolean mode = how != null && toLuaString(how).equals("a");
 
                     if (target instanceof OutputStream) {
@@ -1436,7 +1433,8 @@ public class Lua {
 
                         if (buffer instanceof ByteArrayOutputStream) {
                             ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
-                            baos.writeTo(outputStream);
+                            byte[] bytes = baos.toByteArray();
+                            outputStream.write(bytes);
                         } else {
                             outputStream.write(toLuaString(buffer).getBytes("UTF-8"));
                         }
@@ -1448,7 +1446,8 @@ public class Lua {
 
                         if (target instanceof ByteArrayOutputStream) {
                             ByteArrayOutputStream baos = (ByteArrayOutputStream) target;
-                            baos.writeTo(outputStream);
+                            byte[] bytes = baos.toByteArray();
+                            outputStream.write(bytes);
                         } else {
                             outputStream.write(toLuaString(target).getBytes("UTF-8"));
                         }
@@ -1456,9 +1455,9 @@ public class Lua {
                         return new Double(0);
                     }
                     else if (target instanceof StringBuffer) {
-                        StringBuffer buffer = (StringBuffer) target;
+                        StringBuffer sb = (StringBuffer) target;
                         String content = toLuaString(buffer);
-                        buffer.append(content);
+                        sb.append(content);
                         return new Double(0);
                     }
                     else if (buffer instanceof ByteArrayOutputStream) {
