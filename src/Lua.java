@@ -1464,7 +1464,8 @@ public class Lua {
                         ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
                         byte[] bytes = baos.toByteArray();
                         String filename = target != null ? toLuaString(target) : "/dev/stdout";
-                        return new Double(midlet.write(filename, mode ? midlet.getcontent(filename) + new String(bytes, "UTF-8") : bytes, id));
+                        if (mode) { return new Double(midlet.write(filename, midlet.getcontent(filename) + new String(bytes, "UTF-8"), id)); }
+                        else { return new Double(midlet.write(filename, bytes, id)); }
                     }
                     else {
                         String content = toLuaString(buffer);
