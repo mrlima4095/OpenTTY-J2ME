@@ -41,7 +41,7 @@ if arg[1] then
     end
 
     local content = io.read(file)
-    local lines = split(content, "\n")
+    local lines = split(content, "\.n")
     local start = math.max(1, #lines - count + 1)
 
     for i = start, #lines do
