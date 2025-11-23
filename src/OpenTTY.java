@@ -1333,7 +1333,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             int index = base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4;
             String content = loadRMS("OpenRMS", index);
-            if (content.indexOf("[\1BEGIN:" + name + "\1]") == -1) { print("read-only storage", stdout); return 5; }
+            if (content.indexOf("[|BEGIN:" + name + "|]") == -1) { print("read-only storage", stdout); return 5; }
 
             if (useCache) { cache.remove("/" + base + "/" + name); }
             return writeRMS("OpenRMS", delFile(name, content).getBytes(), index);
@@ -1353,23 +1353,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Archives Structures)
     public int addFile(String filename, String content, String archive, String base) { return writeRMS("OpenRMS", (delFile(filename, archive) + "[\0BEGIN:" + filename + "\0]\n" + content + "\n[\0END\0]\n").getBytes(), base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4); }
     public String delFile(String filename, String content) {
-        String startTag = "[\0BEGIN:" + filename + "\0]";
+        String startTag = "[\1BEGIN:" + filename + "\1]";
         int start = content.indexOf(startTag);
         if (start == -1) { return content; }
 
-        int end = content.indexOf("[\0END\0]", start);
+        int end = content.indexOf("[\2END\2]", start);
         if (end == -1) { return content; }
 
-        end += "[\0END\0]".length();
+        end += "[\2END\2]".length();
         return content.substring(0, start) + content.substring(end);
     }
     public String read(String filename, String content) {
-        String startTag = "[\0BEGIN:" + filename + "\0]";
+        String startTag = "[\1BEGIN:" + filename + "\1]";
         int start = content.indexOf(startTag);
         if (start == -1) { return null; }
 
         start += startTag.length() + 1;
-        int end = content.indexOf("[\0END\0]", start);
+        int end = content.indexOf("[\2END\2]", start);
         if (end == -1) { return null; }
 
         return content.substring(start, end).trim();
@@ -1395,7 +1395,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String dir = dirname(filename); 
             if (dir.equals("/bin/") || dir.equals("/etc/") || dir.equals("/lib/")) {
                 String content = loadRMS("OpenRMS", dir.equals("/bin/") ? 3 : dir.equals("/etc/") ? 5 : 4);
-                if (content.indexOf("[\0BEGIN:" + basename(filename) + "\0]") != -1) { return true; }
+                if (content.indexOf("[\1BEGIN:" + basename(filename) + "\1]") != -1) { return true; }
             }
             
             return (fs.containsKey((dir)) && ((Vector) fs.get(dir)).indexOf(basename(filename)) != -1); 
