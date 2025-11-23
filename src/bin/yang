@@ -10,17 +10,23 @@ local mirror = {
     ["cmatrix"] = { remote = "cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
     ["darkdm"] = { remote = "darkdm.lua", here = "/bin/ddm", description = "Reverse of LightDM" },
     ["docker"] = { remote = "docker.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
+    ["diff"] = { remote = "diff.lua", here = "/bin/diff", description = "View diferences of a file" },
     ["expr"] = { remote = "expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
     ["forge"] = { remote = "forge", here = "/lib/forge", description = "Additional API for OpenTTY" },
+    ["find"] = { remote = "find", here = "/bin/find", description = "" },
+    ["grep"] = { remote = "grep", here = "/bin/grep", description = "" },
+    ["head"] = { remote = "head", here = "/bin/head", description = "Prints first lines of a file" },
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
     ["pastebin"] = { remote = "pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
     ["sed"] = { remote = "sed.lua", here = "/bin/sed", description = "String Editor" },
     ["sdk"] = { remote = "sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
     ["sync"] = { remote = "sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
+    ["tail"] = { remote = "tail", here = "/bin/tail", description = "Prints last lines of a file" },
     ["viaversion"] = { remote = "viaversion", here = "/bin/axrz", description = "Change OpenTTY API on Runtime" },
     ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
-    ["wget"] = { remote = "wget", here = "/bin/wget", description = "Download files from Network" }
+    ["wget"] = { remote = "wget", here = "/bin/wget", description = "Download files from Network" },
+    ["wc"] = { remote = "wc", here = "/bin/wc", description = "Prints file lenght values" },
 }
 
 local function connect(payload)
