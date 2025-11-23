@@ -1501,7 +1501,7 @@ public class Lua {
                 else { pwd = pwd + "/"; }
                 
                 if (pwd.equals("/tmp/")) {
-                    for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) {
+                    for (Enumeration KEYS = midlet.tmp.keys(); KEYS.hasMoreElements();) {
                         String KEY = (String) KEYS.nextElement();
                         if ((all || !KEY.startsWith(".")) && !list.contains(KEY)) { list.put(new Double(index), KEY); index++; } 
                     }
@@ -1523,7 +1523,7 @@ public class Lua {
                     CONN.close(); 
                 } 
                 else if (pwd.equals("/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
-                    String content = loadRMS("OpenRMS", pwd.equals("/bin/") ? 3 : pwd.equals("/etc/") ? 5 : 4);
+                    String content = midlet.loadRMS("OpenRMS", pwd.equals("/bin/") ? 3 : pwd.equals("/etc/") ? 5 : 4);
                     int index = 0;
 
                     while (true) {
