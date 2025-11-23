@@ -1423,6 +1423,8 @@ public class Lua {
                         String target = toLuaString(arg);
                         return target.equals("stdout") ? midlet.stdout.getText() : target.equals("stdin") ? midlet.stdin.getString() : midlet.getcontent(target);
                     }
+                    //else if (mainCommand.equals("getty")) { buffer = stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? read((String) stdout) : ""; }
+        
                 }
             }
             else if (MOD == WRITE) {
