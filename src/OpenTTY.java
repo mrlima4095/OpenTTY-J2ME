@@ -929,6 +929,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
             }
         }
+        else if (mainCommand.equals("help")) {
+            viewer()
+        }
         // |
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
         else if (mainCommand.equals("@alert")) { display.vibrate(argument.equals("") ? 500 : getNumber(argument, 0, stdout) * 100); }
@@ -1276,29 +1279,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
         } catch (Exception e) { return ""; }
     }
-    //public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
-    // Modifique o método loadRMS
-public static String loadRMS(String filename, int index) {
-    try {
-        RecordStore RMS = RecordStore.openRecordStore(filename, true);
-        if (RMS.getNumRecords() >= index) {
-            byte[] data = RMS.getRecord(index);
-            if (data != null) {
-                // Tenta diferentes encodings
-                try {
-                    return new String(data, "UTF-8");
-                } catch (Exception e) {
-                    return new String(data); // Encoding padrão
-                }
-            }
-        }
-        if (RMS != null) RMS.closeRecordStore();
-    } catch (RecordStoreException e) {
-        System.out.println("Erro RMS: " + e.getMessage());
-    }
-    return "";
-}
-// | (Write)
+    public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
+    // | (Write)
     public int write(String filename, String data, int id) { return write(filename, data.getBytes(), id); }
     public int write(String filename, byte[] data, int id) { 
         if (filename == null || filename.length() == 0) { return 2; } 
@@ -1351,7 +1333,7 @@ public static String loadRMS(String filename, int index) {
 
             int index = base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4;
             String content = loadRMS("OpenRMS", index);
-            if (content.indexOf("[\0BEGIN:" + name + "\0]") == -1) { print("read-only storage", stdout); return 5; }
+            if (content.indexOf("[\1BEGIN:" + name + "\1]") == -1) { print("read-only storage", stdout); return 5; }
 
             if (useCache) { cache.remove("/" + base + "/" + name); }
             return writeRMS("OpenRMS", delFile(name, content).getBytes(), index);
