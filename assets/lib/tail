@@ -34,17 +34,18 @@ end
 local count = tonumber(arg[2]) or 10
 
 if arg[1] then
-    local content = io.read(arg[1])
-    if content == nil then
+    local file = io.open(arg[1])
+    if file then
         io.write("tail: " .. arg[1] .. ": not found")
         os.exit(127)
     end
 
+    local content = io.read(file)
     local lines = split(content, "\n")
     local start = math.max(1, #lines - count + 1)
 
     for i = start, #lines do
-        io.write(lines[i] .. "\n")
+        print(lines[i])
     end
 else
     print("tail [file]")

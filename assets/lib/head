@@ -34,16 +34,17 @@ end
 local count = tonumber(arg[2]) or 10
 
 if arg[1] then
-    local content = io.read(arg[1])
-    if content == nil then
+    local file = io.open(arg[1])
+    if file then
         io.write("head: " .. arg[1] .. ": not found")
         os.exit(127)
     end
-    
+
+    local content = io.read(file)
     local lines = split(content, "\n")
     
     for i = 1, math.min(count, #lines) do
-        io.write(lines[i] .. "\n")
+        print(lines[i])
     end
 else
     print("head [file]")
