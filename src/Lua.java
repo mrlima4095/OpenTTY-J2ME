@@ -1430,14 +1430,55 @@ public class Lua {
             else if (MOD == WRITE) {
                 if (args.isEmpty()) { }
                 else {
-                    String content = toLuaString(args.elementAt(0)), out = args.size() == 1 ? "stdout" : toLuaString(args.elementAt(1));
-                    boolean mode = args.size() > 2 && toLuaString(args.elementAt(2)).equals("a") ? true : false;
+                    Object buffer = args.elementAt(0);
+                    Object target = args.size() > 1 ? args.elementAt(1) : null;
+                    Object how = args.size() > 2 ? args.elementAt(2) : null;
+                    
+                    boolean mode = thirdArg != null && toLuaString(thirdArg).equals("a");
 
-                    if (args.size() > 1 && args.elementAt(1) instanceof InputStream) { return gotbad(2, "write", "output stream expected, got input"); }  
-                    else if (args.size() > 1 && args.elementAt(1) instanceof OutputStream) { OutputStream out = (OutputStream) args.elementAt(1); out.write(content.getBytes("UTF-8")); out.flush(); return new Double(0); }
-                    else if (args.elementAt(0) instanceof OutputStream) { OutputStream o = (OutputStream) args.elementAt(0); o.write(out.getBytes("UTF-8")); o.flush(); return new Double(0); }
-                    else if (args.size() > 1 && args.elementAt(1) instanceof StringBuffer) { ((StringBuffer) args.elementAt(1)).append(content); return new Double(0); }
-                    else { return new Double(midlet.write(out, mode ? midlet.getcontent(out) + content : content, id)); }
+                    if (target instanceof OutputStream) {
+                        OutputStream outputStream = (OutputStream) target;
+
+                        if (firstArg instanceof ByteArrayOutputStream) {
+                            ByteArrayOutputStream baos = (ByteArrayOutputStream) firstArg;
+                            baos.writeTo(outputStream);
+                        } else {
+                            String content = toLuaString(firstArg);
+                            outputStream.write(content.getBytes("UTF-8"));
+                        }
+                        outputStream.flush();
+                        return new Double(0);
+                    }
+                    else if (buffer instanceof OutputStream) {
+                        OutputStream outputStream = (OutputStream) buffer;
+
+                        if (target instanceof ByteArrayOutputStream) {
+                            ByteArrayOutputStream baos = (ByteArrayOutputStream) target;
+                            baos.writeTo(outputStream);
+                        } else {
+                            String content = toLuaString(target);
+                            outputStream.write(content.getBytes("UTF-8"));
+                        }
+                        outputStream.flush();
+                        return new Double(0);
+                    }
+                    else if (target instanceof StringBuffer) {
+                        StringBuffer buffer = (StringBuffer) target;
+                        String content = toLuaString(buffer);
+                        buffer.append(content);
+                        return new Double(0);
+                    }
+                    else if (buffer instanceof ByteArrayOutputStream) {
+                        ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
+                        byte[] bytes = baos.toByteArray();
+                        String filename = target != null ? toLuaString(target) : "/dev/stdout";
+                        return new Double(midlet.write(filename, mode ? midlet.getcontent(filename) + new String(bytes, "UTF-8") : bytes, id));
+                    }
+                    else {
+                        String content = toLuaString(buffer);
+                        String filename = target != null ? toLuaString(target) : "/dev/stdout";
+                        return new Double(midlet.write(filename, mode ? midlet.getcontent(filename) + content : content, id));
+                    }
                 }
             }
             else if (MOD == CLOSE) {
