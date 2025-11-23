@@ -458,160 +458,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("tick")) { if (argument.equals("label")) { print(display.getCurrent().getTicker().getString(), stdout); } else { return xcli("tick " + argument, id, stdout, scope); } }
         
         // API 003 - File System
-        // | (Navigation)
-        else if (mainCommand.equals("pwd")) { print(path, stdout); }
-        else if (mainCommand.equals("popd")) { Vector stack = (Vector) getobject("1", "stack"); if (stack.isEmpty()) { print("popd: empty stack", stdout); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); print(readStack(), stdout); } }
-        else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
-            String old_pwd = path;
-            if (argument.equals("") && mainCommand.equals("cd")) { path = "/home/"; } 
-            else if (argument.equals("")) { print(readStack() == null || readStack().length() == 0 ? "pushd: missing directory" : readStack(), stdout); }
-            else if (argument.equals("..")) { 
-                if (path.equals("/")) { return 0; } 
-
-                int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); 
-                path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); 
-            } 
-            else { 
-                String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
-                if (!TARGET.endsWith("/")) { TARGET += "/"; } 
-                if (fs.containsKey(TARGET)) { path = TARGET; } 
-
-                else if (TARGET.startsWith("/mnt/")) { 
-                    try { 
-                        FileConnection fc = (FileConnection) Connector.open("file:///" + TARGET.substring(5), Connector.READ); 
-                        if (fc.exists() && fc.isDirectory()) { path = TARGET; } 
-                        else { print(mainCommand + ": " + basename(TARGET) + ": not " + (fc.exists() ? "a directory" : "found"), stdout); return 127; } 
-
-                        fc.close(); 
-                    } 
-                    catch (IOException e) { 
-                        print(mainCommand + ": " + basename(TARGET) + ": " + getCatch(e), stdout); 
-
-                        return 1; 
-                    } 
-                } 
-                else if (TARGET.startsWith("/proc/")) {
-                    String[] parts = split(TARGET.substring(6), '/');
-                    if (parts.length < 1) { print(mainCommand + ": not found", stdout); return 127; }
-
-                    String pid = parts[0];
-                    Hashtable proc = getprocess(pid);
-                    Object current = proc;
-
-                    for (int i = 1; i < parts.length; i++) {
-                        if (current instanceof Hashtable) {
-                            current = ((Hashtable) current).get(parts[i]);
-
-                            if (current == null) { print(mainCommand + ": " + parts[i] + ": not found", stdout); return 127; }
-                        } else { print(mainCommand + ": " + parts[i] + ": not a directory", stdout); return 127; }
-                    }
-
-                    path = TARGET.endsWith("/") ? TARGET : TARGET + "/";
-                }
-                else { print(mainCommand + ": " + basename(TARGET) + ": not accessible", stdout); return 127; } 
-
-            } 
-
-            if (mainCommand.equals("pushd")) { ((Vector) getobject("1", "stack")).addElement(old_pwd); print(readStack(), stdout); }
-        }
-        
-        
-        else if (mainCommand.equals("alias")) { if (argument.equals("")) { for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { print("alias " + KEY + "='" + VALUE.trim() + "'", stdout); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { print("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'", stdout); } else { print("alias: " + argument + ": not found", stdout); return 127; } } } else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } }  
-        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { aliases.remove(args[i]); } else { print("unalias: "+ args[i] + ": not found", stdout); return 127; } } } }
-        // |
-        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); } } else { attributes.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } } 
-        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { attributes.remove(args[i]); } else { } } } }
-        else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false, id, pid, stdout, scope); }
-        else if (mainCommand.equals("env")) { if (argument.equals("")) { for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { print(KEY + "=" + VALUE.trim(), stdout); } } } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { print(args[i] + "=" + (String) attributes.get(args[i]), stdout); } else { print("env: " + args[i] + ": not found", stdout); return 127; } } } }
-
-        else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, enable, id, pid, stdout, scope) : mainCommand.equals("for") ? forCommand(argument, enable, id, pid, stdout, scope) : caseCommand(argument, enable, id, pid, stdout, scope); }
-        // |
-        else if (mainCommand.equals("echo")) { print(argument, stdout); }
-        else if (mainCommand.equals("buff")) { stdin.setString(argument); }
-        else if (mainCommand.equals("uuid")) { print(generateUUID(), stdout); }
-        else if (mainCommand.equals("basename")) { print(basename(argument), stdout); }
-        else if (mainCommand.equals("getopt")) { print(getArgument(argument), stdout); }
-        else if (mainCommand.equals("trim")) { this.stdout.setText(this.stdout.getText().trim()); }
-        else if (mainCommand.equals("locale")) { print((String) attributes.get("LOCALE"), stdout); }
-        else if (mainCommand.equals("date")) { print(new java.util.Date().toString(), stdout); }
-        else if (mainCommand.equals("clear")) { if (argument.equals("")) { this.stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { this.stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { print("clear: " + args[i] + ": not found", stdout); return 127; } } } }
-        else if (mainCommand.equals("seed")) { try { print("" + random.nextInt(Integer.parseInt(argument)) + "", stdout); } catch (NumberFormatException e) { print(getCatch(e), stdout); return 2; } }
-        // | (Device API)
-        else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
-        else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { print("open: " + argument + ": not found", stdout); return 127; } } }
-        // | (PushRegistry & Wireless)
-        else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (ClassNotFoundException e) { print("prg: " + getArgument(argument) + ": not found", stdout); return 127; } catch (NumberFormatException e) { print(getCatch(e), stdout); return 2; } catch (Exception e) { print(getCatch(e), stdout); return 3; } }
-        else if (mainCommand.equals("wrl")) { String ID = System.getProperty("wireless.messaging.sms.smsc"); if (ID == null) { print("Unsupported API", stdout); return 3; } else { print(ID, stdout); } }
-        // | (Network)
-        else if (mainCommand.equals("who")) { print("PORT\tADDRESS", stdout); Hashtable sessions = (Hashtable) getobject("1", "sessions"); boolean all = argument.indexOf("-a") != -1; for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); if (!all && ADDR.equals("nobody")) { } else { print(PORT + "\t" + ADDR, stdout); } } }
-        else if (mainCommand.equals("genip")) { print(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256), stdout); }
-        else if (mainCommand.equals("ifconfig")) { if (argument.equals("")) { argument = "1.1.1.1:53"; } try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); print(CONN.getLocalAddress(), stdout); CONN.close(); } catch (Exception e) { print("null", stdout); return 101; } }
-        else if (mainCommand.equals("gaddr")) { return GetAddress(argument, id, pid, stdout, scope); }
-        else if (mainCommand.equals("netstat")) { 
-            if (argument.equals("") || args[0].equals("-a")) {
-                print("Active Connections:\nPID\tName\tLocal\tRemote\tState", stdout);
-                
-                for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
-                    String pid = (String) keys.nextElement();
-                    Hashtable proc = (Hashtable) sys.get(pid);
-                    String procName = (String) proc.get("name");
-                    
-                    if (proc.containsKey("socket")) {
-                        String state = "ESTABLISHED", localAddr = "N/A", remoteAddr = "N/A";
-                        
-                        try { if (proc.get("socket") != null) { SocketConnection conn = (SocketConnection) proc.get("socket"); localAddr = conn.getLocalAddress() + ":" + conn.getLocalPort(); remoteAddr = conn.getAddress() + ":" + conn.getLocalPort(); } } 
-                        catch (Exception e) { }
-                        
-                        print(pid + "\t" + procName + "\t" + localAddr + "\t" + remoteAddr + "\t" + state, stdout);
-                    }
-                }
-                
-                print("\nActive Servers:\nPID\tType\tPort\tStatus", stdout);
-                
-                Hashtable sessions = (Hashtable) getobject("1", "sessions");
-                for (Enumeration ports = sessions.keys(); ports.hasMoreElements();) {
-                    String port = (String) ports.nextElement(), status = sessions.get(port).equals("nobody") ? "LISTENING" : "ESTABLISHED";
-                    
-                    for (Enumeration pids = sys.keys(); pids.hasMoreElements();) {
-                        String pid = (String) pids.nextElement();
-                        Hashtable proc = (Hashtable) sys.get(pid);
-                        if (proc.get("port") != null && proc.get("port").equals(port)) { print(pid + "\tbind\t" + port + "\t" + status, stdout); }
-                    }
-                }
-            } else if (args[0].equals("-c")) {
-                if (args.length < 2) { return 2; }
-
-                if (sys.containsKey(args[1])) {
-                    
-                } else {
-                    print("netstat: " + args[1] + ": not found", stdout);
-                }
-            } else {
-                int STATUS = 0; 
-                try { 
-                    HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); 
-                    CONN.setRequestMethod(HttpConnection.GET); 
-                    if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } 
-                    else { STATUS = 101; } CONN.close(); 
-                } 
-                catch (SecurityException e) { STATUS = 13; } 
-                catch (Exception e) { STATUS = 101; } 
-                
-                print(STATUS == 0 ? "true" : "false", stdout); 
-                return STATUS; 
-            }
-            
-        }
-        // |
-        else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); print("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms", stdout); } catch (IOException e) { print("Pong to " + argument + " failed: " + getCatch(e), stdout); return 101; } } }
-        else if (mainCommand.equals("ping")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); CONN.setRequestMethod(HttpConnection.GET); int responseCode = CONN.getResponseCode(); CONN.close(); print("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms", stdout); } catch (IOException e) { print("Ping to " + argument + " failed: " + getCatch(e), stdout); return 101; } } }
-        // |
-        else if (mainCommand.equals("bind") || mainCommand.equals("nc")) { new MIDletControl(mainCommand, argument, id, stdout, scope); }
-        // | (Files)
-        else if (mainCommand.equals("dir") || mainCommand.equals("history")) { new MIDletControl(mainCommand, id, stdout, scope); }
+        // | (Structure)
         else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument)); } }
         else if (mainCommand.equals("umount")) { fs = new Hashtable(); }
-        
+        // | (Listings)
+        else if (mainCommand.equals("dir") || mainCommand.equals("history")) { new MIDletControl(mainCommand, id, stdout, scope); }
         else if (mainCommand.equals("ls")) { 
             boolean all = false, verbose = false;
 
@@ -705,9 +556,63 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 print(formatted.trim(), stdout); 
             } 
         }
-        else if (mainCommand.equals("fdisk")) { return processCommand("ls /mnt/", false, id, pid, stdout, scope); }
-        else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { print(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t"), stdout); } else { print("lsblk: " + argument + ": not found", stdout); return 127; } }
-        // | 
+        // | (Navigation)
+        else if (mainCommand.equals("pwd")) { print(path, stdout); }
+        else if (mainCommand.equals("popd")) { Vector stack = (Vector) getobject("1", "stack"); if (stack.isEmpty()) { print("popd: empty stack", stdout); } else { path = (String) stack.lastElement(); stack.removeElementAt(stack.size() - 1); print(readStack(), stdout); } }
+        else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
+            String old_pwd = path;
+            if (argument.equals("") && mainCommand.equals("cd")) { path = "/home/"; } 
+            else if (argument.equals("")) { print(readStack() == null || readStack().length() == 0 ? "pushd: missing directory" : readStack(), stdout); }
+            else if (argument.equals("..")) { 
+                if (path.equals("/")) { return 0; } 
+
+                int lastSlashIndex = path.lastIndexOf('/', path.endsWith("/") ? path.length() - 2 : path.length() - 1); 
+                path = (lastSlashIndex <= 0) ? "/" : path.substring(0, lastSlashIndex + 1); 
+            } 
+            else { 
+                String TARGET = argument.startsWith("/") ? argument : (path.endsWith("/") ? path + argument : path + "/" + argument); 
+                if (!TARGET.endsWith("/")) { TARGET += "/"; } 
+                if (fs.containsKey(TARGET)) { path = TARGET; } 
+
+                else if (TARGET.startsWith("/mnt/")) { 
+                    try { 
+                        FileConnection fc = (FileConnection) Connector.open("file:///" + TARGET.substring(5), Connector.READ); 
+                        if (fc.exists() && fc.isDirectory()) { path = TARGET; } 
+                        else { print(mainCommand + ": " + basename(TARGET) + ": not " + (fc.exists() ? "a directory" : "found"), stdout); return 127; } 
+
+                        fc.close(); 
+                    } 
+                    catch (IOException e) { 
+                        print(mainCommand + ": " + basename(TARGET) + ": " + getCatch(e), stdout); 
+
+                        return 1; 
+                    } 
+                } 
+                else if (TARGET.startsWith("/proc/")) {
+                    String[] parts = split(TARGET.substring(6), '/');
+                    if (parts.length < 1) { print(mainCommand + ": not found", stdout); return 127; }
+
+                    String pid = parts[0];
+                    Hashtable proc = getprocess(pid);
+                    Object current = proc;
+
+                    for (int i = 1; i < parts.length; i++) {
+                        if (current instanceof Hashtable) {
+                            current = ((Hashtable) current).get(parts[i]);
+
+                            if (current == null) { print(mainCommand + ": " + parts[i] + ": not found", stdout); return 127; }
+                        } else { print(mainCommand + ": " + parts[i] + ": not a directory", stdout); return 127; }
+                    }
+
+                    path = TARGET.endsWith("/") ? TARGET : TARGET + "/";
+                }
+                else { print(mainCommand + ": " + basename(TARGET) + ": not accessible", stdout); return 127; } 
+
+            } 
+
+            if (mainCommand.equals("pushd")) { ((Vector) getobject("1", "stack")).addElement(old_pwd); print(readStack(), stdout); }
+        }
+        // | (Tools)
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = deleteFile(args[i], id, stdout); if (STATUS != 0) { return STATUS; } } } }
         else if (mainCommand.equals("install")) { if (argument.equals("")) { } else { int STATUS = write(argument, buffer, id); if (STATUS != 0) { print(STATUS == 13 ? "Permission denied" : STATUS == 5 ? "read-only storage" : "java.io.IOException", stdout); } return STATUS; } }
         else if (mainCommand.equals("touch")) { if (argument.equals("")) { buffer = ""; } else { for (int i = 0; i < args.length; i++) { int STATUS = write(argument, "", id); if (STATUS != 0) { return STATUS; } } } }
@@ -719,7 +624,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     String origin = args[0], target = (args.length > 1 && !args[1].equals("")) ? args[1] : origin + "-copy";
 
                     InputStream in = getInputStream(origin.startsWith("/") ? origin : path + origin);
-                    if (in == null) { print("cp: cannot open " + origin, stdout); return 1; }
+                    if (in == null) { print("cp: " + origin + ": not found", stdout); return 1; }
 
                     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                     byte[] tmpBuf = new byte[4096];
@@ -728,9 +633,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     in.close();
 
                     return write(target.startsWith("/") ? target : path + target, buffer.toByteArray(), id);
-                } catch (Exception e) { print("cp: " + getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; }
+                } catch (Exception e) { print(getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; }
             }
         }
+        
+        // | (Utilities)
+        else if (mainCommand.equals("basename")) { print(basename(argument), stdout); }
+        // | (Informations)
+        else if (mainCommand.equals("fdisk")) { return processCommand("ls /mnt/", false, id, pid, stdout, scope); }
+        else if (mainCommand.equals("lsblk")) { if (argument.equals("") || argument.equals("-x")) { print(replace("MIDlet.RMS.Storage", ".", argument.equals("-x") ? ";" : "\t"), stdout); } else { print("lsblk: " + argument + ": not found", stdout); return 127; } }
+        // | (Archive Structure Management)
         else if (mainCommand.equals("cache")) { if (argument.equals("")) { print("Cache: " + (useCache ? "enabled (" + cache.size() + " items)" : "disabled"), stdout); } else if (argument.equals("on")) { useCache = true; } else if (argument.equals("off")) { useCache = false; cache = new Hashtable(); } else if (argument.equals("clear")) { cache = new Hashtable(); } else { print("cache: " + args[0] + ": not found", stdout); return 127; } } 
         else if (mainCommand.equals("rmsfix")) {
             if (argument.equals("")) { }
@@ -744,9 +656,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else { print("rmsfix: " + args[0] + ": not found", stdout); return 127; }
         }
-        // |
+        // | ()
+
         else if (mainCommand.equals("add")) { buffer = buffer.equals("") ? argument : buffer + "\n" + argument; }
-        else if (mainCommand.equals("getty")) { buffer = stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? read((String) stdout) : ""; }
         else if (mainCommand.equals("du")) { 
             if (argument.equals("")) { } 
             else { 
@@ -754,22 +666,126 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     InputStream in = getInputStream(argument); 
                     if (in == null) { print("du: " + basename(argument) + ": not found", stdout); return 127; } 
                     else { print("" + in.available(), stdout); } 
-                } catch (Exception e) {
-                    print("du: " + getCatch(e), stdout);
-                    return e instanceof SecurityException ? 13 : 1;
-                }
+                } catch (Exception e) { print(getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; }
             } 
         }
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { print(buffer, stdout); } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i]), stdout); } } }
         else if (mainCommand.equals("get")) { buffer = argument.equals("") ? "" : getcontent(argument); }
         else if (mainCommand.equals("hash")) { if (argument.equals("")) { } else { print("" + getcontent(argument).hashCode(), stdout); } }
         else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1])); } }
-        else if (mainCommand.equals("grep")) { if (argument.equals("") || args.length < 2) { return 2; } else { print(getcontent(args[1]).indexOf(args[0]) != -1 ? "true" : "false", stdout); } }
-        else if (mainCommand.equals("find")) { if (argument.equals("") || args.length < 2) { return 2; } else { String VALUE = (String) parseProperties(getcontent(args[1])).get(args[0]); print(VALUE != null ? VALUE : "null", stdout); } }
-        else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0]); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, null) : 10, LINES.length); for (int i = 0; i < COUNT; i++) { print(LINES[i], stdout); } } }
-        else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0]); String[] LINES = split(CONTENT, '\n'); int COUNT = args.length > 1 ? getNumber(args[1], 10, null) : 10; COUNT = Math.max(0, LINES.length - COUNT); for (int i = COUNT; i < LINES.length; i++) { print(LINES[i], stdout); } } }
-        else if (mainCommand.equals("diff")) { if (argument.equals("") || args.length < 2) { return 2; } else { String[] LINES1 = split(getcontent(args[0]), '\n'), LINES2 = split(getcontent(args[1]), '\n'); int MAX_RANGE = Math.max(LINES1.length, LINES2.length); for (int i = 0; i < MAX_RANGE; i++) { String LINE1 = i < LINES1.length ? LINES1[i] : "", LINE2 = i < LINES2.length ? LINES2[i] : ""; if (!LINE1.equals(LINE2)) { print("--- Line " + (i + 1) + " ---\n< " + LINE1 + "\n" + "> " + LINE2, stdout); } if (i > LINES1.length || i > LINES2.length) { break; } } } }
-        else if (mainCommand.equals("wc")) { if (argument.equals("")) { } else { int MODE = args[0].indexOf("-c") != -1 ? 1 : args[0].indexOf("-w") != -1 ? 2 : args[0].indexOf("-l") != -1 ? 3 : 0; if (MODE != 0) { argument = join(args, " ", 1); } String CONTENT = getcontent(argument), FILENAME = basename(argument); int LINES = 0, WORDS = 0, CHARS = CONTENT.length(); String[] LINE_ARRAY = split(CONTENT, '\n'); LINES = LINE_ARRAY.length; for (int i = 0; i < LINE_ARRAY.length; i++) { String[] WORD_ARRAY = split(LINE_ARRAY[i], ' '); for (int j = 0; j < WORD_ARRAY.length; j++) { if (!WORD_ARRAY[j].trim().equals("")) { WORDS++; } } } print(MODE == 0 ? LINES + "\t" + WORDS + "\t" + CHARS + "\t" + FILENAME : MODE == 1 ? CHARS + "\t" + FILENAME : MODE == 2 ? WORDS + "\t" + FILENAME : LINES + "\t" + FILENAME, stdout); } }
+        
+        
+        
+        else if (mainCommand.equals("alias")) { if (argument.equals("")) { for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { print("alias " + KEY + "='" + VALUE.trim() + "'", stdout); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { print("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'", stdout); } else { print("alias: " + argument + ": not found", stdout); return 127; } } } else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } }  
+        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { aliases.remove(args[i]); } else { print("unalias: "+ args[i] + ": not found", stdout); return 127; } } } }
+        // |
+        else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); } } else { attributes.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } } 
+        else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { attributes.remove(args[i]); } else { } } } }
+        else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false, id, pid, stdout, scope); }
+        else if (mainCommand.equals("env")) { if (argument.equals("")) { for (Enumeration KEYS = attributes.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) attributes.get(KEY); if (!KEY.equals("OUTPUT") && !VALUE.equals("")) { print(KEY + "=" + VALUE.trim(), stdout); } } } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { print(args[i] + "=" + (String) attributes.get(args[i]), stdout); } else { print("env: " + args[i] + ": not found", stdout); return 127; } } } }
+
+        else if (mainCommand.equals("if") || mainCommand.equals("for") || mainCommand.equals("case")) { return mainCommand.equals("if") ? ifCommand(argument, enable, id, pid, stdout, scope) : mainCommand.equals("for") ? forCommand(argument, enable, id, pid, stdout, scope) : caseCommand(argument, enable, id, pid, stdout, scope); }
+        // |
+        else if (mainCommand.equals("echo")) { print(argument, stdout); }
+        else if (mainCommand.equals("buff")) { stdin.setString(argument); }
+        else if (mainCommand.equals("uuid")) { print(generateUUID(), stdout); }
+        else if (mainCommand.equals("getopt")) { print(getArgument(argument), stdout); }
+        else if (mainCommand.equals("trim")) { this.stdout.setText(this.stdout.getText().trim()); }
+        else if (mainCommand.equals("locale")) { print((String) attributes.get("LOCALE"), stdout); }
+        else if (mainCommand.equals("date")) { print(new java.util.Date().toString(), stdout); }
+        else if (mainCommand.equals("clear")) { if (argument.equals("")) { this.stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { this.stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { print("clear: " + args[i] + ": not found", stdout); return 127; } } } }
+        // | (Device API)
+        else if (mainCommand.equals("call")) { if (argument.equals("")) { } else { try { platformRequest("tel:" + argument); } catch (Exception e) { } } }
+        else if (mainCommand.equals("open")) { if (argument.equals("")) { } else { try { platformRequest(argument); } catch (Exception e) { print("open: " + argument + ": not found", stdout); return 127; } } }
+        // | (PushRegistry & Wireless)
+        else if (mainCommand.equals("prg")) { if (argument.equals("")) { argument = "5"; } try { PushRegistry.registerAlarm(getArgument(argument).equals("") ? "OpenTTY" : getArgument(argument), System.currentTimeMillis() + Integer.parseInt(getCommand(argument)) * 1000); } catch (ClassNotFoundException e) { print("prg: " + getArgument(argument) + ": not found", stdout); return 127; } catch (NumberFormatException e) { print(getCatch(e), stdout); return 2; } catch (Exception e) { print(getCatch(e), stdout); return 3; } }
+        else if (mainCommand.equals("wrl")) { String ID = System.getProperty("wireless.messaging.sms.smsc"); if (ID == null) { print("Unsupported API", stdout); return 3; } else { print(ID, stdout); } }
+        // | (Network)
+        else if (mainCommand.equals("who")) { print("PORT\tADDRESS", stdout); Hashtable sessions = (Hashtable) getobject("1", "sessions"); boolean all = argument.indexOf("-a") != -1; for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); if (!all && ADDR.equals("nobody")) { } else { print(PORT + "\t" + ADDR, stdout); } } }
+        else if (mainCommand.equals("genip")) { print(random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(256), stdout); }
+        else if (mainCommand.equals("ifconfig")) { if (argument.equals("")) { argument = "1.1.1.1:53"; } try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); print(CONN.getLocalAddress(), stdout); CONN.close(); } catch (Exception e) { print("null", stdout); return 101; } }
+        else if (mainCommand.equals("gaddr")) { return GetAddress(argument, id, pid, stdout, scope); }
+        else if (mainCommand.equals("netstat")) { 
+            if (argument.equals("") || args[0].equals("-a")) {
+                print("Active Connections:\nPID\tName\tLocal\tRemote\tState", stdout);
+                
+                for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
+                    String pid = (String) keys.nextElement();
+                    Hashtable proc = (Hashtable) sys.get(pid);
+                    String procName = (String) proc.get("name");
+                    
+                    if (proc.containsKey("socket")) {
+                        String state = "ESTABLISHED", localAddr = "N/A", remoteAddr = "N/A";
+                        
+                        try { if (proc.get("socket") != null) { SocketConnection conn = (SocketConnection) proc.get("socket"); localAddr = conn.getLocalAddress() + ":" + conn.getLocalPort(); remoteAddr = conn.getAddress() + ":" + conn.getLocalPort(); } } 
+                        catch (Exception e) { }
+                        
+                        print(pid + "\t" + procName + "\t" + localAddr + "\t" + remoteAddr + "\t" + state, stdout);
+                    }
+                }
+                
+                print("\nActive Servers:\nPID\tType\tPort\tStatus", stdout);
+                
+                Hashtable sessions = (Hashtable) getobject("1", "sessions");
+                for (Enumeration ports = sessions.keys(); ports.hasMoreElements();) {
+                    String port = (String) ports.nextElement(), status = sessions.get(port).equals("nobody") ? "LISTENING" : "ESTABLISHED";
+                    
+                    for (Enumeration pids = sys.keys(); pids.hasMoreElements();) {
+                        String pid = (String) pids.nextElement();
+                        Hashtable proc = (Hashtable) sys.get(pid);
+                        if (proc.get("port") != null && proc.get("port").equals(port)) { print(pid + "\tbind\t" + port + "\t" + status, stdout); }
+                    }
+                }
+            } else if (args[0].equals("-c")) {
+                if (args.length < 2) { return 2; }
+
+                if (sys.containsKey(args[1])) {
+                    
+                } else {
+                    print("netstat: " + args[1] + ": not found", stdout);
+                }
+            } else {
+                int STATUS = 0; 
+                try { 
+                    HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); 
+                    CONN.setRequestMethod(HttpConnection.GET); 
+                    if (CONN.getResponseCode() == HttpConnection.HTTP_OK) { } 
+                    else { STATUS = 101; } CONN.close(); 
+                } 
+                catch (SecurityException e) { STATUS = 13; } 
+                catch (Exception e) { STATUS = 101; } 
+                
+                print(STATUS == 0 ? "true" : "false", stdout); 
+                return STATUS; 
+            }
+            
+        }
+        // |
+        else if (mainCommand.equals("pong")) { if (argument.equals("")) { } else { long START = System.currentTimeMillis(); try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); CONN.close(); print("Pong to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms", stdout); } catch (IOException e) { print("Pong to " + argument + " failed: " + getCatch(e), stdout); return 101; } } }
+        else if (mainCommand.equals("ping")) { 
+            if (argument.equals("")) { } 
+            else { 
+                long START = System.currentTimeMillis(); 
+                try { 
+                    HttpConnection CONN = (HttpConnection) Connector.open(!argument.startsWith("http://") && !argument.startsWith("https://") ? "http://" + argument : argument); 
+                    CONN.setRequestMethod(HttpConnection.GET); 
+                    int responseCode = CONN.getResponseCode(); 
+                    CONN.close(); 
+                    print("Ping to " + argument + " successful, time=" + (System.currentTimeMillis() - START) + "ms", stdout); 
+                } catch (IOException e) { 
+                    print("Ping to " + argument + " failed: " + getCatch(e), stdout); return 101; 
+                } 
+            } 
+        }
+        // |
+        else if (mainCommand.equals("bind") || mainCommand.equals("nc")) { new MIDletControl(mainCommand, argument, id, stdout, scope); }
+        // | (Files)
+        
+        
+        // | 
+        
+        
+        // |
         // |
         else if (mainCommand.equals("nano")) { new MIDletControl(argument, enable, id, stdout, scope); }
         else if (mainCommand.equals("html")) { String content = argument.equals("") ? buffer : getcontent(argument); viewer(extractTitle(env(content), "HTML Viewer"), html2text(env(content))); }
