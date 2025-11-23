@@ -18,4 +18,6 @@ if arg[1] then
             print(lines[i])
         end
     end
-else print("head [file]") end
+else
+    print("head [file]")
+end
