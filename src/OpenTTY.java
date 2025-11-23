@@ -930,7 +930,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         else if (mainCommand.equals("help")) {
-            viewer()
+            
         }
         // |
         else if (mainCommand.equals("@exec")) { commandAction(EXECUTE, display.getCurrent()); }
