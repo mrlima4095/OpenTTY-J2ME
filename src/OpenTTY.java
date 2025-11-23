@@ -116,16 +116,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             this.id = id; this.stdout = stdout; this.scope = scope;
 
             if (args == null || args.length() == 0) { return; }
-            else if (MOD == BIND) {
-                String[] argv = splitArgs(args);
-
-                port = argv[0]; 
-                DB = argv.length > 1 ? argv[1] : "";
-                proc_name = argv.length > 2 ? argv[2] : "bind";
-
-                new Thread(this, "Bind").start();
-                return;
-            } else {
+            else if (MOD == BIND) { String[] argv = splitArgs(args); port = argv[0]; DB = argv.length > 1 ? argv[1] : ""; proc_name = argv.length > 2 ? argv[2] : "bind"; new Thread(this, "Bind").start(); } 
+            else {
                 Hashtable proc = genprocess("remote", id, null);
 
                 address = args; this.previous = display.getCurrent();
@@ -363,7 +355,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == BG) { processCommand(command, enable, id, PID, stdout, scope); }
         }
 
-        private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == MONITOR ? "monitor" : MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id, stdout, scope); } else { load(); } }
+        private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id, stdout, scope); } else { load(); } }
         private void load() {
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
             else if (MOD == EXPLORER) {
