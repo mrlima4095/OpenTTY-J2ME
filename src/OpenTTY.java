@@ -112,14 +112,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (args == null || args.length() == 0) { return; }
             else if (MOD == BIND) { String[] argv = splitArgs(args); port = argv[0]; DB = argv.length > 1 ? argv[1] : ""; proc_name = argv.length > 2 ? argv[2] : "bind"; new Thread(this, "Bind").start(); } 
-            
         }
         public MIDletControl(String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = BG; this.command = command; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
         
         public MIDletControl(String file, boolean enable, int id, Object stdout, Hashtable scope) {
             MOD = NANO; this.filename = file; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope;
             this.previous = display.getCurrent();
-            
+
             box = new TextBox("Nano - " + (file == null || file.equals("") ? "New Buffer" : file), (file == null || file.equals("")) ? "" : getcontent(file, scope), 31522, TextField.ANY);
             box.addCommand(BACK);
             box.addCommand(CLEAR = new Command("Clear", Command.SCREEN, 1));
