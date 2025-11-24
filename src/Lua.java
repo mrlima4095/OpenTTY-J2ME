@@ -18,7 +18,16 @@ public class Lua {
     private Vector tokens;
     // |
     public int status = 0;
-    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, RANDOM = 12, EXEC = 13, GETENV = 14, CLOCK = 15, SETLOC = 16, EXIT = 17, DATE = 18, GETPID = 19, SETPROC = 20, GETPROC = 21, READ = 22, WRITE = 23, CLOSE = 24, TB_INSERT = 25, TB_CONCAT = 26, TB_REMOVE = 27, TB_SORT = 28, TB_MOVE = 29, TB_UNPACK = 30, TB_PACK = 31, TB_DECODE = 32, HTTP_GET = 33, HTTP_POST = 34, CONNECT = 35, PEER = 36, DEVICE = 37, SERVER = 38, ACCEPT = 39, ALERT = 40, SCREEN = 41, LIST = 42, QUEST = 43, EDIT = 44, TITLE = 45, TICKER = 46, WTITLE = 47, DISPLAY = 48, APPEND = 49, UPPER = 50, LOWER = 51, LEN = 52, MATCH = 53, REVERSE = 54, SUB = 55, HASH = 56, BYTE = 57, CHAR = 58, TRIM = 59, GETCWD = 60, OPEN = 61, GETCURRENT = 62, IMG = 63, CLASS = 64, NAME = 65, SETMETATABLE = 66, GETMETATABLE = 67, FIND = 68, IPAIRS = 69, DELETE = 70, REQUEST = 71, GETUID = 72, POPEN = 73, UUID = 74, SPLIT = 75, DIRS = 76, CHDIR = 77, SETENV = 78;
+    // | (LuaFunction)
+    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15;
+    public static final int UPPER = 100, LOWER = 101, LEN = 102, FIND = 103, MATCH = 104, REVERSE = 105, SUB = 106, HASH = 107, BYTE = 108, CHAR = 109, TRIM = 110, SPLIT = 111, UUID = 112;
+    public static final int TB_INSERT = 200, TB_CONCAT = 201, TB_REMOVE = 202, TB_SORT = 203, TB_MOVE = 204, TB_UNPACK = 205, TB_PACK = 206, TB_DECODE = 207;
+    public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313;
+    public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406;
+    public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506;
+    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608;
+    public static final int CLASS = 700, NAME = 701, DELETE = 702;
+
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
     public static final Object LUA_NIL = new Object();
     // |
@@ -31,32 +40,41 @@ public class Lua {
         this.proc = midlet.genprocess("lua", id, null);
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable();
-        String[] funcs = new String[] { "execute", "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir" }; int[] loaders = new int[] { EXEC, GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR };
+        String[] funcs = new String[] { "execute", "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir" }; 
+        int[] loaders = new int[] { EXEC, GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
-        funcs = new String[] { "read", "write", "close", "open", "popen", "dirs" }; loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN, DIRS };
+        funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout" }; 
+        loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN, DIRS, SETOUT };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } io.put("stdout", stdout); io.put("stdin", midlet.stdin); globals.put("io", io);
 
-        funcs = new String[] { "insert", "concat", "remove", "sort", "move", "unpack", "pack", "decode" }; loaders = new int[] { TB_INSERT, TB_CONCAT, TB_REMOVE, TB_SORT, TB_MOVE, TB_UNPACK, TB_PACK, TB_DECODE };
+        funcs = new String[] { "insert", "concat", "remove", "sort", "move", "unpack", "pack", "decode" }; 
+        loaders = new int[] { TB_INSERT, TB_CONCAT, TB_REMOVE, TB_SORT, TB_MOVE, TB_UNPACK, TB_PACK, TB_DECODE };
         for (int i = 0; i < funcs.length; i++) { table.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("table", table);
 
-        funcs = new String[] { "get", "post" }; loaders = new int[] { HTTP_GET, HTTP_POST };
+        funcs = new String[] { "get", "post" }; 
+        loaders = new int[] { HTTP_GET, HTTP_POST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "class", "getName", "delete" }; loaders = new int[] { CLASS, NAME, DELETE };
+        funcs = new String[] { "class", "getName", "delete" }; 
+        loaders = new int[] { CLASS, NAME, DELETE };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
         jdb.put("sessions", midlet.getobject("1", "sessions")); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); java.put("midlet", jdb); globals.put("java", java);
 
-        funcs = new String[] { "connect", "peer", "device", "server", "accept" }; loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
+        funcs = new String[] { "connect", "peer", "device", "server", "accept" }; 
+        loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
-        funcs = new String[] { "Alert", "BuildScreen", "BuildList", "BuildQuest", "BuildEdit", "SetTitle", "SetTicker", "WindowTitle", "display", "append", "getCurrent", "render" }; loaders = new int[] { ALERT, SCREEN, LIST, QUEST, EDIT, TITLE, TICKER, WTITLE, DISPLAY, APPEND, GETCURRENT, IMG };
-        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("xterm", midlet.xterm); globals.put("graphics", graphics);
+        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker" }; 
+        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER };
+        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("graphics", graphics);
 
-        funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split" }; loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT };
+        funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split" }; 
+        loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
-        funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "ipairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty", "setmetatable", "getmetatable" }; loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, IPAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY, SETMETATABLE, GETMETATABLE };
+        funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "ipairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty", "setmetatable", "getmetatable" }; 
+        loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, IPAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY, SETMETATABLE, GETMETATABLE };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
@@ -1113,16 +1131,15 @@ public class Lua {
     // Lua Object
     public class LuaFunction implements CommandListener, ItemCommandListener, ItemStateListener {
         private Vector params, bodyTokens;
-        private Hashtable closureScope, PKG, ITEM = null, STATE = null; 
-        private int MOD = -1, LTYPE = -1;
+        private Hashtable closureScope, cmds = null; 
+        private int MOD = -1;
         // | (Screen)
-        private Displayable screen; 
-        private Command BACK, USER; 
-        private TextField INPUT;
+        private LuaFunction root = null;
+        private String handler = "";
         // | 
         // Config.
         LuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
-        LuaFunction(int type, Hashtable PKG) { this.MOD = type; this.PKG = PKG; }
+        LuaFunction(String handler, LuaFunction root) { this.handler = handler; this.root = root; }
         LuaFunction(int type) { this.MOD = type; }
         // | (Main)
         public Object call(Vector args) throws Exception {
@@ -1595,6 +1612,7 @@ public class Lua {
                 }
                 return list;
             }
+            else if (MOD == SETOUT) { if (args.isEmpty()) { } else { stdout = args.elementAt(0); } }
             // Package: table
             else if (MOD == TB_INSERT) {
                 if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
@@ -1840,23 +1858,8 @@ public class Lua {
                     return result;
                 }
             }
-            // Package: graphics
-            else if (MOD == ALERT || MOD == SCREEN || MOD == LIST || MOD == QUEST || MOD == EDIT) {
-                if (args.isEmpty()) { }
-                else {
-                    Object table = args.elementAt(0);
-
-                    if (table instanceof Hashtable) { return ((LuaFunction) new LuaFunction(MOD, (Hashtable) table)).BuildScreen(); }
-                    else { return gotbad(1, MOD == ALERT ? "Alert" : MOD == SCREEN ? "BuildScreen" : MOD == LIST ? "BuildList" : MOD == QUEST ? "BuildQuest" : "BuildEdit", "table expected, got " + type(table)); }
-                }
-            }
-            else if (MOD == TITLE || MOD == WTITLE || MOD == TICKER) {
-                String label = args.isEmpty() || args.elementAt(0) == null ? null : toLuaString(args.elementAt(0));
-
-                if (MOD == TITLE) { midlet.xterm.setTitle(label); }
-                else if (MOD == WTITLE) { if (args.size() > 1) { Object obj2 = args.elementAt(1); if (obj2 instanceof Displayable) { } else { return gotbad(2, "WindowTitle", "screen expected, got" + type(obj2)); } } else { midlet.display.getCurrent().setTitle(label); } }
-                else { midlet.display.getCurrent().setTicker(label == null ? null : new Ticker(label)); }
-            }
+            // Package: graphics 
+            { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER };
             else if (MOD == DISPLAY) {
                 if (args.isEmpty()) { }
                 else {
@@ -1866,19 +1869,143 @@ public class Lua {
                     else { return gotbad(1, "display", "screen expected, got " + type(screen)); }
                 }
             }
+            else if (MOD == NEW) {
+                if (args.size() < 2) { return gotbad(1, "graphics.new", "wrong number of arguments"); }
+                
+                String type = toLuaString(args.elementAt(0)), title = toLuaString(args.elementAt(1));
+                Object content = args.size() > 2 ? args.elementAt(2) : null;
+
+                if (type.equals("alert")) {
+                    Alert alert = new Alert(title, content != null ? toLuaString(content) : "", null, AlertType.INFO);
+                    alert.setTimeout(Alert.FOREVER);
+                    return alert;
+                } 
+                else if (type.equals("edit")) { return new TextBox(title, content != null ? toLuaString(content) : "", 31522, TextField.ANY); } 
+                else if (type.equals("list")) { return new List(title, (type = content != null ? toLuaString(content) : "implicit").equals("exclusive") ? List.EXCLUSIVE : type.equals("multiple") ? List.MULTIPLE : List.IMPLICIT); } 
+                else if (type.equals("screen")) { return new Form(title); } 
+                else if (type.equals("command")) {
+                    if (content instanceof Hashtable) {
+                        Hashtable cmdTable = (Hashtable) cmdObj;
+                        type = getFieldValue(cmdTable, "type", "screen");
+
+                        return new Command(getFieldValue(cmdTable, "label", "Command"), type.equals("back") ? Command.BACK : type.equals("ok") ? Command.OK : type.equals("cancel") ? Command.CANCEL : type.equals("help") ? Command.HELP : type.equals("stop") ? Command.STOP : type.equals("exit") ? Command.EXIT : type.equals("item") ? Command.ITEM : Command.SCREEN, getFieldNumber(cmdTable, "priority", 1));
+                    } else { return gotbad(2, "new", "table expected, got " + type(content)); }
+                }
+                else if (type.equals("buffer")) {
+                    if (content instanceof Hashtable) {
+                        String layout = getFieldValue(field, "layout", "default");
+                        StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
+                        
+                        si.setFont(midlet.genFont(getFieldValue(field, "style", "default")));
+                }
+                else { return gotbad(1, "new", "invalid type: " + type); } 
+            }
+            else if (MOD == IMG) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0))); }
             else if (MOD == APPEND) {
-                if (args.size() < 2) { return gotbad(1, "append", "wrong number of arguments"); }
-                else {
-                    Object obj1 = args.elementAt(0), obj2 = args.elementAt(1);
-                    if (obj1 instanceof Form) {
-                        if (obj2 instanceof Hashtable || obj2 instanceof String) { AppendScreen((Form) obj1, obj2); }
-                        else { return gotbad(2, "append", "string expected, got " + type(obj2)); }
+                if (args.size() < 2) return gotbad(1, "append", "wrong number of arguments");
+                
+                Object target = args.elementAt(0), itemObj = args.elementAt(1);
+                
+                if (target instanceof Form) {
+                    Form form = (Form) target;
+                    
+                    if (itemObj instanceof Hashtable) {
+                        Hashtable field = (Hashtable) itemObj;
+                        String type = getFieldValue(field, "type", "text");
+                        
+                        if (type.equals("image")) {
+                            String imgPath = getFieldValue(field, "img", "");
+                            if (!imgPath.equals("")) { form.append(midlet.readImg(imgPath)); }
+                        } 
+                        else if (type.equals("text")) {
+                            String layout = getFieldValue(field, "layout", "default");
+                            StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
+                            
+                            si.setFont(midlet.genFont(getFieldValue(field, "style", "default")));
+                            form.append(si);
+                        } 
+                        else if (type.equals("item")) {
+                            String label = field.containsKey("label") ? toLuaString(field.get("label")) : ;
+                            Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("BuildScreen", "item", "missing root"); 
+
+                            Command RUN = new Command(getFieldValue(field, "label", (String) gotbad("new", "item", "missing label")), Command.ITEM, 1); 
+                            StringItem s = new StringItem(null, label, StringItem.BUTTON); 
+                            s.setFont(midlet.genFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
+                            s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
+                            s.addCommand(RUN); 
+                            s.setDefaultCommand(RUN); 
+                            s.setItemCommandListener(this); 
+                            f.append(s);
+
+                            if (ITEM == null) { ITEM = new Hashtable(); }
+                            ITEM.put(s, rootObj);
+                        }
+                        else if (type.equals("choice")) { 
+                            String choiceType = getvalue(field, "mode", "exclusive");
+                            ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), (LTYPE = choiceType.equals("exclusive") ? Choice.EXCLUSIVE : choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.POPUP));
+                            Object options = field.get("options");
+                            Image IMG = null;
+
+                            if (options instanceof Hashtable) {
+                                Hashtable fields = (Hashtable) options;
+
+                                if (isListTable(fields)) {
+                                    Vector fv = toVector(fields);
+
+                                    for (int i = 0; i < fields.size(); i++) { cg.append(toLuaString(fv.elementAt(i)), IMG); }
+                                } else {
+                                    for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
+                                        cg.append(toLuaString(fields.get(keys.nextElement())), IMG);
+                                    }
+                                }
+                            }
+
+                            f.setItemStateListener(this);
+                            f.append(cg);
+
+                            if (ITEM == null) { ITEM = new Hashtable(); }
+                            if (STATE == null) { STATE = new Hashtable(); }
+                            ITEM.put(cg, new Double(LTYPE));
+                            STATE.put(cg, field.containsKey("root") ? field.get("root") : LUA_NIL);
+                        } 
+                        else if (type.equals("field")) { form.append(new TextField(getFieldValue(field, "label", ""), fiegetFieldValue(field, "value", "")ldValue, getFieldNumber(field, "length", 256), getQuest(getFieldValue(field, "mode", "")))); } 
+                        else if (type.equals("spacer")) { form.append(new Spacer(getFieldNumber(field, "width", 1), getFieldNumber(field, "height", 10))); }
+                        else if (type.equals("gauge")) { form.append(new Gauge(getFieldValue(field, "label", ""), getFieldBoolean(field, "interactive", false), getFieldNumber(field, "maxValue", 100), getFieldNumber(field, "value", 0))); } 
+                    } 
+                    else if (itemObj instanceof StringItem) { form.append(itemObj); } 
+                    else { form.append(new StringItem("", toLuaString(itemObj))); }
+                } else if (target instanceof List) {
+                    List list = (List) target;
+                    Image image = null;
+                    
+                    if (args.size() > 2) {
+                        Object imgObj = args.elementAt(2);
+                        image = imgObj instanceof Image ? (Image) imgObj : midlet.readImg(toLuaString(imgObj));
                     }
-                    else if (obj1 instanceof List) { ((List) obj1).append(toLuaString(obj2), null); }
+                    
+                    list.append(toLuaString(itemObj), image);
+                } else {
+                    return gotbad(1, "append", "Form or List expected");
                 }
             }
+            else if (MOD == ADDCMD) {
+                if (args.size() < 2) return gotbad(1, "addCommand", "wrong number of arguments");
+                
+                Object target = args.elementAt(0), cmdObj = args.elementAt(1);
+                
+                if (!(target instanceof Displayable)) { return gotbad(1, "addCommand", "Displayable expected"); }
+                if (!(cmdObj instanceof Command)) { return gotbad(1, "addCommand", "Command expected"); }
+                
+                ((Displayable) target).addCommand((Command) cmdObj);
+            }
+            else if (MOD == HANDLER) {
+
+            }
+
+            else if (MOD == TITLE) { ((Displayable) args.elementAt(0)).setTitle(args.isEmpty() ? null : toLuaString(args.elementAt(1))); }
+            else if (MOD == TICKER) { ((Displayable) args.elementAt(0)).setTicker(args.isEmpty() ? null : new Ticker(toLuaString(args.elementAt(1)))); }
+
             else if (MOD == GETCURRENT) { return midlet.display.getCurrent(); }
-            else if (MOD == IMG) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0))); }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
             else if (MOD == FIND || MOD == MATCH || MOD == LEN) {
@@ -2042,7 +2169,7 @@ public class Lua {
         }
         // |
         private Object exec(String code) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = new Hashtable(); for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
-        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : item instanceof Image ? "image" : "userdata"; }
+        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : item instanceof Image ? "image" : item instanceof StringItem ? "output" : item instanceof Command ? "button" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
         private Object http(String method, String url, String data, Object item) throws Exception {
@@ -2114,323 +2241,49 @@ public class Lua {
         }
         public static Vector toVector(Hashtable table) throws Exception { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
 
-        private void AppendScreen(Form f, Object obj) throws Exception {
-            if (obj instanceof Hashtable) {
-                Hashtable field = (Hashtable) obj;
-                String type = getenv(field, "type", "text").trim();
-
-                if (type.equals("image")) {
-                    String imgPath = getenv(field, "img", "");
-                    
-                    if (imgPath.equals("")) { } 
-                    else { f.append(midlet.readImg(imgPath)); }
-                } 
-                else if (type.equals("text")) {
-                    String value = getenv(field, "value", ""), layout = getenv(field, "layout", "default");
-                    if (value.equals("")) { }
-                    else { StringItem si = new StringItem(getenv(field, "label", ""), value, layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT); si.setFont(midlet.genFont(getenv(field, "style", "default"))); f.append(si); }
-                } 
-                else if (type.equals("item")) {
-                    String label = field.containsKey("label") ? toLuaString(field.get("label")) : (String) gotbad("BuildScreen", "item", "missing label");
-                    Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("BuildScreen", "item", "missing root"); 
-
-                    Command RUN = new Command(label, Command.ITEM, 1); 
-                    StringItem s = new StringItem(null, label, StringItem.BUTTON); 
-                    s.setFont(midlet.genFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
-                    s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
-                    s.addCommand(RUN); 
-                    s.setDefaultCommand(RUN); 
-                    s.setItemCommandListener(this); 
-                    f.append(s);
-
-                    if (ITEM == null) { ITEM = new Hashtable(); }
-                    ITEM.put(s, rootObj);
-                }
-                else if (type.equals("spacer")) { int w = field.containsKey("width") ? field.get("width") instanceof Double ? ((Double) field.get("width")).intValue() : 1 : 1, h = field.containsKey("heigth") ? field.get("heigth") instanceof Double ? ((Double) field.get("heigth")).intValue() : 10 : 10; f.append(new Spacer(w, h)); }
-                else if (type.equals("gauge")) { 
-                    Gauge g = new Gauge(getvalue(field, "label", ""), getBoolean(field, "interactive", true), getNumber(field, "max", 100), getNumber(field, "value", 0));
-                    f.setItemStateListener(this);
-                    f.append(g);
-                    if (STATE == null) { STATE = new Hashtable(); }
-                    STATE.put(g, field.containsKey("root") ? field.get("root") : LUA_NIL);
-                } 
-                else if (type.equals("field")) { f.append(new TextField(getvalue(field, "label", midlet.stdin.getLabel()), getvalue(field, "value", ""), getNumber(field, "length", 256), getQuest(getenv(field, "mode", "default")))); }
-                else if (type.equals("choice")) { 
-                    String choiceType = getvalue(field, "mode", "exclusive");
-                    ChoiceGroup cg = new ChoiceGroup(getvalue(field, "label", ""), (LTYPE = choiceType.equals("exclusive") ? Choice.EXCLUSIVE : choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.POPUP));
-                    Object options = field.get("options");
-                    Image IMG = null;
-
-                    if (options instanceof Hashtable) {
-                        Hashtable fields = (Hashtable) options;
-
-                        if (isListTable(fields)) {
-                            Vector fv = toVector(fields);
-
-                            for (int i = 0; i < fields.size(); i++) { cg.append(toLuaString(fv.elementAt(i)), IMG); }
-                        } else {
-                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                                cg.append(toLuaString(fields.get(keys.nextElement())), IMG);
-                            }
-                        }
-                    }
-
-                    f.setItemStateListener(this);
-                    f.append(cg);
-
-                    if (ITEM == null) { ITEM = new Hashtable(); }
-                    if (STATE == null) { STATE = new Hashtable(); }
-                    ITEM.put(cg, new Double(LTYPE));
-                    STATE.put(cg, field.containsKey("root") ? field.get("root") : LUA_NIL);
-                } 
-            } 
-            else if (obj instanceof String) { f.append(toLuaString(obj)); }
-        }
-        
-        private int getNumber(Hashtable table, String key, int fallback) { Object val = table.get(key); if (val instanceof Double) { return ((Double) val).intValue(); } try { return Integer.parseInt(toLuaString(val)); } catch (Exception e) { return fallback; } }
-        private boolean getBoolean(Hashtable table, String key, boolean fallback) { Object val = table.get(key); if (val instanceof Boolean) { return ((Boolean) val).booleanValue(); } return toLuaString(val).equalsIgnoreCase("true") ? true : fallback; } private String getvalue(Hashtable table, String key, String fallback) { return table.containsKey(key) ? toLuaString(table.get(key)) : fallback; } 
-        private String getenv(Hashtable table, String key, String fallback) { return midlet.env(getvalue(table, key, fallback)); }
+        private int getFieldNumber(Hashtable table, String key, int fallback) { Object val = table.get(key); if (val instanceof Double) { return ((Double) val).intValue(); } try { return Integer.parseInt(toLuaString(val)); } catch (Exception e) { return fallback; } }
+        private boolean getFieldBoolean(Hashtable table, String key, boolean fallback) { Object val = table.get(key); if (val instanceof Boolean) { return ((Boolean) val).booleanValue(); } return toLuaString(val).equalsIgnoreCase("true") ? true : fallback; } 
         private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = midlet.replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
 
-        private Object BuildScreen() throws Exception {
-            if (MOD == ALERT) {
-                Alert alert = new Alert(getenv(PKG, "title", midlet.xterm.getTitle()), getenv(PKG, "message", ""), null, null);
-                if (PKG.containsKey("indicator")) { alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); }
+        private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
 
-                Object backObj = PKG.get("back");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null;
-                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
-                alert.addCommand(BACK = new Command(backLabel, Command.BACK, 1));
-
-                Object buttonObj = PKG.get("button");
-                Hashtable buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
-                if (buttonTable != null) { alert.addCommand(USER = new Command(getenv(buttonTable, "label", "OK"), Command.SCREEN, 2)); }
-                
-                Object timeoutObj = PKG.get("timeout");
-                alert.setTimeout(timeoutObj instanceof Double ? ((Double) timeoutObj).intValue() : Alert.FOREVER);
-            
-                this.screen = alert;
-            } 
-            else if (MOD == SCREEN) {
-                Form form = new Form(getenv(PKG, "title", midlet.xterm.getTitle()));
-
-                Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
-                String backLabel = backTable != null ? getenv(backTable, "label", "Back") : "Back";
-                form.addCommand(BACK = new Command(backLabel, Command.OK, 1));
-
-                if (buttonTable != null) { form.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
-
-                Object fieldsObj = PKG.get("fields");
-                if (fieldsObj != null) {
-                    if (fieldsObj instanceof Hashtable) {
-                        Hashtable fields = (Hashtable) fieldsObj;
-
-                        if (isListTable(fields)) { Vector fv = toVector(fields); for (int i = 0; i < fields.size(); i++) { AppendScreen(form, fv.elementAt(i)); } } 
-                        else { for (Enumeration keys = fields.keys(); keys.hasMoreElements();) { AppendScreen(form, fields.get(keys.nextElement())); } }
-                    } 
-                    else { return gotbad("BuildScreen", "fields", "table expected, got " + type(fieldsObj)); }
-                }
-
-                this.screen = form;
-            } 
-            else if (MOD == LIST) {
-                String ListType = getenv(PKG, "type", "implict");
-                List list = new List(getenv(PKG, "title", midlet.xterm.getTitle()), (LTYPE = ListType.equals("exclusive") ? List.EXCLUSIVE : ListType.equals("multiple") ? List.MULTIPLE : List.IMPLICIT));
-
-                Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : null;
-                list.addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1));
-                if (buttonTable != null) { list.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
-
-                Object fieldsObj = PKG.get("fields");
-                if (fieldsObj != null) {
-                    Image IMG = null;
-                    if (PKG.containsKey("icon")) {
-                        if (PKG.get("icon") instanceof Image) { IMG = (Image) PKG.get("icon"); }
-                        else { IMG = midlet.readImg(getenv(PKG, "icon", "")); }
-                    }
-
-                    if (fieldsObj instanceof Hashtable) {
-                        Hashtable fields = (Hashtable) fieldsObj;
-
-                        if (isListTable(fields)) {
-                            Vector fv = toVector(fields);
-
-                            for (int i = 0; i < fields.size(); i++) { list.append(toLuaString(fv.elementAt(i)), IMG); }
-                        } else {
-                            for (Enumeration keys = fields.keys(); keys.hasMoreElements();) {
-                                list.append(toLuaString(fields.get(keys.nextElement())), IMG);
-                            }
-                        }
-                    } else { return gotbad("BuildList", "fields", "table expected, got " + type(fieldsObj)); }
-                }
-
-                this.screen = list;
-            } 
-            else if (MOD == QUEST) {
-                Form form = new Form(getenv(PKG, "title", midlet.xterm.getTitle()));
-                TextField field = new TextField(getenv(PKG, "label", midlet.stdin.getLabel()), getenv(PKG, "content", ""), 256, getQuest(getenv(PKG, "type", "default")));
-                form.append(field);
-
-                Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildQuest", "button", "table expected, got " + type(buttonObj));
-                form.addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.SCREEN, 2));
-
-                if (buttonTable != null) { form.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
-
-                this.INPUT = field;
-                this.screen = form;
-            } 
-            else if (MOD == EDIT) {
-                TextBox box = new TextBox(getenv(PKG, "title", midlet.xterm.getTitle()), getenv(PKG, "content", ""), 31522, getQuest(getenv(PKG, "type", "default")));
-
-                Object backObj = PKG.get("back"), buttonObj = PKG.get("button");
-                Hashtable backTable = (backObj instanceof Hashtable) ? (Hashtable) backObj : null, buttonTable = (buttonObj instanceof Hashtable) ? (Hashtable) buttonObj : (Hashtable) gotbad("BuildEdit", "button", "table expected, got " + type(buttonObj));
-                box.addCommand(BACK = new Command(backTable != null ? getenv(backTable, "label", "Back") : "Back", Command.BACK, 1));
-                if (buttonTable != null) { box.addCommand(USER = new Command(getenv(buttonTable, "label", "Menu"), Command.SCREEN, 2)); }
-
-                this.screen = box;
-            }
-
-            this.screen.setCommandListener(this);
-            return this.screen;
-        }
         public void commandAction(Command c, Displayable d) {
             try {
-                if (c == BACK) {
-                    midlet.processCommand("xterm", true, id, PID, stdout, father);
-    
-                    Hashtable backTable = (Hashtable) PKG.get("back");
-                    if (backTable != null) {
-                        Object back = backTable.get("root");
-                        if (back instanceof LuaFunction) { ((LuaFunction) back).call(new Vector()); } 
-                        else if (back != null) { midlet.processCommand(toLuaString(back), true, id, PID, stdout, father); }
-                    }
-                } 
-                else if (c == USER || c == List.SELECT_COMMAND) {
-                    Object fire = PKG.get("button") == null ? null : ((Hashtable) PKG.get("button")).get("root");
-    
-                    if (MOD == ALERT) {
-                        midlet.processCommand("xterm", true, id, PID, stdout, father);
-    
-                        if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } 
-                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father); }
-                    } 
-                    else if (MOD == QUEST) {
-                        String value = INPUT.getString().trim();
-                        if (!value.equals("")) {
-                            midlet.processCommand("xterm", true, id, PID, stdout, father);
-                            if (fire instanceof LuaFunction) {
-                                Vector result = new Vector();
-                                result.addElement(midlet.env(value));
-                                ((LuaFunction) fire).call(result);
-                            } else if (fire != null) {
-                                midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
-                                midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father);
-                            }
-                        }
-                    } 
-                    else if (MOD == EDIT) {
-                        String value = ((TextBox) screen).getString().trim();
-                        if (!value.equals("")) {
-                            midlet.processCommand("xterm", true, id, PID, stdout, father);
-                            if (fire instanceof LuaFunction) {
-                                Vector result = new Vector();
-                                result.addElement(midlet.env(value));
-                                ((LuaFunction) fire).call(result);
-                            } else if (fire != null) {
-                                midlet.attributes.put(getenv(PKG, "key", ""), midlet.env(value));
-                                midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father);
-                            }
-                        }
-                    } 
-                    else if (MOD == LIST) {
-                        List list = (List) screen;
-                        
-                        if (LTYPE == List.MULTIPLE) {
-                            Vector args = new Vector();
-                            for (int i = 0; i < list.size(); i++) { if (list.isSelected(i)) { args.addElement(midlet.env(list.getString(i))); } }
-    
-                            if (args.size() > 0) {
-                                midlet.processCommand("xterm", true, id, PID, stdout, father);
-                                if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(args); } 
-                                else {
-                                    for (int i = 0; i < args.size(); i++) {
-                                        String key = args.elementAt(i).toString();
-                                        midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, id, PID, stdout, father);
-                                    }
-                                }
-                            }
-                        } else {
-                            int index = list.getSelectedIndex();
-                            if (index >= 0) {
-                                midlet.processCommand("xterm", true, id, PID, stdout, father);
-                                String key = list.getString(index);
-    
-                                if (fire instanceof LuaFunction) {
-                                    Vector args = new Vector();
-                                    args.addElement(midlet.env(key));
-                                    ((LuaFunction) fire).call(args);
-                                } else if (fire != null) { midlet.processCommand(getvalue(PKG, key, "log add warn An error occurred, '" + key + "' not found"), true, id, PID, stdout, father); }
-                            }
-                        }
-                    }
-                    else if (MOD == SCREEN) {
-                        Vector formData = new Vector();
-                        if (screen instanceof Form) {
-                            Form form = (Form) screen;
-                            for (int i = 0; i < form.size(); i++) {
-                                Item item = form.get(i);
+                if (cmds.containsKey(c) && cmds.get(c) instanceof LuaFunction) {
+                    Vector args = new Vector();
+                    if (d instanceof List) {
+                        List list = (List) d;
+                        for (int i = 0; i < list.size(); i++) { if (list.isSelected(i)) { args.addElement(list.getString(i)); } }
+                    } else if (d instanceof TextBox) {
+                        args.addElement(((TextBox) d).getString());
+                    } else if (d instanceof Form) {
+                        Form form = (Form) d;
+                        for (int i = 0; i < form.size(); i++) {
+                            Item item = form.get(i);
 
-                                if (item instanceof TextField) { formData.addElement(((TextField) item).getString()); } 
-                                else if (item instanceof Gauge) { formData.addElement(new Double(((Gauge) item).getValue())); }
-                                else if (item instanceof ChoiceGroup) {
-                                    ChoiceGroup cg = (ChoiceGroup) item;
+                            if (item instanceof TextField) { args.addElement(((TextField) item).getString()); } 
+                            else if (item instanceof Gauge) { args.addElement(new Double(((Gauge) item).getValue())); }
+                            else if (item instanceof ChoiceGroup) {
+                                ChoiceGroup cg = (ChoiceGroup) item;
 
-                                    if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) {
-                                        Hashtable selTable = new Hashtable();
-                                        for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
+                                if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) {
+                                    Hashtable selTable = new Hashtable();
+                                    for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
 
-                                        formData.addElement(selTable);
-                                    } else {
-                                        int sel = cg.getSelectedIndex();
-                                        formData.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
-                                    }
+                                    args.addElement(selTable);
+                                } else {
+                                    int sel = cg.getSelectedIndex();
+                                    args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
                                 }
                             }
                         }
-                        
-                        midlet.processCommand("xterm", true, id, PID, stdout, father);
-                        if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(formData); } 
-                        else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father); }
                     }
+
+                    ((LuaFunction) cmds.get(c)).call(args);
                 }
             }
             catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } 
             catch (Error e) { midlet.sys.remove(PID); }
-        }
-        public void commandAction(Command c, Item item) { try { Object fire = ITEM.get(item); if (fire instanceof LuaFunction) { ((LuaFunction) fire).call(new Vector()); } else if (fire != null) { midlet.processCommand(toLuaString(fire), true, id, PID, stdout, father); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
-        public void itemStateChanged(Item item) {
-            try {
-                Object fire = STATE.get(item); 
-                
-                if (fire == LUA_NIL) { }
-                else if (fire instanceof LuaFunction) { 
-                    Vector args = new Vector();
-
-                    if (item instanceof ChoiceGroup) {
-                        ChoiceGroup cg = (ChoiceGroup) item;
-
-                        if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) { for (int j = 0; j < cg.size(); j++) { args.addElement(new Boolean(cg.isSelected(j))); } } 
-                        else { int sel = cg.getSelectedIndex(); args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL); }
-                    }
-                    else if (item instanceof Gauge) { args.addElement(new Double(((Gauge) item).getValue())); }
-
-                    ((LuaFunction) fire).call(args); 
-                } 
-                else if (fire != null) { midlet.print(toLuaString(fire), stdout); } 
-            } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
         }
     }
 } 

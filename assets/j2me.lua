@@ -1,6 +1,7 @@
 os = {
     execute = function (command, sudo) return 0 end,
     getenv = function (key) return nil or key end,
+    setenv = function (key, value) return value end,
     clock = function () end,
     setlocale = function (locale) end,
     exit = function (status) os.exit(status, true) end,
@@ -64,11 +65,13 @@ string = {
 
 graphics = {
     display = function (screen) end,
-    Alert = function (config) end,
-    BuildScreen = function (config) end,
-    BuildList = function (config) end,
-    BuildQuest = function (config) end,
-    BuildEdit = function (config) end,
+    new = function (type, title, ...)
+        if type == "alert" then
+        elseif type == "screen" then
+        elseif type == "alert" then
+        elseif type == "edit" then
+        end
+    end,
     SetTitle = function (title) end,
     WindowTitle = function (title, screen) end,
     SetTicker = function (text) end,

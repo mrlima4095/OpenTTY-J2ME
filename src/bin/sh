@@ -1,2 +1,20 @@
-#!/bin/sh
-exec title cd buff clear "cat /etc/motd" "clear history"
+#!/bin/lua
+
+for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["HOSTNAME"] = "localhost", ["SHELL"] = "/bin/sh" }) do
+    os.setenv(k, v)
+end
+for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do
+    os.setenv(k, getAppProperty("/microedition." .. v))
+end
+
+local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
+local stdout = graphics.new("buffer")
+
+--[[
+    // |
+    String[] KEYS = { "TYPE", "CONFIG", "PROFILE", "LOCALE" }, SYS = { "platform", "configuration", "profiles", "locale" };
+    for (int i = 0; i < KEYS.length; i++) { attributes.put(KEYS[i], System.getProperty("microedition." + SYS[i])); }
+    // |
+    if (runScript(read("/etc/init"), 0, "1", this.stdout, globals) != 0) { destroyApp(true); }
+    setLabel();
+]]

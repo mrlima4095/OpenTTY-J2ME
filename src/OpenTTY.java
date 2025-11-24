@@ -25,22 +25,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
-    public Form xterm = new Form(null);
-    public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
-    public StringItem stdout = new StringItem("", "");
     public Command BACK = new Command("Back", Command.BACK, 1), EXECUTE = new Command("Run", Command.OK, 0);
     // |
     // MIDlet Loader
     public void startApp() {
         if (sys.containsKey("1")) { }
         else {
-            attributes.put("PATCH", "Fear Fog"); attributes.put("VERSION", getAppProperty("MIDlet-Version")); attributes.put("RELEASE", "stable"); attributes.put("XVERSION", "0.7"); attributes.put("HOSTNAME", "localhost"); attributes.put("SHELL", "/bin/sh"); globals.put("PWD", "/home/");
-            // |
-            String[] KEYS = { "TYPE", "CONFIG", "PROFILE", "LOCALE" }, SYS = { "platform", "configuration", "profiles", "locale" };
-            for (int i = 0; i < KEYS.length; i++) { attributes.put(KEYS[i], System.getProperty("microedition." + SYS[i])); }
-            // |
-            if (runScript(read("/etc/init"), 0, "1", this.stdout, globals) != 0) { destroyApp(true); }
-            setLabel();
+            
             // |
             if (username.equals("") || MIDletControl.passwd().equals("")) { new MIDletControl(); }
             else { run("/home/.initrc", new String[] { "/home/.initrc" }, 1000, "1", this.stdout, globals); }
@@ -63,12 +54,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
     public int setLabel() { stdin.setLabel(username + " " + ((String) globals.get("PWD")) + " " + (username.equals("root") ? "#" : "$")); return 0; }
     public class MIDletControl implements CommandListener, Runnable {
-        public static final int HISTORY = 1, EXPLORER = 2, MONITOR = 3, PROCESS = 4, SIGNUP = 5, REQUEST = 6, BIND = 11, BG = 12, NANO = 13;
-        public static final String impl = "full";
+        public static final int HISTORY = 1, PROCESS = 4, SIGNUP = 5, REQUEST = 6, BIND = 11, BG = 12;
 
         private int MOD = -1, COUNT = 1, id = 1000, start;
-        private boolean enable = true, asked = false, keep = false, asking_user = username.equals(""), asking_passwd = passwd().equals(""), isOpen = true, closed = false;
-        private String command = null, pfilter = "", PID = genpid(), DB, address, port, node, proc_name, filename;
+        private boolean enable = true, asking_user = username.equals(""), asking_passwd = passwd().equals("");
+        private String command = null, pfilter = "", PID = genpid(), DB, address, node, proc_name, filename;
         private Vector history = (Vector) getobject("1", "history");
         private Hashtable sessions = (Hashtable) getobject("1", "sessions"), PKG, scope;
         private Displayable previous;
@@ -331,67 +321,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id, stdout, scope); } else { load(); } }
         private void load() {
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
-            else if (MOD == EXPLORER) {
-                String path = ((String) scope.get("PWD"));
-
-                if (attributes.containsKey("J2EMU")) { }
-                else { preview.setTitle(path); }
-
-                preview.deleteAll();
-                Vector stack = new Vector();
-                if (path.equals("/")) { }
-                else { preview.append("..", null); }
-
-                try {
-                    if (path.equals("/tmp/")) { for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) { String file = (String) KEYS.nextElement(); if (file.startsWith(".")) { } else { preview.append(file, null); } } }
-                    else if (path.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { preview.append((String) roots.nextElement(), null); } }
-                    else if (path.startsWith("/mnt/")) {
-                        FileConnection CONN = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
-                        Vector dirs = new Vector(), files = new Vector();
-
-                        for (Enumeration content = CONN.list(); content.hasMoreElements();) {
-                            String name = (String) content.nextElement();
-
-                            if (stack.contains(name)) { }
-                            else if (name.endsWith("/")) { dirs.addElement(name); }
-                            else { files.addElement(name); }
-                        }
-
-                        while (!dirs.isEmpty()) { preview.append(getFirstString(dirs), null); }
-                        while (!files.isEmpty()) { preview.append(getFirstString(files), null); }
-
-                        CONN.close();
-                    } 
-                    else if (path.equals("/bin/") || path.equals("/etc/") || path.equals("/lib/")) {
-                        String content = loadRMS("OpenRMS", path.equals("/bin/") ? 3 : path.equals("/etc/") ? 5 : 4);
-                        int index = 0;
-
-                        while (true) {
-                            int start = content.indexOf("[\1BEGIN:", index);
-                            if (start == -1) { break; }
-
-                            int end = content.indexOf("\1]", start);
-                            if (end == -1) { break; }
-
-                            String filename = content.substring(start + "[\1BEGIN:".length(), end);
-                            if (filename.startsWith(".") || stack.contains(filename)) { } else { preview.append(filename, null); stack.addElement(filename); }
-
-                            index = content.indexOf("[\1END\1]", end);
-                            if (index == -1) { break; }
-
-                            index += "[\1END\1]".length();
-                        }
-                    }
-                    else if (path.startsWith("/home/")) { String[] recordStores = RecordStore.listRecordStores(); for (int i = 0; i < recordStores.length; i++) { if (!recordStores[i].startsWith(".")) { preview.append(recordStores[i], null); } } }
-
-                    Vector files = (Vector) fs.get(path);
-                    if (files != null) { for (int i = 0; i < files.size(); i++) { String f = (String) files.elementAt(i); if (f != null && !f.equals("..") && !f.equals("/") && !stack.contains(f)) { preview.append(f, null); stack.addElement(f); } } }
-                } catch (IOException e) { }
-            } 
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = sys.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) ((Hashtable) sys.get(PID)).get("name"); if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); } } }
         }
 
-        private void back() { if (sys.containsKey(PID) && !asked) { confirm = new Alert("Background Process", "Keep this process running in background?", null, AlertType.WARNING); confirm.addCommand(YES = new Command("Yes", Command.OK, 1)); confirm.addCommand(NO = new Command("No", Command.BACK, 1)); confirm.setCommandListener(this); asked = true; display.setCurrent(confirm); } else { goback(); } }
         private void goback() { if (previous != null && !aliases.containsKey("xterm")) { display.setCurrent(this.previous); } else { processCommand("xterm", enable, id, PID, stdout, scope); } }
 
         public static String passwd() { return loadRMS("OpenRMS", 2); }
@@ -1089,7 +1021,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("title")) { display.getCurrent().setTitle(argument); }
         else if (mainCommand.equals("font")) { this.stdout.setFont(genFont(argument.equals("") ? "default" : argument)); }
         else if (mainCommand.equals("tick")) { Displayable current = display.getCurrent(); current.setTicker(argument.equals("") ? null : new Ticker(argument)); }
-        else if (mainCommand.equals("gauge")) { Alert alert = new Alert(xterm.getTitle(), argument, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING)); display.setCurrent(alert); }
         // |
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else if (sys.containsKey("2")) { ((Hashtable) getobject("2", "saves")).put(argument, display.getCurrent()); } else { return 69; } }
         else if (mainCommand.equals("load") || mainCommand.equals("unset")) {
