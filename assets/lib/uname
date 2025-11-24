@@ -1,0 +1,24 @@
+#!/bin/lua
+
+
+if not arg[1] then
+elseif arg[1] == "-a" or arg[1] == "--all" then
+    print(os.getenv("TYPE") .. " (OpenTTY " .. os.getenv("VERSION") .. ") main/" .. os.getenv("RELEASE") .. " " .. java.midlet.build .. " - " .. os.getenv("CONFIG") .. os.getenv("PROFILE"))
+elseif arg[1] == "-i" then
+    print(os.getenv("TYPE"))
+elseif arg[1] == "-r" or arg[1] == "--release" then
+    print(os.getenv("VERSION"))
+elseif arg[1] == "-v" or arg[1] == "--build" then
+    print(java.midlet.build)
+elseif arg[1] == "-s" then
+    print("J2ME")
+elseif arg[1] == "-m" then
+    print(os.getenv("PROFILE"))
+elseif arg[1] == "-p" then
+    print(os.getenv("CONFIG"))
+elseif arg[1] == "-n" then
+    print(os.getenv("HOSTNAME") or "localhost")
+else
+    print("uname: " .. arg[1] .. ": not found")
+    os.exit(127)
+end

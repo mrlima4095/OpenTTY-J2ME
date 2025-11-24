@@ -712,9 +712,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // | (Navigation)
         else if (mainCommand.equals("pwd")) { print((String) scope.get("PWD"), stdout); }
-        else if (mainCommand.equals("popd")) { Vector stack = (Vector) getobject("1", "stack"); if (stack.isEmpty()) { print("popd: empty stack", stdout); } else { scope.put("PWD", (String) stack.lastElement()); stack.removeElementAt(stack.size() - 1); print(readStack(scope), stdout); } }
         else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
-            String pwd = (String) scope.get("PWD"), old_pwd = pwd;
+            String pwd = (String) scope.get("PWD");
             if (argument.equals("") && mainCommand.equals("cd")) { scope.put("PWD", "/home/"); } 
             else if (argument.equals("")) { print(readStack(scope) == null || readStack(scope).length() == 0 ? "pushd: missing directory" : readStack(scope), stdout); }
             else if (argument.equals("..")) { 
@@ -744,9 +743,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 else { print(mainCommand + ": " + basename(TARGET) + ": not accessible", stdout); return 127; } 
 
-            } 
-
-            if (mainCommand.equals("pushd")) { ((Vector) getobject("1", "stack")).addElement(old_pwd); print(readStack(scope), stdout); }
+            }
         }
         // | (Tools)
         else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = deleteFile(args[i], id, stdout); if (STATUS != 0) { return STATUS; } } } }
