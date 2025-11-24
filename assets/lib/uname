@@ -2,8 +2,9 @@
 
 
 if not arg[1] then
+    print("OpenTTY")
 elseif arg[1] == "-a" or arg[1] == "--all" then
-    print(os.getenv("TYPE") .. " (OpenTTY " .. os.getenv("VERSION") .. ") main/" .. os.getenv("RELEASE") .. " " .. java.midlet.build .. " - " .. os.getenv("CONFIG") .. os.getenv("PROFILE"))
+    print(os.getenv("TYPE") .. " (OpenTTY " .. os.getenv("VERSION") .. ") main/" .. os.getenv("RELEASE") .. " " .. java.midlet.build .. " - " .. os.getenv("CONFIG") .. " " .. os.getenv("PROFILE"))
 elseif arg[1] == "-i" then
     print(os.getenv("TYPE"))
 elseif arg[1] == "-r" or arg[1] == "--release" then
