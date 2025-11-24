@@ -1009,7 +1009,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         else if (app.equals("audio")) { print("usage: audio play [file]", stdout); return 1; }
-        else if (app.equals("bruteforce")) { }
         else { 
             while (sys.containsKey(pid) || pid == null || pid.length() == 0) { pid = genpid(); } 
             
