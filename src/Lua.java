@@ -1563,10 +1563,10 @@ public class Lua {
                 } 
                 else if (pwd.equals("/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
                     String content = midlet.loadRMS("OpenRMS", pwd.equals("/bin/") ? 3 : pwd.equals("/etc/") ? 5 : 4);
-                    int index = 0;
+                    int i = 0;
 
                     while (true) {
-                        int start = content.indexOf("[\1BEGIN:", index);
+                        int start = content.indexOf("[\1BEGIN:", i);
                         if (start == -1) { break; }
 
                         int end = content.indexOf("\1]", start);
@@ -1575,10 +1575,10 @@ public class Lua {
                         String filename = content.substring(start + "[\1BEGIN:".length(), end);
                         if ((all || !filename.startsWith(".")) && !list.contains(filename)) { list.put(new Double(index), filename); index++; }
 
-                        index = content.indexOf("[\1END\1]", end);
-                        if (index == -1) { break; }
+                        i = content.indexOf("[\1END\1]", end);
+                        if (i == -1) { break; }
 
-                        index += "[\1END\1]".length();
+                        i += "[\1END\1]".length();
                     }
                 }
                 else if (pwd.equals("/home/")) { 
@@ -1586,7 +1586,10 @@ public class Lua {
                     if (files != null) { 
                         for (int i = 0; i < files.length; i++) { 
                             String file = files[i]; 
-                            if ((all || !file.startsWith(".")) && !list.contains(file)) { list.put(new Double(index), file); index++; } 
+                            if ((all || !file.startsWith(".")) && !list.contains(file)) { 
+                                list.put(new Double(index), file); 
+                                index++; 
+                            } 
                         } 
                     } 
                 }
