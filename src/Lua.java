@@ -1975,9 +1975,7 @@ public class Lua {
                     }
                     
                     Hashtable result = new Hashtable();
-                    int index = 1;
-                    int startPos = 0;
-                    int sepLength = separator.length();
+                    int index = 1, startPos = 0, sepLength = separator.length();
                     
                     while (startPos < text.length()) {
                         int foundPos = text.indexOf(separator, startPos);
