@@ -687,7 +687,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // | (Navigation)
         else if (mainCommand.equals("pwd")) { print((String) scope.get("PWD"), stdout); }
-        else if (mainCommand.equals("cd") || mainCommand.equals("pushd")) { 
+        else if (mainCommand.equals("cd")) { 
             String pwd = (String) scope.get("PWD");
             if (argument.equals("") && mainCommand.equals("cd")) { scope.put("PWD", "/home/"); } 
             else if (argument.equals("")) { print(readStack(scope) == null || readStack(scope).length() == 0 ? "pushd: missing directory" : readStack(scope), stdout); }
