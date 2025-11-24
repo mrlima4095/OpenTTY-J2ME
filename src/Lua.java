@@ -1225,8 +1225,8 @@ public class Lua {
                     Object cached = requireCache.get(name);
                     if (cached != null) { return (cached == LUA_NIL) ? null : cached; }
 
-                    String code = midlet.getcontent(name);
-                    if (code.equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".lua")).equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".so")).equals("")) { throw new Exception("module '" + code + "' not found"); } } } 
+                    String code = midlet.getcontent(name, scope);
+                    if (code.equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".lua", scope)).equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".so", scope)).equals("")) { throw new Exception("module '" + code + "' not found"); } } } 
 
                     Object obj = exec(code);
                     requireCache.put(name, (obj == null) ? LUA_NIL : obj);
@@ -1405,7 +1405,7 @@ public class Lua {
             else if (MOD == GETUID) { return new Double(id); }
             // Package: io
             else if (MOD == READ) {
-                if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? midlet.getcontent((String) stdout) : ""; }
+                if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? midlet.getcontent((String) stdout, scope) : ""; }
                 else {
                     Object arg = args.elementAt(0);
 
@@ -1421,7 +1421,7 @@ public class Lua {
                         return new String(buffer, 0, bytesRead, "UTF-8");
                     }
                     else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
-                    else { return midlet.getcontent(toLuaString(arg)); } 
+                    else { return midlet.getcontent(toLuaString(arg), scope); } 
                 }
             }
             else if (MOD == WRITE) {
@@ -1466,13 +1466,13 @@ public class Lua {
                         ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
                         byte[] bytes = baos.toByteArray();
                         String filename = target != null ? toLuaString(target) : "/dev/stdout";
-                        if (mode) { return new Double(midlet.write(filename, midlet.getcontent(filename) + new String(bytes, "UTF-8"), id)); }
+                        if (mode) { return new Double(midlet.write(filename, midlet.getcontent(filename, scope) + new String(bytes, "UTF-8"), id)); }
                         else { return new Double(midlet.write(filename, bytes, id)); }
                     }
                     else {
                         String content = toLuaString(buffer);
                         String filename = target != null ? toLuaString(target) : "/dev/stdout";
-                        return new Double(midlet.write(filename, mode ? midlet.getcontent(filename) + content : content, id));
+                        return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, scope) + content : content, id));
                     }
                 }
             }
