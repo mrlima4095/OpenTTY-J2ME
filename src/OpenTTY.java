@@ -315,7 +315,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (sessions.containsKey(port)) { print("[-] Port '" + port + "' is unavailable", stdout); return; }
 
                 Hashtable proc = genprocess(proc_name, id, null), scope = new Hashtable();
-                proc.put("port", port); sys.put(PID, proc); sessions.put(port, "nobody");
+                scope.put("PWD", this.scope.get("PWD")); proc.put("port", port); sys.put(PID, proc); sessions.put(port, "nobody");
 
                 while (sys.containsKey(PID)) {
                     try {
