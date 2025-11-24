@@ -1355,7 +1355,7 @@ public class Lua {
                     if (args.size() > 1) {
                         if (args.elementAt(1) == null) { }
                         else {
-                            midlet.attributes.put(toLuaString(args.elementAt(0), toLuaString(args.elementAt(1))));
+                            midlet.attributes.put(toLuaString(args.elementAt(0)), toLuaString(args.elementAt(1)));
                             return new Double(0);
                         }
                     }
