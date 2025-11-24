@@ -144,8 +144,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             if (d == box && MOD == PROCESS) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
             if (d == confirm) {
-                if (MOD == NC) { if (c == YES) { keep = true; } else { sys.remove(PID); } goback(); }
-                else if (MOD == NANO) {
+                if (MOD == NANO) {
                     if (c == YES) {
                         if (filename == null || filename.equals("")) {
                             monitor = new Form("Nano Editor");
