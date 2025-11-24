@@ -183,7 +183,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { goback(); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected, true, id, PID, stdout, scope); } } 
             else if (MOD == EXPLORER) {
-                String path = ((String) scope.get("PWD"))
+                String path = ((String) scope.get("PWD"));
                 String selected = preview.getString(preview.getSelectedIndex());
 
                 if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { if (selected != null) { processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false, id, PID, stdout, scope); if (display.getCurrent() == preview) { reload(); } setLabel(); } } 
