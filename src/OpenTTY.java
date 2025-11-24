@@ -573,7 +573,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     print("trap: " + args[1] + ": invalid signal specification", stdout);
                 }
             }
-        }
+        } 
         else if (mainCommand.equals("svchost")) {
             if (argument.equals("")) { }
             else if (argument.equals("set")) { print("svchost: set: in dev", stdout); }
