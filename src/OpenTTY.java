@@ -112,28 +112,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (args == null || args.length() == 0) { return; }
             else if (MOD == BIND) { String[] argv = splitArgs(args); port = argv[0]; DB = argv.length > 1 ? argv[1] : ""; proc_name = argv.length > 2 ? argv[2] : "bind"; new Thread(this, "Bind").start(); } 
-            else {
-                Hashtable proc = genprocess("remote", id, null);
-
-                address = args; this.previous = display.getCurrent();
-                try { CONN = (SocketConnection) Connector.open("socket://" + address); IN = CONN.openInputStream(); OUT = CONN.openOutputStream(); } 
-                catch (Exception e) { print(getCatch(e), stdout); return; }
-
-                monitor = new Form(xterm.getTitle());
-                monitor.append(console = new StringItem("", ""));
-                monitor.append(remotein = new TextField("Remote (" + split(address, ':')[0] + ")", "", 256, TextField.ANY));
-                monitor.addCommand(EXECUTE);
-                monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2));
-                monitor.addCommand(CLEAR = new Command("Clear", Command.SCREEN, 2));
-                monitor.addCommand(VIEW = new Command("View info", Command.SCREEN, 2));
-                monitor.setCommandListener(this);
-
-                proc.put("socket", CONN); proc.put("in", IN); proc.put("out", OUT); proc.put("screen", monitor);
-                display.setCurrent(monitor);
-
-                sys.put(PID, proc);
-                new Thread(this, "Remote").start();
-            }
+            
         }
         public MIDletControl(String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = BG; this.command = command; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
         
