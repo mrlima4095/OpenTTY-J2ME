@@ -1,8 +1,16 @@
 #!/bin/lua
 
+local function ping_http(url)
+
+end
+local function ping_socket(uri)
+
+end
 
 if arg[1] then
-
+    if string.sub(arg[1], 1, #"http://") == "http://" or string.sub(arg[1], 1, #"https://") == "https://" then
+        ping_http(arg[1])
+    end
 else print("ping [address]")
 end
 
