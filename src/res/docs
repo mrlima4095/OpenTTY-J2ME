@@ -1,53 +1,7 @@
 OpenTTY $VERSION - $PATCH  
 Copyright (C) 2025 - Mr. Lima
 
-[ Commands Overview ]
 
-Network API:
-  bind  curl  fw  gaddr  gobuster
-  ifconfig  nc  netstat  prscan
-  ping  pong  query  wget
-
-File API:
-  about  add  audio  basename  cat
-  cd  chmod  clone  cp  dir  du
-  find  get getopt  getty  grep
-  hash  head  html  install  json
-  ls  lsblk  mkdir  mount  nano
-  open  ph2s pinc  pjnc  pwd  read
-  rm  sed  tail  touch  wc
-
-Session API:
-  login  logout  passwd  sudo  su
-  who  whoami
-
-Process API:
-  bg  exec  execute  kill  ps  
-  sleep  start  stop  htop  top
-
-MIDlet Builtins:
-  alias  builtin  buff  call  case  
-  clear  date  debug  echo  env
-  eval  export  false  help  history
-  hostname  hostid  locale  log
-  logcat  man  pkg  report  return
-  set  sh  title  true  tty  uname
-  unalias  unset  warn  
-
-Others API: 
-  audio  java  lua prg  wrl  x11
-
-
-[ Manual ]
-
-  To read more usage command 'man [page]'. You can replace PAGE by a command or a default package.
-
-[ Package Manager ] 
-
-  Run 'import /lib/yang' to load PackJ.  
-  Usage: yang
-
-  The downloaded packages will be installed at home folder. 
 
 [ Web Project ]
 
