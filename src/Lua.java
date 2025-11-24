@@ -1421,7 +1421,26 @@ public class Lua {
             else if (MOD == CHDIR) {
                 if (args.isEmpty()) { return father.get("PWD"); }
                 else {
-                    
+                    String pwd = (String) father.get("PWD"), target = toLuaString(args.elementAt(0));
+
+                    if (target.equals("")) { father.put("PWD", "/home/"); }
+                    else if (target.equals("..")) {
+                        if (pwd.equals("/")) { return new Double(1); }
+                        else {
+                            int lastSlashIndex = pwd.lastIndexOf('/', pwd.endsWith("/") ? pwd.length() - 2 : pwd.length() - 1);
+                            father.put("PWD", (lastSlashIndex <= 0) ? "/" : pwd.substring(0, lastSlashIndex + 1));
+                        }
+                    }
+                    else if (midlet.fs.containsKey(target)) { father.put("PWD", target); }
+                    else if (target.startsWith("/mnt/")) {
+                        FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ); 
+                        if (fc.exists() && fc.isDirectory()) { father.put("PWD", target); } 
+                        else { fc.close(); return new Double(fc.exists() ? 5 : 127); }
+
+                        fc.close(); 
+                    }
+
+                    return new Double(0);
                 }
             }
             // Package: io
