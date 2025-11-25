@@ -474,7 +474,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument), xterm.getTitle()), html2text(env(argument))); } }
         // | (Window Modificators)
         else if (mainCommand.equals("title")) { xterm.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument.equals("hide") ? null : argument); }
-        else if (mainCommand.equals("tick")) { if (argument.equals("label")) { print(display.getCurrent().getTicker().getString(), stdout); } else { return xcli("tick " + argument, id, stdout, scope); } }
         // |
         // | -=-=-=-=-=-=-=-=-=-=-
         // API 003 - File System
