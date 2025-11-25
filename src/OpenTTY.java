@@ -32,7 +32,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // MIDlet Loader
     public void startApp() {
         warn("Ok", "Carregou o startApp();");
-        if (sys.containsKey("1")) { }
+        /*if (sys.containsKey("1")) { }
         else {
             Lua lua = new Lua(this, 0, stdout, globals);
             start("sh", 0, null, null, null, globals);
@@ -40,7 +40,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable arg = new Hashtable(); arg.put(new Double(0), "/bin/sh");
             
             lua.run("1", "sh", getprocess("1"), read("/bin/sh"), arg); 
-        }
+        }*/
     }
     // |
     // | (Triggers)
@@ -48,11 +48,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { notifyDestroyed(); } // false = user | true = system
     // |
     // | (Main Listener)
-    public void commandAction(Command c, Displayable d) {
-        if (c == BACK) { processCommand("xterm", true, 1000, "1", stdout, globals); }
-        else if (c == EXECUTE) { String command = stdin.getString().trim(); add2History(command); stdin.setString(""); processCommand(command, true, 1000, "1", stdout, globals); setLabel(); } 
-        else { if (sys.containsKey("2")) { Hashtable cmds = (Hashtable) getobject("2", "buttons"); if (cmds.containsKey(c)) { processCommand((String) cmds.get(c), true, 1000, "1", stdout, globals); } } }
-    }
+    public void commandAction(Command c, Displayable d) { }
     // |
     // Control Thread
     public OpenTTY getInstance() { return this; }
