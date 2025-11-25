@@ -952,7 +952,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (IN == null) { print("audio: " + basename(argument) + ": not found", stdout); return 127; }
                     if (sys.containsKey("3")) { audio("stop", id, pid, stdout, scope); }
                     
-                    Player player = Manager.createPlayer(IN, getMimeType(argument)); 
+                    Player player = Manager.createPlayer(IN, "mp3"); 
                     player.prefetch(); player.start(); 
 
                     Hashtable proc = genprocess("audio", id, gensignals("audio stop")); 
