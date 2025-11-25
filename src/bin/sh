@@ -8,13 +8,9 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
 end
 
 local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
-local stdout = graphics.new("buffer", { value = io.read("/etc/motd") })
-
 local execute = graphics.new("command", { label = "Run", type = "ok", priority = 0 })
 
-io.setstdout(stdout)
-
-graphics.append(xterm, stdout)
+graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
 graphics.addCommand(xterm, execute)
 graphics.handler(xterm, {
