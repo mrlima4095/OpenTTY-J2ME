@@ -31,8 +31,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Loader
     public void startApp() {
-        warn("Ok", "Carregou o startApp();");
-        /*if (sys.containsKey("1")) { }
+        if (sys.containsKey("1")) { }
         else {
             Lua lua = new Lua(this, 0, stdout, globals);
             start("sh", 0, null, null, null, globals);
@@ -40,7 +39,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             Hashtable arg = new Hashtable(); arg.put(new Double(0), "/bin/sh");
             
             lua.run("1", "sh", getprocess("1"), read("/bin/sh"), arg); 
-        }*/
+        }
     }
     // |
     // | (Triggers)
