@@ -20,6 +20,9 @@ for k,v in pairs({
     os.setenv(k, getAppProperty("/microedition." .. v))
 end
 
+os.setenv("PATCH", "Fear Fog")
+os.setenv("VERSION", getAppProperty("MIDlet-Version"))
+
 print("Iniciando OpenTTY " .. os.getenv("VERSION"))
 
 -- Montar sistema de arquivos
