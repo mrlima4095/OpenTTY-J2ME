@@ -34,6 +34,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (sys.containsKey("1")) { }
         else {
             Hashtable proc = genprocess("sh", 0, gensignals("exit"));
+            Hashtable sessions = new Hashtable(); 
+            sessions.put(pid, "127.0.0.1"); 
+            proc.put("stack", new Vector()); 
+            proc.put("history", new Vector()); 
+            proc.put("sessions", sessions); 
+            proc.put("servers", new Hashtable());
             sys.put("1", proc);
             Lua lua = new Lua(this, 0, stdout, globals);
             
