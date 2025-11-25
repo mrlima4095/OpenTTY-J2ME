@@ -110,8 +110,8 @@ public class Lua {
             
             while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
-        catch (Exception e) { midlet.warn(midlet.getCatch(e), stdout); status = 1; } 
-        catch (Error e) { if (e.getMessage() != null) { midlet.warn(e.getMessage(), stdout); } status = 1; }
+        catch (Exception e) { midlet.warn("Exception", midlet.getCatch(e)); status = 1; } 
+        catch (Error e) { if (e.getMessage() != null) { midlet.warn("Error", e.getMessage()); } status = 1; }
 
         ITEM.put("status", status);
         return ITEM;
