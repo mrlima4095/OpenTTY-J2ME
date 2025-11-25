@@ -538,7 +538,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
         }
         // | (File)
-        else if (mainCommand.equals("nano")) { new MIDletControl(argument, enable, id, stdout, scope); }
         else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i], scope), stdout); } } }
         else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1], scope)); } }
         else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0], scope); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, null) : 10, LINES.length); for (int i = 0; i < COUNT; i++) { print(LINES[i], stdout); } } }
