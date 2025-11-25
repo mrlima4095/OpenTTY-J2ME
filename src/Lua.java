@@ -1897,6 +1897,7 @@ public class Lua {
                         StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                         
                         si.setFont(midlet.genFont(getFieldValue(field, "style", "default")));
+                    }
                 }
                 else { return gotbad(1, "new", "invalid type: " + type); } 
             }
@@ -2300,6 +2301,6 @@ public class Lua {
             } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
         }
     }
-} 
+}
 // |
 // EOF
