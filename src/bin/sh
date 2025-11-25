@@ -7,7 +7,7 @@ for k,v in pairs({
     ["HOSTNAME"] = "localhost",
     ["SHELL"] = "/bin/sh"
 }) do
-    os.setenv(k, v)
+    print(k, v)
 end
 
 for k,v in pairs({ 
@@ -16,7 +16,7 @@ for k,v in pairs({
     ["PROFILE"] = "profiles", 
     ["LOCALE"] = "locale" 
 }) do
-    os.setenv(k, getAppProperty("/microedition." .. v))
+    print(getAppProperty("/microedition." .. v))
 end
 
 
