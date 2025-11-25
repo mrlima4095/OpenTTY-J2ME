@@ -1365,7 +1365,7 @@ public class Lua {
                 return (mt == LUA_NIL || mt == null) ? null : mt;
             }
             // Package: os
-            else if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, stdout, father)); } }
+            //else if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, stdout, father)); } }
             else if (MOD == GETENV) { return args.isEmpty() ? gotbad(1, "getenv", "string expected, got no value") : midlet.attributes.get(toLuaString(args.elementAt(0))); }
             else if (MOD == SETENV) { 
                 if (args.isEmpty()) { } 
@@ -1548,7 +1548,7 @@ public class Lua {
                 } 
             }
             else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
-            else if (MOD == POPEN) { if (args.isEmpty()) { } else { StringBuffer out = new StringBuffer(); int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, out, father); Vector result = new Vector(); result.addElement(new Double(STATUS)); result.addElement(out.toString()); return result; } } 
+            //else if (MOD == POPEN) { if (args.isEmpty()) { } else { StringBuffer out = new StringBuffer(); int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, out, father); Vector result = new Vector(); result.addElement(new Double(STATUS)); result.addElement(out.toString()); return result; } } 
             else if (MOD == DIRS) {
                 String pwd = args.isEmpty() ? (String) father.get("PWD") : toLuaString(args.elementAt(0));
                 boolean all = (Boolean) args.elementAt(1); int index = 1;
