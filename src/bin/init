@@ -9,11 +9,11 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
 end
 
 local xterm = graphics.new("screen", "OpenTTY")
-local run = graphics.new("command", { label = "Run" })
+local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
-graphics.addCommand(xterm, exit)
+graphics.addCommand(xterm, run)
 graphics.handler(xterm, {
     [run] = function()
         os.execute("quit")
