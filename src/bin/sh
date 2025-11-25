@@ -10,10 +10,10 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
 end
 os.execute("warn Montando...")
 io.mount(io.read("/etc/fstab"))
---io.write(io.read("/etc/motd"), io.stdout, "w")
+io.write(io.read("/etc/motd"), io.stdout, "w")
 os.execute("warn Gerando Interface...")
 local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
-local execute = graphics.new("command", { label = "Run", type = "ok", priority = 0 })
+local execute = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 os.execute("warn Configurando...")
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
