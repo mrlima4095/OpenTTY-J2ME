@@ -2288,7 +2288,7 @@ public class Lua {
                     if (item instanceof ChoiceGroup) {
                         ChoiceGroup cg = (ChoiceGroup) item;
 
-                        for (int j = 0; j < cg.size(); j++) { args.addElement(new Boolean(cg.isSelected(j))); } } 
+                        for (int j = 0; j < cg.size(); j++) { args.addElement(new Boolean(cg.isSelected(j))); }
                     }
                     else if (item instanceof Gauge) { args.addElement(new Double(((Gauge) item).getValue())); }
 
