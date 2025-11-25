@@ -20,7 +20,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
     
-    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), filetypes = null, aliases = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), globals = new Hashtable();
+    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), aliases = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), globals = new Hashtable();
     public String username = read("/home/OpenRMS"), logs = "", build = "2025-1.17-03x04"; 
     // |
     // Graphics
@@ -863,7 +863,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | -=-=-=-=-=-=-=-=-=-=-
     // API 003 - File System
     // | (Mount)
-    private int mount(String struct) { if (struct == null || struct.length() == 0) { return 2; } String[] lines = split(struct, '\n'); for (int i = 0; i < lines.length; i++) { String line = lines[i].trim(); int div = line.indexOf('='); if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } else { String base = line.substring(0, div).trim(); String[] files = split(line.substring(div + 1).trim(), ','); Vector content = new Vector(); content.addElement(".."); for (int j = 0; j < files.length; j++) { if (!content.contains(files[j])) { if (files[j].endsWith("/")) { Vector dir = new Vector(); dir.addElement(".."); fs.put(base + files[j], dir); } content.addElement(files[j]); } } fs.put(base, content); } } return 0; }
     private String readStack(Hashtable scope) { Vector stack = (Vector) getobject("1", "stack"); StringBuffer sb = new StringBuffer(); sb.append((String) scope.get("PWD")); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     private boolean file(String filename) {
