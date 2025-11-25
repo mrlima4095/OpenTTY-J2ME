@@ -56,7 +56,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public OpenTTY getInstance() { return this; }
     public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
     public int setLabel() { stdin.setLabel(username + " " + ((String) globals.get("PWD")) + " " + (username.equals("root") ? "#" : "$")); return 0; }
-    public class MIDletControl implements CommandListene {
+    public class MIDletControl implements CommandListener {
         public static final int SIGNUP = 1;
 
         private int MOD = -1;
