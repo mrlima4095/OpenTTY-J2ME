@@ -1335,7 +1335,7 @@ public class Lua {
                         return result;
                     }
                 }
-            }            
+            }
             else if (MOD == TYPE) { return args.isEmpty() ? gotbad(1, "type", "value expected") : type(args.elementAt(0)); }
             else if (MOD == GETPROPERTY) { if (args.isEmpty()) { } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : midlet.getAppProperty(query); } }
             else if (MOD == RANDOM) { Double gen = new Double(midlet.random.nextInt(midlet.getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100, false))); return args.isEmpty() ? new Double(gen.doubleValue() / 100) : gen; }
