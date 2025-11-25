@@ -32,13 +32,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void startApp() {
         if (sys.containsKey("1")) { }
         else {
-            Lua lua = new Lua(this, id, stdout, scope); 
+            Lua lua = new Lua(this, id, null, globals);
+            start("sh", 0, null, null, null, globals)
 
-            Hashtable arg = new Hashtable();
+            Hashtable arg = new Hashtable(); arg.put(new Double(0), "/bin/sh");
             String source, code;
-            if (args[0].equals("-e")) { source = "stdin"; code = argument.substring(3).trim(); arg.put(new Double(0), "/dev/stdin"); } 
-            else { source = args[0]; code = getcontent(source, scope); arg.put(new Double(0), source); for (int i = 1; i < args.length; i++) { arg.put(new Double(i), args[i]); } }
-
             lua.run("bin", read("/bin/sh"), arg); 
         }
     }
