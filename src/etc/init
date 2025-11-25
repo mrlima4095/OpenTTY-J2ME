@@ -1,2 +1,0 @@
-#!/bin/sh
-exec "mount /etc/fstab" "stty /dev/tty" "cat /etc/motd" "x11 init" "x11 term" "start sh"
