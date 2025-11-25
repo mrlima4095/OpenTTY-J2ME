@@ -20,50 +20,6 @@ for k,v in pairs({
     os.setenv(k, getAppProperty("/microedition." .. v))
 end
 
-os.setenv("PATCH", "Fear Fog")
-os.setenv("VERSION", getAppProperty("MIDlet-Version"))
 
-print("Iniciando OpenTTY " .. os.getenv("VERSION"))
 
--- Montar sistema de arquivos
-local fstab = io.read("/etc/fstab")
-if fstab and fstab ~= "" then
-    io.mount(fstab)
-    print("Sistema de arquivos montado")
-end
-
--- Exibir MOTD
-local motd = io.read("/etc/motd")
-if motd and motd ~= "" then
-    print(motd)
-end
-
--- Criar interface
-local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
-local execute = graphics.new("command", { 
-    label = "Run", 
-    type = "ok", 
-    priority = 1 
-})
-
--- Configurar interface
-graphics.append(xterm, io.stdout)
-graphics.append(xterm, io.stdin)
-graphics.addCommand(xterm, execute)
-
--- Handler simplificado
-graphics.handler(xterm, {
-    [execute] = function(args)
-        if args and #args > 0 then
-            local command = args[1]
-            local status, result = io.popen(command, false)
-            if result and result ~= "" then
-                print(result)
-            end
-        end
-    end
-})
-
--- Exibir interface
-graphics.display(xterm)
-print("Interface pronta - use o comando Run para executar comandos")
+os.execute("env")
