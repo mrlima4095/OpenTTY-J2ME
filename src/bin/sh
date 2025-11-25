@@ -2,17 +2,17 @@
 
 os.execute("@alert")
 os.execute("warn Iniciando...")
---[[for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["HOSTNAME"] = "localhost", ["SHELL"] = "/bin/sh" }) do
+for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["HOSTNAME"] = "localhost", ["SHELL"] = "/bin/sh" }) do
     os.setenv(k, v)
 end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do
     os.setenv(k, getAppProperty("/microedition." .. v))
-end]]
+end
 os.execute("warn Montando...")
 io.mount(io.read("/etc/fstab"))
 io.write(io.read("/etc/motd"), io.stdout, "w")
 os.execute("warn Gerando Interface...")
-local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
+--[[local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
 local execute = graphics.new("command", { label = "Run", type = "ok", priority = 0 })
 os.execute("warn Configurando...")
 graphics.append(xterm, io.stdout)
@@ -25,4 +25,4 @@ graphics.handler(xterm, {
     end
 })
 os.execute("warn Exibindo...")
-graphics.display(xterm)
+graphics.display(xterm)]]
