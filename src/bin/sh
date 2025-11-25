@@ -6,6 +6,8 @@ local function shell(command)
     local argument, args = string.getArgument(command), string.split()
     
     if mainCommand == "" then
+    elseif io.open("/bin/" .. mainCommand) then
+        local status, out = io.popen("/bin/" .. mainCommand, argument, false)
     elseif mainCommand == "echo" then
         print(argument)
     end

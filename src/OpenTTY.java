@@ -43,8 +43,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             Lua lua = new Lua(this, 0, stdout, globals); globals.put("PWD", "/home/");
             Hashtable proc = genprocess("init", 0, null), args = new Hashtable(); args.put(new Double(0), "/bin/init"); 
-
-            sys.put("1", proc); lua.globals.put("arg", args);
+            warn("hello", "working!");
+            /*sys.put("1", proc); lua.globals.put("arg", args);
             
             try { 
                 lua.tokens = lua.tokenize(read("/bin/init")); 
@@ -52,7 +52,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
             } 
             catch (Exception e) { warn("SandBox", getCatch(e)); } 
-            catch (Error e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
+            catch (Error e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }*/
         }
     }
     public void pauseApp() { }
