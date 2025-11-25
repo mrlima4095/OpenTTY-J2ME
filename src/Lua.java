@@ -1551,7 +1551,26 @@ public class Lua {
                 } 
             }
             else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
-            //else if (MOD == POPEN) { if (args.isEmpty()) { } else { StringBuffer out = new StringBuffer(); int STATUS = midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, out, father); Vector result = new Vector(); result.addElement(new Double(STATUS)); result.addElement(out.toString()); return result; } } 
+            else if (MOD == POPEN) { 
+                if (args.isEmpty()) { } 
+                else { 
+                    StringBuffer out = new StringBuffer(); 
+                    String program = toLuaString(args.elementAt(0)), code = midlet.read(program), arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
+                    int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? 1000 : id) :  (Integer) gotbad(3, "execute", "boolean expected, got " + type(args.elementAt(2))));
+
+                    if (code.equals("")) { return null; }
+
+                    Lua lua = new Lua(midlet, owner, out, father);                    
+                    Hashtable arg = new Hashtable();
+                    arg.put(new Double(0), program);
+                    String[] list = midlet.splitArgs(arguments);
+                    for (int i = 0; i < list.length; i++) {
+                        arg.put(new Double(i + 1), list[i]);
+                    }
+
+                    return lua.run(program, code, arg);
+                } 
+            } 
             else if (MOD == DIRS) {
                 String pwd = args.isEmpty() ? (String) father.get("PWD") : toLuaString(args.elementAt(0));
                 boolean all = (Boolean) args.elementAt(1); int index = 1;
