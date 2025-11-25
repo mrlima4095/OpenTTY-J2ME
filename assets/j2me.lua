@@ -60,7 +60,10 @@ string = {
     byte = function (s, x, y) end,
     char = function (...) end,
     trim = function (s) return "" end,
-    uuid = function () return "" end
+    uuid = function () return "" end,
+    split = function (s, char) return "" end,
+    getCommand = function(s) return "" end,
+    getArgument = function(s) return "" end
 }
 
 graphics = {
