@@ -78,7 +78,8 @@ graphics = {
     getCurrent = function () end,
     render = function (img) end,
     append = function (screen, field) end,
-    xterm = ""
+    addCommand = function (screen, command) end,
+    handler = function (screen, actions) end
 }
 
 java = {

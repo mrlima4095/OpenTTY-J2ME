@@ -8,13 +8,18 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
 end
 
 local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
-local stdout = graphics.new("buffer")
+local stdout = graphics.new("buffer", { value = io.read("/etc/motd") })
 
---[[
-    // |
-    String[] KEYS = { "TYPE", "CONFIG", "PROFILE", "LOCALE" }, SYS = { "platform", "configuration", "profiles", "locale" };
-    for (int i = 0; i < KEYS.length; i++) { attributes.put(KEYS[i], System.getProperty("microedition." + SYS[i])); }
-    // |
-    if (runScript(read("/etc/init"), 0, "1", this.stdout, globals) != 0) { destroyApp(true); }
-    setLabel();
-]]
+local execute = graphics.new("command", { label = "Run", type = "ok", priority = 0 })
+
+graphics.append(xterm, stdout)
+graphics.append(xterm, io.stdin)
+graphics.addCommand(xterm, execute)
+graphics.handler(xterm, {
+    execute = function (command)
+        command = string.trim(command)
+        mainCommand = 
+        
+    end
+})
+

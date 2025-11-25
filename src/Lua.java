@@ -1134,12 +1134,13 @@ public class Lua {
         private Hashtable closureScope, cmds = null; 
         private int MOD = -1;
         // | (Screen)
-        private LuaFunction root = null;
+        private Object root = null;
         private String handler = "";
         // | 
         // Config.
         LuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
-        LuaFunction(String handler, LuaFunction root) { this.handler = handler; this.root = root; }
+        LuaFunction(String handler, Object root) { this.handler = handler; this.root = root; }
+        LuaFunction(Hashtable cmds) { this.cmds = cmds; }
         LuaFunction(int type) { this.MOD = type; }
         // | (Main)
         public Object call(Vector args) throws Exception {
@@ -1859,7 +1860,6 @@ public class Lua {
                 }
             }
             // Package: graphics 
-            { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER };
             else if (MOD == DISPLAY) {
                 if (args.isEmpty()) { }
                 else {
@@ -1902,7 +1902,7 @@ public class Lua {
             }
             else if (MOD == IMG) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0))); }
             else if (MOD == APPEND) {
-                if (args.size() < 2) return gotbad(1, "append", "wrong number of arguments");
+                if (args.size() < 2) { return gotbad(1, "append", "wrong number of arguments"); }
                 
                 Object target = args.elementAt(0), itemObj = args.elementAt(1);
                 
@@ -1926,7 +1926,7 @@ public class Lua {
                         } 
                         else if (type.equals("item")) {
                             String label = field.containsKey("label") ? toLuaString(field.get("label")) : ;
-                            Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("BuildScreen", "item", "missing root"); 
+                            Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("new", "item", "missing root"); 
 
                             Command RUN = new Command(getFieldValue(field, "label", (String) gotbad("new", "item", "missing label")), Command.ITEM, 1); 
                             StringItem s = new StringItem(null, label, StringItem.BUTTON); 
@@ -1934,11 +1934,8 @@ public class Lua {
                             s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
                             s.addCommand(RUN); 
                             s.setDefaultCommand(RUN); 
-                            s.setItemCommandListener(this); 
+                            s.setItemCommandListener("item", new LuaFunction((Lua) rootObj)); 
                             f.append(s);
-
-                            if (ITEM == null) { ITEM = new Hashtable(); }
-                            ITEM.put(s, rootObj);
                         }
                         else if (type.equals("choice")) { 
                             String choiceType = getvalue(field, "mode", "exclusive");
@@ -1960,15 +1957,10 @@ public class Lua {
                                 }
                             }
 
-                            f.setItemStateListener(this);
+                            f.setItemStateListener(new LuaFunction("state", field.containsKey("root") ? field.get("root") : LUA_NIL));
                             f.append(cg);
-
-                            if (ITEM == null) { ITEM = new Hashtable(); }
-                            if (STATE == null) { STATE = new Hashtable(); }
-                            ITEM.put(cg, new Double(LTYPE));
-                            STATE.put(cg, field.containsKey("root") ? field.get("root") : LUA_NIL);
                         } 
-                        else if (type.equals("field")) { form.append(new TextField(getFieldValue(field, "label", ""), fiegetFieldValue(field, "value", "")ldValue, getFieldNumber(field, "length", 256), getQuest(getFieldValue(field, "mode", "")))); } 
+                        else if (type.equals("field")) { form.append(new TextField(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), getFieldNumber(field, "length", 256), getQuest(getFieldValue(field, "mode", "")))); } 
                         else if (type.equals("spacer")) { form.append(new Spacer(getFieldNumber(field, "width", 1), getFieldNumber(field, "height", 10))); }
                         else if (type.equals("gauge")) { form.append(new Gauge(getFieldValue(field, "label", ""), getFieldBoolean(field, "interactive", false), getFieldNumber(field, "maxValue", 100), getFieldNumber(field, "value", 0))); } 
                     } 
@@ -1984,12 +1976,10 @@ public class Lua {
                     }
                     
                     list.append(toLuaString(itemObj), image);
-                } else {
-                    return gotbad(1, "append", "Form or List expected");
-                }
+                } else { return gotbad(1, "append", "Form or List expected"); }
             }
             else if (MOD == ADDCMD) {
-                if (args.size() < 2) return gotbad(1, "addCommand", "wrong number of arguments");
+                if (args.size() < 2) { return gotbad(1, "addCommand", "wrong number of arguments"); }
                 
                 Object target = args.elementAt(0), cmdObj = args.elementAt(1);
                 
@@ -1999,12 +1989,18 @@ public class Lua {
                 ((Displayable) target).addCommand((Command) cmdObj);
             }
             else if (MOD == HANDLER) {
+                if (args.size() < 2) { return gotbad(1, "handler", "wrong number of arguments"); }
 
+                Object screen = args.elementAt(0), table = args.elementAt(1);
+
+                if (!(screen instanceof Displayable)) { return gotbad(1, "handler", "Displayable expected"); }
+                if (!(table instanceof Command)) { return gotbad(1, "handler", "Hashtable expected"); }
+
+                ((Displayable) screen).setCommandListener(new LuaFunction((Hashtable) table));
             }
 
             else if (MOD == TITLE) { ((Displayable) args.elementAt(0)).setTitle(args.isEmpty() ? null : toLuaString(args.elementAt(1))); }
             else if (MOD == TICKER) { ((Displayable) args.elementAt(0)).setTicker(args.isEmpty() ? null : new Ticker(toLuaString(args.elementAt(1)))); }
-
             else if (MOD == GETCURRENT) { return midlet.display.getCurrent(); }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }

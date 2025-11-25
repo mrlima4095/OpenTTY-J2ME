@@ -25,6 +25,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
+    public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     public Command BACK = new Command("Back", Command.BACK, 1), EXECUTE = new Command("Run", Command.OK, 0);
     // |
     // MIDlet Loader
