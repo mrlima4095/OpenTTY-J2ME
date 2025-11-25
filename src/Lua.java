@@ -34,10 +34,10 @@ public class Lua {
     private static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |
     // Main
-    public Lua(OpenTTY midlet, int id, Object stdout, Hashtable scope) {
+    public Lua(OpenTTY midlet, int id, String pid, Hashtable proc, Object stdout, Hashtable scope) {
         this.midlet = midlet; this.id = id; this.stdout = stdout; this.father = scope;
-        this.tokenIndex = 0; this.PID = midlet.genpid();
-        this.proc = midlet.genprocess("lua", id, null);
+        this.tokenIndex = 0; this.PID = pid == null ? midlet.genpid() : pid;
+        this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable();
         String[] funcs = new String[] { "execute", "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "start", "stop" }; 

@@ -30,7 +30,7 @@ graphics.handler(xterm, {
         end
 
         if command ~= "" then
-            io.popen("/bin/sh", command, false)
+            io.popen("/bin/sh", command, false, io.stdout)
         end
     end
 })
