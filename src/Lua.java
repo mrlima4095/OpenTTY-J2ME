@@ -1622,30 +1622,30 @@ public class Lua {
                     String struct = toLuaString(args.elementAt(0));
                     
                     if (struct == null || struct.length() == 0) { return new Double(2); } 
-String[] lines = split(struct, '\n'); 
-for (int i = 0; i < lines.length; i++) {
-    String line = lines[i].trim(); 
-    int div = line.indexOf('='); 
-    if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } 
-    else { 
-        String base = line.substring(0, div).trim(); 
-        String[] files = split(line.substring(div + 1).trim(), ','); 
-        Vector content = new Vector(); 
-        content.addElement(".."); 
-        for (int j = 0; j < files.length; j++) { 
-            if (!content.contains(files[j])) { 
-                if (files[j].endsWith("/")) { 
-                    Vector dir = new Vector(); 
-                    dir.addElement(".."); 
-                    fs.put(base + files[j], dir); 
-                } 
-                
-                content.addElement(files[j]);
-            }
-        } 
-        fs.put(base, content);
-    } 
-}
+                    String[] lines = split(struct, '\n'); 
+                    for (int i = 0; i < lines.length; i++) {
+                        String line = lines[i].trim(); 
+                        int div = line.indexOf('='); 
+                        if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } 
+                        else { 
+                            String base = line.substring(0, div).trim(); 
+                            String[] files = split(line.substring(div + 1).trim(), ','); 
+                            Vector content = new Vector(); 
+                            content.addElement(".."); 
+                            for (int j = 0; j < files.length; j++) { 
+                                if (!content.contains(files[j])) { 
+                                    if (files[j].endsWith("/")) { 
+                                        Vector dir = new Vector(); 
+                                        dir.addElement(".."); 
+                                        fs.put(base + files[j], dir); 
+                                    } 
+                                    
+                                    content.addElement(files[j]);
+                                }
+                            } 
+                            fs.put(base, content);
+                        } 
+                    }
                 }
             }
             // Package: table
