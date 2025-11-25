@@ -119,8 +119,6 @@ public class Lua {
     // |
     // Tokenizer
     private Vector tokenize(String code) throws Exception {
-        if (midlet.cacheLua.containsKey(code)) { return (Vector) midlet.cacheLua.get(code); }
-
         Vector tokens = new Vector();
         int i = 0;
         if (code.startsWith("#!")) {
