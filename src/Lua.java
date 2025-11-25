@@ -1935,7 +1935,7 @@ public class Lua {
                             s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
                             s.addCommand(RUN); 
                             s.setDefaultCommand(RUN); 
-                            s.setItemCommandListener("item", new LuaFunction((Lua) rootObj)); 
+                            s.setItemCommandListener("item", (ItemCommandListener) new LuaFunction((Lua) rootObj)); 
                             f.append(s);
                         }
                         else if (type.equals("choice")) { 
