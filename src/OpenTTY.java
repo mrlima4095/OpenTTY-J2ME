@@ -69,7 +69,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public MIDletControl() { MOD = SIGNUP; monitor = new Form("Login"); monitor.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); if (asking_user) { monitor.append(USER = new TextField("Username", "", 256, TextField.ANY)); } if (asking_passwd) { monitor.append(PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); } monitor.addCommand(LOGIN = new Command("Login", Command.OK, 1)); monitor.addCommand(EXIT = new Command("Exit", Command.SCREEN, 2)); monitor.setCommandListener(this); display.setCurrent(monitor); }
 
         public void commandAction(Command c, Displayable d) {
-            else if (MOD == SIGNUP) {
+            if (MOD == SIGNUP) {
                 if (c == LOGIN) {
                     String password = asking_passwd ? PASSWD.getString().trim() : "";
 
