@@ -36,16 +36,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Command BACK = new Command("Back", Command.BACK, 1), EXECUTE = new Command("Run", Command.OK, 0);
     // |
     // MIDlet Loader
-    public OpenTTY() {
-        Lua init = new Lua(this, 0, stdout, globals);
+    // |
+    // | (Triggers)
+    public void startApp() {
+        if (!sys.containsKey("1")) {
+            Lua init = new Lua(this, 0, stdout, globals);
         Hashtable proc = genprocess("init", 0, null), arg = new Hashtable(); arg.put(new Double(0), "/bin/init");
         sys.put("1", proc);
         
         init.run("1", "sh", proc, read("/bin/init"), arg); 
+        }
     }
-    // |
-    // | (Triggers)
-    public void startApp() { }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
     // |
