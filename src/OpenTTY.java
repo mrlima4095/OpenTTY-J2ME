@@ -10,7 +10,7 @@ import java.util.*;
 import java.io.*;
 // |
 // OpenTTY MIDlet
-public class OpenTTY extends MIDlet implements CommandListener {
+public class OpenTTY extends MIDlet {
     // Behavior Settings
     public long uptime = System.currentTimeMillis();
     public boolean classpath = true, useCache = true;
@@ -57,9 +57,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
-    // |
-    // | (Main Listener)
-    public void commandAction(Command c, Displayable d) { }
     // |
     // Control Thread
     public OpenTTY getInstance() { return this; }
