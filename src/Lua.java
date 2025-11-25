@@ -44,8 +44,8 @@ public class Lua {
         int[] loaders = new int[] { EXEC, GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
-        funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout" }; 
-        loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN, DIRS, SETOUT };
+        funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout", "mount" }; 
+        loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN, DIRS, SETOUT, MOUNT };
         for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } io.put("stdout", stdout); io.put("stdin", midlet.stdin); globals.put("io", io);
 
         funcs = new String[] { "insert", "concat", "remove", "sort", "move", "unpack", "pack", "decode" }; 
@@ -1614,6 +1614,40 @@ public class Lua {
                 return list;
             }
             else if (MOD == SETOUT) { if (args.isEmpty()) { } else { stdout = args.elementAt(0); } }
+            else if (MOD == MOUNT) {
+                private int mount(String struct) { 
+
+                if (args.isEmpty()) { }
+                else {
+                    String struct = toLuaString(args.elementAt(0));
+                    
+                    if (struct == null || struct.length() == 0) { return new Double(2); } 
+String[] lines = split(struct, '\n'); 
+for (int i = 0; i < lines.length; i++) {
+    String line = lines[i].trim(); 
+    int div = line.indexOf('='); 
+    if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } 
+    else { 
+        String base = line.substring(0, div).trim(); 
+        String[] files = split(line.substring(div + 1).trim(), ','); 
+        Vector content = new Vector(); 
+        content.addElement(".."); 
+        for (int j = 0; j < files.length; j++) { 
+            if (!content.contains(files[j])) { 
+                if (files[j].endsWith("/")) { 
+                    Vector dir = new Vector(); 
+                    dir.addElement(".."); 
+                    fs.put(base + files[j], dir); 
+                } 
+                
+                content.addElement(files[j]);
+            }
+        } 
+        fs.put(base, content);
+    } 
+}
+                }
+            }
             // Package: table
             else if (MOD == TB_INSERT) {
                 if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
