@@ -1535,10 +1535,10 @@ public class Lua {
             else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
             else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
-                else { 
-                    StringBuffer out = new StringBuffer(); 
+                else {
                     String program = toLuaString(args.elementAt(0)), code = midlet.read(program), arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
                     int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? 1000 : id) :  (Integer) gotbad(3, "execute", "boolean expected, got " + type(args.elementAt(2))));
+                    Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
 
                     if (code.equals("")) { return null; }
 
