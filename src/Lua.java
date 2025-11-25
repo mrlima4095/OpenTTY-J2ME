@@ -2195,6 +2195,9 @@ public class Lua {
                 else if (args.size() < 2 || args.elementAt(1) == null) { return gotbad(2, "delete", "value expected, got " + (args.size() < 2 ? "no value" : "nil")); }
                 else { ((Hashtable) args.elementAt(0)).remove(args.elementAt(1)); }
             }
+            else if (MOD == UPTIME) {
+                return new Double(System.currentTimeMillis() - midlet.uptime);
+            }
 
             return null;
         }
