@@ -49,9 +49,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 init.run("1", "sh", proc, read("/bin/init"), arg); 
             } catch (Throwable e) {
                 warn(e.getClass().getName(), e.getMessage());
-            }
-        }
-            
+            }            
         }
     }
     public void pauseApp() { }
