@@ -49,7 +49,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             Hashtable arg = new Hashtable(); arg.put(new Double(0), "/bin/sh");
             
-            lua.run("1", "sh", proc, read("/bin/sh"), arg); 
+            lua.run("1", "sh", proc, read("/bin/init"), arg); 
         }
     }
     // |
