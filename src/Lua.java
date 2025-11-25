@@ -1914,38 +1914,38 @@ public class Lua {
                 else if (type.equals("edit")) { return new TextBox(title, content != null ? toLuaString(content) : "", 31522, TextField.ANY); } 
                 else if (type.equals("list")) { return new List(title, (type = content != null ? toLuaString(content) : "implicit").equals("exclusive") ? List.EXCLUSIVE : type.equals("multiple") ? List.MULTIPLE : List.IMPLICIT); } 
                 else if (type.equals("screen")) { return new Form(title); } 
-else if (type.equals("command")) {
-    if (content instanceof Hashtable) {
-        Hashtable cmdTable = (Hashtable) content;
-        
-        // Acessa os campos da tabela de forma mais direta
-        Object labelObj = cmdTable.get("label");
-        Object typeObj = cmdTable.get("type");
-        Object priorityObj = cmdTable.get("priority");
-        
-        String label = (labelObj != null && labelObj != LUA_NIL) ? toLuaString(labelObj) : "Command";
-        String cmdType = (typeObj != null && typeObj != LUA_NIL) ? toLuaString(typeObj) : "screen";
-        int priority = 1;
-        
-        if (priorityObj != null && priorityObj != LUA_NIL && priorityObj instanceof Double) {
-            priority = ((Double) priorityObj).intValue();
-        }
-        
-        int commandType;
-        if (cmdType.equals("back")) commandType = Command.BACK;
-        else if (cmdType.equals("ok")) commandType = Command.OK;
-        else if (cmdType.equals("cancel")) commandType = Command.CANCEL;
-        else if (cmdType.equals("help")) commandType = Command.HELP;
-        else if (cmdType.equals("stop")) commandType = Command.STOP;
-        else if (cmdType.equals("exit")) commandType = Command.EXIT;
-        else if (cmdType.equals("item")) commandType = Command.ITEM;
-        else commandType = Command.SCREEN;
-        
-        return new Command(label, commandType, priority);
-    } else {
-        return gotbad(2, "new", "table expected, got " + type(content));
-    }
-}
+                else if (type.equals("command")) {
+                    if (content instanceof Hashtable) {
+                        Hashtable cmdTable = (Hashtable) content;
+                        
+                        // Acessa os campos da tabela de forma mais direta
+                        Object labelObj = cmdTable.get("label");
+                        Object typeObj = cmdTable.get("type");
+                        Object priorityObj = cmdTable.get("priority");
+                        
+                        String label = (labelObj != null && labelObj != LUA_NIL) ? toLuaString(labelObj) : "Command";
+                        String cmdType = (typeObj != null && typeObj != LUA_NIL) ? toLuaString(typeObj) : "screen";
+                        int priority = 1;
+                        
+                        if (priorityObj != null && priorityObj != LUA_NIL && priorityObj instanceof Double) {
+                            priority = ((Double) priorityObj).intValue();
+                        }
+                        
+                        int commandType;
+                        if (cmdType.equals("back")) commandType = Command.BACK;
+                        else if (cmdType.equals("ok")) commandType = Command.OK;
+                        else if (cmdType.equals("cancel")) commandType = Command.CANCEL;
+                        else if (cmdType.equals("help")) commandType = Command.HELP;
+                        else if (cmdType.equals("stop")) commandType = Command.STOP;
+                        else if (cmdType.equals("exit")) commandType = Command.EXIT;
+                        else if (cmdType.equals("item")) commandType = Command.ITEM;
+                        else commandType = Command.SCREEN;
+                        
+                        return new Command(label, commandType, priority);
+                    } else {
+                        return gotbad(2, "new", "table expected, got " + type(content) + " " + content.toString());
+                    }
+                }
                 else if (type.equals("buffer")) {
                     if (content instanceof Hashtable) {
                         Hashtable field = (Hashtable) content;
