@@ -184,7 +184,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (MOD == BG) { processCommand(command, enable, id, PID, stdout, scope); }
         }
 
-        private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl(MOD == PROCESS ? "process" : MOD == EXPLORER ? "dir" : "history", id, stdout, scope); } else { load(); } }
+        private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl("process", id, stdout, scope); } else { load(); } }
         private void load() {
             if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = sys.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) ((Hashtable) sys.get(PID)).get("name"); if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); } } }
