@@ -16,6 +16,6 @@ for k,v in pairs({
     ["PROFILE"] = "profiles", 
     ["LOCALE"] = "locale" 
 }) do
-    print(getAppProperty("/microedition." .. v))
+    print(k, getAppProperty("/microedition." .. v))
 end
 
