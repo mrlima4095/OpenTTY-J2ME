@@ -116,34 +116,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         public void commandAction(Command c, Displayable d) {
             if (c == BACK) { 
-                if (d == box) { 
-                    confirm = new Alert("Nano Editor", "Save modified buffer?", null, AlertType.WARNING); 
-                    confirm.addCommand(YES = new Command("Yes", Command.OK, 1)); confirm.addCommand(NO = new Command("No", Command.BACK, 1)); 
-                    confirm.setCommandListener(this); display.setCurrent(confirm);
-                }
-                else if (d == monitor && MOD == EXPLORER) { display.setCurrent(preview); }
-                else if (d == monitor && MOD == NANO) { display.setCurrent(box); }
-                else if (MOD == NC) { back(); } 
-                else { goback(); } 
+                goback();
 
                 return; 
             }
             if (d == box && MOD == PROCESS) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
-            if (d == confirm) {
-                if (MOD == NANO) {
-                    if (c == YES) {
-                        if (filename == null || filename.equals("")) {
-                            monitor = new Form("Nano Editor");
-                            monitor.append(USER = new TextField("File Name to Write", "", 256, TextField.ANY));
-                            monitor.addCommand(BACK);
-                            monitor.addCommand(SAVE = new Command("Save", Command.OK, 1));
-                            monitor.setCommandListener(this);
-                            display.setCurrent(monitor);
-                        } else { int STATUS = write(filename, box.getString().getBytes(), id); if (STATUS == 0) { goback(); } else { warn("Nano Editor", "Status: " + STATUS); } }
-                    }
-                    else { goback(); }
-                }
-            }
 
             if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { goback(); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected, true, id, PID, stdout, scope); } } 
             else if (MOD == PROCESS) {
@@ -200,24 +177,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (password.equals("")) { } 
                 else if (String.valueOf(password.hashCode()).equals(passwd())) { goback(); processCommand(command, enable, 0, PID, stdout, scope); setLabel(); } 
                 else { PASSWD.setString(""); warn(xterm.getTitle(), "Wrong password"); }
-            }
-
-            else if (MOD == NC) {
-                if (c == EXECUTE) {
-                    String payload = remotein.getString().trim(); remotein.setString("");
-
-                    try { OUT.write((payload + "\n").getBytes()); OUT.flush(); } 
-                    catch (Exception e) { warn(xterm.getTitle(), getCatch(e)); if (keep) { } else { sys.remove(PID); } }
-                } 
-                else if (c == BACK) { write("/home/remote", console.getText(), 0); back(); } 
-                else if (c == CLEAR) { console.setText(""); }
-                else if (c == VIEW) { try { warn("Information", "Host: " + split(address, ':')[0] + "\n" + "Port: " + split(address, ':')[1] + "\n\n" + "Local Address: " + CONN.getLocalAddress() + "\n" + "Local Port: " + CONN.getLocalPort()); } catch (Exception e) { warn(xterm.getTitle(), "Couldn't read connection information!"); } }
-            }
-
-            else if (MOD == NANO) {
-                if (c == CLEAR) { box.setString(""); }
-                else if (c == SAVE) { if (USER == null) { } else { String file = USER.getString().trim(); if (file.equals("")) { } else { int STATUS = write(file, box.getString(), id); if (STATUS == 0) { goback(); } else { warn("Nano Editor", "Status: " + STATUS); } } } }
-                else if (c == VIEW) { String html = box.getString(); monitor = new Form(extractTitle(html, "HTML Viewer")); monitor.append(html2text(html)); monitor.addCommand(BACK); monitor.setCommandListener(this); display.setCurrent(monitor); }
             }
         }
 
