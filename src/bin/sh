@@ -1,22 +1,11 @@
 #!/bin/lua
 
-for k,v in pairs({ 
-    ["PATCH"] = "Fear Fog",
-    ["VERSION"] = getAppProperty("MIDlet-Version"),
-    ["RELEASE"] = "stable",
-    ["HOSTNAME"] = "localhost",
-    ["SHELL"] = "/bin/sh"
-}) do
-    print(k, v)
+for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["HOSTNAME"] = "localhost", ["SHELL"] = "/bin/sh" }) do
+    os.setenv(k, v)
 end
 
-for k,v in pairs({
-    ["TYPE"] = "platform",
-    ["CONFIG"] = "configuration",
-    ["PROFILE"] = "profiles",
-    ["LOCALE"] = "locale"
-}) do
-    print(k, getAppProperty("/microedition." .. v))
+for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do
+    os.setenv(k, getAppProperty("/microedition." .. v))
 end
 
 local xterm = graphics.new("screen", "OpenTTY")
