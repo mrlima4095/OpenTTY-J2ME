@@ -1923,7 +1923,7 @@ public class Lua {
                             
                             si.setFont(midlet.genFont(getFieldValue(field, "style", "default")));
                             form.append(si);
-                        } 
+                        }
                         else if (type.equals("item")) {
                             Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("new", "item", "missing root"); 
 
