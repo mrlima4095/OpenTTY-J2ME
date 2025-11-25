@@ -220,7 +220,7 @@ public class Lua {
     private Token consume(int expectedType) throws Exception { Token token = peek(); if (token.type == expectedType) { tokenIndex++; return token; } throw new Exception("Expected token type " + expectedType + " but got " + token.type + " with value " + token.value); }
     // |
     // Statements
-    private Object statement(Hashtable scope) throws Exception {
+    public Object statement(Hashtable scope) throws Exception {
         Token current = peek();
 
         if (status != 0) { midlet.sys.remove(PID); throw new Error(); }
