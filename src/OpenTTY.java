@@ -34,6 +34,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (sys.containsKey("1")) { }
         else {
             xterm.append(stdout);
+            print(read("/bin/sh") + "\n\n", stdout);
             display.setCurrent(xterm);
 
             Hashtable proc = genprocess("sh", 0, gensignals("exit"));
