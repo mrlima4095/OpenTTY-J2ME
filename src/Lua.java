@@ -1542,7 +1542,7 @@ public class Lua {
 
                     if (code.equals("")) { return null; }
 
-                    Lua lua = new Lua(midlet, owner, null, null out, father);                    
+                    Lua lua = new Lua(midlet, owner, null, null, out, father);                    
                     Hashtable arg = new Hashtable();
                     arg.put(new Double(0), program);
                     String[] list = midlet.splitArgs(arguments);
