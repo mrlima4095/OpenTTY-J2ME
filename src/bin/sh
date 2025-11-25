@@ -4,3 +4,5 @@ local function shell()
 
 end
 
+if arg[1] == "echo" then
+end

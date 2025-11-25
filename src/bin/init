@@ -11,6 +11,8 @@ end
 local xterm = graphics.new("screen", "OpenTTY")
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
+
+
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
 graphics.addCommand(xterm, run)
