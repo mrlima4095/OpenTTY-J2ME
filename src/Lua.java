@@ -1885,7 +1885,7 @@ public class Lua {
                 else if (type.equals("screen")) { return new Form(title); } 
                 else if (type.equals("command")) {
                     if (content instanceof Hashtable) {
-                        Hashtable cmdTable = (Hashtable) cmdObj;
+                        Hashtable cmdTable = (Hashtable) content;
                         type = getFieldValue(cmdTable, "type", "screen");
 
                         return new Command(getFieldValue(cmdTable, "label", "Command"), type.equals("back") ? Command.BACK : type.equals("ok") ? Command.OK : type.equals("cancel") ? Command.CANCEL : type.equals("help") ? Command.HELP : type.equals("stop") ? Command.STOP : type.equals("exit") ? Command.EXIT : type.equals("item") ? Command.ITEM : Command.SCREEN, getFieldNumber(cmdTable, "priority", 1));
