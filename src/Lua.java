@@ -1930,7 +1930,7 @@ public class Lua {
                             Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("new", "item", "missing root"); 
 
                             Command RUN = new Command(getFieldValue(field, "label", (String) gotbad("new", "item", "missing label")), Command.ITEM, 1); 
-                            StringItem s = new StringItem(null, label, StringItem.BUTTON); 
+                            StringItem s = new StringItem(null, getFieldValue(field, "label", ""), StringItem.BUTTON); 
                             s.setFont(midlet.genFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
                             s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
                             s.addCommand(RUN); 
