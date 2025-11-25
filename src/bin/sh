@@ -12,13 +12,14 @@ local stdout = graphics.new("buffer", { value = io.read("/etc/motd") })
 
 local execute = graphics.new("command", { label = "Run", type = "ok", priority = 0 })
 
+io.setout(stdout)
+
 graphics.append(xterm, stdout)
 graphics.append(xterm, io.stdin)
 graphics.addCommand(xterm, execute)
 graphics.handler(xterm, {
     execute = function (command)
-        command = string.trim(command)
-        mainCommand = 
+        io
         
     end
 })

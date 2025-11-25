@@ -682,7 +682,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         // | (Interfaces)
         else if (mainCommand.equals("gaddr")) { return GetAddress(argument, id, pid, stdout, scope); }
-        else if (mainCommand.equals("bind")) { new MIDletControl(mainCommand, argument, id, stdout, scope); }
         else if (mainCommand.equals("who")) { print("PORT\tADDRESS", stdout); Hashtable sessions = (Hashtable) getobject("1", "sessions"); boolean all = argument.indexOf("-a") != -1; for (Enumeration KEYS = sessions.keys(); KEYS.hasMoreElements();) { String PORT = (String) KEYS.nextElement(), ADDR = (String) sessions.get(PORT); if (!all && ADDR.equals("nobody")) { } else { print(PORT + "\t" + ADDR, stdout); } } }
         else if (mainCommand.equals("ifconfig")) { if (argument.equals("")) { argument = "1.1.1.1:53"; } try { SocketConnection CONN = (SocketConnection) Connector.open("socket://" + argument); print(CONN.getLocalAddress(), stdout); CONN.close(); } catch (Exception e) { print("null", stdout); return 101; } }
         else if (mainCommand.equals("netstat")) { 
