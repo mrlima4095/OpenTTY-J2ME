@@ -1936,7 +1936,7 @@ public class Lua {
                             s.addCommand(RUN); 
                             s.setDefaultCommand(RUN); 
                             s.setItemCommandListener((ItemCommandListener) new LuaFunction("item", (Lua) rootObj)); 
-                            f.append(s);
+                            form.append(s);
                         }
                         else if (type.equals("choice")) { 
                             String choiceType = getvalue(field, "mode", "exclusive");
