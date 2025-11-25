@@ -7,6 +7,8 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
     os.setenv(k, getAppProperty("/microedition." .. v))
 end
 
+io.mount(io.read("/etc/fstab"))
+
 local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
 local execute = graphics.new("command", { label = "Run", type = "ok", priority = 0 })
 
