@@ -1915,10 +1915,9 @@ public class Lua {
                 else if (type.equals("list")) { return new List(title, (type = content != null ? toLuaString(content) : "implicit").equals("exclusive") ? List.EXCLUSIVE : type.equals("multiple") ? List.MULTIPLE : List.IMPLICIT); } 
                 else if (type.equals("screen")) { return new Form(title); } 
                 else if (type.equals("command")) {
-                    if (content instanceof Hashtable) {
-                        Hashtable cmdTable = (Hashtable) content;
+                    if (args.elementAt(1) instanceof Hashtable) {
+                        Hashtable cmdTable = (Hashtable) args.elementAt(1);
                         
-                        // Acessa os campos da tabela de forma mais direta
                         Object labelObj = cmdTable.get("label");
                         Object typeObj = cmdTable.get("type");
                         Object priorityObj = cmdTable.get("priority");
@@ -1943,12 +1942,12 @@ public class Lua {
                         
                         return new Command(label, commandType, priority);
                     } else {
-                        return gotbad(2, "new", "table expected, got " + type(content) + " " + content.toString());
+                        return gotbad(2, "new", "table expected, got " + type(args.elementAt(1)));
                     }
                 }
                 else if (type.equals("buffer")) {
-                    if (content instanceof Hashtable) {
-                        Hashtable field = (Hashtable) content;
+                    if (args.elementAt(1) instanceof Hashtable) {
+                        Hashtable field = (Hashtable) args.elementAt(1);
                         String layout = getFieldValue(field, "layout", "default");
                         StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                         
