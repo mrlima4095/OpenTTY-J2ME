@@ -1,21 +1,66 @@
 #!/bin/lua
 
+-- Configurar variáveis de ambiente
+for k,v in pairs({ 
+    ["PATCH"] = "Fear Fog", 
+    ["VERSION"] = getAppProperty("MIDlet-Version"), 
+    ["RELEASE"] = "stable", 
+    ["HOSTNAME"] = "localhost", 
+    ["SHELL"] = "/bin/sh" 
+}) do
+    os.setenv(k, v)
+end
 
+for k,v in pairs({ 
+    ["TYPE"] = "platform", 
+    ["CONFIG"] = "configuration", 
+    ["PROFILE"] = "profiles", 
+    ["LOCALE"] = "locale" 
+}) do
+    os.setenv(k, getAppProperty("/microedition." .. v))
+end
 
--- Versão mínima funcional
-print("OpenTTY Iniciando...")
+print("Iniciando OpenTTY " .. os.getenv("VERSION"))
 
--- Criar interface básica
-local screen = graphics.new("screen", "OpenTTY")
-local runCmd = graphics.new("command", {label = "Executar", type = "ok"})
+-- Montar sistema de arquivos
+local fstab = io.read("/etc/fstab")
+if fstab and fstab ~= "" then
+    io.mount(fstab)
+    print("Sistema de arquivos montado")
+end
 
-graphics.append(screen, "Sistema pronto")
-graphics.addCommand(screen, runCmd)
+-- Exibir MOTD
+local motd = io.read("/etc/motd")
+if motd and motd ~= "" then
+    print(motd)
+end
 
-graphics.handler(screen, {
-    [runCmd] = function()
-        print("Comando executado com sucesso!")
+-- Criar interface
+local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
+local execute = graphics.new("command", { 
+    label = "Run", 
+    type = "ok", 
+    priority = 1 
+})
+
+-- Configurar interface
+graphics.append(xterm, io.stdout)
+graphics.append(xterm, io.stdin)
+graphics.addCommand(xterm, execute)
+
+-- Handler simplificado
+graphics.handler(xterm, {
+    [execute] = function(args)
+        if args and #args > 0 then
+            local command = args[1]
+            local status, result = io.popen(command, false)
+            if result and result ~= "" then
+                print(result)
+            end
+        end
     end
 })
 
-graphics.display(screen)
+-- Exibir interface
+graphics.display(xterm)
+print("Interface pronta - use o comando Run para executar comandos")
