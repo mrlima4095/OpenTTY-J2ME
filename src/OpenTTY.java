@@ -33,12 +33,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void startApp() {
         if (sys.containsKey("1")) { }
         else {
+            Hashtable proc = genprocess("sh", 0, gensignals("exit"));
+            sys.put("1", proc);
             Lua lua = new Lua(this, 0, stdout, globals);
-            start("sh", 0, null, null, null, globals);
-
+            
             Hashtable arg = new Hashtable(); arg.put(new Double(0), "/bin/sh");
             
-            lua.run("1", "sh", getprocess("1"), read("/bin/sh"), arg); 
+            lua.run("1", "sh", proc, read("/bin/sh"), arg); 
         }
     }
     // |
@@ -626,17 +627,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Hashtable proc = genprocess(app, id, signals);
         Lua lua = null; String source = null;
 
-        if (app.equals("sh") || app.equals("x11-wm")) {
-            pid = app.equals("sh") ? "1" : "2"; 
-            proc.put("signals", gensignals(app.equals("sh") ? "exit" : "x11 stop")); proc.put("screen", xterm); 
-
+        if (app.equals("sh")) {
+            
             if (sys.containsKey(pid)) { return 68; }
-            else if (app.equals("sh")) { Hashtable sessions = new Hashtable(); sessions.put(pid, "127.0.0.1"); proc.put("stack", new Vector()); proc.put("history", new Vector()); proc.put("sessions", sessions); proc.put("servers", new Hashtable()); }
-            else if (app.equals("x11-wm")) { 
-                proc.put("saves", new Hashtable()); proc.put("buttons", new Hashtable());
-
-                
-            }
         }
         else if (app.equals("audio")) { print("usage: audio play [file]", stdout); return 1; }
         else { 
