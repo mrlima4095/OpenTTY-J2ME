@@ -1378,7 +1378,7 @@ public class Lua {
                         }
                     }
 
-                    midlet.attributes.remove(toLuaString(args.elementAt(0)));                    
+                    midlet.attributes.remove(toLuaString(args.elementAt(0)));
                 }
                 
             }
