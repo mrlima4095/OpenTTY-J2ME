@@ -2281,6 +2281,25 @@ public class Lua {
             catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } 
             catch (Error e) { midlet.sys.remove(PID); }
         }
+        public void commandAction(Command c, Item item) { try { if (fire instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
+        public void itemStateChanged(Item item) {
+            try {
+                if (root == LUA_NIL) { }
+                else if (root instanceof LuaFunction) { 
+                    Vector args = new Vector();
+
+                    if (item instanceof ChoiceGroup) {
+                        ChoiceGroup cg = (ChoiceGroup) item;
+
+                        if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) { for (int j = 0; j < cg.size(); j++) { args.addElement(new Boolean(cg.isSelected(j))); } } 
+                        else { int sel = cg.getSelectedIndex(); args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL); }
+                    }
+                    else if (item instanceof Gauge) { args.addElement(new Double(((Gauge) item).getValue())); }
+
+                    ((LuaFunction) root).call(args); 
+                }
+            } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
+        }
     }
 } 
 // |
