@@ -468,7 +468,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // API 002 - X Server
         // | (Client)
         else if (mainCommand.equals("xterm")) { display.setCurrent(xterm); }
-        else if (mainCommand.equals("x11")) { return xcli(argument, id, stdout, scope); }
         // | (Screens)
         else if (mainCommand.equals("warn")) { return warn(xterm.getTitle(), argument); }
         else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument), xterm.getTitle()), html2text(env(argument))); } }
