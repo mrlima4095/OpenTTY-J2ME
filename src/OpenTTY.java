@@ -33,6 +33,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void startApp() {
         if (sys.containsKey("1")) { }
         else {
+            xterm.append(stdout);
+            display.setCurrent(stdout);
+
             Hashtable proc = genprocess("sh", 0, gensignals("exit"));
             Hashtable sessions = new Hashtable(); 
             sessions.put("1", "127.0.0.1"); 
