@@ -178,7 +178,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = sys.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) ((Hashtable) sys.get(PID)).get("name"); if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); } } }
         }
 
-        private void goback() { if (previous != null && !aliases.containsKey("xterm")) { display.setCurrent(this.previous); } else { processCommand("xterm", enable, id, PID, stdout, scope); } }
+        private void goback() { display.setCurrent(previous != null ? this.previous : xterm); }
 
         public static String passwd() { return loadRMS("OpenRMS", 2); }
         private String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } 
