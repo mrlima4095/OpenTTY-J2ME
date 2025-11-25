@@ -7,8 +7,13 @@ local function shell(command)
     
     if mainCommand == "" then
     elseif io.open("/bin/" .. mainCommand) then
-        local status, out = io.popen("/bin/" .. mainCommand, argument, false, io.stdout)
+        io.popen("/bin/" .. mainCommand, argument, false, io.stdout)
     elseif mainCommand == "echo" then
         print(argument)
+    else
+        print(mainCommand .. ": not found")
+        return 127
     end
+
+    return 0
 end
