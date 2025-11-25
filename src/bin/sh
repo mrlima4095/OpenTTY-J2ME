@@ -30,3 +30,5 @@ graphics.handler({
         os.execute("quit")
     end
 })
+
+graphics.display(xten)
