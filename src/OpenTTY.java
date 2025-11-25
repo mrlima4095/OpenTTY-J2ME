@@ -99,8 +99,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 return; 
             }
-            if (d == box && MOD == PROCESS) { pfilter = box.getString().trim(); load(); display.setCurrent(preview); return; }
-
             else if (MOD == SIGNUP) {
                 if (c == LOGIN) {
                     String password = asking_passwd ? PASSWD.getString().trim() : "";
@@ -122,12 +120,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         public void run() {
             if (MOD == BG) { }
-        }
-
-        private void reload() { if (attributes.containsKey("J2EMU")) { new MIDletControl("process", id, stdout, scope); } else { load(); } }
-        private void load() {
-            if (MOD == HISTORY) { preview.deleteAll(); for (int i = 0; i < history.size(); i++) { preview.append((String) history.elementAt(i), null); } } 
-            else if (MOD == PROCESS) { preview.deleteAll(); for (Enumeration keys = sys.keys(); keys.hasMoreElements();) { String PID = (String) keys.nextElement(), name = (String) ((Hashtable) sys.get(PID)).get("name"); if (pfilter.equals("") || name.indexOf(pfilter) != -1) { preview.append(PID + "\t" + name, null); } } }
         }
 
         private void goback() { display.setCurrent(previous != null ? this.previous : xterm); }
