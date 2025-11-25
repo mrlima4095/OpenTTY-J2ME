@@ -32,7 +32,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void startApp() {
         if (sys.containsKey("1")) { }
         else {
-            Lua lua = new Lua(this, id, null, globals);
+            Lua lua = new Lua(this, 0, null, globals);
             start("sh", 0, null, null, null, globals);
 
             Hashtable arg = new Hashtable(); arg.put(new Double(0), "/bin/sh");
