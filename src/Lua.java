@@ -2288,8 +2288,7 @@ public class Lua {
                     if (item instanceof ChoiceGroup) {
                         ChoiceGroup cg = (ChoiceGroup) item;
 
-                        if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) { for (int j = 0; j < cg.size(); j++) { args.addElement(new Boolean(cg.isSelected(j))); } } 
-                        else { int sel = cg.getSelectedIndex(); args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL); }
+                        for (int j = 0; j < cg.size(); j++) { args.addElement(new Boolean(cg.isSelected(j))); } } 
                     }
                     else if (item instanceof Gauge) { args.addElement(new Double(((Gauge) item).getValue())); }
 
