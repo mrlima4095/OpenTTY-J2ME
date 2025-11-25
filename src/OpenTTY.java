@@ -119,6 +119,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 } 
                 else if (c == EXIT) { destroyApp(true); }
             }
+        }
         public void run() {
             if (MOD == BG) { }
         }
