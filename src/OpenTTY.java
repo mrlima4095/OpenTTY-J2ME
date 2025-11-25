@@ -31,6 +31,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Loader
     public void startApp() {
+        warn("Ok", "Carregou o startApp();");
         if (sys.containsKey("1")) { }
         else {
             Lua lua = new Lua(this, 0, stdout, globals);
