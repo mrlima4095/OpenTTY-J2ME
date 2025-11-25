@@ -120,7 +120,7 @@ public class Lua {
     // Tokenizer
     private Vector tokenize(String code) throws Exception {
         if (midlet.cacheLua.containsKey(code)) { return (Vector) midlet.cacheLua.get(code); }
-        
+
         Vector tokens = new Vector();
         int i = 0;
         if (code.startsWith("#!")) {
@@ -213,6 +213,7 @@ public class Lua {
         }
 
         tokens.addElement(new Token(EOF, "EOF"));
+        midlet.cacheLua.put(code, tokens);
         return tokens;
     }
     private Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return new Token(EOF, "EOF"); }
