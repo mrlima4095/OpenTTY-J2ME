@@ -87,7 +87,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         public MIDletControl(String command, boolean enable, String pid, Object stdout, Hashtable scope) { MOD = REQUEST; this.enable = enable; this.PID = pid; this.stdout = stdout; this.scope = scope; this.command = command; if (asking_passwd) { new MIDletControl(); return; } monitor = new Form(xterm.getTitle()); monitor.append(PASSWD = new TextField("[sudo] password for " + read("/home/OpenRMS"), "", 256, TextField.ANY | TextField.PASSWORD)); monitor.addCommand(EXECUTE); monitor.addCommand(BACK = new Command("Back", Command.SCREEN, 2)); monitor.setCommandListener(this); display.setCurrent(monitor); }
 
         public MIDletControl(String command, int id, Object stdout, Hashtable scope) { 
-            MOD = command == null || command.length() == 0 || command.equals("process") ? PROCESS : command.equals("dir") ? EXPLORER : command.equals("history") ? HISTORY : -1; 
+            MOD = command == null || command.length() == 0 || command.equals("process") ? PROCESS : command.equals("history") ? HISTORY : -1; 
             this.id = id; this.stdout = stdout; this.scope = scope; this.previous = display.getCurrent();
 
             preview = new List(xterm.getTitle(), List.IMPLICIT); 
