@@ -2333,7 +2333,6 @@ public class Lua {
                                 for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
 
                                 args.addElement(selTable);
-
                             }
                         }
                     }
