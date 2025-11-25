@@ -19,6 +19,3 @@ for k,v in pairs({
     print(getAppProperty("/microedition." .. v))
 end
 
-
-
-os.execute("env")
