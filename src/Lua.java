@@ -1380,7 +1380,6 @@ public class Lua {
 
                     midlet.attributes.remove(toLuaString(args.elementAt(0)));
                 }
-                
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
