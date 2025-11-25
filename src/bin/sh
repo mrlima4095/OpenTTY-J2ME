@@ -8,6 +8,7 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
 end
 
 io.mount(io.read("/etc/fstab"))
+io.write(io.read("/etc/motd"), io.stdout, "w")
 
 local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
 local execute = graphics.new("command", { label = "Run", type = "ok", priority = 0 })
