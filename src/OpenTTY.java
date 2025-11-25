@@ -174,8 +174,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
     // API 003 - File System
-    // | (Mount)
-    private String readStack(Hashtable scope) { Vector stack = (Vector) getobject("1", "stack"); StringBuffer sb = new StringBuffer(); sb.append((String) scope.get("PWD")); for (int i = 0; i < stack.size(); i++) { sb.append(" ").append((String) stack.elementAt(i)); } return sb.toString(); }
     // |
     private boolean file(String filename) {
         if (filename.startsWith("/home/")) {
