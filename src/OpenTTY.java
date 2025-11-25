@@ -25,6 +25,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
+    public StringItem stdout = new StringItem("", "");
     public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     public Command BACK = new Command("Back", Command.BACK, 1), EXECUTE = new Command("Run", Command.OK, 0);
     // |
@@ -36,7 +37,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             start("sh", 0, null, null, null, globals);
 
             Hashtable arg = new Hashtable(); arg.put(new Double(0), "/bin/sh");
-            String source, code;
+            
             lua.run("1", "sh", getprocess("1"), read("/bin/sh"), arg); 
         }
     }
