@@ -12,6 +12,11 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
     os.setenv(k, getAppProperty("/microedition." .. v))
 end
 
+graphics.vibrate(1000)
+graphics.display(graphics.new("screen", "SandBox"))
+graphics.SetTicker("gg")
+
+
 local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
