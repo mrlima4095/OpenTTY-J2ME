@@ -40,11 +40,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Triggers)
     public void startApp() {
         if (sys.containsKey("1")) { }
-        else {            
+        else {
+            Lua lua = new Lua(this, 0, stdout, globals); globals.put("PWD", "/home/");
+            Hashtable proc = genprocess("init", 0, null), args = new Hashtable(); args.put(new Double(0), "/bin/init"); 
+
+            sys.put("1", proc); lua.globals.put("arg", args);
+            
             try { 
-                this.tokens = tokenize(code); 
+                Vector tokens = lua.tokenize(code); 
                 
-                while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
+                while (peek().type != EOF) { Object res = lua.statement(globals); if (doreturn) { break; } }
             } 
             catch (Exception e) { warn("SandBox", midlet.getCatch(e)); } 
             catch (Error e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }

@@ -11,11 +11,11 @@ public class Lua {
     private boolean[] attrchanges = new boolean[] { true, true };
     private OpenTTY midlet;
     private Object stdout;
-    private String PID = null;
+    public String PID = null;
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
     public Hashtable globals = new Hashtable(), proc = new Hashtable(), father, requireCache = new Hashtable();
-    private Vector tokens;
+    public Vector tokens;
     // |
     public int status = 0;
     // | (LuaFunction)
