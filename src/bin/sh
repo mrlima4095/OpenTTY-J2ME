@@ -19,7 +19,7 @@ graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
 graphics.addCommand(xterm, execute)
 graphics.handler(xterm, {
-    execute = function (command)
+    [execute] = function (command)
         local status, out = io.popen(command, false)
         print(out)
     end
