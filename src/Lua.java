@@ -1615,8 +1615,7 @@ public class Lua {
             }
             else if (MOD == SETOUT) { if (args.isEmpty()) { } else { stdout = args.elementAt(0); } }
             else if (MOD == MOUNT) {
-                private int mount(String struct) { 
-
+                
                 if (args.isEmpty()) { }
                 else {
                     String struct = toLuaString(args.elementAt(0));
