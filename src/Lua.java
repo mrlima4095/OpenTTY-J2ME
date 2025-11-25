@@ -100,25 +100,9 @@ public class Lua {
         ITEM.put("status", status);
         return ITEM;
     }
-    public Hashtable run(String pid, String name, Hashtable proc, String code, Hashtable args) {
-        this.PID = pid; this.proc = proc; globals.put("arg", args); attrchanges[0] = false; 
-        
-        Hashtable ITEM = new Hashtable(); 
-        
-        try { 
-            this.tokens = tokenize(code); 
-            
-            while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
-        } 
-        catch (Exception e) { midlet.warn("Exception", midlet.getCatch(e)); status = 1; } 
-        catch (Error e) { if (e.getMessage() != null) { midlet.warn("Error", e.getMessage()); } status = 1; }
-
-        ITEM.put("status", status);
-        return ITEM;
-    }
     // |
     // Tokenizer
-    private Vector tokenize(String code) throws Exception {
+    public Vector tokenize(String code) throws Exception {
         Vector tokens = new Vector();
         int i = 0;
         if (code.startsWith("#!")) {
