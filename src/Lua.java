@@ -2207,6 +2207,12 @@ public class Lua {
                     return result;
                 }
             }
+            else if (MOD == GETCMD) {
+                return args.isEmpty() ? null : midlet.getCommand(toLuaString(args.elementAt(0)));
+            } 
+            else if (MOD == GETARGS) {
+                return args.isEmpty() ? null : midlet.getArgument(toLuaString(args.elementAt(0)));
+            }
             // Package: java
             else if (MOD == CLASS) { if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "class", "string expected, got no value"); } else { return new Boolean(midlet.javaClass(toLuaString(args.elementAt(0))) == 0); } }
             else if (MOD == NAME) { return midlet.getName(); } 
