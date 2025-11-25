@@ -1958,7 +1958,7 @@ public class Lua {
                                 }
                             }
 
-                            form.setItemStateListener((ItemCommandListener) new LuaFunction("state", field.containsKey("root") ? field.get("root") : LUA_NIL));
+                            form.setItemStateListener((ItemStateListener) new LuaFunction("state", field.containsKey("root") ? field.get("root") : LUA_NIL));
                             form.append(cg);
                         } 
                         else if (type.equals("field")) { form.append(new TextField(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), getFieldNumber(field, "length", 256), getQuest(getFieldValue(field, "mode", "")))); } 
