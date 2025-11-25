@@ -12,7 +12,7 @@ local stdout = graphics.new("buffer", { value = io.read("/etc/motd") })
 
 local execute = graphics.new("command", { label = "Run", type = "ok", priority = 0 })
 
-io.setout(stdout)
+io.setstdout(stdout)
 
 graphics.append(xterm, stdout)
 graphics.append(xterm, io.stdin)
