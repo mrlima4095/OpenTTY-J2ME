@@ -7,7 +7,7 @@ import java.io.*;
 // |
 // Lua Runtime
 public class Lua {
-    private boolean breakLoop = false, doreturn = false, kill = true, gc = true;
+    public boolean breakLoop = false, doreturn = false, kill = true, gc = true;
     private boolean[] attrchanges = new boolean[] { true, true };
     private OpenTTY midlet;
     private Object stdout;
