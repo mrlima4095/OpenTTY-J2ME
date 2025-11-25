@@ -1,20 +1,20 @@
 #!/bin/lua
 
 for k,v in pairs({ 
-    ["PATCH"] = "Fear Fog", 
-    ["VERSION"] = getAppProperty("MIDlet-Version"), 
-    ["RELEASE"] = "stable", 
+    ["PATCH"] = "Fear Fog",
+    ["VERSION"] = getAppProperty("MIDlet-Version"),
+    ["RELEASE"] = "stable",
     ["HOSTNAME"] = "localhost",
     ["SHELL"] = "/bin/sh"
 }) do
     print(k, v)
 end
 
-for k,v in pairs({ 
-    ["TYPE"] = "platform", 
-    ["CONFIG"] = "configuration", 
-    ["PROFILE"] = "profiles", 
-    ["LOCALE"] = "locale" 
+for k,v in pairs({
+    ["TYPE"] = "platform",
+    ["CONFIG"] = "configuration",
+    ["PROFILE"] = "profiles",
+    ["LOCALE"] = "locale"
 }) do
     print(k, getAppProperty("/microedition." .. v))
 end
@@ -23,7 +23,7 @@ local xterm = graphics.new("screen", "OpenTTY")
 local exit = graphics.new("command", { label = "Exit" })
 
 graphics.addCommand(xterm, exit)
-graphics.handler({
+graphics.handler(xterm, {
     [exit] = function()
         os.execute("quit")
     end
