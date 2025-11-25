@@ -1,8 +1,12 @@
 #!/bin/lua
 
-local function shell()
+local function shell(command)
+    command = string.trim(command)
+    local mainCommand = string.getCommand(command)
+    local argument, args = string.getArgument(command), string.split()
     
-end
-
-if arg[1] == "echo" then
+    if mainCommand == "" then
+    elseif mainCommand == "echo" then
+        print(argument)
+    end
 end
