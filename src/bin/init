@@ -1,5 +1,9 @@
 #!/bin/lua
 
+if os.getpid("init") then
+    os.exit(69)
+end
+
 for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["HOSTNAME"] = "localhost", ["SHELL"] = "/bin/sh" }) do
     os.setenv(k, v)
 end
@@ -8,10 +12,8 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
     os.setenv(k, getAppProperty("/microedition." .. v))
 end
 
-local xterm = graphics.new("screen", "OpenTTY")
+local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
-
-
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)

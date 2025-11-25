@@ -69,8 +69,8 @@ public class Lua {
         loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("graphics", graphics);
 
-        funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split" }; 
-        loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT };
+        funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument" }; 
+        loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT, GETCMD, GETARGS };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
         funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "ipairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty", "setmetatable", "getmetatable" }; 
@@ -2210,12 +2210,8 @@ public class Lua {
                     return result;
                 }
             }
-            else if (MOD == GETCMD) {
-                return args.isEmpty() ? null : midlet.getCommand(toLuaString(args.elementAt(0)));
-            } 
-            else if (MOD == GETARGS) {
-                return args.isEmpty() ? null : midlet.getArgument(toLuaString(args.elementAt(0)));
-            }
+            else if (MOD == GETCMD) { return args.isEmpty() ? null : midlet.getCommand(toLuaString(args.elementAt(0))); } 
+            else if (MOD == GETARGS) { return args.isEmpty() ? null : midlet.getArgument(toLuaString(args.elementAt(0))); }
             // Package: java
             else if (MOD == CLASS) { if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "class", "string expected, got no value"); } else { return new Boolean(midlet.javaClass(toLuaString(args.elementAt(0))) == 0); } }
             else if (MOD == NAME) { return midlet.getName(); } 

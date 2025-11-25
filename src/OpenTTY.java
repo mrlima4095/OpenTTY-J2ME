@@ -19,7 +19,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
     
-    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), globals = new Hashtable();
+    public Hashtable attributes = new Hashtable(), 
+                     fs = new Hashtable(), 
+                     sys = new Hashtable(), 
+                     tmp = new Hashtable(), 
+                     cache = new Hashtable(), cacheLua = new Hashtable(), 
+                     sessions = new Hashtable(),
+                     globals = new Hashtable();
     public String username = read("/home/OpenRMS"), logs = "", build = "2025-1.17-03x04"; 
     // |
     // Graphics
@@ -30,32 +36,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Command BACK = new Command("Back", Command.BACK, 1), EXECUTE = new Command("Run", Command.OK, 0);
     // |
     // MIDlet Loader
-    public void startApp() {
+    public OpenTTY() {
         if (sys.containsKey("1")) { }
         else {
-            xterm.append(stdout);
-            print(read("/bin/sh") + "\n\n", stdout);
-            display.setCurrent(xterm);
-
-            Hashtable proc = genprocess("sh", 0, gensignals("exit"));
-            Hashtable sessions = new Hashtable(); 
-            sessions.put("1", "127.0.0.1");
-            proc.put("stack", new Vector()); 
-            proc.put("history", new Vector()); 
-            proc.put("sessions", sessions); 
-            proc.put("servers", new Hashtable());
+            Lua init = new Lua(this, 0, stdout, globals);
+            Hashtable proc = genprocess("init", 0, null), arg = new Hashtable(); arg.put(new Double(0), "/bin/init");
             sys.put("1", proc);
-            Lua lua = new Lua(this, 0, stdout, globals);
             
-            Hashtable arg = new Hashtable(); arg.put(new Double(0), "/bin/sh");
-            
-            lua.run("1", "sh", proc, read("/bin/init"), arg); 
+            init.run("1", "sh", proc, read("/bin/init"), arg); 
         }
     }
     // |
     // | (Triggers)
+    public void startApp() { }
     public void pauseApp() { }
-    public void destroyApp(boolean unconditional) { notifyDestroyed(); } // false = user | true = system
+    public void destroyApp(boolean unconditional) { notifyDestroyed(); }
     // |
     // | (Main Listener)
     public void commandAction(Command c, Displayable d) { }
@@ -65,40 +60,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
     public int setLabel() { stdin.setLabel(username + " " + ((String) globals.get("PWD")) + " " + (username.equals("root") ? "#" : "$")); return 0; }
     public class MIDletControl implements CommandListener, Runnable {
-        public static final int SIGNUP = 5, REQUEST = 6, BG = 12;
+        public static final int SIGNUP = 1;
 
-        private int MOD = -1, COUNT = 1, id = 1000, start;
+        private int MOD = -1;
         private boolean enable = true, asking_user = username.equals(""), asking_passwd = passwd().equals("");
-        private String command = null, pfilter = "", PID = genpid(), DB, address, node, proc_name, filename;
-        private Vector history = (Vector) getobject("1", "history");
-        private Hashtable sessions = (Hashtable) getobject("1", "sessions"), PKG, scope;
-        private Displayable previous;
-        private Alert confirm;
         private Form monitor;
-        private List preview;
-        private TextBox box;
         private Object stdout;
-        private StringItem console, s;
-        private TextField USER, PASSWD, remotein;
-        private Command BACK = new Command("Back", Command.BACK, 1), CLEAR, COPY, CUT, PASTE, MENU, RUN, RUNS, IMPORT, OPEN, EDIT, REFRESH, PROPERTY, KILL, LOAD, DELETE, LOGIN, EXIT, FILTER, CONNECT, VIEW, SAVE, YES, NO;
-
-        private SocketConnection CONN;
-        private ServerSocketConnection server = null;
-        private InputStream IN;
-        private OutputStream OUT;
-
-        private String[] wordlist;
+        private TextField USER, PASSWD;
+        private Command BACK = new Command("Back", Command.BACK, 1), LOGIN, EXIT;
 
         public MIDletControl() { MOD = SIGNUP; monitor = new Form("Login"); monitor.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); if (asking_user) { monitor.append(USER = new TextField("Username", "", 256, TextField.ANY)); } if (asking_passwd) { monitor.append(PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); } monitor.addCommand(LOGIN = new Command("Login", Command.OK, 1)); monitor.addCommand(EXIT = new Command("Exit", Command.SCREEN, 2)); monitor.setCommandListener(this); display.setCurrent(monitor); }
 
-        public MIDletControl(String name, String command, boolean enable, int id, Object stdout, Hashtable scope) { this.MOD = BG; this.command = command; this.enable = enable; this.id = id; this.stdout = stdout; this.scope = scope; new Thread(this, name).start(); }
-
         public void commandAction(Command c, Displayable d) {
-            if (c == BACK) { 
-                goback();
-
-                return; 
-            }
             else if (MOD == SIGNUP) {
                 if (c == LOGIN) {
                     String password = asking_passwd ? PASSWD.getString().trim() : "";
@@ -117,14 +90,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 else if (c == EXIT) { destroyApp(true); }
             }
         }
-        public void run() {
-            if (MOD == BG) { }
-        }
-
-        private void goback() { display.setCurrent(previous != null ? this.previous : xterm); }
 
         public static String passwd() { return loadRMS("OpenRMS", 2); }
-        private String getFirstString(Vector v) { String result = null; for (int i = 0; i < v.size(); i++) { String cur = (String) v.elementAt(i); if (result == null || cur.compareTo(result) < 0) { result = cur; } } v.removeElement(result); return result; } 
     }
     // |
     // String Utils
