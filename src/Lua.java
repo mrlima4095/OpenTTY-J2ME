@@ -2263,15 +2263,11 @@ public class Lua {
                             else if (item instanceof ChoiceGroup) {
                                 ChoiceGroup cg = (ChoiceGroup) item;
 
-                                if (((Double) ITEM.get(cg)).intValue() == Choice.MULTIPLE) {
-                                    Hashtable selTable = new Hashtable();
-                                    for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
+                                Hashtable selTable = new Hashtable();
+                                for (int j = 0; j < cg.size(); j++) { selTable.put(new Double(j + 1), new Boolean(cg.isSelected(j))); }
 
-                                    args.addElement(selTable);
-                                } else {
-                                    int sel = cg.getSelectedIndex();
-                                    args.addElement(sel >= 0 ? cg.getString(sel) : LUA_NIL);
-                                }
+                                args.addElement(selTable);
+
                             }
                         }
                     }
