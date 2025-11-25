@@ -14,7 +14,7 @@ public class Lua {
     private String PID = null;
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    private Hashtable globals = new Hashtable(), proc = new Hashtable(), father, requireCache = new Hashtable();
+    public Hashtable globals = new Hashtable(), proc = new Hashtable(), father, requireCache = new Hashtable();
     private Vector tokens;
     // |
     public int status = 0;
