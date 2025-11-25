@@ -23,7 +23,7 @@ local xterm = graphics.new("screen", "OpenTTY")
 local exit = {
     label = "Exit"
 }
-exit = graphics.new("command", )
+exit = graphics.new("command", exit)
 
 graphics.addCommand(exit)
 graphics.handler({
