@@ -26,5 +26,7 @@ local exit = graphics.new("command", {
 
 graphics.addCommand(exit)
 graphics.handler({
-    [exit]
+    [exit] = function() 
+        os.execute("quit")
+    end
 })
