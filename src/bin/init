@@ -21,7 +21,7 @@ graphics.addCommand(xterm, run)
 graphics.handler(xterm, {
     [run] = function(command)
         if command ~= "" then
-            io.popen("/bin/sh " .. command,)
+            io.popen("/bin/sh", command, false)
         end
     end
 })
