@@ -1925,7 +1925,6 @@ public class Lua {
                             form.append(si);
                         } 
                         else if (type.equals("item")) {
-                            String label = field.containsKey("label") ? toLuaString(field.get("label")) : ;
                             Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("new", "item", "missing root"); 
 
                             Command RUN = new Command(getFieldValue(field, "label", (String) gotbad("new", "item", "missing label")), Command.ITEM, 1); 
