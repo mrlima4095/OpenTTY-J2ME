@@ -1,12 +1,11 @@
 #!/bin/lua
 
--- Configurar variáveis de ambiente
 for k,v in pairs({ 
     ["PATCH"] = "Fear Fog", 
     ["VERSION"] = getAppProperty("MIDlet-Version"), 
     ["RELEASE"] = "stable", 
-    ["HOSTNAME"] = "localhost", 
-    ["SHELL"] = "/bin/sh" 
+    ["HOSTNAME"] = "localhost",
+    ["SHELL"] = "/bin/sh"
 }) do
     os.setenv(k, v)
 end
