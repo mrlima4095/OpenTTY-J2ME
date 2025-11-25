@@ -146,58 +146,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
 
             if (MOD == HISTORY) { String selected = preview.getString(preview.getSelectedIndex()); if (selected != null) { goback(); processCommand(c == RUN || c == List.SELECT_COMMAND ? selected : "buff " + selected, true, id, PID, stdout, scope); } } 
-            else if (MOD == EXPLORER) {
-                String path = ((String) scope.get("PWD"));
-                String selected = preview.getString(preview.getSelectedIndex());
-
-                if (c == OPEN || (c == List.SELECT_COMMAND && !attributes.containsKey("J2EMU"))) { if (selected != null) { processCommand(selected.endsWith("..") ? "cd .." : selected.endsWith("/") ? "cd " + path + selected : "nano " + path + selected, false, id, PID, stdout, scope); if (display.getCurrent() == preview) { reload(); } setLabel(); } } 
-                else if (c == DELETE) { 
-                    if (selected.equals("..")) {  }
-                    else if (path.equals("/home/") || path.equals("/tmp/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")) || path.equals("/bin/") || path.equals("/lib/")) {
-                        int STATUS = deleteFile(path + selected, id, stdout); 
-                        if (STATUS != 0) { warn(xterm.getTitle(), STATUS == 13 ? "Permission denied!" : "java.io.IOException"); } 
-                        
-                        reload(); 
-                    } 
-                    else { warn(xterm.getTitle(), "read-only storage"); }
-                } 
-                else if (c == RUNS) { if (selected.equals("..") || selected.endsWith("/")) { } else { goback(); processCommand(". " + path + selected, true, id, PID, stdout, scope); } } 
-                else if (c == PROPERTY) {
-                    if (selected.equals("..")) { }
-                    else {
-                        String[] info = getExtensionInfo(getExtension(selected)); 
-                        String type = selected.endsWith("/") ? "Directory" : (path.startsWith("/home/") || path.startsWith("/tmp/")) ? (info[0].equals("Unknown") ? "ASCII text" : info[0]) : path.startsWith("/bin/") ? "Application" : path.startsWith("/dev/") ? "Special Device" : path.startsWith("/lib/") ? "Shared Package" : (path.equals("/tmp/") || path.equals("/res/")) ? "ASCII text" : info[0];
-                        
-                        monitor = new Form(selected + " - Information");
-                        monitor.addCommand(BACK);
-                        monitor.append(new StringItem("File:", path + selected));
-                        monitor.append(new StringItem("Type:", type));
-                        if (type.equals("Directory")) { }
-                        else {
-                            int size = 0;
-                            try {
-                                InputStream in = getInputStream(path + selected);
-                                size = in.available(); in.close();
-                            } catch (Exception e) { warn(xterm.getTitle(), getCatch(e)); }
-                            
-                            monitor.append(new StringItem("Size:", String.valueOf(size)));
-                            ChoiceGroup perms = new ChoiceGroup("Permissions", Choice.MULTIPLE);
-                            perms.append("Read", null); perms.append("Write", null);
-
-                            perms.setSelectedIndex(0, true);
-                            perms.setSelectedIndex(1, (path.startsWith("/home/") || path.startsWith("/tmp/") || (path.startsWith("/mnt/") && !path.equals("/mnt/")) || (selected = path + selected).equals("/dev/null") || selected.equals("/dev/stdin") || selected.equals("/dev/stdout") || ((path.equals("/bin/") || path.equals("/lib/")) && id == 0)));
-
-                            monitor.append(perms);
-                            if (info[2].equals("image")) { monitor.append(new ImageItem(null, readImg(path + selected), ImageItem.LAYOUT_DEFAULT, null)); }
-                            if (info[2].equals("text") || path.startsWith("/home/") || path.startsWith("/tmp/")) { monitor.addCommand(OPEN); }
-                        }
-                        monitor.setCommandListener(this);
-                        display.setCurrent(monitor);
-                    }
-                } 
-                else if (c == REFRESH) { reload(); }
-            } 
-            else if (MOD == MONITOR) { System.gc(); reload(); } 
             else if (MOD == PROCESS) {
                 if (c == FILTER) {
                     if (box == null) { box = new TextBox("Process Filter", "", 31522, TextField.ANY); box.addCommand(RUN = new Command("Apply", Command.OK, 1)); box.setCommandListener(this); }
