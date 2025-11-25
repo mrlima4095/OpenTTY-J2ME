@@ -20,9 +20,10 @@ for k,v in pairs({
 end]]
 
 local xterm = graphics.new("screen", "OpenTTY")
-local exit = graphics.new("command", {
+local exit = {
     label = "Exit"
-})
+}
+exit = graphics.new("command", )
 
 graphics.addCommand(exit)
 graphics.handler({
