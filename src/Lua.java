@@ -1902,7 +1902,7 @@ public class Lua {
                 }
                 else { return gotbad(1, "new", "invalid type: " + type); } 
             }
-            else if (MOD == IMG) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0))); }
+            else if (MOD == RENDER) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0))); }
             else if (MOD == APPEND) {
                 if (args.size() < 2) { return gotbad(1, "append", "wrong number of arguments"); }
                 
