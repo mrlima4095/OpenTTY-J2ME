@@ -19,7 +19,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
     
-    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), aliases = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), globals = new Hashtable();
+    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), globals = new Hashtable();
     public String username = read("/home/OpenRMS"), logs = "", build = "2025-1.17-03x04"; 
     // |
     // Graphics
@@ -193,14 +193,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (command.endsWith("&")) { return processCommand("bg " + command.substring(0, command.length() - 1), enable, id, pid, stdout, scope); }
 
         if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.equals("#")) { }
-        else if (aliases.containsKey(mainCommand)) { return processCommand(((String) aliases.get(mainCommand)) + " " + argument, enable, id, pid, stdout, scope); }
         else if (classpath && file("/bin/" + mainCommand) && !mainCommand.equals("sh") && !mainCommand.equals("lua") && !mainCommand.startsWith(".")) { return processCommand(". /bin/" + command, enable, id, pid, stdout, scope); }
 
         // Shell Utilities
-        // | (Aliases)
-        else if (mainCommand.equals("alias")) { if (argument.equals("")) { for (Enumeration KEYS = aliases.keys(); KEYS.hasMoreElements();) { String KEY = (String) KEYS.nextElement(), VALUE = (String) aliases.get(KEY); if (!KEY.equals("xterm") && !VALUE.equals("")) { print("alias " + KEY + "='" + VALUE.trim() + "'", stdout); } } } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { print("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'", stdout); } else { print("alias: " + argument + ": not found", stdout); return 127; } } } else { aliases.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } }  
-        else if (mainCommand.equals("unalias")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (aliases.containsKey(args[i])) { aliases.remove(args[i]); } else { print("unalias: "+ args[i] + ": not found", stdout); return 127; } } } }
-        // | (Environment Keys)
         else if (mainCommand.equals("set")) { if (argument.equals("")) { } else { int INDEX = argument.indexOf('='); if (INDEX == -1) { for (int i = 0; i < args.length; i++) { attributes.put(args[i], ""); } } else { attributes.put(argument.substring(0, INDEX).trim(), getpattern(argument.substring(INDEX + 1).trim())); } } } 
         else if (mainCommand.equals("unset")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { if (attributes.containsKey(args[i])) { attributes.remove(args[i]); } else { } } } }
         else if (mainCommand.equals("export")) { return processCommand(argument.equals("") ? "env" : "set " + argument, false, id, pid, stdout, scope); }
