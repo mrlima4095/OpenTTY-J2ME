@@ -1940,7 +1940,7 @@ public class Lua {
                         }
                         else if (type.equals("choice")) { 
                             String choiceType = getFieldValue(field, "mode", "exclusive");
-                            ChoiceGroup cg = new ChoiceGroup(getFieldValue(field, "label", ""), (LTYPE = choiceType.equals("exclusive") ? Choice.EXCLUSIVE : choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.POPUP));
+                            ChoiceGroup cg = new ChoiceGroup(getFieldValue(field, "label", ""), choiceType.equals("exclusive") ? Choice.EXCLUSIVE : choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.POPUP);
                             Object options = field.get("options");
                             Image IMG = null;
 
