@@ -2278,7 +2278,7 @@ public class Lua {
             catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } 
             catch (Error e) { midlet.sys.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { if (fire instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 if (root == LUA_NIL) { }
