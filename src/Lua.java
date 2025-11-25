@@ -1893,6 +1893,7 @@ public class Lua {
                 }
                 else if (type.equals("buffer")) {
                     if (content instanceof Hashtable) {
+                        Hashtable field = (Hashtable) content;
                         String layout = getFieldValue(field, "layout", "default");
                         StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                         
