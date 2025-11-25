@@ -31,4 +31,4 @@ graphics.handler({
     end
 })
 
-graphics.display(xtem)
+graphics.display(xterm)
