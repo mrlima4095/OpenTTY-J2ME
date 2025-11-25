@@ -2078,7 +2078,7 @@ public class Lua {
             else if (MOD == TICKER) { ((Displayable) args.elementAt(0)).setTicker(args.isEmpty() ? null : new Ticker(toLuaString(args.elementAt(1)))); }
             else if (MOD == GETCURRENT) { return midlet.display.getCurrent(); }
             else if (MOD == VIBRATE) { 
-                display.vibrate(args.isEmpty() ? 500 : args.elementAt(0) instanceof Double ? ((Double) args.elementAt(0)).intValue() : gotbad(1, "vibrate", "number expected"));
+                midlet.display.vibrate(args.isEmpty() ? 500 : args.elementAt(0) instanceof Double ? ((Double) args.elementAt(0)).intValue() : gotbad(1, "vibrate", "number expected"));
             }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
