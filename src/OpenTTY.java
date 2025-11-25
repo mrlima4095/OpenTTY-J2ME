@@ -251,20 +251,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (mainCommand.equals("cron")) { if (argument.equals("")) { } else { return processCommand("execute sleep " + getCommand(argument) + "; " + getArgument(argument), enable, id, pid, stdout, scope); } }
         else if (mainCommand.equals("sleep")) { if (argument.equals("")) { } else { try { Thread.sleep(Integer.parseInt(argument) * 1000); } catch (Exception e) { print(getCatch(e), stdout); return 2; } } }
         // | (TTY Emulation)
-        else if (mainCommand.equals("tty")) { print((String) attributes.get("TTY"), stdout); }
-        else if (mainCommand.equals("ttysize")) { print((stdout instanceof StringItem ? ((StringItem) stdout).getText().length() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString().length() : stdout instanceof String ? read((String) stdout).length() : -1) + " B", stdout); }
-        else if (mainCommand.equals("stty")) {
-            if (argument.equals("")) { print("" + TTY_MAX_LEN, stdout); }
-            else {
-                String source = argument;
-                if (argument.indexOf("=") == -1) { source = getcontent(argument, scope); }
-
-                Hashtable TTY = parseProperties(source);
-
-                if (TTY.containsKey("max-length")) { try { TTY_MAX_LEN = Integer.parseInt((String) TTY.get("max-length")); } catch (Exception e) { destroyApp(false); } }
-                if (TTY.containsKey("classpath")) { classpath = ((String) TTY.get("classpath")).equals("true"); }
-            }
-        }
         // | (Logging)
         else if (mainCommand.equals("log")) { return MIDletLogs(argument, id, stdout); }
         else if (mainCommand.equals("logcat")) { print(logs, stdout); }
@@ -366,103 +352,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         // | -=-=-=-=-=-=-=-=-=-=-
         // API 003 - File System
         // | (Structure)
-        else if (mainCommand.equals("mount")) { if (argument.equals("")) { } else { mount(getcontent(argument, scope)); } }
-        else if (mainCommand.equals("umount")) { fs = new Hashtable(); }
         // | (Listings)
-        else if (mainCommand.equals("dir") || mainCommand.equals("history")) { new MIDletControl(mainCommand, id, stdout, scope); }
-        else if (mainCommand.equals("ls")) { 
-            boolean all = false, verbose = false;
-
-            while (true) {
-                if (argument.startsWith("-a")) { all = true; } 
-                else if (argument.startsWith("-v")) { verbose = true; }
-                else { break; }
-
-                argument = argument.substring(2).trim();
-            }
-
-            String PWD = argument.equals("") ? (String) scope.get("PWD") : argument; 
-            if (!PWD.startsWith("/")) { PWD = ((String) scope.get("PWD")) + PWD; } 
-            if (!PWD.endsWith("/")) { PWD += "/"; }
-
-            Vector BUFFER = new Vector();
-
-            try { 
-                if (PWD.equals("/tmp/")) {
-                    for (Enumeration KEYS = tmp.keys(); KEYS.hasMoreElements();) {
-                        String KEY = (String) KEYS.nextElement();
-                        if ((all || !KEY.startsWith(".")) && !BUFFER.contains(KEY)) { BUFFER.addElement(KEY); } 
-                    }
-                }
-                else if (PWD.equals("/mnt/")) { 
-                    for (Enumeration ROOTS = FileSystemRegistry.listRoots(); ROOTS.hasMoreElements();) { 
-                        String ROOT = (String) ROOTS.nextElement(); if ((all || !ROOT.startsWith(".")) && !BUFFER.contains(ROOT)) { BUFFER.addElement(ROOT); } 
-                    }
-                } 
-                else if (PWD.startsWith("/mnt/")) { 
-                    String REALPWD = "file:///" + PWD.substring(5); 
-                    if (!REALPWD.endsWith("/")) { REALPWD += "/"; } 
-                    FileConnection CONN = (FileConnection) Connector.open(REALPWD, Connector.READ); 
-                    for (Enumeration CONTENT = CONN.list(); CONTENT.hasMoreElements();) { 
-                        String ITEM = (String) CONTENT.nextElement();
-                        if ((all || !ITEM.startsWith(".")) && !BUFFER.contains(ITEM)) {
-                            BUFFER.addElement(ITEM); 
-                        }
-                    } 
-                    CONN.close(); 
-                } 
-                else if (PWD.equals("/bin/") || PWD.equals("/etc/") || PWD.equals("/lib/")) {
-                    String content = loadRMS("OpenRMS", PWD.equals("/bin/") ? 3 : PWD.equals("/etc/") ? 5 : 4);
-                    int index = 0;
-
-                    while (true) {
-                        int start = content.indexOf("[\1BEGIN:", index);
-                        if (start == -1) { break; }
-
-                        int end = content.indexOf("\1]", start);
-                        if (end == -1) { break; }
-
-                        String filename = content.substring(start + "[\1BEGIN:".length(), end);
-                        if (filename.startsWith(".")) { } else { BUFFER.addElement(filename); }
-
-                        index = content.indexOf("[\1END\1]", end);
-                        if (index == -1) { break; }
-
-                        index += "[\1END\1]".length();
-                    }
-                }
-                else if (PWD.equals("/home/") && verbose) { 
-                    String[] FILES = RecordStore.listRecordStores(); 
-                    if (FILES != null) { 
-                        for (int i = 0; i < FILES.length; i++) { 
-                            String NAME = FILES[i]; 
-                            if ((all || !NAME.startsWith(".")) && !BUFFER.contains(NAME)) { BUFFER.addElement(NAME); } 
-                        } 
-                    } 
-                } 
-                else if (PWD.equals("/home/")) { return processCommand("dir", false, id, pid, stdout, scope); }
-            } catch (IOException e) { } 
-
-            Vector FILES = (Vector) fs.get(PWD); 
-            if (FILES != null) { 
-                for (int i = 0; i < FILES.size(); i++) { 
-                    String file = ((String) FILES.elementAt(i)).trim(); 
-                    if (file == null || file.equals("..") || file.equals("/")) { continue; }
-                    if ((all || !file.startsWith(".")) && !BUFFER.contains(file) && !BUFFER.contains(file + "/")) { BUFFER.addElement(file); } 
-                } 
-            } 
-
-            if (!BUFFER.isEmpty()) { 
-                String formatted = "";
-                for (int i = 0; i < BUFFER.size(); i++) { 
-                    String ITEM = (String) BUFFER.elementAt(i); 
-                    if (!ITEM.equals("/")) { 
-                        formatted += ITEM + (PWD.startsWith("/home/") ? "\n" : "\t"); 
-                    } 
-                } 
-                print(formatted.trim(), stdout); 
-            } 
-        }
         // | (Navigation)
         else if (mainCommand.equals("pwd")) { print((String) scope.get("PWD"), stdout); }
         else if (mainCommand.equals("cd")) { 
