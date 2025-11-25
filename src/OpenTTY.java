@@ -35,7 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             Hashtable proc = genprocess("sh", 0, gensignals("exit"));
             Hashtable sessions = new Hashtable(); 
-            sessions.put(pid, "127.0.0.1"); 
+            sessions.put("1", "127.0.0.1"); 
             proc.put("stack", new Vector()); 
             proc.put("history", new Vector()); 
             proc.put("sessions", sessions); 
