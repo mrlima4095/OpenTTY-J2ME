@@ -17,11 +17,21 @@ local function shell(args, enable, aliases, scope)
             print(shell(argument))
         end
     elseif cmd == "echo" then print(argument)
+    elseif cmd == "env" then print(os.getenv())
     elseif cmd == "clear" then
         graphics.SetText(io.stdout, "")
     
     -- File Utils
-
+    elseif cmd == "cat" then
+        for i = 1, #args do
+            local file = io.open(args[i])
+            if file then
+                print(io.read(file))
+            else
+                print("cat: " .. args[i] .. ": not found")
+                return 127
+            end
+        end
     -- 
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
 
