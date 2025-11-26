@@ -95,7 +95,8 @@ java = {
     run = function (func) end,
 
     midlet = {
-        sessions = { ["1"] = "127.0.0.1" },
+        username = "myuser",
+        net = { },
         cache = { ["/bin/shprxy"] = "Cached file" },
         build = "2025-1.17-02x96"
     }

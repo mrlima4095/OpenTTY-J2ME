@@ -1,10 +1,12 @@
 #!/bin/lua
 
-local function shell(args, aliases, scope)
+local function shell(args, enable, aliases, scope)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
 
     if cmd == "" then
+    elseif aliases[cmd] and enable then
+        return shell(aliases[cmd] .. " " .. argument, enable, aliases, scope)
     elseif io.open("/bin/" .. cmd) then
         if argument == "" then
         else
@@ -20,6 +22,12 @@ local function shell(args, aliases, scope)
     elseif cmd == "echo" then print(argument)
     elseif cmd == "clear" then
         graphics.setText(io.stdout, "")
+    
+    -- Basic
+
+    -- 
+
+
     else
         print(cmd .. ": not found")
         return 127

@@ -15,7 +15,7 @@ local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Versio
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
 local function label()
-    graphics.SetLabel(io.stdin, os.getcwd() .. " $")
+    graphics.SetLabel(io.stdin, java.midlet.username .. " " .. os.getcwd() .. " $")
 end
 
 label()
@@ -27,7 +27,7 @@ graphics.handler(xterm, {
     [run] = function(command)
         if command ~= "" then
             graphics.SetText(io.stdin, "")
-            shell(command, alias, scope)
+            shell(command, true, alias, scope)
             label()
         end
     end
