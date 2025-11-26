@@ -91,7 +91,6 @@ local function shell(args, enable, aliases, scope)
             end
         end
         print(string.trim(buff))
-    end
     -- 
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
 
