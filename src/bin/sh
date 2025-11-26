@@ -15,7 +15,7 @@ local function shell(args, scope)
     elseif cmd == "eval" then
         if argument == "" then
         else
-            print(shell(argument))
+            print(shell(argument, scope))
         end
     elseif cmd == "echo" then print(argument)
     else
