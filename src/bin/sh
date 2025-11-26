@@ -15,6 +15,8 @@ local function shell(args)
     elseif args[1] == "env" then
     elseif args[1] == "cat" then
         for i = 2,#args - 1 do
+            if args[i] == nil then break end
+            
             local file = io.open(args[i])
             
             if file then
