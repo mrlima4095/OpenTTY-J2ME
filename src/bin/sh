@@ -8,11 +8,8 @@ local function shell(args, enable, aliases, scope)
     elseif aliases[cmd] and enable then
         return shell(aliases[cmd] .. " " .. argument, enable, aliases, scope)
     elseif io.open("/bin/" .. cmd) then
-        if argument == "" then
-        else
-            local res = io.popen("/bin/" .. cmd, argument, false, io.stdout)
-            return res.status
-        end
+        local res = io.popen("/bin/" .. cmd, argument, false, io.stdout)
+        return res.status
     elseif cmd == "exit" then os.exit(nil)
     elseif cmd == "eval" then
         if argument == "" then
@@ -21,12 +18,12 @@ local function shell(args, enable, aliases, scope)
         end
     elseif cmd == "echo" then print(argument)
     elseif cmd == "clear" then
-        graphics.setText(io.stdout, "")
+        graphics.SetText(io.stdout, "")
     
-    -- Basic
+    -- File Utils
 
     -- 
-
+    elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
 
     else
         print(cmd .. ": not found")
