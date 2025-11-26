@@ -1,5 +1,29 @@
 #!/bin/lua
 
+
+return function (args)
+    local argument, j = {}, 1
+    for i = 2, #args - 1 do
+        argument[j] = args[i]
+        j = j + 1
+    end
+    argument = table.concat(argument, " ")
+
+    if args[1] == "" then
+    elseif io.open("/bin/" .. args[1]) then
+        local res = io.popen("/bin/" .. args[i], argument, false, io.stdout)
+        return res.status
+    elseif args[1] == "" then
+    elseif args[1] == "" then
+    elseif args[1] == "" then
+    elseif args[1] == "" then
+    elseif args[1] == "" then
+    
+    end
+
+    return 0
+end
+
 local function shell(args)
     local argument, j = {}, 1
     for i = 2,#args - 1 do
@@ -8,10 +32,6 @@ local function shell(args)
     end
     argument = table.concat(argument, " ")
     
-    if args[1] == "" then
-    elseif io.open("/bin/" .. args[1]) then
-        local res = io.popen("/bin/" .. args[1], argument, false, io.stdout)
-        return res.status
     elseif args[1] == "env" then
     elseif args[1] == "cat" then
         for i = 2,#args - 1 do

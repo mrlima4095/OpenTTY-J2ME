@@ -30,7 +30,6 @@ public class OpenTTY extends MIDlet {
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
-    public Form xterm = new Form("SandBox");
     public StringItem stdout = new StringItem("", "");
     public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
     public Command BACK = new Command("Back", Command.BACK, 1), EXECUTE = new Command("Run", Command.OK, 0);
@@ -38,32 +37,30 @@ public class OpenTTY extends MIDlet {
     // MIDlet Loader
     // |
     // | (Triggers)
-    public void startApp() {
-        if (sys.containsKey("1")) { }
-        else {    
-            try { 
-                Hashtable proc = new Hashtable(), args = new Hashtable();    
-                args.put(new Double(0), "/bin/init"); globals.put("PWD", "/home/");
-                proc.put("name", "init"); proc.put("owner", "root");
-
-                Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
-                sys.put("1", proc); lua.globals.put("arg", args);    
-
-                lua.tokens = lua.tokenize(read("/bin/init")); 
-                
-                while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
-            }
-            catch (Exception e) { warn("SandBox", getCatch(e)); } 
-            catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
-        }
-    }
+    public void startApp() { if (sys.containsKey("1")) { } else { init(); } }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
+    // | (Boot)
+    public void init() {
+        try { 
+            Hashtable proc = new Hashtable(), args = new Hashtable();    
+            args.put(new Double(0), "/bin/init"); globals.put("PWD", "/home/");
+            proc.put("name", "init"); proc.put("owner", "root");
+
+            Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
+            sys.put("1", proc); lua.globals.put("arg", args);    
+
+            lua.tokens = lua.tokenize(read("/bin/init")); 
+            
+            while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
+        }
+        catch (Exception e) { warn("SandBox", getCatch(e)); } 
+        catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
+    }
     // |
     // Control Thread
     public OpenTTY getInstance() { return this; }
     public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
-    public int setLabel() { stdin.setLabel(username + " " + ((String) globals.get("PWD")) + " " + (username.equals("root") ? "#" : "$")); return 0; }
     public class MIDletControl implements CommandListener {
         public static final int SIGNUP = 1;
 
@@ -88,7 +85,7 @@ public class OpenTTY extends MIDlet {
                         if (asking_user) { write("/home/OpenRMS", username.getBytes(), 0); }
                         if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
 
-                        display.setCurrent(xterm);
+                        display.setCurrent();
                         setLabel();
                     }
                 } 
