@@ -59,7 +59,7 @@ public class Lua {
         funcs = new String[] { "class", "getName", "delete" }; 
         loaders = new int[] { CLASS, NAME, DELETE };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
-        jdb.put("net", midlet.network); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
+        jdb.put("username", midlet.username); jdb.put("net", midlet.network); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
 
         funcs = new String[] { "connect", "peer", "device", "server", "accept" }; 
         loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
@@ -1370,7 +1370,7 @@ public class Lua {
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
-            else if (MOD == EXIT) { midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, null); } }
+            else if (MOD == EXIT) { midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else if (args.elementAt(0) == null) { midlet.destroyApp(true); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, null); } }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
             else if (MOD == GETPID) { return args.isEmpty() ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
             else if (MOD == SETPROC) {
@@ -2206,6 +2206,7 @@ public class Lua {
             else if (MOD == UUID) { String chars = "0123456789abcdef"; StringBuffer uuid = new StringBuffer(); for (int i = 0; i < 36; i++) { if (i == 8 || i == 13 || i == 18 || i == 23) { uuid.append('-'); } else if (i == 14) { uuid.append('4'); } else if (i == 19) { uuid.append(chars.charAt(8 + midlet.random.nextInt(4))); } else { uuid.append(chars.charAt(midlet.random.nextInt(16))); } } return uuid.toString(); }
             else if (MOD == SPLIT) {
                 if (args.isEmpty()) { return gotbad(1, "split", "string expected, got no value"); } 
+                else if (args.size() > 1 && args.elementAt(1) == null) { return midlet.splitArgs(toLuaString(args.elementAt(0))); }
                 else {
                     String text = toLuaString(args.elementAt(0));
                     String separator = args.size() > 1 ? toLuaString(args.elementAt(1)) : " ";
