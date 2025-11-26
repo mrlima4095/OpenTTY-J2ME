@@ -1,34 +1,6 @@
 #!/bin/lua
 
-local PASTEBIN_API = os.getenv("PASTEBIN_API")
-local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
-local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
 
-local app = {}
-
-function app.main()
-    local menu = {
-        title = "PasteBin",
-        back = { root = os.exit },
-        button = {
-            label = "Select",
-            root = function (opt)
-                if opt == "Config. PasteBin API Key" then
-
-                elseif opt == "Upload File" then app.GetFile()
-                elseif opt == "Editor" then app.GetPaste()
-                elseif opt == "---" then app.main()
-                else app.GetURL() end
-            end
-        },
-
-        fields = { "Upload File", "Editor", "---", "View" }
-    }
-
-    if PASTEBIN_API == nil then menu.fields = { "Config. PasteBin API Key", "---", "View" } end
-
-    graphics.display(graphics.BuildList(menu))
-end
 function app.paste(content)
     local conn, i, o = socket.connect("socket://" .. PROXY)
 
@@ -64,6 +36,35 @@ function app.Preview(id)
     end
 end
 function app.GetURL() graphics.display(graphics.BuildQuest({ title = "PasteBin", label = "Paste ID", back = { root = app.main }, button = { label = "View", root = app.Preview } })) end
+
+local PASTEBIN_API = os.getenv("PASTEBIN_API")
+local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
+local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
+
+local app = {}
+
+app.main = function ()
+    local previous = graphics.getCurrent()
+    local menu = graphics.new("list", "PasteBin")
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local select = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+
+    if PASTEBIN_API then
+        graphics.append(menu, "New Paste")
+        graphics.append(menu, "View Paste")
+    else
+        graphics.append(menu, "Config. PasteBin API KEY")
+        graphics.append(menu, "View Paste")
+    end
+    graphics.addCommand(menu, back)
+    graphics.addCommand(menu, select)
+    graphics.handler(menu, { [back] = function () graphics.display(previous) os.exit(0) end, [select] = function (option)
+        if option == "New Paste" then
+        elseif option == "View Paste" then
+        elseif option == "Config. PasteBin API KEY" then
+        end
+    end })
+end
 
 os.setproc("name", "pastebin")
 app.main()
