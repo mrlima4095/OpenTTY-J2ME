@@ -40,20 +40,18 @@ public class OpenTTY extends MIDlet {
     // | (Triggers)
     public void startApp() {
         if (sys.containsKey("1")) { }
-        else {  
-            Hashtable proc = new Hashtable(), args = new Hashtable();          
+        else {    
             try { 
+                Hashtable proc = new Hashtable(), args = new Hashtable();    
                 args.put(new Double(0), "/bin/init"); globals.put("PWD", "/home/");
                 proc.put("name", "init"); proc.put("owner", "root");
 
                 Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
-                warn("hello", "working?");
-                
-    
+                sys.put("1", proc); lua.globals.put("arg", args);    
 
-                //lua.tokens = lua.tokenize(read("/bin/init")); 
+                lua.tokens = lua.tokenize(read("/bin/init")); 
                 
-                //while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
+                while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
             }
             catch (Exception e) { warn("SandBox", getCatch(e)); } 
             catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
