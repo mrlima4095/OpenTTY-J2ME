@@ -20,4 +20,9 @@ local function shell(command)
     return 0
 end
 
-print(arg)
+local cmd = {}
+for i=1,#arg - 1 do
+    cmd[i] = arg[i]
+end
+
+os.exit(shell(table.concat(cmd, " ")))
