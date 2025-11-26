@@ -21,7 +21,7 @@ local function shell(args, enable, aliases, scope)
     -- Environment Manager
     elseif cmd == "env" then
         if argument == "" then
-            for k,v in pairs(os.getenv("")) do
+            for k,v in pairs(os.getenv()) do
                 print(k .. "=" .. v)
             end
         else
