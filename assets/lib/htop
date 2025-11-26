@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local function refresh(item)
+local function clean(item)
     collectgarbage()
     graphics.setText(item, "Used Memory: " .. collectgarbage("count") .. "\.nFree Memory: " .. collectgarbage("free") .. "\.nTotal Memory: " .. collectgarbage("total"))
 end
@@ -17,15 +17,15 @@ local function monitor()
         [back] = function()
             graphics.display(os.getenv("xterm"))
         end,
-        [refresh] = {
-            
-        }
+        [refresh] = function()
+            clean(inf9)
+        end
     }
     
-    graphics.append(info)
-    graphics.addCommand(back)
-    graphics.addCommand(refresh)
-    graphics.handler()
+    graphics.append(screen, info)
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, refresh)
+    graphics.handler(screen, handler)
 end
 
 os.setproc("name", "monitor")
