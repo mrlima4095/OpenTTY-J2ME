@@ -1,9 +1,10 @@
 #!/bin/lua
 
 local function shell(args)
-    local argument = {}
+    local argument, j = {}, 1
     for i = 2,#args - 1 do
-        argument[i] = args[i]
+        argument[j] = args[i]
+        j = j + 1
     end
     argument = table.concat(argument, " ")
     
