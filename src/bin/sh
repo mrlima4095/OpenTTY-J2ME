@@ -20,10 +20,6 @@ local function shell (args, scope)
             print(shell(argument))
         end
     elseif cmd == "echo" then print(argument)
-    elseif cmd == "" then
-    elseif cmd == "" then
-    elseif cmd == "" then
-    elseif cmd == "" then
     else
         print(cmd .. ": not found")
         return 127
