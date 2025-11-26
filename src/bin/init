@@ -15,13 +15,14 @@ local function label()
     graphics.setLabel(io.stdin, os.getcwd() .. " $")
 end
 
+label()
+
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
 graphics.addCommand(xterm, run)
 graphics.handler(xterm, {
     [run] = function(command)
         if command ~= "" then
-            
             graphics.setText(io.stdin, "")
             io.popen("/bin/sh", command, false, io.stdout)
         end
