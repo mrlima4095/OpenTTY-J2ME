@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local function shell(args, scope)
+local function shell(args)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
 
@@ -15,7 +15,7 @@ local function shell(args, scope)
     elseif cmd == "eval" then
         if argument == "" then
         else
-            print(shell(argument, scope))
+            print(shell(argument))
         end
     elseif cmd == "echo" then print(argument)
     else
