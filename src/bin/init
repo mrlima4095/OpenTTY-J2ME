@@ -1,9 +1,5 @@
 #!/bin/lua
 
-if os.getpid("init") then
-    os.exit(69)
-end
-
 for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["HOSTNAME"] = "localhost", ["SHELL"] = "/bin/sh" }) do
     os.setenv(k, v)
 end
