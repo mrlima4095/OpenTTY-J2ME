@@ -1,5 +1,5 @@
 #!/bin/lua
-
+--[[
 for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["HOSTNAME"] = "localhost", ["SHELL"] = "/bin/sh" }) do
     os.setenv(k, v)
 end
@@ -8,7 +8,6 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
     os.setenv(k, getAppProperty("/microedition." .. v))
 end
 
-local shell = require("/bin/sh")
 
 local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
@@ -33,3 +32,6 @@ graphics.handler(xterm, {
 })
 graphics.db["xterm"] = xterm
 graphics.display(xterm)
+]]
+
+graphics.vibrate()
