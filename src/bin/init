@@ -25,6 +25,7 @@ graphics.handler(xterm, {
         if command ~= "" then
             graphics.setText(io.stdin, "")
             io.popen("/bin/sh", command, false, io.stdout)
+            label()
         end
     end
 })
