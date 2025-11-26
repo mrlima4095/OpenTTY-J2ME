@@ -19,3 +19,5 @@ local function shell(command)
 
     return 0
 end
+
+print(arg)
