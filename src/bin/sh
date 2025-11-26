@@ -10,7 +10,7 @@ local function shell(args)
     
     if args[1] == "" then
     elseif io.open("/bin/" .. args[1]) then
-        local res = io.popen("/bin/" .. args[1], table.concat(), false, io.stdout)
+        local res = io.popen("/bin/" .. args[1], argument, false, io.stdout)
         return res.status
     elseif args[1] == "env" then
     elseif args[1] == "cat" then
