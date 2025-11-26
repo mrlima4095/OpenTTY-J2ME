@@ -2163,7 +2163,14 @@ public class Lua {
             else if (MOD == UUID) { String chars = "0123456789abcdef"; StringBuffer uuid = new StringBuffer(); for (int i = 0; i < 36; i++) { if (i == 8 || i == 13 || i == 18 || i == 23) { uuid.append('-'); } else if (i == 14) { uuid.append('4'); } else if (i == 19) { uuid.append(chars.charAt(8 + midlet.random.nextInt(4))); } else { uuid.append(chars.charAt(midlet.random.nextInt(16))); } } return uuid.toString(); }
             else if (MOD == SPLIT) {
                 if (args.isEmpty()) { return gotbad(1, "split", "string expected, got no value"); } 
-                else if (args.size() > 1 && args.elementAt(1) == null) { return midlet.splitArgs(toLuaString(args.elementAt(0))); }
+                else if (args.size() > 1 && args.elementAt(1) == null) {
+                    String[] array = midlet.splitArgs(toLuaString(args.elementAt(0)));
+                    Hashtable result = new Hashtable();
+                    for (int i = 0; i < array; i++) {
+                        result.put(new Double(i + 1), array[i]);
+                    }
+                    return result;
+                }
                 else {
                     String text = toLuaString(args.elementAt(0));
                     String separator = args.size() > 1 ? toLuaString(args.elementAt(1)) : " ";
