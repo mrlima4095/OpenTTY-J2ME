@@ -10,15 +10,25 @@ local function cmatrix()
 
     os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 init /dev/stdout; clear; bg cron 20 unset CMATRIX; true")
 
-    while os.getenv("CMATRIX") do
-        io.write(math.random(10) .. " ", "/dev/stdout", "a")
+    
 
-        if string.len(io.read()) > 200 then os.execute("clear") end
-    end
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("screen", nil)
+    local buffer = graphics.new("buffer")
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local handler = { [back] = function () graphics.display(previous) os.exit() end }
 
-    os.execute(collector)
+    graphics.append(screen, buffer)
+    graphics.handler(screen, handler)
+    graphics.display(screen)
+
+    java.run(function ()
+        while true do
+            
+        end
+    end)
+
 end
 
 os.setproc("name", "cmatrix")
-os.setproc("collector", collector)
 cmatrix()

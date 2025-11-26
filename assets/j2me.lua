@@ -78,7 +78,8 @@ graphics = {
     SetTitle = function (title) end,
     WindowTitle = function (title, screen) end,
     SetTicker = function (text) end,
-    setText = function (field, text) end,
+    SetLabel = function (field, text) end,
+    SetText = function (field, text) end,
     getCurrent = function () end,
     render = function (img) end,
     append = function (screen, field) end,
@@ -91,6 +92,7 @@ java = {
     class = function (name) return true end,
     getName = function () return "JVM" end,
     delete = function (struct, field) local value = struct[field] struct[field] = nil return value end,
+    run = function (func) end,
 
     midlet = {
         sessions = { ["1"] = "127.0.0.1" },
