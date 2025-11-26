@@ -2070,7 +2070,7 @@ public class Lua {
                 if (args.isEmpty()) {
                     
                 } else {
-                    Item i = args.elementAt(0) instanceof Item ? args.elementAt(0) : (Item) gotbad(1, "setLabel", "Item expected");
+                    Item i = args.elementAt(0) instanceof Item ? (Item) args.elementAt(0) : (Item) gotbad(1, "setLabel", "Item expected");
                     i.setLabel(args.size() > 1 ? toLuaString(args.elementAt(1)) : null);
                 }
             } 
@@ -2078,7 +2078,7 @@ public class Lua {
                 if (args.isEmpty()) {
                     
                 } else {
-                    Item i = args.elementAt(0) instanceof Item ? args.elementAt(0) : (Item) gotbad(1, "setLabel", "Item expected");
+                    Item i = args.elementAt(0) instanceof Item ? (Item) args.elementAt(0) : (Item) gotbad(1, "setLabel", "Item expected");
                     if (i instanceof StringItem) ((StringItem) i).setText(args.size() > 1 ? toLuaString(args.elementAt(1)) : "");
                     if (i instanceof TextField) ((TextField) i).setString(args.size() > 1 ? toLuaString(args.elementAt(1)) : "");
                 }
