@@ -1,6 +1,6 @@
 #!/bin/lua
 
---[[local function shell(args, aliases, scope, )
+local function shell(args, aliases, scope, )
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
 
@@ -25,4 +25,4 @@
 
     return 0
 end
-]]
+
