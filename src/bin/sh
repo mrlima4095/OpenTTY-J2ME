@@ -12,6 +12,8 @@ local function shell(command)
     elseif mainCommand == "env" then
     elseif mainCommand == "echo" then
         print(argument)
+    elseif mainCommand == "clear" then
+        io.write("", io.stdout)
     else
         print(mainCommand .. ": not found")
         return 127
