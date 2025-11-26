@@ -8,7 +8,7 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
     os.setenv(k, getAppProperty("/microedition." .. v))
 end
 
-local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
+local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
 local function label()
