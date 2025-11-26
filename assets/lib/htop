@@ -15,7 +15,7 @@ local function monitor()
     })
     local handler = {
         [back] = function()
-            graphics.display(os.getenv("xterm"))
+            graphics.display(graphics.db["xterm"])
         end,
         [refresh] = function()
             clean(info)
