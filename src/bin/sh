@@ -29,7 +29,7 @@ local function shell(args)
     elseif args[1] == "echo" then
         print(argument)
     elseif args[1] == "clear" then
-        io.write("", io.stdout)
+        graphics.setText(io.stdout, "")
     else
         print(args[1] .. ": not found")
         return 127
