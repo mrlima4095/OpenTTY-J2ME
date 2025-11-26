@@ -16,6 +16,7 @@ graphics.append(xterm, io.stdin)
 graphics.addCommand(xterm, run)
 graphics.handler(xterm, {
     [run] = function(command)
+        graphics.display(graphics.new("alert", "OpenTTY", "Ok running!"))
         if command ~= "" then
             io.popen("/bin/sh", command, false, io.stdout)
         end
