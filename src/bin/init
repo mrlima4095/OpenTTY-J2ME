@@ -1,5 +1,5 @@
 #!/bin/lua
---[[
+
 for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["HOSTNAME"] = "localhost", ["SHELL"] = "/bin/sh" }) do
     os.setenv(k, v)
 end
@@ -32,6 +32,3 @@ graphics.handler(xterm, {
 })
 graphics.db["xterm"] = xterm
 graphics.display(xterm)
-]]
-
-graphics.vibrate()
