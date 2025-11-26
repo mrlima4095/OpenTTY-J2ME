@@ -78,6 +78,7 @@ graphics = {
     SetTitle = function (title) end,
     WindowTitle = function (title, screen) end,
     SetTicker = function (text) end,
+    setText = function (field, text) end,
     getCurrent = function () end,
     render = function (img) end,
     append = function (screen, field) end,
