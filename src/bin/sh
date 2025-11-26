@@ -2,7 +2,7 @@
 
 local function shell(args)
     local argument = {}
-    for i = 1,#args - 1 then
+    for i = 2,#args then
         argument[i] = args[i]
     end
     argument = table.concat(argument)
@@ -11,13 +11,13 @@ local function shell(args)
     elseif io.open("/bin/" .. args[1]) then
         local res = io.popen("/bin/" .. args[1], table.concat(), false, io.stdout)
         return res.status
-    elseif mainCommand == "env" then
-    elseif mainCommand == "echo" then
+    elseif args[1] == "env" then
+    elseif args[1] == "echo" then
         print(argument)
-    elseif mainCommand == "clear" then
+    elseif args[1] == "clear" then
         io.write("", io.stdout)
     else
-        print(mainCommand .. ": not found")
+        print(args[1] .. ": not found")
         return 127
     end
 
