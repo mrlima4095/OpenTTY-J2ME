@@ -28,6 +28,8 @@ local function shell(args)
         end
     elseif args[1] == "echo" then
         print(argument)
+    elseif args[1] == "eval" then
+        print(shell(argument))
     elseif args[1] == "clear" then
         graphics.setText(io.stdout, "")
     else
