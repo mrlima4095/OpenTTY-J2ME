@@ -1354,19 +1354,21 @@ public class Lua {
             }
             // Package: os
             //else if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, stdout, father)); } }
-            else if (MOD == GETENV) { return args.isEmpty() ? gotbad(1, "getenv", "string expected, got no value") : midlet.attributes.get(toLuaString(args.elementAt(0))); }
+            else if (MOD == GETENV) { return args.isEmpty() ? midlet.attributes : midlet.attributes.get(toLuaString(args.elementAt(0))); }
             else if (MOD == SETENV) { 
                 if (args.isEmpty()) { } 
                 else {
                     if (args.size() > 1) {
-                        if (args.elementAt(1) == null) { }
+                        if (args.elementAt(1) == null) {
+                            midlet.attributes.remove(toLuaString(args.elementAt(0)));
+                        }
                         else {
                             midlet.attributes.put(toLuaString(args.elementAt(0)), toLuaString(args.elementAt(1)));
-                            return new Double(0);
                         }
                     }
-
-                    midlet.attributes.remove(toLuaString(args.elementAt(0)));
+                    else {
+                        midlet.attributes.remove(toLuaString(args.elementAt(0)));
+                    }
                 }
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
@@ -2249,9 +2251,7 @@ public class Lua {
                     new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0))).run();
                 } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); }
             }
-            else if (MOD == UPTIME) {
-                return new Double(System.currentTimeMillis() - midlet.uptime);
-            }
+            else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
 
             return null;
         }
