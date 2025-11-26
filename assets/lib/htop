@@ -18,7 +18,7 @@ local function monitor()
             graphics.display(os.getenv("xterm"))
         end,
         [refresh] = function()
-            clean(inf9)
+            clean(info)
         end
     }
     
