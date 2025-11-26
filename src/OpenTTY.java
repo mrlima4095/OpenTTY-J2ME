@@ -47,12 +47,13 @@ public class OpenTTY extends MIDlet {
                 proc.put("name", "init"); proc.put("owner", "root");
 
                 Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
-                warn("hello", "working?");if (lua == null) {
+                warn("hello", "working?");
+                if (lua == null) {
                     warn("Debug", "lua is null");
                 } else if (lua.globals == null) {
                     warn("Debug", "lua.globals is null");
                 } else {
-                    lua.globals.put("arg", args); 
+                    //lua.globals.put("arg", args); 
                     warn("Debug", "lua.globals.put completed");
                 }
     
