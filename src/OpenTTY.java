@@ -24,7 +24,8 @@ public class OpenTTY extends MIDlet {
                      sys = new Hashtable(), 
                      tmp = new Hashtable(), 
                      cache = new Hashtable(), cacheLua = new Hashtable(), 
-                     sessions = new Hashtable(),
+                     graphics = new Hashtable(),
+                     network = new Hashtable(),
                      globals = new Hashtable();
     public String username = read("/home/OpenRMS"), logs = "", build = "2025-1.17-03x04"; 
     // |

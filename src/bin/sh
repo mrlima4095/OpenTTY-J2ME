@@ -1,6 +1,5 @@
 #!/bin/lua
 
-
 return function (args)
     local argument, j = {}, 1
     for i = 2, #args - 1 do
@@ -13,51 +12,12 @@ return function (args)
     elseif io.open("/bin/" .. args[1]) then
         local res = io.popen("/bin/" .. args[i], argument, false, io.stdout)
         return res.status
+    elseif args[1] == "exit" then
     elseif args[1] == "" then
     elseif args[1] == "" then
     elseif args[1] == "" then
     elseif args[1] == "" then
-    elseif args[1] == "" then
-    
     end
 
     return 0
 end
-
-local function shell(args)
-    local argument, j = {}, 1
-    for i = 2,#args - 1 do
-        argument[j] = args[i]
-        j = j + 1
-    end
-    argument = table.concat(argument, " ")
-    
-    elseif args[1] == "env" then
-    elseif args[1] == "cat" then
-        for i = 2,#args - 1 do
-            if args[i] == nil then break end
-            
-            local file = io.open(args[i])
-            
-            if file then
-                print(io.read(file))
-            else
-                print("cat: " .. args[i] .. ": not found")
-                return 127
-            end
-        end
-    elseif args[1] == "echo" then
-        print(argument)
-    elseif args[1] == "eval" then
-        print(shell(argument))
-    elseif args[1] == "clear" then
-        graphics.setText(io.stdout, "")
-    else
-        print(args[1] .. ": not found")
-        return 127
-    end
-
-    return 0
-end
-
-os.exit(shell(arg))
