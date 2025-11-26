@@ -1585,7 +1585,7 @@ public class Lua {
                     } 
                     CONN.close(); 
                 } 
-                else if (pwd.equals("bbbbbbbbbbbbbbbbbbbbbvbhcbhcbcgbhcbbbbcxbbbbbbchbhcbbbgcbhcbchb gnhhhcvcnhbbbbbhc bchb cbbb/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
+                else if (pwd.equals("/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
                     String content = midlet.loadRMS("OpenRMS", pwd.equals("/bin/") ? 3 : pwd.equals("/etc/") ? 5 : 4);
                     int i = 0;
 
