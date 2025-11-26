@@ -5,6 +5,7 @@ local function shell(args, enable, aliases, scope)
     args = string.split(argument, nil)
 
     if cmd == "" then
+
     elseif aliases[cmd] and enable then
         return shell(aliases[cmd] .. " " .. argument, enable, aliases, scope)
     elseif io.open("/bin/" .. cmd) then
@@ -18,9 +19,38 @@ local function shell(args, enable, aliases, scope)
         end
     elseif cmd == "echo" then print(argument)
     elseif cmd == "env" then print(os.getenv())
-    elseif cmd == "clear" then
-        graphics.SetText(io.stdout, "")
-    
+    elseif cmd == "clear" then graphics.SetText(io.stdout, "")
+
+    -- Alias Manager
+    elseif cmd == "alias" then
+        if argument == "" then
+            for k,v in pairs(aliases) do
+                print("alias " .. k .. "='" .. v .. "'")
+            end
+        elseif string.find(argument, "=") then
+        else
+            for i = 1, #args do
+                if aliases[args[i]] then
+                    print("alias " .. args[i] .. "='" .. aliases[args[i]] .. "'")
+                else
+                    print("alias: " .. args[i] .. ": not found")
+                    return 127
+                end
+            end
+        end
+    elseif cmd == "unalias" then
+        if argument == "" then
+            print("unalias: usage: unalias [-a] name [name ...]")
+        else
+            for i = 1, #args do
+                if aliases[args[i]] then
+                    java.delete(aliases, args[i])
+                else
+                    print("unalias: " .. args[i] .. ": not found")
+                    return 127
+                end
+            end
+        end
     -- File Utils
     elseif cmd == "cat" then
         for i = 1, #args do
