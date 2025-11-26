@@ -7,7 +7,8 @@ local function shell(command)
     
     if mainCommand == "" then
     elseif io.open("/bin/" .. mainCommand) then
-        io.popen("/bin/" .. mainCommand, argument, false, io.stdout)
+        local res = io.popen("/bin/" .. mainCommand, argument, false, io.stdout)
+        return res.status
     elseif mainCommand == "echo" then
         print(argument)
     else
