@@ -26,7 +26,7 @@ graphics.handler(xterm, {
     [run] = function(command)
         if command ~= "" then
             graphics.setText(io.stdin, "")
-            shell(command)
+            shell(command, {})
             label()
         end
     end
