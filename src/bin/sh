@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local function shell(args, aliases, scope, )
+local function shell(args, aliases, scope)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
 
@@ -18,6 +18,8 @@ local function shell(args, aliases, scope, )
             print(shell(argument))
         end
     elseif cmd == "echo" then print(argument)
+    elseif cmd == "clear" then
+        graphics.setText(io.stdout, "")
     else
         print(cmd .. ": not found")
         return 127
@@ -26,3 +28,4 @@ local function shell(args, aliases, scope, )
     return 0
 end
 
+return shell
