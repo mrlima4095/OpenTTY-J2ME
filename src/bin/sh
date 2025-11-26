@@ -1,8 +1,11 @@
 #!/bin/lua
 
 local function shell(args, scope)
-    if args[i] == "" then
-    elseif io.open("/bin/" .. args[i]) then
+    local cmd, argument = string.getCommand(args), string.getArgument(args)
+    args = string.split(argument, nil)
+
+    if cmd == "" then
+    elseif io.open("/bin/" .. cmd) then
         if argument == "" then
         else
             local res = io.popen("/bin/" .. cmd, argument, false, io.stdout)
@@ -23,4 +26,3 @@ local function shell(args, scope)
     return 0
 end
 
-os.exit()
