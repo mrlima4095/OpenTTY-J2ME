@@ -2246,6 +2246,12 @@ public class Lua {
                 else if (args.size() < 2 || args.elementAt(1) == null) { return gotbad(2, "delete", "value expected, got " + (args.size() < 2 ? "no value" : "nil")); }
                 else { ((Hashtable) args.elementAt(0)).remove(args.elementAt(1)); }
             }
+            else if (MOD == THREAD) { 
+                if (args.isEmpty()) { }
+                else if (args.elementAt(0) instanceof LuaFunction) {
+                    new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0))).run();
+                } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); }
+            }
             else if (MOD == UPTIME) {
                 return new Double(System.currentTimeMillis() - midlet.uptime);
             }
@@ -2331,6 +2337,15 @@ public class Lua {
         private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = midlet.replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
 
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
+
+        public void run() {
+            if (root instanceof LuaFunction) {
+                Vector arg = new Vector();
+
+                try { ((LuaFunction) root).call(arg); }
+                catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout); } 
+            }
+        }
 
         public void commandAction(Command c, Displayable d) {
             try {
