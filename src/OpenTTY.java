@@ -80,8 +80,8 @@ public class OpenTTY extends MIDlet {
                     String password = asking_passwd ? PASSWD.getString().trim() : "";
 
                     if (asking_user) { username = USER.getString().trim(); }
-                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warn(xterm.getTitle(), "Missing credentials!"); } 
-                    else if (username.equals("root")) { USER.setString(""); warn(xterm.getTitle(), "Invalid username!"); } 
+                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warn("Login", "Missing credentials!"); } 
+                    else if (username.equals("root")) { USER.setString(""); warn("Login", "Invalid username!"); } 
                     else {
                         if (asking_user) { write("/home/OpenRMS", username.getBytes(), 0); }
                         if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
