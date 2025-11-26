@@ -47,7 +47,7 @@ public class OpenTTY extends MIDlet {
 
                 Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
                 warn("hello", "working! but not booting");
-                sys.put("1", proc); lua.globals.put("arg", args);
+                //sys.put("1", proc); lua.globals.put("arg", args);
 
                 //lua.tokens = lua.tokenize(read("/bin/init")); 
                 
