@@ -29,5 +29,5 @@ graphics.handler(xterm, {
         end
     end
 })
-
+os.setenv("xterm", xterm)
 graphics.display(xterm)
