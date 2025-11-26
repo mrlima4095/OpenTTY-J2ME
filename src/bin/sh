@@ -5,6 +5,7 @@ local function shell(args)
     for i = 1,#args - 1 then
         argument[i] = args[i]
     end
+    argument = table.concat(argument)
     
     if args[1] == "" then
     elseif io.open("/bin/" .. args[1]) then
