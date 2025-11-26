@@ -1,19 +1,31 @@
 #!/bin/lua
 
-
+local function refresh(item)
+    collectgarbage()
+    graphics.setText(item, "Used Memory: " .. collectgarbage("count") .. "\.nFree Memory: " .. collectgarbage("free") .. "\.nTotal Memory: " .. collectgarbage("total"))
+end
 local function monitor()
-    graphics.display(graphics.BuildScreen({
-        back = { label = "Back", root = os.exit },
-        button = { label = "Refresh", root = function () os.execute("gc") monitor() end },
-
-        fields = {
-            {
-                type = "text",
-                label = "Memory Status:",
-                value = "Used Memory: " .. collectgarbage("count") .. "\.nFree Memory: " .. collectgarbage("free") .. "\.nTotal Memory: " .. collectgarbage("total")
-            }
+    local screen = graphics.new("screen", "Monitor")
+    local info = graphics.new("buffer", { label = "Memory Status:" })
+    local back = graphics.new("command", {
+        label = "Back", type = "back", priority = 1
+    })
+    local refresh = graphics.new("command", {
+        label = "Refresh", type = "ok", priority = 1
+    })
+    local handler = {
+        [back] = function()
+            graphics.display(os.getenv("xterm"))
+        end,
+        [refresh] = {
+            
         }
-    }))
+    }
+    
+    graphics.append(info)
+    graphics.addCommand(back)
+    graphics.addCommand(refresh)
+    graphics.handler()
 end
 
 os.setproc("name", "monitor")
