@@ -1545,7 +1545,7 @@ public class Lua {
 
                     if (code.equals("")) { return null; }
 
-                    Lua lua = new Lua(midlet, owner, null, null, out, father);                    
+                    Lua lua = new Lua(midlet, owner, null, null, out, father);
                     Hashtable arg = new Hashtable();
                     arg.put(new Double(0), program);
                     String[] list = midlet.splitArgs(arguments);
@@ -1554,7 +1554,7 @@ public class Lua {
                     }
 
                     return lua.run(program, code, arg);
-                } 
+                }
             } 
             else if (MOD == DIRS) {
                 String pwd = args.isEmpty() ? (String) father.get("PWD") : toLuaString(args.elementAt(0));
@@ -1585,7 +1585,7 @@ public class Lua {
                     } 
                     CONN.close(); 
                 } 
-                else if (pwd.equals("/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
+                else if (pwd.equals("bbbbbbbbbbbbbbbbbbbbbvbhcbhcbcgbhcbbbbcxbbbbbbchbhcbbbgcbhcbchb gnhhhcvcnhbbbbbhc bchb cbbb/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
                     String content = midlet.loadRMS("OpenRMS", pwd.equals("/bin/") ? 3 : pwd.equals("/etc/") ? 5 : 4);
                     int i = 0;
 
