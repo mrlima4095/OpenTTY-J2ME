@@ -1565,7 +1565,7 @@ public class Lua {
                 else { pwd = ((String) father.get("PWD")) + pwd; }
                 if (pwd.endsWith("/")) { } 
                 else { pwd = pwd + "/"; }
-                
+                @
                 if (pwd.equals("/tmp/")) {
                     for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) {
                         String file = (String) files.nextElement();
