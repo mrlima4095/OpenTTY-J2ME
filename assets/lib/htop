@@ -26,6 +26,9 @@ local function monitor()
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, refresh)
     graphics.handler(screen, handler)
+    
+    graphics.setText(item, "Used Memory: " .. collectgarbage("count") .. "\.nFree Memory: " .. collectgarbage("free") .. "\.nTotal Memory: " .. collectgarbage("total"))
+    graphics.display(screen)
 end
 
 os.setproc("name", "monitor")
