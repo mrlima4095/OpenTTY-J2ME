@@ -1547,7 +1547,7 @@ public class Lua {
             } 
             else if (MOD == DIRS) {
                 String pwd = args.isEmpty() ? (String) father.get("PWD") : toLuaString(args.elementAt(0));
-                boolean all = (Boolean) args.elementAt(1); int index = 1;
+                int index = 1;
                 
                 Hashtable list = new Hashtable();
                 if (pwd.startsWith("/")) { }
@@ -1555,23 +1555,11 @@ public class Lua {
                 if (pwd.endsWith("/")) { } 
                 else { pwd = pwd + "/"; }
 
-                if (pwd.equals("/tmp/")) {
-                    for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) {
-                        String file = (String) files.nextElement();
-                        if ((all || !file.startsWith(".")) && !list.contains(file)) { list.put(new Double(index), file); index++; } 
-                    }
-                }
-                else if (pwd.equals("/mnt/")) { 
-                    for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { 
-                        String root = (String) roots.nextElement(); if ((all || !root.startsWith(".")) && !list.contains(root)) { list.put(new Double(index), root); index++; } 
-                    }
-                } 
+                if (pwd.equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } }
+                else if (pwd.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { list.put(new Double(index), (String) roots.nextElement()); index++; } } 
                 else if (pwd.startsWith("/mnt/")) { 
                     FileConnection CONN = (FileConnection) Connector.open("file:///" + pwd.substring(5), Connector.READ); 
-                    for (Enumeration files = CONN.list(); files.hasMoreElements();) { 
-                        String file = (String) files.nextElement();
-                        if ((all || !file.startsWith(".")) && !list.contains(file)) { list.put(new Double(index), file); index++; }
-                    } 
+                    for (Enumeration files = CONN.list(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } 
                     CONN.close(); 
                 } 
                 else if (pwd.equals("/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
@@ -1585,8 +1573,7 @@ public class Lua {
                         int end = content.indexOf("\1]", start);
                         if (end == -1) { break; }
 
-                        String filename = content.substring(start + "[\1BEGIN:".length(), end);
-                        if ((all || !filename.startsWith(".")) && !list.contains(filename)) { list.put(new Double(index), filename); index++; }
+                        list.put(new Double(index), content.substring(start + "[\1BEGIN:".length(), end)); index++;
 
                         i = content.indexOf("[\1END\1]", end);
                         if (i == -1) { break; }
@@ -1597,13 +1584,7 @@ public class Lua {
                 else if (pwd.equals("/home/")) { 
                     String[] files = RecordStore.listRecordStores(); 
                     if (files != null) { 
-                        for (int i = 0; i < files.length; i++) { 
-                            String file = files[i]; 
-                            if ((all || !file.startsWith(".")) && !list.contains(file)) { 
-                                list.put(new Double(index), file); 
-                                index++; 
-                            } 
-                        } 
+                        for (int i = 0; i < files.length; i++) { list.put(new Double(index), files[i]); index++; } 
                     } 
                 }
                 return list;
