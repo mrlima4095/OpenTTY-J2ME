@@ -41,8 +41,8 @@ public class OpenTTY extends MIDlet {
     public void startApp() {
         if (sys.containsKey("1")) { }
         else {
-            //Hashtable proc = new Hashtable(), args = new Hashtable(); args.put(new Double(0), "/bin/init"); globals.put("PWD", "/home/");
-            //proc.put("name", "init"); proc.put("owner", "root");
+            Hashtable proc = new Hashtable(), args = new Hashtable(); args.put(new Double(0), "/bin/init"); globals.put("PWD", "/home/");
+            proc.put("name", "init"); proc.put("owner", "root");
 
             //Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
             warn("hello", "working!");
