@@ -2025,7 +2025,7 @@ public class Lua {
                         else if (type.equals("spacer")) { form.append(new Spacer(getFieldNumber(field, "width", 1), getFieldNumber(field, "height", 10))); }
                         else if (type.equals("gauge")) { form.append(new Gauge(getFieldValue(field, "label", ""), getFieldBoolean(field, "interactive", false), getFieldNumber(field, "maxValue", 100), getFieldNumber(field, "value", 0))); } 
                     } 
-                    else if (itemObj instanceof StringItem) { form.append((StringItem) itemObj); } 
+                    else if (itemObj instanceof Item) { form.append((Item) itemObj); } 
                     else { form.append(new StringItem("", toLuaString(itemObj))); }
                 } else if (target instanceof List) {
                     List list = (List) target;
