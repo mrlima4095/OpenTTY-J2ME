@@ -82,7 +82,8 @@ graphics = {
     render = function (img) end,
     append = function (screen, field) end,
     addCommand = function (screen, command) end,
-    handler = function (screen, actions) end
+    handler = function (screen, actions) end,
+    db = {}
 }
 
 java = {

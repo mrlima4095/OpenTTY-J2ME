@@ -1,23 +1,35 @@
 #!/bin/lua
 
-return function (args)
-    local argument, j = {}, 1
-    for i = 2, #args - 1 do
-        argument[j] = args[i]
-        j = j + 1
-    end
-    argument = table.concat(argument, " ")
+local function shell (args, scope)
+    local cmd, argument = string.getCommand(args), string.getArgument(args)
+    args = string.split(argument, nil)
 
-    if args[1] == "" then
-    elseif io.open("/bin/" .. args[1]) then
-        local res = io.popen("/bin/" .. args[i], argument, false, io.stdout)
-        return res.status
-    elseif args[1] == "exit" then
-    elseif args[1] == "" then
-    elseif args[1] == "" then
-    elseif args[1] == "" then
-    elseif args[1] == "" then
+    if cmd == "" then
+    elseif scope[cmd] then
+
+    elseif io.open("/bin/" .. cmd) then
+        if argument == "" then
+        else
+            local res = io.popen("/bin/" .. cmd, argument, false, io.stdout)
+            return res.status
+        end
+    elseif cmd == "exit" then os.exit(nil)
+    elseif cmd == "eval" then
+        if argument == "" then
+        else
+            print(shell(argument))
+        end
+    elseif cmd == "echo" then print(argument)
+    elseif cmd == "" then
+    elseif cmd == "" then
+    elseif cmd == "" then
+    elseif cmd == "" then
+    else
+        print(cmd .. ": not found")
+        return 127
     end
 
     return 0
 end
+
+return shell
