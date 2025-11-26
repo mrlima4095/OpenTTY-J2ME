@@ -44,7 +44,7 @@ local function shell(args, enable, aliases, scope)
             end
         elseif string.find(argument, "=") then
             local index = string.find(argument, "=")
-            local alias, mean = string.sub(argument, 1, index), string.sub(argument, index + 1)
+            local alias, mean = string.sub(argument, 1, index - 1), string.sub(argument, index + 1)
 
             if alias ~= "" and mean ~= "" then
                 aliases[alias] = mean
