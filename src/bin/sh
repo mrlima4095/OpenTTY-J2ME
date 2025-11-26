@@ -2,7 +2,7 @@
 
 local function shell(args)
     local argument = {}
-    for i = 2,#args then
+    for i = 2,#args - 1 then
         argument[i] = args[i]
     end
     argument = table.concat(argument)
