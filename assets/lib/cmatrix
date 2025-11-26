@@ -1,17 +1,6 @@
 #!/bin/lua
 
-
-local collector = "execute unset CMATRIX; x11 stop; x11 init; case key (OLD_TITLE) exec title $OLD_TITLE & unset OLD_TITLE; clear; true"
 local function cmatrix()
-    if os.getenv("J2EMU") ~= nil then error("cmatrix cannot run in j2me loader!") end
-
-    local thr = os.execute("case thread (MIDlet) false")
-    if tonumber(thr) == 255 then return os.execute("bg lua " .. arg[0]) end
-
-    os.execute("execute set OLD_TITLE=$TITLE; export CMATRIX; x11 stop; title hide; x11 init /dev/stdout; clear; bg cron 20 unset CMATRIX; true")
-
-    
-
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", nil)
     local buffer = graphics.new("buffer")
