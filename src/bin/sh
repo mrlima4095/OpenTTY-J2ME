@@ -9,6 +9,7 @@ local function shell(command)
     elseif io.open("/bin/" .. mainCommand) then
         local res = io.popen("/bin/" .. mainCommand, argument, false, io.stdout)
         return res.status
+    elseif mainCommand == "env" then
     elseif mainCommand == "echo" then
         print(argument)
     else

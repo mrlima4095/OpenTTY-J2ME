@@ -7,8 +7,9 @@ end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do
     os.setenv(k, getAppProperty("/microedition." .. v))
 end
+graphics.display(graphics.new("alert", "SandBox", "Ok!"))
 
-local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
+--[[local xterm = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
 graphics.append(xterm, io.stdout)
@@ -22,4 +23,4 @@ graphics.handler(xterm, {
     end
 })
 
-graphics.display(xterm)
+graphics.display(xterm)]]
