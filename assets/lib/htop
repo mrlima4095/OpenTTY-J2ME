@@ -21,13 +21,13 @@ local function monitor()
             update_info(info)
         end
     }
-    
+
     graphics.append(screen, info)
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, refresh)
     graphics.handler(screen, handler)
-    
-    update_info()
+
+    update_info(info)
     graphics.display(screen)
 end
 
