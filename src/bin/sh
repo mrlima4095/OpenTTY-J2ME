@@ -18,7 +18,22 @@ local function shell(args, enable, aliases, scope)
             print(shell(argument))
         end
     elseif cmd == "echo" then print(argument)
-    elseif cmd == "env" then print(os.getenv())
+    -- Environment Manager
+    elseif cmd == "env" then
+        if argument == "" then
+            for k,v in pairs(os.getenv("")) do
+                print(k .. "=" .. v)
+            end
+        else
+            for i = 1, #args do
+                if os.getenv(args[i]) then
+                    print(args[i] .. "=" .. os.getenv(args[i]))
+                else
+                    print("env: " .. args[i] .. ": not found")
+                    return 127
+                end
+            end
+        end
     elseif cmd == "clear" then graphics.SetText(io.stdout, "")
 
     -- Alias Manager
