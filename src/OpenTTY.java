@@ -132,7 +132,14 @@ public class OpenTTY extends MIDlet {
     // |
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
-    public Hashtable genprocess(String name, int id, Hashtable signal) { Hashtable proc = new Hashtable(); proc.put("name", name); proc.put("owner", id == 0 ? "root" : username); if (signal != null) { proc.put("signals", signal); } return proc; }
+    public Hashtable genprocess(String name, int id, Hashtable signal) { 
+        Hashtable proc = new Hashtable(); 
+        proc.put("name", name); 
+        proc.put("owner", id == 0 ? "root" : username); 
+        if (signal != null) { proc.put("signals", signal); } 
+        
+        return proc;
+    }
     public Hashtable gensignals(String collector) {
         Hashtable signal = new Hashtable();
 
