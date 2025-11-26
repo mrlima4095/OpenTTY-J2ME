@@ -86,8 +86,7 @@ public class OpenTTY extends MIDlet {
                         if (asking_user) { write("/home/OpenRMS", username.getBytes(), 0); }
                         if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
 
-                        display.setCurrent();
-                        setLabel();
+                        init();
                     }
                 } 
                 else if (c == EXIT) { destroyApp(true); }
