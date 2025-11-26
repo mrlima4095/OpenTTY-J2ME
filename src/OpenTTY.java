@@ -60,7 +60,6 @@ public class OpenTTY extends MIDlet {
                       ", globals: " + (globals != null) +
                       ", proc: " + (proc != null);
     warn("NPE Debug", debugInfo);
-    throw e; // Re-lança para ver stack trace completo
 }
             catch (Exception e) { warn("SandBox", getCatch(e)); } 
             catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
