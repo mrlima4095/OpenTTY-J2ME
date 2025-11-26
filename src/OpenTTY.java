@@ -47,20 +47,20 @@ public class OpenTTY extends MIDlet {
                 proc.put("name", "init"); proc.put("owner", "root");
 
                 Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
-                warn("hello", "working?");
-                sys.put("1", proc); lua.globals.put("arg", args);
+                warn("hello", "working?");if (lua == null) {
+                    warn("Debug", "lua is null");
+                } else if (lua.globals == null) {
+                    warn("Debug", "lua.globals is null");
+                } else {
+                    lua.globals.put("arg", args); 
+                    warn("Debug", "lua.globals.put completed");
+                }
+    
 
                 //lua.tokens = lua.tokenize(read("/bin/init")); 
                 
                 //while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
-            } catch (NullPointerException e) {
-    // Log detalhado para identificar a variável nula
-    String debugInfo = "Debug - midlet: " + (this != null) + 
-                      ", stdout: " + (stdout != null) + 
-                      ", globals: " + (globals != null) +
-                      ", proc: " + (proc != null);
-    warn("NPE Debug", debugInfo);
-}
+            }
             catch (Exception e) { warn("SandBox", getCatch(e)); } 
             catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
         }
