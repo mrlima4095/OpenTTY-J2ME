@@ -2074,7 +2074,7 @@ public class Lua {
                     i.setLabel(args.size() > 1 ? toLuaString(args.elementAt(1)) : null);
                 }
             } 
-            else if (MOD == GETLABEL) { if (args.isEmpty()) { } else { Item i = args.elementAt(0) instanceof Item ? (Item) args.elementAt(0) : (Item) gotbad(1, "GetLabel", "Item expected"); return i.getLabel(); }
+            else if (MOD == GETLABEL) { if (args.isEmpty()) { } else { Item i = args.elementAt(0) instanceof Item ? (Item) args.elementAt(0) : (Item) gotbad(1, "GetLabel", "Item expected"); return i.getLabel(); } }
             else if (MOD == SETTEXT) { if (args.isEmpty()) { } else {
                     Item i = args.elementAt(0) instanceof Item ? (Item) args.elementAt(0) : (Item) gotbad(1, "SetText", "Item expected");
                     if (i instanceof StringItem) { ((StringItem) i).setText(args.size() > 1 ? toLuaString(args.elementAt(1)) : ""); }
