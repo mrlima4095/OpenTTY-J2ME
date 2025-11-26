@@ -87,6 +87,9 @@ local function shell(args, enable, aliases, scope)
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
 
     else
+        print("CMD: " .. cmd)
+        print("ARGS: " .. argument)
+        print("ARG:" .. args)
         print(cmd .. ": not found")
         return 127
     end
