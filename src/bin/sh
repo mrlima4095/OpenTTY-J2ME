@@ -28,6 +28,12 @@ local function shell(args, enable, aliases, scope)
                 print("alias " .. k .. "='" .. v .. "'")
             end
         elseif string.find(argument, "=") then
+            local index = string.find(argument, "=")
+            local alias, mean = string.sub(argument, 1, index), string.sub(argument, index + 1)
+
+            if alias ~= "" and mean ~= "" then
+                aliases[alias] = mean
+            end
         else
             for i = 1, #args do
                 if aliases[args[i]] then
