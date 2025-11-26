@@ -1,13 +1,14 @@
 #!/bin/lua
 
-local function shell(command)
-    command = string.trim(command)
-    local mainCommand = string.getCommand(command)
-    local argument, args = string.getArgument(command), string.split()
+local function shell(args)
+    local argument = {}
+    for i = 1,#args - 1 then
+        argument[i] = args[i]
+    end
     
-    if mainCommand == "" then
-    elseif io.open("/bin/" .. mainCommand) then
-        local res = io.popen("/bin/" .. mainCommand, argument, false, io.stdout)
+    if args[1] == "" then
+    elseif io.open("/bin/" .. args[1]) then
+        local res = io.popen("/bin/" .. args[1], table.concat(), false, io.stdout)
         return res.status
     elseif mainCommand == "env" then
     elseif mainCommand == "echo" then
@@ -22,9 +23,4 @@ local function shell(command)
     return 0
 end
 
-local cmd = {}
-for i=1,#arg - 1 do
-    cmd[i] = arg[i]
-end
-
-os.exit(shell(table.concat(cmd, " ")))
+os.exit(shell(arg))
