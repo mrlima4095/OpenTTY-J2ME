@@ -45,7 +45,7 @@ public class OpenTTY extends MIDlet {
                 Hashtable proc = new Hashtable(), args = new Hashtable(); args.put(new Double(0), "/bin/init"); globals.put("PWD", "/home/");
                 proc.put("name", "init"); proc.put("owner", "root");
 
-                Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
+                //Lua lua = new Lua(this, 0, "1", proc, stdout, globals); 
                 warn("hello", "working! but not booting");
                 //sys.put("1", proc); lua.globals.put("arg", args);
 
