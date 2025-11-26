@@ -14,9 +14,7 @@ local alias, scope = {}, {}
 local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
-local function label()
-    graphics.SetLabel(io.stdin, java.midlet.username .. " " .. os.getcwd() .. " $")
-end
+local function label() graphics.SetLabel(io.stdin, java.midlet.username .. " " .. os.getcwd() .. " $") end
 
 label()
 
