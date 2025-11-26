@@ -83,6 +83,15 @@ local function shell(args, enable, aliases, scope)
                 return 127
             end
         end
+    elseif cmd == "ls" then
+        local buff = ""
+        for k,v in pairs(io.dirs()) do
+            if string.sub(v, 1, 1) ~= "." then
+                buff = buff .. "\t" .. v
+            end
+        end
+        print(string.trim(buff))
+    end
     -- 
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
 
