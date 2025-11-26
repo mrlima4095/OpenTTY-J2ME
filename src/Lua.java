@@ -8,7 +8,6 @@ import java.io.*;
 // Lua Runtime
 public class Lua {
     public boolean breakLoop = false, doreturn = false, kill = true, gc = true;
-    private boolean[] attrchanges = new boolean[] { true, true };
     private OpenTTY midlet;
     private Object stdout;
     public String PID = null;
@@ -1359,16 +1358,10 @@ public class Lua {
                 if (args.isEmpty()) { } 
                 else {
                     if (args.size() > 1) {
-                        if (args.elementAt(1) == null) {
-                            midlet.attributes.remove(toLuaString(args.elementAt(0)));
-                        }
-                        else {
-                            midlet.attributes.put(toLuaString(args.elementAt(0)), toLuaString(args.elementAt(1)));
-                        }
+                        if (args.elementAt(1) == null) { midlet.attributes.remove(toLuaString(args.elementAt(0))); }
+                        else { midlet.attributes.put(toLuaString(args.elementAt(0)), toLuaString(args.elementAt(1))); }
                     }
-                    else {
-                        midlet.attributes.remove(toLuaString(args.elementAt(0)));
-                    }
+                    else { midlet.attributes.remove(toLuaString(args.elementAt(0))); }
                 }
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
@@ -1384,13 +1377,6 @@ public class Lua {
                     Object value = args.size() < 2 ? null : args.elementAt(1);
 
                     if (attribute.equals("owner")) { return gotbad(1, "setproc", "permission denied"); } 
-                    else if (attribute.equals("name") || attribute.equals("collector")) {
-                        if (value == null) { return gotbad(2, "setproc", "value expected, got nil"); }
-                        else {
-                            if (attribute.equals("name")) { if (attrchanges[0]) { proc.put("name", toLuaString(value)); attrchanges[0] = false; } } 
-                            else { if (attrchanges[1]) { proc.put("collector", toLuaString(value)); attrchanges[1] = false; } }
-                        }
-                    } 
                     else { if (value == null) { proc.remove(attribute); } else { proc.put(attribute, value); } }
                 } 
             }
