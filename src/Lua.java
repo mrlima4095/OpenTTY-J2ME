@@ -25,7 +25,7 @@ public class Lua {
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506;
     public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613;
-    public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, THREAD = 704;
+    public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705;
 
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
     public static final Object LUA_NIL = new Object();
@@ -55,8 +55,8 @@ public class Lua {
         loaders = new int[] { HTTP_GET, HTTP_POST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "class", "getName", "delete", "run" }; 
-        loaders = new int[] { CLASS, NAME, DELETE, THREAD };
+        funcs = new String[] { "class", "getName", "delete", "run", "thread" }; 
+        loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
         jdb.put("username", midlet.username); jdb.put("net", midlet.network); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
 
@@ -1366,7 +1366,7 @@ public class Lua {
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
-            else if (MOD == EXIT) { midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, null); } }
+            else if (MOD == EXIT) { if (PID.equals("1")) { return new Double(1); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, null); } }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
             else if (MOD == GETPID) { return args.isEmpty() ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
             else if (MOD == SETPROC) {
@@ -2203,12 +2203,13 @@ public class Lua {
                 else if (args.size() < 2 || args.elementAt(1) == null) { return gotbad(2, "delete", "value expected, got " + (args.size() < 2 ? "no value" : "nil")); }
                 else { ((Hashtable) args.elementAt(0)).remove(args.elementAt(1)); }
             }
-            else if (MOD == THREAD) { 
+            else if (MOD == RUN) { 
                 if (args.isEmpty()) { }
                 else if (args.elementAt(0) instanceof LuaFunction) {
                     new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0))).run();
                 } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); }
             }
+            else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
 
             return null;
