@@ -1958,6 +1958,7 @@ public class Lua {
                         StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                         
                         si.setFont(midlet.genFont(getFieldValue(field, "style", "default")));
+                        return si;
                     }
                 }
                 else { return gotbad(1, "new", "invalid type: " + type); } 
