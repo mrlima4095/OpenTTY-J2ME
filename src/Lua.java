@@ -1541,9 +1541,7 @@ public class Lua {
                     Hashtable arg = new Hashtable();
                     arg.put(new Double(0), program);
                     String[] list = midlet.splitArgs(arguments);
-                    for (int i = 0; i < list.length; i++) {
-                        arg.put(new Double(i + 1), list[i]);
-                    }
+                    for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
 
                     return lua.run(program, code, arg);
                 }
