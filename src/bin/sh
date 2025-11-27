@@ -101,7 +101,7 @@ local function shell(args, enable, aliases, stdout, scope)
             elseif status == 20 then
                 print("cd: " .. argument .. ": is a directory")
             elseif status == 1 then
-                print("cd: " .. argument .. ": no parent directory")
+                print("cd: no parent directory")
             end
             return status
         end
