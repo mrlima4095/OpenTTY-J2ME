@@ -5,12 +5,23 @@ local function shell(args, enable, aliases, scope)
     args = string.split(argument, nil)
 
     if cmd == "" then
-
+    
     elseif aliases[cmd] and enable then
         return shell(aliases[cmd] .. " " .. argument, enable, aliases, scope)
     elseif io.open("/bin/" .. cmd) then
         local res = io.popen("/bin/" .. cmd, argument, true, io.stdout)
         return res.status
+    
+    -- Kernel
+    elseif cmd == "ps" then
+    elseif cmd == "start" then
+    elseif cmd == "pkill" then
+    elseif cmd == "kill" then
+    -- Session
+    elseif cmd == "whoami" then print(os.getuid() == 0 and "root" or java.midlet.username)
+    elseif cmd == "id" then print(os.getuid())
+
+
     elseif cmd == "exit" then os.exit(nil)
     elseif cmd == "eval" then
         if argument == "" then
@@ -109,8 +120,7 @@ local function shell(args, enable, aliases, scope)
         java.run(function ()
             print(java.thread())
         end)
-    elseif cmd == "whoami" then print(os.getuid() == 0 and "root" or java.midlet.username)
-    elseif cmd == "id" then print(os.getuid())
+    
 
     else
         print(cmd .. ": not found")
