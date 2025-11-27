@@ -13,7 +13,7 @@ local function label() graphics.SetLabel(io.stdin, java.midlet.username .. " " .
 
 label()
 
-io.mount("/etc/fstab")
+io.mount(io.read("/etc/fstab"))
 
 print(string.env(io.read("/etc/motd")))
 
