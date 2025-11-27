@@ -1415,6 +1415,8 @@ public class Lua {
                 if (args.isEmpty()) { return father.get("PWD"); }
                 else {
                     String pwd = (String) father.get("PWD"), target = toLuaString(args.elementAt(0));
+                    target = target.startsWith("/") ? target : pwd + target;
+                    target = target.endsWith("/") ? target : target + "/";
 
                     if (target.equals("")) { father.put("PWD", "/home/"); }
                     else if (target.equals("..")) {
