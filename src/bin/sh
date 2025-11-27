@@ -13,38 +13,26 @@ local function shell(args, enable, aliases, scope)
         return res.status
     
     -- Kernel
+    -- (Process)
     elseif cmd == "ps" then
-    elseif cmd == "start" then
-    elseif cmd == "pkill" then
     elseif cmd == "kill" then
+    elseif cmd == "pkill" then
+    elseif cmd == "start" then
+    elseif cmd == "" then
+    elseif cmd == "" then
+    elseif cmd == "" then
+    -- (Memory)
+    elseif cmd == "top" then
+
     -- Session
+    -- (User Information)
     elseif cmd == "whoami" then print(os.getuid() == 0 and "root" or java.midlet.username)
     elseif cmd == "id" then print(os.getuid())
-
-
+    -- (Manager)
     elseif cmd == "exit" then os.exit(nil)
-    elseif cmd == "eval" then
-        if argument == "" then
-        else
-            print(shell(argument))
-        end
-    elseif cmd == "echo" then print(argument)
-    -- Environment Manager
-    elseif cmd == "env" then
-        if argument == "" then for k,v in pairs(os.getenv()) do print(k .. "=" .. v) end
-        else
-            for i = 1, #args do
-                if os.getenv(args[i]) then
-                    print(args[i] .. "=" .. os.getenv(args[i]))
-                else
-                    print("env: " .. args[i] .. ": not found")
-                    return 127
-                end
-            end
-        end
-    elseif cmd == "clear" then graphics.SetText(io.stdout, "")
 
-    -- Alias Manager
+    -- Shell Utils
+    -- (Alias Manager)
     elseif cmd == "alias" then
         if argument == "" then
             for k,v in pairs(aliases) do
@@ -79,6 +67,31 @@ local function shell(args, enable, aliases, scope)
                 end
             end
         end
+    -- (Environment Keys)
+    elseif cmd == "env" then
+        if argument == "" then for k,v in pairs(os.getenv()) do print(k .. "=" .. v) end
+        else
+            for i = 1, #args do
+                if os.getenv(args[i]) then print(args[i] .. "=" .. os.getenv(args[i]))
+                else
+                    print("env: " .. args[i] .. ": not found")
+                    return 127
+                end
+            end
+        end
+
+
+
+
+    elseif cmd == "eval" then
+        if argument == "" then
+        else
+            print(shell(argument))
+        end
+    elseif cmd == "echo" then print(argument)
+    
+    elseif cmd == "clear" then graphics.SetText(io.stdout, "")
+
     -- File Utils
     elseif cmd == "pwd" then print(os.getcwd())
     elseif cmd == "cd" then
@@ -122,11 +135,7 @@ local function shell(args, enable, aliases, scope)
         java.run(function ()
             print(java.thread())
         end)
-    elseif cmd == "open" then
-        if argument == "" then
-        else
-            os.open(argument)
-        end
+    elseif cmd == "open" then if argument == "" then else os.open(argument) end
 
     else
         print(cmd .. ": not found")
