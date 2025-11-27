@@ -1468,6 +1468,7 @@ public class Lua {
 
                         return new String(buffer, 0, bytesRead, "UTF-8");
                     }
+                    else if (arg instanceof StringBuffer) { ((StringBuffer) arg).toString(); }
                     else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
                     else { return midlet.getcontent(toLuaString(arg), father); } 
                 }
@@ -2226,6 +2227,7 @@ public class Lua {
             else if (MOD == RUN) { 
                 if (args.isEmpty()) { }
                 else if (args.elementAt(0) instanceof LuaFunction) {
+                    kill = false;
                     new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0)), args.size() > 1 ? "Background" : toLuaString(args.elementAt(1))).start();
                 } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); }
             }
