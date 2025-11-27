@@ -105,6 +105,10 @@ local function shell(args, enable, aliases, scope)
         print(string.trim(buff))
     -- 
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
+    elseif cmd == "debug" then
+        java.run(function ()
+            print(java.thread())
+        end)
 
     else
         print(cmd .. ": not found")
