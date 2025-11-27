@@ -120,7 +120,11 @@ local function shell(args, enable, aliases, scope)
         java.run(function ()
             print(java.thread())
         end)
-    
+    elseif cmd == "open" then
+        if argument == "" then
+        else
+            io.open(argument)
+        end
 
     else
         print(cmd .. ": not found")
