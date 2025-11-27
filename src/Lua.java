@@ -1556,7 +1556,10 @@ public class Lua {
                     String[] list = midlet.splitArgs(arguments);
                     for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
 
-                    return lua.run(program, code, arg);
+                    Vector result = new Vector();
+                    result.addElement(lua.run(program, code, arg));
+                    result.addElement(out);
+                    return result;
                 }
             } 
             else if (MOD == DIRS) {
