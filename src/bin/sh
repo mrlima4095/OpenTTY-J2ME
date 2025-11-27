@@ -1,20 +1,22 @@
 #!/bin/lua
 
-local function shell(args, enable, aliases, scope)
+local function shell(args, enable, aliases, stdout, scope)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
 
     if cmd == "" then
-    
-    elseif aliases[cmd] and enable then
-        return shell(aliases[cmd] .. " " .. argument, enable, aliases, scope)
+
+    elseif aliases[cmd] and enable then return shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
     elseif io.open("/bin/" .. cmd) then
-        local res = io.popen("/bin/" .. cmd, argument, true, io.stdout, scope)
+        local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
         return res.status
-    
+
     -- Kernel
     -- (Process)
     elseif cmd == "ps" then
+        for k,v in pairs(os.getproc()) do
+            
+        end
     elseif cmd == "kill" then
     elseif cmd == "pkill" then
     elseif cmd == "start" then
