@@ -2166,7 +2166,7 @@ public class Lua {
                 else if (args.size() > 1 && args.elementAt(1) == null) {
                     String[] array = midlet.splitArgs(toLuaString(args.elementAt(0)));
                     Hashtable result = new Hashtable();
-                    for (int i = 0; i < array; i++) {
+                    for (int i = 0; i < array.length; i++) {
                         result.put(new Double(i + 1), array[i]);
                     }
                     return result;
