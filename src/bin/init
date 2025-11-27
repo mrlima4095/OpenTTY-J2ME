@@ -17,6 +17,9 @@ local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 }
 local function label() graphics.SetLabel(io.stdin, java.midlet.username .. " " .. os.getcwd() .. " $") end
 
 label()
+
+io.mount("/etc/fstab")
+
 print(string.env(io.read("/etc/motd")))
 
 graphics.append(xterm, io.stdout)
