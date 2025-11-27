@@ -83,6 +83,10 @@ local function shell(args, enable, aliases, scope)
         end
     elseif cmd == "cat" then
         for i = 1, #args do
+            if string.find(args[i], 1, 1) ~= "/" then
+                args[i] = os.getcwd() .. args[i]
+            end
+
             local file = io.open(args[i])
             if file then
                 print(io.read(file))
