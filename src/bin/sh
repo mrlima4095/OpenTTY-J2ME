@@ -135,7 +135,7 @@ local function shell(args, enable, aliases, scope)
 end
 
 if arg[0] == "/bin/sh" then
-    graphics.SetText(io.stdin, "")
+    graphics.SetText(io.stdout, "")
     print(string.env(io.read("/etc/motd")))
 end
 
