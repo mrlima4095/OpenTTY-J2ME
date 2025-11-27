@@ -41,35 +41,6 @@ local function app()
     pcall(io.close, conn, i, o)
     print("WebProxy -> Server disconnected")
 end
-local function Quest()
-    local previous = graphics.getCurrent()
-    local screen = graphics.new("screen", "WebProxy")
-    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-    local connect = graphics.new("command", { label = "Connect", type = "ok", priority = 1 })
-    local handler = {
-        [back] = function()
-            graphics.display(previous)
-            os.exit()
-        end,
-        [connect] = function(passwd)
-            if passwd ~= "" and passwd then
-                graphics.display(previous)
-                password = passwd
-                java.run(app)
-            else
-                graphics.display(graphics.new("alert", "WebProxy", "Missing password"))
-            end
-        end
-    }
-
-    graphics.append(screen, graphics.new("field", { label = "Password for Connection", mode = "password" }))
-    graphics.addCommand(screen, back)
-    graphics.addCommand(screen, connect)
-    graphics.handler(screen, handler)
-    graphics.display(screen)
-end
 
 if password then java.run(app)
-else 
-    
-end
+else print("shprxy: usage: shprxy [password]") os.exit(2) end
