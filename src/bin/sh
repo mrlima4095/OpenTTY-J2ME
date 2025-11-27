@@ -89,7 +89,7 @@ local function shell(args, enable, aliases, scope)
 
             local file = io.open(args[i])
             if file then
-                print(io.read(file))
+                print(string.env(io.read(file)))
             else
                 print("cat: " .. args[i] .. ": not found")
                 return 127
@@ -109,6 +109,8 @@ local function shell(args, enable, aliases, scope)
         java.run(function ()
             print(java.thread())
         end)
+    elseif cmd == "whoami" then print(os.getuid() == 0 and "root" or java.midlet.username)
+    elseif cmd == "id" then print(os.getuid())
 
     else
         print(cmd .. ": not found")
@@ -116,6 +118,11 @@ local function shell(args, enable, aliases, scope)
     end
 
     return 0
+end
+
+if arg[0] == "/bin/sh" then
+    graphics.SetText(io.stdin, "")
+    print(string.env(io.read("/etc/motd")))
 end
 
 return shell
