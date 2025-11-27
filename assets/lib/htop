@@ -6,20 +6,11 @@ end
 local function monitor()
     local screen = graphics.new("screen", "Monitor")
     local info = graphics.new("buffer", { label = "Memory Status:" })
-    local back = graphics.new("command", {
-        label = "Back", type = "back", priority = 1
-    })
-    local refresh = graphics.new("command", {
-        label = "Refresh", type = "ok", priority = 1
-    })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local refresh = graphics.new("command", { label = "Refresh", type = "ok", priority = 1 })
     local handler = {
-        [back] = function()
-            graphics.display(graphics.db["xterm"])
-        end,
-        [refresh] = function()
-            collectgarbage()
-            update_info(info)
-        end
+        [back] = function() graphics.display(graphics.db["xterm"]) os.exit() end,
+        [refresh] = function() collectgarbage() update_info(info) end
     }
 
     graphics.append(screen, info)
