@@ -17,7 +17,7 @@ local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 }
 local function label() graphics.SetLabel(io.stdin, java.midlet.username .. " " .. os.getcwd() .. " $") end
 
 label()
-print(io.read("/etc/motd"))
+print(string.env(io.read("/etc/motd")))
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)

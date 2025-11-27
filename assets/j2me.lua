@@ -65,7 +65,8 @@ string = {
     uuid = function () return "" end,
     split = function (s, char) return "" end,
     getCommand = function(s) return "" end,
-    getArgument = function(s) return "" end
+    getArgument = function(s) return "" end,
+    env = function(s) return "" end
 }
 
 graphics = {
