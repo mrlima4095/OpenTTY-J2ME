@@ -20,10 +20,7 @@ local function shell(args, enable, aliases, scope)
     elseif cmd == "echo" then print(argument)
     -- Environment Manager
     elseif cmd == "env" then
-        if argument == "" then
-            for k,v in pairs(os.getenv()) do
-                print(k .. "=" .. v)
-            end
+        if argument == "" then for k,v in pairs(os.getenv()) do print(k .. "=" .. v) end
         else
             for i = 1, #args do
                 if os.getenv(args[i]) then
@@ -46,13 +43,12 @@ local function shell(args, enable, aliases, scope)
             local index = string.find(argument, "=")
             local alias, mean = string.sub(argument, 1, index - 1), string.sub(argument, index + 1)
 
-            if alias ~= "" and mean ~= "" then
+            if alias ~= "" then
                 aliases[alias] = mean
             end
         else
             for i = 1, #args do
-                if aliases[args[i]] then
-                    print("alias " .. args[i] .. "='" .. aliases[args[i]] .. "'")
+                if aliases[args[i]] then print("alias " .. args[i] .. "='" .. aliases[args[i]] .. "'")
                 else
                     print("alias: " .. args[i] .. ": not found")
                     return 127
