@@ -1415,9 +1415,6 @@ public class Lua {
                 if (args.isEmpty()) { return father.get("PWD"); }
                 else {
                     String pwd = (String) father.get("PWD"), target = toLuaString(args.elementAt(0));
-                    target = target.startsWith("/") ? target : pwd + target;
-                    target = target.endsWith("/") ? target : target + "/";
-
                     if (target.equals("")) { father.put("PWD", "/home/"); return new Double(0); }
                     else if (target.equals("..")) {
                         if (pwd.equals("/")) { return new Double(1); }
@@ -1427,7 +1424,13 @@ public class Lua {
 
                         return new Double(0);
                     }
-                    else if (midlet.fs.containsKey(target)) { father.put("PWD", target); }
+
+                    target = target.startsWith("/") ? target : pwd + target;
+                    target = target.endsWith("/") ? target : target + "/";
+
+                    
+                    if (midlet.fs.containsKey(target)) { father.put("PWD", target); }
+                    else if 
                     else if (target.startsWith("/mnt/")) {
                         FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ); 
                         boolean exist = fc.exists(), dir = fc.isDirectory();
