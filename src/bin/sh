@@ -69,6 +69,16 @@ local function shell(args, enable, aliases, scope)
             end
         end
     -- File Utils
+    elseif cmd == "pwd" then print(os.getcwd())
+    elseif cmd == "cd" then
+        if argument == "" then os.chdir("/home/")
+        else
+            local status = os.chdir(argument)
+            if status == 127 then
+                print("cd: " .. argument .. ": not found")
+            end
+            return status
+        end
     elseif cmd == "cat" then
         for i = 1, #args do
             local file = io.open(args[i])
@@ -91,9 +101,6 @@ local function shell(args, enable, aliases, scope)
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
 
     else
-        print("CMD: " .. cmd)
-        print("ARGS: " .. argument)
-        print("ARG:" .. args)
         print(cmd .. ": not found")
         return 127
     end

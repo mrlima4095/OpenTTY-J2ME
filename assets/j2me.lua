@@ -10,6 +10,7 @@ os = {
     getproc = function (pid, field) return {} end,
     setproc = function (field, value) end,
     getcwd = function () return "/home/" end,
+    chdir = function (pwd) return 0 end,
     request = function(pid, payload) return {} end,
     getuid = function () return 1000 end
 }
