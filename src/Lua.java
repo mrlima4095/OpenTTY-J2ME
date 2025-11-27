@@ -2213,7 +2213,7 @@ public class Lua {
             else if (MOD == RUN) { 
                 if (args.isEmpty()) { }
                 else if (args.elementAt(0) instanceof LuaFunction) {
-                    new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0))).run();
+                    new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0))).start();
                 } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); }
             }
             else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
