@@ -89,6 +89,8 @@ local function shell(args, enable, aliases, scope)
                 print("cd: " .. argument .. ": not found")
             elseif status == 5 then
                 print("cd: " .. argument .. ": is a directory")
+            elseif status == 1 then
+                print("cd: " .. argument .. ": no parent directory")
             end
             return status
         end

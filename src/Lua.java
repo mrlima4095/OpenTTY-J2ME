@@ -1418,24 +1418,25 @@ public class Lua {
                     target = target.startsWith("/") ? target : pwd + target;
                     target = target.endsWith("/") ? target : target + "/";
 
-                    if (target.equals("")) { father.put("PWD", "/home/"); }
+                    if (target.equals("")) { father.put("PWD", "/home/"); return new Double(0); }
                     else if (target.equals("..")) {
                         if (pwd.equals("/")) { return new Double(1); }
-                        else {
-                            int lastSlashIndex = pwd.lastIndexOf('/', pwd.endsWith("/") ? pwd.length() - 2 : pwd.length() - 1);
-                            father.put("PWD", (lastSlashIndex <= 0) ? "/" : pwd.substring(0, lastSlashIndex + 1));
-                        }
+                        
+                        int lastSlashIndex = pwd.lastIndexOf('/', pwd.endsWith("/") ? pwd.length() - 2 : pwd.length() - 1);
+                        father.put("PWD", (lastSlashIndex <= 0) ? "/" : pwd.substring(0, lastSlashIndex + 1));
+
+                        return new Double(0);
                     }
                     else if (midlet.fs.containsKey(target)) { father.put("PWD", target); }
                     else if (target.startsWith("/mnt/")) {
                         FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ); 
-                        if (fc.exists() && fc.isDirectory()) { father.put("PWD", target); } 
+                        if (fc.exists() && fc.isDirectory()) { father.put("PWD", target); return new Double(0); } 
                         else { fc.close(); return new Double(fc.exists() ? 5 : 127); }
 
                         fc.close(); 
                     }
 
-                    return new Double(0);
+                    return new Double(127);
                 }
             }
             // Package: io
