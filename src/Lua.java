@@ -1588,7 +1588,7 @@ public class Lua {
                         for (int i = 0; i < files.length; i++) { list.put(new Double(index), files[i]); index++; } 
                     } 
                 }
-                return list;
+                return midlet.fs;
             }
             else if (MOD == SETOUT) { if (args.isEmpty()) { } else { stdout = args.elementAt(0); } }
             else if (MOD == MOUNT) {
