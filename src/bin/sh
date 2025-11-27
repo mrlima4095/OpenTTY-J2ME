@@ -98,7 +98,7 @@ local function shell(args, enable, aliases, stdout, scope)
             local status = os.chdir(argument)
             if status == 127 then
                 print("cd: " .. argument .. ": not found")
-            elseif status == 5 then
+            elseif status == 20 then
                 print("cd: " .. argument .. ": is a directory")
             elseif status == 1 then
                 print("cd: " .. argument .. ": no parent directory")
