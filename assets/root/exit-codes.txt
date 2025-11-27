@@ -4,6 +4,7 @@
 3   Unsupported API
 5   Read-only storage
 13  Permission denied
+20  Not a directory
 68  Service running
 69  Service unavailable
 100 Data parsing error
