@@ -2216,6 +2216,12 @@ public class Lua {
                     new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0)), args.size() > 1 ? "Background" : toLuaString(args.elementAt(1))).start();
                 } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); }
             }
+            else if (MOD == PREQ) {
+                if (args.isEmpty()) { }
+                else {
+                    return new Double(midlet.platformRequest(toLuaString(args.elementAt(0))));
+                }
+            }
             else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
 
