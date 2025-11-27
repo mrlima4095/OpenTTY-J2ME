@@ -1443,7 +1443,7 @@ public class Lua {
                         boolean exist = fc.exists(), dir = fc.isDirectory();
                         fc.close(); 
                         if (exist && dir) { father.put("PWD", target); return new Double(0); } 
-                        else { return new Double(exist ? 5 : 127); }
+                        else { return new Double(exist ? 20 : 127); }
                     }
 
                     return new Double(127);
