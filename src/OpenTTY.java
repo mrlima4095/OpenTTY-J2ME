@@ -343,28 +343,8 @@ public class OpenTTY extends MIDlet {
     }
     // | (Archive Structures)
     public int addFile(String filename, String content, String archive, String base) { return writeRMS("OpenRMS", (delFile(filename, archive) + "[\1BEGIN:" + filename + "\1]\n" + content + "\n[\1END\1]\n").getBytes(), base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4); }
-    public String delFile(String filename, String content) {
-        String startTag = "[\1BEGIN:" + filename + "\1]";
-        int start = content.indexOf(startTag);
-        if (start == -1) { return content; }
-
-        int end = content.indexOf("[\1END\1]", start);
-        if (end == -1) { return content; }
-
-        end += "[\1END\1]".length();
-        return content.substring(0, start) + content.substring(end);
-    }
-    public String read(String filename, String content) {
-        String startTag = "[\1BEGIN:" + filename + "\1]";
-        int start = content.indexOf(startTag);
-        if (start == -1) { return null; }
-
-        start += startTag.length() + 1;
-        int end = content.indexOf("[\1END\1]", start);
-        if (end == -1) { return null; }
-
-        return content.substring(start, end).trim();
-    }
+    public String delFile(String filename, String content) { String startTag = "[\1BEGIN:" + filename + "\1]"; int start = content.indexOf(startTag); if (start == -1) { return content; } int end = content.indexOf("[\1END\1]", start); if (end == -1) { return content; } end += "[\1END\1]".length(); return content.substring(0, start) + content.substring(end); }
+    public String read(String filename, String content) { String startTag = "[\1BEGIN:" + filename + "\1]"; int start = content.indexOf(startTag); if (start == -1) { return null; } start += startTag.length() + 1; int end = content.indexOf("[\1END\1]", start); if (end == -1) { return null; } return content.substring(start, end).trim(); }
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
     // Java Virtual Machine

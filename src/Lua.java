@@ -1438,7 +1438,6 @@ public class Lua {
 
                     
                     if (midlet.fs.containsKey(target)) { father.put("PWD", target); }
-                    else if 
                     else if (target.startsWith("/mnt/")) {
                         FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ); 
                         boolean exist = fc.exists(), dir = fc.isDirectory();
