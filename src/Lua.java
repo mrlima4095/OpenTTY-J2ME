@@ -1445,7 +1445,7 @@ public class Lua {
                         if (exist && dir) { father.put("PWD", target); return new Double(0); } 
                         else { return new Double(exist ? 20 : 127); }
                     }
-                    else if (midlet.getInputStream(target)) { return new Double(20); }
+                    else if (midlet.getInputStream(target) != null) { return new Double(20); }
 
                     return new Double(127);
                 }
