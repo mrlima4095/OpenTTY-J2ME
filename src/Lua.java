@@ -1430,10 +1430,9 @@ public class Lua {
                     else if (midlet.fs.containsKey(target)) { father.put("PWD", target); }
                     else if (target.startsWith("/mnt/")) {
                         FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ); 
-                        if (fc.exists() && fc.isDirectory()) { father.put("PWD", target); return new Double(0); } 
-                        else { fc.close(); return new Double(fc.exists() ? 5 : 127); }
-
-                        fc.close(); 
+                        boolean exist = fc.exists(), dir = fc.isDirectory();
+                        fc.close(); if (exist && dir) { father.put("PWD", target); return new Double(0); } 
+                        else { return new Double(exist ? 5 : 127); }
                     }
 
                     return new Double(127);
