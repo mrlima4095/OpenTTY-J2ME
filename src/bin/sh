@@ -98,8 +98,8 @@ local function shell(args, enable, aliases, scope)
                 args[i] = os.getcwd() .. args[i]
             end
 
-            local file = io.open(args[i])
-            if file then
+            local ok, file = pcall(io.open(args[i]))
+            if ok and file then
                 print(string.env(io.read(file)))
             else
                 print("cat: " .. args[i] .. ": not found")
