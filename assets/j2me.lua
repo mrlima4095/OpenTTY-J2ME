@@ -23,6 +23,7 @@ io = {
     close = function (...) end,
     popen = function (program, argument, sudo, out, scope) return 0, "" end,
     dirs = function (pwd) return {} end,
+    setstdout = function (file) end,
     mount = function (struct) end
 }
 

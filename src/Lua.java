@@ -2017,7 +2017,8 @@ public class Lua {
                     } 
                     else if (itemObj instanceof Item) { form.append((Item) itemObj); } 
                     else { form.append(new StringItem("", toLuaString(itemObj))); }
-                } else if (target instanceof List) {
+                } 
+                else if (target instanceof List) {
                     List list = (List) target;
                     Image image = null;
                     
@@ -2227,13 +2228,7 @@ public class Lua {
                 else if (args.size() < 2 || args.elementAt(1) == null) { return gotbad(2, "delete", "value expected, got " + (args.size() < 2 ? "no value" : "nil")); }
                 else { ((Hashtable) args.elementAt(0)).remove(args.elementAt(1)); }
             }
-            else if (MOD == RUN) { 
-                if (args.isEmpty()) { }
-                else if (args.elementAt(0) instanceof LuaFunction) {
-                    kill = false;
-                    new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0)), args.size() > 1 ? "Background" : toLuaString(args.elementAt(1))).start();
-                } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); }
-            }
+            else if (MOD == RUN) { if (args.isEmpty()) { } else if (args.elementAt(0) instanceof LuaFunction) { kill = false; new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0)), args.size() > 1 ? "Background" : toLuaString(args.elementAt(1))).start(); } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); } }
             else if (MOD == PREQ) {
                 if (args.isEmpty()) { }
                 else {
