@@ -107,11 +107,12 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     elseif cmd == "cat" then
         for i = 1, #args do
-            if string.find(args[i], 1, 1) ~= "/" then
-                args[i] = os.getcwd() .. args[i]
+            local fpwd = args[i]
+            if string.find(fpwd, 1, 1) ~= "/" then
+                fpwd = os.getcwd() .. fpwd
             end
 
-            local ok, file = pcall(io.open(args[i]))
+            local ok, file = pcall(io.open(fpwd))
             if ok and file then
                 print(string.env(io.read(file)))
             else
