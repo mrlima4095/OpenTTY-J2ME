@@ -14,8 +14,9 @@ local function shell(args, enable, aliases, stdout, scope)
     -- Kernel
     -- (Process)
     elseif cmd == "ps" then
+        print("PID\tPROCESS")
         for k,v in pairs(os.getproc()) do
-            
+            print(k .. "\t" .. v)
         end
     elseif cmd == "kill" then
     elseif cmd == "pkill" then
