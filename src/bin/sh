@@ -9,7 +9,7 @@ local function shell(args, enable, aliases, scope)
     elseif aliases[cmd] and enable then
         return shell(aliases[cmd] .. " " .. argument, enable, aliases, scope)
     elseif io.open("/bin/" .. cmd) then
-        local res = io.popen("/bin/" .. cmd, argument, false, io.stdout)
+        local res = io.popen("/bin/" .. cmd, argument, true, io.stdout)
         return res.status
     elseif cmd == "exit" then os.exit(nil)
     elseif cmd == "eval" then
