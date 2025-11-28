@@ -8,7 +8,7 @@ local function shell(args, enable, aliases, stdout, scope)
 
     elseif aliases[cmd] and enable then return shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
     elseif io.open("/bin/" .. cmd) then
-        local res = io.popen("/bin/" .. cmd, argument, false, stdout, scope)
+        local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
         return res.status
 
     -- Kernel
