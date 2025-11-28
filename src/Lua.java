@@ -2290,7 +2290,6 @@ public class Lua {
             else if (MOD == PREQ) { if (args.isEmpty()) { } else { return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); } }
             else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
-            
 
             return null;
         }
