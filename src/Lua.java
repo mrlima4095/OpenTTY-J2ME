@@ -2258,7 +2258,7 @@ public class Lua {
                 if (args.isEmpty()) { }
                 else {
                     String query = toLuaString(args.elementAt(0));
-                    if (String.valueOf(query.hashCode()).equals(midlet.loadRMS("OpenRMS", 1))) {
+                    if (midlet.loadRMS("OpenRMS", 1).equals(String.valueOf(query.hashCode()))) {
                         id = 0;
                         return new Double(0);
                     } else {
