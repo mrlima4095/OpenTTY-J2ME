@@ -1474,7 +1474,11 @@ public class Lua {
                 }
             }
             else if (MOD == SUDO) {
-                if (args.isEmpty()) { }
+                if (args.isEmpty()) {
+                    Hashtable result = new Hashtable();
+                    result.put("USER", father.get("USER"))
+                    result.put("UID", id);
+                }
                 else {
                     String passwd = toLuaString(args.elementAt(0));
                     if (midlet.loadRMS("OpenRMS", 2).equals(String.valueOf(passwd.hashCode()))) {
