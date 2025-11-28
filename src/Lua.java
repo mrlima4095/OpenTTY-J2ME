@@ -2294,7 +2294,7 @@ public class Lua {
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
 
             else if (MOD == KERNEL) {
-                print(proc, stdout);
+                midlet.print(proc, stdout);
             }
 
             return null;
