@@ -54,7 +54,7 @@ public class OpenTTY extends MIDlet {
             lua.tokens = lua.tokenize(read("/bin/init")); 
             
             while (lua.peek().type != 0) { res = lua.statement(globals); if (lua.doreturn) { break; } }
-            proc.put("lua", lua); proc.put("handler", lua.getKernel(/*  */));
+            proc.put("lua", lua); proc.put("handler", lua.getKernel());
 
         }
         catch (Exception e) { warn("SandBox", getCatch(e)); } 
