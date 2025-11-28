@@ -1958,7 +1958,7 @@ public class Lua {
             else if (MOD == NEW) {
                 if (args.size() < 2) { return gotbad(1, "graphics.new", "wrong number of arguments"); }
                 
-                String type = toLuaString(args.elementAt(0)), title = toLuaString(args.elementAt(1));
+                String type = toLuaString(args.elementAt(0)), title = args.elementAt(1) == null ? null : toLuaString(args.elementAt(1));
                 Object content = args.size() > 2 ? args.elementAt(2) : null;
 
                 if (type.equals("alert")) {
