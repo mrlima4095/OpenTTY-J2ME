@@ -1435,9 +1435,8 @@ public class Lua {
 
                     target = target.startsWith("/") ? target : pwd + target;
                     target = target.endsWith("/") ? target : target + "/";
-
                     
-                    if (midlet.fs.containsKey(target)) { father.put("PWD", target); }
+                    if (midlet.fs.containsKey(target)) { father.put("PWD", target); return new Double(0); }
                     else if (target.startsWith("/mnt/")) {
                         FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ); 
                         boolean exist = fc.exists(), dir = fc.isDirectory();
@@ -1467,8 +1466,10 @@ public class Lua {
                             }
 
                             midlet.sys.remove(pid);
-                        }
-                        
+                            return new Double(0);
+                        } else { return new Double(13); }
+                    } else {
+                        return new Double(127);
                     }
                 }
             }
@@ -1651,6 +1652,13 @@ public class Lua {
                         for (int i = 0; i < files.length; i++) { list.put(new Double(index), files[i]); index++; } 
                     } 
                 }
+                
+                if (midlet.fs.containsKey(pwd)) {
+                    Vector struct = (Vector) midlet.fs.get(pwd);
+
+                    for (int i = 0; i < struct.size(); i++) { list.put(new Double(index), struct.elementAt(i)); index++; }
+                }
+                
                 return list;
             }
             else if (MOD == SETOUT) { if (args.isEmpty()) { } else { stdout = args.elementAt(0); } }
