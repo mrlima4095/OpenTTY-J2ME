@@ -1463,7 +1463,7 @@ public class Lua {
                             Object TERM = midlet.getsignal(pid, "TERM");
 
                             if (TERM != null) {
-                                if (TERM instanceof LuaFunction) { ((LuaFunction) TERM).call(); }
+                                if (TERM instanceof LuaFunction) { ((LuaFunction) TERM).call(new Vector()); }
                             }
 
                             midlet.sys.remove(pid);
