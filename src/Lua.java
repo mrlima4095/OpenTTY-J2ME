@@ -1450,6 +1450,30 @@ public class Lua {
                     return new Double(127);
                 }
             }
+            else if (MOD == START) {
+
+            }
+            else if (MOD == STOP) {
+                if (args.isEmpty()) { }
+                else {
+                    String pid = toLuaString(args.elementAt(0));
+                    if (midlet.sys.containsKey(pid)) {
+                        Hashtable proc = midlet.sys.get(pid);
+                        if (((String) proc.get("owner").equals(midlet.loadRMS("OpenRMS", 1))) || id == 0) {
+                            Object TERM = midlet.getsignal(pid, "TERM");
+
+                            if (TERM != null) {
+                                if (TERM instanceof LuaFunction) {
+                                    ((LuaFunction) TERM).call();
+                                }
+                            }
+
+                            midlet.sys.remove(pid);
+                        }
+                        
+                    }
+                }
+            }
             // Package: io
             else if (MOD == READ) {
                 if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? midlet.getcontent((String) stdout, father) : ""; }
