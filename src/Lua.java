@@ -1114,6 +1114,8 @@ public class Lua {
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
     // |
+    public Object getKernel() { return new LuaFunction(KERNEL); }
+    // |
     // Lua Object
     public class LuaFunction implements Runnable, CommandListener, ItemCommandListener, ItemStateListener {
         private Vector params, bodyTokens;
