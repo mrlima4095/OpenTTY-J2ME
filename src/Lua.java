@@ -1458,7 +1458,7 @@ public class Lua {
                 else {
                     String pid = toLuaString(args.elementAt(0));
                     if (midlet.sys.containsKey(pid)) {
-                        Hashtable proc = midlet.sys.get(pid);
+                        Hashtable proc = (Hashtable) midlet.sys.get(pid);
                         if (((String) proc.get("owner").equals(midlet.loadRMS("OpenRMS", 1))) || id == 0) {
                             Object TERM = midlet.getsignal(pid, "TERM");
 
