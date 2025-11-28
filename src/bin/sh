@@ -22,6 +22,12 @@ local function shell(args, enable, aliases, stdout, scope)
         if argument == "" then
         else
             local status = os.stop(argument)
+            
+            if status == 13 then
+                print("kill: (" .. argument .. ") - Operation not permitted")
+            elseif status == 127 then
+                print("kill: (" .. argument .. ") - No such process")
+            end
         end
     elseif cmd == "pkill" then
     elseif cmd == "start" then
@@ -85,13 +91,8 @@ local function shell(args, enable, aliases, stdout, scope)
 
 
 
-    elseif cmd == "eval" then
-        if argument == "" then
-        else
-            print(shell(argument))
-        end
+    elseif cmd == "eval" then if argument == "" then else print(shell(argument)) end
     elseif cmd == "echo" then print(argument)
-    
     elseif cmd == "clear" then graphics.SetText(io.stdout, "")
 
     -- File Utils
