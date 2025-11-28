@@ -19,6 +19,10 @@ local function shell(args, enable, aliases, stdout, scope)
             print(k .. "\t" .. v)
         end
     elseif cmd == "kill" then
+        if argument == "" then
+        else
+            local status = os.stop(argument)
+        end
     elseif cmd == "pkill" then
     elseif cmd == "start" then
     elseif cmd == "" then
