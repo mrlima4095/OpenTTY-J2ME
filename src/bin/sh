@@ -148,8 +148,6 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
 
-    end
-
     else
         print(cmd .. ": not found")
         return 127
