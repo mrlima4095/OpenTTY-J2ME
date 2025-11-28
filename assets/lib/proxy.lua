@@ -29,7 +29,7 @@ local function app()
     pcall(function ()
         while true do
             local cmd = string.trim(io.read(i))
-            
+
             if cmd then shell(cmd, true, aliases, o, scope)
             else break end
         end
