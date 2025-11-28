@@ -8,6 +8,7 @@ local function cmatrix()
     local handler = { [back] = function () graphics.display(previous) os.exit() end }
 
     graphics.append(screen, buffer)
+    graphics.addCommand(screen, back)
     graphics.handler(screen, handler)
     graphics.display(screen)
 
