@@ -100,6 +100,7 @@ java = {
     getName = function () return "JVM" end,
     delete = function (struct, field) local value = struct[field] struct[field] = nil return value end,
     run = function (func) end,
+    sudo = function (password) end,
 
     midlet = {
         username = "myuser",
