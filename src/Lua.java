@@ -1476,7 +1476,7 @@ public class Lua {
             else if (MOD == SUDO) {
                 if (args.isEmpty()) {
                     Hashtable result = new Hashtable();
-                    result.put("USER", father.get("USER"))
+                    result.put("USER", father.get("USER"));
                     result.put("UID", id);
                     return result;
                 }
