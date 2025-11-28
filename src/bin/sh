@@ -139,7 +139,16 @@ local function shell(args, enable, aliases, stdout, scope)
         java.run(function ()
             print(java.thread())
         end)
-    elseif cmd == "open" then if argument == "" then else os.open(argument) end
+    elseif cmd == "open" then
+        if argument == "" then
+        else
+            local ok, status = pcall(os.open, argument)
+            if not ok then
+                print(tostring(status))
+            end
+        end
+
+    end
 
     else
         print(cmd .. ": not found")
