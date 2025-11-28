@@ -31,3 +31,7 @@ graphics.handler(xterm, {
 })
 graphics.db["xterm"] = xterm
 graphics.display(xterm)
+
+return function (payload, source, pid, uid)
+
+end
