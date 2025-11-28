@@ -1478,6 +1478,7 @@ public class Lua {
                     Hashtable result = new Hashtable();
                     result.put("USER", father.get("USER"))
                     result.put("UID", id);
+                    return result;
                 }
                 else {
                     String passwd = toLuaString(args.elementAt(0));
