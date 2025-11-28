@@ -27,7 +27,6 @@ local function app()
     io.setstdout(o)
 
     pcall(function ()
-        
         while true do
             local cmd = string.trim(io.read(i))
             
