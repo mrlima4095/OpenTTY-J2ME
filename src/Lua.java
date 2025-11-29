@@ -2312,7 +2312,7 @@ public class Lua {
                     if (payload.equals("kill")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
-                            if (midlet.getobject((String) arg, "owner").equals(scope.get("USER")) || id == 0) { midlet.sys.remove(arg); return new Double(0); } 
+                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { midlet.sys.remove(arg); return new Double(0); } 
                             else { return new Double(13); }
                         }
                         else { return new Double(127); }
@@ -2320,7 +2320,7 @@ public class Lua {
                     else if (payload.equals("proc")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
-                            if (midlet.getobject((String) arg, "owner").equals(scope.get("USER")) || id == 0) { return midlet.sys.get(arg); } 
+                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { return midlet.sys.get(arg); } 
                             else { return new Double(13); }
                         }
                         else { return new Double(127); }
