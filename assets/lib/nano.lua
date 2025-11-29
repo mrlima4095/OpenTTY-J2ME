@@ -35,8 +35,8 @@ end
 
 app.quest = function ()
     local quest = graphics.new("edit", "Save As", "")
-    local save = graphics.new("command", {label="Save", type="ok", priority=1})
-    local back = graphics.new("command", {label="Cancel", type="cancel", priority=2})
+    local save = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
+    local back = graphics.new("command", { label = "Cancel", type = "back", priority = 2 })
 
     graphics.addCommand(quest, save)
     graphics.addCommand(quest, back)
