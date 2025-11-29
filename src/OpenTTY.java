@@ -45,15 +45,16 @@ public class OpenTTY extends MIDlet {
     public void init() {
         try { 
             Hashtable proc = new Hashtable(), args = new Hashtable();    
-            args.put(new Double(0), "/bin/init"); globals.put("PWD", "/home/"); globals.put("USER", "root");
+            args.put(new Double(0), "/bin/init"); 
+            globals.put("PWD", "/home/"); globals.put("USER", "root");
             proc.put("name", "init"); proc.put("owner", "root");
 
-            Lua lua = new Lua(this, 0, "1", proc, stdout, globals); Object res;
+            Lua lua = new Lua(this, 0, "1", proc, stdout, globals);
             sys.put("1", proc); lua.globals.put("arg", args);    
 
             lua.tokens = lua.tokenize(read("/bin/init")); 
             
-            while (lua.peek().type != 0) { res = lua.statement(globals); if (lua.doreturn) { break; } }
+            while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
             proc.put("lua", lua); proc.put("handler", lua.getKernel());
 
         }
@@ -304,12 +305,12 @@ public class OpenTTY extends MIDlet {
             try { 
                 filename = filename.substring(6); 
                 if (filename.equals("")) { return 2; }
-                if (filename.equals("OpenRMS")) { print("Permission denied!", stdout); return 13; } 
+                if (filename.equals("OpenRMS")) { return 13; } 
                 
                 RecordStore.deleteRecordStore(filename); 
             } 
-            catch (RecordStoreNotFoundException e) { print("rm: " + filename + ": not found", stdout); return 127; } 
-            catch (Exception e) { print(getCatch(e), stdout); return 1; } 
+            catch (RecordStoreNotFoundException e) { preturn 127; } 
+            catch (Exception e) { return 1; } 
         }
         else if (filename.startsWith("/mnt/")) { 
             try { 
@@ -337,9 +338,9 @@ public class OpenTTY extends MIDlet {
             filename = filename.substring(5);
             if (filename.equals("")) { }
             else if (tmp.containsKey(filename)) { tmp.remove(filename); }
-            else { print("rm: " + filename + ": not found", stdout); return 127; }
+            else { return 127; }
         }
-        else if (filename.startsWith("/")) { print("read-only storage", stdout); return 5; }
+        else if (filename.startsWith("/")) { return 5; }
         
         return 0; 
     }
