@@ -34,8 +34,6 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "" then
     elseif cmd == "" then
     elseif cmd == "" then
-    -- (Memory)
-    elseif cmd == "top" then
 
     -- Session
     -- (User Information)
@@ -135,10 +133,6 @@ local function shell(args, enable, aliases, stdout, scope)
         print(string.trim(buff))
     -- 
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
-    elseif cmd == "debug" then
-        java.run(function ()
-            print(java.thread())
-        end)
     elseif cmd == "open" then
         if argument == "" then
         else
