@@ -15,9 +15,9 @@ if arg[1] then
     if string.sub(arg[1], 1, 1) ~= "/" then app.file = os.getcwd() .. app.file end
 
     app.content = io.read(app.file)
-    app.editor = graphics.new("editor", "Nano - " .. app.filename, app.content)
+    app.editor = graphics.new("edit", "Nano - " .. app.filename, app.content)
 else
-    app.editor = graphics.new("editor", "Nano - New Buffer", "")
+    app.editor = graphics.new("edit", "Nano - New Buffer", "")
 end
 
 app.save = function ()
