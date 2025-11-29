@@ -30,7 +30,6 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
     elseif cmd == "pkill" then
-    elseif cmd == "start" then
     elseif cmd == "" then
     elseif cmd == "" then
     elseif cmd == "" then
