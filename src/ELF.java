@@ -1,19 +1,33 @@
-import java.io.*;
-import java.util.*;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
- * ELF loader + tiny x86-32 interpreter (extended)
+ * ELF loader + tiny x86-32 interpreter, reescrito para J2ME (CLDC 1.1 / MIDP 2.0)
  *
- * Extensões:
- *  - MOV r32, r32 (mod=3 subset of 0x89 / 0x8B)
- *  - PUSH r32 (0x50-0x57), POP r32 (0x58-0x5F)
- *  - CALL rel32 (0xE8), JMP rel32 (0xE9), RET (0xC3)
- *  - stack semantics fixed (ESP cresce pra baixo)
+ * Restrições J2ME atendidas:
+ * - Não usa java.util.Arrays
+ * - Não usa ByteArrayOutputStream
+ * - Não usa encodings explícitos (UTF-8)
+ * - Usa apenas APIs básicas disponíveis no CLDC
+ *
+ * Funcionalidade:
+ * - Carrega ELF32 little-endian (apenas segmentos PT_LOAD)
+ * - Emula subset de instruções x86 suficiente para programas "minimal" em C que usam int 0x80:
+ *     mov r32, imm32 (0xB8..0xBF)
+ *     mov r32, r32 (0x8B /r)  (mod==3)
+ *     mov r/m32, r32 (0x89 /r) (mod==3)
+ *     push r32 (0x50..0x57), pop r32 (0x58..0x5F)
+ *     call rel32 (0xE8), ret (0xC3), jmp rel32 (0xE9)
+ *     nop (0x90), int imm8 (0xCD)
+ * - Syscalls via int 0x80 (1 exit, 3 read, 4 write, 5 open stub, 6 close stub)
  *
  * Limitações:
- *  - interpreta apenas subset de x86 suficiente para muitos "minimal" C compilados com -nostdlib
- *  - modrm handling apenas para mod==3 (register-direct)
- *  - não lida com relocations, PLT/GOT, dynamic linker, SSE, etc.
+ * - Não suporta relocations, PLT/GOT, dynamic linking, ou instruções complexas
+ * - modrm suportado apenas quando mod == 3 (registro-direto)
+ *
+ * Integração: precisa de uma classe OpenTTY com métodos/atributos usados aqui:
+ *   host.print(String msg, int stream); host.write(String path, byte[] data, int off);
+ *   host.stdin.getString(); host.stdout etc.
  */
 public class ELF {
     private OpenTTY host;
@@ -34,18 +48,47 @@ public class ELF {
         this.host = host;
     }
 
-    public boolean load(InputStream is) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] tmp = new byte[8192];
-        int r;
-        while ((r = is.read(tmp)) > 0) baos.write(tmp, 0, r);
-        byte[] file = baos.toByteArray();
-
-        if (file.length < 52) { host.print("ELF: arquivo muito pequeno", host.stdout); return false; }
-        if (!(file[0] == 0x7f && file[1] == 'E' && file[2] == 'L' && file[3] == 'F')) {
-            host.print("ELF: magic inválido", host.stdout); return false;
+    /**
+     * Lê todo InputStream em um buffer (implementação J2ME-safe)
+     */
+    private byte[] readAll(InputStream is) throws IOException {
+        int capacity = 8192;
+        byte[] buf = new byte[capacity];
+        int total = 0;
+        while (true) {
+            int toRead = capacity - total;
+            if (toRead == 0) {
+                // expand
+                int newCap = capacity * 2;
+                byte[] nb = new byte[newCap];
+                System.arraycopy(buf, 0, nb, 0, total);
+                buf = nb;
+                capacity = newCap;
+                toRead = capacity - total;
+            }
+            int r = is.read(buf, total, toRead);
+            if (r < 0) break;
+            total += r;
         }
+        // trim
+        byte[] out = new byte[total];
+        System.arraycopy(buf, 0, out, 0, total);
+        return out;
+    }
 
+    /**
+     * Carrega ELF a partir de InputStream
+     */
+    public boolean load(InputStream is) throws IOException {
+        byte[] file = readAll(is);
+        if (file == null || file.length < 52) {
+            host.print("ELF: arquivo muito pequeno", host.stdout);
+            return false;
+        }
+        if (!(file[0] == 0x7f && file[1] == 'E' && file[2] == 'L' && file[3] == 'F')) {
+            host.print("ELF: magic inválido", host.stdout);
+            return false;
+        }
         int elfClass = unsigned(file[4]); // 1 = 32-bit
         int data = unsigned(file[5]);     // 1 = little endian
         if (elfClass != 1 || data != 1) {
@@ -53,35 +96,42 @@ public class ELF {
             return false;
         }
 
-        int e_entry   = read32LE(file, 24);
-        int e_phoff   = read32LE(file, 28);
+        int e_entry = read32LE(file, 24);
+        int e_phoff = read32LE(file, 28);
         int e_phentsize = read16LE(file, 42);
-        int e_phnum   = read16LE(file, 44);
+        int e_phnum = read16LE(file, 44);
 
         this.entryPoint = e_entry;
 
+        // calcula highest used virtual address pelos PT_LOAD
         int highest = 0;
         for (int i = 0; i < e_phnum; i++) {
             int phoff = e_phoff + i * e_phentsize;
+            if (phoff + 32 > file.length) continue;
             int p_type = read32LE(file, phoff + 0);
             if (p_type != 1) continue; // PT_LOAD
             int p_offset = read32LE(file, phoff + 4);
             int p_vaddr  = read32LE(file, phoff + 8);
             int p_filesz = read32LE(file, phoff + 16);
             int p_memsz  = read32LE(file, phoff + 20);
-            int top = p_vaddr + Math.max(p_memsz, p_filesz);
+            int top = p_vaddr + (p_memsz > p_filesz ? p_memsz : p_filesz);
             if (top > highest) highest = top;
         }
 
-        int stackSize = 1024 * 128; // 128KB stack
-        memSize = alignUp(Math.max(highest + 1, 1024 * 1024), 4096) + stackSize;
+        int stackSize = 128 * 1024; // 128KB stack
+        int baseMem = (highest + 1);
+        if (baseMem < 1024 * 1024) baseMem = 1024 * 1024;
+        memSize = alignUp(baseMem, 4096) + stackSize;
         mem = new byte[memSize];
-        Arrays.fill(mem, (byte)0);
+        // zero fill (for J2ME, array already zeroed, mas deixamos seguro)
+        for (int i = 0; i < memSize; i++) mem[i] = 0;
 
+        // carregar segmentos PT_LOAD
         for (int i = 0; i < e_phnum; i++) {
             int phoff = e_phoff + i * e_phentsize;
+            if (phoff + 32 > file.length) continue;
             int p_type = read32LE(file, phoff + 0);
-            if (p_type != 1) continue; // PT_LOAD only
+            if (p_type != 1) continue;
             int p_offset = read32LE(file, phoff + 4);
             int p_vaddr  = read32LE(file, phoff + 8);
             int p_filesz = read32LE(file, phoff + 16);
@@ -91,19 +141,24 @@ public class ELF {
                 host.print("ELF: segmento fora da memória alocada", host.stdout);
                 return false;
             }
-
             if (p_filesz > 0 && p_offset + p_filesz <= file.length) {
                 System.arraycopy(file, p_offset, mem, p_vaddr, p_filesz);
             }
+            // rest remains zero (BSS)
         }
 
+        // registradores init
         EIP = entryPoint;
         ESP = memSize - 4;
         EBP = ESP;
+
         host.print("ELF: carregado; entry=0x" + Integer.toHexString(entryPoint) + " memSize=" + memSize, host.stdout);
         return true;
     }
 
+    /**
+     * Executa o binário carregado
+     */
     public void run() {
         halted = false;
         int steps = 0;
@@ -116,7 +171,7 @@ public class ELF {
                 int opcode = unsigned(mem[EIP]);
 
                 steps++;
-                if (steps > 10000000) {
+                if (steps > 10_000_000) {
                     host.print("ELF: limite de passos atingido, abortando", host.stdout);
                     break;
                 }
@@ -131,7 +186,7 @@ public class ELF {
                     setRegByIndex(reg, imm);
                     EIP += 5;
                 }
-                // MOV r/m32, r32 : 0x89 /r  (we only handle mod==3: reg->rm)
+                // MOV r/m32, r32 : 0x89 /r  (mod==3 only)
                 else if (opcode == 0x89) {
                     int modrm = unsigned(mem[EIP + 1]);
                     int mod = (modrm >> 6) & 0x3;
@@ -146,7 +201,7 @@ public class ELF {
                         halted = true;
                     }
                 }
-                // MOV r32, r/m32 : 0x8B /r (we only handle mod==3: rm->reg)
+                // MOV r32, r/m32 : 0x8B /r (mod==3 only)
                 else if (opcode == 0x8B) {
                     int modrm = unsigned(mem[EIP + 1]);
                     int mod = (modrm >> 6) & 0x3;
@@ -207,83 +262,90 @@ public class ELF {
                     halted = true;
                 }
             }
-        } catch (Throwable t) {
-            host.print("ELF: exceção durante execução: " + t.getMessage(), host.stdout);
+        } catch (Exception e) {
+            host.print("ELF: exceção durante execução: " + e.getClass().getName() + " " + e.getMessage(), host.stdout);
         }
         host.print("ELF: execução finalizada", host.stdout);
     }
 
-    // Syscall handling (unchanged logic but keep)
+    // -----------------------
+    // Syscall handling (simples)
+    // -----------------------
     private void handleSyscall() {
         int nr = EAX;
-        switch (nr) {
-            case 1: // exit
-                halted = true;
-                host.print("ELF: sys_exit(" + EBX + ")", host.stdout);
-                break;
-
-            case 3: // read(fd, buf, count)
-                int fd_r = EBX, buf = ECX, count = EDX;
-                if (fd_r == 0) {
-                    try {
-                        String in = host.stdin.getString();
-                        byte[] b = in.getBytes("UTF-8");
-                        int n = Math.min(b.length, Math.max(0, count));
-                        if (buf >= 0 && buf + n <= memSize) {
-                            System.arraycopy(b, 0, mem, buf, n);
-                            EAX = n;
-                        } else {
-                            EAX = -1;
-                        }
-                    } catch (UnsupportedEncodingException e) {
-                        EAX = -1;
-                    }
-                } else {
-                    EAX = -1;
-                }
-                break;
-
-            case 4: // write(fd, buf, count)
-                int fd = EBX;
-                int bptr = ECX, len = EDX;
-                if (len < 0) { EAX = -1; return; }
-                if (bptr < 0 || bptr + len > memSize) { EAX = -1; return; }
-                byte[] out = new byte[len];
-                System.arraycopy(mem, bptr, out, 0, len);
+        if (nr == 1) { // exit
+            halted = true;
+            host.print("ELF: sys_exit(" + EBX + ")", host.stdout);
+            return;
+        }
+        if (nr == 3) { // read(fd, buf, count)
+            int fd_r = EBX;
+            int buf = ECX;
+            int count = EDX;
+            if (fd_r == 0) {
                 try {
-                    if (fd == 1 || fd == 2) {
-                        String s = new String(out, "UTF-8");
-                        host.write("/dev/stdout", s.getBytes("UTF-8"), 0);
-                        EAX = len;
+                    String in = host.stdin.getString();
+                    if (in == null) in = "";
+                    byte[] b = in.getBytes(); // platform encoding
+                    int n = b.length;
+                    if (n > count) n = count;
+                    if (buf >= 0 && buf + n <= memSize) {
+                        for (int i = 0; i < n; i++) mem[buf + i] = b[i];
+                        EAX = n;
                     } else {
                         EAX = -1;
                     }
-                } catch (UnsupportedEncodingException e) {
+                } catch (Exception e) {
                     EAX = -1;
                 }
-                break;
-
-            case 5: // open (stub)
-                int fnamePtr = EBX;
-                String fname = readCStringFromMem(fnamePtr);
-                if (fname == null) { EAX = -1; break; }
+            } else {
                 EAX = -1;
-                break;
-
-            case 6: // close stub
-                EAX = 0;
-                break;
-
-            default:
-                host.print("ELF: syscall não suportada: " + nr, host.stdout);
-                EAX = -1;
-                break;
+            }
+            return;
         }
+        if (nr == 4) { // write(fd, buf, count)
+            int fd = EBX;
+            int bptr = ECX;
+            int len = EDX;
+            if (len < 0) { EAX = -1; return; }
+            if (bptr < 0 || bptr + len > memSize) { EAX = -1; return; }
+            byte[] out = new byte[len];
+            for (int i = 0; i < len; i++) out[i] = mem[bptr + i];
+            try {
+                if (fd == 1 || fd == 2) {
+                    // convert to String using platform default
+                    String s = new String(out, 0, len);
+                    host.write("/dev/stdout", s.getBytes(), 0);
+                    EAX = len;
+                } else {
+                    EAX = -1;
+                }
+            } catch (Exception e) {
+                EAX = -1;
+            }
+            return;
+        }
+        if (nr == 5) { // open stub
+            int fnamePtr = EBX;
+            String fname = readCStringFromMem(fnamePtr);
+            if (fname == null) { EAX = -1; return; }
+            EAX = -1;
+            return;
+        }
+        if (nr == 6) { // close stub
+            EAX = 0;
+            return;
+        }
+        // default
+        host.print("ELF: syscall não suportada: " + nr, host.stdout);
+        EAX = -1;
     }
 
-    // Helpers: stack, memory access, regs
+    // -----------------------
+    // Stack helpers
+    // -----------------------
     private void push32(int v) {
-        ESP -= 4;
+        ESP = ESP - 4;
         if (ESP < 0) { host.print("ELF: stack overflow", host.stdout); halted = true; return; }
         write32LE(mem, ESP, v);
     }
@@ -291,75 +353,88 @@ public class ELF {
     private int pop32() {
         if (ESP + 4 > memSize) { host.print("ELF: stack underflow", host.stdout); halted = true; return 0; }
         int v = read32LE(mem, ESP);
-        ESP += 4;
+        ESP = ESP + 4;
         return v;
     }
 
+    // -----------------------
+    // Reg helpers
+    // -----------------------
     private int getRegByIndex(int reg) {
-        switch (reg) {
-            case REG_EAX: return EAX;
-            case REG_ECX: return ECX;
-            case REG_EDX: return EDX;
-            case REG_EBX: return EBX;
-            case REG_ESP: return ESP;
-            case REG_EBP: return EBP;
-            case REG_ESI: return ESI;
-            case REG_EDI: return EDI;
-            default: return 0;
-        }
+        if (reg == REG_EAX) return EAX;
+        if (reg == REG_ECX) return ECX;
+        if (reg == REG_EDX) return EDX;
+        if (reg == REG_EBX) return EBX;
+        if (reg == REG_ESP) return ESP;
+        if (reg == REG_EBP) return EBP;
+        if (reg == REG_ESI) return ESI;
+        if (reg == REG_EDI) return EDI;
+        return 0;
     }
 
     private int setRegByIndex(int reg, int value) {
-        switch (reg) {
-            case REG_EAX: EAX = value; return EAX;
-            case REG_ECX: ECX = value; return ECX;
-            case REG_EDX: EDX = value; return EDX;
-            case REG_EBX: EBX = value; return EBX;
-            case REG_ESP: ESP = value; return ESP;
-            case REG_EBP: EBP = value; return EBP;
-            case REG_ESI: ESI = value; return ESI;
-            case REG_EDI: EDI = value; return EDI;
-            default: return 0;
-        }
+        if (reg == REG_EAX) { EAX = value; return EAX; }
+        if (reg == REG_ECX) { ECX = value; return ECX; }
+        if (reg == REG_EDX) { EDX = value; return EDX; }
+        if (reg == REG_EBX) { EBX = value; return EBX; }
+        if (reg == REG_ESP) { ESP = value; return ESP; }
+        if (reg == REG_EBP) { EBP = value; return EBP; }
+        if (reg == REG_ESI) { ESI = value; return ESI; }
+        if (reg == REG_EDI) { EDI = value; return EDI; }
+        return 0;
     }
 
     private String readCStringFromMem(int addr) {
         if (addr < 0 || addr >= memSize) return null;
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (int i = addr; i < memSize; i++) {
-            if (mem[i] == 0) break;
-            baos.write(mem[i]);
+        int i = addr;
+        // find zero byte or end
+        int max = memSize;
+        int len = 0;
+        while (i < max && mem[i] != 0) { i++; len++; }
+        if (len == 0) return "";
+        try {
+            return new String(mem, addr, len);
+        } catch (Exception e) {
+            return null;
         }
-        try { return new String(baos.toByteArray(), "UTF-8"); } catch (UnsupportedEncodingException e) { return null; }
     }
 
+    // -----------------------
+    // Byte/LE helpers
+    // -----------------------
     private static int unsigned(byte b) { return b & 0xFF; }
 
     private static int read16LE(byte[] a, int off) {
-        return (unsigned(a[off]) | (unsigned(a[off + 1]) << 8));
+        int b0 = a[off] & 0xFF;
+        int b1 = a[off + 1] & 0xFF;
+        return (b0 | (b1 << 8));
     }
 
     private static int read32LE(byte[] a, int off) {
-        return (unsigned(a[off]) | (unsigned(a[off + 1]) << 8) | (unsigned(a[off + 2]) << 16) | (unsigned(a[off + 3]) << 24));
+        int b0 = a[off] & 0xFF;
+        int b1 = a[off + 1] & 0xFF;
+        int b2 = a[off + 2] & 0xFF;
+        int b3 = a[off + 3] & 0xFF;
+        return (b0 | (b1 << 8) | (b2 << 16) | (b3 << 24));
     }
 
     private static void write32LE(byte[] a, int off, int v) {
         a[off] = (byte)(v & 0xFF);
-        a[off+1] = (byte)((v >> 8) & 0xFF);
-        a[off+2] = (byte)((v >> 16) & 0xFF);
-        a[off+3] = (byte)((v >> 24) & 0xFF);
+        a[off + 1] = (byte)((v >> 8) & 0xFF);
+        a[off + 2] = (byte)((v >> 16) & 0xFF);
+        a[off + 3] = (byte)((v >> 24) & 0xFF);
     }
-
-    private static int read16LE(byte[] a, int off, int lenGuard) { return read16LE(a, off); }
-    private static int read32LE(byte[] a, int off, int lenGuard) { return read32LE(a, off); }
 
     private static int alignUp(int v, int align) {
-        return ((v + align - 1) / align) * align;
+        int rem = v % align;
+        if (rem == 0) return v;
+        return v + (align - rem);
     }
 
+    // Debug / snapshot
     public byte[] getMemorySnapshot(int start, int len) {
         if (start < 0) start = 0;
-        if (start + len > memSize) len = Math.max(0, memSize - start);
+        if (start + len > memSize) len = memSize - start;
         byte[] out = new byte[len];
         System.arraycopy(mem, start, out, 0, len);
         return out;
