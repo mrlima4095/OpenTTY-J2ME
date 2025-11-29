@@ -1507,7 +1507,7 @@ public class Lua {
                     else { return new Double(13); }
                 }
             }
-            else if (MOD == REMOVE) { return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : midlet.deleteFile(); }
+            else if (MOD == REMOVE) { return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)))); }
             else if (MOD == SCOPE) {
                 if (args.isEmpty()) { return father; }
                 else {
