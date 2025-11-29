@@ -2308,7 +2308,7 @@ public class Lua {
                 else {
                     try {
                         InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)));
-                        ELF elf = new ELF(this); 
+                        ELF elf = new ELF(midlet); 
                         if (elf.load(is)) {
                             elf.run();
                         } else {
