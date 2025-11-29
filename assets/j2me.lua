@@ -127,7 +127,7 @@ java = {
     --[=[When you set a Lua NIL on a table it current exists on Java as nil, usage java.delete to really delete from table]=]
     delete = function (struct, field) local value = struct[field] struct[field] = nil return value end,
     --[=[Run function in another Thread (Background)]=]
-    run = function (func) end,
+    run = function (func, thread_name) end,
 
     --[=[MIDlet Lua representation]=]
     midlet = {

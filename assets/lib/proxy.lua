@@ -41,5 +41,5 @@ local function app()
     print("WebProxy -> Server disconnected")
 end
 
-if password and password ~= "" then java.run(app)
+if password and password ~= "" then java.run(app, "WebProxy")
 else print("shprxy: usage: shprxy [password]") os.exit(2) end
