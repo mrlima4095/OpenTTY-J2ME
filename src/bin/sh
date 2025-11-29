@@ -42,6 +42,10 @@ local function shell(args, enable, aliases, stdout, scope)
     -- (Manager)
     elseif cmd == "exit" then os.exit(nil)
 
+    -- Window Aliases
+    elseif cmd == "xterm" then graphics.display(graphics.db["xterm"])
+    elseif cmd == "warn" then graphics.display(graphics.new("alert", arg[1], arg[2]))
+
     -- Shell Utils
     -- (Alias Manager)
     elseif cmd == "alias" then
