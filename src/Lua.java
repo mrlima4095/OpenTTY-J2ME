@@ -1473,7 +1473,7 @@ public class Lua {
                 }
             }
             else if (MOD == SU) {
-                else if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
+                if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
                 else {
                     String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
                     if (user.equals(midlet.username)) { id = 1000; father.put("USER", midlet.username); return new Double(0); }
