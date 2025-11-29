@@ -18,7 +18,8 @@ local function shell(args, enable, aliases, stdout, scope)
         for k,v in pairs(os.getproc()) do
             print(k .. "\t" .. v)
         end
-    elseif cmd == "" then
+    elseif cmd == "su" then
+        print(os.sudo("root", argument))
     elseif cmd == "" then
     elseif cmd == "" then
 
