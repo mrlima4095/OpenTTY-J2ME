@@ -53,7 +53,7 @@ app.quest = function ()
                 graphics.display(graphics.new("alert", "Error", "Filename cannot be empty!"))
             end
         end,
-        
+
         [back] = function() graphics.display(app.editor) end
     })
     graphics.display(quest)
