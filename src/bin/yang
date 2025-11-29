@@ -17,6 +17,7 @@ local mirror = {
     ["head"] = { remote = "head", here = "/bin/head", description = "Prints first lines of a file" },
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
+    ["nano"] = { remote = "nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
     ["pastebin"] = { remote = "pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
     ["ping"] = { remote = "ping.lua", here = "/bin/ping", description = "Test connection delay" },
     ["sed"] = { remote = "sed.lua", here = "/bin/sed", description = "String Editor" },
