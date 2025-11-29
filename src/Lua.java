@@ -196,7 +196,7 @@ public class Lua {
         }
 
         tokens.addElement(new Token(EOF, "EOF"));
-        midlet.cacheLua.put(code, tokens);
+        if (midlet.useCache) { midlet.cacheLua.put(code, tokens); }
         return tokens;
     }
     public Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return new Token(EOF, "EOF"); }
