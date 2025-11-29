@@ -30,11 +30,7 @@ graphics.handler(menu, {
                     else
                         os.open("http://opentty.xyz/dist/versions/OpenTTY-" .. body .. ".jar")
                     end
-                else
-                    graphics.display(graphics.new("alert", "Error", "Fetching error"))
                 end
-            else
-                graphics.display(graphics.new("alert", "Error", "Connection error"))
             end
         elseif opt == "Go to releases archive" then
             os.open("http://opentty.xyz/dist/versions")
