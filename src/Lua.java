@@ -1411,7 +1411,7 @@ public class Lua {
                     Hashtable proc = (Hashtable) midlet.sys.get(toLuaString(args.elementAt(0)));
                     if (proc.containsKey("lua") && proc.containsKey("handler")) {
                         Lua lua = (Lua) proc.get("lua");
-                        Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(3) : null); arg.addElement(scope); arg.addElement(PID); arg.addElement(id);
+                        Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(3) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(id);
                         Object response = null;
 
                         try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
