@@ -2337,7 +2337,7 @@ public class Lua {
                             String old = (String) query.get("old"), newpw = (String) query.get("new");
 
                             if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
-                            else if (midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2);); }
+                            else if (midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
                             else { return new Double(13); }
                         }
                     }
