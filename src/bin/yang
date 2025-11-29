@@ -95,7 +95,7 @@ local function main()
 
                 if file then
                     print(":: Removing " .. arg[2])
-                    local status = os.execute("rm " .. here)
+                    local status = os.remove(here)
                     if status == 0 then
                         print(":: Removed " .. here .. "...")
                     else
