@@ -7,7 +7,7 @@ local forge = {
 
 if arg[1] == "--deamon" then
     os.setproc("name", "forge")
-    return function (payload, source, pid, id)
+    return function (payload, args, pid, id)
 
     end
 end
