@@ -2310,6 +2310,7 @@ public class Lua {
                         InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)));
                         ELF elf = new ELF(midlet); 
                         if (elf.load(is)) {
+                            midlet.print("Iniciando a execucao", stdout);
                             elf.run();
                         } else {
                             midlet.print("Falha ao carregar ELF", stdout);
