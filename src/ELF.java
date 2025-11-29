@@ -27,7 +27,7 @@ import java.io.IOException;
  *
  * Integração: precisa de uma classe OpenTTY com métodos/atributos usados aqui:
  *   host.print(String msg, int stream); host.write(String path, byte[] data, int off);
- *   host.stdin.getString(); host.stdout etc.
+ *   host.stdin.getString(); stdout etc.
  */
 public class ELF {
     private OpenTTY host;
@@ -83,17 +83,17 @@ public class ELF {
     public boolean load(InputStream is) throws IOException {
         byte[] file = readAll(is);
         if (file == null || file.length < 52) {
-            host.print("ELF: arquivo muito pequeno", host.stdout);
+            host.print("ELF: arquivo muito pequeno", stdout);
             return false;
         }
         if (!(file[0] == 0x7f && file[1] == 'E' && file[2] == 'L' && file[3] == 'F')) {
-            host.print("ELF: magic inválido", host.stdout);
+            host.print("ELF: magic inválido", stdout);
             return false;
         }
         int elfClass = unsigned(file[4]); // 1 = 32-bit
         int data = unsigned(file[5]);     // 1 = little endian
         if (elfClass != 1 || data != 1) {
-            host.print("ELF: somente ELF32 little-endian suportado (classe=" + elfClass + " data=" + data + ")", host.stdout);
+            host.print("ELF: somente ELF32 little-endian suportado (classe=" + elfClass + " data=" + data + ")", stdout);
             return false;
         }
 
@@ -139,7 +139,7 @@ public class ELF {
             int p_memsz  = read32LE(file, phoff + 20);
 
             if (p_vaddr < 0 || p_vaddr + p_memsz > memSize) {
-                host.print("ELF: segmento fora da memória alocada", host.stdout);
+                host.print("ELF: segmento fora da memória alocada", stdout);
                 return false;
             }
             if (p_filesz > 0 && p_offset + p_filesz <= file.length) {
@@ -153,7 +153,7 @@ public class ELF {
         ESP = memSize - 4;
         EBP = ESP;
 
-        host.print("ELF: carregado; entry=0x" + Integer.toHexString(entryPoint) + " memSize=" + memSize, host.stdout);
+        host.print("ELF: carregado; entry=0x" + Integer.toHexString(entryPoint) + " memSize=" + memSize, stdout);
         return true;
     }
 
@@ -165,16 +165,16 @@ public class ELF {
         int steps = 0;
         try {
             while (!halted) {
-                host.print("chegou aqui!", host.stdout);
+                host.print("chegou aqui!", stdout);
                 if (EIP < 0 || EIP >= memSize) {
-                    host.print("ELF: EIP fora dos limites: 0x" + Integer.toHexString(EIP), host.stdout);
+                    host.print("ELF: EIP fora dos limites: 0x" + Integer.toHexString(EIP), stdout);
                     break;
                 }
                 int opcode = unsigned(mem[EIP]);
 
                 steps++;
                 if (steps > 10000000) {
-                    host.print("ELF: limite de passos atingido, abortando", host.stdout);
+                    host.print("ELF: limite de passos atingido, abortando", stdout);
                     break;
                 }
 
@@ -199,7 +199,7 @@ public class ELF {
                         setRegByIndex(rm, val);
                         EIP += 2;
                     } else {
-                        host.print("ELF: 0x89 with mod!=3 não suportado", host.stdout);
+                        host.print("ELF: 0x89 with mod!=3 não suportado", stdout);
                         halted = true;
                     }
                 }
@@ -214,7 +214,7 @@ public class ELF {
                         setRegByIndex(reg, val);
                         EIP += 2;
                     } else {
-                        host.print("ELF: 0x8B with mod!=3 não suportado", host.stdout);
+                        host.print("ELF: 0x8B with mod!=3 não suportado", stdout);
                         halted = true;
                     }
                 }
@@ -250,7 +250,7 @@ public class ELF {
                     if (imm8 == 0x80) {
                         handleSyscall();
                     } else {
-                        host.print("ELF: int 0x" + Integer.toHexString(imm8) + " não suportado", host.stdout);
+                        host.print("ELF: int 0x" + Integer.toHexString(imm8) + " não suportado", stdout);
                         halted = true;
                     }
                 }
@@ -260,14 +260,14 @@ public class ELF {
                     EIP = addr;
                 }
                 else {
-                    host.print("ELF: opcode 0x" + Integer.toHexString(opcode) + " não implementado. Aborting.", host.stdout);
+                    host.print("ELF: opcode 0x" + Integer.toHexString(opcode) + " não implementado. Aborting.", stdout);
                     halted = true;
                 }
             }
         } catch (Exception e) {
-            host.print("ELF: exceção durante execução: " + e.getClass().getName() + " " + e.getMessage(), host.stdout);
+            host.print("ELF: exceção durante execução: " + e.getClass().getName() + " " + e.getMessage(), stdout);
         }
-        host.print("ELF: execução finalizada", host.stdout);
+        host.print("ELF: execução finalizada", stdout);
     }
 
     // -----------------------
@@ -277,7 +277,7 @@ public class ELF {
         int nr = EAX;
         if (nr == 1) { // exit
             halted = true;
-            host.print("ELF: sys_exit(" + EBX + ")", host.stdout);
+            host.print("ELF: sys_exit(" + EBX + ")", stdout);
             return;
         }
         if (nr == 3) { // read(fd, buf, count)
@@ -339,7 +339,7 @@ public class ELF {
             return;
         }
         // default
-        host.print("ELF: syscall não suportada: " + nr, host.stdout);
+        host.print("ELF: syscall não suportada: " + nr, stdout);
         EAX = -1;
     }
 
@@ -348,12 +348,12 @@ public class ELF {
     // -----------------------
     private void push32(int v) {
         ESP = ESP - 4;
-        if (ESP < 0) { host.print("ELF: stack overflow", host.stdout); halted = true; return; }
+        if (ESP < 0) { host.print("ELF: stack overflow", stdout); halted = true; return; }
         write32LE(mem, ESP, v);
     }
 
     private int pop32() {
-        if (ESP + 4 > memSize) { host.print("ELF: stack underflow", host.stdout); halted = true; return 0; }
+        if (ESP + 4 > memSize) { host.print("ELF: stack underflow", stdout); halted = true; return 0; }
         int v = read32LE(mem, ESP);
         ESP = ESP + 4;
         return v;
