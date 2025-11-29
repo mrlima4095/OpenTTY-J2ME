@@ -11,11 +11,11 @@ return function (ok, err, prev)
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, run)
     graphics.handler(screen, {
-        [back] = function ()
+        [back] = function()
             graphics.display(previous)
         end,
-        [run] = function (passwd)
-            local status = os.su(passwd)
+        [run] = function(passwd)
+            local status = os.su("root", passwd)
             if status == 0 then
                 ok()
             else

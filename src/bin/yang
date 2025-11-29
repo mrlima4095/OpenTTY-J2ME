@@ -16,6 +16,7 @@ local mirror = {
     ["hash"] = { remote = "hash.lua", here = "/bin/hash", description = "Prints file hash" },
     ["head"] = { remote = "head", here = "/bin/head", description = "Prints first lines of a file" },
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
+    ["jauth2"] = { remote = "jauth2", here = "/lib/jauth2", description = "Credentials Manager" }
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
     ["nano"] = { remote = "nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
     ["pastebin"] = { remote = "pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
