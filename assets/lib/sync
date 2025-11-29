@@ -16,13 +16,13 @@ graphics.append(menu, "Download (Beta)")
 graphics.addCommand(menu, back)
 graphics.addCommand(menu, open)
 graphics.handler(menu, {
-    [back] = function ()
+    [back] = function()
         graphics.display(previous)
         os.exit()
     end,
-    [open] = function (opt)
+    [open] = function(opt)
         if opt == "Check for Updates" then
-            --[[local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/latest")
+            local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/latest")
             if ok then
                 if status == 200 then
                     if body == os.getenv("VERSION") then
@@ -35,7 +35,7 @@ graphics.handler(menu, {
                 end
             else
                 graphics.display(graphics.new("alert", "Error", "Connection error"))
-            end]]
+            end
         elseif opt == "Go to releases archive" then
             os.open("http://opentty.xyz/dist/versions")
         elseif opt == "Download 1.16 (LTS)" then
