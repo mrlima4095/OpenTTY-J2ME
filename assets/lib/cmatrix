@@ -23,4 +23,4 @@ local function cmatrix()
 end
 
 os.setproc("name", "cmatrix")
-cmatrix()
+pcall(cmatrix)
