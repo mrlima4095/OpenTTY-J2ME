@@ -37,6 +37,7 @@ local function shell(args, enable, aliases, stdout, scope)
 
     -- Session
     -- (User Information)
+    elseif cmd == "su" then local su = require("jauth2") su()
     elseif cmd == "whoami" then print(os.getuid() == 0 and "root" or java.midlet.username)
     elseif cmd == "id" then print(os.getuid())
     -- (Manager)
@@ -124,6 +125,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 print(string.env(io.read(file)))
             else
                 print("cat: " .. args[i] .. ": not found")
+                print(tostring(file))
                 return 127
             end
         end
