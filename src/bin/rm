@@ -8,7 +8,7 @@ if #arg > 1 then
 
         local status = os.remove(file)
         if status == 1 then
-            print("rm: " .. arg[i] .. ": ")
+            print("rm: " .. arg[i] .. ": java.io.IOException")
         elseif status == 5 then
             print("rm: " .. arg[i] .. ": read-only storage")
         elseif status == 13 then
