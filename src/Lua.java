@@ -2310,8 +2310,9 @@ public class Lua {
                         InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)));
                         ELF elf = new ELF(midlet, stdout); 
                         midlet.print("Verificando", stdout);
-                        if (elf.load(is)) {
-
+                        boolean s = elf.load(is);
+                        midlet.print("" + s, stdout);
+                        if (s) {
                             midlet.print("Starting", stdout);
                             elf.run();
                             midlet.print("Finished", stdout);
