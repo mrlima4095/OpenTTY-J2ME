@@ -71,7 +71,7 @@ app.confirm = function ()
     local cancel = graphics.new("command", { label = "Cancel", type = "cancel", priority = 3 })
 
     graphics.handler(alert, {
-        [yes] = function ()
+        [yes] = function()
             if app.file then
                 if app.save() then
                     graphics.display(previous)
@@ -81,11 +81,11 @@ app.confirm = function ()
                 app.quest()
             end
         end,
-        [no] = function ()
+        [no] = function()
             graphics.display(previous)
             os.exit()
         end,
-        [cancel] = function ()
+        [cancel] = function()
             graphics.display(app.editor)
         end
     })
@@ -104,7 +104,7 @@ graphics.handler(app.editor, {
             app.confirm()
         end
     end,
-    [app.clear] = function ()
+    [app.clear] = function()
         graphics.SetText(app.editor, "")
     end
 })
