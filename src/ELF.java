@@ -116,7 +116,7 @@ public class ELF {
                 int opcode = unsigned(mem[EIP]);
 
                 steps++;
-                if (steps > 10_000_000) {
+                if (steps > 10000000) {
                     host.print("ELF: limite de passos atingido, abortando", host.stdout);
                     break;
                 }
