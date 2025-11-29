@@ -33,3 +33,4 @@ graphics.db["xterm"] = xterm
 graphics.display(xterm)
 
 os.scope(scope)
+os.su(java.midlet.username)
