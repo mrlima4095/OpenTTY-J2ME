@@ -7,20 +7,20 @@ local proxy = getAppProperty("MIDlet-Proxy") or "http://nnp.nnchan.ru/proxy.php?
 local previous = graphics.getCurrent()
 local menu = graphics.new("list", "MIDlet Updater")
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-local ok = graphics.new("command", { label = "Open", type = "screen", priority = 1 })
+local open = graphics.new("command", { label = "Open", type = "screen", priority = 1 })
 
 graphics.append(menu, "Check for Updates")
 graphics.append(menu, "Go to releases archive")
 graphics.append(menu, "Download 1.16 LTS")
 graphics.append(menu, "Download (Beta)")
 graphics.addCommand(menu, back)
-graphics.addCommand(menu, ok)
+graphics.addCommand(menu, open)
 graphics.handler(menu, {
     [back] = function ()
         graphics.display(previous)
         os.exit()
     end,
-    [ok] = function (opt)
+    [open] = function (opt)
         if opt == "Check for Updates" then
             local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/latest")
             if ok then
@@ -36,9 +36,13 @@ graphics.handler(menu, {
             else
                 graphics.display(graphics.new("alert", "Error", "Connection error"))
             end
-        elseif opt == "Go to releases archive" then os.open("http://opentty.xyz/dist/versions")
-        elseif opt == "Download 1.16 (LTS)" then os.open("http://opentty.xyz/dist/versions/OpenTTY-1.16.jar")
-        else os.open("http://opentty.xyz/dist/OpenTTY.jar") end
+        elseif opt == "Go to releases archive" then
+            os.open("http://opentty.xyz/dist/versions")
+        elseif opt == "Download 1.16 (LTS)" then
+            os.open("http://opentty.xyz/dist/versions/OpenTTY-1.16.jar")
+        else
+            os.open("http://opentty.xyz/dist/OpenTTY.jar")
+        end
 
         graphics.display(previous)
         os.exit()
