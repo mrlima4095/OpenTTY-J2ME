@@ -299,7 +299,7 @@ public class OpenTTY extends MIDlet {
         return 0; 
     }
     public int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { return 1; } return 0; }
-    public int deleteFile(String filename, int id, Object stdout) { 
+    public int deleteFile(String filename, int id) { 
         if (filename == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/home/")) { 
             try { 
