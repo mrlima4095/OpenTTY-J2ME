@@ -20,7 +20,7 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     elseif cmd == "su" then
         if os.getuid() == 0 then
-            os.su()
+            os.su(java.midlet.username)
         elseif argument == "" then
             print("su: usage: su [passwd]")
         else
