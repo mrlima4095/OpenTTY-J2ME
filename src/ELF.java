@@ -147,7 +147,7 @@ public class ELF {
 
                 // Safety: evita loops infinitos exagerados
                 steps++;
-                if (steps > 5_000_000) {
+                if (steps > 5000000) {
                     host.print("ELF: limite de passos atingido, abortando", host.stdout);
                     break;
                 }
