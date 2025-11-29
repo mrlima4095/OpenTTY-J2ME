@@ -39,8 +39,8 @@ public class Lua {
         this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable();
-        String[] funcs = new String[] { "execute", "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "start", "stop", "open", "sudo", "su", "remove", "scope" }; 
-        int[] loaders = new int[] { EXEC, GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, START, STOP, PREQ, SUDO, SU, REMOVE, SCOPE };
+        String[] funcs = new String[] { "execute", "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "sudo", "su", "remove", "scope" }; 
+        int[] loaders = new int[] { EXEC, GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SUDO, SU, REMOVE, SCOPE };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
 
         funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout", "mount", "new" }; 
@@ -1411,16 +1411,18 @@ public class Lua {
                     Hashtable proc = (Hashtable) midlet.sys.get(toLuaString(args.elementAt(0)));
                     if (proc.containsKey("lua") && proc.containsKey("handler")) {
                         Lua lua = (Lua) proc.get("lua");
-                        Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(3) : null); arg.addElement(PID); arg.addElement(id);
+                        Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(3) : null); arg.addElement(scope); arg.addElement(PID); arg.addElement(id);
                         Object response = null;
 
                         try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
-                        catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); return 1; } 
+                        catch (Exception e) { return midlet.getCatch(e); } 
                         catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout); } return lua.status; }
 
                         return response;
-                    } else { return gotbad(1, "request", "not a service"); }
-                } else { return gotbad(1, "request", "process not found"); }
+                    } 
+                    else { return gotbad(1, "request", "not a service"); }
+                } 
+                else { return gotbad(1, "request", "process not found"); }
             }
             else if (MOD == GETUID) { return new Double(id); }
             else if (MOD == CHDIR) {
@@ -1453,35 +1455,11 @@ public class Lua {
                     return new Double(127);
                 }
             }
-            else if (MOD == START) {
-
-            }
-            else if (MOD == STOP) {
-                if (args.isEmpty()) { }
-                else {
-                    String pid = toLuaString(args.elementAt(0));
-                    if (midlet.sys.containsKey(pid)) {
-                        Hashtable proc = (Hashtable) midlet.sys.get(pid);
-                        if (((String) proc.get("owner")).equals(midlet.loadRMS("OpenRMS", 1)) || id == 0) {
-                            Object TERM = midlet.getsignal(pid, "TERM");
-
-                            if (TERM != null) {
-                                if (TERM instanceof LuaFunction) { ((LuaFunction) TERM).call(new Vector()); }
-                            }
-
-                            midlet.sys.remove(pid);
-                            return new Double(0);
-                        } else { return new Double(13); }
-                    } else {
-                        return new Double(127);
-                    }
-                }
-            }
             else if (MOD == SUDO) {
                 if (args.isEmpty()) {
-                    Hashtable result = new Hashtable();
-                    result.put("USER", father.get("USER"));
-                    result.put("UID", id);
+                    Vector result = new Vector();
+                    result.addElement(father.get("USER"));
+                    result.addElement(id);
                     return result;
                 }
                 else {
@@ -1498,10 +1476,9 @@ public class Lua {
                 if (id == 0) { id = 1000; }
                 else if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
                 else {
-                    String passwd = toLuaString(args.elementAt(0));
-
-                    if (midlet.loadRMS("OpenRMS", 2).equals(String.valueOf(passwd.hashCode()))) {
+                    if (midlet.passwd(toLuaString(args.elementAt(0)))) {
                         id = 0;
+                        father.put("USER", "root");
                         return new Double(0);
                     }
                     else { return new Double(13); }
@@ -2331,7 +2308,30 @@ public class Lua {
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
 
             else if (MOD == KERNEL) {
-                return proc;
+                Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3), uid = args.elementAt(4);
+
+                if (payload == null || payload.equals("")) { return null; }
+                if (payload instanceof String) {
+                    if (payload.equals("kill")) {
+                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        else if (midlet.sys.containsKey(arg)) {
+                            if (midlet.getobject(arg).equals(scope.get("USER")) || id == 0) { midlet.sys.remove(arg); return new Double(0); } 
+                            else { return new Double(13); }
+                        }
+                        else { return new Double(127); }
+                    }
+                    else if (payload.equals("passwd")) {
+                        if (arg instanceof String) { return new Boolean(midlet.passwd((String) arg)); }
+                        else if (arg instanceof Hashtable) {
+                            Hashtable query = (Hashtable) arg;
+                            String old = (String) query.get("old"), newpw = (String) query.get("new");
+
+                            if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
+                            else if (midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2);); }
+                            else { return new Double(13); }
+                        }
+                    }
+                }
             }
 
             return null;

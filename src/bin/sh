@@ -21,7 +21,7 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "kill" then
         if argument == "" then
         else
-            local status = os.stop(argument)
+            local status = os.request("1", "kill", argument)
             
             if status == 13 then
                 print("kill: (" .. argument .. ") - Operation not permitted")
@@ -91,7 +91,7 @@ local function shell(args, enable, aliases, stdout, scope)
 
 
 
-    elseif cmd == "eval" then if argument == "" then else print(shell(argument)) end
+    elseif cmd == "eval" then if argument == "" then else print(shell(argument, true, aliases, stdout, scope)) end
     elseif cmd == "echo" then print(argument)
     elseif cmd == "clear" then graphics.SetText(io.stdout, "")
 

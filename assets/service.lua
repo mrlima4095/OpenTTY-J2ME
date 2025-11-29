@@ -1,4 +1,4 @@
-return function (payload, args, pid, uid)
+return function (payload, args, scope, pid, uid)
     print("---")
     print("Debugger Service")
     print("* Payload: " .. payload)
