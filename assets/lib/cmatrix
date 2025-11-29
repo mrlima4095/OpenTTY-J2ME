@@ -16,9 +16,7 @@ local function cmatrix()
         while true do
             graphics.SetText(buffer, string.trim(graphics.GetText(buffer) .. " " .. math.random(10)))
 
-            if #graphics.GetText(buffer) > 200 then
-                graphics.SetText(buffer, "")
-            end
+            if #graphics.GetText(buffer) > 200 then graphics.SetText(buffer, "") end
         end
     end)
 
