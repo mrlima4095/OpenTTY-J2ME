@@ -31,7 +31,7 @@ import java.io.IOException;
  */
 public class ELF {
     private OpenTTY host;
-    privaestdout
+    private Object stdout;
 
     private byte[] mem;
     private int memSize;
