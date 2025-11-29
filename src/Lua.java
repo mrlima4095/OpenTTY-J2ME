@@ -2320,6 +2320,14 @@ public class Lua {
                         }
                         else { return new Double(127); }
                     }
+                    else if (payload.equals("proc")) {
+                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        else if (midlet.sys.containsKey(arg)) {
+                            if (midlet.getobject(arg).equals(scope.get("USER")) || id == 0) { return midlet.sys.get(arg); } 
+                            else { return new Double(13); }
+                        }
+                        else { return new Double(127); }
+                    }
                     else if (payload.equals("passwd")) {
                         if (arg instanceof String) { return new Boolean(midlet.passwd((String) arg)); }
                         else if (arg instanceof Hashtable) {
