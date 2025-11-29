@@ -1411,7 +1411,7 @@ public class Lua {
                     Hashtable proc = (Hashtable) midlet.sys.get(toLuaString(args.elementAt(0)));
                     if (proc.containsKey("lua") && proc.containsKey("handler")) {
                         Lua lua = (Lua) proc.get("lua");
-                        Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(3) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(id);
+                        Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 3 ? args.elementAt(3) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(id);
                         Object response = null;
 
                         try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
@@ -2311,6 +2311,7 @@ public class Lua {
                 if (payload instanceof String) {
                     if (payload.equals("kill")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
+                        else if (arg.equals("1")) { midlet.destroyApp(true); }
                         else if (midlet.sys.containsKey(arg)) {
                             if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { midlet.sys.remove(arg); return new Double(0); } 
                             else { return new Double(13); }
