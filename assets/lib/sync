@@ -1,42 +1,48 @@
 #!/bin/lua
 
+os.setproc("name", "sync")
 
 local proxy = getAppProperty("MIDlet-Proxy") or "http://nnp.nnchan.ru/proxy.php?"
 
-os.setproc("name", "sync")
+local previous = graphics.getCurrent()
+local menu = graphics.new("list", "MIDlet Updater")
+local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+local ok = graphics.new("command", { label = "Open", type = "screen", priority = 1 })
 
-graphics.display(graphics.BuildList({
-    title = "MIDlet Updater",
-    back = { label = "Back", root = os.exit },
-    button = {
-        label = "Go",
-        root = function (opt)
-            if opt == "Check for Updates" then
-                local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/scripts/latest.sh")
-                if ok then
-                    if status == 200 then
-                        if body == os.getenv("VERSION") then
-                            os.execute("warn OpenTTY is updated!")
-                        else
-                            os.execute("open http://opentty.xyz/dist/versions/OpenTTY-" .. body .. ".jar")
-                        end
+graphics.append(menu, "Check for Updates")
+graphics.append(menu, "Go to releases archive")
+graphics.append(menu, "Download 1.16 LTS")
+graphics.append(menu, "Download (Beta)")
+graphics.addCommand(menu, back)
+graphics.addCommand(menu, ok)
+graphics.handler(menu, {
+    [back] = function ()
+        graphics.display(previous)
+        os.exit()
+    end,
+    [ok] = function (opt)
+        if opt == "Check for Updates" then
+            local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/latest")
+            if ok then
+                if status == 200 then
+                    if body == os.getenv("VERSION") then
+                        graphics.display(graphics.new("alert", "Updater", "MIDlet is already Updated"))
                     else
-                        os.execute("warn Fetching error")
+                        os.open("http://opentty.xyz/dist/versions/OpenTTY-" .. body .. ".jar")
                     end
                 else
-                    os.execute("warn Connection error")
+                    graphics.display(graphics.new("alert", "Error", "Fetching error"))
                 end
-
-                os.exit()
-            elseif opt == "Go to releases archive" then 
-                os.execute("open http://opentty.xyz/dist/versions") os.exit()
-            elseif opt == "Download 1.16 (LTS)" then 
-                os.execute("open http://opentty.xyz/dist/versions/OpenTTY-1.16.jar") os.exit()
-            else 
-                os.execute("open http://opentty.xyz/dist/OpenTTY.jar") os.exit() 
+            else
+                graphics.display(graphics.new("alert", "Error", "Connection error"))
             end
-        end
-    },
+        elseif opt == "Go to releases archive" then os.open("http://opentty.xyz/dist/versions")
+        elseif opt == "Download 1.16 (LTS)" then os.open("http://opentty.xyz/dist/versions/OpenTTY-1.16.jar")
+        else os.open("http://opentty.xyz/dist/OpenTTY.jar") end
 
-    fields = { "Check for Updates", "Go to releases archive", "Download 1.16 (LTS)", "Download (Beta)" }
-}))
+        graphics.display(previous)
+        os.exit()
+    end
+})
+
+graphics.display(menu)
