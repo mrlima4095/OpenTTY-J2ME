@@ -5,7 +5,7 @@ local function cmatrix()
     local screen = graphics.new("screen", nil)
     local buffer = graphics.new("buffer", {})
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-    local handler = { [back] = function () graphics.display(previous) os.exit() end }
+    local handler = { [back] = function() graphics.display(previous) os.exit() end }
 
     graphics.append(screen, buffer)
     graphics.addCommand(screen, back)
