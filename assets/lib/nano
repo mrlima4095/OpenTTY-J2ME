@@ -1,1 +1,30 @@
 #!/bin/lua
+
+local previous = graphics.getCurrent()
+local app = {
+    back = graphics.new("command", { label = "Back", type = "back", priority = 1 }),
+    clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
+}
+
+
+if arg[1] then
+    app.filename, app.file = arg[1], arg[1]
+
+    if string.sub(arg[1], 1, 1) ~= "/" then app.file = os.getcwd() .. app.file end
+
+    app.editor = graphics.new("editor", "Nano - " .. app.filename, io.read(app.file))
+else
+    app.editor = graphics.new("editor", "Nano - New Buffer", "")
+end
+
+
+graphics.addCommand(app.editor, app.back)
+graphics.addCommand(app.editor, app.clear)
+graphics.handler(app.editor, {
+    [app.back] = function ()
+        
+    end,
+    [app.clear] = function ()
+        
+    end
+})
