@@ -141,9 +141,7 @@ local function shell(args, enable, aliases, stdout, scope)
         if argument == "" then
         else
             local ok, status = pcall(os.open, argument)
-            if not ok then
-                print(tostring(status))
-            end
+            if not ok then print(tostring(status)) end
         end
 
     else
