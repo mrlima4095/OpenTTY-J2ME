@@ -2311,9 +2311,8 @@ public class Lua {
                 if (payload instanceof String) {
                     if (payload.equals("kill")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
-                        else if (arg.equals("1")) { midlet.destroyApp(true); }
                         else if (midlet.sys.containsKey(arg)) {
-                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { midlet.sys.remove(arg); return new Double(0); } 
+                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { midlet.sys.remove(arg); if (arg.equals("1")) { midlet.destroyApp(true); } return new Double(0); } 
                             else { return new Double(13); }
                         }
                         else { return new Double(127); }
