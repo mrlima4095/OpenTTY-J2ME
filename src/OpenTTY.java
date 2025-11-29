@@ -65,38 +65,7 @@ public class OpenTTY extends MIDlet {
     // Control Thread
     public OpenTTY getInstance() { return this; }
     public String getThreadName(Thread thr) { String name = thr.getName(); String[] generic = { "Thread-0", "Thread-1", "MIDletEventQueue", "main" }; for (int i = 0; i < generic.length; i++) { if (name.equals(generic[i])) { name = "MIDlet"; break; } } return name; }
-    public class MIDletControl implements CommandListener {
-        public static final int SIGNUP = 1;
-
-        private int MOD = -1;
-        private boolean enable = true, asking_user = username.equals(""), asking_passwd = passwd().equals("");
-        private Form monitor;
-        private Object stdout;
-        private TextField USER, PASSWD;
-        private Command BACK = new Command("Back", Command.BACK, 1), LOGIN, EXIT;
-
-        public MIDletControl() { MOD = SIGNUP; monitor = new Form("Login"); monitor.append(env("Welcome to OpenTTY $VERSION\nCopyright (C) 2025 - Mr. Lima\n\n" + (asking_user && asking_passwd ? "Create your credentials!" : asking_user ? "Create an user to access OpenTTY!" : asking_passwd ? "Create a password!" : "")).trim()); if (asking_user) { monitor.append(USER = new TextField("Username", "", 256, TextField.ANY)); } if (asking_passwd) { monitor.append(PASSWD = new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); } monitor.addCommand(LOGIN = new Command("Login", Command.OK, 1)); monitor.addCommand(EXIT = new Command("Exit", Command.SCREEN, 2)); monitor.setCommandListener(this); display.setCurrent(monitor); }
-
-        public void commandAction(Command c, Displayable d) {
-            if (MOD == SIGNUP) {
-                if (c == LOGIN) {
-                    String password = asking_passwd ? PASSWD.getString().trim() : "";
-
-                    if (asking_user) { username = USER.getString().trim(); }
-                    if (asking_user && username.equals("") || asking_passwd && password.equals("")) { warn("Login", "Missing credentials!"); } 
-                    else if (username.equals("root")) { USER.setString(""); warn("Login", "Invalid username!"); } 
-                    else {
-                        if (asking_user) { write("/home/OpenRMS", username.getBytes(), 0); }
-                        if (asking_passwd) { writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2); }
-
-                        init();
-                    }
-                } 
-                else if (c == EXIT) { destroyApp(true); }
-            }
-        }
-    }
-
+    // |
     public static String passwd() { return loadRMS("OpenRMS", 2); }
     public static boolean passwd(String query) { return query != null && String.valueOf(query.hashCode()).equals(loadRMS("OpenRMS", 2)); }
     // |
