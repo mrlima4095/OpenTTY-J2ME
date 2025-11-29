@@ -164,7 +164,7 @@ public class ELF {
         int steps = 0;
         try {
             while (!halted) {
-                host.print("chegou aqui!")
+                host.print("chegou aqui!", host.stdout);
                 if (EIP < 0 || EIP >= memSize) {
                     host.print("ELF: EIP fora dos limites: 0x" + Integer.toHexString(EIP), host.stdout);
                     break;
