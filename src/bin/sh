@@ -18,19 +18,6 @@ local function shell(args, enable, aliases, stdout, scope)
         for k,v in pairs(os.getproc()) do
             print(k .. "\t" .. v)
         end
-    elseif cmd == "kill" then
-        if argument == "" then
-        else
-            local status = os.request("1", "kill", argument)
-            
-            if status == 13 then
-                print("kill: (" .. argument .. ") - Operation not permitted")
-            elseif status == 127 then
-                print("kill: (" .. argument .. ") - No such process")
-            end
-        end
-    elseif cmd == "pkill" then
-    elseif cmd == "start" then
     elseif cmd == "" then
     elseif cmd == "" then
     elseif cmd == "" then
