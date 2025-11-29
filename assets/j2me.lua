@@ -75,44 +75,71 @@ string = {
     env = function(s) return "" end
 }
 
+--[=[
+Lua J2ME - Graphics API
+]=]
 graphics = {
+    --[=[Set current screen]=]
     display = function (...) end,
+    --[=[Generate new Screen Object (`alert`, `screen`, `list`, `edit`)]=]
     new = function (type, title, ...)
         if type == "alert" then
         elseif type == "screen" then
-        elseif type == "alert" then
+        elseif type == "list" then
         elseif type == "edit" then
         end
     end,
-    SetTitle = function (title) end,
-    WindowTitle = function (title, screen) end,
-    SetTicker = function (text) end,
+    --[=[Set title of screen]=]
+    SetTitle = function (screen, title) end,
+    --[=[Set ticker of screen]=]
+    SetTicker = function (scrren, text) end,
+    --[=[Set label of Item]=]
     SetLabel = function (field, text) end,
+    --[=[Set text of Item or Editor Screen]=]
     SetText = function (field, text) end,
+    --[=[Get label of Item]=]
     GetLabel = function (field, text) end,
+    --[=[Get text of Item or Editor Screen]=]
     GetText = function (field, text) end,
+    --[=[Get current displayed scrren]=]
     getCurrent = function () end,
+    --[=[Render Image]=]
     render = function (img) end,
+    --[=[Append itens on screen]=]
     append = function (screen, field) end,
+    --[=[Add buttons `Command` in screen]=]
     addCommand = function (screen, command) end,
+    --[=[Set `Command Listener` for screen]=]
     handler = function (screen, actions) end,
+    --[=[Table to save screens across programs]=]
     db = {}
 }
 
+--[=[ 
+Lua J2ME - Control MIDlet Suite with Lua
+]=]
 java = {
+    --[=[Verify if current Runtime supports a Java Class]=]
     class = function (name) return true end,
+    --[=[Returns JVM Name]=]
     getName = function () return "JVM" end,
+    --[=[When you set a Lua NIL on a table it current exists on Java as nil, usage java.delete to really delete from table]=]
     delete = function (struct, field) local value = struct[field] struct[field] = nil return value end,
+    --[=[Run function in another Thread (Background)]=]
     run = function (func) end,
-    sudo = function (password) end,
 
+    --[=[MIDlet Lua representation]=]
     midlet = {
+        --[=[MIDlet Default User Name]=]
         username = "myuser",
+        --[=[Registred Network Connections]=]
         net = { },
+        --[=[Cached Content from Archive Strucutres]=]
         cache = { ["/bin/shprxy"] = "Cached file" },
+        --[=[OpenTTY Build Code]=]
         build = "2025-1.17-02x96"
     }
 }
 
+--[=[Get a MIDlet Property Value]=]
 getAppProperty = function (field) end
-random = function (max) end
