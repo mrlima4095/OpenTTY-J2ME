@@ -12,7 +12,9 @@ os.setproc("name", "nano")
 if arg[1] then
     app.filename, app.file = arg[1], arg[1]
 
-    if string.sub(arg[1], 1, 1) ~= "/" then app.file = os.getcwd() .. app.file end
+    if string.sub(arg[1], 1, 1) ~= "/" then
+        app.file = os.getcwd() .. app.file
+    end
 
     app.content = io.read(app.file)
     app.editor = graphics.new("edit", "Nano - " .. app.filename, app.content)
@@ -54,7 +56,9 @@ app.quest = function ()
             end
         end,
 
-        [back] = function() graphics.display(app.editor) end
+        [back] = function()
+            graphics.display(app.editor)
+        end
     })
     graphics.display(quest)
 end
@@ -77,16 +81,32 @@ app.confirm = function ()
                 app.quest()
             end
         end,
-        [no] = function () graphics.display(previous) os.exit() end,
-        [cancel] = function () graphics.display(app.editor) end
+        [no] = function ()
+            graphics.display(previous)
+            os.exit()
+        end,
+        [cancel] = function ()
+            graphics.display(app.editor)
+        end
     })
 end
 
 graphics.addCommand(app.editor, app.back)
 graphics.addCommand(app.editor, app.clear)
 graphics.handler(app.editor, {
-    [app.back] = function (content) app.modified = content if content == app.content then graphics.display(previous) os.exit() else app.confirm() end end,
-    [app.clear] = function () graphics.SetText(app.editor, "") end
+    [app.back] = function (content)
+        app.modified = tostring(content)
+
+        if content == app.content then
+            graphics.display(previous)
+            os.exit()
+        else
+            app.confirm()
+        end
+    end,
+    [app.clear] = function ()
+        graphics.SetText(app.editor, "")
+    end
 })
 
 graphics.display(app.editor)
