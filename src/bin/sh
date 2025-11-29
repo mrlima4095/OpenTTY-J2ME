@@ -24,7 +24,7 @@ local function shell(args, enable, aliases, stdout, scope)
         elseif argument == "" then
             print("su: usage: su [passwd]")
         else
-            print(os.sudo("root", argument)
+            print(os.sudo("root", argument))
         end
     elseif cmd == "" then
     elseif cmd == "" then
