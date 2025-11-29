@@ -20,11 +20,11 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     elseif cmd == "su" then
         if os.getuid() == 0 then
-            os.sudo()
+            os.su()
         elseif argument == "" then
             print("su: usage: su [passwd]")
         else
-            print(os.sudo("root", argument))
+            print(os.su("root", argument))
         end
     elseif cmd == "" then
     elseif cmd == "" then
