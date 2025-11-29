@@ -4,7 +4,7 @@ if #arg > 1 then
     for i = 1, #arg - 1 do
         local file = arg[i]
 
-        if string.sub(file, 1, 1) ~= "/" then file = os.getcwd() + file end
+        if string.sub(file, 1, 1) ~= "/" then file = os.getcwd() .. file end
 
         local status = os.remove(file)
         if status == 1 then
