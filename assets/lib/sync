@@ -22,7 +22,7 @@ graphics.handler(menu, {
     end,
     [open] = function (opt)
         if opt == "Check for Updates" then
-            local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/latest")
+            --[[local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/latest")
             if ok then
                 if status == 200 then
                     if body == os.getenv("VERSION") then
@@ -30,8 +30,12 @@ graphics.handler(menu, {
                     else
                         os.open("http://opentty.xyz/dist/versions/OpenTTY-" .. body .. ".jar")
                     end
+                else
+                    graphics.display(graphics.new("alert", "Error", "Fetching error"))
                 end
-            end
+            else
+                graphics.display(graphics.new("alert", "Error", "Connection error"))
+            end]]
         elseif opt == "Go to releases archive" then
             os.open("http://opentty.xyz/dist/versions")
         elseif opt == "Download 1.16 (LTS)" then
