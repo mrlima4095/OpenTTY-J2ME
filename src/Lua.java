@@ -1511,7 +1511,18 @@ public class Lua {
             else if (MOD == SCOPE) {
                 if (args.isEmpty()) { return father; }
                 else {
-                    if (args.elementAt(0) instanceof Hashtable) { father = (Hashtable) args.elementAt(0); }
+                    if (args.elementAt(0) instanceof Hashtable) { 
+                        father = (Hashtable) args.elementAt(0);
+
+                        if (father.containsKey("USER")) {
+                            String user = (String) father.get("USER");
+                            if (user.equals("root")) {
+                                if (id == 1000) {
+                                    father.put("USER", midlet.loadRMS("OpenRMS", 1));
+                                }
+                            }
+                        }
+                    }
                     else { return gotbad(1, "scope", "table expected, got " + type(args.elementAt(0))) }
                 }
             }
