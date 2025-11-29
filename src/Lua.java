@@ -1523,7 +1523,7 @@ public class Lua {
                             }
                         }
                     }
-                    else { return gotbad(1, "scope", "table expected, got " + type(args.elementAt(0))) }
+                    else { return gotbad(1, "scope", "table expected, got " + type(args.elementAt(0))); }
                 }
             }
             // Package: io
