@@ -309,27 +309,27 @@ public class OpenTTY extends MIDlet {
                 
                 RecordStore.deleteRecordStore(filename); 
             } 
-            catch (RecordStoreNotFoundException e) { preturn 127; } 
+            catch (RecordStoreNotFoundException e) { return 127; } 
             catch (Exception e) { return 1; } 
         }
         else if (filename.startsWith("/mnt/")) { 
             try { 
                 FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); 
                 if (CONN.exists()) { CONN.delete(); } 
-                else { print("rm: " + basename(filename) + ": not found", stdout); return 127; } 
+                else { return 127; } 
                 
                 CONN.close(); 
             } 
-            catch (Exception e) { print(getCatch(e), stdout); return e instanceof SecurityException ? 13 : 1; } 
+            catch (Exception e) { return e instanceof SecurityException ? 13 : 1; } 
         }
         else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
             String base = filename.substring(1, 4), name = filename.substring(5);
             if (name.equals("")) { return 2; }
-            if (id != 0) { print("Permission denied!", stdout); return 13; }
+            if (id != 0) { return 13; }
 
             int index = base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4;
             String content = loadRMS("OpenRMS", index);
-            if (content.indexOf("[\1BEGIN:" + name + "\1]") == -1) { print("read-only storage", stdout); return 5; }
+            if (content.indexOf("[\1BEGIN:" + name + "\1]") == -1) { return 5; }
 
             if (useCache) { cache.remove("/" + base + "/" + name); }
             return writeRMS("OpenRMS", delFile(name, content).getBytes(), index);
