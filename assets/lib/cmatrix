@@ -1,11 +1,12 @@
 #!/bin/lua
 
 local function cmatrix()
+    local running = true
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", nil)
     local buffer = graphics.new("buffer", {})
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-    local handler = { [back] = function() graphics.display(previous) os.exit() end }
+    local handler = { [back] = function() graphics.display(previous) running = false os.exit() end }
 
     graphics.append(screen, buffer)
     graphics.addCommand(screen, back)
@@ -13,7 +14,7 @@ local function cmatrix()
     graphics.display(screen)
 
     java.run(function ()
-        while true do
+        while running do
             graphics.SetText(buffer, string.trim(graphics.GetText(buffer) .. " " .. math.random(10)))
 
             if #graphics.GetText(buffer) > 200 then graphics.SetText(buffer, "") end
