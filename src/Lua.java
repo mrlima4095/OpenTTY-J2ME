@@ -1974,7 +1974,8 @@ public class Lua {
                 else {
                     Object screen = args.elementAt(0);
 
-                    if (screen instanceof Displayable) { kill = false; midlet.display.setCurrent((Displayable) screen); }
+                    if (screen instanceof Alert && args.size() > 1) { kill = false; midlet.display.setCurrent((Alert) screen, (Displayable) args.elementAt(1)) }
+                    else if (screen instanceof Displayable) { kill = false; midlet.display.setCurrent((Displayable) screen); }
                     else { return gotbad(1, "display", "screen expected, got " + type(screen)); }
                 }
             }

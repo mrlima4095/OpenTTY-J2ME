@@ -76,7 +76,7 @@ string = {
 }
 
 graphics = {
-    display = function (screen) end,
+    display = function (...) end,
     new = function (type, title, ...)
         if type == "alert" then
         elseif type == "screen" then
