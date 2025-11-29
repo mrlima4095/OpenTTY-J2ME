@@ -1456,12 +1456,7 @@ public class Lua {
                 }
             }
             else if (MOD == SUDO) {
-                if (args.isEmpty()) {
-                    Vector result = new Vector();
-                    result.addElement(father.get("USER"));
-                    result.addElement(id);
-                    return result;
-                }
+                if (args.isEmpty()) { Vector result = new Vector(); result.addElement(father.get("USER")); result.addElement(id); return result; }
                 else {
                     String passwd = toLuaString(args.elementAt(0));
                     if (midlet.loadRMS("OpenRMS", 2).equals(String.valueOf(passwd.hashCode()))) {
