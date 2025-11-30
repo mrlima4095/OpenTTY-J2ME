@@ -2306,28 +2306,38 @@ public class Lua {
             else if (MOD == PREQ) { if (args.isEmpty()) { } else { return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); } }
             else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
-            else if (MOD == ELF) {
-                if (args.isEmpty()) { }
-                else {
-                    try {
-                        InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)));
-                        ELF elf = new ELF(midlet, stdout); 
-                        midlet.print("Verificando", stdout);
-                        boolean s = elf.load(is);
-                        midlet.print("" + s, stdout);
-                        if (s) {
-                            midlet.print("Starting", stdout);
-                            elf.run();
-                            midlet.print("Finished", stdout);
-                        } else {
-                            midlet.print("Falha ao carregar ELF", stdout);
-                        }
-                    } catch (Exception e) {
-                        midlet.print("Error: " + e.getMessage(), stdout);
-                    }
-
-                }
+// Adicionar este método na classe LuaFunction (dentro da classe Lua)
+else if (MOD == ELF) {
+    if (args.isEmpty()) { }
+    else {
+        try {
+            String filename = toLuaString(args.elementAt(0));
+            InputStream is = midlet.getInputStream(filename);
+            
+            if (is == null) {
+                midlet.print("Arquivo ELF não encontrado: " + filename, stdout);
+                return null;
             }
+            
+            ELF elf = new ELF(midlet, stdout); 
+            midlet.print("Carregando ELF: " + filename, stdout);
+            
+            boolean loaded = elf.load(is);
+            if (loaded) {
+                midlet.print("ELF carregado com sucesso", stdout);
+                midlet.print("Iniciando execução...", stdout);
+                elf.run();
+                midlet.print("Execução finalizada", stdout);
+            } else {
+                midlet.print("Falha ao carregar ELF: formato inválido", stdout);
+            }
+            
+            is.close();
+        } catch (Exception e) {
+            midlet.print("Erro ao executar ELF: " + e.getMessage(), stdout);
+        }
+    }
+}
 
             else if (MOD == KERNEL) {
                 Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3), uid = args.elementAt(4);
