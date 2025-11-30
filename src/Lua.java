@@ -1235,7 +1235,7 @@ public class Lua {
                     String code = midlet.getcontent(name, father);
                     if (code.equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".lua", father)).equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".so", father)).equals("")) { throw new Exception("module '" + code + "' not found"); } } } 
 
-                    Object obj = exec(code);
+                    Object obj = exec(code, null);
                     requireCache.put(name, (obj == null) ? LUA_NIL : obj);
                     return obj;
                 } 
