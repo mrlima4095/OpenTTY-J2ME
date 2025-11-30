@@ -140,6 +140,13 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
     elseif cmd == "ls" then
+        local pwd
+        if argument == "" or argument == "." then
+            pwd = os.getcwd()
+        else
+            pwd = joinpath(argument)
+        end
+
         local buff = ""
         for k,v in pairs(io.dirs()) do
             if string.sub(v, 1, 1) ~= "." then
@@ -153,7 +160,7 @@ local function shell(args, enable, aliases, stdout, scope)
         if argument == "" then
         else
             local ok, status = pcall(os.open, argument)
-            if not ok then 
+            if not ok then
                 if status == "javax.microedition.io.ConnectionNotFoundException" then print("open: " .. argument .. ": not found") return 127
                 else print(tostring(status)) return 1 end
             end

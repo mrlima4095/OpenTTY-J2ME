@@ -36,4 +36,7 @@ graphics.handler(term, {
         graphics.SetText(output, "")
     end
 })
+
+os.setproc("name", "lua")
+
 graphics.display(term)

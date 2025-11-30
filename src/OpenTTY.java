@@ -33,7 +33,7 @@ public class OpenTTY extends MIDlet {
     public Display display = Display.getDisplay(this);
     public StringItem stdout = new StringItem("", "");
     public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
-    public Command BACK = new Command("Back", Command.BACK, 1), EXECUTE = new Command("Run", Command.OK, 0);
+    public Command BACK = new Command("Back", Command.BACK, 1), ;
     // |
     // MIDlet Loader
     // |
@@ -60,6 +60,10 @@ public class OpenTTY extends MIDlet {
         }
         catch (Exception e) { warn("SandBox", getCatch(e)); } 
         catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
+    }
+    // | (Installation)
+    private void login() {
+        
     }
     // |
     // Control Thread
@@ -122,8 +126,6 @@ public class OpenTTY extends MIDlet {
     public Object getobject(String pid, String item) { return sys.containsKey(pid) ? ((Hashtable) sys.get(pid)).get(item) : null; }
     public Object getsignal(String pid, Object signal) { if (sys.containsKey(pid)) { Hashtable signals = (Hashtable) getobject(pid, "signals"); if (signals != null && signals.containsKey(signal)) { return signals.get(signal); } else { return null; } } else { return null; } } 
     public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) sys.get(PID)).get("name"))) { return PID; } } return null; } 
-    // | (Renders)
-    private String renderJSON(Object obj, int indent) { StringBuffer json = new StringBuffer(); String pad = ""; for (int i = 0; i < indent; i++) { pad += "  "; } if (obj instanceof Hashtable) { Hashtable map = (Hashtable) obj; json.append("{\n"); Enumeration keys = map.keys(); while (keys.hasMoreElements()) { String key = (String) keys.nextElement(); Object val = map.get(key); json.append(pad + "  \"" + key + "\": " + renderJSON(val, indent + 1)); if (keys.hasMoreElements()) { json.append(","); } json.append("\n"); } json.append(pad + "}"); } else if (obj instanceof Vector) { Vector list = (Vector) obj; json.append("[\n"); for (int i = 0; i < list.size(); i++) { json.append(pad + "  " + renderJSON(list.elementAt(i), indent + 1)); if (i < list.size() - 1) { json.append(","); } json.append("\n"); } json.append(pad + "]"); } else if (obj instanceof String) { String s = (String) obj; s = replace(s, "\n", "\\n"); s = replace(s, "\r", "\\r"); s = replace(s, "\t", "\\t"); json.append("\"" + s + "\""); } else { json.append(String.valueOf(obj)); } return json.toString(); }
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
     // | (Window-Based Interfaces)
