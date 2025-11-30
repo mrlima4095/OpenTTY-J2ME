@@ -21,7 +21,7 @@ graphics.handler(term, {
                 graphics.SetText(output, "")
             end
             graphics.SetText(input, "")
-            local ok, msg = pcall(loadstring, command)
+            local ok, msg = pcall(load, command)
             if not ok then
                 print(msg)
             end
