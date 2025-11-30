@@ -2315,7 +2315,7 @@ public class Lua {
                         
                         if (is == null) { return new Double(127); }
                         
-                        midlet.print("Iniciando! " + is.toString(), stdout)
+                        midlet.print("Iniciando! " + is.toString(), stdout);
                         ELF elf = new ELF(midlet, stdout); 
                         midlet.print("Carregando ELF: " + filename, stdout);
                         
