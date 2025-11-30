@@ -44,6 +44,7 @@ local function shell(args, enable, aliases, stdout, scope)
             else
                 print("du: " .. argument .. ": not found")
             end
+        end
 
     -- Session
     -- (User Information)
