@@ -8,22 +8,23 @@ local app = {
 
 os.setproc("name", "nano")
 
+local function joinpath(pwd)
+    if string.sub(pwd, 1, 1) ~= "/" then
+        return os.getcwd() .. pwd
+    end
+    return pwd
+end
+
 
 if arg[1] then
-    app.filename, app.file = arg[1], arg[1]
-
-    if string.sub(arg[1], 1, 1) ~= "/" then
-        app.file = os.getcwd() .. app.file
-    end
-
-    app.content = io.read(app.file)
-    app.editor = graphics.new("edit", "Nano - " .. app.filename, app.content)
+    app.content = io.read(joinpath(arg[1]))
+    app.editor = graphics.new("edit", "Nano - " .. arg[1], app.content)
 else
     print("nano [file]") os.exit(2)
 end
 
 app.save = function ()
-    local status = io.write(app.file, app.modified)
+    local status = io.write(app.modified, joinpath(arg[1]))
     if status == 0 then
         return true
     end
@@ -47,7 +48,7 @@ graphics.handler(app.editor, {
             graphics.display(previous)
             os.exit()
         else
-            os.exit(io.write(content, app.file))
+            os.exit(tonumber(io.write(content, joinpath(arg[1]))))
         end
     end,
     [app.clear] = function()
