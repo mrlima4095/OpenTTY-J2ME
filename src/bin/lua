@@ -32,7 +32,6 @@ graphics.handler(term, {
     end,
     [clear] = function()
         graphics.SetText(output, "")
-        graphics.SetText(input, "")
     end
 })
 graphics.display(term)
