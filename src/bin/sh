@@ -1,5 +1,12 @@
 #!/bin/lua
 
+local function joinpath(pwd)
+    if string.sub(pwd, 1, 1) ~= "/" then
+        return os.getcwd() .. pwd
+    end
+    return pwd
+end
+
 local function shell(args, enable, aliases, stdout, scope)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
@@ -30,7 +37,12 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "du" then
         if argument == "" then
         else
-            local ok, file = pcall(io.open, )
+            local ok, file = pcall(io.open, joinpath(argument))
+            if ok then
+            
+            else
+                print("du: " .. argument .. ": not found")
+            end
 
     -- Session
     -- (User Information)
