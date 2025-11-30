@@ -1,7 +1,7 @@
 #!/bin/lua
 
 local shell = require("/bin/sh")
-local aliases, scope = {}, {}
+local aliases, scope = {}, { PWD = "/home/", USER = java.midlet.username }
 local password = arg[1]
 
 local function app()
@@ -22,6 +22,8 @@ local function app()
     os.setproc("id", id)
     os.setproc("passwd", password)
     os.setproc("name", "web-proxy")
+
+    os.scope(scope)
 
     local bkp_stdout = io.stdout
     io.setstdout(o)
