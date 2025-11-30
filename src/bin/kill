@@ -4,7 +4,8 @@ if #arg > 1 then
     for i = 1, #arg - 1 do
         local status = os.request("1", "kill", arg[i])
         
-        if status == 127 then
+        if status == 0 then
+        elseif status == 127 then
             print("kill: (" .. arg[i] .. ") - No such process")
         else
             print("kill: (" .. arg[i] .. ") - Operation not permitted")
