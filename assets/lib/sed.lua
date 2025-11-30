@@ -19,7 +19,9 @@ if not cmd or cmd == "-h" or cmd == "--help" then
     return
 end
 
-if not file then file = "nano" end
+if not file then
+    print("sed [PATTERN] [file]")
+end
 
 local content = io.read(file)
 if content == "" then print("sed: empty content") return end
