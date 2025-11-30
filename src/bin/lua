@@ -1,0 +1,29 @@
+#!/bin/lua
+
+local previous = graphics.getCurrent()
+
+local term = graphics.new("screen", "Lua J2ME")
+local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
+local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+local output = graphics.new("buffer", {})
+
+io.setstdout(output)
+
+graphics.append(term, output)
+graphics.append(term, { type = "field", label = ">" })
+graphics.addCommand(term, run)
+graphics.addCommand(term, back)
+graphics.handler(term, {
+    [run] = function(command)
+        if command ~= "" then
+            graphics.SetText(io.stdin, "")
+            local ok, msg = pcall(loadstring, )
+            
+        end
+    end,
+    [back] = function()
+        graphics.display(previous)
+        os.exit()
+    end
+})
+graphics.display(term)
