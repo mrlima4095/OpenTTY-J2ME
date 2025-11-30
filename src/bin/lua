@@ -6,19 +6,22 @@ local term = graphics.new("screen", "Lua J2ME")
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
 local output = graphics.new("buffer", {})
+local input =graphics.new("field", { type = "field", label = ">" })
 
 io.setstdout(output)
 
 graphics.append(term, output)
-graphics.append(term, { type = "field", label = ">" })
+graphics.append(term, )
 graphics.addCommand(term, run)
 graphics.addCommand(term, back)
 graphics.handler(term, {
     [run] = function(command)
         if command ~= "" then
-            graphics.SetText(io.stdin, "")
-            local ok, msg = pcall(loadstring, )
-            
+            graphics.SetText(input, "")
+            local ok, msg = pcall(loadstring, command)
+            if not ok then
+                print(msg)
+            end
         end
     end,
     [back] = function()
