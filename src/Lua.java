@@ -2312,34 +2312,27 @@ else if (MOD == ELF) {
         try {
             String filename = toLuaString(args.elementAt(0));
             
-            // Verificar se arquivo existe
-            String content = midlet.read(filename);
-            if (content.equals("")) {
+            InputStream is = midlet.getInputStream(filename);
+            if (is == null) {
                 midlet.print("Arquivo não encontrado: " + filename, stdout);
                 return new Double(127);
             }
             
-            midlet.print("ELF: Iniciando emulação simples", stdout);
-            
-            InputStream is = midlet.getInputStream(filename);
             ELF elf = new ELF(midlet, stdout);
             
-            boolean loaded = elf.load(is);
-            is.close();
-            
-            if (loaded) {
+            if (elf.load(is)) {
                 elf.run();
             } else {
                 midlet.print("Formato ELF inválido", stdout);
             }
             
+            is.close();
         } catch (Exception e) {
-            midlet.print("Erro ELF: " + e.toString(), stdout);
+            midlet.print("Erro: " + e.toString(), stdout);
         }
         return null;
     }
 }
-
             else if (MOD == KERNEL) {
                 Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3), uid = args.elementAt(4);
 
