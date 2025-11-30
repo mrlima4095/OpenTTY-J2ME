@@ -1,4 +1,4 @@
-// ELF.java - Emulador de CPU para ELF32
+// ELF.java - Emulador de CPU para ELF32 (J2ME Compatível)
 import java.io.*;
 import java.util.*;
 
@@ -48,8 +48,16 @@ public class ELF {
     }
     
     public void reset() {
-        Arrays.fill(registers, 0);
-        Arrays.fill(memory, (byte)0);
+        // Preencher registradores com zeros sem usar Arrays.fill
+        for (int i = 0; i < registers.length; i++) {
+            registers[i] = 0;
+        }
+        
+        // Preencher memória com zeros
+        for (int i = 0; i < MEMORY_SIZE; i++) {
+            memory[i] = 0;
+        }
+        
         pc = 0;
         sp = STACK_BASE + STACK_SIZE - 4; // Stack cresce para baixo
         fp = sp;
@@ -118,11 +126,16 @@ public class ELF {
                     return false; // Memória insuficiente
                 }
                 
-                System.arraycopy(elfData, fileOffset, memory, virtualAddr, fileSize);
+                // Copiar dados do ELF para memória
+                for (int j = 0; j < fileSize; j++) {
+                    if (fileOffset + j < elfData.length) {
+                        memory[virtualAddr + j] = elfData[fileOffset + j];
+                    }
+                }
                 
                 // Zerar o restante da memória alocada
-                if (memSize > fileSize) {
-                    Arrays.fill(memory, virtualAddr + fileSize, virtualAddr + memSize, (byte)0);
+                for (int j = fileSize; j < memSize; j++) {
+                    memory[virtualAddr + j] = 0;
                 }
             }
             
@@ -138,8 +151,12 @@ public class ELF {
         midlet.print("Iniciando execução do ELF...", stdout);
         
         try {
-            while (running) {
+            while (running && pc < MEMORY_SIZE - 3) {
                 executeInstruction();
+            }
+            
+            if (running) {
+                midlet.print("Execução terminada (PC fora da memória)", stdout);
             }
         } catch (Exception e) {
             midlet.print("Erro durante execução: " + e.getMessage(), stdout);
@@ -147,11 +164,6 @@ public class ELF {
     }
     
     private void executeInstruction() {
-        if (pc >= MEMORY_SIZE - 3) {
-            running = false;
-            return;
-        }
-        
         int instruction = readU32(pc);
         pc += 4;
         
@@ -248,7 +260,7 @@ public class ELF {
             // Operando imediato
             int imm = operand2 & 0xFF;
             int rotate = (operand2 >>> 8) & 0xF;
-            return Integer.rotateRight(imm, rotate * 2);
+            return rotateRight(imm, rotate * 2);
         } else {
             // Operando de registro
             int rm = operand2 & 0xF;
@@ -264,11 +276,17 @@ public class ELF {
                 case 2: // ASR
                     return value >> shiftAmount;
                 case 3: // ROR
-                    return Integer.rotateRight(value, shiftAmount);
+                    return rotateRight(value, shiftAmount);
                 default:
                     return value;
             }
         }
+    }
+    
+    // Implementação de rotação à direita sem usar Integer.rotateRight
+    private int rotateRight(int value, int shift) {
+        shift = shift & 0x1F; // Limitar a 0-31
+        return (value >>> shift) | (value << (32 - shift));
     }
     
     private void updateFlags(int result) {
@@ -363,7 +381,14 @@ public class ELF {
             
             byte[] data = input.getBytes("UTF-8");
             int bytesToCopy = Math.min(count, data.length);
-            System.arraycopy(data, 0, memory, bufferAddr, bytesToCopy);
+            
+            // Copiar dados para memória sem System.arraycopy
+            for (int i = 0; i < bytesToCopy; i++) {
+                if (bufferAddr + i < MEMORY_SIZE) {
+                    memory[bufferAddr + i] = data[i];
+                }
+            }
+            
             registers[0] = bytesToCopy; // Retornar número de bytes lidos
             
         } catch (Exception e) {
@@ -377,8 +402,16 @@ public class ELF {
         int count = registers[2];
         
         try {
+            // Ler dados da memória sem System.arraycopy
             byte[] data = new byte[count];
-            System.arraycopy(memory, bufferAddr, data, 0, count);
+            for (int i = 0; i < count; i++) {
+                if (bufferAddr + i < MEMORY_SIZE) {
+                    data[i] = memory[bufferAddr + i];
+                } else {
+                    data[i] = 0;
+                }
+            }
+            
             String output = new String(data, "UTF-8");
             
             if (fd == 1 || fd == 2) { // STDOUT ou STDERR
@@ -424,7 +457,7 @@ public class ELF {
     }
     
     private String readString(int addr) {
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         int offset = 0;
         
         while (addr + offset < MEMORY_SIZE) {
@@ -452,9 +485,23 @@ public class ELF {
                ((elfData[offset + 1] & 0xFF) << 8));
     }
     
+    // Método para escrever na memória (para debug)
+    public void writeMemory(int address, byte[] data) {
+        for (int i = 0; i < data.length && address + i < MEMORY_SIZE; i++) {
+            memory[address + i] = data[i];
+        }
+    }
+    
     // Getters para debug
     public int getPC() { return pc; }
     public int getSP() { return sp; }
-    public int[] getRegisters() { return registers.clone(); }
+    public int[] getRegisters() { 
+        int[] copy = new int[registers.length];
+        for (int i = 0; i < registers.length; i++) {
+            copy[i] = registers[i];
+        }
+        return copy;
+    }
     public boolean isRunning() { return running; }
+    public byte[] getMemory() { return memory; }
 }
