@@ -11,7 +11,7 @@ local input =graphics.new("field", { type = "field", label = ">" })
 io.setstdout(output)
 
 graphics.append(term, output)
-graphics.append(term, )
+graphics.append(term, input)
 graphics.addCommand(term, run)
 graphics.addCommand(term, back)
 graphics.handler(term, {
