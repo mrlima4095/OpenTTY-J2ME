@@ -29,11 +29,19 @@ local function shell(args, enable, aliases, stdout, scope)
         if os.getuid() == 0 then
             os.su(java.midlet.username)
         elseif argument == "" then
-            print("su: usage: su [passwd]")
+            print("su: usage: su [user] [passwd]")
         else
-            print(os.su("root", argument))
+            local status = os.su("root", argument)
+
+            if status == 0 then
+                io.write("", stdout)
+                print(string.env(io.read("/etc/motd")))
+            elseif status == 13 then
+                print("su: permission denied")
+            end
+
+            return status
         end
-    elseif cmd == "" then
     elseif cmd == "du" then
         if argument == "" then
         else
@@ -113,6 +121,11 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "cd" then
         if argument == "" then os.chdir("/home/")
         else
+            argument = joinpath(argument)
+            if string.sub(argument, -1, -1) ~= "/" then
+                argument = argument .. "/"
+            end
+
             local status = os.chdir(argument)
             if status == 127 then
                 print("cd: " .. argument .. ": not found")
