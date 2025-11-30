@@ -55,8 +55,8 @@ public class Lua {
         loaders = new int[] { HTTP_GET, HTTP_POST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "class", "getName", "delete", "run", "thread", }; 
-        loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD };
+        funcs = new String[] { "class", "getName", "delete", "run", "thread", "elf" }; 
+        loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD, ELF };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
         jdb.put("username", midlet.username); jdb.put("net", midlet.network); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
 
@@ -77,7 +77,7 @@ public class Lua {
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
-        math.put("random", new LuaFunction(RANDOM)); globals.put("math", math); globals.put("run", new LuaFunction(ELF));
+        math.put("random", new LuaFunction(RANDOM)); globals.put("math", math);
         globals.put("_VERSION", "Lua J2ME");
     }
     // | (Run Source code)
