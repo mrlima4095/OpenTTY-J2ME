@@ -2307,48 +2307,36 @@ public class Lua {
             else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
 else if (MOD == ELF) {
-    if (args.isEmpty()) { }
+    if (args.isEmpty()) { return null; }
     else {
         try {
             String filename = toLuaString(args.elementAt(0));
-            midlet.print("DEBUG: Tentando abrir arquivo: " + filename, stdout);
+            
+            // Verificar se arquivo existe
+            String content = midlet.read(filename);
+            if (content.equals("")) {
+                midlet.print("Arquivo não encontrado: " + filename, stdout);
+                return new Double(127);
+            }
+            
+            midlet.print("ELF: Iniciando emulação simples", stdout);
             
             InputStream is = midlet.getInputStream(filename);
-            
-            if (is == null) { 
-                midlet.print("DEBUG: Arquivo não encontrado: " + filename, stdout);
-                return new Double(127); 
-            }
-            
-            midlet.print("DEBUG: InputStream criado com sucesso", stdout);
-            midlet.print("DEBUG: Instanciando ELF...", stdout);
-            
-            ELF elf = new ELF(midlet, stdout); 
-            midlet.print("DEBUG: ELF instanciado", stdout);
-            midlet.print("DEBUG: Carregando ELF: " + filename, stdout);
+            ELF elf = new ELF(midlet, stdout);
             
             boolean loaded = elf.load(is);
-            midlet.print("DEBUG: Load retornou: " + loaded, stdout);
+            is.close();
             
             if (loaded) {
-                midlet.print("ELF carregado com sucesso", stdout);
-                midlet.print("Iniciando execução...", stdout);
                 elf.run();
-                midlet.print("Execução finalizada", stdout);
             } else {
-                midlet.print("Falha ao carregar ELF: formato inválido", stdout);
+                midlet.print("Formato ELF inválido", stdout);
             }
             
-            is.close();
-            midlet.print("DEBUG: InputStream fechado", stdout);
         } catch (Exception e) {
-            midlet.print("Erro ao executar ELF: " + e.getMessage(), stdout);
-            // Imprimir stack trace completo
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            midlet.print("Stack trace: " + sw.toString(), stdout);
+            midlet.print("Erro ELF: " + e.toString(), stdout);
         }
+        return null;
     }
 }
 
