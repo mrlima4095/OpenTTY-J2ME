@@ -1,507 +1,365 @@
-// ELF.java - Emulador de CPU para ELF32 (J2ME Compatível)
-import java.io.*;
-import java.util.*;
-
+// Classe ELF dentro de Lua.java
 public class ELF {
     private OpenTTY midlet;
     private Object stdout;
     
-    // Registradores da CPU
-    private int[] registers = new int[16]; // R0-R15
-    private int pc; // Program Counter
-    private int sp; // Stack Pointer
-    private int fp; // Frame Pointer
+    // Registradores da CPU 32-bits
+    private int[] registers;
+    private int eip; // Instruction Pointer
+    private int eflags;
     
-    // Memória
+    // Memória 
     private byte[] memory;
-    private static final int MEMORY_SIZE = 64 * 1024; // 64KB
-    private static final int STACK_BASE = 32 * 1024; // Stack começa em 32KB
-    private static final int STACK_SIZE = 8 * 1024; // 8KB para stack
+    private static final int MEMORY_SIZE = 16 * 1024 * 1024; // 16MB
     
-    // Estado da CPU
-    private boolean running = false;
-    private boolean carryFlag = false;
-    private boolean zeroFlag = false;
-    private boolean negativeFlag = false;
+    // Constantes dos registradores
+    private static final int EAX = 0;
+    private static final int EBX = 1;
+    private static final int ECX = 2;
+    private static final int EDX = 3;
+    private static final int ESI = 4;
+    private static final int EDI = 5;
+    private static final int EBP = 6;
+    private static final int ESP = 7;
     
-    // Estrutura do ELF
-    private byte[] elfData;
-    private int entryPoint;
-    private int programHeaderOffset;
-    private int programHeaderEntrySize;
-    private int programHeaderCount;
+    // Flags
+    private static final int CF = 1 << 0; // Carry Flag
+    private static final int PF = 1 << 2; // Parity Flag
+    private static final int ZF = 1 << 6; // Zero Flag
+    private static final int SF = 1 << 7; // Sign Flag
     
-    // Syscalls
+    // Syscalls Linux
     private static final int SYS_EXIT = 1;
     private static final int SYS_READ = 3;
     private static final int SYS_WRITE = 4;
     private static final int SYS_OPEN = 5;
     private static final int SYS_CLOSE = 6;
     private static final int SYS_BRK = 45;
-    private static final int SYS_IOCTL = 54;
     
     public ELF(OpenTTY midlet, Object stdout) {
         this.midlet = midlet;
         this.stdout = stdout;
+        this.registers = new int[8];
         this.memory = new byte[MEMORY_SIZE];
         reset();
     }
     
-    public void reset() {
-        // Preencher registradores com zeros sem usar Arrays.fill
+    private void reset() {
         for (int i = 0; i < registers.length; i++) {
             registers[i] = 0;
         }
+        eip = 0;
+        eflags = 0;
+        // Stack começa no topo da memória
+        registers[ESP] = MEMORY_SIZE - 4;
+        registers[EBP] = MEMORY_SIZE - 4;
         
-        // Preencher memória com zeros
+        // Limpar memória
         for (int i = 0; i < MEMORY_SIZE; i++) {
             memory[i] = 0;
         }
-        
-        pc = 0;
-        sp = STACK_BASE + STACK_SIZE - 4; // Stack cresce para baixo
-        fp = sp;
-        running = false;
-        carryFlag = false;
-        zeroFlag = false;
-        negativeFlag = false;
     }
     
-    public boolean load(InputStream is) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buffer = new byte[4096];
-        int bytesRead;
-        
-        while ((bytesRead = is.read(buffer)) != -1) {
-            baos.write(buffer, 0, bytesRead);
-        }
-        
-        elfData = baos.toByteArray();
-        return parseELFHeader();
-    }
-    
-    private boolean parseELFHeader() {
-        if (elfData.length < 52) return false;
+    public boolean load(InputStream is) throws Exception {
+        reset();
         
         // Verificar assinatura ELF
-        if (elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') {
+        byte[] magic = new byte[4];
+        if (readFully(is, magic) != 4) return false;
+        if (magic[0] != 0x7F || magic[1] != 'E' || magic[2] != 'L' || magic[3] != 'F') {
             return false;
         }
         
-        // Verificar se é ELF32
-        if (elfData[4] != 1) return false; // ELFCLASS32
+        // Ler header ELF
+        byte[] header = new byte[52]; // Tamanho do header ELF32
+        if (readFully(is, header) != 52) return false;
         
-        // Verificar endianness (little endian)
-        if (elfData[5] != 1) return false;
+        // Extrair informações do header
+        int entryPoint = read32(header, 24);
+        int phoff = read32(header, 28);    // Offset program header
+        int phentsize = read16(header, 42); // Tamanho program header
+        int phnum = read16(header, 44);    // Número de program headers
         
-        // Verificar se é executável
-        if (elfData[16] != 2) return false; // ET_EXEC
+        midlet.print("Entry point: 0x" + Integer.toHexString(entryPoint), stdout);
+        midlet.print("Program headers: " + phnum, stdout);
         
-        // Verificar arquitetura ARM
-        if (readU16(18) != 40) return false; // EM_ARM
+        // Ler program headers e carregar segmentos
+        skipFully(is, phoff - 52); // Pular para program headers
         
-        entryPoint = readU32(24);
-        programHeaderOffset = readU32(28);
-        programHeaderEntrySize = readU16(42);
-        programHeaderCount = readU16(44);
-        
-        // Carregar segmentos do programa
-        return loadProgramSegments();
-    }
-    
-    private boolean loadProgramSegments() {
-        int offset = programHeaderOffset;
-        
-        for (int i = 0; i < programHeaderCount; i++) {
-            int type = readU32(offset);
+        for (int i = 0; i < phnum; i++) {
+            byte[] pheader = new byte[phentsize];
+            if (readFully(is, pheader) != phentsize) return false;
             
+            int type = read32(pheader, 0);
             if (type == 1) { // PT_LOAD
-                int fileOffset = readU32(offset + 4);
-                int virtualAddr = readU32(offset + 8);
-                int fileSize = readU32(offset + 16);
-                int memSize = readU32(offset + 20);
+                int offset = read32(pheader, 4);
+                int vaddr = read32(pheader, 8);
+                int filesz = read32(pheader, 16);
+                int memsz = read32(pheader, 20);
                 
-                // Copiar dados para memória
-                if (virtualAddr + memSize > MEMORY_SIZE) {
-                    return false; // Memória insuficiente
-                }
+                midlet.print("Loading segment at 0x" + Integer.toHexString(vaddr) + 
+                           " size: " + filesz + " bytes", stdout);
                 
-                // Copiar dados do ELF para memória
-                for (int j = 0; j < fileSize; j++) {
-                    if (fileOffset + j < elfData.length) {
-                        memory[virtualAddr + j] = elfData[fileOffset + j];
+                // Salvar posição atual
+                long currentPos = phoff + (i * phentsize) + phentsize;
+                
+                // Pular para o segmento
+                skipFully(is, offset - currentPos);
+                
+                // Ler segmento para memória
+                if (readFully(is, memory, vaddr, filesz) != filesz) return false;
+                
+                // Zerar memória restante se memsz > filesz
+                if (memsz > filesz) {
+                    for (int j = vaddr + filesz; j < vaddr + memsz; j++) {
+                        memory[j] = 0;
                     }
                 }
                 
-                // Zerar o restante da memória alocada
-                for (int j = fileSize; j < memSize; j++) {
-                    memory[virtualAddr + j] = 0;
-                }
+                // Voltar para próxima program header
+                long nextHeaderPos = phoff + ((i + 1) * phentsize);
+                long afterSegmentPos = offset + filesz;
+                skipFully(is, nextHeaderPos - afterSegmentPos);
             }
-            
-            offset += programHeaderEntrySize;
         }
         
-        pc = entryPoint;
+        // Definir EIP para entry point
+        eip = entryPoint;
+        
         return true;
     }
     
     public void run() {
-        running = true;
-        midlet.print("Iniciando execução do ELF...", stdout);
-        
         try {
-            while (running && pc < MEMORY_SIZE - 3) {
-                executeInstruction();
-            }
+            midlet.print("Iniciando execução ELF...", stdout);
             
-            if (running) {
-                midlet.print("Execução terminada (PC fora da memória)", stdout);
-            }
-        } catch (Exception e) {
-            midlet.print("Erro durante execução: " + e.getMessage(), stdout);
-        }
-    }
-    
-    private void executeInstruction() {
-        int instruction = readU32(pc);
-        pc += 4;
-        
-        // Decodificação básica de instruções ARM
-        int cond = (instruction >>> 28) & 0xF;
-        int opcode = (instruction >>> 21) & 0x7;
-        int rn = (instruction >>> 16) & 0xF;
-        int rd = (instruction >>> 12) & 0xF;
-        int operand2 = instruction & 0xFFF;
-        
-        // Verificar condição
-        if (!checkCondition(cond)) {
-            return;
-        }
-        
-        switch (opcode) {
-            case 0: // AND
-                registers[rd] = registers[rn] & decodeOperand2(operand2);
-                break;
-            case 1: // EOR
-                registers[rd] = registers[rn] ^ decodeOperand2(operand2);
-                break;
-            case 2: // SUB
-                int subResult = registers[rn] - decodeOperand2(operand2);
-                registers[rd] = subResult;
-                updateFlags(subResult);
-                break;
-            case 3: // RSB
-                int rsbResult = decodeOperand2(operand2) - registers[rn];
-                registers[rd] = rsbResult;
-                updateFlags(rsbResult);
-                break;
-            case 4: // ADD
-                int addResult = registers[rn] + decodeOperand2(operand2);
-                registers[rd] = addResult;
-                updateFlags(addResult);
-                break;
-            case 5: // ADC
-                int adcResult = registers[rn] + decodeOperand2(operand2) + (carryFlag ? 1 : 0);
-                registers[rd] = adcResult;
-                updateFlags(adcResult);
-                break;
-            case 6: // SBC
-                int sbcResult = registers[rn] - decodeOperand2(operand2) - (carryFlag ? 0 : 1);
-                registers[rd] = sbcResult;
-                updateFlags(sbcResult);
-                break;
-            case 7: // RSC
-                int rscResult = decodeOperand2(operand2) - registers[rn] - (carryFlag ? 0 : 1);
-                registers[rd] = rscResult;
-                updateFlags(rscResult);
-                break;
-            case 8: // TST
-                int tstResult = registers[rn] & decodeOperand2(operand2);
-                updateFlags(tstResult);
-                break;
-            case 9: // TEQ
-                int teqResult = registers[rn] ^ decodeOperand2(operand2);
-                updateFlags(teqResult);
-                break;
-            case 10: // CMP
-                int cmpResult = registers[rn] - decodeOperand2(operand2);
-                updateFlags(cmpResult);
-                break;
-            case 11: // CMN
-                int cmnResult = registers[rn] + decodeOperand2(operand2);
-                updateFlags(cmnResult);
-                break;
-            case 12: // ORR
-                registers[rd] = registers[rn] | decodeOperand2(operand2);
-                break;
-            case 13: // MOV
-                registers[rd] = decodeOperand2(operand2);
-                updateFlags(registers[rd]);
-                break;
-            case 14: // BIC
-                registers[rd] = registers[rn] & ~decodeOperand2(operand2);
-                break;
-            case 15: // MVN
-                registers[rd] = ~decodeOperand2(operand2);
-                updateFlags(registers[rd]);
-                break;
-            default:
-                // Instrução SWI (Syscall)
-                if ((instruction & 0x0F000000) == 0x0F000000) {
-                    handleSyscall(instruction & 0x00FFFFFF);
+            while (true) {
+                if (eip >= MEMORY_SIZE || eip < 0) {
+                    midlet.print("EIP fora dos limites: 0x" + Integer.toHexString(eip), stdout);
+                    break;
                 }
-                break;
-        }
-    }
-    
-    private int decodeOperand2(int operand2) {
-        if ((operand2 & 0x02000000) != 0) {
-            // Operando imediato
-            int imm = operand2 & 0xFF;
-            int rotate = (operand2 >>> 8) & 0xF;
-            return rotateRight(imm, rotate * 2);
-        } else {
-            // Operando de registro
-            int rm = operand2 & 0xF;
-            int shiftType = (operand2 >>> 5) & 0x3;
-            int shiftAmount = (operand2 >>> 7) & 0x1F;
-            
-            int value = registers[rm];
-            switch (shiftType) {
-                case 0: // LSL
-                    return value << shiftAmount;
-                case 1: // LSR
-                    return value >>> shiftAmount;
-                case 2: // ASR
-                    return value >> shiftAmount;
-                case 3: // ROR
-                    return rotateRight(value, shiftAmount);
-                default:
-                    return value;
+                
+                // Buscar instrução
+                int opcode = memory[eip] & 0xFF;
+                
+                // Decodificar e executar
+                switch (opcode) {
+                    case 0xCD: // INT (syscall)
+                        if (memory[eip + 1] == 0x80) {
+                            handleSyscall();
+                            eip += 2;
+                        } else {
+                            eip++;
+                        }
+                        break;
+                        
+                    case 0xC3: // RET
+                        eip = pop32();
+                        break;
+                        
+                    case 0x90: // NOP
+                        eip++;
+                        break;
+                        
+                    case 0xEB: // JMP rel8
+                        byte rel8 = memory[eip + 1];
+                        eip += rel8 + 2;
+                        break;
+                        
+                    default:
+                        // Instrução não implementada
+                        midlet.print("Instrução não implementada: 0x" + 
+                                   Integer.toHexString(opcode) + " em 0x" + 
+                                   Integer.toHexString(eip), stdout);
+                        eip++;
+                        break;
+                }
+                
+                // Verificar se deve parar
+                if (eip == 0) break;
             }
+            
+        } catch (Exception e) {
+            midlet.print("Erro durante execução ELF: " + e.getMessage(), stdout);
         }
     }
     
-    // Implementação de rotação à direita sem usar Integer.rotateRight
-    private int rotateRight(int value, int shift) {
-        shift = shift & 0x1F; // Limitar a 0-31
-        return (value >>> shift) | (value << (32 - shift));
-    }
-    
-    private void updateFlags(int result) {
-        zeroFlag = (result == 0);
-        negativeFlag = (result < 0);
-        // Para carry flag, precisaríamos de mais informações sobre a operação
-    }
-    
-    private boolean checkCondition(int cond) {
-        switch (cond) {
-            case 0: // EQ
-                return zeroFlag;
-            case 1: // NE
-                return !zeroFlag;
-            case 2: // CS/HS
-                return carryFlag;
-            case 3: // CC/LO
-                return !carryFlag;
-            case 4: // MI
-                return negativeFlag;
-            case 5: // PL
-                return !negativeFlag;
-            case 6: // VS
-                return false; // Overflow - não implementado
-            case 7: // VC
-                return true; // No overflow
-            case 8: // HI
-                return carryFlag && !zeroFlag;
-            case 9: // LS
-                return !carryFlag || zeroFlag;
-            case 10: // GE
-                return negativeFlag == false; // Simplificado
-            case 11: // LT
-                return negativeFlag;
-            case 12: // GT
-                return !zeroFlag && (negativeFlag == false); // Simplificado
-            case 13: // LE
-                return zeroFlag || negativeFlag;
-            case 14: // AL
-                return true;
-            default:
-                return false;
-        }
-    }
-    
-    private void handleSyscall(int syscallNumber) {
-        switch (syscallNumber) {
+    private void handleSyscall() {
+        int syscall = registers[EAX];
+        
+        switch (syscall) {
             case SYS_EXIT:
-                handleExit();
+                midlet.print("Programa terminou com código: " + registers[EBX], stdout);
+                eip = 0; // Para execução
                 break;
-            case SYS_READ:
-                handleRead();
-                break;
+                
             case SYS_WRITE:
                 handleWrite();
                 break;
+                
+            case SYS_READ:
+                handleRead();
+                break;
+                
             case SYS_OPEN:
                 handleOpen();
                 break;
+                
             case SYS_CLOSE:
                 handleClose();
                 break;
+                
             case SYS_BRK:
                 handleBrk();
                 break;
-            case SYS_IOCTL:
-                handleIoctl();
-                break;
+                
             default:
-                midlet.print("Syscall não implementada: " + syscallNumber, stdout);
+                midlet.print("Syscall não implementada: " + syscall, stdout);
+                registers[EAX] = -1; // Retornar erro
                 break;
-        }
-    }
-    
-    private void handleExit() {
-        int status = registers[0];
-        midlet.print("Programa finalizado com status: " + status, stdout);
-        running = false;
-    }
-    
-    private void handleRead() {
-        int fd = registers[0];
-        int bufferAddr = registers[1];
-        int count = registers[2];
-        
-        try {
-            String input = "";
-            if (fd == 0) { // STDIN
-                // Simular entrada do usuário
-                input = "entrada_simulada\n";
-            }
-            
-            byte[] data = input.getBytes("UTF-8");
-            int bytesToCopy = Math.min(count, data.length);
-            
-            // Copiar dados para memória sem System.arraycopy
-            for (int i = 0; i < bytesToCopy; i++) {
-                if (bufferAddr + i < MEMORY_SIZE) {
-                    memory[bufferAddr + i] = data[i];
-                }
-            }
-            
-            registers[0] = bytesToCopy; // Retornar número de bytes lidos
-            
-        } catch (Exception e) {
-            registers[0] = -1; // Erro
         }
     }
     
     private void handleWrite() {
-        int fd = registers[0];
-        int bufferAddr = registers[1];
-        int count = registers[2];
+        int fd = registers[EBX];
+        int buf = registers[ECX];
+        int count = registers[EDX];
         
-        try {
-            // Ler dados da memória sem System.arraycopy
-            byte[] data = new byte[count];
-            for (int i = 0; i < count; i++) {
-                if (bufferAddr + i < MEMORY_SIZE) {
-                    data[i] = memory[bufferAddr + i];
-                } else {
-                    data[i] = 0;
+        if (fd == 1 || fd == 2) { // stdout ou stderr
+            try {
+                // Construir string manualmente
+                StringBuffer output = new StringBuffer();
+                for (int i = 0; i < count; i++) {
+                    output.append((char) memory[buf + i]);
                 }
+                midlet.print(output.toString(), stdout);
+                registers[EAX] = count; // Retornar número de bytes escritos
+            } catch (Exception e) {
+                registers[EAX] = -1;
             }
-            
-            String output = new String(data, "UTF-8");
-            
-            if (fd == 1 || fd == 2) { // STDOUT ou STDERR
-                midlet.print(output, stdout);
+        } else {
+            registers[EAX] = -1; // File descriptor inválido
+        }
+    }
+    
+    private void handleRead() {
+        int fd = registers[EBX];
+        int buf = registers[ECX];
+        int count = registers[EDX];
+        
+        // Por enquanto, só stdin (fd 0) é suportado
+        if (fd == 0) {
+            try {
+                // Simular leitura - retornar 0 bytes por enquanto
+                registers[EAX] = 0;
+            } catch (Exception e) {
+                registers[EAX] = -1;
             }
-            
-            registers[0] = count; // Retornar número de bytes escritos
-            
-        } catch (Exception e) {
-            registers[0] = -1; // Erro
+        } else {
+            registers[EAX] = -1;
         }
     }
     
     private void handleOpen() {
-        int filenameAddr = registers[0];
-        int flags = registers[1];
-        int mode = registers[2];
+        int filenamePtr = registers[EBX];
+        int flags = registers[ECX];
+        int mode = registers[EDX];
         
         try {
-            String filename = readString(filenameAddr);
-            // Simular abertura de arquivo - sempre retorna sucesso
-            registers[0] = 3; // Retornar file descriptor (começando em 3)
+            // Ler nome do arquivo da memória
+            String filename = readString(filenamePtr);
             
+            // Tentar abrir arquivo usando sistema do OpenTTY
+            InputStream is = midlet.getInputStream(filename);
+            if (is != null) {
+                // Por enquanto, retornar FD fictício
+                registers[EAX] = 3; // Primeiro FD após stdio
+                is.close();
+            } else {
+                registers[EAX] = -1;
+            }
         } catch (Exception e) {
-            registers[0] = -1; // Erro
+            registers[EAX] = -1;
         }
     }
     
     private void handleClose() {
-        int fd = registers[0];
-        // Simular fechamento - sempre retorna sucesso
-        registers[0] = 0;
+        int fd = registers[EBX];
+        // Por enquanto, sempre sucesso para FD > 2
+        registers[EAX] = (fd > 2) ? 0 : -1;
     }
     
     private void handleBrk() {
-        // Simulação simples de brk - sempre retorna sucesso
-        registers[0] = STACK_BASE; // Retornar endereço atual do break
+        // Implementação simples - sempre retorna sucesso
+        registers[EAX] = registers[EBX];
     }
     
-    private void handleIoctl() {
-        // Syscall ioctl não implementada - retornar erro
-        registers[0] = -1;
+    // Métodos auxiliares para leitura/escrita de memória
+    private int read32(byte[] data, int offset) {
+        return (data[offset] & 0xFF) | 
+               ((data[offset + 1] & 0xFF) << 8) | 
+               ((data[offset + 2] & 0xFF) << 16) | 
+               ((data[offset + 3] & 0xFF) << 24);
+    }
+    
+    private int read16(byte[] data, int offset) {
+        return (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8);
     }
     
     private String readString(int addr) {
         StringBuffer sb = new StringBuffer();
-        int offset = 0;
-        
-        while (addr + offset < MEMORY_SIZE) {
-            byte b = memory[addr + offset];
-            if (b == 0) break;
-            sb.append((char) b);
-            offset++;
+        for (int i = addr; i < MEMORY_SIZE && memory[i] != 0; i++) {
+            sb.append((char) memory[i]);
         }
-        
         return sb.toString();
     }
     
-    // Métodos auxiliares para leitura de dados da memória
-    private int readU32(int offset) {
-        if (offset + 3 >= elfData.length) return 0;
-        return ((elfData[offset] & 0xFF) |
-               ((elfData[offset + 1] & 0xFF) << 8) |
-               ((elfData[offset + 2] & 0xFF) << 16) |
-               ((elfData[offset + 3] & 0xFF) << 24));
+    private void push32(int value) {
+        registers[ESP] -= 4;
+        write32(registers[ESP], value);
     }
     
-    private int readU16(int offset) {
-        if (offset + 1 >= elfData.length) return 0;
-        return ((elfData[offset] & 0xFF) |
-               ((elfData[offset + 1] & 0xFF) << 8));
+    private int pop32() {
+        int value = read32(registers[ESP]);
+        registers[ESP] += 4;
+        return value;
     }
     
-    // Método para escrever na memória (para debug)
-    public void writeMemory(int address, byte[] data) {
-        for (int i = 0; i < data.length && address + i < MEMORY_SIZE; i++) {
-            memory[address + i] = data[i];
+    private int read32(int addr) {
+        return (memory[addr] & 0xFF) | 
+               ((memory[addr + 1] & 0xFF) << 8) | 
+               ((memory[addr + 2] & 0xFF) << 16) | 
+               ((memory[addr + 3] & 0xFF) << 24);
+    }
+    
+    private void write32(int addr, int value) {
+        memory[addr] = (byte) (value & 0xFF);
+        memory[addr + 1] = (byte) ((value >> 8) & 0xFF);
+        memory[addr + 2] = (byte) ((value >> 16) & 0xFF);
+        memory[addr + 3] = (byte) ((value >> 24) & 0xFF);
+    }
+    
+    // Métodos auxiliares para leitura de streams (substituem Arrays.fill e leitura completa)
+    private int readFully(InputStream is, byte[] buffer) throws IOException {
+        return readFully(is, buffer, 0, buffer.length);
+    }
+    
+    private int readFully(InputStream is, byte[] buffer, int offset, int length) throws IOException {
+        int totalRead = 0;
+        while (totalRead < length) {
+            int read = is.read(buffer, offset + totalRead, length - totalRead);
+            if (read == -1) break;
+            totalRead += read;
+        }
+        return totalRead;
+    }
+    
+    private void skipFully(InputStream is, long bytes) throws IOException {
+        long remaining = bytes;
+        while (remaining > 0) {
+            long skipped = is.skip(remaining);
+            if (skipped <= 0) break;
+            remaining -= skipped;
         }
     }
-    
-    // Getters para debug
-    public int getPC() { return pc; }
-    public int getSP() { return sp; }
-    public int[] getRegisters() { 
-        int[] copy = new int[registers.length];
-        for (int i = 0; i < registers.length; i++) {
-            copy[i] = registers[i];
-        }
-        return copy;
-    }
-    public boolean isRunning() { return running; }
-    public byte[] getMemory() { return memory; }
 }
