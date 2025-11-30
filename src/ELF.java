@@ -10,7 +10,7 @@ public class ELF {
     private int eflags;
     
     private byte[] memory;
-    private static final int MEMORY_SIZE = 8 * 1024 * 1024;
+    private static final int MEMORY_SIZE = 16 * 1024 * 1024;
     
     private static final int EAX = 0;
     private static final int EBX = 1;
