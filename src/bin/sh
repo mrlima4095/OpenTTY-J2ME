@@ -117,7 +117,7 @@ local function shell(args, enable, aliases, stdout, scope)
             if status == 127 then
                 print("cd: " .. argument .. ": not found")
             elseif status == 20 then
-                print("cd: " .. argument .. ": is a directory")
+                print("cd: " .. argument .. ": not a directory")
             elseif status == 1 then
                 print("cd: no parent directory")
             end
