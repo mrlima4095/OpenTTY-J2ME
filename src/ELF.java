@@ -12,7 +12,7 @@ public class ELF {
     
     // Memória 
     private byte[] memory;
-    private static final int MEMORY_SIZE = 16 * 1024 * 1024; // 16MB
+    private static final int MEMORY_SIZE = 256 * 1024;
     
     // Constantes dos registradores
     private static final int EAX = 0;
