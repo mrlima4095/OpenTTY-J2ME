@@ -1439,9 +1439,6 @@ public class Lua {
                         return new Double(0);
                     }
 
-                    target = target.startsWith("/") ? target : pwd + target;
-                    target = target.endsWith("/") ? target : target + "/";
-                    
                     if (midlet.fs.containsKey(target)) { father.put("PWD", target); return new Double(0); }
                     else if (target.startsWith("/mnt/")) {
                         FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ); 
