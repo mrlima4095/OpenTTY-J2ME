@@ -1241,7 +1241,7 @@ public class Lua {
                 } 
                 else { return gotbad(1, "require", "string expected, got " + type(args.elementAt(0))); }
             }
-            else if (MOD == LOADS) { if (args.isEmpty() || args.elementAt(0) == null) { } else { return exec(toLuaString(args.elementAt(0)), args.size() > 1 ? (args.elementAt(1) instanceof Hashtable ? (Hashtable)) : null); } }
+            else if (MOD == LOADS) { if (args.isEmpty() || args.elementAt(0) == null) { } else { return exec(toLuaString(args.elementAt(0)), args.size() > 1 ? (args.elementAt(1) instanceof Hashtable ? (Hashtable) args.elementAt(1) : null) : null); } }
             else if (MOD == PAIRS) { 
                 if (args.isEmpty()) { return gotbad(1, "pairs", "table expected, got no value"); } 
                 else {
