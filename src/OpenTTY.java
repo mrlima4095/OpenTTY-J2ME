@@ -33,10 +33,9 @@ public class OpenTTY extends MIDlet {
     public Display display = Display.getDisplay(this);
     public StringItem stdout = new StringItem("", "");
     public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
-    public Command BACK = new Command("Back", Command.BACK, 1), ;
+    public Command BACK = new Command("Back", Command.BACK, 1);
     // |
     // MIDlet Loader
-    // |
     // | (Triggers)
     public void startApp() { if (sys.containsKey("1")) { } else { init(); } }
     public void pauseApp() { }
