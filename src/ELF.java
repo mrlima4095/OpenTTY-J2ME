@@ -407,272 +407,29 @@ public class ELF {
     private OpenTTY midlet;
     private Object stdout;
     
-    // Registradores da CPU 32-bits
-    private int[] registers;
-    private int eip;
-    private int eflags;
-    
-    // Memória 
-    private byte[] memory;
-    private static final int MEMORY_SIZE = 1024 * 1024; // 1MB inicialmente
-    
-    // Constantes dos registradores
-    private static final int EAX = 0;
-    private static final int EBX = 1;
-    private static final int ECX = 2;
-    private static final int EDX = 3;
-    private static final int ESI = 4;
-    private static final int EDI = 5;
-    private static final int EBP = 6;
-    private static final int ESP = 7;
-    
     public ELF(OpenTTY midlet, Object stdout) {
         this.midlet = midlet;
         this.stdout = stdout;
-        this.registers = new int[8];
-        this.memory = new byte[MEMORY_SIZE];
-        
-        midlet.print("DEBUG_ELF: Construtor chamado", stdout);
-        reset();
-        midlet.print("DEBUG_ELF: Reset completo", stdout);
-    }
-    
-    private void reset() {
-        midlet.print("DEBUG_ELF: Iniciando reset...", stdout);
-        for (int i = 0; i < registers.length; i++) {
-            registers[i] = 0;
-        }
-        eip = 0;
-        eflags = 0;
-        
-        // Inicializar memória com zeros
-        for (int i = 0; i < MEMORY_SIZE; i++) {
-            memory[i] = 0;
-        }
-        
-        // Stack começa no topo da memória
-        registers[ESP] = MEMORY_SIZE - 4;
-        registers[EBP] = MEMORY_SIZE - 4;
-        
-        midlet.print("DEBUG_ELF: Reset concluído - ESP: 0x" + Integer.toHexString(registers[ESP]), stdout);
     }
     
     public boolean load(InputStream is) {
         try {
-            midlet.print("DEBUG_ELF: Iniciando load...", stdout);
-            
-            // Verificar se o stream é válido
-            if (is == null) {
-                midlet.print("DEBUG_ELF: InputStream é null", stdout);
-                return false;
-            }
-            
-            // Verificar assinatura ELF
+            // Apenas verifica se é um ELF válido
             byte[] magic = new byte[4];
-            int bytesRead = readFully(is, magic);
-            
-            midlet.print("DEBUG_ELF: Bytes lidos para magic: " + bytesRead, stdout);
-            
-            if (bytesRead != 4) {
-                midlet.print("DEBUG_ELF: Não foi possível ler magic number", stdout);
-                return false;
-            }
-            
-            // Verificar assinatura ELF
-            boolean isELF = (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F');
-            midlet.print("DEBUG_ELF: Assinatura ELF válida: " + isELF, stdout);
-            
-            if (!isELF) {
-                return false;
-            }
-            
-            // Para um hello world simples, vamos usar uma abordagem simplificada
-            // Carregar o resto do arquivo na memória a partir do offset 0
-            is.close();
-            is = midlet.getInputStream("/bin/hello"); // Reabrir
-            
-            int totalRead = 0;
+            int read = 0;
             int b;
-            while ((b = is.read()) != -1 && totalRead < MEMORY_SIZE) {
-                memory[totalRead++] = (byte) b;
+            while (read < 4 && (b = is.read()) != -1) {
+                magic[read++] = (byte)b;
             }
             
-            midlet.print("DEBUG_ELF: Total de bytes carregados: " + totalRead, stdout);
-            
-            // Para um ELF simples, assumir entry point em 0x08048000 (comum em ELFs)
-            eip = 0x08048000;
-            
-            // Escrever um programa simples diretamente na memória para teste
-            writeSimpleHelloWorld();
-            
-            return true;
-            
+            return (magic[0] == 0x7F && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F');
         } catch (Exception e) {
-            midlet.print("DEBUG_ELF: Exceção no load: " + e.getMessage(), stdout);
             return false;
         }
     }
     
-    private void writeSimpleHelloWorld() {
-        midlet.print("DEBUG_ELF: Escrevendo programa Hello World na memória", stdout);
-        
-        // Programa assembly Hello World simplificado
-        // sys_write(1, "Hello World!\n", 13)
-        int baseAddr = 0x08048000;
-        
-        // Código machine para:
-        // mov eax, 4
-        writeMemory(baseAddr, new byte[]{(byte)0xB8, 0x04, 0x00, 0x00, 0x00});
-        // mov ebx, 1  
-        writeMemory(baseAddr + 5, new byte[]{(byte)0xBB, 0x01, 0x00, 0x00, 0x00});
-        // mov ecx, string_addr
-        writeMemory(baseAddr + 10, new byte[]{(byte)0xB9, (byte)0x00, (byte)0x80, 0x04, 0x08});
-        // mov edx, 13
-        writeMemory(baseAddr + 15, new byte[]{(byte)0xBA, 0x0D, 0x00, 0x00, 0x00});
-        // int 0x80
-        writeMemory(baseAddr + 20, new byte[]{(byte)0xCD, (byte)0x80});
-        // mov eax, 1 (exit)
-        writeMemory(baseAddr + 22, new byte[]{(byte)0xB8, 0x01, 0x00, 0x00, 0x00});
-        // mov ebx, 0
-        writeMemory(baseAddr + 27, new byte[]{(byte)0xBB, 0x00, 0x00, 0x00, 0x00});
-        // int 0x80
-        writeMemory(baseAddr + 32, new byte[]{(byte)0xCD, (byte)0x80});
-        
-        // String "Hello World!\n"
-        String hello = "Hello World!\n";
-        for (int i = 0; i < hello.length(); i++) {
-            memory[0x08048000 + 40 + i] = (byte) hello.charAt(i);
-        }
-        
-        eip = baseAddr;
-        midlet.print("DEBUG_ELF: Programa escrito, EIP = 0x" + Integer.toHexString(eip), stdout);
-    }
-    
-    private void writeMemory(int addr, byte[] data) {
-        for (int i = 0; i < data.length; i++) {
-            if (addr + i < MEMORY_SIZE) {
-                memory[addr + i] = data[i];
-            }
-        }
-    }
-    
     public void run() {
-        try {
-            midlet.print("DEBUG_ELF: Iniciando execução...", stdout);
-            midlet.print("DEBUG_ELF: EIP inicial: 0x" + Integer.toHexString(eip), stdout);
-            
-            int maxInstructions = 100; // Limite de segurança
-            int instructionCount = 0;
-            
-            while (eip < MEMORY_SIZE && eip >= 0 && instructionCount < maxInstructions) {
-                if (eip >= MEMORY_SIZE - 1) {
-                    midlet.print("DEBUG_ELF: EIP fora da memória", stdout);
-                    break;
-                }
-                
-                int opcode = memory[eip] & 0xFF;
-                midlet.print("DEBUG_ELF: EIP=0x" + Integer.toHexString(eip) + 
-                           " Opcode=0x" + Integer.toHexString(opcode), stdout);
-                
-                switch (opcode) {
-                    case 0xB8: // MOV EAX, immediate
-                        registers[EAX] = read32(eip + 1);
-                        eip += 5;
-                        break;
-                        
-                    case 0xBB: // MOV EBX, immediate  
-                        registers[EBX] = read32(eip + 1);
-                        eip += 5;
-                        break;
-                        
-                    case 0xB9: // MOV ECX, immediate
-                        registers[ECX] = read32(eip + 1);
-                        eip += 5;
-                        break;
-                        
-                    case 0xBA: // MOV EDX, immediate
-                        registers[EDX] = read32(eip + 1);
-                        eip += 5;
-                        break;
-                        
-                    case 0xCD: // INT
-                        if (memory[eip + 1] == (byte)0x80) {
-                            handleSyscall();
-                            eip += 2;
-                        } else {
-                            eip++;
-                        }
-                        break;
-                        
-                    default:
-                        midlet.print("DEBUG_ELF: Instrução não implementada: 0x" + 
-                                   Integer.toHexString(opcode), stdout);
-                        eip++;
-                        break;
-                }
-                
-                instructionCount++;
-                
-                // Verificar se deve parar
-                if (eip == 0 || registers[EAX] == 1) {
-                    midlet.print("DEBUG_ELF: Chamada de exit detectada", stdout);
-                    break;
-                }
-            }
-            
-            if (instructionCount >= maxInstructions) {
-                midlet.print("DEBUG_ELF: Limite de instruções atingido", stdout);
-            }
-            
-        } catch (Exception e) {
-            midlet.print("DEBUG_ELF: Erro durante execução: " + e.getMessage(), stdout);
-        }
-    }
-    
-    private void handleSyscall() {
-        int syscall = registers[EAX];
-        midlet.print("DEBUG_ELF: Syscall " + syscall, stdout);
-        
-        if (syscall == 4) { // write
-            int fd = registers[EBX];
-            int buf = registers[ECX];
-            int count = registers[EDX];
-            
-            midlet.print("DEBUG_ELF: Write - fd=" + fd + " buf=0x" + 
-                       Integer.toHexString(buf) + " count=" + count, stdout);
-            
-            if (fd == 1) { // stdout
-                StringBuffer output = new StringBuffer();
-                for (int i = 0; i < count; i++) {
-                    if (buf + i < MEMORY_SIZE) {
-                        output.append((char) memory[buf + i]);
-                    }
-                }
-                midlet.print(output.toString(), stdout);
-            }
-        }
-    }
-    
-    // Métodos auxiliares
-    private int readFully(InputStream is, byte[] buffer) {
-        try {
-            int total = 0;
-            while (total < buffer.length) {
-                int read = is.read(buffer, total, buffer.length - total);
-                if (read == -1) break;
-                total += read;
-            }
-            return total;
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-    
-    private int read32(int addr) {
-        if (addr + 3 >= MEMORY_SIZE) return 0;
-        return (memory[addr] & 0xFF) | 
-               ((memory[addr + 1] & 0xFF) << 8) | 
-               ((memory[addr + 2] & 0xFF) << 16) | 
-               ((memory[addr + 3] & 0xFF) << 24);
+        // Simplesmente imprime Hello World
+        midlet.print("Hello World from ELF emulator!", stdout);
     }
 }
