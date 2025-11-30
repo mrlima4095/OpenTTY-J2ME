@@ -39,7 +39,8 @@ local function shell(args, enable, aliases, stdout, scope)
         else
             local ok, file = pcall(io.open, joinpath(argument))
             if ok then
-            
+                print(argument .. ": " .. #file)
+                io.close(file)
             else
                 print("du: " .. argument .. ": not found")
             end
