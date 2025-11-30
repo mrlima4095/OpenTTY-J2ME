@@ -55,7 +55,7 @@ local function shell(args, enable, aliases, stdout, scope)
 
     -- Window Aliases
     elseif cmd == "xterm" then graphics.display(graphics.db["xterm"])
-    elseif cmd == "warn" then graphics.display(graphics.new("alert", arg[1], arg[2]))
+    elseif cmd == "warn" then graphics.display(graphics.new("alert", args[1], args[2]))
 
     -- Shell Utils
     -- (Alias Manager)
