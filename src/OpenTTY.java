@@ -27,7 +27,7 @@ public class OpenTTY extends MIDlet {
                      graphics = new Hashtable(),
                      network = new Hashtable(),
                      globals = new Hashtable();
-    public String username = read("/home/OpenRMS"), build = "2025-1.17-03x04"; 
+    public String username = read("/home/OpenRMS"), build = "2025-1.17-03x05"; 
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
