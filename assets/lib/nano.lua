@@ -19,7 +19,7 @@ if arg[1] then
     app.content = io.read(app.file)
     app.editor = graphics.new("edit", "Nano - " .. app.filename, app.content)
 else
-    app.editor = graphics.new("edit", "Nano - New Buffer", "")
+    print("nano [file]") os.exit(2)
 end
 
 app.save = function ()
@@ -35,61 +35,7 @@ app.save = function ()
     return false
 end
 
-app.quest = function ()
-    local quest = graphics.new("edit", "Save As", "")
-    local save = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
-    local back = graphics.new("command", { label = "Cancel", type = "back", priority = 2 })
 
-    graphics.addCommand(quest, save)
-    graphics.addCommand(quest, back)
-    graphics.handler(quest, {
-        [save] = function(save_args)
-            local new_filename = save_args
-            if new_filename and string.len(new_filename) > 0 then
-                local result = app.save()
-                if result then
-                    graphics.display(previous)
-                    os.exit()
-                end
-            else
-                graphics.display(graphics.new("alert", "Error", "Filename cannot be empty!"))
-            end
-        end,
-
-        [back] = function()
-            graphics.display(app.editor)
-        end
-    })
-    graphics.display(quest)
-end
-
-app.confirm = function ()
-    local alert = graphics.new("alert", "Save Changes?", "The file has been modified. Save changes?")
-
-    local yes = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
-    local no = graphics.new("command", { label = "Don't Save", type = "screen", priority = 2 })
-    local cancel = graphics.new("command", { label = "Cancel", type = "cancel", priority = 3 })
-
-    graphics.handler(alert, {
-        [yes] = function()
-            if app.file then
-                if app.save() then
-                    graphics.display(previous)
-                    os.exit()
-                end
-            else
-                app.quest()
-            end
-        end,
-        [no] = function()
-            graphics.display(previous)
-            os.exit()
-        end,
-        [cancel] = function()
-            graphics.display(app.editor)
-        end
-    })
-end
 
 graphics.addCommand(app.editor, app.back)
 graphics.addCommand(app.editor, app.clear)
@@ -101,7 +47,7 @@ graphics.handler(app.editor, {
             graphics.display(previous)
             os.exit()
         else
-            app.confirm()
+            os.exit(io.write(content, app.file))
         end
     end,
     [app.clear] = function()
