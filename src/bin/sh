@@ -27,7 +27,10 @@ local function shell(args, enable, aliases, stdout, scope)
             print(os.su("root", argument))
         end
     elseif cmd == "" then
-    elseif cmd == "" then
+    elseif cmd == "du" then
+        if argument == "" then
+        else
+            local ok, file = pcall(io.open, )
 
     -- Session
     -- (User Information)
