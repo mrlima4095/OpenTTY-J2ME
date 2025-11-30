@@ -41,7 +41,6 @@ local function shell(args, enable, aliases, stdout, scope)
             if ok then
                 local du = #file
                 print(argument .. ": " .. du)
-                io.close(file)
             else
                 print("du: " .. argument .. ": not found")
             end
