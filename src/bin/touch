@@ -13,7 +13,7 @@ if #arg > 1 then
 
         if string.sub(file, 1, 1) ~= "/" then file = os.getcwd() .. file end
 
-        local status = io.write(file, " ")
+        local status = io.write(file, "", "w)
         if status == 1 then
             print("touch: " .. arg[i] .. ": java.io.IOException")
         elseif status == 5 then
