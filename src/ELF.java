@@ -165,6 +165,42 @@ public class ELF {
                         byte rel8 = memory[eip + 1];
                         eip += rel8 + 2;
                         break;
+
+                    // Mov imediato para EAX
+                    case 0xB8:
+                        registers[EAX] = read32(eip + 1);
+                        eip += 5;
+                        break;
+
+                    // Mov imediato para ECX
+                    case 0xB9:
+                        registers[ECX] = read32(eip + 1);
+                        eip += 5;
+                        break;
+
+                    // Mov imediato para EDX
+                    case 0xBA:
+                        registers[EDX] = read32(eip + 1);
+                        eip += 5;
+                        break;
+
+                    // Mov imediato para EBX
+                    case 0xBB:
+                        registers[EBX] = read32(eip + 1);
+                        eip += 5;
+                        break;
+
+                    // Mov imediato para ESI
+                    case 0xBE:
+                        registers[ESI] = read32(eip + 1);
+                        eip += 5;
+                        break;
+
+                    // Mov imediato para EDI
+                    case 0xBF:
+                        registers[EDI] = read32(eip + 1);
+                        eip += 5;
+                        break;
                         
                     default:
                         // Instrução não implementada
