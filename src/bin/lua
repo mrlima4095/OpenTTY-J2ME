@@ -17,6 +17,9 @@ graphics.addCommand(term, back)
 graphics.handler(term, {
     [run] = function(command)
         if command ~= "" then
+            if command == "/clear" then
+                graphics.SetText(output, "")
+            end
             graphics.SetText(input, "")
             local ok, msg = pcall(loadstring, command)
             if not ok then
