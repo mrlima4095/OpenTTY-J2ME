@@ -2010,6 +2010,7 @@ public class Lua {
                         Hashtable field = (Hashtable) args.elementAt(1);
                         return new TextField(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), getFieldNumber(field, "length", 256), getQuest(getFieldValue(field, "mode", "")));
                     }
+                }
                 else { return gotbad(1, "new", "invalid type: " + type); } 
             }
             else if (MOD == RENDER) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0))); }
