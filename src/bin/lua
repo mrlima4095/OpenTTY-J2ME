@@ -1,14 +1,15 @@
 #!/bin/lua
 
 local previous = graphics.getCurrent()
-local scope = {}
 
 local term = graphics.new("screen", "Lua J2ME")
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 local back = graphics.new("command", { label = "Back", type = "screen", priority = 1 })
 local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
 local output = graphics.new("buffer", {})
-local input =graphics.new("field", { type = "field", label = ">" })
+local input = graphics.new("field", { type = "field", label = ">" })
+
+local scope = {}
 
 io.setstdout(output)
 
