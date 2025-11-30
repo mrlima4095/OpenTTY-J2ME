@@ -2311,8 +2311,8 @@ else if (MOD == ELF) {
     else {
         try {
             String filename = toLuaString(args.elementAt(0));
-            
             InputStream is = midlet.getInputStream(filename);
+            
             if (is == null) {
                 midlet.print("Arquivo não encontrado: " + filename, stdout);
                 return new Double(127);
@@ -2323,12 +2323,12 @@ else if (MOD == ELF) {
             if (elf.load(is)) {
                 elf.run();
             } else {
-                midlet.print("Formato ELF inválido", stdout);
+                midlet.print("Falha ao carregar ELF", stdout);
             }
             
             is.close();
         } catch (Exception e) {
-            midlet.print("Erro: " + e.toString(), stdout);
+            midlet.print("Erro ELF: " + e.toString(), stdout);
         }
         return null;
     }
