@@ -19,13 +19,15 @@ local function shell(args, enable, aliases, stdout, scope)
             print(k .. "\t" .. v)
         end
     elseif cmd == "su" then
-        if os.getuid() == 0 then
+        --[[if os.getuid() == 0 then
             os.su(java.midlet.username)
         elseif argument == "" then
             print("su: usage: su [passwd]")
         else
             print(os.su("root", argument))
-        end
+        end]]
+        local su = require("jauth2")
+        su(function() end, function() end)
     elseif cmd == "" then
     elseif cmd == "" then
 
