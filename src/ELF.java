@@ -164,6 +164,8 @@ public class ELF {
     
     public void run() {
         midlet.print("Starting execution...", stdout);
+        // Antes do loop de execução no método run():
+midlet.print("Memory at EIP: " + Integer.toHexString(memory[eip] & 0xFF), stdout);
         
         try {
             int instructionCount = 0;
