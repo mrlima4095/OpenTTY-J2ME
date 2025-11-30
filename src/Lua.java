@@ -2309,6 +2309,29 @@ public class Lua {
             else if (MOD == ELF) {
                 if (args.isEmpty()) { }
                 else {
+                    try {
+                        String filename = toLuaString(args.elementAt(0));
+                        InputStream is = midlet.getInputStream(filename);
+                        
+                        if (is == null) { return new Double(127); }
+                        
+                        ELF elf = new ELF(midlet, stdout); 
+                        midlet.print("Carregando ELF: " + filename, stdout);
+                        
+                        boolean loaded = elf.load(is);
+                        if (loaded) {
+                            midlet.print("ELF carregado com sucesso", stdout);
+                            midlet.print("Iniciando execução...", stdout);
+                            elf.run();
+                            midlet.print("Execução finalizada", stdout);
+                        } else {
+                            midlet.print("Falha ao carregar ELF: formato inválido", stdout);
+                        }
+                        
+                        is.close();
+                    } catch (Exception e) {
+                        midlet.print("Erro ao executar ELF: " + e.getMessage(), stdout);
+                    }
                 }
             }
 
