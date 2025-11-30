@@ -1,3 +1,6 @@
+import java.util.*;
+import java.io.*;
+
 // Classe ELF dentro de Lua.java
 public class ELF {
     private OpenTTY midlet;
