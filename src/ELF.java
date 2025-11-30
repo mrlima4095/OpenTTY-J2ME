@@ -346,36 +346,61 @@ public class ELF {
                 
                 if (fd == 1 || fd == 2) { // stdout ou stderr
                     StringBuffer output = new StringBuffer();
+                    int bytesWritten = 0;
+                    
                     for (int i = 0; i < count; i++) {
-                        if (buf + i < MEMORY_SIZE) {
-                            char c = (char) (memory[buf + i] & 0xFF);
+                        int addr = buf + i;
+                        // Verificação de limites mais rigorosa
+                        if (addr >= 0 && addr < MEMORY_SIZE) {
+                            byte b = memory[addr];
+                            // Converter byte para char de forma segura
+                            char c = (char) (b & 0xFF);
                             output.append(c);
+                            bytesWritten++;
+                        } else {
+                            // Se encontrar endereço inválido, para a escrita
+                            break;
                         }
                     }
-                    midlet.print(output.toString(), stdout);
-                    registers[EAX] = count; // Retornar número de bytes escritos
+                    
+                    if (output.length() > 0) {
+                        midlet.print(output.toString(), stdout);
+                    }
+                    registers[EAX] = bytesWritten; // Retornar número real de bytes escritos
                 } else {
-                    registers[EAX] = -1; // Erro
+                    registers[EAX] = -1; // Erro: file descriptor inválido
                 }
                 break;
                 
             case SYS_READ:
-                // Por enquanto, retornar 0 bytes lidos
-                registers[EAX] = 0;
+                // Implementação básica de read para stdin
+                if (registers[EBX] == 0) { // stdin
+                    // Por enquanto, retornar 0 bytes lidos (não bloqueante)
+                    registers[EAX] = 0;
+                } else {
+                    registers[EAX] = -1;
+                }
                 break;
                 
             case SYS_OPEN:
-                // Por enquanto, retornar erro
-                registers[EAX] = -1;
+                // Implementação simples para arquivos básicos
+                String filename = readStringFromMemory(registers[EBX], 256);
+                if ("/dev/stdout".equals(filename) || "/dev/stderr".equals(filename)) {
+                    registers[EAX] = 1; // Retorna fd 1
+                } else if ("/dev/stdin".equals(filename)) {
+                    registers[EAX] = 0; // Retorna fd 0
+                } else {
+                    registers[EAX] = -1; // Arquivo não encontrado
+                }
                 break;
                 
             case SYS_CLOSE:
-                // Por enquanto, sempre sucesso
+                // Sempre sucesso para stdin/stdout/stderr
                 registers[EAX] = 0;
                 break;
                 
             case SYS_BRK:
-                // Implementação simples
+                // Implementação simples - sempre sucesso
                 registers[EAX] = registers[EBX];
                 break;
                 
@@ -384,6 +409,18 @@ public class ELF {
                 registers[EAX] = -1;
                 break;
         }
+    }
+
+    // Método auxiliar para ler strings da memória
+    private String readStringFromMemory(int addr, int maxLength) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < maxLength; i++) {
+            if (addr + i >= MEMORY_SIZE) break;
+            byte b = memory[addr + i];
+            if (b == 0) break; // Null terminator
+            sb.append((char) (b & 0xFF));
+        }
+        return sb.toString();
     }
     
     // Métodos auxiliares
