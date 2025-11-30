@@ -1,6 +1,7 @@
 #!/bin/lua
 
 local previous = graphics.getCurrent()
+local scope = {}
 
 local term = graphics.new("screen", "Lua J2ME")
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
@@ -20,7 +21,7 @@ graphics.handler(term, {
     [run] = function(command)
         if command ~= "" then
             graphics.SetText(input, "")
-            local ok, msg = pcall(load, command)
+            local ok, msg = pcall(load, command, scope)
             if not ok then
                 print(msg)
             end
