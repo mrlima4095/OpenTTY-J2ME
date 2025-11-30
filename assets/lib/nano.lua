@@ -42,14 +42,8 @@ graphics.addCommand(app.editor, app.back)
 graphics.addCommand(app.editor, app.clear)
 graphics.handler(app.editor, {
     [app.back] = function(content)
-        app.modified = tostring(content)
-
-        if content == app.content then
-            graphics.display(previous)
-            os.exit()
-        else
-            os.exit(tonumber(io.write(content, joinpath(arg[1]))))
-        end
+        io.write(content, joinpath(arg[1]))
+        graphics.display(previous)
     end,
     [app.clear] = function()
         graphics.SetText(app.editor, "")
