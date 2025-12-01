@@ -47,28 +47,17 @@ public class ELF {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         int bytesRead;
-        while ((bytesRead = is.read(buffer)) != -1) {
-            baos.write(buffer, 0, bytesRead);
-        }
+        while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
         byte[] elfData = baos.toByteArray();
         
         // Verificar assinatura ELF
-        if (elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') {
-            midlet.print("Not a valid ELF file", stdout);
-            return false;
-        }
+        if (elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout); return false; }
         
         // Verificar classe 32-bit
-        if (elfData[4] != ELFCLASS32) {
-            midlet.print("Only 32-bit ELF supported", stdout);
-            return false;
-        }
+        if (elfData[4] != ELFCLASS32) { midlet.print("Only 32-bit ELF supported", stdout); return false; }
         
         // Verificar little-endian
-        if (elfData[5] != ELFDATA2LSB) {
-            midlet.print("Only little-endian ELF supported", stdout);
-            return false;
-        }
+        if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout); return false; }
         
         // Ler cabeçalho ELF
         int e_type = readShortLE(elfData, 16);
@@ -79,15 +68,8 @@ public class ELF {
         int e_phentsize = readShortLE(elfData, 42);
         
         // Verificar tipo e arquitetura
-        if (e_type != ET_EXEC) {
-            midlet.print("Not an executable ELF", stdout);
-            return false;
-        }
-        
-        if (e_machine != EM_ARM) {
-            midlet.print("Not an ARM executable", stdout);
-            return false;
-        }
+        if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout); return false; }
+        if (e_machine != EM_ARM) { midlet.print("Not an ARM executable", stdout); return false; }
         
         // Configurar PC inicial
         pc = e_entry;
