@@ -1,11 +1,6 @@
 #!/bin/lua
 
-local function joinpath(pwd)
-    if string.sub(pwd, 1, 1) ~= "/" then
-        return os.getcwd() .. pwd
-    end
-    return pwd
-end
+local libcore = require("libcore")
 
 local function shell(args, enable, aliases, stdout, scope)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
@@ -125,10 +120,7 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "cd" then
         if argument == "" then os.chdir("/home/")
         else
-            argument = joinpath(argument)
-            if string.sub(argument, -1, -1) ~= "/" then
-                argument = argument .. "/"
-            end
+            argument = libcore.joinpath(argument)
 
             local status = os.chdir(argument)
             if status == 127 then
@@ -142,27 +134,18 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     elseif cmd == "cat" then
         for i = 1, #args do
-            local fpwd = args[i]
-            if string.find(fpwd, 1, 1) ~= "/" then
-                fpwd = os.getcwd() .. fpwd
-            end
+            local fpwd = libcore.joinpath(args[i])
 
             local ok, file = pcall(io.open, fpwd)
             if ok and file then
                 print(string.env(io.read(file)))
             else
                 print("cat: " .. args[i] .. ": not found")
-                print(tostring(file))
                 return 127
             end
         end
     elseif cmd == "ls" then
-        local pwd
-        if argument == "" or argument == "." then
-            pwd = os.getcwd()
-        else
-            pwd = joinpath(argument)
-        end
+        local pwd = libcore.joinpath(argument)
 
         local buff = ""
         for k,v in pairs(io.dirs()) do
