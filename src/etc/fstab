@@ -2,6 +2,6 @@
 /bin/=a,curl,init,kill,lua,rm,sh,touch,yang
 /dev/=null,random,stdin,stdout,zero
 /etc/=fstab,motd,os-release
-/lib/=
+/lib/=libcore.so
 /res/=docs,img/
 /res/img/=app.png,cursor.png,dir.png,file.png,sh.png,up.png

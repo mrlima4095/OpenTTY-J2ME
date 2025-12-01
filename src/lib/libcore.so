@@ -1,0 +1,58 @@
+#!/bin/lua
+
+local libcore = {}
+
+libcore.joinpath = function(pwd)
+    if not pwd or pwd == "" or pwd == "." then
+        return os.getcwd()
+    end
+
+    if string.sub(pwd, 1, 1) ~= "/" then
+        pwd = os.getcwd() .. "/" .. pwd
+    end
+
+    local parts = {}
+    local part = ""
+
+    for i = 1, #pwd do
+        local char = string.sub(pwd, i, i)
+        if char == "/" then
+            if part ~= "" then
+                table.insert(parts, part)
+                part = ""
+            end
+        else
+            part = part .. char
+        end
+    end
+
+    if part ~= "" then
+        table.insert(parts, part)
+    end
+
+    local result_parts = {}
+    for i = 1, #parts do
+        local part = parts[i]
+
+        if part == "." then
+        elseif part == ".." then
+            if #result_parts > 0 then
+                table.remove(result_parts)
+            end
+        else
+            table.insert(result_parts, part)
+        end
+    end
+
+    -- Reconstroi o caminho
+    local result = "/" .. table.concat(result_parts, "/")
+
+    if #result_parts == 0 then
+        return "/"
+    end
+
+    return result
+end
+
+
+return libcore
