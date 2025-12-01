@@ -137,7 +137,7 @@ public class ELF {
                 executeInstruction(instruction);
             }
         } catch (Exception e) {
-            midlet.print("ELF execution error: " + e.getMessage(), stdout);
+            midlet.print("ELF execution error: " + (e.getMessage() == null ? e.getClass().getName() : e.getMessage()), stdout);
             running = false;
         }
     }
@@ -276,30 +276,10 @@ public class ELF {
     }
     
     // Métodos auxiliares para leitura/escrita little-endian
-    private int readIntLE(byte[] data, int offset) {
-        if (offset + 3 >= data.length) return 0;
-        return ((data[offset] & 0xFF) |
-                ((data[offset + 1] & 0xFF) << 8) |
-                ((data[offset + 2] & 0xFF) << 16) |
-                ((data[offset + 3] & 0xFF) << 24));
-    }
+    private int readIntLE(byte[] data, int offset) { if (offset + 3 >= data.length) { return 0; } return ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24)); }
     
-    private short readShortLE(byte[] data, int offset) {
-        if (offset + 1 >= data.length) return 0;
-        return (short)((data[offset] & 0xFF) |
-                      ((data[offset + 1] & 0xFF) << 8));
-    }
+    private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
+    private void writeIntLE(byte[] data, int offset, int value) { if (offset + 3 >= data.length) { return; } data[offset] = (byte)(value & 0xFF); data[offset + 1] = (byte)((value >> 8) & 0xFF); data[offset + 2] = (byte)((value >> 16) & 0xFF); data[offset + 3] = (byte)((value >> 24) & 0xFF); }
     
-    private void writeIntLE(byte[] data, int offset, int value) {
-        if (offset + 3 >= data.length) return;
-        data[offset] = (byte)(value & 0xFF);
-        data[offset + 1] = (byte)((value >> 8) & 0xFF);
-        data[offset + 2] = (byte)((value >> 16) & 0xFF);
-        data[offset + 3] = (byte)((value >> 24) & 0xFF);
-    }
-    
-    private int rotateRight(int value, int amount) {
-        amount &= 31;
-        return (value >>> amount) | (value << (32 - amount));
-    }
+    private int rotateRight(int value, int amount) { amount &= 31; return (value >>> amount) | (value << (32 - amount)); }
 }
