@@ -12,11 +12,7 @@ libcore.joinpath = function(pwd)
     end
 
     local parts = string.split(pwd, "/")
-    local part = ""
 
-    if part ~= "" then
-        table.insert(parts, part)
-    end
 
     local result_parts = {}
     for i = 1, #parts do
