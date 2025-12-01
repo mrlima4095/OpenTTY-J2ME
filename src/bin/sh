@@ -25,6 +25,7 @@ local function shell(args, enable, aliases, stdout, scope)
         for k,v in pairs(os.getproc()) do
             print(k .. "\t" .. v)
         end
+    -- (Permissions)
     elseif cmd == "su" then
         if os.getuid() == 0 then
             os.su(java.midlet.username)
@@ -42,17 +43,6 @@ local function shell(args, enable, aliases, stdout, scope)
 
             return status
         end
-    elseif cmd == "du" then
-        if argument == "" then
-        else
-            local ok, file = pcall(io.open, joinpath(argument))
-            if ok then
-                local du = #file
-                print(argument .. ": " .. du)
-            else
-                print("du: " .. argument .. ": not found")
-            end
-        end
 
     -- Session
     -- (User Information)
@@ -63,7 +53,11 @@ local function shell(args, enable, aliases, stdout, scope)
 
     -- Window Aliases
     elseif cmd == "xterm" then graphics.display(graphics.db["xterm"])
-    elseif cmd == "warn" then graphics.display(graphics.new("alert", args[1], args[2]))
+    elseif cmd == "warn" then
+        if #args < 2 then
+        else
+            graphics.display(graphics.new("alert", args[1], args[2]))
+        end
 
     -- Shell Utils
     -- (Alias Manager)
@@ -97,19 +91,29 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
     -- (Environment Keys)
-    elseif cmd == "env" then
+    elseif cmd == "env" or cmd == "set" then
         if argument == "" then for k,v in pairs(os.getenv()) do print(k .. "=" .. v) end
+        elseif string.find(argument, "=") then
+            local index = string.find(argument, "=")
+            local alias, mean = string.sub(argument, 1, index - 1), string.sub(argument, index + 1)
+
+            if alias ~= "" then aliases[alias] = mean end
         else
             for i = 1, #args do
                 if os.getenv(args[i]) then print(args[i] .. "=" .. os.getenv(args[i]))
                 else
-                    print("env: " .. args[i] .. ": not found")
+                    print(cmd .. ": " .. args[i] .. ": not found")
                     return 127
                 end
             end
         end
-
-
+    elseif cmd == "unset" then
+        if argument == "" then
+        else
+            for i = 1, #args do
+                os.setenv(args[i])
+            end
+        end
 
 
     elseif cmd == "eval" then if argument == "" then else print(shell(argument, true, aliases, stdout, scope)) end
