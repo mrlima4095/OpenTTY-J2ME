@@ -2,40 +2,36 @@
 
 local libcore = {}
 
-libcore.joinpath = function(pwd)
-    if not pwd or pwd == "" or pwd == "." then
+function libcore.joinpath(path)
+    if not path or path == "" or path == "." then
         return os.getcwd()
     end
 
-    if string.sub(pwd, 1, 1) ~= "/" then
-        pwd = os.getcwd() .. "/" .. pwd
+    if string.sub(path, 1, 1)  ~= "" then
+        path = os.getcwd() .. "/" .. path
     end
 
-    local parts = string.split(pwd, "/")
-
-
-    local result_parts = {}
+    local parts, eparts = string.split(path, "/"), {}
     for i = 1, #parts do
         local part = parts[i]
 
         if part == "." then
         elseif part == ".." then
-            if #result_parts > 0 then
-                table.remove(result_parts)
+            if #eparts > 0 then
+                table.remove(eparts)
             end
         else
-            table.insert(result_parts, part)
+            table.insert(eparts, part)
         end
     end
 
-    local result = "/" .. table.concat(result_parts, "/")
+    local result = "/" .. table.concat(eparts, "/")
 
-    if #result_parts == 0 then
+    if #eparts == 0 then
         return "/"
     end
 
     return result
 end
-
 
 return libcore
