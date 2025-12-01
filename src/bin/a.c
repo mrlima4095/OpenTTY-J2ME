@@ -1,16 +1,16 @@
-.global _start
 .text
+.global _start
+
 _start:
-    mov r0, #1      @ file descriptor (stdout)
+    mov r7, #4      @ syscall write (4)
+    mov r0, #1      @ fd = stdout
     ldr r1, =msg    @ buffer
-    ldr r2, =len    @ length
-    mov r7, #4      @ syscall write
+    mov r2, #13     @ length
     swi 0           @ syscall
     
-    mov r0, #0      @ exit code
-    mov r7, #1      @ syscall exit
-    swi 0
+    mov r7, #1      @ syscall exit (1)
+    mov r0, #0      @ status = 0
+    swi 0           @ syscall
 
 .data
-msg: .asciz "Hello, ARM World!\n"
-len = . - msg
+msg: .asciz "Hello World!\n"
