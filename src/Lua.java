@@ -2306,33 +2306,33 @@ public class Lua {
             else if (MOD == PREQ) { if (args.isEmpty()) { } else { return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); } }
             else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
-else if (MOD == ELF) {
-    if (args.isEmpty()) { return null; }
-    else {
-        try {
-            String filename = toLuaString(args.elementAt(0));
-            InputStream is = midlet.getInputStream(filename);
-            
-            if (is == null) {
-                midlet.print("Arquivo não encontrado: " + filename, stdout);
-                return new Double(127);
+        else if (MOD == ELF) {
+            if (args.isEmpty()) { return null; }
+            else {
+                try {
+                    String filename = toLuaString(args.elementAt(0));
+                    InputStream is = midlet.getInputStream(filename);
+                    
+                    if (is == null) {
+                        midlet.print("Arquivo não encontrado: " + filename, stdout);
+                        return new Double(127);
+                    }
+                    
+                    ELF elf = new ELF(midlet, stdout);
+                    
+                    if (elf.load(is)) {
+                        elf.run();
+                    } else {
+                        midlet.print("Falha ao carregar ELF", stdout);
+                    }
+                    
+                    is.close();
+                } catch (Exception e) {
+                    midlet.print("Erro ELF: " + e.toString(), stdout);
+                }
+                return null;
             }
-            
-            ELF elf = new ELF(midlet, stdout);
-            
-            if (elf.load(is)) {
-                elf.run();
-            } else {
-                midlet.print("Falha ao carregar ELF", stdout);
-            }
-            
-            is.close();
-        } catch (Exception e) {
-            midlet.print("Erro ELF: " + e.toString(), stdout);
         }
-        return null;
-    }
-}
             else if (MOD == KERNEL) {
                 Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3), uid = args.elementAt(4);
 
