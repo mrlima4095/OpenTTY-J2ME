@@ -16,6 +16,6 @@ if #arg > 1 then
         end
     end
 else
-    print("kill: usage: kill [pid]")
+    print("kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]")
     os.exit(2)
 end
