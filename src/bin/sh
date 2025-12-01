@@ -165,6 +165,11 @@ local function shell(args, enable, aliases, stdout, scope)
                 else print(tostring(status)) return 1 end
             end
         end
+    elseif cmd == "elf" then
+        java.run(function ()
+            java.elf(argument)
+        end)
+
 
     else
         print(cmd .. ": not found")
