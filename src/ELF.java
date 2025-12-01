@@ -133,21 +133,39 @@ public class ELF {
         
         return true;
     }
-    
+
     public void run() {
         running = true;
         int instructionCount = 0;
         
         try {
+            // Dump da área onde está o pool literal
+            midlet.print("Dump do pool literal (0x10090):", stdout);
+            for (int i = 0; i < 32; i += 4) {
+                int addr = 0x10090 + i;
+                if (addr < memory.length - 3) {
+                    int value = readIntLE(memory, addr);
+                    midlet.print(String.format("0x%08x: 0x%08x", addr, value), stdout);
+                }
+            }
+            
+            // Dump da área de dados (onde a string deveria estar)
+            midlet.print("Dump da área de dados (0x20090):", stdout);
+            for (int i = 0; i < 32; i++) {
+                int addr = 0x20090 + i;
+                if (addr < memory.length) {
+                    midlet.print(String.format("0x%08x: 0x%02x '%c'", 
+                        addr, memory[addr] & 0xFF, 
+                        (memory[addr] >= 32 && memory[addr] < 127) ? (char)memory[addr] : '.'), stdout);
+                }
+            }
+            
             while (running && pc < memory.length - 3 && instructionCount < 10000) {
                 // Buscar instrução
                 int instruction = readIntLE(memory, pc);
                 
-                // Debug: mostrar instrução
-                if (instructionCount < 50) {
-                    midlet.print("PC=0x" + Integer.toHexString(pc) + 
-                               " I=0x" + Integer.toHexString(instruction), stdout);
-                }
+                // Debug
+                midlet.print(String.format("PC=0x%08x I=0x%08x", pc, instruction), stdout);
                 
                 pc += 4;
                 instructionCount++;
@@ -168,7 +186,7 @@ public class ELF {
             running = false;
         }
     }
-    
+
     private void executeInstruction(int instruction) {
         // Primeiro, verificar se é uma instrução de syscall (EABI)
         // ARM EABI usa SWI 0 com número da syscall em R7
@@ -236,7 +254,15 @@ public class ELF {
             boolean addOffset = (instruction & (1 << 23)) != 0;
             boolean preIndexed = (instruction & (1 << 24)) != 0;
             
-            int address = registers[rn];
+            int base;
+            if (rn == REG_PC) {
+                // ARM: PC tem valor de endereço atual + 8
+                base = pc - 4 + 8; // pc já incrementou para próxima instrução
+            } else {
+                base = registers[rn];
+            }
+            
+            int address = base;
             
             if (preIndexed) {
                 if (addOffset) {
@@ -252,8 +278,18 @@ public class ELF {
                     if (isByte) {
                         registers[rd] = memory[address] & 0xFF;
                     } else {
+                        // LDR palavra
                         registers[rd] = readIntLE(memory, address);
+                        
+                        // Debug para R1
+                        if (rd == 1) {
+                            midlet.print(String.format("LDR R1 from 0x%08x = 0x%08x", 
+                                address, registers[rd]), stdout);
+                        }
                     }
+                } else {
+                    midlet.print(String.format("Erro: acesso de memória inválido em 0x%08x", 
+                        address), stdout);
                 }
             } else {
                 // STR ou STRB
@@ -267,7 +303,7 @@ public class ELF {
             }
             
             if (!preIndexed) {
-                // Post-indexed: atualiza o registrador base
+                // Post-indexed
                 if (addOffset) {
                     registers[rn] += offset;
                 } else {
@@ -381,32 +417,23 @@ public class ELF {
                 break;
         }
     }
+
+    private void dumpMemory(int address, int length) {
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < length; i += 4) {
+            if (address + i < memory.length - 3) {
+                int value = readIntLE(memory, address + i);
+                sb.append(String.format("0x%08x: 0x%08x\n", address + i, value));
+            }
+        }
+        midlet.print(sb.toString(), stdout);
+    }
     
     // Métodos auxiliares para leitura/escrita little-endian
-    private int readIntLE(byte[] data, int offset) {
-        if (offset + 3 >= data.length || offset < 0) return 0;
-        return ((data[offset] & 0xFF) |
-                ((data[offset + 1] & 0xFF) << 8) |
-                ((data[offset + 2] & 0xFF) << 16) |
-                ((data[offset + 3] & 0xFF) << 24));
-    }
+    private int readIntLE(byte[] data, int offset) { if (offset + 3 >= data.length || offset < 0) { return 0; } return ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24)); }
+    private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length || offset < 0) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
     
-    private short readShortLE(byte[] data, int offset) {
-        if (offset + 1 >= data.length || offset < 0) return 0;
-        return (short)((data[offset] & 0xFF) |
-                      ((data[offset + 1] & 0xFF) << 8));
-    }
+    private void writeIntLE(byte[] data, int offset, int value) { if (offset + 3 >= data.length || offset < 0) { return; } data[offset] = (byte)(value & 0xFF); data[offset + 1] = (byte)((value >> 8) & 0xFF); data[offset + 2] = (byte)((value >> 16) & 0xFF); data[offset + 3] = (byte)((value >> 24) & 0xFF); }
     
-    private void writeIntLE(byte[] data, int offset, int value) {
-        if (offset + 3 >= data.length || offset < 0) return;
-        data[offset] = (byte)(value & 0xFF);
-        data[offset + 1] = (byte)((value >> 8) & 0xFF);
-        data[offset + 2] = (byte)((value >> 16) & 0xFF);
-        data[offset + 3] = (byte)((value >> 24) & 0xFF);
-    }
-    
-    private int rotateRight(int value, int amount) {
-        amount &= 31;
-        return (value >>> amount) | (value << (32 - amount));
-    }
+    private int rotateRight(int value, int amount) { amount &= 31; return (value >>> amount) | (value << (32 - amount)); }
 }
