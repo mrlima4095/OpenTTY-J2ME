@@ -11,20 +11,8 @@ libcore.joinpath = function(pwd)
         pwd = os.getcwd() .. "/" .. pwd
     end
 
-    local parts = {}
+    local parts = string.split(pwd, "/")
     local part = ""
-
-    for i = 1, #pwd do
-        local char = string.sub(pwd, i, i)
-        if char == "/" then
-            if part ~= "" then
-                table.insert(parts, part)
-                part = ""
-            end
-        else
-            part = part .. char
-        end
-    end
 
     if part ~= "" then
         table.insert(parts, part)
@@ -44,7 +32,6 @@ libcore.joinpath = function(pwd)
         end
     end
 
-    -- Reconstroi o caminho
     local result = "/" .. table.concat(result_parts, "/")
 
     if #result_parts == 0 then
