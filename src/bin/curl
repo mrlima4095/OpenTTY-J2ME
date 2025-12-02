@@ -1,14 +1,9 @@
 #!/bin/lua
 
+local libcore = require("libcore")
 local function parse_url(url)
     if string.sub(url, 1, 4) == "http:" or string.sub(url, 0, 6) == "https:" then return url end
     return "http://" .. url
-end
-local function joinpath(pwd)
-    if string.sub(pwd, 1, 1) ~= "/" then
-        return os.getcwd() .. pwd
-    end
-    return pwd
 end
 
 os.setproc("name", "curl")
@@ -25,7 +20,7 @@ if arg[1] == "-o" then
                 print("---")
             end
 
-            local code = io.write(body, joinpath(arg[2]))
+            local code = io.write(body, libcore.joinpath(arg[2]))
             if code == 13 then
                 print("curl: permission denied")
             elseif code == 5 then
