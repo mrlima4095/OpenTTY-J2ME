@@ -25,7 +25,7 @@ public class Lua {
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506;
     public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613;
-    public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, ELF = 706, KERNEL = 1000;
+    public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, KERNEL = 1000;
 
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15,  GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
     public static final Object LUA_NIL = new Object();
@@ -55,8 +55,8 @@ public class Lua {
         loaders = new int[] { HTTP_GET, HTTP_POST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "class", "getName", "delete", "run", "thread", "elf" }; 
-        loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD, ELF };
+        funcs = new String[] { "class", "getName", "delete", "run", "thread" }; 
+        loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
         jdb.put("username", midlet.username); jdb.put("net", midlet.network); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
 
@@ -1608,6 +1608,52 @@ public class Lua {
                     result.addElement(out);
                     return result;
                 }
+            }
+            else if (MOD == POPEN) { 
+                if (args.isEmpty()) { } 
+                else {
+                    String program = toLuaString(args.elementAt(0));
+                    String arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
+                    int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
+                    Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
+                    Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
+
+                    try {
+                        InputStream is = midlet.getInputStream(program);
+                        if (is != null) {
+                            byte[] header = new byte[4];
+                            int bytesRead = is.read(header);
+                            is.close();
+
+                            boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
+                            if (isElf) {
+                                InputStream elfStream = midlet.getInputStream(program);
+                                ELF elf = new ELF(midlet, out, scope, owner, null, null);
+                                
+                                if (elf.load(elfStream)) { elf.run(); } else { return new Double(1); }
+                            } else {
+                                String code = midlet.read(program);
+
+                                Lua lua = new Lua(midlet, owner, null, null, out, scope);
+                                Hashtable arg = new Hashtable();
+                                arg.put(new Double(0), program);
+                                String[] list = midlet.splitArgs(arguments);
+                                for (int i = 0; i < list.length; i++) { 
+                                    arg.put(new Double(i + 1), list[i]); 
+                                }
+
+                                Vector result = new Vector();
+                                result.addElement(lua.run(program, code, arg));
+                                result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                                return result;
+                            }
+                        } else {
+                            return new Double(127);
+                        }
+                    } catch (Exception e) {
+                        return new Double(1);
+                    }
+                }
             } 
             else if (MOD == DIRS) {
                 String pwd = args.isEmpty() ? (String) father.get("PWD") : toLuaString(args.elementAt(0));
@@ -2306,27 +2352,7 @@ public class Lua {
             else if (MOD == PREQ) { if (args.isEmpty()) { } else { return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); } }
             else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
-            else if (MOD == ELF) {
-                if (args.isEmpty()) { return null; }
-                else {
-                    try {
-                        String filename = toLuaString(args.elementAt(0));
-                        InputStream is = midlet.getInputStream(filename);
-                        
-                        if (is == null) { return new Double(127); }
-                        
-                        ELF elf = new ELF(midlet, stdout, father, id, null, null);
-                        
-                        if (elf.load(is)) { elf.run(); } 
-                        else { return new Double(1); }
-                        
-                        is.close();
-                    } catch (Exception e) {
-                        midlet.print("Erro ELF: " + e.toString(), stdout);
-                        return new Double(1);
-                    }
-                }
-            }
+
             else if (MOD == KERNEL) {
                 Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3), uid = args.elementAt(4);
 
