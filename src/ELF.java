@@ -639,10 +639,7 @@ public class ELF {
         // Ler o caminho da memória
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
-        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
-            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
-            i++;
-        }
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
         String path = pathBuf.toString();
         
         try {
@@ -839,23 +836,14 @@ public class ELF {
         }
     }
     
-    private void handleGetpid() {
-        try {
-            int pidValue = Integer.parseInt(this.pid);
-            registers[REG_R0] = pidValue;
-        } catch (NumberFormatException e) {
-            registers[REG_R0] = 1; // Fallback para PID 1 (init)
-        }
-    }
+    private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_R0] = pidValue; } catch (NumberFormatException e) { registers[REG_R0] = 1; } }
     
     private void handleKill() {
         int pid = registers[REG_R0];
         int sig = registers[REG_R1];
-        
-        // Converter PID para string
+
         String targetPid = String.valueOf(pid);
-        
-        // Verificar se o processo existe
+
         if (!midlet.sys.containsKey(targetPid)) {
             registers[REG_R0] = -3; // ESRCH - No such process
             return;
