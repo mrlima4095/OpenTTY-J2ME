@@ -9,8 +9,8 @@ abstract: |
   virtual filesystem, process management, and system call emulation to enable 
   portable scripting and binary execution in embedded Java environments.
 authors:
-  - given-names: "OpenTTY"
-    family-names: "Project"
+  - given-names: "Lima"
+    family-names: "Mr"
     affiliation: "Community-driven open source project"
 license: "MIT"
 repository-code: "https://github.com/mrlima4095/OpenTTY-J2ME"
