@@ -610,16 +610,16 @@ public class ELF {
         Integer fdKey = new Integer(fd);
         
         if (fd == 1 || fd == 2) {
-            // stdout/stderr - escrever no OpenTTY
             StringBuffer sb = new StringBuffer();
             for (int i = 0; i < count && buf + i < memory.length; i++) {
-                sb.append((char)(memory[buf + i] & 0xFF));
+                char c = (char)(memory[buf + i] & 0xFF);
+                if (c >= 32 || c == '\n' || c == '\r' || c == '\t') {
+                    sb.append(c);
+                }
             }
             
             midlet.print(sb.toString(), stdout, id);
-            
             registers[REG_R0] = count;
-            
         } else if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
             
