@@ -225,92 +225,91 @@ public class ELF {
             int result = 0;
             boolean updateCarry = false;
             int carry_in = (cpsr & C_MASK) != 0 ? 1 : 0;
-            
             switch (opcode) {
-                case 0x0: // AND
-                    result = rnValue & shifter_operand;
-                    updateCarry = true;
-                    break;
-                case 0x1: // EOR
-                    result = rnValue ^ shifter_operand;
-                    updateCarry = true;
-                    break;
-                case 0x2: // SUB
-                    result = rnValue - shifter_operand;
-                    // Para SUB, carry é NOT borrow
-                    updateCarry = true;
-                    shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
-                    break;
-                case 0x3: // RSB (Reverse Subtract)
-                    result = shifter_operand - rnValue;
-                    updateCarry = true;
-                    shifter_carry_out = (shifter_operand >= rnValue) ? 1 : 0;
-                    break;
-                case 0x4: // ADD
-                    long add_result = (long)rnValue + (long)shifter_operand;
-                    result = (int)add_result;
-                    updateCarry = true;
-                    shifter_carry_out = (add_result >>> 32) & 0x1;
-                    break;
-                case 0x5: // ADC (Add with Carry)
-                    long adc_result = (long)rnValue + (long)shifter_operand + carry_in;
-                    result = (int)adc_result;
-                    updateCarry = true;
-                    shifter_carry_out = (adc_result >>> 32) & 0x1;
-                    break;
-                case 0x6: // SBC (Subtract with Carry)
-                    long sbc_result = (long)rnValue - (long)shifter_operand - (1 - carry_in);
-                    result = (int)sbc_result;
-                    updateCarry = true;
-                    shifter_carry_out = (rnValue >= (shifter_operand + (1 - carry_in))) ? 1 : 0;
-                    break;
-                case 0x7: // RSC (Reverse Subtract with Carry)
-                    long rsc_result = (long)shifter_operand - (long)rnValue - (1 - carry_in);
-                    result = (int)rsc_result;
-                    updateCarry = true;
-                    shifter_carry_out = (shifter_operand >= (rnValue + (1 - carry_in))) ? 1 : 0;
-                    break;
-                case 0x8: // TST (Test - AND sem armazenar resultado)
-                    result = rnValue & shifter_operand;
-                    setFlags = 1; // TST sempre atualiza flags
-                    updateCarry = true;
-                    break;
-                case 0x9: // TEQ (Test Equivalence - EOR sem armazenar resultado)
-                    result = rnValue ^ shifter_operand;
-                    setFlags = 1; // TEQ sempre atualiza flags
-                    updateCarry = true;
-                    break;
-                case 0xA: // CMP (Compare - SUB sem armazenar resultado)
-                    result = rnValue - shifter_operand;
-                    setFlags = 1; // CMP sempre atualiza flags
-                    updateCarry = true;
-                    shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
-                    break;
-                case 0xB: // CMN (Compare Negative - ADD sem armazenar resultado)
-                    long cmn_result = (long)rnValue + (long)shifter_operand;
-                    result = (int)cmn_result;
-                    setFlags = 1; // CMN sempre atualiza flags
-                    updateCarry = true;
-                    shifter_carry_out = (cmn_result >>> 32) & 0x1;
-                    break;
-                case 0xC: // ORR
-                    result = rnValue | shifter_operand;
-                    updateCarry = true;
-                    break;
-                case 0xD: // MOV
-                    result = shifter_operand;
-                    updateCarry = true;
-                    break;
-                case 0xE: // BIC (Bit Clear)
-                    result = rnValue & ~shifter_operand;
-                    updateCarry = true;
-                    break;
-                case 0xF: // MVN (Move Not)
-                    result = ~shifter_operand;
-                    updateCarry = true;
-                    break;
-            }
-            
+    case 0x0: // AND
+        result = rnValue & shifter_operand;
+        updateCarry = true;
+        break;
+    case 0x1: // EOR
+        result = rnValue ^ shifter_operand;
+        updateCarry = true;
+        break;
+    case 0x2: // SUB
+        result = rnValue - shifter_operand;
+        // Para SUB, carry é NOT borrow
+        updateCarry = true;
+        shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
+        break;
+    case 0x3: // RSB (Reverse Subtract)
+        result = shifter_operand - rnValue;
+        updateCarry = true;
+        shifter_carry_out = (shifter_operand >= rnValue) ? 1 : 0;
+        break;
+    case 0x4: // ADD
+        long add_result = (long)rnValue + (long)shifter_operand;
+        result = (int)(add_result & 0xFFFFFFFFL);
+        updateCarry = true;
+        shifter_carry_out = (int)((add_result >>> 32) & 0x1L);
+        break;
+    case 0x5: // ADC (Add with Carry)
+        long adc_result = (long)rnValue + (long)shifter_operand + (long)carry_in;
+        result = (int)(adc_result & 0xFFFFFFFFL);
+        updateCarry = true;
+        shifter_carry_out = (int)((adc_result >>> 32) & 0x1L);
+        break;
+    case 0x6: // SBC (Subtract with Carry)
+        long sbc_result = (long)rnValue - (long)shifter_operand - (1L - (long)carry_in);
+        result = (int)(sbc_result & 0xFFFFFFFFL);
+        updateCarry = true;
+        shifter_carry_out = (rnValue >= (shifter_operand + (1 - carry_in))) ? 1 : 0;
+        break;
+    case 0x7: // RSC (Reverse Subtract with Carry)
+        long rsc_result = (long)shifter_operand - (long)rnValue - (1L - (long)carry_in);
+        result = (int)(rsc_result & 0xFFFFFFFFL);
+        updateCarry = true;
+        shifter_carry_out = (shifter_operand >= (rnValue + (1 - carry_in))) ? 1 : 0;
+        break;
+    case 0x8: // TST (Test - AND sem armazenar resultado)
+        result = rnValue & shifter_operand;
+        setFlags = 1; // TST sempre atualiza flags
+        updateCarry = true;
+        break;
+    case 0x9: // TEQ (Test Equivalence - EOR sem armazenar resultado)
+        result = rnValue ^ shifter_operand;
+        setFlags = 1; // TEQ sempre atualiza flags
+        updateCarry = true;
+        break;
+    case 0xA: // CMP (Compare - SUB sem armazenar resultado)
+        result = rnValue - shifter_operand;
+        setFlags = 1; // CMP sempre atualiza flags
+        updateCarry = true;
+        shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
+        break;
+    case 0xB: // CMN (Compare Negative - ADD sem armazenar resultado)
+        long cmn_result = (long)rnValue + (long)shifter_operand;
+        result = (int)(cmn_result & 0xFFFFFFFFL);
+        setFlags = 1; // CMN sempre atualiza flags
+        updateCarry = true;
+        shifter_carry_out = (int)((cmn_result >>> 32) & 0x1L);
+        break;
+    case 0xC: // ORR
+        result = rnValue | shifter_operand;
+        updateCarry = true;
+        break;
+    case 0xD: // MOV
+        result = shifter_operand;
+        updateCarry = true;
+        break;
+    case 0xE: // BIC (Bit Clear)
+        result = rnValue & ~shifter_operand;
+        updateCarry = true;
+        break;
+    case 0xF: // MVN (Move Not)
+        result = ~shifter_operand;
+        updateCarry = true;
+        break;
+}
+ 
             // Atualizar registrador de destino (exceto para instruções de teste)
             if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) {
                 registers[rd] = result;
