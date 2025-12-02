@@ -538,11 +538,11 @@ public class ELF {
                     shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
                     break;
                 case 0xB: // CMN (Compare Negative - ADD sem armazenar resultado)
-                    long cmn_result = (long)rnValue + (long)shifter_operand;
-                    result = (int)cmn_result;
+                    long cmn_result_long = (long)rnValue + (long)shifter_operand;
+                    result = (int)(cmn_result_long & 0xFFFFFFFFL); // Apenas 32 bits
                     setFlags = 1; // CMN sempre atualiza flags
                     updateCarry = true;
-                    shifter_carry_out = (cmn_result >>> 32) & 0x1;
+                    shifter_carry_out = (cmn_result_long >>> 32) & 0x1;
                     break;
                 case 0xC: // ORR
                     result = rnValue | shifter_operand;
