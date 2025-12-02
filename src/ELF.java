@@ -552,13 +552,9 @@ public class ELF {
         byte[] cwdBytes = cwd.getBytes();
         int len = Math.min(cwdBytes.length, size - 1);
         
-        for (int i = 0; i < len && buf + i < memory.length; i++) {
-            memory[buf + i] = cwdBytes[i];
-        }
+        for (int i = 0; i < len && buf + i < memory.length; i++) { memory[buf + i] = cwdBytes[i]; }
         
-        if (buf + len < memory.length) {
-            memory[buf + len] = 0; // Null terminator
-        }
+        if (buf + len < memory.length) { memory[buf + len] = 0; }
         
         registers[REG_R0] = buf;
     }
