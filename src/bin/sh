@@ -1,7 +1,6 @@
 #!/bin/lua
 
 local libcore = require("libcore")
-local _stdout = io.stdout
 
 local function shell(args, enable, aliases, stdout, scope)
     local status, redirect = 0, false
@@ -190,7 +189,7 @@ local function shell(args, enable, aliases, stdout, scope)
     end
 
     if redirect then
-        io.setstdout(_stdout)
+        io.setstdout(stdout)
     end
 
     return status
