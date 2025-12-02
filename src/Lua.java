@@ -2315,7 +2315,7 @@ public class Lua {
                         
                         if (is == null) { return new Double(127); }
                         
-                        ELF elf = new ELF(midlet, stdout);
+                        ELF elf = new ELF(midlet, stdout, scope, id);
                         
                         if (elf.load(is)) { elf.run(); } 
                         else { return new Double(1); }
