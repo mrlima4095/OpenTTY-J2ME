@@ -782,7 +782,7 @@ public class ELF {
                     }
                 }
                 
-                fileDescriptors.remove(fdK);
+                fileDescriptors.remove(fd);
                 fileDescriptors.remove(fd + ":path");
                 registers[REG_R0] = 0;
                 
