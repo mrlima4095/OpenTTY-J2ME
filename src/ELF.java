@@ -142,7 +142,6 @@ public class ELF {
     public void run() {
         running = true;
         
-        // Registrar como processo ativo
         Hashtable proc = midlet.genprocess("elf", id, null);
         proc.put("elf", this); midlet.sys.put(pid, proc);
         
@@ -152,13 +151,9 @@ public class ELF {
                 pc += 4;
                 executeInstruction(instruction);
             }
-            
-        } catch (Exception e) {
-            midlet.print("ELF execution error: " + e.toString(), stdout);
-            running = false;
-        } finally {
-            if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); }
-        }
+        } 
+        catch (Exception e) { midlet.print("ELF execution error: " + e.toString(), stdout); running = false; } 
+        finally { if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); } }
     }
     
     private void executeInstruction(int instruction) {
@@ -225,103 +220,100 @@ public class ELF {
             int result = 0;
             boolean updateCarry = false;
             int carry_in = (cpsr & C_MASK) != 0 ? 1 : 0;
-switch (opcode) {
-    case 0x0: // AND
-        result = rnValue & shifter_operand;
-        updateCarry = true;
-        break;
-    case 0x1: // EOR
-        result = rnValue ^ shifter_operand;
-        updateCarry = true;
-        break;
-    case 0x2: // SUB
-        result = rnValue - shifter_operand;
-        // Para SUB, carry é NOT borrow
-        updateCarry = true;
-        shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
-        break;
-    case 0x3: // RSB (Reverse Subtract)
-        result = shifter_operand - rnValue;
-        updateCarry = true;
-        shifter_carry_out = (shifter_operand >= rnValue) ? 1 : 0;
-        break;
-    case 0x4: // ADD
-        int add_temp = rnValue + shifter_operand;
-        result = add_temp;
-        updateCarry = true;
-        // Verifica overflow para 32 bits
-        boolean add_overflow = ((rnValue ^ shifter_operand) >= 0) && ((rnValue ^ add_temp) < 0);
-        shifter_carry_out = add_overflow ? 1 : 0;
-        break;
-    case 0x5: // ADC (Add with Carry)
-        int adc_temp = rnValue + shifter_operand + carry_in;
-        result = adc_temp;
-        updateCarry = true;
-        // Verifica overflow considerando carry
-        long adc_check = (long)rnValue + (long)shifter_operand + (long)carry_in;
-        shifter_carry_out = (adc_check > 0xFFFFFFFFL) ? 1 : 0;
-        break;
-    case 0x6: // SBC (Subtract with Carry)
-        int sbc_temp = rnValue - shifter_operand - (1 - carry_in);
-        result = sbc_temp;
-        updateCarry = true;
-        shifter_carry_out = (rnValue >= (shifter_operand + (1 - carry_in))) ? 1 : 0;
-        break;
-    case 0x7: // RSC (Reverse Subtract with Carry)
-        int rsc_temp = shifter_operand - rnValue - (1 - carry_in);
-        result = rsc_temp;
-        updateCarry = true;
-        shifter_carry_out = (shifter_operand >= (rnValue + (1 - carry_in))) ? 1 : 0;
-        break;
-    case 0x8: // TST (Test - AND sem armazenar resultado)
-        result = rnValue & shifter_operand;
-        setFlags = 1; // TST sempre atualiza flags
-        updateCarry = true;
-        break;
-    case 0x9: // TEQ (Test Equivalence - EOR sem armazenar resultado)
-        result = rnValue ^ shifter_operand;
-        setFlags = 1; // TEQ sempre atualiza flags
-        updateCarry = true;
-        break;
-    case 0xA: // CMP (Compare - SUB sem armazenar resultado)
-        result = rnValue - shifter_operand;
-        setFlags = 1; // CMP sempre atualiza flags
-        updateCarry = true;
-        shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
-        break;
-    case 0xB: // CMN (Compare Negative - ADD sem armazenar resultado)
-        int cmn_temp = rnValue + shifter_operand;
-        result = cmn_temp;
-        setFlags = 1; // CMN sempre atualiza flags
-        updateCarry = true;
-        // Verifica overflow
-        long cmn_check = (long)rnValue + (long)shifter_operand;
-        shifter_carry_out = (cmn_check > 0xFFFFFFFFL) ? 1 : 0;
-        break;
-    case 0xC: // ORR
-        result = rnValue | shifter_operand;
-        updateCarry = true;
-        break;
-    case 0xD: // MOV
-        result = shifter_operand;
-        updateCarry = true;
-        break;
-    case 0xE: // BIC (Bit Clear)
-        result = rnValue & ~shifter_operand;
-        updateCarry = true;
-        break;
-    case 0xF: // MVN (Move Not)
-        result = ~shifter_operand;
-        updateCarry = true;
-        break;
-}
-
- 
-            // Atualizar registrador de destino (exceto para instruções de teste)
-            if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) {
-                registers[rd] = result;
+            switch (opcode) {
+                case 0x0: // AND
+                    result = rnValue & shifter_operand;
+                    updateCarry = true;
+                    break;
+                case 0x1: // EOR
+                    result = rnValue ^ shifter_operand;
+                    updateCarry = true;
+                    break;
+                case 0x2: // SUB
+                    result = rnValue - shifter_operand;
+                    // Para SUB, carry é NOT borrow
+                    updateCarry = true;
+                    shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
+                    break;
+                case 0x3: // RSB (Reverse Subtract)
+                    result = shifter_operand - rnValue;
+                    updateCarry = true;
+                    shifter_carry_out = (shifter_operand >= rnValue) ? 1 : 0;
+                    break;
+                case 0x4: // ADD
+                    int add_temp = rnValue + shifter_operand;
+                    result = add_temp;
+                    updateCarry = true;
+                    // Verifica overflow para 32 bits
+                    boolean add_overflow = ((rnValue ^ shifter_operand) >= 0) && ((rnValue ^ add_temp) < 0);
+                    shifter_carry_out = add_overflow ? 1 : 0;
+                    break;
+                case 0x5: // ADC (Add with Carry)
+                    int adc_temp = rnValue + shifter_operand + carry_in;
+                    result = adc_temp;
+                    updateCarry = true;
+                    // Verifica overflow considerando carry
+                    long adc_check = (long)rnValue + (long)shifter_operand + (long)carry_in;
+                    shifter_carry_out = (adc_check > 0xFFFFFFFFL) ? 1 : 0;
+                    break;
+                case 0x6: // SBC (Subtract with Carry)
+                    int sbc_temp = rnValue - shifter_operand - (1 - carry_in);
+                    result = sbc_temp;
+                    updateCarry = true;
+                    shifter_carry_out = (rnValue >= (shifter_operand + (1 - carry_in))) ? 1 : 0;
+                    break;
+                case 0x7: // RSC (Reverse Subtract with Carry)
+                    int rsc_temp = shifter_operand - rnValue - (1 - carry_in);
+                    result = rsc_temp;
+                    updateCarry = true;
+                    shifter_carry_out = (shifter_operand >= (rnValue + (1 - carry_in))) ? 1 : 0;
+                    break;
+                case 0x8: // TST (Test - AND sem armazenar resultado)
+                    result = rnValue & shifter_operand;
+                    setFlags = 1; // TST sempre atualiza flags
+                    updateCarry = true;
+                    break;
+                case 0x9: // TEQ (Test Equivalence - EOR sem armazenar resultado)
+                    result = rnValue ^ shifter_operand;
+                    setFlags = 1; // TEQ sempre atualiza flags
+                    updateCarry = true;
+                    break;
+                case 0xA: // CMP (Compare - SUB sem armazenar resultado)
+                    result = rnValue - shifter_operand;
+                    setFlags = 1; // CMP sempre atualiza flags
+                    updateCarry = true;
+                    shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
+                    break;
+                case 0xB: // CMN (Compare Negative - ADD sem armazenar resultado)
+                    int cmn_temp = rnValue + shifter_operand;
+                    result = cmn_temp;
+                    setFlags = 1; // CMN sempre atualiza flags
+                    updateCarry = true;
+                    // Verifica overflow
+                    long cmn_check = (long)rnValue + (long)shifter_operand;
+                    shifter_carry_out = (cmn_check > 0xFFFFFFFFL) ? 1 : 0;
+                    break;
+                case 0xC: // ORR
+                    result = rnValue | shifter_operand;
+                    updateCarry = true;
+                    break;
+                case 0xD: // MOV
+                    result = shifter_operand;
+                    updateCarry = true;
+                    break;
+                case 0xE: // BIC (Bit Clear)
+                    result = rnValue & ~shifter_operand;
+                    updateCarry = true;
+                    break;
+                case 0xF: // MVN (Move Not)
+                    result = ~shifter_operand;
+                    updateCarry = true;
+                    break;
             }
+
             
+            // Atualizar registrador de destino (exceto para instruções de teste)
+            if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) { registers[rd] = result; }
             // Atualizar flags se necessário
             if (setFlags != 0) {
                 updateFlags(result, updateCarry ? shifter_carry_out : -1);
@@ -349,25 +341,15 @@ switch (opcode) {
             
             int baseAddress;
             
-            if (rn == REG_PC) {
-                baseAddress = pc + 4;
-            } else {
-                baseAddress = registers[rn];
-            }
+            if (rn == REG_PC) { baseAddress = pc + 4; } else { baseAddress = registers[rn]; }
             
             int address = baseAddress;
             
             if (preIndexed) {
-                if (addOffset) {
-                    address += offset;
-                } else {
-                    address -= offset;
-                }
+                if (addOffset) { address += offset; } else { address -= offset; }
                 
                 // Write back para pré-indexado
-                if (writeBack && rn != REG_PC) {
-                    registers[rn] = address;
-                }
+                if (writeBack && rn != REG_PC) { registers[rn] = address; }
             }
             
             if (isLoad) {
