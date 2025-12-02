@@ -14,6 +14,9 @@ public class ELF {
     private boolean running;
     private int stackPointer;
     
+    // Registrador de flags CPSR
+    private int cpsr;
+    
     // File descriptors
     private Hashtable fileDescriptors;
     private int nextFd;
@@ -35,6 +38,18 @@ public class ELF {
     private static final int REG_SP = 13;
     private static final int REG_LR = 14;
     private static final int REG_PC = 15;
+    
+    // Bits do CPSR
+    private static final int CPSR_N = 31; // Negative/Less than
+    private static final int CPSR_Z = 30; // Zero
+    private static final int CPSR_C = 29; // Carry/Borrow/Extend
+    private static final int CPSR_V = 28; // Overflow
+    
+    // Máscaras para bits do CPSR
+    private static final int N_MASK = 1 << CPSR_N;
+    private static final int Z_MASK = 1 << CPSR_Z;
+    private static final int C_MASK = 1 << CPSR_C;
+    private static final int V_MASK = 1 << CPSR_V;
     
     // Syscalls Linux ARM (EABI)
     private static final int SYS_EXIT = 1;
@@ -61,6 +76,7 @@ public class ELF {
         this.id = id;
         this.memory = new byte[1024 * 1024]; // 1MB de memória
         this.registers = new int[16];
+        this.cpsr = 0;
         this.running = false;
         this.stackPointer = memory.length - 1024;
         this.fileDescriptors = new Hashtable();
@@ -88,9 +104,18 @@ public class ELF {
         }
         byte[] elfData = baos.toByteArray();
         
-        if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout); return false; }
-        if (elfData[4] != ELFCLASS32) {  midlet.print("Only 32-bit ELF supported", stdout); return false; }
-        if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout); return false; }
+        if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { 
+            midlet.print("Not a valid ELF file", stdout); 
+            return false; 
+        }
+        if (elfData[4] != ELFCLASS32) {  
+            midlet.print("Only 32-bit ELF supported", stdout); 
+            return false; 
+        }
+        if (elfData[5] != ELFDATA2LSB) { 
+            midlet.print("Only little-endian ELF supported", stdout); 
+            return false; 
+        }
         
         int e_type = readShortLE(elfData, 16);
         int e_machine = readShortLE(elfData, 18);
@@ -99,8 +124,14 @@ public class ELF {
         int e_phnum = readShortLE(elfData, 44);
         int e_phentsize = readShortLE(elfData, 42);
         
-        if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout); return false; }
-        if (e_machine != EM_ARM) { midlet.print("Not an ARM executable", stdout); return false; }
+        if (e_type != ET_EXEC) { 
+            midlet.print("Not an executable ELF", stdout); 
+            return false; 
+        }
+        if (e_machine != EM_ARM) { 
+            midlet.print("Not an ARM executable", stdout); 
+            return false; 
+        }
         
         pc = e_entry;
         registers[REG_SP] = stackPointer;
@@ -116,8 +147,16 @@ public class ELF {
                 int p_filesz = readIntLE(elfData, phdrOffset + 16);
                 int p_memsz = readIntLE(elfData, phdrOffset + 20);
                 
-                for (int j = 0; j < p_filesz && j < memory.length; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = elfData[p_offset + j]; } }
-                for (int j = p_filesz; j < p_memsz; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = 0; } }
+                for (int j = 0; j < p_filesz && j < memory.length; j++) { 
+                    if (p_vaddr + j < memory.length) { 
+                        memory[p_vaddr + j] = elfData[p_offset + j]; 
+                    } 
+                }
+                for (int j = p_filesz; j < p_memsz; j++) { 
+                    if (p_vaddr + j < memory.length) { 
+                        memory[p_vaddr + j] = 0; 
+                    } 
+                }
             }
         }
         
@@ -145,18 +184,55 @@ public class ELF {
         if ((instruction & 0x0F000000) == 0x0F000000) {
             int swi_number = instruction & 0x00FFFFFF;
             
-            if (swi_number == 0) { handleSyscall(registers[REG_R7]); } else { handleSyscall(swi_number); }
+            if (swi_number == 0) { 
+                handleSyscall(registers[REG_R7]); 
+            } else { 
+                handleSyscall(swi_number); 
+            }
             return;
         }
 
         // Data Processing Instructions
         if ((instruction & 0x0C000000) == 0x00000000) {
             int opcode = (instruction >> 21) & 0xF;
+            int setFlags = (instruction >> 20) & 0x1;
             int rn = (instruction >> 16) & 0xF;
             int rd = (instruction >> 12) & 0xF;
-            int imm = instruction & 0xFF;
-            int rotate = ((instruction >> 8) & 0xF) * 2;
-            int shifter_operand = rotateRight(imm, rotate);
+            
+            // Extrair shifter_operand baseado no bit I (immediate)
+            int shifter_operand;
+            int shifter_carry_out = (cpsr & C_MASK) != 0 ? 1 : 0; // carry atual
+            
+            if ((instruction & (1 << 25)) != 0) {
+                // Immediate operand
+                int imm = instruction & 0xFF;
+                int rotate = ((instruction >> 8) & 0xF) * 2;
+                shifter_operand = rotateRight(imm, rotate);
+                
+                // Para rotações, o carry é o último bit rotacionado para fora
+                if (rotate != 0) {
+                    int last_bit = (imm >> (rotate - 1)) & 0x1;
+                    shifter_carry_out = last_bit;
+                }
+            } else {
+                // Register operand with shift
+                int rm = instruction & 0xF;
+                int shift_type = (instruction >> 5) & 0x3;
+                int shift_amount;
+                
+                // Verificar se o shift amount é imediato ou registrador
+                if ((instruction & (1 << 4)) == 0) {
+                    // Shift amount é imediato
+                    shift_amount = (instruction >> 7) & 0x1F;
+                } else {
+                    // Shift amount é registrador
+                    int rs = (instruction >> 8) & 0xF;
+                    shift_amount = registers[rs] & 0xFF;
+                }
+                
+                int rm_value = registers[rm];
+                shifter_operand = applyShift(rm_value, shift_type, shift_amount, shifter_carry_out);
+            }
             
             // Para instruções que usam PC como Rn, ajustar o valor
             int rnValue;
@@ -168,33 +244,111 @@ public class ELF {
                 rnValue = registers[rn];
             }
             
+            int result = 0;
+            boolean updateCarry = false;
+            int carry_in = (cpsr & C_MASK) != 0 ? 1 : 0;
+            
             switch (opcode) {
-                case 13: // MOV (immediate)
-                    registers[rd] = shifter_operand;
+                case 0x0: // AND
+                    result = rnValue & shifter_operand;
+                    updateCarry = true;
                     break;
-                case 4: // ADD (immediate)
-                    registers[rd] = rnValue + shifter_operand;
+                case 0x1: // EOR
+                    result = rnValue ^ shifter_operand;
+                    updateCarry = true;
                     break;
-                case 2: // SUB (immediate)
-                    registers[rd] = rnValue - shifter_operand;
+                case 0x2: // SUB
+                    result = rnValue - shifter_operand;
+                    // Para SUB, carry é NOT borrow
+                    updateCarry = true;
+                    shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
                     break;
-                case 0: // AND (immediate)
-                    registers[rd] = rnValue & shifter_operand;
+                case 0x3: // RSB (Reverse Subtract)
+                    result = shifter_operand - rnValue;
+                    updateCarry = true;
+                    shifter_carry_out = (shifter_operand >= rnValue) ? 1 : 0;
                     break;
-                case 12: // ORR (immediate)
-                    registers[rd] = rnValue | shifter_operand;
+                case 0x4: // ADD
+                    long add_result = (long)rnValue + (long)shifter_operand;
+                    result = (int)add_result;
+                    updateCarry = true;
+                    shifter_carry_out = (add_result >>> 32) & 0x1;
                     break;
-                case 14: // BIC (immediate)
-                    registers[rd] = rnValue & ~shifter_operand;
+                case 0x5: // ADC (Add with Carry)
+                    long adc_result = (long)rnValue + (long)shifter_operand + carry_in;
+                    result = (int)adc_result;
+                    updateCarry = true;
+                    shifter_carry_out = (adc_result >>> 32) & 0x1;
                     break;
-                case 8: // TST (immediate) - apenas atualiza flags
-                    // Não implementamos flags, então apenas calculamos
-                    int result = rnValue & shifter_operand;
+                case 0x6: // SBC (Subtract with Carry)
+                    long sbc_result = (long)rnValue - (long)shifter_operand - (1 - carry_in);
+                    result = (int)sbc_result;
+                    updateCarry = true;
+                    shifter_carry_out = (rnValue >= (shifter_operand + (1 - carry_in))) ? 1 : 0;
                     break;
-                default:
-                    // Outras instruções não implementadas
+                case 0x7: // RSC (Reverse Subtract with Carry)
+                    long rsc_result = (long)shifter_operand - (long)rnValue - (1 - carry_in);
+                    result = (int)rsc_result;
+                    updateCarry = true;
+                    shifter_carry_out = (shifter_operand >= (rnValue + (1 - carry_in))) ? 1 : 0;
+                    break;
+                case 0x8: // TST (Test - AND sem armazenar resultado)
+                    result = rnValue & shifter_operand;
+                    setFlags = 1; // TST sempre atualiza flags
+                    updateCarry = true;
+                    break;
+                case 0x9: // TEQ (Test Equivalence - EOR sem armazenar resultado)
+                    result = rnValue ^ shifter_operand;
+                    setFlags = 1; // TEQ sempre atualiza flags
+                    updateCarry = true;
+                    break;
+                case 0xA: // CMP (Compare - SUB sem armazenar resultado)
+                    result = rnValue - shifter_operand;
+                    setFlags = 1; // CMP sempre atualiza flags
+                    updateCarry = true;
+                    shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
+                    break;
+                case 0xB: // CMN (Compare Negative - ADD sem armazenar resultado)
+                    long cmn_result = (long)rnValue + (long)shifter_operand;
+                    result = (int)cmn_result;
+                    setFlags = 1; // CMN sempre atualiza flags
+                    updateCarry = true;
+                    shifter_carry_out = (cmn_result >>> 32) & 0x1;
+                    break;
+                case 0xC: // ORR
+                    result = rnValue | shifter_operand;
+                    updateCarry = true;
+                    break;
+                case 0xD: // MOV
+                    result = shifter_operand;
+                    updateCarry = true;
+                    break;
+                case 0xE: // BIC (Bit Clear)
+                    result = rnValue & ~shifter_operand;
+                    updateCarry = true;
+                    break;
+                case 0xF: // MVN (Move Not)
+                    result = ~shifter_operand;
+                    updateCarry = true;
                     break;
             }
+            
+            // Atualizar registrador de destino (exceto para instruções de teste)
+            if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) {
+                registers[rd] = result;
+            }
+            
+            // Atualizar flags se necessário
+            if (setFlags != 0) {
+                updateFlags(result, updateCarry ? shifter_carry_out : -1);
+                
+                // Atualizar flags de overflow para operações aritméticas
+                if (opcode == 0x2 || opcode == 0x3 || opcode == 0x4 || opcode == 0x5 || 
+                    opcode == 0x6 || opcode == 0x7 || opcode == 0xA || opcode == 0xB) {
+                    updateOverflow(rnValue, shifter_operand, result, opcode);
+                }
+            }
+            
             return;
         }
         
@@ -207,6 +361,7 @@ public class ELF {
             boolean isByte = (instruction & (1 << 22)) != 0;
             boolean addOffset = (instruction & (1 << 23)) != 0;
             boolean preIndexed = (instruction & (1 << 24)) != 0;
+            boolean writeBack = (instruction & (1 << 21)) != 0;
             
             int baseAddress;
             
@@ -224,19 +379,27 @@ public class ELF {
                 } else {
                     address -= offset;
                 }
+                
+                // Write back para pré-indexado
+                if (writeBack && rn != REG_PC) {
+                    registers[rn] = address;
+                }
             }
             
             if (isLoad) {
-                if (address >= 0 && address < memory.length - 3) {
+                if (address >= 0 && address < memory.length) {
                     if (isByte) {
                         registers[rd] = memory[address] & 0xFF;
                     } else {
+                        // Alinhar para palavra (4 bytes)
                         int alignedAddr = address & ~3;
-                        registers[rd] = readIntLE(memory, alignedAddr);
+                        if (alignedAddr + 3 < memory.length) {
+                            registers[rd] = readIntLE(memory, alignedAddr);
+                        }
                     }
                 }
             } else {
-                if (address >= 0 && address < memory.length - 3) {
+                if (address >= 0 && address < memory.length) {
                     if (isByte) {
                         memory[address] = (byte)(registers[rd] & 0xFF);
                     } else {
@@ -266,13 +429,14 @@ public class ELF {
             boolean link = (instruction & (1 << 24)) != 0;
             
             if (link) {
-                registers[REG_LR] = pc - 4;
+                registers[REG_LR] = pc;
             }
             
             pc = pc + offset - 4;
             return;
         }
 
+        // ADR/SUB pseudo-instructions (ADD/SUB com PC)
         if ((instruction & 0x0F000000) == 0x02800000 || (instruction & 0x0F000000) == 0x02400000) {
             boolean isAdd = (instruction & 0x0F000000) == 0x02800000;
             int rd = (instruction >> 12) & 0xF;
@@ -282,7 +446,11 @@ public class ELF {
             
             int pcValue = pc + 4;
             
-            if (isAdd) { registers[rd] = pcValue + offset; } else { registers[rd] = pcValue - offset; }
+            if (isAdd) { 
+                registers[rd] = pcValue + offset; 
+            } else { 
+                registers[rd] = pcValue - offset; 
+            }
 
             return;
         }
@@ -290,6 +458,102 @@ public class ELF {
         // NOP
         if (instruction == 0xE1A00000) {
             return;
+        }
+    }
+    
+    private int applyShift(int value, int shift_type, int shift_amount, int carry_in) {
+        if (shift_amount == 0) {
+            return value;
+        }
+        
+        switch (shift_type) {
+            case 0: // LSL (Logical Shift Left)
+                if (shift_amount >= 32) {
+                    cpsr = (cpsr & ~C_MASK) | ((value << (shift_amount - 1)) >>> 31) << CPSR_C;
+                    return 0;
+                }
+                cpsr = (cpsr & ~C_MASK) | ((value << (shift_amount - 1)) >>> 31) << CPSR_C;
+                return value << shift_amount;
+                
+            case 1: // LSR (Logical Shift Right)
+                if (shift_amount >= 32) {
+                    cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C;
+                    return 0;
+                }
+                cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C;
+                return value >>> shift_amount;
+                
+            case 2: // ASR (Arithmetic Shift Right)
+                if (shift_amount >= 32) {
+                    int sign_bit = value >>> 31;
+                    cpsr = (cpsr & ~C_MASK) | (sign_bit << CPSR_C);
+                    return sign_bit == 0 ? 0 : 0xFFFFFFFF;
+                }
+                cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C;
+                return value >> shift_amount;
+                
+            case 3: // ROR (Rotate Right)
+                shift_amount &= 31;
+                if (shift_amount == 0) {
+                    // RRX (Rotate Right with Extend)
+                    int result = (carry_in << 31) | (value >>> 1);
+                    cpsr = (cpsr & ~C_MASK) | ((value & 1) << CPSR_C);
+                    return result;
+                }
+                int result = rotateRight(value, shift_amount);
+                cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C;
+                return result;
+        }
+        
+        return value;
+    }
+    
+    private void updateFlags(int result, int carry) {
+        // Atualizar flag N (Negative)
+        if ((result & 0x80000000) != 0) {
+            cpsr |= N_MASK;
+        } else {
+            cpsr &= ~N_MASK;
+        }
+        
+        // Atualizar flag Z (Zero)
+        if (result == 0) {
+            cpsr |= Z_MASK;
+        } else {
+            cpsr &= ~Z_MASK;
+        }
+        
+        // Atualizar flag C (Carry) se fornecido
+        if (carry >= 0) {
+            if (carry != 0) {
+                cpsr |= C_MASK;
+            } else {
+                cpsr &= ~C_MASK;
+            }
+        }
+    }
+    
+    private void updateOverflow(int operand1, int operand2, int result, int opcode) {
+        boolean overflow = false;
+        
+        switch (opcode) {
+            case 0x2: // SUB
+            case 0xA: // CMP
+                overflow = ((operand1 ^ operand2) & (operand1 ^ result) & 0x80000000) != 0;
+                break;
+            case 0x3: // RSB
+                overflow = ((operand2 ^ operand1) & (operand2 ^ result) & 0x80000000) != 0;
+                break;
+            case 0x4: // ADD
+            case 0xB: // CMN
+                overflow = ((~(operand1 ^ operand2)) & (operand1 ^ result) & 0x80000000) != 0;
+                break;
+        }
+        
+        if (overflow) {
+            cpsr |= V_MASK;
+        } else {
+            cpsr &= ~V_MASK;
         }
     }
     
@@ -586,18 +850,46 @@ public class ELF {
         byte[] cwdBytes = cwd.getBytes();
         int len = Math.min(cwdBytes.length, size - 1);
         
-        for (int i = 0; i < len && buf + i < memory.length; i++) { memory[buf + i] = cwdBytes[i]; }
+        for (int i = 0; i < len && buf + i < memory.length; i++) { 
+            memory[buf + i] = cwdBytes[i]; 
+        }
         
-        if (buf + len < memory.length) { memory[buf + len] = 0; }
+        if (buf + len < memory.length) { 
+            memory[buf + len] = 0; 
+        }
         
         registers[REG_R0] = buf;
     }
     
     // Métodos auxiliares para leitura/escrita little-endian
-    private int readIntLE(byte[] data, int offset) { if (offset + 3 >= data.length || offset < 0) return 0; return ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24)); } 
-    private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length || offset < 0) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
+    private int readIntLE(byte[] data, int offset) { 
+        if (offset + 3 >= data.length || offset < 0) return 0; 
+        return ((data[offset] & 0xFF) | 
+                ((data[offset + 1] & 0xFF) << 8) | 
+                ((data[offset + 2] & 0xFF) << 16) | 
+                ((data[offset + 3] & 0xFF) << 24)); 
+    } 
     
-    private void writeIntLE(byte[] data, int offset, int value) { if (offset + 3 >= data.length || offset < 0) { return; } data[offset] = (byte)(value & 0xFF); data[offset + 1] = (byte)((value >> 8) & 0xFF); data[offset + 2] = (byte)((value >> 16) & 0xFF); data[offset + 3] = (byte)((value >> 24) & 0xFF); }
+    private short readShortLE(byte[] data, int offset) { 
+        if (offset + 1 >= data.length || offset < 0) { 
+            return 0; 
+        } 
+        return (short)((data[offset] & 0xFF) | 
+                      ((data[offset + 1] & 0xFF) << 8)); 
+    }
     
-    private int rotateRight(int value, int amount) { amount &= 31; return (value >>> amount) | (value << (32 - amount)); }
+    private void writeIntLE(byte[] data, int offset, int value) { 
+        if (offset + 3 >= data.length || offset < 0) { 
+            return; 
+        } 
+        data[offset] = (byte)(value & 0xFF); 
+        data[offset + 1] = (byte)((value >> 8) & 0xFF); 
+        data[offset + 2] = (byte)((value >> 16) & 0xFF); 
+        data[offset + 3] = (byte)((value >> 24) & 0xFF); 
+    }
+    
+    private int rotateRight(int value, int amount) { 
+        amount &= 31; 
+        return (value >>> amount) | (value << (32 - amount)); 
+    }
 }
