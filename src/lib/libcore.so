@@ -7,10 +7,8 @@ function libcore.joinpath(pwd)
         return os.getcwd()
     end
 
-    local is_absolute = string.sub(pwd, 1, 1) == "/"
-
     local parts
-    if is_absolute then
+    if string.sub(pwd, 1, 1) == "/" then
         parts = string.split(pwd, "/")
     else
         local cwd = os.getcwd()
