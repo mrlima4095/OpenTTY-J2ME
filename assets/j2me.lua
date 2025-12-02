@@ -128,6 +128,8 @@ java = {
     delete = function (struct, field) local value = struct[field] struct[field] = nil return value end,
     --[=[Run function in another Thread (Background)]=]
     run = function (func, thread_name) end,
+    --[=[Run ARM 32 ELF binaries]=]
+    elf = function (elf) end,
 
     --[=[MIDlet Lua representation]=]
     midlet = {
