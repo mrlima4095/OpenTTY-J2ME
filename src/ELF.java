@@ -225,7 +225,7 @@ public class ELF {
             int result = 0;
             boolean updateCarry = false;
             int carry_in = (cpsr & C_MASK) != 0 ? 1 : 0;
-            switch (opcode) {
+switch (opcode) {
     case 0x0: // AND
         result = rnValue & shifter_operand;
         updateCarry = true;
@@ -246,26 +246,30 @@ public class ELF {
         shifter_carry_out = (shifter_operand >= rnValue) ? 1 : 0;
         break;
     case 0x4: // ADD
-        long add_result = (long)rnValue + (long)shifter_operand;
-        result = (int)(add_result & 0xFFFFFFFFL);
+        int add_temp = rnValue + shifter_operand;
+        result = add_temp;
         updateCarry = true;
-        shifter_carry_out = (int)((add_result >>> 32) & 0x1L);
+        // Verifica overflow para 32 bits
+        boolean add_overflow = ((rnValue ^ shifter_operand) >= 0) && ((rnValue ^ add_temp) < 0);
+        shifter_carry_out = add_overflow ? 1 : 0;
         break;
     case 0x5: // ADC (Add with Carry)
-        long adc_result = (long)rnValue + (long)shifter_operand + (long)carry_in;
-        result = (int)(adc_result & 0xFFFFFFFFL);
+        int adc_temp = rnValue + shifter_operand + carry_in;
+        result = adc_temp;
         updateCarry = true;
-        shifter_carry_out = (int)((adc_result >>> 32) & 0x1L);
+        // Verifica overflow considerando carry
+        long adc_check = (long)rnValue + (long)shifter_operand + (long)carry_in;
+        shifter_carry_out = (adc_check > 0xFFFFFFFFL) ? 1 : 0;
         break;
     case 0x6: // SBC (Subtract with Carry)
-        long sbc_result = (long)rnValue - (long)shifter_operand - (1L - (long)carry_in);
-        result = (int)(sbc_result & 0xFFFFFFFFL);
+        int sbc_temp = rnValue - shifter_operand - (1 - carry_in);
+        result = sbc_temp;
         updateCarry = true;
         shifter_carry_out = (rnValue >= (shifter_operand + (1 - carry_in))) ? 1 : 0;
         break;
     case 0x7: // RSC (Reverse Subtract with Carry)
-        long rsc_result = (long)shifter_operand - (long)rnValue - (1L - (long)carry_in);
-        result = (int)(rsc_result & 0xFFFFFFFFL);
+        int rsc_temp = shifter_operand - rnValue - (1 - carry_in);
+        result = rsc_temp;
         updateCarry = true;
         shifter_carry_out = (shifter_operand >= (rnValue + (1 - carry_in))) ? 1 : 0;
         break;
@@ -286,11 +290,13 @@ public class ELF {
         shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
         break;
     case 0xB: // CMN (Compare Negative - ADD sem armazenar resultado)
-        long cmn_result = (long)rnValue + (long)shifter_operand;
-        result = (int)(cmn_result & 0xFFFFFFFFL);
+        int cmn_temp = rnValue + shifter_operand;
+        result = cmn_temp;
         setFlags = 1; // CMN sempre atualiza flags
         updateCarry = true;
-        shifter_carry_out = (int)((cmn_result >>> 32) & 0x1L);
+        // Verifica overflow
+        long cmn_check = (long)rnValue + (long)shifter_operand;
+        shifter_carry_out = (cmn_check > 0xFFFFFFFFL) ? 1 : 0;
         break;
     case 0xC: // ORR
         result = rnValue | shifter_operand;
@@ -309,6 +315,7 @@ public class ELF {
         updateCarry = true;
         break;
 }
+
  
             // Atualizar registrador de destino (exceto para instruções de teste)
             if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) {
