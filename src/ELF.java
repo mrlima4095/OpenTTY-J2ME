@@ -148,7 +148,7 @@ public class ELF {
             if (swi_number == 0) { handleSyscall(registers[REG_R7]); } else { handleSyscall(swi_number); }
             return;
         }
-        
+
         // Data Processing Instructions
         if ((instruction & 0x0C000000) == 0x00000000) {
             int opcode = (instruction >> 21) & 0xF;
@@ -158,21 +158,41 @@ public class ELF {
             int rotate = ((instruction >> 8) & 0xF) * 2;
             int shifter_operand = rotateRight(imm, rotate);
             
+            // Para instruções que usam PC como Rn, ajustar o valor
+            int rnValue;
+            if (rn == REG_PC) {
+                // PC arquitetural: endereço da instrução atual + 8
+                // A instrução atual está em (pc - 4) porque já incrementamos o pc
+                rnValue = pc + 4;
+            } else {
+                rnValue = registers[rn];
+            }
+            
             switch (opcode) {
                 case 13: // MOV (immediate)
                     registers[rd] = shifter_operand;
                     break;
                 case 4: // ADD (immediate)
-                    registers[rd] = registers[rn] + shifter_operand;
+                    registers[rd] = rnValue + shifter_operand;
                     break;
                 case 2: // SUB (immediate)
-                    registers[rd] = registers[rn] - shifter_operand;
+                    registers[rd] = rnValue - shifter_operand;
                     break;
                 case 0: // AND (immediate)
-                    registers[rd] = registers[rn] & shifter_operand;
+                    registers[rd] = rnValue & shifter_operand;
                     break;
                 case 12: // ORR (immediate)
-                    registers[rd] = registers[rn] | shifter_operand;
+                    registers[rd] = rnValue | shifter_operand;
+                    break;
+                case 14: // BIC (immediate)
+                    registers[rd] = rnValue & ~shifter_operand;
+                    break;
+                case 8: // TST (immediate) - apenas atualiza flags
+                    // Não implementamos flags, então apenas calculamos
+                    int result = rnValue & shifter_operand;
+                    break;
+                default:
+                    // Outras instruções não implementadas
                     break;
             }
             return;
