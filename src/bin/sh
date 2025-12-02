@@ -3,6 +3,7 @@
 local libcore = require("libcore")
 
 local function shell(args, enable, aliases, stdout, scope)
+    args = string.env(args)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
 
@@ -15,11 +16,7 @@ local function shell(args, enable, aliases, stdout, scope)
 
     -- Kernel
     -- (Process)
-    elseif cmd == "ps" then
-        print("PID\tPROCESS")
-        for k,v in pairs(os.getproc()) do
-            print(k .. "\t" .. v)
-        end
+    elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
     -- (Permissions)
     elseif cmd == "su" then
         if os.getuid() == 0 then
@@ -150,7 +147,7 @@ local function shell(args, enable, aliases, stdout, scope)
         local pwd = libcore.joinpath(argument)
 
         local buff = ""
-        for k,v in pairs(io.dirs()) do
+        for k,v in pairs(io.dirs(pwd)) do
             if string.sub(v, 1, 1) ~= "." then
                 buff = buff .. "\t" .. v
             end
