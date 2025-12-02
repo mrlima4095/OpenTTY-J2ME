@@ -2313,24 +2313,18 @@ public class Lua {
                         String filename = toLuaString(args.elementAt(0));
                         InputStream is = midlet.getInputStream(filename);
                         
-                        if (is == null) {
-                            midlet.print("Arquivo não encontrado: " + filename, stdout);
-                            return new Double(127);
-                        }
+                        if (is == null) { return new Double(127); }
                         
                         ELF elf = new ELF(midlet, stdout);
                         
-                        if (elf.load(is)) {
-                            elf.run();
-                        } else {
-                            midlet.print("Falha ao carregar ELF", stdout);
-                        }
+                        if (elf.load(is)) { elf.run(); } 
+                        else { return new Double(1); }
                         
                         is.close();
                     } catch (Exception e) {
                         midlet.print("Erro ELF: " + e.toString(), stdout);
+                        return new Double(1);
                     }
-                    return null;
                 }
             }
             else if (MOD == KERNEL) {
