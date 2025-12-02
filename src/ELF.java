@@ -1,9 +1,11 @@
 import java.util.*;
 import java.io.*;
-
+// |
 public class ELF {
     private OpenTTY midlet;
     private Object stdout;
+    private Hashtable scope;
+    private int id;
     
     // Memória e registradores
     private byte[] memory;
@@ -11,6 +13,10 @@ public class ELF {
     private int pc;
     private boolean running;
     private int stackPointer;
+    
+    // File descriptors
+    private Hashtable fileDescriptors;
+    private int nextFd;
     
     // Constantes ELF
     private static final int EI_NIDENT = 16;
@@ -25,29 +31,46 @@ public class ELF {
     private static final int REG_R1 = 1;
     private static final int REG_R2 = 2;
     private static final int REG_R3 = 3;
-    private static final int REG_R4 = 4;
-    private static final int REG_R5 = 5;
-    private static final int REG_R6 = 6;
-    private static final int REG_R7 = 7;  // Número da syscall no EABI
+    private static final int REG_R7 = 7;
     private static final int REG_SP = 13;
     private static final int REG_LR = 14;
     private static final int REG_PC = 15;
     
     // Syscalls Linux ARM (EABI)
     private static final int SYS_EXIT = 1;
+    private static final int SYS_READ = 3;
     private static final int SYS_WRITE = 4;
+    private static final int SYS_OPEN = 5;
+    private static final int SYS_CLOSE = 6;
     private static final int SYS_BRK = 45;
+    private static final int SYS_GETPID = 20;
+    private static final int SYS_GETCWD = 183;
     
-    public ELF(OpenTTY midlet, Object stdout) {
+    // Flags de open
+    private static final int O_RDONLY = 0;
+    private static final int O_WRONLY = 1;
+    private static final int O_RDWR = 2;
+    private static final int O_CREAT = 64;
+    private static final int O_APPEND = 1024;
+    private static final int O_TRUNC = 512;
+    
+    public ELF(OpenTTY midlet, Object stdout, Hashtable scope, int id) {
         this.midlet = midlet;
         this.stdout = stdout;
+        this.scope = scope;
+        this.id = id;
         this.memory = new byte[1024 * 1024]; // 1MB de memória
         this.registers = new int[16];
         this.running = false;
-        this.stackPointer = memory.length - 1024; // Stack no final da memória
+        this.stackPointer = memory.length - 1024;
+        this.fileDescriptors = new Hashtable();
+        this.nextFd = 3; // 0=stdin, 1=stdout, 2=stderr
+        
+        // Inicializar file descriptors padrão
+        fileDescriptors.put(new Integer(1), stdout); // stdout
+        fileDescriptors.put(new Integer(2), stdout); // stderr
     }
     
-    // Método auxiliar para converter int para hex string
     private String toHex(int value) {
         String hex = Integer.toHexString(value);
         while (hex.length() < 8) {
@@ -57,7 +80,6 @@ public class ELF {
     }
     
     public boolean load(InputStream is) throws Exception {
-        // Ler todo o arquivo para um array de bytes
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         int bytesRead;
@@ -66,25 +88,10 @@ public class ELF {
         }
         byte[] elfData = baos.toByteArray();
         
-        // Verificar assinatura ELF
-        if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') {
-            midlet.print("Not a valid ELF file", stdout);
-            return false;
-        }
+        if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout); return false; }
+        if (elfData[4] != ELFCLASS32) {  midlet.print("Only 32-bit ELF supported", stdout); return false; }
+        if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout); return false; }
         
-        // Verificar classe 32-bit
-        if (elfData[4] != ELFCLASS32) {
-            midlet.print("Only 32-bit ELF supported", stdout);
-            return false;
-        }
-        
-        // Verificar little-endian
-        if (elfData[5] != ELFDATA2LSB) {
-            midlet.print("Only little-endian ELF supported", stdout);
-            return false;
-        }
-        
-        // Ler cabeçalho ELF
         int e_type = readShortLE(elfData, 16);
         int e_machine = readShortLE(elfData, 18);
         int e_entry = readIntLE(elfData, 24);
@@ -92,25 +99,13 @@ public class ELF {
         int e_phnum = readShortLE(elfData, 44);
         int e_phentsize = readShortLE(elfData, 42);
         
-        // Verificar tipo e arquitetura
-        if (e_type != ET_EXEC) {
-            midlet.print("Not an executable ELF", stdout);
-            return false;
-        }
+        if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout); return false; }
+        if (e_machine != EM_ARM) { midlet.print("Not an ARM executable", stdout); return false; }
         
-        if (e_machine != EM_ARM) {
-            midlet.print("Not an ARM executable", stdout);
-            return false;
-        }
-        
-        midlet.print("Loading ELF at entry point: " + toHex(e_entry), stdout);
-        
-        // Configurar PC inicial
         pc = e_entry;
         registers[REG_SP] = stackPointer;
-        registers[REG_LR] = 0xFFFFFFFF; // Endereço de retorno inválido
+        registers[REG_LR] = 0xFFFFFFFF;
         
-        // Carregar segmentos
         for (int i = 0; i < e_phnum; i++) {
             int phdrOffset = e_phoff + i * e_phentsize;
             int p_type = readIntLE(elfData, phdrOffset);
@@ -121,43 +116,8 @@ public class ELF {
                 int p_filesz = readIntLE(elfData, phdrOffset + 16);
                 int p_memsz = readIntLE(elfData, phdrOffset + 20);
                 
-                midlet.print("Loading segment at " + toHex(p_vaddr) + 
-                           ", size: " + p_filesz + " bytes", stdout);
-                
-                // Copiar dados para a memória
-                for (int j = 0; j < p_filesz && j < memory.length; j++) {
-                    if (p_vaddr + j < memory.length) {
-                        memory[p_vaddr + j] = elfData[p_offset + j];
-                    }
-                }
-                
-                // Zerar memória restante (bss)
-                for (int j = p_filesz; j < p_memsz; j++) {
-                    if (p_vaddr + j < memory.length) {
-                        memory[p_vaddr + j] = 0;
-                    }
-                }
-            }
-        }
-        
-        // Debug: dump do pool literal
-        midlet.print("Dump do pool literal (0x10090):", stdout);
-        for (int i = 0; i < 32; i += 4) {
-            int addr = 0x10090 + i;
-            if (addr < memory.length - 3) {
-                int value = readIntLE(memory, addr);
-                midlet.print(toHex(addr) + ": " + toHex(value), stdout);
-            }
-        }
-        
-        // Debug: dump da string
-        midlet.print("Dump da string (0x20098):", stdout);
-        for (int i = 0; i < 20; i++) {
-            int addr = 0x20098 + i;
-            if (addr < memory.length) {
-                int b = memory[addr] & 0xFF;
-                char c = (b >= 32 && b < 127) ? (char)b : '.';
-                midlet.print(toHex(addr) + ": " + b + " '" + c + "'", stdout);
+                for (int j = 0; j < p_filesz && j < memory.length; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = elfData[p_offset + j]; } }
+                for (int j = p_filesz; j < p_memsz; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = 0; } }
             }
         }
         
@@ -166,58 +126,28 @@ public class ELF {
     
     public void run() {
         running = true;
-        int instructionCount = 0;
         
         try {
-            while (running && pc < memory.length - 3 && instructionCount < 10000) {
-                // Buscar instrução
+            while (running && pc < memory.length - 3) {
                 int instruction = readIntLE(memory, pc);
-                
-                // Debug
-                midlet.print("PC=" + toHex(pc) + " I=" + toHex(instruction), stdout);
-                
-                // Mostrar registradores antes da execução
-                if (instructionCount < 10) {
-                    midlet.print("R0=" + toHex(registers[0]) + " R1=" + toHex(registers[1]) + 
-                               " R2=" + toHex(registers[2]) + " R7=" + toHex(registers[7]), stdout);
-                }
-                
                 pc += 4;
-                instructionCount++;
-                
-                // Decodificar e executar
                 executeInstruction(instruction);
             }
             
-            if (!running) {
-                midlet.print("Program exited", stdout);
-            } else if (instructionCount >= 10000) {
-                midlet.print("Instruction limit reached", stdout);
-            }
-            
         } catch (Exception e) {
-            midlet.print("ELF execution error: " + e.toString(), stdout);
+            midlet.print("ELF execution error", stdout);
             running = false;
         }
     }
     
     private void executeInstruction(int instruction) {
-        // Primeiro, verificar se é uma instrução de syscall (EABI)
-        // ARM EABI usa SWI 0 com número da syscall em R7
+        // Syscall
         if ((instruction & 0x0F000000) == 0x0F000000) {
             int swi_number = instruction & 0x00FFFFFF;
             
-            // Para EABI, swi_number deve ser 0
-            if (swi_number == 0) {
-                handleSyscall(registers[REG_R7]);
-            } else {
-                // OABI antigo - usar número direto da instrução
-                handleSyscall(swi_number);
-            }
+            if (swi_number == 0) { handleSyscall(registers[REG_R7]); } else { handleSyscall(swi_number); }
             return;
         }
-        
-        // Decodificação de instruções ARM básicas
         
         // Data Processing Instructions
         if ((instruction & 0x0C000000) == 0x00000000) {
@@ -244,21 +174,11 @@ public class ELF {
                 case 12: // ORR (immediate)
                     registers[rd] = registers[rn] | shifter_operand;
                     break;
-                case 14: // BIC (immediate)
-                    registers[rd] = registers[rn] & ~shifter_operand;
-                    break;
-                case 8: // TST (immediate)
-                    // Só atualiza flags, mas não implementado
-                    int result = registers[rn] & shifter_operand;
-                    break;
-                default:
-                    // Instrução não implementada
-                    break;
             }
             return;
         }
         
-        // Load/Store Instructions - CORRIGIDO
+        // Load/Store Instructions
         if ((instruction & 0x0C000000) == 0x04000000) {
             int rn = (instruction >> 16) & 0xF;
             int rd = (instruction >> 12) & 0xF;
@@ -267,15 +187,10 @@ public class ELF {
             boolean isByte = (instruction & (1 << 22)) != 0;
             boolean addOffset = (instruction & (1 << 23)) != 0;
             boolean preIndexed = (instruction & (1 << 24)) != 0;
-            boolean isImmediate = (instruction & (1 << 25)) != 0;
             
             int baseAddress;
             
-            // Calcular endereço base
             if (rn == REG_PC) {
-                // No ARM, PC é 8 bytes à frente da instrução atual
-                // Já incrementamos pc, então pc atual aponta para próxima instrução
-                // O PC arquitetural é (pc - 4) + 8 = pc + 4
                 baseAddress = pc + 4;
             } else {
                 baseAddress = registers[rn];
@@ -292,26 +207,15 @@ public class ELF {
             }
             
             if (isLoad) {
-                // LDR ou LDRB
                 if (address >= 0 && address < memory.length - 3) {
                     if (isByte) {
                         registers[rd] = memory[address] & 0xFF;
                     } else {
-                        // LDR palavra - alinhamento de palavra
                         int alignedAddr = address & ~3;
                         registers[rd] = readIntLE(memory, alignedAddr);
-                        
-                        // Debug para LDR
-                        if (rd == 1) {
-                            midlet.print("LDR R1 from " + toHex(alignedAddr) + 
-                                       " = " + toHex(registers[rd]), stdout);
-                        }
                     }
-                } else {
-                    midlet.print("Erro: acesso de memória inválido em " + toHex(address), stdout);
                 }
             } else {
-                // STR ou STRB
                 if (address >= 0 && address < memory.length - 3) {
                     if (isByte) {
                         memory[address] = (byte)(registers[rd] & 0xFF);
@@ -321,8 +225,7 @@ public class ELF {
                 }
             }
             
-            if (!preIndexed && isImmediate) {
-                // Post-indexed: atualiza o registrador base
+            if (!preIndexed) {
                 if (addOffset) {
                     registers[rn] += offset;
                 } else {
@@ -335,7 +238,6 @@ public class ELF {
         // Branch Instructions
         if ((instruction & 0x0E000000) == 0x0A000000) {
             int offset = instruction & 0x00FFFFFF;
-            // Sign extend 24-bit offset
             if ((offset & 0x00800000) != 0) {
                 offset |= 0xFF000000;
             }
@@ -344,119 +246,328 @@ public class ELF {
             boolean link = (instruction & (1 << 24)) != 0;
             
             if (link) {
-                // BL (Branch with Link)
                 registers[REG_LR] = pc - 4;
             }
             
-            // Atualizar PC (já temos +4 no PC da instrução atual)
             pc = pc + offset - 4;
             return;
         }
         
-        // LDR com endereçamento PC-relativo especial
-        if ((instruction & 0x0F7F0000) == 0x051F0000) {
-            // Formato especial para LDR Rd, [PC, #offset]
-            int rd = (instruction >> 12) & 0xF;
-            int offset = instruction & 0xFFF;
-            boolean add = (instruction & (1 << 23)) != 0;
-            
-            // PC é 8 bytes à frente da instrução atual
-            int pcValue = pc + 4;
-            int address;
-            
-            if (add) {
-                address = pcValue + offset;
-            } else {
-                address = pcValue - offset;
-            }
-            
-            if (address >= 0 && address < memory.length - 3) {
-                registers[rd] = readIntLE(memory, address);
-                midlet.print("LDR PC-relative: R" + rd + " = [" + toHex(pcValue) + 
-                           (add ? "+" : "-") + offset + "] = " + toHex(address) + 
-                           " -> " + toHex(registers[rd]), stdout);
-            }
-            return;
-        }
-        
-        // NOP - não fazer nada
+        // NOP
         if (instruction == 0xE1A00000) {
             return;
         }
-        
-        // Instrução não reconhecida
-        midlet.print("Instrução não reconhecida: " + toHex(instruction), stdout);
     }
     
     private void handleSyscall(int number) {
-        midlet.print("Syscall " + number + " called", stdout);
-        
         switch (number) {
-            case SYS_WRITE:  // 4
-                // write(fd, buf, count)
-                int fd = registers[REG_R0];
-                int buf = registers[REG_R1];
-                int count = registers[REG_R2];
-                
-                midlet.print("Write: fd=" + fd + ", buf=" + toHex(buf) + 
-                           ", count=" + count, stdout);
-                
-                if (fd == 1 || fd == 2) { // stdout ou stderr
-                    StringBuffer sb = new StringBuffer();
-                    for (int i = 0; i < count && buf + i < memory.length && i < 256; i++) {
-                        sb.append((char)(memory[buf + i] & 0xFF));
-                    }
-                    midlet.print("String: " + sb.toString(), stdout);
-                    registers[REG_R0] = count; // Retorna número de bytes escritos
-                } else {
-                    registers[REG_R0] = -1; // Erro
-                }
+            case SYS_WRITE:
+                handleWrite();
                 break;
                 
-            case SYS_EXIT:  // 1
-                // exit(status)
-                int status = registers[REG_R0];
-                midlet.print("Exit with status: " + status, stdout);
-                running = false;
+            case SYS_READ:
+                handleRead();
                 break;
                 
-            case SYS_BRK:  // 45
-                // brk(addr) - implementação simples
+            case SYS_OPEN:
+                handleOpen();
+                break;
+                
+            case SYS_CLOSE:
+                handleClose();
+                break;
+                
+            case SYS_EXIT:
+                handleExit();
+                break;
+                
+            case SYS_GETPID:
+                registers[REG_R0] = 1000 + midlet.random.nextInt(9000);
+                break;
+                
+            case SYS_GETCWD:
+                handleGetcwd();
+                break;
+                
+            case SYS_BRK:
                 registers[REG_R0] = memory.length;
                 break;
                 
             default:
-                midlet.print("Unsupported syscall: " + number, stdout);
-                registers[REG_R0] = -1; // Retorna erro
+                registers[REG_R0] = -1; // Syscall não implementada
                 break;
         }
     }
     
+    private void handleWrite() {
+        int fd = registers[REG_R0];
+        int buf = registers[REG_R1];
+        int count = registers[REG_R2];
+        
+        if (count <= 0 || buf < 0 || buf >= memory.length) {
+            registers[REG_R0] = -1;
+            return;
+        }
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (fd == 1 || fd == 2) {
+            // stdout/stderr - escrever no OpenTTY
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < count && buf + i < memory.length; i++) {
+                sb.append((char)(memory[buf + i] & 0xFF));
+            }
+            
+            midlet.print(sb.toString, stdout, id);
+            
+            registers[REG_R0] = count;
+            
+        } else if (fileDescriptors.containsKey(fdKey)) {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            if (stream instanceof OutputStream) {
+                try {
+                    OutputStream os = (OutputStream) stream;
+                    for (int i = 0; i < count && buf + i < memory.length; i++) {
+                        os.write(memory[buf + i]);
+                    }
+                    os.flush();
+                    registers[REG_R0] = count;
+                } catch (Exception e) {
+                    registers[REG_R0] = -1;
+                }
+            } else if (stream instanceof StringBuffer) {
+                StringBuffer sb = (StringBuffer) stream;
+                for (int i = 0; i < count && buf + i < memory.length; i++) {
+                    sb.append((char)(memory[buf + i] & 0xFF));
+                }
+                registers[REG_R0] = count;
+            } else {
+                registers[REG_R0] = -1;
+            }
+        } else {
+            registers[REG_R0] = -1;
+        }
+    }
+    
+    private void handleRead() {
+        int fd = registers[REG_R0];
+        int buf = registers[REG_R1];
+        int count = registers[REG_R2];
+        
+        if (count <= 0 || buf < 0 || buf >= memory.length) {
+            registers[REG_R0] = -1;
+            return;
+        }
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (fd == 0) {
+            // stdin - não implementado por enquanto
+            registers[REG_R0] = 0;
+        } else if (fileDescriptors.containsKey(fdKey)) {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            if (stream instanceof InputStream) {
+                try {
+                    InputStream is = (InputStream) stream;
+                    int bytesRead = 0;
+                    for (int i = 0; i < count && buf + i < memory.length; i++) {
+                        int b = is.read();
+                        if (b == -1) break;
+                        memory[buf + i] = (byte) b;
+                        bytesRead++;
+                    }
+                    registers[REG_R0] = bytesRead;
+                } catch (Exception e) {
+                    registers[REG_R0] = -1;
+                }
+            } else {
+                registers[REG_R0] = -1;
+            }
+        } else {
+            registers[REG_R0] = -1;
+        }
+    }
+    
+    private void handleOpen() {
+        int pathAddr = registers[REG_R0];
+        int flags = registers[REG_R1];
+        int mode = registers[REG_R2];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length) {
+            registers[REG_R0] = -1;
+            return;
+        }
+        
+        // Ler o caminho da memória
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
+        String path = pathBuf.toString();
+        
+        try {
+            boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR;
+            boolean forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR;
+            boolean create = (flags & O_CREAT) != 0;
+            boolean append = (flags & O_APPEND) != 0;
+            boolean truncate = (flags & O_TRUNC) != 0;
+            
+            // Resolver caminho relativo
+            String fullPath = path;
+            if (!path.startsWith("/")) {
+                String pwd = (String) scope.get("PWD");
+                if (pwd == null) { pwd = "/home/"; }
+                fullPath = pwd + (pwd.endsWith("/") ? "" : "/") + path;
+            }
+            
+            if (forReading) {
+                InputStream is = midlet.getInputStream(fullPath);
+                if (is != null) {
+                    Integer fd = new Integer(nextFd++);
+                    fileDescriptors.put(fd, is);
+                    registers[REG_R0] = fd.intValue();
+                } else if (create) {
+                    midlet.write(fullPath, "", id);
+                    InputStream is2 = midlet.getInputStream(fullPath);
+                    if (is2 != null) {
+                        Integer fd = new Integer(nextFd++);
+                        fileDescriptors.put(fd, is2);
+                        registers[REG_R0] = fd.intValue();
+                    } else {
+                        registers[REG_R0] = -1;
+                    }
+                } else {
+                    registers[REG_R0] = -2; // ENOENT
+                }
+            } else if (forWriting) {
+                // Para escrita, usamos um ByteArrayOutputStream temporário
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                
+                // Se for append, carregar conteúdo existente
+                if (append && !truncate) {
+                    InputStream existing = midlet.getInputStream(fullPath);
+                    if (existing != null) {
+                        int b;
+                        while ((b = existing.read()) != -1) {
+                            baos.write(b);
+                        }
+                        existing.close();
+                    }
+                }
+                
+                Integer fd = new Integer(nextFd++);
+                fileDescriptors.put(fd, baos);
+                registers[REG_R0] = fd.intValue();
+                
+                // Guardar o caminho para uso no close/flush
+                fileDescriptors.put(fd + ":path", fullPath);
+            } else {
+                registers[REG_R0] = -1;
+            }
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1;
+        }
+    }
+    
+    private void handleClose() {
+        int fd = registers[REG_R0];
+        Integer fdKey = new Integer(fd);
+        
+        if (fd == 0 || fd == 1 || fd == 2) {
+            // Não fechar stdin/stdout/stderr
+            registers[REG_R0] = 0;
+            return;
+        }
+        
+        if (fileDescriptors.containsKey(fdKey)) {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            try {
+                if (stream instanceof InputStream) {
+                    ((InputStream) stream).close();
+                } else if (stream instanceof OutputStream) {
+                    OutputStream os = (OutputStream) stream;
+                    os.close();
+                    
+                    // Se for ByteArrayOutputStream, salvar no arquivo
+                    if (stream instanceof ByteArrayOutputStream) {
+                        ByteArrayOutputStream baos = (ByteArrayOutputStream) stream;
+                        String pathKey = fd + ":path";
+                        if (fileDescriptors.containsKey(pathKey)) {
+                            String path = (String) fileDescriptors.get(pathKey);
+                            byte[] data = baos.toByteArray();
+                            midlet.write(path, data, id);
+                        }
+                    }
+                }
+                
+                fileDescriptors.remove(fdKey);
+                fileDescriptors.remove(fd + ":path");
+                registers[REG_R0] = 0;
+                
+            } catch (Exception e) {
+                registers[REG_R0] = -1;
+            }
+        } else {
+            registers[REG_R0] = -1;
+        }
+    }
+    
+    private void handleExit() {
+        int status = registers[REG_R0];
+        running = false;
+        
+        // Fechar todos os file descriptors abertos
+        Enumeration keys = fileDescriptors.keys();
+        while (keys.hasMoreElements()) {
+            Object key = keys.nextElement();
+            if (key instanceof Integer) {
+                Integer fd = (Integer) key;
+                if (fd.intValue() >= 3) {
+                    Object stream = fileDescriptors.get(fd);
+                    try {
+                        if (stream instanceof InputStream) {
+                            ((InputStream) stream).close();
+                        } else if (stream instanceof OutputStream) {
+                            ((OutputStream) stream).close();
+                        }
+                    } catch (Exception e) { }
+                }
+            }
+        }
+    }
+    
+    private void handleGetcwd() {
+        int buf = registers[REG_R0];
+        int size = registers[REG_R1];
+        
+        String cwd = (String) scope.get("PWD");
+        if (cwd == null) cwd = "/home/";
+        
+        byte[] cwdBytes = cwd.getBytes();
+        int len = Math.min(cwdBytes.length, size - 1);
+        
+        for (int i = 0; i < len && buf + i < memory.length; i++) {
+            memory[buf + i] = cwdBytes[i];
+        }
+        
+        if (buf + len < memory.length) {
+            memory[buf + len] = 0; // Null terminator
+        }
+        
+        registers[REG_R0] = buf;
+    }
+    
     // Métodos auxiliares para leitura/escrita little-endian
-    private int readIntLE(byte[] data, int offset) {
-        if (offset + 3 >= data.length || offset < 0) return 0;
-        return ((data[offset] & 0xFF) |
-                ((data[offset + 1] & 0xFF) << 8) |
-                ((data[offset + 2] & 0xFF) << 16) |
-                ((data[offset + 3] & 0xFF) << 24));
-    }
+    private int readIntLE(byte[] data, int offset) { if (offset + 3 >= data.length || offset < 0) return 0; return ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24)); } 
+    private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length || offset < 0) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
     
-    private short readShortLE(byte[] data, int offset) {
-        if (offset + 1 >= data.length || offset < 0) return 0;
-        return (short)((data[offset] & 0xFF) |
-                      ((data[offset + 1] & 0xFF) << 8));
-    }
+    private void writeIntLE(byte[] data, int offset, int value) { if (offset + 3 >= data.length || offset < 0) { return; } data[offset] = (byte)(value & 0xFF); data[offset + 1] = (byte)((value >> 8) & 0xFF); data[offset + 2] = (byte)((value >> 16) & 0xFF); data[offset + 3] = (byte)((value >> 24) & 0xFF); }
     
-    private void writeIntLE(byte[] data, int offset, int value) {
-        if (offset + 3 >= data.length || offset < 0) return;
-        data[offset] = (byte)(value & 0xFF);
-        data[offset + 1] = (byte)((value >> 8) & 0xFF);
-        data[offset + 2] = (byte)((value >> 16) & 0xFF);
-        data[offset + 3] = (byte)((value >> 24) & 0xFF);
-    }
-    
-    private int rotateRight(int value, int amount) {
-        amount &= 31;
-        return (value >>> amount) | (value << (32 - amount));
-    }
+    private int rotateRight(int value, int amount) { amount &= 31; return (value >>> amount) | (value << (32 - amount)); }
 }
