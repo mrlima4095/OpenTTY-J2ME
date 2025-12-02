@@ -499,25 +499,25 @@ public class ELF {
                     break;
                 case 0x4: // ADD
                     long add_result = (long)rnValue + (long)shifter_operand;
-                    result = (int)add_result;
+                    result = (int)(add_result & 0xFFFFFFFFL);
                     updateCarry = true;
-                    shifter_carry_out = (add_result >>> 32) & 0x1;
+                    shifter_carry_out = (int)((add_result >>> 32) & 0x1L);
                     break;
                 case 0x5: // ADC (Add with Carry)
-                    long adc_result = (long)rnValue + (long)shifter_operand + carry_in;
-                    result = (int)adc_result;
+                    long adc_result = (long)rnValue + (long)shifter_operand + (long)carry_in;
+                    result = (int)(adc_result & 0xFFFFFFFFL);
                     updateCarry = true;
-                    shifter_carry_out = (adc_result >>> 32) & 0x1;
+                    shifter_carry_out = (int)((adc_result >>> 32) & 0x1L);
                     break;
                 case 0x6: // SBC (Subtract with Carry)
-                    long sbc_result = (long)rnValue - (long)shifter_operand - (1 - carry_in);
-                    result = (int)sbc_result;
+                    long sbc_result = (long)rnValue - (long)shifter_operand - (1L - (long)carry_in);
+                    result = (int)(sbc_result & 0xFFFFFFFFL);
                     updateCarry = true;
                     shifter_carry_out = (rnValue >= (shifter_operand + (1 - carry_in))) ? 1 : 0;
                     break;
                 case 0x7: // RSC (Reverse Subtract with Carry)
-                    long rsc_result = (long)shifter_operand - (long)rnValue - (1 - carry_in);
-                    result = (int)rsc_result;
+                    long rsc_result = (long)shifter_operand - (long)rnValue - (1L - (long)carry_in);
+                    result = (int)(rsc_result & 0xFFFFFFFFL);
                     updateCarry = true;
                     shifter_carry_out = (shifter_operand >= (rnValue + (1 - carry_in))) ? 1 : 0;
                     break;
@@ -538,11 +538,11 @@ public class ELF {
                     shifter_carry_out = (rnValue >= shifter_operand) ? 1 : 0;
                     break;
                 case 0xB: // CMN (Compare Negative - ADD sem armazenar resultado)
-                    long cmn_result_long = (long)rnValue + (long)shifter_operand;
-                    result = (int)(cmn_result_long & 0xFFFFFFFFL); // Apenas 32 bits
+                    long cmn_result = (long)rnValue + (long)shifter_operand;
+                    result = (int)(cmn_result & 0xFFFFFFFFL);
                     setFlags = 1; // CMN sempre atualiza flags
                     updateCarry = true;
-                    shifter_carry_out = (cmn_result_long >>> 32) & 0x1;
+                    shifter_carry_out = (int)((cmn_result >>> 32) & 0x1L);
                     break;
                 case 0xC: // ORR
                     result = rnValue | shifter_operand;
