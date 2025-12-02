@@ -2,36 +2,49 @@
 
 local libcore = {}
 
-function libcore.joinpath(path)
-    if not path or path == "" or path == "." then
+function libcore.joinpath(pwd)
+    if pwd == nil or pwd == "" or pwd == "." then
         return os.getcwd()
     end
 
-    if string.sub(path, 1, 1)  ~= "" then
-        path = os.getcwd() .. "/" .. path
+    local is_absolute = string.sub(pwd, 1, 1) == "/"
+
+    local parts
+    if is_absolute then
+        parts = string.split(pwd, "/")
+    else
+        local cwd = os.getcwd()
+
+        if string.sub(cwd, -1) == "/" and cwd ~= "/" then
+            cwd = string.sub(cwd, 1, -2)
+        end
+
+        parts = string.split(cwd .. "/" .. pwd, "/")
     end
 
-    local parts, eparts = string.split(path, "/"), {}
+    local resolved = {}
     for i = 1, #parts do
         local part = parts[i]
 
-        if part == "." then
+        if part == "" or part == "." then
         elseif part == ".." then
-            if #eparts > 0 then
-                table.remove(eparts)
+            if #resolved > 0 then
+                table.remove(resolved)
             end
         else
-            table.insert(eparts, part)
+            table.insert(resolved, part)
         end
     end
 
-    local result = "/" .. table.concat(eparts, "/")
+    local result = "/" .. table.concat(resolved, "/")
 
-    if #eparts == 0 then
+    if #resolved == 0 then
         return "/"
+    end
+
+    if string.sub(result, 1, 2) == "//" then
+        result = string.sub(result, 2)
     end
 
     return result
 end
-
-return libcore
