@@ -713,7 +713,7 @@ switch (opcode) {
                     fileDescriptors.put(fd, is);
                     registers[REG_R0] = fd.intValue();
                 } else if (create) {
-                    midlet.write(fullPath, "", pid);
+                    midlet.write(fullPath, "", id);
                     InputStream is2 = midlet.getInputStream(fullPath);
                     if (is2 != null) {
                         Integer fd = new Integer(nextFd++);
