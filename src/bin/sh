@@ -38,6 +38,19 @@ local function shell(args, enable, aliases, stdout, scope)
         local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
         status = res.status
 
+    elseif cmd == "exec" then
+        if argument == "" then
+        else
+            for i = 1, #args do
+                status = shell(args[i], enable, aliases, stdout, scope)
+
+                if status > 0 then
+                    break
+                end
+            end
+        end
+    end
+
     -- Kernel
     -- (Process)
     elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
