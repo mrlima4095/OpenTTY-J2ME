@@ -1,18 +1,35 @@
 #!/bin/lua
 
 local libcore = require("libcore")
+local stdout = io.stdout
 
 local function shell(args, enable, aliases, stdout, scope)
+    local status, redirect = 0, false
+    if string.find(args, ">") then
+        redirect = true
+    end
+
     args = string.env(args)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
+
+    if redirect then
+        for k,v in pairs(args) do
+            if v == ">" then
+                local std = args[k + 1]
+                if std then
+                    io.setstdout(std)
+                end
+            end
+        end
+    end
 
     if cmd == "" then
 
     elseif enable and aliases[cmd] then print(aliases[cmd]) return shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
     elseif io.open("/bin/" .. cmd) then
         local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
-        return res.status
+        status = res.status
 
     -- Kernel
     -- (Process)
@@ -24,7 +41,7 @@ local function shell(args, enable, aliases, stdout, scope)
         elseif argument == "" then
             print("su: usage: su [user] [passwd]")
         else
-            local status = os.su("root", argument)
+            status = os.su("root", argument)
 
             if status == 0 then
                 io.write("", stdout)
@@ -32,8 +49,6 @@ local function shell(args, enable, aliases, stdout, scope)
             elseif status == 13 then
                 print("su: permission denied")
             end
-
-            return status
         end
 
     -- Session
@@ -65,7 +80,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 if aliases[args[i]] then print("alias " .. args[i] .. "='" .. aliases[args[i]] .. "'")
                 else
                     print("alias: " .. args[i] .. ": not found")
-                    return 127
+                    status = 127
                 end
             end
         end
@@ -78,7 +93,7 @@ local function shell(args, enable, aliases, stdout, scope)
                     java.delete(aliases, args[i])
                 else
                     print("unalias: " .. args[i] .. ": not found")
-                    return 127
+                    status = 127
                 end
             end
         end
@@ -95,7 +110,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 if os.getenv(args[i]) then print(args[i] .. "=" .. os.getenv(args[i]))
                 else
                     print(cmd .. ": " .. args[i] .. ": not found")
-                    return 127
+                    status = 127
                 end
             end
         end
@@ -121,7 +136,7 @@ local function shell(args, enable, aliases, stdout, scope)
 
             if string.sub(argument, -1) ~= "/" then argument = argument .. "/" end
 
-            local status = os.chdir(argument)
+            status = os.chdir(argument)
             if status == 127 then
                 print("cd: " .. argument .. ": not found")
             elseif status == 20 then
@@ -129,7 +144,6 @@ local function shell(args, enable, aliases, stdout, scope)
             elseif status == 1 then
                 print("cd: no parent directory")
             end
-            return status
         end
     elseif cmd == "cat" then
         for i = 1, #args do
@@ -140,7 +154,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 print(string.env(io.read(file)))
             else
                 print("cat: " .. args[i] .. ": not found")
-                return 127
+                status = 127
             end
         end
     elseif cmd == "ls" then
@@ -158,10 +172,10 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "open" then
         if argument == "" then
         else
-            local ok, status = pcall(os.open, argument)
+            local ok, msg = pcall(os.open, argument)
             if not ok then
-                if status == "javax.microedition.io.ConnectionNotFoundException" then print("open: " .. argument .. ": not found") return 127
-                else print(tostring(status)) return 1 end
+                if msg == "javax.microedition.io.ConnectionNotFoundException" then print("open: " .. argument .. ": not found") return 127
+                else print(tostring(msg)) return 1 end
             end
         end
     elseif cmd == "elf" then
@@ -172,10 +186,14 @@ local function shell(args, enable, aliases, stdout, scope)
 
     else
         print(cmd .. ": not found")
-        return 127
+        status = 127
     end
 
-    return 0
+    if redirect then
+        io.setstdout(stdout)
+    end
+
+    return status
 end
 
 if arg[0] == "/bin/sh" then
