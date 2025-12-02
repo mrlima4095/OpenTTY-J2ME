@@ -824,7 +824,7 @@ switch (opcode) {
     private void handleGetcwd() {
         int buf = registers[REG_R0];
         int size = registers[REG_R1];
-         return 0; 
+        
         String cwd = (String) scope.get("PWD");
         if (cwd == null) cwd = "/home/";
         
