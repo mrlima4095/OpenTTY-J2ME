@@ -76,7 +76,7 @@ public class ELF {
         this.scope = scope;
         this.id = id;
         this.pid = pid == null ? midlet.genpid() : pid;
-        this.memory = new byte[1024 * 1024]; // 1MB de memória
+        this.memory = new byte[2 * 1024 * 1024]; // 1MB de memória
         this.registers = new int[16];
         this.cpsr = 0;
         this.running = false;
