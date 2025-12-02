@@ -55,12 +55,7 @@ public class ELF {
     private static final int V_MASK = 1 << CPSR_V;
     
     // Syscalls Linux ARM (EABI) - Atualizadas
-    private static final int SYS_EXIT = 1;
-    private static final int SYS_FORK = 2;
-    private static final int SYS_READ = 3;
-    private static final int SYS_WRITE = 4;
-    private static final int SYS_OPEN = 5;
-    private static final int SYS_CLOSE = 6;
+    private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6;
     private static final int SYS_CREAT = 8;
     private static final int SYS_TIME = 13;
     private static final int SYS_CHDIR = 12;
@@ -70,9 +65,7 @@ public class ELF {
     private static final int SYS_GETCWD = 183;
     
     // Flags de open
-    private static final int O_RDONLY = 0;
-    private static final int O_WRONLY = 1;
-    private static final int O_RDWR = 2;
+    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2;
     private static final int O_CREAT = 64;
     private static final int O_APPEND = 1024;
     private static final int O_TRUNC = 512;
@@ -361,33 +354,17 @@ public class ELF {
             
             if (isLoad) {
                 if (address >= 0 && address < memory.length) {
-                    if (isByte) {
-                        registers[rd] = memory[address] & 0xFF;
-                    } else {
+                    if (isByte) { registers[rd] = memory[address] & 0xFF; } 
+                    else {
                         // Alinhar para palavra (4 bytes)
                         int alignedAddr = address & ~3;
-                        if (alignedAddr + 3 < memory.length) {
-                            registers[rd] = readIntLE(memory, alignedAddr);
-                        }
+                        if (alignedAddr + 3 < memory.length) { registers[rd] = readIntLE(memory, alignedAddr); }
                     }
                 }
-            } else {
-                if (address >= 0 && address < memory.length) {
-                    if (isByte) {
-                        memory[address] = (byte)(registers[rd] & 0xFF);
-                    } else {
-                        writeIntLE(memory, address, registers[rd]);
-                    }
-                }
-            }
+            } 
+            else { if (address >= 0 && address < memory.length) { if (isByte) { memory[address] = (byte)(registers[rd] & 0xFF); } else { writeIntLE(memory, address, registers[rd]); } } }
             
-            if (!preIndexed) {
-                if (addOffset) {
-                    registers[rn] += offset;
-                } else {
-                    registers[rn] -= offset;
-                }
-            }
+            if (!preIndexed) { if (addOffset) { registers[rn] += offset; } else { registers[rn] -= offset; } }
             return;
         }
         
