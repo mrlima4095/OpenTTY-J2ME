@@ -122,6 +122,10 @@ local function shell(args, enable, aliases, stdout, scope)
         else
             argument = libcore.joinpath(argument)
 
+            if string.sub(argument, -1) ~= "/" then
+                argument = argument .. "/"
+            end
+
             local status = os.chdir(argument)
             if status == 127 then
                 print("cd: " .. argument .. ": not found")

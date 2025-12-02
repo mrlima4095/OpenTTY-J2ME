@@ -253,6 +253,29 @@ public class ELF {
             return;
         }
         
+        if ((instruction & 0x0FF00000) == 0x02800000) {
+            int rd = (instruction >> 12) & 0xF;
+            int imm = instruction & 0xFF;
+            int rotate = ((instruction >> 8) & 0xF) * 2;
+            int offset = rotateRight(imm, rotate);
+            
+            // ADR Rd, label -> ADD Rd, PC, #offset
+            registers[rd] = pc - 4 + offset;
+            return;
+        }
+
+        if ((instruction & 0x0FF00000) == 0x02800000) {
+            int rd = (instruction >> 12) & 0xF;
+            int imm = instruction & 0xFF;
+            int rotate = ((instruction >> 8) & 0xF) * 2;
+            int offset = rotateRight(imm, rotate);
+            
+            // ADR calcula endereço relativo ao PC
+            // PC já aponta para próxima instrução (pc atual)
+            registers[rd] = pc - 4 + offset;
+            return;
+        }
+
         // NOP
         if (instruction == 0xE1A00000) {
             return;
