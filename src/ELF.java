@@ -144,8 +144,7 @@ public class ELF {
         
         // Registrar como processo ativo
         Hashtable proc = midlet.genprocess("elf", id, null);
-        proc.put("elf", this); // Armazenar instância ELF no processo
-        midlet.sys.put(pid, proc);
+        proc.put("elf", this); midlet.sys.put(pid, proc);
         
         try {
             while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
@@ -559,7 +558,7 @@ public class ELF {
                 break;
                 
             case SYS_GETPID:
-                registers[REG_R0] = 1000 + midlet.random.nextInt(9000);
+                try { registers[REG_R0] = Integer.valueOf(this.pid); } catch (NumberFormatException e) { }
                 break;
                 
             case SYS_GETCWD:
