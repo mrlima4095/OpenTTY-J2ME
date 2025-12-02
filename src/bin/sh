@@ -49,7 +49,6 @@ local function shell(args, enable, aliases, stdout, scope)
                 end
             end
         end
-    end
 
     -- Kernel
     -- (Process)
