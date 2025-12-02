@@ -1,0 +1,27 @@
+# CITATION.cff
+cff-version: 1.2.0
+message: "Please cite the following work when using OpenTTY J2ME in your research or projects."
+title: "OpenTTY J2ME"
+abstract: |
+  OpenTTY is a J2ME-based terminal emulator and lightweight operating environment 
+  that provides a Lua runtime interpreter, ELF binary execution for ARM 32, and a 
+  POSIX-like shell interface on constrained mobile j2me devices. It implements a 
+  virtual filesystem, process management, and system call emulation to enable 
+  portable scripting and binary execution in embedded Java environments.
+authors:
+  - given-names: "OpenTTY"
+    family-names: "Project"
+    affiliation: "Community-driven open source project"
+license: "MIT"
+repository-code: "https://github.com/mrlima4095/OpenTTY-J2ME"
+version: "1.16"
+date-released: 2025-08-31
+keywords:
+  - "J2ME"
+  - "Lua"
+  - "ELF"
+  - "ARM emulation"
+  - "Terminal emulator"
+  - "Embedded systems"
+  - "Mobile computing"
+  - "Java ME"
