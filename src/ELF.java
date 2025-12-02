@@ -783,7 +783,7 @@ switch (opcode) {
                         if (fileDescriptors.containsKey(pathKey)) {
                             String path = (String) fileDescriptors.get(pathKey);
                             byte[] data = baos.toByteArray();
-                            midlet.write(path, data, pid);
+                            midlet.write(path, data, id);
                         }
                     }
                 }
