@@ -19,6 +19,14 @@ local function shell(args, enable, aliases, stdout, scope)
                 if std then
                     io.setstdout(std)
                 end
+
+                for x,y in pairs(args) do
+                    if x > k then
+                        table.remove(args, x)
+                    end
+                end
+
+                break
             end
         end
     end
