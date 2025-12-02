@@ -371,16 +371,12 @@ public class ELF {
         // Branch Instructions
         if ((instruction & 0x0E000000) == 0x0A000000) {
             int offset = instruction & 0x00FFFFFF;
-            if ((offset & 0x00800000) != 0) {
-                offset |= 0xFF000000;
-            }
+            if ((offset & 0x00800000) != 0) { offset |= 0xFF000000; }
             offset <<= 2;
             
             boolean link = (instruction & (1 << 24)) != 0;
             
-            if (link) {
-                registers[REG_LR] = pc;
-            }
+            if (link) { registers[REG_LR] = pc; }
             
             pc = pc + offset - 4;
             return;
@@ -396,40 +392,26 @@ public class ELF {
             
             int pcValue = pc + 4;
             
-            if (isAdd) { 
-                registers[rd] = pcValue + offset; 
-            } else { 
-                registers[rd] = pcValue - offset; 
-            }
+            if (isAdd) { registers[rd] = pcValue + offset; } else { registers[rd] = pcValue - offset; }
 
             return;
         }
 
         // NOP
-        if (instruction == 0xE1A00000) {
-            return;
-        }
+        if (instruction == 0xE1A00000) { return; }
     }
     
     private int applyShift(int value, int shift_type, int shift_amount, int carry_in) {
-        if (shift_amount == 0) {
-            return value;
-        }
+        if (shift_amount == 0) { return value; }
         
         switch (shift_type) {
             case 0: // LSL (Logical Shift Left)
-                if (shift_amount >= 32) {
-                    cpsr = (cpsr & ~C_MASK) | ((value << (shift_amount - 1)) >>> 31) << CPSR_C;
-                    return 0;
-                }
+                if (shift_amount >= 32) { cpsr = (cpsr & ~C_MASK) | ((value << (shift_amount - 1)) >>> 31) << CPSR_C; return 0; }
                 cpsr = (cpsr & ~C_MASK) | ((value << (shift_amount - 1)) >>> 31) << CPSR_C;
                 return value << shift_amount;
                 
             case 1: // LSR (Logical Shift Right)
-                if (shift_amount >= 32) {
-                    cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C;
-                    return 0;
-                }
+                if (shift_amount >= 32) { cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C; return 0; }
                 cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C;
                 return value >>> shift_amount;
                 
@@ -460,27 +442,13 @@ public class ELF {
     
     private void updateFlags(int result, int carry) {
         // Atualizar flag N (Negative)
-        if ((result & 0x80000000) != 0) {
-            cpsr |= N_MASK;
-        } else {
-            cpsr &= ~N_MASK;
-        }
+        if ((result & 0x80000000) != 0) { cpsr |= N_MASK; } else { cpsr &= ~N_MASK; }
         
         // Atualizar flag Z (Zero)
-        if (result == 0) {
-            cpsr |= Z_MASK;
-        } else {
-            cpsr &= ~Z_MASK;
-        }
+        if (result == 0) { cpsr |= Z_MASK; } else { cpsr &= ~Z_MASK; }
         
         // Atualizar flag C (Carry) se fornecido
-        if (carry >= 0) {
-            if (carry != 0) {
-                cpsr |= C_MASK;
-            } else {
-                cpsr &= ~C_MASK;
-            }
-        }
+        if (carry >= 0) { if (carry != 0) { cpsr |= C_MASK; } else { cpsr &= ~C_MASK; } }
     }
     
     private void updateOverflow(int operand1, int operand2, int result, int opcode) {
@@ -500,11 +468,7 @@ public class ELF {
                 break;
         }
         
-        if (overflow) {
-            cpsr |= V_MASK;
-        } else {
-            cpsr &= ~V_MASK;
-        }
+        if (overflow) { cpsr |= V_MASK; } else { cpsr &= ~V_MASK; }
     }
     
     private void handleSyscall(int number) {
@@ -670,10 +634,7 @@ public class ELF {
         int flags = registers[REG_R1];
         int mode = registers[REG_R2];
         
-        if (pathAddr < 0 || pathAddr >= memory.length) {
-            registers[REG_R0] = -1;
-            return;
-        }
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
         
         // Ler o caminho da memória
         StringBuffer pathBuf = new StringBuffer();
