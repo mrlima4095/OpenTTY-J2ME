@@ -122,9 +122,7 @@ local function shell(args, enable, aliases, stdout, scope)
         else
             argument = libcore.joinpath(argument)
 
-            if string.sub(argument, -1) ~= "/" then
-                argument = argument .. "/"
-            end
+            if string.sub(argument, -1) ~= "/" then argument = argument .. "/" end
 
             local status = os.chdir(argument)
             if status == 127 then
@@ -169,7 +167,10 @@ local function shell(args, enable, aliases, stdout, scope)
                 else print(tostring(status)) return 1 end
             end
         end
-    elseif cmd == "elf" then java.elf(argument)
+    elseif cmd == "elf" then
+        if argument == "" then
+            print("elf: usage: elf [binary]")
+        else java.elf(libcore.joinpath(argument)) end
 
 
     else
