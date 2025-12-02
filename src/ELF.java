@@ -1,3 +1,5 @@
+[file name]: ELF.java
+[file content begin]
 import java.util.*;
 import java.io.*;
 
@@ -52,14 +54,19 @@ public class ELF {
     private static final int C_MASK = 1 << CPSR_C;
     private static final int V_MASK = 1 << CPSR_V;
     
-    // Syscalls Linux ARM (EABI)
+    // Syscalls Linux ARM (EABI) - Atualizadas
     private static final int SYS_EXIT = 1;
+    private static final int SYS_FORK = 2;
     private static final int SYS_READ = 3;
     private static final int SYS_WRITE = 4;
     private static final int SYS_OPEN = 5;
     private static final int SYS_CLOSE = 6;
-    private static final int SYS_BRK = 45;
+    private static final int SYS_CREAT = 8;
+    private static final int SYS_TIME = 13;
+    private static final int SYS_CHDIR = 12;
     private static final int SYS_GETPID = 20;
+    private static final int SYS_KILL = 37;
+    private static final int SYS_BRK = 45;
     private static final int SYS_GETCWD = 183;
     
     // Flags de open
@@ -76,7 +83,7 @@ public class ELF {
         this.scope = scope;
         this.id = id;
         this.pid = pid == null ? midlet.genpid() : pid;
-        this.memory = new byte[2 * 1024 * 1024]; // 1MB de memória
+        this.memory = new byte[1024 * 1024]; // 1MB de memória
         this.registers = new int[16];
         this.cpsr = 0;
         this.running = false;
@@ -525,6 +532,10 @@ public class ELF {
     
     private void handleSyscall(int number) {
         switch (number) {
+            case SYS_FORK:
+                handleFork();
+                break;
+                
             case SYS_WRITE:
                 handleWrite();
                 break;
@@ -541,12 +552,28 @@ public class ELF {
                 handleClose();
                 break;
                 
+            case SYS_CREAT:
+                handleCreat();
+                break;
+                
+            case SYS_TIME:
+                handleTime();
+                break;
+                
+            case SYS_CHDIR:
+                handleChdir();
+                break;
+                
             case SYS_EXIT:
                 handleExit();
                 break;
                 
             case SYS_GETPID:
-                try { registers[REG_R0] = Integer.valueOf(this.pid); } catch (NumberFormatException e) { }
+                handleGetpid();
+                break;
+                
+            case SYS_KILL:
+                handleKill();
                 break;
                 
             case SYS_GETCWD:
@@ -561,6 +588,13 @@ public class ELF {
                 registers[REG_R0] = -1; // Syscall não implementada
                 break;
         }
+    }
+    
+    private void handleFork() {
+        // Em J2ME não temos fork real, simulamos retornando 0 para o processo filho (simulado)
+        // No sistema real, isso criaria um novo processo
+        // Por simplicidade, retornamos -1 (erro) indicando que fork não é suportado
+        registers[REG_R0] = -1; // ENOSYS - Function not implemented
     }
     
     private void handleWrite() {
@@ -738,6 +772,18 @@ public class ELF {
         }
     }
     
+    private void handleCreat() {
+        // creat(path, mode) é equivalente a open(path, O_CREAT | O_WRONLY | O_TRUNC, mode)
+        int pathAddr = registers[REG_R0];
+        int mode = registers[REG_R1];
+        
+        // Simular open com flags O_CREAT | O_WRONLY | O_TRUNC
+        registers[REG_R1] = O_CREAT | O_WRONLY | O_TRUNC;
+        registers[REG_R2] = mode;
+        
+        handleOpen();
+    }
+    
     private void handleClose() {
         int fd = registers[REG_R0];
         Integer fdKey = new Integer(fd);
@@ -779,6 +825,132 @@ public class ELF {
             }
         } else {
             registers[REG_R0] = -1;
+        }
+    }
+    
+    private void handleTime() {
+        // Retornar o tempo atual em segundos desde a época (1970-01-01 00:00:00 UTC)
+        long currentTime = System.currentTimeMillis() / 1000;
+        registers[REG_R0] = (int) currentTime;
+        
+        // Se o ponteiro para time_t foi fornecido (R0 != 0), escrever o tempo lá também
+        int timePtr = registers[REG_R1];
+        if (timePtr != 0 && timePtr >= 0 && timePtr + 3 < memory.length) {
+            writeIntLE(memory, timePtr, (int) currentTime);
+        }
+    }
+    
+    private void handleChdir() {
+        int pathAddr = registers[REG_R0];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length) {
+            registers[REG_R0] = -1; // EFAULT
+            return;
+        }
+        
+        // Ler o caminho da memória
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
+        String path = pathBuf.toString();
+        
+        // Verificar se o diretório existe
+        if (path.equals("") || path.equals(".")) {
+            registers[REG_R0] = 0; // Sucesso
+            return;
+        }
+        
+        // Resolver caminho relativo
+        String fullPath = path;
+        if (!path.startsWith("/")) {
+            String pwd = (String) scope.get("PWD");
+            if (pwd == null) { pwd = "/home/"; }
+            fullPath = pwd + (pwd.endsWith("/") ? "" : "/") + path;
+        }
+        
+        // Adicionar barra final se necessário
+        if (!fullPath.endsWith("/")) {
+            fullPath = fullPath + "/";
+        }
+        
+        // Verificar se é um diretório válido no sistema de arquivos
+        boolean dirExists = false;
+        
+        if (fullPath.equals("/home/")) {
+            dirExists = true;
+        } else if (fullPath.startsWith("/mnt/")) {
+            try {
+                FileConnection conn = (FileConnection) Connector.open("file:///" + fullPath.substring(5), Connector.READ);
+                dirExists = conn.exists() && conn.isDirectory();
+                conn.close();
+            } catch (Exception e) {
+                dirExists = false;
+            }
+        } else if (midlet.fs.containsKey(fullPath)) {
+            dirExists = true;
+        }
+        
+        if (dirExists) {
+            scope.put("PWD", fullPath);
+            registers[REG_R0] = 0; // Sucesso
+        } else {
+            registers[REG_R0] = -2; // ENOENT - No such file or directory
+        }
+    }
+    
+    private void handleGetpid() {
+        try {
+            int pidValue = Integer.parseInt(this.pid);
+            registers[REG_R0] = pidValue;
+        } catch (NumberFormatException e) {
+            registers[REG_R0] = 1; // Fallback para PID 1 (init)
+        }
+    }
+    
+    private void handleKill() {
+        int pid = registers[REG_R0];
+        int sig = registers[REG_R1];
+        
+        // Converter PID para string
+        String targetPid = String.valueOf(pid);
+        
+        // Verificar se o processo existe
+        if (!midlet.sys.containsKey(targetPid)) {
+            registers[REG_R0] = -3; // ESRCH - No such process
+            return;
+        }
+        
+        // Verificar permissões (apenas root ou o próprio processo pode matar)
+        if (this.id != 0 && !targetPid.equals(this.pid)) {
+            registers[REG_R0] = -1; // EPERM - Operation not permitted
+            return;
+        }
+        
+        // Enviar sinal (simulado)
+        if (sig == 9) { // SIGKILL
+            // Matar processo imediatamente
+            Object procObj = midlet.sys.get(targetPid);
+            if (procObj instanceof Hashtable) {
+                Hashtable proc = (Hashtable) procObj;
+                if (proc.containsKey("elf")) {
+                    ELF elf = (ELF) proc.get("elf");
+                    elf.kill();
+                }
+            }
+            midlet.sys.remove(targetPid);
+            registers[REG_R0] = 0; // Sucesso
+        } else if (sig == 15) { // SIGTERM
+            // Sinal de término normal
+            // Em um sistema real, isso permitiria limpeza
+            // Aqui apenas matamos o processo
+            midlet.sys.remove(targetPid);
+            registers[REG_R0] = 0; // Sucesso
+        } else {
+            // Sinal não suportado
+            registers[REG_R0] = -22; // EINVAL - Invalid argument
         }
     }
     
