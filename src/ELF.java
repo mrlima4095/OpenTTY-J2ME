@@ -318,7 +318,7 @@ public class ELF {
                 sb.append((char)(memory[buf + i] & 0xFF));
             }
             
-            midlet.print(sb.toString, stdout, id);
+            midlet.print(sb.toString(), stdout, id);
             
             registers[REG_R0] = count;
             
