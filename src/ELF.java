@@ -1,5 +1,3 @@
-[file name]: ELF.java
-[file content begin]
 import java.util.*;
 import java.io.*;
 
