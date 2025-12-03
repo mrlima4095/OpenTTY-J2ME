@@ -35,6 +35,13 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif io.open("/bin/" .. cmd) then
         local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
         status = res.status
+    elseif cmd == "." then
+        if argument then
+            local program = libcore.joinpath(args[1])
+            table.remove(args, 1)
+            local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
+            status = res.status
+        end
 
     elseif cmd == "exec" then
         if argument == "" then
