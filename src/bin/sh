@@ -6,12 +6,11 @@ local function shell(args, enable, aliases, stdout, scope)
     local status, redirect = 0, false
     if string.find(args, ">") then
         redirect = true
+        
+        local index = string.find(args, ">")
+        io.setstdout(string.sub 
     end
-
-    args = string.env(args)
-    local cmd, argument = string.getCommand(args), string.getArgument(args)
-    args = string.split(argument, nil)
-
+    
     if redirect then
         for i = 1, #args do
             if args[i] == ">" then
@@ -30,6 +29,10 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
     end
+
+    args = string.env(args)
+    local cmd, argument = string.getCommand(args), string.getArgument(args)
+    args = string.split(argument, nil)
 
     if cmd == "" then
 
