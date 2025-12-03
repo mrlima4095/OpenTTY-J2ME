@@ -1,14 +1,9 @@
 #!/bin/lua
 
-local function joinpath(pwd)
-    if string.sub(pwd, 1, 1) ~= "/" then
-        return os.getcwd() .. pwd
-    end
-    return pwd
-end
+local libcore = require("libcore")
 
 if #arg[1] then
-    local file = io.read(joinpath(arg[1]))
+    local file = io.read(libcore.joinpath(arg[1]))
     if file then
         print(string.hash(file))
     else
