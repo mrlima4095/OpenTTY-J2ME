@@ -26,10 +26,8 @@ local function shell(args, enable, aliases, stdout, scope)
                     end
                 end
 
-                break
-
                 argument = table.concat(args, " ")
-                return
+                break
             end
         end
     end
