@@ -13,7 +13,7 @@ local function cmatrix()
     graphics.display(screen)
 
     java.run(function ()
-        while running do
+        while true do
             graphics.SetText(buffer, string.trim(graphics.GetText(buffer) .. " " .. math.random(10)))
 
             if #graphics.GetText(buffer) > 200 then graphics.SetText(buffer, "") end
