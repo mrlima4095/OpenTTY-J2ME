@@ -63,7 +63,7 @@ local function shell(args, enable, aliases, stdout, scope)
             status = os.su("root", argument)
 
             if status == 0 then
-                io.write("", stdout)
+                graphics.SetText(io.stdout, "")
                 print(string.env(io.read("/etc/motd")))
             elseif status == 13 then
                 print("su: permission denied")
