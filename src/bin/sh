@@ -13,16 +13,16 @@ local function shell(args, enable, aliases, stdout, scope)
     args = string.split(argument, nil)
 
     if redirect then
-        for k,v in pairs(args) do
-            if v == ">" then
-                local std = args[k + 1]
+        for i = 1, #args do
+            if args[i] == ">" then
+                local std = args[i + 1]
                 if std then
                     io.setstdout(std)
                 end
 
-                for x,y in pairs(args) do
-                    if x > k then
-                        table.remove(args, x)
+                for j = 1, #args do
+                    if j > i then
+                        table.remove(args, j)
                     end
                 end
 
