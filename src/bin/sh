@@ -8,7 +8,7 @@ local function shell(args, enable, aliases, stdout, scope)
         redirect = true
         
         local index = string.find(args, ">")
-        io.setstdout(string.sub 
+        io.setstdout(string.sub())
     end
     
     if redirect then
