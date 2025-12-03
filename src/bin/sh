@@ -3,10 +3,7 @@
 local libcore = require("libcore")
 
 local function shell(args, enable, aliases, stdout, scope)
-    local status, redirect = 0, false
-    if string.find(args, ">") then
-        redirect = true
-    end
+    local status, redirect = 0, string.find(args, ">") ~= nil
 
     args = string.env(args)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
