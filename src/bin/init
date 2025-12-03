@@ -27,6 +27,9 @@ graphics.handler(xterm, {
             graphics.SetText(io.stdin, "")
             if command ~= "!!" then
                 history = command
+            else
+                graphics.SetText(io.stdin, history)
+                return
             end
 
             local ok, msg = pcall(shell, command, true, alias, io.stdout, scope)
