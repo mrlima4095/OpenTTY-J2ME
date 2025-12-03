@@ -10,7 +10,7 @@ import java.util.*;
 import java.io.*;
 // |
 // OpenTTY MIDlet
-public class OpenTTY extends MIDlet {
+public class OpenTTY extends MIDlet implements CommandListener {
     // Behavior Settings
     public long uptime = System.currentTimeMillis();
     public boolean useCache = true;
@@ -60,8 +60,22 @@ public class OpenTTY extends MIDlet {
         catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
     }
     // | (Installation)
-    private void login() {
-        
+    private void login(boolean user, boolean pword) {
+        if (user || pword) {
+            Form screen = new Form("OpenTTY - Login");
+            screen.append(env(read("/etc/motd") + "\n:: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
+            if (user) { screen.append(new TextField("Username", "", 256, TextField.ANY)); }
+            if (pword) { screen.append(new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); }
+            screen.addCommand(new Command())
+            screen.setCommandListener(this);
+            display.setCurrent(screen);            
+        }
+    }
+    public void commandAction(Command c, Displayable d) {
+        if (c.getLabel() == "Exit") { destroyApp(true); }
+        else {
+            
+        }
     }
     // |
     // Control Thread
