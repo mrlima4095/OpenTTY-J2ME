@@ -11,7 +11,8 @@ local libcore = require("libcore")
 
 if arg[1] then
     app.content = io.read(libcore.joinpath(arg[1]))
-    app.editor = graphics.new("edit", "Nano - " .. arg[1], app.content)
+    app.editor = graphics.new("edit", "Nano - " .. arg[1])
+    graphics.SetText(app.editor, app.content)
 else
     print("nano: usage: nano [file]")
     os.exit(2)
