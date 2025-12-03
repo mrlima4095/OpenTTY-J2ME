@@ -197,11 +197,6 @@ local function shell(args, enable, aliases, stdout, scope)
                 else print(tostring(msg)) return 1 end
             end
         end
-    elseif cmd == "elf" then
-        if argument == "" then
-            print("elf: usage: elf [binary]")
-        else java.elf(libcore.joinpath(argument)) end
-
 
     else
         print(cmd .. ": not found")
