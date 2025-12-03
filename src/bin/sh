@@ -3,37 +3,36 @@
 local libcore = require("libcore")
 
 local function shell(args, enable, aliases, stdout, scope)
-    local status, argv, redirect = 0, {}, false
-
+    local status, redirect = 0, false
     if string.find(args, ">") then
-        local argx = string.split(argument, nil)
-        
-        for i = 1, #argx do
-            if args[i] == ">" then
-                local std = argx[i + 1]
-                if std then
-                    io.setstdout(std)
-                end
-
-                for j = 1, #argx do
-                    if j < i then
-                        table.insert(argv, j)
-                    end
-                end
-
-                break
-            end
-        end
-        
         redirect = true
-        
-        local index = string.find(args, ">")
-        io.setstdout(string.sub())
     end
 
     args = string.env(args)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
+
+    if redirect then
+        for i = 1, #args do
+            if args[i] == ">" then
+                local std = args[i + 1]
+                if std then
+                    io.setstdout(libcore.joinpath(std))
+                end
+
+                for j = 1, #args do
+                    if j > i then
+                        table.remove(args, j)
+                    end
+                end
+
+                break
+
+                argument = table.concat(args, " ")
+                return
+            end
+        end
+    end
 
     if cmd == "" then
 
