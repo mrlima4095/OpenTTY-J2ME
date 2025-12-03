@@ -4,6 +4,7 @@ for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
 local shell = require("/bin/sh")
+local history = ""
 local alias, scope = {}, { PWD = "/home/", USER = java.midlet.username }
 
 local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
@@ -24,6 +25,10 @@ graphics.handler(xterm, {
     [run] = function(command)
         if command ~= "" then
             graphics.SetText(io.stdin, "")
+            if command ~= "!!" then
+                history = command
+            end
+
             local ok, msg = pcall(shell, command, true, alias, io.stdout, scope)
             if not ok then
                 print(tostring(msg))
