@@ -16,37 +16,23 @@ graphics.append(menu, "Download (Beta)")
 graphics.addCommand(menu, back)
 graphics.addCommand(menu, open)
 graphics.handler(menu, {
-    [back] = function()
+    [back] = function ()
         graphics.display(previous)
-        os.exit()
+        os.exit(0)
     end,
-    [open] = function(opt)
+    [open] = function (opt)
         if opt == "Check for Updates" then
-            local ok, body, status = pcall(socket.http.get, proxy .. "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/root/latest")
-            if ok then
-                if status == 200 then
-                    if body == os.getenv("VERSION") then
-                        graphics.display(graphics.new("alert", "Updater", "MIDlet is already Updated"))
-                    else
-                        os.open("http://opentty.xyz/dist/versions/OpenTTY-" .. body .. ".jar")
-                    end
-                else
-                    graphics.display(graphics.new("alert", "Error", "Fetching error"))
-                end
-            else
-                graphics.display(graphics.new("alert", "Error", "Connection error"))
-            end
-        elseif opt == "Go to releases archive" then
-            os.open("http://opentty.xyz/dist/versions")
-        elseif opt == "Download 1.16 (LTS)" then
+
+        elseif opt == "Go to releases" then
+            os.open("http://opentty.xyz/dist/versions/")
+        elseif opt == "Download 1.16 LTS" then
             os.open("http://opentty.xyz/dist/versions/OpenTTY-1.16.jar")
         else
             os.open("http://opentty.xyz/dist/OpenTTY.jar")
         end
 
         graphics.display(previous)
-        os.exit()
+        os.exit(0)
     end
 })
-
 graphics.display(menu)
