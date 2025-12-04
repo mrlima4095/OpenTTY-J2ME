@@ -48,7 +48,7 @@ if url == "" then
     os.exit(2)
 end
 
-local ok, body, status = 0
+local ok, body, status = nil, nil, 0
 if method == "GET" then
     ok, body, status = pcall(socket.http.get, url, headers)
 elseif method == "POST" then
