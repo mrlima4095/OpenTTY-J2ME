@@ -1,49 +1,61 @@
 #!/bin/lua
 
-local libcore = require("libcore")
-local function parse_url(url)
-    if string.sub(url, 1, 4) == "http:" or string.sub(url, 0, 6) == "https:" then return url end
-    return "http://" .. url
+local output = "/dev/stdout"
+local follow_redirects, verbose = false, false
+local url, method, data = "", "GET", ""
+local headers = {}
+
+if not arg[1] then
+    print("curl: usage: curl [options] [url]")
 end
 
-os.setproc("name", "curl")
 
-if arg[1] == "-o" then
-    if arg[2] and arg[3] then
-        local url = parse_url(arg[3])
-        local ok, body, status = pcall(socket.http.get, url)
-        if ok then
-            if status ~= 200 then
-                print("status: " .. status)
-                print("---")
-                print(body)
-                print("---")
-            end
+local i = 1
+while i <= #arg - 1 do
+    local opt = arg[i]
 
-            local code = io.write(body, libcore.joinpath(arg[2]))
-            if code == 13 then
-                print("curl: permission denied")
-            elseif code == 5 then
-                print("curl: read-only storage")
-            elseif code == 1 then
-                print("curl: java.io.IOException")
-            end
-
-            os.exit(tonumber(code))
-        else
-            print("curl: (6) Could not resolve host: " .. arg[3])
+    if opt == "-h" or opt == "--help" then
+    elseif opt == "-X" then
+        i = i + 1
+        method = arg[i] or "GET"
+        method = string.upper(method)
+    elseif opt == "-H" then
+        i = i + 1
+        local line = arg[i] or ""
+        local colon = string.find(line, ":")
+        if colon then
+            headers[string.trim(string.sub(line, 1, colon - 1))] = string.trim(string.sub(line, colon + 1))
         end
+    elseif opt == "-d" then
+        i = i + 1
+        data = arg[i] or ""
+    elseif opt == "-o" then
+        i = i + 1
+        output = arg[i] or ""
+    elseif opt == "-L" then
+        follow_redirects = true
+    elseif opt == "-v" then
+        verbose = true
+    elseif string.sub(opt, 1, 1) == "-" then
+        print("curl: option " .. opt .. ": is unknown")
+        os.exit(2)
     else
-        print("Usage: curl -o [file] [url]")
+        url = opt
     end
-elseif arg[1] then
-    local url = parse_url(arg[1])
-    local ok, body, status = pcall(socket.http.get, url)
-    if ok then
-        print(body)
-    else
-        print("curl: (6) Could not resolve host: " .. arg[1])
-    end
-else
-    print("curl [url]")
 end
+
+if url == "" then
+    print("curl: no URL specified!")
+    os.exit(2)
+end
+
+local body, request
+if method == "GET" then
+    body, request = socket.http.get()
+elseif method == "POST" then
+
+else
+    print("curl: method " .. method .. ": is unsupported")
+    os.exit(127)
+end
+
