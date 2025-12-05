@@ -23,7 +23,7 @@ local function shell(args, enable, aliases, stdout, scope)
                     end
                 end
 
-                argument = table.concat(args, " ")
+                argument = table.concat(args, " ") -- restore argument String line on var
                 break
             end
         end
@@ -57,8 +57,10 @@ local function shell(args, enable, aliases, stdout, scope)
 
     -- Kernel
     -- (Process)
+    -- | prints running process
     elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
     -- (Permissions)
+    -- | change your user
     elseif cmd == "su" then
         if os.getuid() == 0 then
             os.su(java.midlet.username)
@@ -77,13 +79,17 @@ local function shell(args, enable, aliases, stdout, scope)
 
     -- Session
     -- (User Information)
+    -- | prints information about your account
     elseif cmd == "whoami" then print(os.getuid() == 0 and "root" or java.midlet.username)
     elseif cmd == "id" then print(os.getuid())
     -- (Manager)
+    -- | closes MIDlet
     elseif cmd == "exit" then os.exit(nil)
 
     -- Window Aliases
+    -- | go to default screen
     elseif cmd == "xterm" then graphics.display(graphics.db["xterm"])
+    -- | display alerts on screen
     elseif cmd == "warn" then
         if #args < 2 then
         else
@@ -92,6 +98,7 @@ local function shell(args, enable, aliases, stdout, scope)
 
     -- Shell Utils
     -- (Alias Manager)
+    -- | create and view aliases
     elseif cmd == "alias" then
         if argument == "" then for k,v in pairs(aliases) do print("alias " .. k .. "='" .. v .. "'") end
         elseif string.find(argument, "=") then
@@ -108,6 +115,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 end
             end
         end
+    -- | clean aliases
     elseif cmd == "unalias" then
         if argument == "" then
             print("unalias: usage: unalias [-a] name [name ...]")
@@ -122,6 +130,7 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
     -- (Environment Keys)
+    -- | set or view environment keys
     elseif cmd == "env" or cmd == "set" then
         if argument == "" then for k,v in pairs(os.getenv()) do print(k .. "=" .. v) end
         elseif string.find(argument, "=") then
@@ -138,6 +147,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 end
             end
         end
+    -- | remove environment keys
     elseif cmd == "unset" then
         if argument == "" then
         else
