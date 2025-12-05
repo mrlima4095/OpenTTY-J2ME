@@ -6,3 +6,5 @@ ELF (ARM 32)
 
 ## Packages 
 
+- Vim
+- Clang
