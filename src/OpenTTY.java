@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // System Objects
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
-    
+
     public Hashtable attributes = new Hashtable(), 
                      fs = new Hashtable(), 
                      sys = new Hashtable(), 
@@ -27,7 +27,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                      graphics = new Hashtable(),
                      network = new Hashtable(),
                      globals = new Hashtable();
-    public String username = read("/home/OpenRMS"), build = "2025-1.17-03x05"; 
+    public String username = read("/home/OpenRMS"), build = "2025-1.17-03x05";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -42,21 +42,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Boot)
     public void init() {
         try { 
-            Hashtable proc = new Hashtable(), args = new Hashtable();    
-            args.put(new Double(0), "/bin/init"); 
+            Hashtable proc = new Hashtable(), args = new Hashtable();
+            args.put(new Double(0), "/bin/init");
             globals.put("PWD", "/home/"); globals.put("USER", "root");
             proc.put("name", "init"); proc.put("owner", "root");
 
             Lua lua = new Lua(this, 0, "1", proc, stdout, globals);
-            sys.put("1", proc); lua.globals.put("arg", args);    
+            sys.put("1", proc); lua.globals.put("arg", args);
 
-            lua.tokens = lua.tokenize(read("/bin/init")); 
-            
+            lua.tokens = lua.tokenize(read("/bin/init"));
+
             while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
             proc.put("lua", lua); proc.put("handler", lua.getKernel());
 
         }
-        catch (Exception e) { warn("SandBox", getCatch(e)); } 
+        catch (Exception e) { warn("SandBox", getCatch(e)); }
         catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
     }
     // | (Installation)
