@@ -9,6 +9,10 @@ ELF (ARM 32)
 - Vim
 - Clang
 
+## Resources
+
+- MIDletCanvas
+
 ## Commands
 
 - 
