@@ -131,7 +131,7 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     -- (Environment Keys)
     -- | set or view environment keys
-    elseif cmd == "env" or cmd == "set" then
+    elseif cmd == "env" or cmd == "set" or cmd == "export" then
         if argument == "" then for k,v in pairs(os.getenv()) do print(k .. "=" .. v) end
         elseif string.find(argument, "=") then
             local index = string.find(argument, "=")
