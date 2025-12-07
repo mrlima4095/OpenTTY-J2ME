@@ -80,7 +80,7 @@ local function shell(args, enable, aliases, stdout, scope)
     -- Session
     -- (User Information)
     -- | prints information about your account
-    elseif cmd == "whoami" then print(os.getuid() == 0 and "root" or java.midlet.username)
+    elseif cmd == "whoami" or cmd == "logname" then print(os.getuid() == 0 and "root" or java.midlet.username)
     elseif cmd == "id" then print(os.getuid())
     -- (Manager)
     -- | closes MIDlet
