@@ -49,7 +49,7 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
     //else if (mainCommand.equals("ps")) { print("PID\tPROCESS", stdout); for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); print(PID + "\t" + (String) ((Hashtable) sys.get(PID)).get("name"), stdout); } }
     else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], id, genpid(), null, stdout, scope) : mainCommand.equals("stop") ? stop(args[i], id, stdout, scope) : kill(args[i], true, id, stdout, scope); if (STATUS != 0) { return STATUS; } } } 
     // | (Memory)
-    else if (mainCommand.equals("gc")) { System.gc(); }
+    //else if (mainCommand.equals("gc")) { System.gc(); }
     // | (Threads)
     else if (mainCommand.equals("throw")) { Thread.currentThread().interrupt(); }
     else if (mainCommand.equals("bg")) { if (argument.equals("")) { } else { new MIDletControl("Background", argument, enable, id, stdout, scope); } }
