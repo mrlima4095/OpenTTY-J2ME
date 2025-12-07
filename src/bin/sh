@@ -58,6 +58,7 @@ local function shell(args, enable, aliases, stdout, scope)
     -- Kernel
     -- (Process)
     -- | prints running process
+    elseif cmd == "gc" then collectgarbage()
     elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
     -- (Permissions)
     -- | change your user

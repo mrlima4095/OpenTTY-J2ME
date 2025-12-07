@@ -167,7 +167,7 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
     // | (Structure)
     // | (Listings)
     // | (Navigation)
-    else if (mainCommand.equals("pwd")) { print((String) scope.get("PWD"), stdout); }
+    //else if (mainCommand.equals("pwd")) { print((String) scope.get("PWD"), stdout); }
     else if (mainCommand.equals("cd")) { 
         String pwd = (String) scope.get("PWD");
         if (argument.equals("") && mainCommand.equals("cd")) { scope.put("PWD", "/home/"); } 
