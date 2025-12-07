@@ -160,7 +160,7 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
     else if (mainCommand.equals("warn")) { return warn(xterm.getTitle(), argument); }
     else if (mainCommand.equals("view")) { if (argument.equals("")) { } else { viewer(extractTitle(env(argument), xterm.getTitle()), html2text(env(argument))); } }
     // | (Window Modificators)
-    else if (mainCommand.equals("title")) { xterm.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument.equals("hide") ? null : argument); }
+    //else if (mainCommand.equals("title")) { xterm.setTitle(argument.equals("") ? env("OpenTTY $VERSION") : argument.equals("hide") ? null : argument); }
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
     // API 003 - File System
