@@ -96,6 +96,9 @@ local function shell(args, enable, aliases, stdout, scope)
         else
             graphics.display(graphics.new("alert", args[1], args[2]))
         end
+    -- | changes title of current screen
+    elseif cmd == "title" then 
+        graphics.SetTitle(graphics.getCurrent(), argument)
 
     -- Shell Utils
     -- (Alias Manager)
