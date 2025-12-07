@@ -214,6 +214,9 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
 
+    elseif cmd == "true" or string.sub(cmd, 1, 1) == "#"then
+    elseif cmd == "false" then
+        status = 255
     else
         print(cmd .. ": not found")
         status = 127
