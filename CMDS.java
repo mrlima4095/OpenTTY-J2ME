@@ -367,5 +367,5 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
 
     return 0;
 }
-// I am working hard today
-// Keep calm and program in Java ME
+
+// Good morning, afternoon, evening for everybody
