@@ -375,3 +375,4 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
 // Saturday = Saturn day
 // Only to confirm commit streak, lol!
 // New week yeah
+// On school, but dont have class
