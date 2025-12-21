@@ -29,7 +29,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Loader
     // | (Triggers)
-    public void startApp() { if (sys.containsKey("1")) { } else { init(); } }
+    public void startApp() { if (sys.containsKey("1")) { } else { login(username.equals(""), passwd().equals("")); } }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
     // | (Boot)
@@ -63,6 +63,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.addCommand(new Command("Exit", Command.SCREEN, 1));
             screen.setCommandListener(this);
             display.setCurrent(screen);
+        } else {
+            init();
         }
     }
     public void commandAction(Command c, Displayable d) {
@@ -72,16 +74,27 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (size == 2) {
                 TextField userquest = ((Form) d).get(1);
                 String value = userquest.getString().trim();
-                if (userquest.getLabel().equals("Username")) {
-                    
-                } else {
-                    
+                if (value.equals("")) {
+                    warn("Login", "Missing Credentials!");
+                }
+                else if (userquest.getLabel().equals("Username")) {
+                    if (user.equals("root")) {
+                        warn("Login", "Invalid user name!");
+                    }
+                    else {
+                        writeRMS("OpenRMS", value, 1);
+                        init();
+                    }
+                }
+                else {
+                    writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2);
+                    init();
                 }
             } else {
                 TextField userquest = ((Form) d).get(1);
                 TextField pwquest = ((Form) d).get(2);
                 
-                String user= userquest.getString().trim(), password = pwquest.getString().trim();
+                String user = userquest.getString().trim(), password = pwquest.getString().trim();
                 if (user.equals("") || password.equals("")) {
                     warn("Login", "Missing Credentials!");
                 }
@@ -89,7 +102,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     warn("Login", "Invalid user name!");
                 } 
                 else {
-                    
+                    writeRMS("OpenRMS", user.getBytes(), 1);
+                    writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2);
+                    init();
                 }
             }
         }
