@@ -70,7 +70,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             int size = ((Form) d).size();
             if (size == 2) {
-                TextField quest = ((Form) d).get(1)
+                TextField userquest = ((Form) d).get(1);
+                String value = userquest.getString().trim();
+                if (userquest.getLabel().equals("Username")) {
+                    
+                } else {
+                    
+                }
+            } else {
+                TextField userquest = ((Form) d).get(1);
+                TextField pwquest = ((Form) d).get(2);
+                
+                String username 
             }
         }
     }
