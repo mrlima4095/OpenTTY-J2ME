@@ -68,7 +68,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
         else {
-            
+            int size = ((Form) d).size();
+            if (size == 2) {
+                
+            }
         }
     }
     // |
