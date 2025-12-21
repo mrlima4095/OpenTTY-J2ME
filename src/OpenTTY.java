@@ -91,8 +91,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     init();
                 }
             } else {
-                TextField userquest = ((Form) d).get(1);
-                TextField pwquest = ((Form) d).get(2);
+                TextField userquest = ((Form) d).get(1), pwquest = ((Form) d).get(2);
                 
                 String user = userquest.getString().trim(), password = pwquest.getString().trim();
                 if (user.equals("") || password.equals("")) {
