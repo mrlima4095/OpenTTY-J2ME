@@ -53,17 +53,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
     }
     // | (Installation)
-    /*private void login(boolean user, boolean pword) {
+    private void login(boolean user, boolean pword) {
         if (user || pword) {
             Form screen = new Form("OpenTTY - Login");
             screen.append(env(read("/etc/motd") + "\n:: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
             if (user) { screen.append(new TextField("Username", "", 256, TextField.ANY)); }
             if (pword) { screen.append(new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); }
-            screen.addCommand(new Command())
+            screen.addCommand(new Command("Login", Command.OK, 1));
+            screen.addCommand(new Command("Exit", Command.SCREEN, 1));
             screen.setCommandListener(this);
-            display.setCurrent(screen);            
+            display.setCurrent(screen);
         }
-    }*/
+    }
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
         else {
