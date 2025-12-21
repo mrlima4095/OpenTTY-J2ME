@@ -81,7 +81,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 TextField userquest = ((Form) d).get(1);
                 TextField pwquest = ((Form) d).get(2);
                 
-                String username 
+                String user= userquest.getString().trim(), password = pwquest.getString().trim();
+                if (user.equals("") || password.equals("")) {
+                    warn("Login", "Missing Credentials!");
+                }
+                else if (user.equals("root")) {
+                    warn("Login", "Invalid user name!");
+                } 
+                else {
+                    
+                }
             }
         }
     }
