@@ -7,24 +7,53 @@ local function joinpath(pwd)
     return pwd
 end
 
-local cmd, file = arg[1], arg[2]
-if not cmd or cmd == "-h" or cmd == "--help" then
-    print("Usage: sed [PATTERN] [file]")
+local cmd, file, in_place = nil, nil, false
+local args = {}
+
+-- Parse arguments
+for i = 1, #arg do
+    local current = arg[i]
+    if current == "-i" then
+        in_place = true
+    elseif current == "-h" or current == "--help" then
+        cmd = "-h"
+        break
+    elseif not cmd then
+        cmd = current
+    elseif not file then
+        file = current
+    else
+        table.insert(args, current)
+    end
+end
+
+if cmd == "-h" or cmd == "--help" or not cmd then
+    print("Usage: sed [OPTIONS] [PATTERN] [file]")
+    print("Options:")
+    print("  -i      Edit files in-place")
+    print("  -h      Show this help")
     print("Pattern formats:")
     print("  s/search/replace/  - Substitute")
     print("  /pattern/d         - Delete lines matching pattern")
     print("Examples:")
     print("  sed 's/old/new/' file.txt")
+    print("  sed -i 's/old/new/' file.txt")
     print("  sed '/hello/d' file.txt")
     return
 end
 
 if not file then
-    print("sed [PATTERN] [file]")
+    print("sed: missing file operand")
+    print("Usage: sed [OPTIONS] [PATTERN] [file]")
+    return
 end
 
-local content = io.read(file)
-if content == "" then print("sed: empty content") return end
+local full_path = joinpath(file)
+local content = io.read(full_path)
+if content == "" then 
+    print("sed: empty content")
+    return 
+end
 
 local is_delete = string.sub(cmd, -2) == "/d"
 local result_lines = {}
@@ -81,9 +110,6 @@ if is_delete then
         end
     end
 
-    local result = table.concat(result_lines, "\n")
-    os.exit(tonumber(io.write(result, file)))
-
 else
     -- SUBSTITUTE COMMAND: s/search/replace/
     if not string.find(cmd, "/") then
@@ -93,7 +119,9 @@ else
     end
 
     local first_slash = string.find(cmd, "/", 1)
-    if not first_slash then print("sed: invalid pattern - missing /") return
+    if not first_slash then 
+        print("sed: invalid pattern - missing /") 
+        return
     end
 
     local second_slash = string.find(cmd, "/", first_slash + 1)
@@ -122,8 +150,12 @@ else
 
     while i <= string.len(content) do
         local char = string.sub(content, i, i)
-        if char == "\n" then table.insert(lines, current_line) current_line = ""
-        else current_line = current_line .. char end
+        if char == "\n" then 
+            table.insert(lines, current_line) 
+            current_line = ""
+        else 
+            current_line = current_line .. char 
+        end
         i = i + 1
     end
 
@@ -159,4 +191,16 @@ else
 end
 
 local result = table.concat(result_lines, "\n")
-os.exit(tonumber(io.write(result, joinpath(file))))
+
+if in_place then
+    -- Edit file in-place
+    local status = tonumber(io.write(result, full_path))
+    if status ~= 0 then
+        print("sed: failed to write to file")
+    end
+    os.exit(status)
+else
+    -- Output to stdout (comportamento original)
+    print(result)
+    os.exit(0)
+end
