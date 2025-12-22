@@ -4,7 +4,6 @@ for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
 local shell = require("/bin/sh")
-local history = ""
 local alias, scope = {}, { PWD = "/home/", USER = java.midlet.username }
 
 local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
