@@ -164,13 +164,6 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "echo" then print(argument)
     elseif cmd == "clear" then graphics.SetText(io.stdout, "")
 
-    elseif cmd == "hostname" then
-        if argument == "" then
-            print(os.getenv("HOSTNAME") or "localhost")
-        else
-            os.setenv("HOSTNAME", argument)
-        end
-
     -- File Utils
     elseif cmd == "pwd" then print(os.getcwd())
     elseif cmd == "cd" then
