@@ -78,7 +78,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     warn("Login", "Missing Credentials!");
                 }
                 else if (userquest.getLabel().equals("Username")) {
-                    if (user.equals("root")) {
+                    if (value.equals("root")) {
                         warn("Login", "Invalid user name!");
                     }
                     else {
