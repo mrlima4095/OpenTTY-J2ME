@@ -14,6 +14,8 @@ if #arg > 1 then
             print("touch: " .. arg[i] .. ": permission denied")
         elseif status == 127 then
             print("touch: " .. arg[i] .. ": not found")
+        elseif status == 2 then
+            print(libcore.joinpath(arg[i]), "invalid path")
         end
 
         if status > 0 then
