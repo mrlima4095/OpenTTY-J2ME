@@ -54,9 +54,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | (Installation)
     private void login(boolean user, boolean pword) {
-        if (user || pword) {
+        if (user || pword) 
             Form screen = new Form("OpenTTY - Login");
-            screen.append(env(read("/etc/motd") + "\n:: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
+            screen.append(env(read("Welcome to OpenTTY\n\n:: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
             if (user) { screen.append(new TextField("Username", "", 256, TextField.ANY)); }
             if (pword) { screen.append(new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); }
             screen.addCommand(new Command("Login", Command.OK, 1));
