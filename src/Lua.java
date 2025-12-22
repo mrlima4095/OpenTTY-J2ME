@@ -1429,7 +1429,7 @@ public class Lua {
                 if (args.isEmpty()) { return father.get("PWD"); }
                 else {
                     String pwd = (String) father.get("PWD"), target = toLuaString(args.elementAt(0));
-                    if (target.equals("")) { father.put("PWD", "/home/"); return new Double(0); }
+                    if (target.equals("") || target == nil) { father.put("PWD", "/home/"); return new Double(0); }
                     else if (target.equals("..")) {
                         if (pwd.equals("/")) { return new Double(1); }
                         
