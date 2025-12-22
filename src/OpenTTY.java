@@ -72,7 +72,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             int size = ((Form) d).size();
             if (size == 2) {
-                TextField userquest = ((Form) d).get(1);
+                TextField userquest = (TextField) ((Form) d).get(1);
                 String value = userquest.getString().trim();
                 if (value.equals("")) {
                     warn("Login", "Missing Credentials!");
@@ -91,7 +91,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     init();
                 }
             } else {
-                TextField userquest = ((Form) d).get(1), pwquest = ((Form) d).get(2);
+                TextField userquest = (TextField) ((Form) d).get(1), pwquest = (TextField) ((Form) d).get(2);
                 
                 String user = userquest.getString().trim(), password = pwquest.getString().trim();
                 if (user.equals("") || password.equals("")) {
