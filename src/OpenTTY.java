@@ -82,7 +82,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                         warn("Login", "Invalid user name!");
                     }
                     else {
-                        writeRMS("OpenRMS", value, 1);
+                        writeRMS("OpenRMS", value.getBytes(), 1);
                         init();
                     }
                 }
