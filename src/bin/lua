@@ -1,5 +1,15 @@
 #!/bin/lua
 
+if arg[1] == "-e" then
+    if arg[2] then
+        return load(arg[2])
+    else
+        print("lua: usage: lua -e [script]")
+        os.exit(2)
+    end
+end
+
+
 local previous = graphics.getCurrent()
 
 local term = graphics.new("screen", _VERSION)
