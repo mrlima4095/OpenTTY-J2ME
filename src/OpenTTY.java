@@ -74,32 +74,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (size == 2) {
                 TextField userquest = (TextField) ((Form) d).get(1);
                 String value = userquest.getString().trim();
-                if (value.equals("")) {
-                    warn("Login", "Missing Credentials!");
-                }
+                if (value.equals("")) { warn("Login", "Missing Credentials!"); }
                 else if (userquest.getLabel().equals("Username")) {
-                    if (value.equals("root")) {
-                        warn("Login", "Invalid user name!");
-                    }
-                    else {
-                        writeRMS("OpenRMS", value.getBytes(), 1); username = value;
-                        init();
-                    }
+                    if (value.equals("root")) { warn("Login", "Invalid user name!"); }
+                    else { writeRMS("OpenRMS", value.getBytes(), 1); username = value; init(); }
                 }
-                else {
-                    writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2);
-                    init();
-                }
+                else { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); init(); }
             } else {
                 TextField userquest = (TextField) ((Form) d).get(1), pwquest = (TextField) ((Form) d).get(2);
                 
                 String user = userquest.getString().trim(), password = pwquest.getString().trim();
-                if (user.equals("") || password.equals("")) {
-                    warn("Login", "Missing Credentials!");
-                }
-                else if (user.equals("root")) {
-                    warn("Login", "Invalid user name!");
-                } 
+                if (user.equals("") || password.equals("")) { warn("Login", "Missing Credentials!"); }
+                else if (user.equals("root")) { warn("Login", "Invalid user name!"); } 
                 else {
                     writeRMS("OpenRMS", user.getBytes(), 1); username = user;
                     writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2);
