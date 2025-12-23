@@ -34,14 +34,21 @@ function libcore.joinpath(pwd)
         end
     end
 
-    local result = "/" .. table.concat(resolved, "/")
-
     if #resolved == 0 then
         return "/"
     end
 
-    if string.sub(result, 1, 2) == "//" then
-        result = string.sub(result, 2)
+    local cache = "/" .. table.concat(resolved, "/")
+    local result, lastChar = "", ""
+
+    for i = 1, #cache do
+        local char = string.sub(cache, i, i)
+
+        if not (char == "/" and lastChar == "/") then
+            result = result .. char
+        end
+
+        lastChar = char
     end
 
     return result
