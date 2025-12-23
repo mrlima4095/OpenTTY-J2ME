@@ -1,193 +1,120 @@
-/* test_elf_fixed.c - Teste corrigido para Clang */
-/* Para compilar: clang -target arm-linux-gnueabi -nostdlib -O1 test_elf_fixed.c -o test_elf */
+/* test_final.c - Versão final testada */
+/* clang -target arm-linux-gnueabi -nostdlib -O1 test_final.c -o test_final */
 
-/* Definições de syscall */
-#define SYS_WRITE   4
-#define SYS_EXIT    1
-#define SYS_GETPID  20
-#define SYS_TIME    13
-#define SYS_MMAP    90
-#define SYS_MUNMAP  91
-#define SYS_MPROTECT 125
+#define SYS_WRITE 4
+#define SYS_EXIT 1
+#define SYS_GETPID 20
+#define SYS_TIME 13
+#define SYS_MMAP 90
+#define SYS_MUNMAP 91
 
-/* Wrappers individuais mais simples */
-static int sys_write(int fd, const char *buf, int count) {
-    register int r7 asm("r7") = SYS_WRITE;
-    register int r0 asm("r0") = fd;
-    register const char *r1 asm("r1") = buf;
-    register int r2 asm("r2") = count;
-    
-    asm volatile (
-        "svc #0"
-        : "+r"(r0)
-        : "r"(r7), "r"(r1), "r"(r2)
-        : "memory"
-    );
+/* Syscall helpers */
+static int syscall3(int nr, int a1, int a2, int a3) {
+    register int r7 asm("r7") = nr;
+    register int r0 asm("r0") = a1;
+    register int r1 asm("r1") = a2;
+    register int r2 asm("r2") = a3;
+    asm volatile("svc #0" : "+r"(r0) : "r"(r7), "r"(r1), "r"(r2) : "memory");
     return r0;
 }
 
-static int sys_exit(int status) {
-    register int r7 asm("r7") = SYS_EXIT;
-    register int r0 asm("r0") = status;
-    
-    asm volatile (
-        "svc #0"
-        :
-        : "r"(r7), "r"(r0)
-        : "memory"
-    );
-    return r0; /* Nunca retorna */
-}
-
-static int sys_getpid(void) {
-    register int r7 asm("r7") = SYS_GETPID;
-    register int r0 asm("r0");
-    
-    asm volatile (
-        "svc #0"
-        : "=r"(r0)
-        : "r"(r7)
-        : "memory"
-    );
+static int syscall6(int nr, int a1, int a2, int a3, int a4, int a5, int a6) {
+    register int r7 asm("r7") = nr;
+    register int r0 asm("r0") = a1;
+    register int r1 asm("r1") = a2;
+    register int r2 asm("r2") = a3;
+    register int r3 asm("r3") = a4;
+    register int r4 asm("r4") = a5;
+    register int r5 asm("r5") = a6;
+    asm volatile("svc #0" : "+r"(r0) : "r"(r7), "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5) : "memory");
     return r0;
 }
 
-static int sys_time(int *tloc) {
-    register int r7 asm("r7") = SYS_TIME;
-    register int r0 asm("r0") = (int)tloc;
-    register int result asm("r0");
-    
-    asm volatile (
-        "svc #0"
-        : "=r"(result)
-        : "r"(r7), "r"(r0)
-        : "memory"
-    );
-    return result;
+/* Syscall wrappers */
+static int write(int fd, const char *buf, int len) {
+    return syscall3(SYS_WRITE, fd, (int)buf, len);
 }
 
-static void *sys_mmap(void *addr, int length, int prot, int flags, int fd, int offset) {
-    register int r7 asm("r7") = SYS_MMAP;
-    register void *result asm("r0");
-    
-    asm volatile (
-        "svc #0"
-        : "=r"(result)
-        : "r"(r7), "r"(addr), "r"(length), "r"(prot), "r"(flags), "r"(fd), "r"(offset)
-        : "memory"
-    );
-    return result;
+static void exit(int code) {
+    syscall3(SYS_EXIT, code, 0, 0);
 }
 
-/* Funções de utilidade */
-void print_string(const char *str) {
+static int getpid(void) {
+    return syscall3(SYS_GETPID, 0, 0, 0);
+}
+
+static int time(int *t) {
+    return syscall3(SYS_TIME, (int)t, 0, 0);
+}
+
+static void *mmap(void *addr, int len, int prot, int flags, int fd, int off) {
+    return (void*)syscall6(SYS_MMAP, (int)addr, len, prot, flags, fd, off);
+}
+
+static int munmap(void *addr, int len) {
+    return syscall3(SYS_MUNMAP, (int)addr, len, 0);
+}
+
+/* Utility functions */
+void print(const char *s) {
     int len = 0;
-    while (str[len]) len++;
-    sys_write(1, str, len);
+    while (s[len]) len++;
+    write(1, s, len);
 }
 
-void print_char(char c) {
-    sys_write(1, &c, 1);
-}
-
-void print_number(int num) {
-    if (num == 0) {
-        print_char('0');
+void print_num(int n) {
+    if (n == 0) {
+        write(1, "0", 1);
         return;
     }
     
-    if (num < 0) {
-        print_char('-');
-        num = -num;
-    }
-    
-    char buffer[12];
+    char buf[12];
     int i = 11;
-    buffer[i] = 0;
+    buf[i] = 0;
     
-    while (num > 0 && i > 0) {
-        buffer[--i] = '0' + (num % 10);
-        num /= 10;
+    if (n < 0) {
+        write(1, "-", 1);
+        n = -n;
     }
     
-    print_string(&buffer[i]);
+    while (n > 0) {
+        buf[--i] = '0' + (n % 10);
+        n /= 10;
+    }
+    
+    print(&buf[i]);
 }
 
-/* Função principal simplificada */
-void _start(void) {
-    /* 1. Teste de escrita */
-    print_string("=== Teste ELF ARM ===\n");
+/* Main */
+void _start() {
+    print("=== ARM ELF Test ===\n");
     
-    /* 2. Teste de SYS_GETPID */
-    print_string("PID: ");
-    int pid = sys_getpid();
-    print_number(pid);
-    print_string("\n");
+    print("PID: ");
+    print_num(getpid());
+    print("\n");
     
-    /* 3. Teste de SYS_TIME */
-    print_string("Time: ");
-    int time_val = sys_time(0);
-    print_number(time_val);
-    print_string("\n");
+    print("Time: ");
+    print_num(time(0));
+    print("\n");
     
-    /* 4. Teste matemático */
-    print_string("Math test: ");
-    int a = 6;
-    int b = 7;
-    int result = 0;
-    for (int i = 0; i < b; i++) {
-        result += a;
-    }
-    print_number(result); /* 42 */
-    print_string("\n");
+    print("Math: ");
+    int sum = 0;
+    for (int i = 1; i <= 10; i++) sum += i;
+    print_num(sum); /* 55 */
+    print("\n");
     
-    /* 5. Teste de memória */
-    char test[5];
-    test[0] = 'T';
-    test[1] = 'E';
-    test[2] = 'S';
-    test[3] = 'T';
-    test[4] = 0;
-    print_string("Memory: ");
-    print_string(test);
-    print_string("\n");
-    
-    /* 6. Teste simples de MMAP */
-    print_string("MMAP test: ");
-    void *mem = sys_mmap(0, 4096, 3, 0x22, -1, 0);
-    
-    if ((int)mem < 0) {
-        print_string("FAILED\n");
+    print("MMAP: ");
+    void *m = mmap(0, 4096, 3, 0x22, -1, 0);
+    if ((int)m < 0) {
+        print("FAIL\n");
     } else {
-        char *ptr = (char *)mem;
-        ptr[0] = 'O';
-        ptr[1] = 'K';
-        ptr[2] = 0;
-        print_string(ptr);
-        
-        /* Cleanup */
-        sys_munmap(mem, 4096);
-        print_string(" (unmapped)\n");
+        char *p = (char*)m;
+        p[0] = 'O'; p[1] = 'K'; p[2] = '\n'; p[3] = 0;
+        print(p);
+        munmap(m, 4096);
+        print("Unmapped OK\n");
     }
     
-    /* 7. Teste de controle de fluxo */
-    print_string("Branch test: ");
-    if (10 < 20) {
-        print_string("PASS");
-    } else {
-        print_string("FAIL");
-    }
-    print_string("\n");
-    
-    /* 8. Loop test */
-    print_string("Loop: ");
-    for (int i = 0; i < 5; i++) {
-        print_char('0' + i);
-    }
-    print_string("\n");
-    
-    print_string("=== SUCCESS ===\n");
-    
-    /* Exit */
-    sys_exit(0);
+    print("=== DONE ===\n");
+    exit(0);
 }
