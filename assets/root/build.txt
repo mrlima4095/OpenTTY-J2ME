@@ -173,3 +173,4 @@
 [2025-1.17-03x03] Added Command 'TRAP'
 [2025-1.17-03x04] Removed buffer
 [2025-1.17-03x05] ELF32
+[2025-1.17-03x06] MMU Support on ELF ARM 32 Module
