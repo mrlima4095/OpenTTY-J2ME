@@ -37,11 +37,18 @@ public class ELF {
     private static final int REG_R1 = 1;
     private static final int REG_R2 = 2;
     private static final int REG_R3 = 3;
+    private static final int REG_R4 = 4;
+    private static final int REG_R5 = 5;
+    private static final int REG_R6 = 6;
     private static final int REG_R7 = 7;
+    private static final int REG_R8 = 8;
+    private static final int REG_R9 = 9;
+    private static final int REG_R10 = 10;
+    private static final int REG_R11 = 11;
+    private static final int REG_R12 = 12;
     private static final int REG_SP = 13;
     private static final int REG_LR = 14;
     private static final int REG_PC = 15;
-    
     // Bits do CPSR
     private static final int CPSR_N = 31; // Negative/Less than
     private static final int CPSR_Z = 30; // Zero
