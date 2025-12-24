@@ -1,1 +1,16 @@
 #!/bin/lua
+
+if arg[1] and arg[2] then
+    local ok, response = pcall(os.request, arg[1], arg[2], arg[3])
+
+    if ok then
+        print(response)
+        os.exit(0)
+    else
+        print("svchost: " .. response)
+        os.exit(1)
+    end
+else
+    print("svchost: usage: svchost [pid] [request]")
+    os.exit(2)
+end
