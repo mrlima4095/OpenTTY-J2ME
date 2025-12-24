@@ -5,9 +5,7 @@ local libcore = {}
 function libcore.joinpath(pwd)
     if pwd == nil or pwd == "" or pwd == "." then
         return os.getcwd()
-    end
-
-    if string.sub(pwd, 1, 1) == "/" then
+    elseif string.sub(pwd, 1, 1) == "/" then
         return pwd
     end
 
