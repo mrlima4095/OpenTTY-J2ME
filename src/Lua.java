@@ -1625,9 +1625,8 @@ public class Lua {
                                 result.addElement(out instanceof StringBuffer ? out.toString() : out);
                                 return result;
                             }
-                        } else {
-                            return new Double(127);
-                        }
+                        } 
+                        else { return new Double(127); }
                     } catch (Exception e) {
                         return new Double(1);
                     }
