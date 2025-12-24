@@ -20,7 +20,7 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
     //else if (mainCommand.equals("echo")) { print(argument, stdout); }
     //else if (mainCommand.equals("buff")) { stdin.setString(argument); }
     else if (mainCommand.equals("help")) { print(read("/res/docs"), stdout); }
-    else if (mainCommand.equals("date")) { print(new java.util.Date().toString(), stdout); }
+    //else if (mainCommand.equals("date")) { print(new java.util.Date().toString(), stdout); }
     //else if (mainCommand.equals("locale")) { print((String) attributes.get("LOCALE"), stdout); }
     //else if (mainCommand.equals("clear")) { if (argument.equals("")) { this.stdout.setText(""); } else { for (int i = 0; i < args.length; i++) { if (args[i].equals("stdout")) { this.stdout.setText(""); } else if (args[i].equals("stdin")) { stdin.setString(""); } else if (args[i].equals("history")) { getprocess("1").put("history", new Vector()); } else if (args[i].equals("cache")) { cache = new Hashtable(); } else if (args[i].equals("logs")) { logs = ""; } else { print("clear: " + args[i] + ": not found", stdout); return 127; } } } }
     // | (Chain)
@@ -38,16 +38,16 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
     else if (mainCommand.equals("logout")) { if (read("/home/OpenRMS").equals(username)) { if (id == 0) { writeRMS("/home/OpenRMS", "".getBytes(), id); destroyApp(false); } else { print("Permission denied!", stdout); return 13; } } else { username = read("/home/OpenRMS"); return processCommand(". /bin/sh", false, id, pid, stdout, scope); } }
     else if (mainCommand.equals("exit")) { if (read("/home/OpenRMS").equals(username)) { destroyApp(false); } else { username = read("/home/OpenRMS"); return processCommand(". /bin/sh", false, id, pid, stdout, scope); } }
     else if (mainCommand.equals("quit")) { destroyApp(false); }
-    else if (mainCommand.equals("false")) { return 255; }
+    //else if (mainCommand.equals("false")) { return 255; }
     // |
     // |
     // -=-=-=-=-=-=-=-=-=-=-=-
     // API 001 - Kernel
     // | (Client)
-    else if (mainCommand.equals("top")) { return kernel(argument, id, pid, stdout, scope);  }
+    //else if (mainCommand.equals("top")) { return kernel(argument, id, pid, stdout, scope);  }
     // | (Process)
     //else if (mainCommand.equals("ps")) { print("PID\tPROCESS", stdout); for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); print(PID + "\t" + (String) ((Hashtable) sys.get(PID)).get("name"), stdout); } }
-    else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], id, genpid(), null, stdout, scope) : mainCommand.equals("stop") ? stop(args[i], id, stdout, scope) : kill(args[i], true, id, stdout, scope); if (STATUS != 0) { return STATUS; } } } 
+    //else if (mainCommand.equals("start") || mainCommand.equals("stop") || mainCommand.equals("kill")) { for (int i = 0; i < args.length; i++) { int STATUS = mainCommand.equals("start") ? start(args[i], id, genpid(), null, stdout, scope) : mainCommand.equals("stop") ? stop(args[i], id, stdout, scope) : kill(args[i], true, id, stdout, scope); if (STATUS != 0) { return STATUS; } } } 
     // | (Memory)
     //else if (mainCommand.equals("gc")) { System.gc(); }
     // | (Threads)

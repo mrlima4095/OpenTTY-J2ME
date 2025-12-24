@@ -7,6 +7,7 @@ local mirror = {
     ["armitage"] = { remote = "armitage", here = "/bin/armitage", description = "OpenTTY Network Tools" },
     ["autogc"] = { remote = "autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
     ["cmatrix"] = { remote = "cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
+    ["curl"] = { remote = "curl.lua", here = "/bin/curl", description = "Connect with a Server" },
     ["docker"] = { remote = "docker.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
     ["expr"] = { remote = "expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
     ["forge"] = { remote = "forge", here = "/lib/forge", description = "Additional API for OpenTTY" },
@@ -14,6 +15,7 @@ local mirror = {
     ["grep"] = { remote = "grep", here = "/bin/grep", description = "" },
     ["hash"] = { remote = "hash.lua", here = "/bin/hash", description = "Prints file hash" },
     ["head"] = { remote = "head", here = "/bin/head", description = "Prints first lines of a file" },
+    ["hostname"] = { remote = "hostname.lua", here = "/bin/hostname", description = "Manage Host Name" },
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
     ["jauth2"] = { remote = "jauth2", here = "/lib/jauth2", description = "Credentials Manager" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
@@ -23,11 +25,13 @@ local mirror = {
     ["sed"] = { remote = "sed.lua", here = "/bin/sed", description = "String Editor" },
     ["sdk"] = { remote = "sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
     ["sync"] = { remote = "sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
-    ["svchost"] = { remote = "svchost", here = "/bin/svchost", description = "Service Host" },
     ["uname"] = { remote = "uname", here = "/bin/uname", description = "System Informations" },
     ["viaversion"] = { remote = "viaversion", here = "/bin/axrz", description = "Change OpenTTY API on Runtime" },
     ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
-    ["wget"] = { remote = "wget", here = "/bin/wget", description = "Download files from Network" }
+    ["wget"] = { remote = "wget", here = "/bin/wget", description = "Download files from Network" },
+
+    ["net"] = { description = "Network Utilities", packages = { "curl", "hostname", "ping" } },
+    ["file"] = { description = "File Utitlities", packages = { "find", "grep", "hash", "head", "nano", "sed" } }
 }
 
 local function connect(payload)

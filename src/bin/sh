@@ -180,7 +180,7 @@ local function shell(args, enable, aliases, stdout, scope)
             elseif status == 20 then
                 print("cd: " .. argument .. ": not a directory")
             
-            end
+            end 
         end
     elseif cmd == "cat" then
         for i = 1, #args do
