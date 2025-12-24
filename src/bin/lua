@@ -5,8 +5,9 @@ if arg[1] == "-e" then
         return load(arg[2])
     else
         print("lua: usage: lua -e [script]")
-        os.exit(2)
     end
+
+    os.exit(2)
 end
 
 
