@@ -146,3 +146,5 @@ java = {
 
 --[=[Get a MIDlet Property Value]=]
 getAppProperty = function (field) end
+--[=[Run code and returns value of code, inject scopes with a table on scope]=]
+load = function (code, scope) end
