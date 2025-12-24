@@ -9,9 +9,8 @@ function libcore.joinpath(pwd)
 
     if string.sub(pwd, 1, 1) == "/" then
         return pwd
-    else
-        return os.getcwd() .. pwd
     end
+    return os.getcwd() .. pwd
 end
 
 return libcore
