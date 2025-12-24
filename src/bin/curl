@@ -36,6 +36,12 @@ if arg[1] == "-o" then
     else
         print("Usage: curl -o [file] [url]")
     end
+elseif arg[1] == "-s" then
+    if arg[2] and arg[3] then
+        print(pcall(os.request, arg[2], arg[3], arg[4]))
+    else
+        print("Usage: curl -s [pid] [request] [args...]")
+    end
 elseif arg[1] then
     local url = parse_url(arg[1])
     local ok, body, status = pcall(socket.http.get, url)
