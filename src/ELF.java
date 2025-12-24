@@ -2,15 +2,15 @@ import javax.microedition.io.file.*;
 import javax.microedition.io.*;
 import java.util.*;
 import java.io.*;
-
+// |
+// ELF ARM 32 Emulator
 public class ELF {
     private OpenTTY midlet;
     private Object stdout;
     private Hashtable scope;
     private String pid;
     private int id;
-    
-    // Memória e registradores
+    // |
     private byte[] memory;
     private int[] registers;
     private int pc;
