@@ -20,7 +20,7 @@ local clear = graphics.new("command", { label = "Clear", type = "screen", priori
 local output = graphics.new("buffer", {})
 local input = graphics.new("field", { type = "field", label = ">" })
 
-local scope = { clear = function () graphics.SetText(output, "") end }
+local scope = { ["clear"] = function () graphics.SetText(output, "") end }
 io.setstdout(output)
 
 graphics.append(term, output)
