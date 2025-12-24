@@ -168,7 +168,7 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
     // | (Listings)
     // | (Navigation)
     //else if (mainCommand.equals("pwd")) { print((String) scope.get("PWD"), stdout); }
-    else if (mainCommand.equals("cd")) { 
+    /*else if (mainCommand.equals("cd")) { 
         String pwd = (String) scope.get("PWD");
         if (argument.equals("") && mainCommand.equals("cd")) { scope.put("PWD", "/home/"); } 
         else if (argument.equals("")) { print(readStack(scope) == null || readStack(scope).length() == 0 ? "pushd: missing directory" : readStack(scope), stdout); }
@@ -200,7 +200,7 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
             else { print(mainCommand + ": " + basename(TARGET) + ": not accessible", stdout); return 127; } 
 
         }
-    }
+    }*/
     // | (Tools)
     else if (mainCommand.equals("rm")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = deleteFile(args[i], id, stdout); if (STATUS != 0) { return STATUS; } } } }
     else if (mainCommand.equals("touch")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { int STATUS = write(argument, "", id); if (STATUS != 0) { return STATUS; } } } }
@@ -235,7 +235,7 @@ public int processCommand(String command, boolean enable, int id, String pid, Ob
         } 
     }
     // | (File)
-    else if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i], scope), stdout); } } }
+    // bhgelse if (mainCommand.equals("cat")) { if (argument.equals("")) { } else { for (int i = 0; i < args.length; i++) { print(getcontent(args[i], scope), stdout); } } }
     else if (mainCommand.equals("read")) { if (argument.equals("") || args.length < 2) { return 2; } else { attributes.put(args[0], getcontent(args[1], scope)); } }
     else if (mainCommand.equals("head")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0], scope); String[] LINES = split(CONTENT, '\n'); int COUNT = Math.min(args.length > 1 ? getNumber(args[1], 10, null) : 10, LINES.length); for (int i = 0; i < COUNT; i++) { print(LINES[i], stdout); } } }
     else if (mainCommand.equals("tail")) { if (argument.equals("")) { } else { String CONTENT = getcontent(args[0], scope); String[] LINES = split(CONTENT, '\n'); int COUNT = args.length > 1 ? getNumber(args[1], 10, null) : 10; COUNT = Math.max(0, LINES.length - COUNT); for (int i = COUNT; i < LINES.length; i++) { print(LINES[i], stdout); } } }
