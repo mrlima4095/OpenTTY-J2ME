@@ -1,3 +1,6 @@
+#!/bin/lua
+
+--[[
 [ Config ]
 
 name=ViaVersion
@@ -48,3 +51,46 @@ list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.1
 1.16=execute set REQUEST=1.16; set PATCH=Absurd Anvil; axrz run;
 1.16.1=execute set REQUEST=1.16.1; set PATCH=Absurd Anvil; axrz run;
 1.16.2=execute set REQUEST=1.16.2; set PATCH=Absurd Anvil; axrz run;
+]]
+
+local db = {
+    { version = "1.16", patch = "Absurd Anvil", release = "stable", lts = true },
+    { version = "1.16.1", patch = "Absurd Anvil", release = "mod" },
+    { version = "1.16.2", patch = "Absurd Anvil", release = "beta" },
+    { version = "1.17", patch = "Fear Fog", release = "stable" },
+}
+
+local previous = graphics.getCurrent()
+local menu = graphics.new("list", "Select API")
+local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+local choice = graphics.new("command", { label = "Select", type = "ok", priority = 1 })
+
+for _,v in ipairs(db) do
+    graphics.append(menu, v.version .. "\t" .. v.type)
+end
+
+local function build(query)
+    local v
+    for _,k in pairs(db) do
+        if k.version == query then
+            v = k
+        end
+    end
+
+    if not v then
+        print(":: Requested API is invalid")
+        os.exit(127)
+    end
+
+    os.setenv("VERSION", v.version)
+    os.setenv("RELEASE", v.release)
+    os.setenv("PATCH", v.patch)
+    io.popen("/bin/sh", "", false)
+end
+
+graphics.addCommand(menu, back)
+graphics.addCommand(menu, choice)
+graphics.handler(menu, { [graphics.fire] = build, [choice] = build, [back] = function () graphics.display(previous) os.exit() end })
+
+os.setproc("name", "axrz")
+graphics.display(menu)
