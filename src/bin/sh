@@ -5,10 +5,7 @@ local libcore = require("libcore")
 local function shell(args, enable, aliases, stdout, scope)
     local status, redirect = 0, string.find(args, ">") ~= nil
 
-    if string.sub(args, 1, 4) ~= "exec" then
-        args = string.env(args)
-    end
-
+    args = string.env(args)
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
 
@@ -181,7 +178,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 print("cd: " .. argument .. ": not found")
             elseif status == 20 then
                 print("cd: " .. argument .. ": not a directory")
-
+            
             end
         end
     elseif cmd == "cat" then
@@ -237,7 +234,5 @@ if arg[0] == "/bin/sh" then
     graphics.SetText(io.stdout, "")
     print(string.env(io.read("/etc/motd")))
 end
-
-os.request("1", "setsh", shell)
 
 return shell
