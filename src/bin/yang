@@ -30,8 +30,10 @@ local mirror = {
     ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
     ["wget"] = { remote = "wget", here = "/bin/wget", description = "Download files from Network" },
 
-    ["net"] = { description = "Network Utilities", packages = { "curl", "hostname", "ping" } },
-    ["file"] = { description = "File Utitlities", packages = { "find", "grep", "hash", "head", "nano", "sed" } }
+    ["net"] = { description = "Network Utilities", packages = { "curl", "ping", "webproxy" } },
+    ["file"] = { description = "File Utitlities", packages = { "find", "grep", "hash", "head", "nano", "sed" } },
+    ["dev"] = { description = "Development Tools", packages = { "forge", "jdb", "sdk" } },
+    ["sys"] = { description = "System Utitlities", packages = { "autogc", "hostname", "htop" } }
 }
 
 local function connect(payload)
