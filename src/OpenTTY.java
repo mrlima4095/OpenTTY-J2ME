@@ -18,6 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // System Objects
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
+    public Object shell;
 
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(),  graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable();
     public String username = read("/home/OpenRMS"), build = "2025-1.17-03x06";
@@ -42,12 +43,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             Lua lua = new Lua(this, 0, "1", proc, stdout, globals);
             sys.put("1", proc); lua.globals.put("arg", args);
+            proc.put("lua", lua); proc.put("handler", lua.getKernel());
 
             lua.tokens = lua.tokenize(read("/bin/init"));
 
             while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
-            proc.put("lua", lua); proc.put("handler", lua.getKernel());
-
         }
         catch (Exception e) { warn("SandBox", getCatch(e)); }
         catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
