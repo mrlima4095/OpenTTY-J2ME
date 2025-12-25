@@ -16,7 +16,7 @@ label()
 io.mount(io.read("/etc/fstab"))
 
 print(string.env(io.read("/etc/motd")))
--- _ = load(io.read("/home/.initrc"), { alias = alias, scope = scope, shell = shell })
+_ = load(io.read("/home/.initrc"), { alias = alias, scope = scope, shell = shell })
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
