@@ -5,53 +5,11 @@ local libcore = {}
 function libcore.joinpath(pwd)
     if pwd == nil or pwd == "" or pwd == "." then
         return os.getcwd()
+    elseif string.sub(pwd, 1, 1) == "/" then
+        return pwd
     end
 
-    local parts
-    if string.sub(pwd, 1, 1) == "/" then
-        parts = string.split(pwd, "/")
-    else
-        local cwd = os.getcwd()
-
-        if string.sub(cwd, -1) == "/" and cwd ~= "/" then
-            cwd = string.sub(cwd, 1, -2)
-        end
-
-        parts = string.split(cwd .. "/" .. pwd, "/")
-    end
-
-    local resolved = {}
-    for i = 1, #parts do
-        local part = parts[i]
-
-        if part == "" or part == "." then
-        elseif part == ".." then
-            if #resolved > 0 then
-                table.remove(resolved)
-            end
-        else
-            table.insert(resolved, part)
-        end
-    end
-
-    if #resolved == 0 then
-        return "/"
-    end
-
-    local cache = "/" .. table.concat(resolved, "/")
-    local result, lastChar = "", ""
-
-    for i = 1, #cache do
-        local char = string.sub(cache, i, i)
-
-        if not (char == "/" and lastChar == "/") then
-            result = result .. char
-        end
-
-        lastChar = char
-    end
-
-    return result
+    return os.getcwd() .. pwd
 end
 
 return libcore
