@@ -1050,7 +1050,7 @@ public class ELF implements Runnable {
         
         for (int i = 0; i < alignedLength; i += PAGE_SIZE) {
             int vpage = alignedAddr + i;
-            Integer physPage = () pageTable.get(new Integer(vpage));
+            Integer physPage = (Integer) pageTable.get(new Integer(vpage));
             
             if (physPage != null) {
                 pageProtections.put(new Integer(vpage), new Integer(prot));
@@ -1632,7 +1632,7 @@ public class ELF implements Runnable {
                     registers[REG_R0] = -1;
                     return;
                 }
-                
+
                 registers[REG_R0] = 0;
                 return;
                 
