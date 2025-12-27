@@ -61,7 +61,7 @@ public class ELF {
     private static final int SYS_SIGACTION = 67;
     
     // Flags de open
-    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2, O_CREAT = 64, O_TRUNC = 512, O_APPEND = 1024,;
+    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2, O_CREAT = 64, O_TRUNC = 512, O_APPEND = 1024;
     
     // Constantes MMU
     private static final int PAGE_SIZE = 4096, PAGE_SHIFT = 12;
@@ -83,6 +83,12 @@ public class ELF {
     private static final int MODE_ABT = 0x17;      // Abort mode
     private static final int MODE_UND = 0x1B;      // Undefined mode
     private static final int MODE_SYS = 0x1F;      // System mode
+
+    private static final int SIGINT = 2;
+    private static final int SIGCHLD = 17;
+    private static final int SIGCONT = 18;
+    private static final int SIGSTOP = 19;
+    private static final int SIGTERM = 15;
 
     // Vetores de exceção ARM
     private static final int VECTOR_RESET = 0x00, VECTOR_UNDEF = 0x04, VECTOR_SWI = 0x08, VECTOR_PREFETCH_ABORT = 0x0C, VECTOR_DATA_ABORT = 0x10, VECTOR_RESERVED = 0x14, VECTOR_IRQ = 0x18, VECTOR_FIQ = 0x1C;
@@ -140,6 +146,11 @@ public class ELF {
         // Inicializar file descriptors padrão
         fileDescriptors.put(new Integer(1), stdout); // stdout
         fileDescriptors.put(new Integer(2), stdout); // stderr
+
+        this.childProcesses = new Hashtable(); // PID -> Hashtable de info
+        this.pendingSignals = new Hashtable(); // PID -> Vector de sinais
+        this.signalHandlers = new Hashtable(); // signum -> handler address
+        
         
         // Inicializar MMU
         this.pageTable = new Hashtable();
@@ -1004,6 +1015,43 @@ public class ELF {
                 handleMprotect();
                 break;
                 
+            case SYS_EXECVE:
+                handleExecve();
+                break;
+                
+            case SYS_WAITPID:
+                handleWaitpid();
+                break;
+                
+            case SYS_IOCTL:
+                handleIoctl();
+                break;
+                
+            case SYS_FSTAT:
+            case SYS_STAT:
+                handleStat(number);
+                break;
+                
+            case SYS_LSEEK:
+                handleLseek();
+                break;
+                
+            case SYS_GETTIMEOFDAY:
+                handleGettimeofday();
+                break;
+                
+            case SYS_PIPE:
+                handlePipe();
+                break;
+                
+            case SYS_DUP2:
+                handleDup2();
+                break;
+                
+            case SYS_SIGNAL:
+            case SYS_SIGACTION:
+                handleSignal(number);
+                break;
             default:
                 registers[REG_R0] = -1; // Syscall não implementada
                 break;
@@ -1458,6 +1506,18 @@ public class ELF {
         // conteudo original completo
         int status = registers[REG_R0];
         running = false;
+
+        // Enviar SIGCHLD aos pais dos processos filhos
+        Enumeration childPids = childProcesses.keys();
+        while (childPids.hasMoreElements()) {
+            String childPid = (String) childPids.nextElement();
+            Hashtable childInfo = (Hashtable) childProcesses.get(childPid);
+            if (childInfo.containsKey("elf")) {
+                ELF childElf = (ELF) childInfo.get("elf");
+                childElf.kill();
+            }
+        }
+        childProcesses.clear();
         
         // Fechar todos os file descriptors abertos
         Enumeration keys = fileDescriptors.keys();
@@ -1611,11 +1671,911 @@ public class ELF {
         pc = VECTOR_FIQ;
     }
     
+    private void handleExecve() {
+        int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
+        
+        try {
+            String path = readString(pathAddr);
+            if (path == null) { registers[REG_R0] = -2; return;
+            }
+            
+            // Verificar se é arquivo Lua (baseado no OpenTTY)
+            boolean isLua = path.endsWith(".lua") || path.endsWith(".sh");
+            boolean isElf = path.endsWith(".elf") || (readByteFromPath(path, 0) == 0x7F && readByteFromPath(path, 1) == 'E');
+            
+            if (!isLua && !isElf) {
+                // Tentar inferir pelo conteúdo
+                InputStream test = midlet.getInputStream(path);
+                if (test != null) {
+                    byte[] header = new byte[4];
+                    int read = test.read(header);
+                    test.close();
+                    isElf = (read == 4 && header[0] == 0x7F && header[1] == 'E');
+                }
+            }
+            
+            if (isLua) {
+                // Executar script Lua
+                String code = midlet.read(path);
+                if (code == null || code.isEmpty()) {
+                    registers[REG_R0] = -2; // ENOENT
+                    return;
+                }
+                
+                // Ler argumentos argv
+                Vector args = new Vector();
+                if (argvAddr != 0) {
+                    int argPtr = readIntLEWithMMU(argvAddr);
+                    int i = 0;
+                    while (argPtr != 0) {
+                        String arg = readString(argPtr);
+                        if (arg != null) args.addElement(arg);
+                        i++;
+                        argPtr = readIntLEWithMMU(argvAddr + i * 4);
+                    }
+                }
+                
+                // Criar Hashtable de argumentos no formato Lua
+                Hashtable luaArgs = new Hashtable();
+                for (int i = 0; i < args.size(); i++) {
+                    luaArgs.put(new Double(i), args.elementAt(i));
+                }
+                
+                // Mesclar ambiente
+                Hashtable newScope = new Hashtable();
+                if (scope != null) {
+                    for (Enumeration e = scope.keys(); e.hasMoreElements();) {
+                        String key = (String) e.nextElement();
+                        newScope.put(key, scope.get(key));
+                    }
+                }
+                
+                // Adicionar variáveis de ambiente
+                if (envpAddr != 0) {
+                    int envPtr = readIntLEWithMMU(envpAddr);
+                    int i = 0;
+                    while (envPtr != 0) {
+                        String env = readString(envPtr);
+                        if (env != null) {
+                            int eq = env.indexOf('=');
+                            if (eq > 0) {
+                                newScope.put(env.substring(0, eq), env.substring(eq + 1));
+                            }
+                        }
+                        i++;
+                        envPtr = readIntLEWithMMU(envpAddr + i * 4);
+                    }
+                }
+                
+                // Criar processo Lua (simulando fork+exec)
+                final String childPid = midlet.genpid();
+                final Lua lua = new Lua(midlet, id, childPid, null, stdout, newScope);
+                final Vector finalArgs = args;
+                
+                // Armazenar info do processo filho
+                Hashtable childInfo = new Hashtable();
+                childInfo.put("type", "lua");
+                childInfo.put("lua", lua);
+                childInfo.put("exited", Boolean.FALSE);
+                childInfo.put("status", new Integer(0));
+                childInfo.put("startTime", new Long(System.currentTimeMillis()));
+                childProcesses.put(childPid, childInfo);
+                
+                // Executar em thread
+                Thread execThread = new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            lua.run(path, code, luaArgs);
+                            childInfo.put("exited", Boolean.TRUE);
+                            childInfo.put("exitTime", new Long(System.currentTimeMillis()));
+                            
+                            // Enviar sinal SIGCHLD ao pai
+                            deliverSignal(SIGCHLD, pid);
+                        } catch (Exception e) {
+                            childInfo.put("exited", Boolean.TRUE);
+                            childInfo.put("status", new Integer(1));
+                            childInfo.put("exitTime", new Long(System.currentTimeMillis()));
+                        }
+                    }
+                });
+                execThread.start();
+                
+                registers[REG_R0] = Integer.parseInt(childPid);
+                
+            } else if (isElf) {
+                // Carregar e executar ELF
+                InputStream is = midlet.getInputStream(path);
+                if (is == null) {
+                    registers[REG_R0] = -2; // ENOENT
+                    return;
+                }
+                
+                // Ler argumentos para passar ao novo processo
+                Vector elfArgs = new Vector();
+                if (argvAddr != 0) {
+                    int argPtr = readIntLEWithMMU(argvAddr);
+                    int i = 0;
+                    while (argPtr != 0) {
+                        String arg = readString(argPtr);
+                        if (arg != null) elfArgs.addElement(arg);
+                        i++;
+                        argPtr = readIntLEWithMMU(argvAddr + i * 4);
+                    }
+                }
+                
+                // Criar novo processo ELF
+                final String childPid = midlet.genpid();
+                final ELF childElf = new ELF(midlet, stdout, scope, id, childPid, null);
+                
+                if (childElf.load(is)) {
+                    // Preparar stack com argumentos
+                    prepareElfStack(childElf, elfArgs);
+                    
+                    // Armazenar info do processo filho
+                    Hashtable childInfo = new Hashtable();
+                    childInfo.put("type", "elf");
+                    childInfo.put("elf", childElf);
+                    childInfo.put("exited", Boolean.FALSE);
+                    childInfo.put("status", new Integer(0));
+                    childInfo.put("startTime", new Long(System.currentTimeMillis()));
+                    childProcesses.put(childPid, childInfo);
+                    
+                    // Executar em thread
+                    Thread elfThread = new Thread(new Runnable() {
+                        public void run() {
+                            try {
+                                childElf.run();
+                                childInfo.put("exited", Boolean.TRUE);
+                                childInfo.put("exitTime", new Long(System.currentTimeMillis()));
+                                
+                                // Enviar sinal SIGCHLD ao pai
+                                deliverSignal(SIGCHLD, pid);
+                            } catch (Exception e) {
+                                childInfo.put("exited", Boolean.TRUE);
+                                childInfo.put("status", new Integer(1));
+                                childInfo.put("exitTime", new Long(System.currentTimeMillis()));
+                            }
+                        }
+                    });
+                    elfThread.start();
+                    
+                    registers[REG_R0] = Integer.parseInt(childPid);
+                } else {
+                    registers[REG_R0] = -8; // ENOEXEC
+                }
+                
+            } else {
+                registers[REG_R0] = -8; // ENOEXEC
+            }
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }
+    private void handleWaitpid() {
+        int pid = registers[REG_R0], statusPtr = registers[REG_R1], options = registers[REG_R2];
+        
+        try {
+            final int WNOHANG = 0x1, WUNTRACED = 0x2;
+            
+            if (pid == -1) {
+                // Esperar por qualquer processo filho
+                Enumeration keys = childProcesses.keys();
+                while (keys.hasMoreElements()) {
+                    String childPid = (String) keys.nextElement();
+                    Hashtable childInfo = (Hashtable) childProcesses.get(childPid);
+                    
+                    if (Boolean.TRUE.equals(childInfo.get("exited"))) {
+                        // Processo terminou
+                        int status = ((Integer) childInfo.get("status")).intValue();
+                        if (statusPtr != 0) {
+                            writeIntLEWithMMU(statusPtr, status);
+                        }
+                        
+                        childProcesses.remove(childPid);
+                        registers[REG_R0] = Integer.parseInt(childPid);
+                        return;
+                    }
+                }
+                
+                // Se WNOHANG, retornar imediatamente
+                if ((options & WNOHANG) != 0) {
+                    registers[REG_R0] = 0;
+                    return;
+                }
+                
+                // Esperar por algum filho terminar
+                boolean childExited = false;
+                long startTime = System.currentTimeMillis();
+                
+                while (!childExited && (System.currentTimeMillis() - startTime < 10000)) {
+                    Thread.sleep(100);
+                    
+                    keys = childProcesses.keys();
+                    while (keys.hasMoreElements()) {
+                        String childPid = (String) keys.nextElement();
+                        Hashtable childInfo = (Hashtable) childProcesses.get(childPid);
+                        
+                        if (Boolean.TRUE.equals(childInfo.get("exited"))) {
+                            int status = ((Integer) childInfo.get("status")).intValue();
+                            if (statusPtr != 0) {
+                                writeIntLEWithMMU(statusPtr, status);
+                            }
+                            
+                            childProcesses.remove(childPid);
+                            registers[REG_R0] = Integer.parseInt(childPid);
+                            return;
+                        }
+                    }
+                }
+                
+                registers[REG_R0] = -10; // ESRCH
+                return;
+                
+            } else if (pid > 0) {
+                // Esperar por PID específico
+                String childPid = String.valueOf(pid);
+                
+                if (childProcesses.containsKey(childPid)) {
+                    Hashtable childInfo = (Hashtable) childProcesses.get(childPid);
+                    
+                    if (Boolean.TRUE.equals(childInfo.get("exited"))) {
+                        // Já terminou
+                        int status = ((Integer) childInfo.get("status")).intValue();
+                        if (statusPtr != 0) {
+                            writeIntLEWithMMU(statusPtr, status);
+                        }
+                        
+                        childProcesses.remove(childPid);
+                        registers[REG_R0] = pid;
+                        return;
+                        
+                    } else if ((options & WNOHANG) != 0) {
+                        // Não esperar
+                        registers[REG_R0] = 0;
+                        return;
+                        
+                    } else {
+                        // Esperar até terminar
+                        long startTime = System.currentTimeMillis();
+                        
+                        while (!Boolean.TRUE.equals(childInfo.get("exited")) && 
+                            (System.currentTimeMillis() - startTime < 10000)) {
+                            Thread.sleep(100);
+                        }
+                        
+                        if (Boolean.TRUE.equals(childInfo.get("exited"))) {
+                            int status = ((Integer) childInfo.get("status")).intValue();
+                            if (statusPtr != 0) {
+                                writeIntLEWithMMU(statusPtr, status);
+                            }
+                            
+                            childProcesses.remove(childPid);
+                            registers[REG_R0] = pid;
+                            return;
+                        } else {
+                            registers[REG_R0] = -10; // ESRCH
+                            return;
+                        }
+                    }
+                } else {
+                    registers[REG_R0] = -10; // ESRCH
+                    return;
+                }
+            } else {
+                // PID 0 ou negativo não suportado
+                registers[REG_R0] = -22; // EINVAL
+                return;
+            }
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }
+
+    private void handleIoctl() {
+        int fd = registers[REG_R0], request = registers[REG_R1], argp = registers[REG_R2];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!fileDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
+        
+        try {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            // Comandos de terminal (TIOC*)
+            if (request == 0x5401) { // TCGETS - get terminal attributes
+                // Estrutura termios simplificada (36 bytes)
+                for (int i = 0; i < 36; i++) {
+                    writeByte(argp + i, (byte)0);
+                }
+                registers[REG_R0] = 0;
+                return;
+                
+            } else if (request == 0x5402) { // TCSETS - set terminal attributes
+                // Ignorar, sempre sucesso
+                registers[REG_R0] = 0;
+                return;
+                
+            } else if (request == 0x5413) { // TIOCGWINSZ - get window size
+                // winsize struct (8 bytes)
+                writeShortWithMMU(argp, (short)24);     // rows
+                writeShortWithMMU(argp + 2, (short)80); // cols
+                writeShortWithMMU(argp + 4, (short)0);  // x pixels
+                writeShortWithMMU(argp + 6, (short)0);  // y pixels
+                registers[REG_R0] = 0;
+                return;
+                
+            } else if (request == 0x541B) { // FIONREAD - bytes disponíveis
+                if (stream instanceof InputStream) {
+                    int available = ((InputStream) stream).available();
+                    writeIntLEWithMMU(argp, available);
+                    registers[REG_R0] = 0;
+                    return;
+                }
+            }
+            
+            // Comandos de arquivo (FIO*)
+            if (request == 0xBE01) { // FIONBIO - non-blocking I/O
+                // Ignorar, sempre sucesso
+                registers[REG_R0] = 0;
+                return;
+            }
+            
+            // Dispositivo especial /dev/null
+            if (stream instanceof ByteArrayInputStream) {
+                ByteArrayInputStream bais = (ByteArrayInputStream) stream;
+                if (bais.available() == 0) { // Provavelmente /dev/null
+                    registers[REG_R0] = 0;
+                    return;
+                }
+            }
+            
+            // Não suportado
+            registers[REG_R0] = -25; // ENOTTY
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }
+
+    private void handleStat(int syscall) {
+        int pathAddr = registers[REG_R0], statbuf = registers[REG_R1];
+        
+        try {
+            String path = null;
+            
+            if (syscall == SYS_STAT) {
+                path = readString(pathAddr);
+            } else if (syscall == SYS_FSTAT) {
+                // Para fstat, pathAddr é na verdade o file descriptor
+                int fd = pathAddr;
+                Integer fdKey = new Integer(fd);
+                if (fileDescriptors.containsKey(fdKey)) {
+                    Object stream = fileDescriptors.get(fdKey);
+                    // Determinar tipo pelo stream
+                    if (stream == stdout || fd == 1 || fd == 2) {
+                        path = "/dev/stdout";
+                    } else if (fd == 0) {
+                        path = "/dev/stdin";
+                    } else if (stream instanceof ByteArrayInputStream) {
+                        ByteArrayInputStream bais = (ByteArrayInputStream) stream;
+                        if (bais.available() == 0) {
+                            path = "/dev/null";
+                        } else {
+                            path = "/tmp/fd_" + fd;
+                        }
+                    } else {
+                        path = "/proc/fd/" + fd;
+                    }
+                } else {
+                    registers[REG_R0] = -9; // EBADF
+                    return;
+                }
+            }
+            
+            if (path == null) {
+                registers[REG_R0] = -2; // ENOENT
+                return;
+            }
+            
+            // Verificar se existe
+            boolean exists = false;
+            boolean isDir = false;
+            long size = 0;
+            long mtime = System.currentTimeMillis() / 1000;
+            
+            if (path.startsWith("/dev/")) {
+                exists = true;
+                size = 0;
+            } else if (path.startsWith("/tmp/")) {
+                String tmpName = path.substring(5);
+                exists = midlet.tmp.containsKey(tmpName);
+                if (exists) {
+                    String content = (String) midlet.tmp.get(tmpName);
+                    size = content.length();
+                }
+            } else if (path.startsWith("/proc/") || path.startsWith("/sys/")) {
+                exists = true;
+                isDir = path.endsWith("/");
+                size = 0;
+            } else {
+                // Usar infraestrutura do OpenTTY
+                InputStream is = midlet.getInputStream(path);
+                if (is != null) {
+                    exists = true;
+                    // Calcular tamanho
+                    byte[] buffer = new byte[1024];
+                    int total = 0;
+                    int read;
+                    while ((read = is.read(buffer)) != -1) {
+                        total += read;
+                    }
+                    is.close();
+                    size = total;
+                } else if (path.endsWith("/") || midlet.fs.containsKey(path)) {
+                    exists = true;
+                    isDir = true;
+                }
+            }
+            
+            if (!exists) {
+                registers[REG_R0] = -2; // ENOENT
+                return;
+            }
+            
+            // Preencher struct stat (48 bytes para ARM EABI)
+            int offset = 0;
+            
+            // st_dev (device)
+            writeIntLEWithMMU(statbuf + offset, 2048); // Major/minor
+            offset += 4;
+            
+            // st_ino (inode)
+            writeIntLEWithMMU(statbuf + offset, path.hashCode() & 0x7FFFFFFF);
+            offset += 4;
+            
+            // st_mode (type + permissions)
+            int mode = isDir ? 0x4000 : 0x8000; // S_IFDIR ou S_IFREG
+            if (path.startsWith("/bin/") || path.endsWith(".elf") || 
+                path.endsWith(".lua") || path.endsWith(".sh")) {
+                mode |= 0755; // rwxr-xr-x
+            } else {
+                mode |= 0644; // rw-r--r--
+            }
+            writeIntLEWithMMU(statbuf + offset, mode);
+            offset += 4;
+            
+            // st_nlink (links)
+            writeIntLEWithMMU(statbuf + offset, 1);
+            offset += 4;
+            
+            // st_uid (owner)
+            writeIntLEWithMMU(statbuf + offset, id == 0 ? 0 : 1000);
+            offset += 4;
+            
+            // st_gid (group)
+            writeIntLEWithMMU(statbuf + offset, id == 0 ? 0 : 1000);
+            offset += 4;
+            
+            // st_rdev
+            writeIntLEWithMMU(statbuf + offset, 0);
+            offset += 4;
+            
+            // st_size
+            writeIntLEWithMMU(statbuf + offset, (int)size);
+            offset += 4;
+            
+            // st_blksize
+            writeIntLEWithMMU(statbuf + offset, 4096);
+            offset += 4;
+            
+            // st_blocks
+            writeIntLEWithMMU(statbuf + offset, (int)((size + 511) / 512));
+            offset += 4;
+            
+            // st_atime
+            writeIntLEWithMMU(statbuf + offset, (int)mtime);
+            offset += 4;
+            
+            // st_mtime
+            writeIntLEWithMMU(statbuf + offset, (int)mtime);
+            offset += 4;
+            
+            // st_ctime
+            writeIntLEWithMMU(statbuf + offset, (int)mtime);
+            offset += 4;
+            
+            registers[REG_R0] = 0;
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }
+
+    private void handleLseek() {
+        int fd = registers[REG_R0];
+        int offset = registers[REG_R1];
+        int whence = registers[REG_R2];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!fileDescriptors.containsKey(fdKey)) {
+            registers[REG_R0] = -9; // EBADF
+            return;
+        }
+        
+        try {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            if (stream instanceof ByteArrayInputStream) {
+                ByteArrayInputStream bais = (ByteArrayInputStream) stream;
+                
+                // Ler todo o conteúdo para array
+                byte[] data = new byte[bais.available()];
+                int total = 0;
+                int read;
+                while ((read = bais.read(data, total, data.length - total)) != -1) {
+                    total += read;
+                    if (total >= data.length) break;
+                }
+                
+                int newPos = 0;
+                switch (whence) {
+                    case SEEK_SET:
+                        newPos = offset;
+                        break;
+                    case SEEK_CUR:
+                        // Não temos posição atual, assumir 0
+                        newPos = offset;
+                        break;
+                    case SEEK_END:
+                        newPos = total + offset;
+                        break;
+                    default:
+                        registers[REG_R0] = -22; // EINVAL
+                        return;
+                }
+                
+                if (newPos < 0 || newPos > total) {
+                    registers[REG_R0] = -22; // EINVAL
+                    return;
+                }
+                
+                // Criar novo stream na posição correta
+                ByteArrayInputStream newStream = new ByteArrayInputStream(data);
+                newStream.skip(newPos);
+                fileDescriptors.put(fdKey, newStream);
+                
+                registers[REG_R0] = newPos;
+                return;
+                
+            } else if (stream instanceof ByteArrayOutputStream) {
+                ByteArrayOutputStream baos = (ByteArrayOutputStream) stream;
+                byte[] data = baos.toByteArray();
+                
+                int newPos = 0;
+                switch (whence) {
+                    case SEEK_SET:
+                        newPos = offset;
+                        break;
+                    case SEEK_CUR:
+                        // Para output stream, posição é o fim
+                        newPos = data.length + offset;
+                        break;
+                    case SEEK_END:
+                        newPos = data.length + offset;
+                        break;
+                    default:
+                        registers[REG_R0] = -22; // EINVAL
+                        return;
+                }
+                
+                if (newPos < 0) {
+                    registers[REG_R0] = -22; // EINVAL
+                    return;
+                }
+                
+                if (newPos > data.length) {
+                    // Estender o buffer
+                    byte[] newData = new byte[newPos];
+                    System.arraycopy(data, 0, newData, 0, data.length);
+                    // Preencher com zeros
+                    for (int i = data.length; i < newPos; i++) {
+                        newData[i] = 0;
+                    }
+                    ByteArrayOutputStream newStream = new ByteArrayOutputStream();
+                    newStream.write(newData, 0, newPos);
+                    fileDescriptors.put(fdKey, newStream);
+                } else {
+                    // Criar stream na posição
+                    ByteArrayOutputStream newStream = new ByteArrayOutputStream() {
+                        private int position = newPos;
+                        public void write(int b) {
+                            if (position < data.length) {
+                                data[position] = (byte) b;
+                            } else {
+                                // Extender
+                                byte[] newData = new byte[position + 1];
+                                System.arraycopy(data, 0, newData, 0, data.length);
+                                newData[position] = (byte) b;
+                                data = newData;
+                            }
+                            position++;
+                            buf = data;
+                            count = position;
+                        }
+                    };
+                    newStream.write(data, 0, newPos);
+                    fileDescriptors.put(fdKey, newStream);
+                }
+                
+                registers[REG_R0] = newPos;
+                return;
+                
+            } else {
+                // Para outros streams (stdin/stdout, sockets), não suportado
+                registers[REG_R0] = -29; // ESPIPE
+                return;
+            }
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }
+
+    private void handleGettimeofday() {
+        int tvAddr = registers[REG_R0];
+        int tzAddr = registers[REG_R1];
+        
+        try {
+            long currentTime = System.currentTimeMillis();
+            long seconds = currentTime / 1000;
+            long microseconds = (currentTime % 1000) * 1000;
+            
+            if (tvAddr != 0) {
+                // struct timeval { time_t tv_sec; suseconds_t tv_usec; }
+                writeIntLEWithMMU(tvAddr, (int)seconds);
+                writeIntLEWithMMU(tvAddr + 4, (int)microseconds);
+            }
+            
+            if (tzAddr != 0) {
+                // struct timezone { int tz_minuteswest; int tz_dsttime; }
+                // UTC+0, sem DST
+                writeIntLEWithMMU(tzAddr, 0);
+                writeIntLEWithMMU(tzAddr + 4, 0);
+            }
+            
+            registers[REG_R0] = 0;
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }
+
+    /*private void handlePipe() {
+        int pipefd = registers[REG_R0];
+        
+        if (pipefd == 0) {
+            registers[REG_R0] = -14; // EFAULT
+            return;
+        }
+        
+        try {
+            // Criar buffers para simular pipe
+            final Vector pipeBuffer = new Vector();
+            final Object lock = new Object();
+            
+            // Criar InputStream e OutputStream que compartilham buffer
+            PipedInputStream pipeIn = new PipedInputStream() {
+                private boolean closed = false;
+                
+                public synchronized int read() throws IOException {
+                    if (closed) return -1;
+                    synchronized (lock) {
+                        while (pipeBuffer.isEmpty()) {
+                            try { lock.wait(100); } 
+                            catch (InterruptedException e) { return -1; }
+                            if (closed) return -1;
+                        }
+                        Byte b = (Byte) pipeBuffer.remove(0);
+                        return b.intValue() & 0xFF;
+                    }
+                }
+                
+                public void close() throws IOException {
+                    closed = true;
+                    super.close();
+                    synchronized (lock) { lock.notifyAll(); }
+                }
+            };
+            
+            PipedOutputStream pipeOut = new PipedOutputStream() {
+                public void write(int b) throws IOException {
+                    synchronized (lock) {
+                        pipeBuffer.addElement(new Byte((byte) b));
+                        lock.notifyAll();
+                    }
+                }
+                
+                public void close() throws IOException {
+                    super.close();
+                    synchronized (lock) { lock.notifyAll(); }
+                }
+            };
+            
+            // Atribuir file descriptors
+            int readFd = nextFd++;
+            int writeFd = nextFd++;
+            
+            fileDescriptors.put(new Integer(readFd), pipeIn);
+            fileDescriptors.put(new Integer(writeFd), pipeOut);
+            
+            // Escrever fds no array
+            writeIntLEWithMMU(pipefd, readFd);
+            writeIntLEWithMMU(pipefd + 4, writeFd);
+            
+            registers[REG_R0] = 0;
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }*/
+
+    private void handleDup2() {
+        int oldfd = registers[REG_R0], newfd = registers[REG_R1];
+        Integer oldKey = new Integer(oldfd), newKey = new Integer(newfd);
+        
+        if (!fileDescriptors.containsKey(oldKey)) { registers[REG_R0] = -9; return; }
+        
+        try {
+            // Fechar newfd se estiver aberto
+            if (fileDescriptors.containsKey(newKey)) {
+                Object oldStream = fileDescriptors.get(newKey);
+                try {
+                    if (oldStream instanceof InputStream) {
+                        ((InputStream) oldStream).close();
+                    } else if (oldStream instanceof OutputStream) {
+                        ((OutputStream) oldStream).close();
+                    }
+                } catch (Exception e) {
+                    // Ignorar erro ao fechar
+                }
+                fileDescriptors.remove(newKey);
+            }
+            
+            // Duplicar referência
+            Object original = fileDescriptors.get(oldKey);
+            fileDescriptors.put(newKey, original);
+            
+            registers[REG_R0] = newfd;
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }
+
+    private void handleSignal(int syscall) {
+        int signum = registers[REG_R0], handler = registers[REG_R1], oldact = registers[REG_R2];
+        
+        try {
+            // Sinais suportados
+            if (signum == SIGINT || signum == SIGTERM || signum == SIGCHLD) {
+                if (syscall == SYS_SIGNAL) {
+                    // signal(signum, handler)
+                    Integer oldHandler = (Integer) signalHandlers.get(new Integer(signum));
+                    if (oldact != 0 && oldHandler != null) {
+                        writeIntLEWithMMU(oldact, oldHandler.intValue());
+                    }
+                    signalHandlers.put(new Integer(signum), new Integer(handler));
+                    registers[REG_R0] = handler;
+                    
+                } else if (syscall == SYS_SIGACTION) {
+                    // sigaction(signum, act, oldact)
+                    if (oldact != 0) {
+                        // Escrever old sigaction (simplificado)
+                        writeIntLEWithMMU(oldact, 0); // sa_handler
+                        writeIntLEWithMMU(oldact + 4, 0); // sa_mask
+                        writeIntLEWithMMU(oldact + 8, 0); // sa_flags
+                    }
+                    
+                    if (handler != 0) {
+                        // Ler nova sigaction
+                        int sa_handler = readIntLEWithMMU(handler);
+                        int sa_mask = readIntLEWithMMU(handler + 4);
+                        int sa_flags = readIntLEWithMMU(handler + 8);
+                        
+                        signalHandlers.put(new Integer(signum), new Integer(sa_handler));
+                    }
+                    
+                    registers[REG_R0] = 0;
+                }
+            } else {
+                registers[REG_R0] = -22; // EINVAL
+            }
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM
+        }
+    }
+
+    private void deliverSignal(int signum, String targetPid) {
+        // Enviar sinal para processo (simplificado)
+        if (signum == SIGCHLD && targetPid.equals(pid)) {
+            // Verificar se há handler registrado
+            Integer handlerAddr = (Integer) signalHandlers.get(new Integer(SIGCHLD));
+            if (handlerAddr != null && handlerAddr.intValue() != 0) {
+                // Simular chamada do handler
+                // Em sistema real, isso seria feito no contexto do processo
+                midlet.print("Signal " + signum + " delivered to process " + pid, stdout);
+            }
+        }
+    }
+
+    private void writeShortWithMMU(int addr, short value) throws Exception { int physAddr = translateAddress(addr, true, false); if (physAddr >= 0 && physAddr + 1 < memory.length) { memory[physAddr] = (byte)(value & 0xFF); memory[physAddr + 1] = (byte)((value >> 8) & 0xFF); } }
+
+    private byte readByteFromPath(String path, int offset) { try { InputStream is = midlet.getInputStream(path); if (is != null) { is.skip(offset); int b = is.read(); is.close(); return (byte)(b & 0xFF); } } catch (Exception e) { } return 0; }
+
+    private void prepareElfStack(ELF elf, Vector args) {
+        try {
+            int sp = elf.registers[REG_SP];
+            
+            // Escrever strings dos argumentos
+            int stringPos = sp - 256;
+            Vector argPointers = new Vector();
+            
+            for (int i = 0; i < args.size(); i++) {
+                String arg = (String) args.elementAt(i);
+                byte[] argBytes = (arg + "\0").getBytes("UTF-8");
+                
+                for (int j = 0; j < argBytes.length; j++) {
+                    elf.writeByte(stringPos + j, argBytes[j]);
+                }
+                
+                argPointers.addElement(new Integer(stringPos));
+                stringPos += argBytes.length;
+            }
+            
+            // Escrever array de ponteiros
+            int argvPos = stringPos;
+            for (int i = 0; i < argPointers.size(); i++) {
+                int ptr = ((Integer) argPointers.elementAt(i)).intValue();
+                elf.writeIntLEWithMMU(argvPos + i * 4, ptr);
+            }
+            // NULL terminator
+            elf.writeIntLEWithMMU(argvPos + argPointers.size() * 4, 0);
+            
+            // Ajustar registradores
+            elf.registers[REG_R0] = argPointers.size(); // argc
+            elf.registers[REG_R1] = argvPos; // argv
+            elf.registers[REG_SP] = argvPos - 16; // Ajustar stack pointer
+            
+        } catch (Exception e) {
+            // Ignorar erros
+        }
+    }
+    
     // Método para criar processo ELF
     public void spawnELF(String pid, ELF elf) {
         Hashtable proc = genprocess("elf", self.id, null);
         proc.put("elf", elf);
         sys.put(pid, proc);
+    }
+
+    private String readString(int addr) {
+        try {
+            if (addr == 0) return null;
+            StringBuffer sb = new StringBuffer();
+            int offset = 0;
+            byte b;
+            while ((b = readByte(addr + offset)) != 0 && offset < 256) {
+                sb.append((char) (b & 0xFF));
+                offset++;
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // Método para enviar sinal IRQ
