@@ -239,4 +239,6 @@ if arg[0] == "/bin/sh" then
     print(string.env(io.read("/etc/motd")))
 end
 
+os.request("1", "setsh", shell)
+
 return shell
