@@ -13,9 +13,8 @@ public class ELF {
     // |
     private byte[] memory;
     private int[] registers;
-    private int pc;
+    private int pc, stackPointer;
     private boolean running;
-    private int stackPointer;
     
     // Registrador de flags CPSR
     private int cpsr;
@@ -33,22 +32,12 @@ public class ELF {
     private static final int PT_LOAD = 1;
     
     // Constantes ARM
-    private static final int REG_R0 = 0;
-    private static final int REG_R1 = 1;
-    private static final int REG_R2 = 2;
-    private static final int REG_R3 = 3;
-    private static final int REG_R4 = 4;
-    private static final int REG_R5 = 5;
-    private static final int REG_R6 = 6;
-    private static final int REG_R7 = 7;
-    private static final int REG_R8 = 8;
-    private static final int REG_R9 = 9;
-    private static final int REG_R10 = 10;
-    private static final int REG_R11 = 11;
-    private static final int REG_R12 = 12;
-    private static final int REG_SP = 13;
-    private static final int REG_LR = 14;
-    private static final int REG_PC = 15;
+    private static final int REG_R0 = 0, REG_R1 = 1, REG_R2 = 2, REG_R3 = 3, REG_R4 = 4, REG_R5 = 5, REG_R6 = 6, REG_R7 = 7, REG_R8 = 8, REG_R9 = 9, REG_R10 = 10, REG_R11 = 11, REG_R12 = 12, REG_SP = 13, REG_LR = 14, REG_PC = 15;
+
+    // Bits I/F/T
+    private static final int CPSR_I = 7;           // IRQ disable
+    private static final int CPSR_F = 6;           // FIQ disable
+    private static final int CPSR_T = 5;           // Thumb state
     // Bits do CPSR
     private static final int CPSR_N = 31; // Negative/Less than
     private static final int CPSR_Z = 30; // Zero
@@ -94,14 +83,34 @@ public class ELF {
     private static final int MAP_PRIVATE = 0x02;
     private static final int MAP_ANONYMOUS = 0x20;
     private static final int MAP_FIXED = 0x10;
+
+    // Modos de processador ARM
+    private static final int MODE_USR = 0x10;      // User mode
+    private static final int MODE_FIQ = 0x11;      // FIQ mode
+    private static final int MODE_IRQ = 0x12;      // IRQ mode
+    private static final int MODE_SVC = 0x13;      // Supervisor mode
+    private static final int MODE_ABT = 0x17;      // Abort mode
+    private static final int MODE_UND = 0x1B;      // Undefined mode
+    private static final int MODE_SYS = 0x1F;      // System mode
+
+    // Vetores de exceção ARM
+    private static final int VECTOR_RESET = 0x00, VECTOR_UNDEF = 0x04, VECTOR_SWI = 0x08, VECTOR_PREFETCH_ABORT = 0x0C, VECTOR_DATA_ABORT = 0x10, VECTOR_RESERVED = 0x14, VECTOR_IRQ = 0x18, VECTOR_FIQ = 0x1C;
+
+    // Bits de modo no CPSR
+    private static final int MODE_MASK = 0x1F;
     
     // Endereços especiais
-    private static final int MMAP_BASE = 0x40000000;  // Base para mmap
-    private static final int MMAP_END = 0x80000000;   // Fim para mmap
+    private static final int MMAP_BASE = 0x40000000, MMAP_END = 0x80000000;   // Fim para mmap
+    // Mascaras para I/F/T
+    private static final int I_MASK = 1 << CPSR_I, F_MASK = 1 << CPSR_F, T_MASK = 1 << CPSR_T;
+
+    // Registradores banked por modo
+    private int[][] bankedRegisters;
+    private int[] bankedSPSR;
+    private int currentMode;
     
     // Estruturas MMU
-    private Hashtable pageTable;
-    private Hashtable pageProtections;  // Proteções por página
+    private Hashtable pageTable, pageProtections;  // Proteções por página
     private int nextMmapAddr;
     
     // Registradores do CP15 (simplificados)
@@ -124,6 +133,19 @@ public class ELF {
         this.fileDescriptors = new Hashtable();
         this.nextFd = 3; // 0=stdin, 1=stdout, 2=stderr
         
+        // Inicializar registradores banked
+        this.bankedRegisters = new int[7][]; // 7 modos: FIQ, IRQ, SVC, ABT, UND, SYS (USR compartilha)
+        this.bankedSPSR = new int[7];
+        
+        // Inicializar cada array de registradores banked
+        for (int i = 0; i < bankedRegisters.length; i++) {
+            bankedRegisters[i] = new int[16]; // R0-R15, mas apenas alguns são banked
+        }
+        
+        // Inicializar modo atual como Supervisor (SVC) - padrão para kernel
+        this.currentMode = MODE_SVC;
+        this.cpsr = (cpsr & ~MODE_MASK) | MODE_SVC;
+        
         // Inicializar file descriptors padrão
         fileDescriptors.put(new Integer(1), stdout); // stdout
         fileDescriptors.put(new Integer(2), stdout); // stderr
@@ -133,17 +155,21 @@ public class ELF {
         this.pageProtections = new Hashtable();
         this.nextMmapAddr = MMAP_BASE;
         this.ttbr0 = 0;
-        this.dacr = 0x55555555;  // Todos domínios como cliente (checagem de permissões)
+        this.dacr = 0x55555555;  // Todos domínios como cliente
         this.sctlr = 0;
-        this.mmuEnabled = false;  // MMU desligada inicialmente
+        this.mmuEnabled = false;
 
-        // Inicializar mapeamento básico: primeira página (0x00000000) mapeada para si mesma
-        // Isso é necessário para o vetor de exceções ARM
+        // Mapeamento básico
         mapPage(0x00000000, 0x00000000, PROT_READ | PROT_WRITE | PROT_EXEC);
-
-        // Mapear stack inicial
         int stackPhys = stackPointer & PAGE_MASK;
         mapPage(stackPointer & PAGE_MASK, stackPhys, PROT_READ | PROT_WRITE);
+        
+        // Inicializar SPs banked com valores padrão
+        setBankedRegister(REG_SP, MODE_SVC, stackPointer);
+        setBankedRegister(REG_SP, MODE_IRQ, memory.length - 2048);
+        setBankedRegister(REG_SP, MODE_ABT, memory.length - 3072);
+        setBankedRegister(REG_SP, MODE_UND, memory.length - 4096);
+        setBankedRegister(REG_SP, MODE_FIQ, memory.length - 5120);
     }
     
     public String getPid() { return pid; }
@@ -207,9 +233,20 @@ public class ELF {
         
         return true;
     }
-    
+
     public void run() {
         running = true;
+        
+        // Inicializar vetores de exceção se necessário
+        if (readIntLE(memory, VECTOR_RESET) == 0) {
+            // Criar vetores básicos (branch para si mesmo)
+            for (int i = 0; i <= 0x1C; i += 4) {
+                writeIntLE(memory, i, 0xEAFFFFFE); // B . (loop infinito)
+            }
+            
+            // Vetor de reset aponta para pc atual
+            writeIntLE(memory, VECTOR_RESET, pc);
+        }
         
         Hashtable proc = midlet.genprocess("elf", id, null);
         proc.put("elf", this); midlet.sys.put(pid, proc);
@@ -231,9 +268,157 @@ public class ELF {
             } 
         }
     }
-    
+
+    // Obter índice do modo no array banked
+    private int getModeIndex(int mode) {
+        switch (mode & MODE_MASK) {
+            case MODE_FIQ: return 0;
+            case MODE_IRQ: return 1;
+            case MODE_SVC: return 2;
+            case MODE_ABT: return 3;
+            case MODE_UND: return 4;
+            case MODE_SYS: return 5;
+            case MODE_USR: return 6;
+            default: return 2; // Default para SVC
+        }
+    }
+
+    // Obter modo atual
+    private int getCurrentMode() { return cpsr & MODE_MASK; }
+
+    // Mudar para novo modo
+    private void changeMode(int newMode) {
+        int oldMode = getCurrentMode();
+        
+        if (oldMode != newMode) {
+            // Salvar registradores do modo atual
+            saveBankedRegisters(oldMode);
+            
+            // Atualizar CPSR
+            cpsr = (cpsr & ~MODE_MASK) | (newMode & MODE_MASK);
+            currentMode = newMode;
+            
+            // Restaurar registradores do novo modo
+            restoreBankedRegisters(newMode);
+        }
+    }
+
+    // Salvar registradores banked do modo atual
+    private void saveBankedRegisters(int mode) {
+        int idx = getModeIndex(mode);
+        
+        // SP e LR são sempre banked (exceto em SYS/USR)
+        if (mode != MODE_USR && mode != MODE_SYS) {
+            bankedRegisters[idx][REG_SP] = registers[REG_SP];
+            bankedRegisters[idx][REG_LR] = registers[REG_LR];
+        }
+        
+        // FIQ tem R8-R12 banked
+        if (mode == MODE_FIQ) { for (int i = 8; i <= 12; i++) { bankedRegisters[idx][i] = registers[i]; } }
+        
+        // Salvar SPSR
+        if (mode != MODE_USR && mode != MODE_SYS) { bankedSPSR[idx] = cpsr; }
+    }
+
+    // Restaurar registradores banked do modo
+    private void restoreBankedRegisters(int mode) {
+        int idx = getModeIndex(mode);
+        
+        // Restaurar SP e LR (exceto em SYS/USR)
+        if (mode != MODE_USR && mode != MODE_SYS) {
+            registers[REG_SP] = bankedRegisters[idx][REG_SP];
+            registers[REG_LR] = bankedRegisters[idx][REG_LR];
+        }
+        
+        // FIQ tem R8-R12 banked
+        if (mode == MODE_FIQ) { for (int i = 8; i <= 12; i++) { registers[i] = bankedRegisters[idx][i]; } }
+        
+        // Restaurar SPSR
+        if (mode != MODE_USR && mode != MODE_SYS) {
+            // SPSR para CPSR quando voltando de exceção
+            // Isso normalmente é feito com instruções explícitas
+        }
+    }
+
+    // Acessar registrador banked
+    private int getBankedRegister(int reg, int mode) { int idx = getModeIndex(mode); return bankedRegisters[getModeIndex(mode)][reg]; }
+    private void setBankedRegister(int reg, int mode, int value) { bankedRegisters[getModeIndex(mode)][reg] = value; }
+
     private void executeInstruction(int instruction) {
         try {
+            // Instruções MRS (Move from Status Register to Register)
+            if ((instruction & 0x0FF00000) == 0x01000000) {
+                int rd = (instruction >> 12) & 0xF;
+                boolean spsr = (instruction & (1 << 22)) != 0;
+                
+                if (spsr) {
+                    // MRS Rd, SPSR - ler SPSR do modo atual
+                    int mode = getCurrentMode();
+                    if (mode != MODE_USR && mode != MODE_SYS) {
+                        int idx = getModeIndex(mode);
+                        registers[rd] = bankedSPSR[idx];
+                    } else {
+                        // Em USR/SYS, SPSR não está acessível
+                        handleUndefinedInstruction();
+                    }
+                } else {
+                    // MRS Rd, CPSR
+                    registers[rd] = cpsr;
+                }
+                return;
+            }
+            
+            // Instruções MSR (Move Register to Status Register)
+            if ((instruction & 0x0FB00000) == 0x01200000) {
+                boolean spsr = (instruction & (1 << 22)) != 0;
+                int fieldMask = (instruction >> 16) & 0xF;
+                int operand;
+                
+                // Determinar operand
+                if ((instruction & (1 << 25)) != 0) {
+                    // Immediate operand
+                    int imm = instruction & 0xFF;
+                    int rotate = ((instruction >> 8) & 0xF) * 2;
+                    operand = rotateRight(imm, rotate);
+                } else {
+                    // Register operand
+                    int rm = instruction & 0xF;
+                    operand = registers[rm];
+                }
+                
+                int mask = 0;
+                if ((fieldMask & 0x1) != 0) mask |= 0x000000FF; // Control field
+                if ((fieldMask & 0x2) != 0) mask |= 0x0000FF00; // Extension field
+                if ((fieldMask & 0x4) != 0) mask |= 0x00FF0000; // Status field
+                if ((fieldMask & 0x8) != 0) mask |= 0xFF000000; // Flags field
+                
+                if (spsr) {
+                    // MSR SPSR, operand
+                    int mode = getCurrentMode();
+                    if (mode != MODE_USR && mode != MODE_SYS) {
+                        int idx = getModeIndex(mode);
+                        int oldSPSR = bankedSPSR[idx];
+                        int newSPSR = (oldSPSR & ~mask) | (operand & mask);
+                        bankedSPSR[idx] = newSPSR;
+                    }
+                } else {
+                    // MSR CPSR, operand
+                    int oldCPSR = cpsr;
+                    int newCPSR = (oldCPSR & ~mask) | (operand & mask);
+                    
+                    // Verificar mudança de modo
+                    int oldMode = oldCPSR & MODE_MASK;
+                    int newMode = newCPSR & MODE_MASK;
+                    
+                    if (oldMode != newMode) {
+                        changeMode(newMode);
+                    }
+                    
+                    cpsr = newCPSR;
+                }
+                return;
+            }
+
             // Instruções MCR/MRC para CP15 (controle da MMU)
             if ((instruction & 0x0F000010) == 0x0E000010) {
                 int cpnum = (instruction >> 8) & 0xF;
@@ -1317,7 +1502,191 @@ public class ELF {
         
         registers[REG_R0] = buf;
     }
+
+    private void handleReset() { cpsr = (cpsr & ~MODE_MASK) | MODE_SVC; pc = readIntLE(memory, VECTOR_RESET); running = true; }
+
+    // Handler de instrução indefinida
+    private void handleUndefinedInstruction() {
+        // Salvar estado atual
+        int oldCPSR = cpsr;
+        
+        // Mudar para modo Undefined
+        changeMode(MODE_UND);
+        
+        // Salvar LR e SPSR
+        registers[REG_LR] = pc - 4; // Endereço da instrução indefinida
+        int idx = getModeIndex(MODE_UND);
+        bankedSPSR[idx] = oldCPSR;
+        
+        // Desabilitar IRQs
+        cpsr |= I_MASK;
+        
+        // Ir para vetor de undefined instruction
+        pc = VECTOR_UNDEF;
+        
+        midlet.print("Undefined Instruction at " + toHex(pc - 4), stdout);
+    }
+
+    // Handler de SWI (syscall já implementado)
+    private void handleSoftwareInterrupt(int swiNumber) {
+        // Salvar estado atual
+        int oldCPSR = cpsr;
+        
+        // Mudar para modo Supervisor
+        changeMode(MODE_SVC);
+        
+        // Salvar LR e SPSR
+        registers[REG_LR] = pc - 4; // Endereço da instrução SWI
+        int idx = getModeIndex(MODE_SVC);
+        bankedSPSR[idx] = oldCPSR;
+        
+        // Desabilitar IRQs
+        cpsr |= I_MASK;
+        
+        // Chamar handler de syscall (já implementado)
+        if (swiNumber == 0) {
+            handleSyscall(registers[REG_R7]);
+        } else {
+            handleSyscall(swiNumber);
+        }
+        
+        // Retornar (instrução MOVS PC, LR)
+        // Isso seria feito no handler de syscall
+    }
+
+    // Modifique o handler de Data Abort:
+    private void handleDataAbort(String message) {
+        // Salvar estado atual
+        int oldCPSR = cpsr;
+        
+        // Mudar para modo Abort
+        changeMode(MODE_ABT);
+        
+        // Salvar LR e SPSR
+        registers[REG_LR] = pc - 8; // PC da instrução que causou abort + 8
+        int idx = getModeIndex(MODE_ABT);
+        bankedSPSR[idx] = oldCPSR;
+        
+        // Desabilitar IRQs
+        cpsr |= I_MASK;
+        
+        // Ir para vetor de Data Abort
+        pc = VECTOR_DATA_ABORT;
+        
+        midlet.print("Data Abort: " + message + " at " + toHex(registers[REG_LR]), stdout);
+    }
+
+    // Handler de Prefetch Abort
+    private void handlePrefetchAbort(String message) {
+        int oldCPSR = cpsr;
+        changeMode(MODE_ABT);
+        registers[REG_LR] = pc - 4;
+        int idx = getModeIndex(MODE_ABT);
+        bankedSPSR[idx] = oldCPSR;
+        cpsr |= I_MASK;
+        pc = VECTOR_PREFETCH_ABORT;
+        
+        midlet.print("Prefetch Abort: " + message + " at " + toHex(registers[REG_LR]), stdout);
+    }
+
+    // Handler de IRQ (simplificado)
+    private void handleIRQ() {
+        // Salvar estado atual
+        int oldCPSR = cpsr;
+        
+        // Mudar para modo IRQ
+        changeMode(MODE_IRQ);
+        
+        // Salvar LR e SPSR
+        registers[REG_LR] = pc + 4; // PC + 4 para retorno
+        int idx = getModeIndex(MODE_IRQ);
+        bankedSPSR[idx] = oldCPSR;
+        
+        // Desabilitar IRQs adicionais
+        cpsr |= I_MASK;
+        
+        // Ir para vetor de IRQ
+        pc = VECTOR_IRQ;
+    }
+
+    // Handler de FIQ (simplificado)
+    private void handleFIQ() {
+        int oldCPSR = cpsr;
+        changeMode(MODE_FIQ);
+        registers[REG_LR] = pc + 4;
+        int idx = getModeIndex(MODE_FIQ);
+        bankedSPSR[idx] = oldCPSR;
+        cpsr |= (I_MASK | F_MASK);
+        pc = VECTOR_FIQ;
+    }
     
+    // Método para criar processo ELF
+    public void spawnELF(String pid, ELF elf) {
+        Hashtable proc = genprocess("elf", self.id, null);
+        proc.put("elf", elf);
+        sys.put(pid, proc);
+    }
+
+    // Método para enviar sinal IRQ
+    public void triggerIRQ(String pid) {
+        Object elfObj = getobject(pid, "elf");
+        if (elfObj instanceof ELF) {
+            ELF elf = (ELF) elfObj;
+            // Em implementação real, isso setaria uma flag de IRQ pendente
+            // Aqui simplificamos chamando diretamente
+            try {
+                java.lang.reflect.Method method = ELF.class.getDeclaredMethod("handleIRQ");
+                method.setAccessible(true);
+                method.invoke(elf);
+            } catch (Exception e) {
+                midlet.print("Failed to trigger IRQ: " + getCatch(e), stdout);
+            }
+        }
+    }
+
+    // Método para acessar registrador considerando modo
+    private int getRegister(int reg) {
+        // R13 (SP) e R14 (LR) são banked
+        if (reg == REG_SP || reg == REG_LR) {
+            int mode = getCurrentMode();
+            if (mode == MODE_USR || mode == MODE_SYS) {
+                return registers[reg];
+            } else {
+                return getBankedRegister(reg, mode);
+            }
+        }
+        
+        // R8-R12 são banked apenas no modo FIQ
+        if (reg >= 8 && reg <= 12) {
+            if (getCurrentMode() == MODE_FIQ) {
+                return getBankedRegister(reg, MODE_FIQ);
+            }
+        }
+        
+        return registers[reg];
+    }
+
+    private void setRegister(int reg, int value) {
+        if (reg == REG_SP || reg == REG_LR) {
+            int mode = getCurrentMode();
+            if (mode == MODE_USR || mode == MODE_SYS) {
+                registers[reg] = value;
+            } else {
+                setBankedRegister(reg, mode, value);
+            }
+            return;
+        }
+        
+        if (reg >= 8 && reg <= 12) {
+            if (getCurrentMode() == MODE_FIQ) {
+                setBankedRegister(reg, MODE_FIQ, value);
+                return;
+            }
+        }
+        
+        registers[reg] = value;
+    }
+
     // Métodos auxiliares para leitura/escrita little-endian
     private int readIntLE(byte[] data, int offset) { 
         // conteudo original completo
