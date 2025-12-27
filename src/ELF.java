@@ -1622,7 +1622,7 @@ public class ELF {
 
     // Método para enviar sinal IRQ
     public void triggerIRQ(String pid) {
-        Object elfObj = getobject(pid, "elf");
+        Object elfObj = midlet.getobject(pid, "elf");
         if (elfObj instanceof ELF) {
             ELF elf = (ELF) elfObj;
             // Em implementação real, isso setaria uma flag de IRQ pendente
