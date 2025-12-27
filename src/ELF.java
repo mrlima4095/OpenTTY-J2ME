@@ -24,26 +24,13 @@ public class ELF {
     private int nextFd;
     
     // Constantes ELF
-    private static final int EI_NIDENT = 16;
-    private static final int ELFCLASS32 = 1;
-    private static final int ELFDATA2LSB = 1;
-    private static final int EM_ARM = 40;
-    private static final int ET_EXEC = 2;
-    private static final int PT_LOAD = 1;
+    private static final int EI_NIDENT = 16, ELFCLASS32 = 1, ELFDATA2LSB = 1, EM_ARM = 40, ET_EXEC = 2, PT_LOAD = 1;
     
     // Constantes ARM
     private static final int REG_R0 = 0, REG_R1 = 1, REG_R2 = 2, REG_R3 = 3, REG_R4 = 4, REG_R5 = 5, REG_R6 = 6, REG_R7 = 7, REG_R8 = 8, REG_R9 = 9, REG_R10 = 10, REG_R11 = 11, REG_R12 = 12, REG_SP = 13, REG_LR = 14, REG_PC = 15;
 
-    // Bits I/F/T
-    private static final int CPSR_I = 7;           // IRQ disable
-    private static final int CPSR_F = 6;           // FIQ disable
-    private static final int CPSR_T = 5;           // Thumb state
     // Bits do CPSR
-    private static final int CPSR_N = 31; // Negative/Less than
-    private static final int CPSR_Z = 30; // Zero
-    private static final int CPSR_C = 29; // Carry/Borrow/Extend
-    private static final int CPSR_V = 28; // Overflow
-    
+    private static final int CPSR_F = 6, CPSR_T = 5, CPSR_I = 7, CPSR_N = 31, CPSR_Z = 30, CPSR_C = 29, CPSR_V = 28; // Overflow
     // Máscaras para bits do CPSR
     private static final int N_MASK = 1 << CPSR_N;
     private static final int Z_MASK = 1 << CPSR_Z;
@@ -53,8 +40,7 @@ public class ELF {
     // Syscalls Linux ARM (EABI) - Atualizadas
     private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6;
     private static final int SYS_CREAT = 8;
-    private static final int SYS_TIME = 13;
-    private static final int SYS_CHDIR = 12;
+    private static final int SYS_CHDIR = 12, SYS_TIME = 13;
     private static final int SYS_GETPID = 20;
     private static final int SYS_KILL = 37;
     private static final int SYS_BRK = 45;
@@ -62,22 +48,27 @@ public class ELF {
     private static final int SYS_MMAP = 90;      // mmap2
     private static final int SYS_MUNMAP = 91;
     private static final int SYS_MPROTECT = 125;
+    private static final int SYS_EXECVE = 11;
+    private static final int SYS_WAITPID = 72;
+    private static final int SYS_IOCTL = 54;
+    private static final int SYS_FSTAT = 108;
+    private static final int SYS_STAT = 106;
+    private static final int SYS_LSEEK = 19;
+    private static final int SYS_GETTIMEOFDAY = 78;
+    private static final int SYS_PIPE = 42;
+    private static final int SYS_DUP2 = 63;
+    private static final int SYS_SIGNAL = 48;
+    private static final int SYS_SIGACTION = 67;
     
     // Flags de open
-    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2;
-    private static final int O_CREAT = 64;
-    private static final int O_APPEND = 1024;
-    private static final int O_TRUNC = 512;
+    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2, O_CREAT = 64, O_TRUNC = 512, O_APPEND = 1024,;
     
     // Constantes MMU
-    private static final int PAGE_SIZE = 4096;
-    private static final int PAGE_SHIFT = 12;
+    private static final int PAGE_SIZE = 4096, PAGE_SHIFT = 12;
     private static final int PAGE_MASK = 0xFFFFF000;
     
     // Bits de proteção de página
-    private static final int PROT_READ = 1;
-    private static final int PROT_WRITE = 2;
-    private static final int PROT_EXEC = 4;
+    private static final int PROT_READ = 1, PROT_WRITE = 2, PROT_EXEC = 4;
     
     // Flags de mapeamento
     private static final int MAP_PRIVATE = 0x02;
