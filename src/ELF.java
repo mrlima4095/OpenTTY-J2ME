@@ -4,7 +4,7 @@ import java.util.*;
 import java.io.*;
 // |
 // ELF ARM 32 Emulator
-public class ELF {
+public class ELF implements Runnable {
     private OpenTTY midlet;
     private Object stdout;
     private Hashtable scope;
@@ -40,15 +40,13 @@ public class ELF {
     // Syscalls Linux ARM (EABI) - Atualizadas
     private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6;
     private static final int SYS_CREAT = 8;
-    private static final int SYS_CHDIR = 12, SYS_TIME = 13;
+    private static final int SYS_EXECVE = 11, SYS_CHDIR = 12, SYS_TIME = 13;
     private static final int SYS_GETPID = 20;
     private static final int SYS_KILL = 37;
     private static final int SYS_BRK = 45;
     private static final int SYS_GETCWD = 183;
-    private static final int SYS_MMAP = 90;      // mmap2
-    private static final int SYS_MUNMAP = 91;
+    private static final int SYS_MMAP = 90, SYS_MUNMAP = 91;
     private static final int SYS_MPROTECT = 125;
-    private static final int SYS_EXECVE = 11;
     private static final int SYS_WAITPID = 72;
     private static final int SYS_IOCTL = 54;
     private static final int SYS_FSTAT = 108;
@@ -951,87 +949,30 @@ public class ELF {
     
     private void handleSyscall(int number) {
         switch (number) {
-            case SYS_FORK:
-                handleFork();
-                break;
-                
-            case SYS_WRITE:
-                handleWrite();
-                break;
-                
-            case SYS_READ:
-                handleRead();
-                break;
-                
-            case SYS_OPEN:
-                handleOpen();
-                break;
-                
-            case SYS_CLOSE:
-                handleClose();
-                break;
-                
-            case SYS_CREAT:
-                handleCreat();
-                break;
-                
-            case SYS_TIME:
-                handleTime();
-                break;
-                
-            case SYS_CHDIR:
-                handleChdir();
-                break;
-                
-            case SYS_EXIT:
-                handleExit();
-                break;
-                
-            case SYS_GETPID:
-                handleGetpid();
-                break;
-                
-            case SYS_KILL:
-                handleKill();
-                break;
-                
-            case SYS_GETCWD:
-                handleGetcwd();
-                break;
-                
-            case SYS_BRK:
-                registers[REG_R0] = memory.length;
-                break;
-                
-            case SYS_MMAP:
-                handleMmap();
-                break;
-                
-            case SYS_MUNMAP:
-                handleMunmap();
-                break;
-                
+            case SYS_FORK: handleFork(); break;  
+            case SYS_WRITE: handleWrite(); break;    
+            case SYS_READ: handleRead(); break; 
+            case SYS_OPEN: handleOpen(); break;
+            case SYS_CLOSE: handleClose(); break; 
+            case SYS_CREAT: handleCreat(); break;
+            case SYS_TIME: handleTime(); break;
+            case SYS_CHDIR: handleChdir(); break;
+            case SYS_EXIT: handleExit(); break;
+            case SYS_GETPID: handleGetpid(); break;
+            case SYS_KILL: handleKill(); break; 
+            case SYS_GETCWD: handleGetcwd(); break;
+            case SYS_BRK: registers[REG_R0] = memory.length; break;
+            case SYS_MMAP: handleMmap(); break;
+            case SYS_MUNMAP: handleMunmap(); break; 
             case SYS_MPROTECT:
                 handleMprotect();
                 break;
-                
-            case SYS_EXECVE:
-                handleExecve();
-                break;
-                
-            case SYS_WAITPID:
-                handleWaitpid();
-                break;
-                
             case SYS_IOCTL:
                 handleIoctl();
                 break;
-                
-            case SYS_FSTAT:
             case SYS_STAT:
                 handleStat(number);
                 break;
-                
             case SYS_LSEEK:
                 handleLseek();
                 break;
@@ -1040,15 +981,6 @@ public class ELF {
                 handleGettimeofday();
                 break;
                 
-            case SYS_PIPE:
-                handlePipe();
-                break;
-                
-            case SYS_DUP2:
-                handleDup2();
-                break;
-                
-            case SYS_SIGNAL:
             case SYS_SIGACTION:
                 handleSignal(number);
                 break;
@@ -1674,183 +1606,7 @@ public class ELF {
     private void handleExecve() {
         int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
         
-        try {
-            String path = readString(pathAddr);
-            if (path == null) { registers[REG_R0] = -2; return;
-            }
-            
-            // Verificar se é arquivo Lua (baseado no OpenTTY)
-            boolean isLua = path.endsWith(".lua") || path.endsWith(".sh");
-            boolean isElf = path.endsWith(".elf") || (readByteFromPath(path, 0) == 0x7F && readByteFromPath(path, 1) == 'E');
-            
-            if (!isLua && !isElf) {
-                // Tentar inferir pelo conteúdo
-                InputStream test = midlet.getInputStream(path);
-                if (test != null) {
-                    byte[] header = new byte[4];
-                    int read = test.read(header);
-                    test.close();
-                    isElf = (read == 4 && header[0] == 0x7F && header[1] == 'E');
-                }
-            }
-            
-            if (isLua) {
-                // Executar script Lua
-                String code = midlet.read(path);
-                if (code == null || code.isEmpty()) {
-                    registers[REG_R0] = -2; // ENOENT
-                    return;
-                }
-                
-                // Ler argumentos argv
-                Vector args = new Vector();
-                if (argvAddr != 0) {
-                    int argPtr = readIntLEWithMMU(argvAddr);
-                    int i = 0;
-                    while (argPtr != 0) {
-                        String arg = readString(argPtr);
-                        if (arg != null) args.addElement(arg);
-                        i++;
-                        argPtr = readIntLEWithMMU(argvAddr + i * 4);
-                    }
-                }
-                
-                // Criar Hashtable de argumentos no formato Lua
-                Hashtable luaArgs = new Hashtable();
-                for (int i = 0; i < args.size(); i++) {
-                    luaArgs.put(new Double(i), args.elementAt(i));
-                }
-                
-                // Mesclar ambiente
-                Hashtable newScope = new Hashtable();
-                if (scope != null) {
-                    for (Enumeration e = scope.keys(); e.hasMoreElements();) {
-                        String key = (String) e.nextElement();
-                        newScope.put(key, scope.get(key));
-                    }
-                }
-                
-                // Adicionar variáveis de ambiente
-                if (envpAddr != 0) {
-                    int envPtr = readIntLEWithMMU(envpAddr);
-                    int i = 0;
-                    while (envPtr != 0) {
-                        String env = readString(envPtr);
-                        if (env != null) {
-                            int eq = env.indexOf('=');
-                            if (eq > 0) {
-                                newScope.put(env.substring(0, eq), env.substring(eq + 1));
-                            }
-                        }
-                        i++;
-                        envPtr = readIntLEWithMMU(envpAddr + i * 4);
-                    }
-                }
-                
-                // Criar processo Lua (simulando fork+exec)
-                final String childPid = midlet.genpid();
-                final Lua lua = new Lua(midlet, id, childPid, null, stdout, newScope);
-                final Vector finalArgs = args;
-                
-                // Armazenar info do processo filho
-                Hashtable childInfo = new Hashtable();
-                childInfo.put("type", "lua");
-                childInfo.put("lua", lua);
-                childInfo.put("exited", Boolean.FALSE);
-                childInfo.put("status", new Integer(0));
-                childInfo.put("startTime", new Long(System.currentTimeMillis()));
-                childProcesses.put(childPid, childInfo);
-                
-                // Executar em thread
-                Thread execThread = new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            lua.run(path, code, luaArgs);
-                            childInfo.put("exited", Boolean.TRUE);
-                            childInfo.put("exitTime", new Long(System.currentTimeMillis()));
-                            
-                            // Enviar sinal SIGCHLD ao pai
-                            deliverSignal(SIGCHLD, pid);
-                        } catch (Exception e) {
-                            childInfo.put("exited", Boolean.TRUE);
-                            childInfo.put("status", new Integer(1));
-                            childInfo.put("exitTime", new Long(System.currentTimeMillis()));
-                        }
-                    }
-                });
-                execThread.start();
-                
-                registers[REG_R0] = Integer.parseInt(childPid);
-                
-            } else if (isElf) {
-                // Carregar e executar ELF
-                InputStream is = midlet.getInputStream(path);
-                if (is == null) {
-                    registers[REG_R0] = -2; // ENOENT
-                    return;
-                }
-                
-                // Ler argumentos para passar ao novo processo
-                Vector elfArgs = new Vector();
-                if (argvAddr != 0) {
-                    int argPtr = readIntLEWithMMU(argvAddr);
-                    int i = 0;
-                    while (argPtr != 0) {
-                        String arg = readString(argPtr);
-                        if (arg != null) elfArgs.addElement(arg);
-                        i++;
-                        argPtr = readIntLEWithMMU(argvAddr + i * 4);
-                    }
-                }
-                
-                // Criar novo processo ELF
-                final String childPid = midlet.genpid();
-                final ELF childElf = new ELF(midlet, stdout, scope, id, childPid, null);
-                
-                if (childElf.load(is)) {
-                    // Preparar stack com argumentos
-                    prepareElfStack(childElf, elfArgs);
-                    
-                    // Armazenar info do processo filho
-                    Hashtable childInfo = new Hashtable();
-                    childInfo.put("type", "elf");
-                    childInfo.put("elf", childElf);
-                    childInfo.put("exited", Boolean.FALSE);
-                    childInfo.put("status", new Integer(0));
-                    childInfo.put("startTime", new Long(System.currentTimeMillis()));
-                    childProcesses.put(childPid, childInfo);
-                    
-                    // Executar em thread
-                    Thread elfThread = new Thread(new Runnable() {
-                        public void run() {
-                            try {
-                                childElf.run();
-                                childInfo.put("exited", Boolean.TRUE);
-                                childInfo.put("exitTime", new Long(System.currentTimeMillis()));
-                                
-                                // Enviar sinal SIGCHLD ao pai
-                                deliverSignal(SIGCHLD, pid);
-                            } catch (Exception e) {
-                                childInfo.put("exited", Boolean.TRUE);
-                                childInfo.put("status", new Integer(1));
-                                childInfo.put("exitTime", new Long(System.currentTimeMillis()));
-                            }
-                        }
-                    });
-                    elfThread.start();
-                    
-                    registers[REG_R0] = Integer.parseInt(childPid);
-                } else {
-                    registers[REG_R0] = -8; // ENOEXEC
-                }
-                
-            } else {
-                registers[REG_R0] = -8; // ENOEXEC
-            }
-            
-        } catch (Exception e) {
-            registers[REG_R0] = -1; // EPERM
-        }
+        registers[REG_R0] = -1;
     }
     private void handleWaitpid() {
         int pid = registers[REG_R0], statusPtr = registers[REG_R1], options = registers[REG_R2];
@@ -2353,74 +2109,6 @@ public class ELF {
         }
     }
 
-    /*private void handlePipe() {
-        int pipefd = registers[REG_R0];
-        
-        if (pipefd == 0) {
-            registers[REG_R0] = -14; // EFAULT
-            return;
-        }
-        
-        try {
-            // Criar buffers para simular pipe
-            final Vector pipeBuffer = new Vector();
-            final Object lock = new Object();
-            
-            // Criar InputStream e OutputStream que compartilham buffer
-            PipedInputStream pipeIn = new PipedInputStream() {
-                private boolean closed = false;
-                
-                public synchronized int read() throws IOException {
-                    if (closed) return -1;
-                    synchronized (lock) {
-                        while (pipeBuffer.isEmpty()) {
-                            try { lock.wait(100); } 
-                            catch (InterruptedException e) { return -1; }
-                            if (closed) return -1;
-                        }
-                        Byte b = (Byte) pipeBuffer.remove(0);
-                        return b.intValue() & 0xFF;
-                    }
-                }
-                
-                public void close() throws IOException {
-                    closed = true;
-                    super.close();
-                    synchronized (lock) { lock.notifyAll(); }
-                }
-            };
-            
-            PipedOutputStream pipeOut = new PipedOutputStream() {
-                public void write(int b) throws IOException {
-                    synchronized (lock) {
-                        pipeBuffer.addElement(new Byte((byte) b));
-                        lock.notifyAll();
-                    }
-                }
-                
-                public void close() throws IOException {
-                    super.close();
-                    synchronized (lock) { lock.notifyAll(); }
-                }
-            };
-            
-            // Atribuir file descriptors
-            int readFd = nextFd++;
-            int writeFd = nextFd++;
-            
-            fileDescriptors.put(new Integer(readFd), pipeIn);
-            fileDescriptors.put(new Integer(writeFd), pipeOut);
-            
-            // Escrever fds no array
-            writeIntLEWithMMU(pipefd, readFd);
-            writeIntLEWithMMU(pipefd + 4, writeFd);
-            
-            registers[REG_R0] = 0;
-            
-        } catch (Exception e) {
-            registers[REG_R0] = -1; // EPERM
-        }
-    }*/
 
     private void handleDup2() {
         int oldfd = registers[REG_R0], newfd = registers[REG_R1];
