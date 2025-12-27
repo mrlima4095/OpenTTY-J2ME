@@ -106,6 +106,7 @@ public class ELF implements Runnable {
     
     // Estruturas MMU
     private Hashtable pageTable, pageProtections;  // Proteções por página
+    private Hashtable childProcesses, pendingSignals, signalHandler;
     private int nextMmapAddr;
     
     // Registradores do CP15 (simplificados)
