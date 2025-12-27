@@ -3,22 +3,27 @@
 local libcore = require("libcore")
 
 if arg[1] then
-    local status = io.write(libcore.joinpath(arg[1]), "", "w")
+    print("Argumento recebido: '" .. arg[1] .. "'")
+    local path = libcore.joinpath(arg[1])
+    print("Caminho gerado: '" .. path .. "'")
+    
+    local status = io.write(path, "", "w")
+    print("Status retornado: " .. tostring(status))
         
     if status == 1 then
-        print("touch: " .. arg[1] .. ": java.io.IOException")
+        print("touch: " .. path .. ": java.io.IOException")
     elseif status == 5 then
-        print("touch: " .. arg[1] .. ": read-only storage")
+        print("touch: " .. path .. ": read-only storage")
     elseif status == 13 then
-        print("touch: " .. arg[1] .. ": permission denied")
+        print("touch: " .. path .. ": permission denied")
     elseif status == 127 then
-        print("touch: " .. arg[1] .. ": not found")
+        print("touch: " .. path .. ": not found")
     elseif status == 2 then
-        print(libcore.joinpath(arg[1]), "invalid path")
+        print("touch: " .. path .. ": invalid path")
     end
 
     os.exit(tonumber(status))
 else
     print("touch: usage: touch [file]")
     os.exit(2)
-end
+enddeb
