@@ -948,47 +948,28 @@ public class ELF implements Runnable {
     }
     
     private void handleSyscall(int number) {
-        switch (number) {
-            case SYS_FORK: handleFork(); break;  
-            case SYS_WRITE: handleWrite(); break;    
-            case SYS_READ: handleRead(); break; 
-            case SYS_OPEN: handleOpen(); break;
-            case SYS_CLOSE: handleClose(); break; 
-            case SYS_CREAT: handleCreat(); break;
-            case SYS_TIME: handleTime(); break;
-            case SYS_CHDIR: handleChdir(); break;
-            case SYS_EXIT: handleExit(); break;
-            case SYS_GETPID: handleGetpid(); break;
-            case SYS_KILL: handleKill(); break; 
-            case SYS_GETCWD: handleGetcwd(); break;
-            case SYS_BRK: registers[REG_R0] = memory.length; break;
-            case SYS_MMAP: handleMmap(); break;
-            case SYS_MUNMAP: handleMunmap(); break; 
-            case SYS_MPROTECT:
-                handleMprotect();
-                break;
-            case SYS_IOCTL:
-                handleIoctl();
-                break;
-            case SYS_STAT:
-                handleStat(number);
-                break;
-            case SYS_LSEEK:
-                handleLseek();
-                break;
-                
-            case SYS_GETTIMEOFDAY:
-                handleGettimeofday();
-                break;
-                
-            case SYS_SIGACTION:
-                handleSignal(number);
-                break;
-            default:
-                registers[REG_R0] = -1; // Syscall não implementada
-                break;
-        }
-    }
+        if (number == SYS_FORK) { handleFork(); }
+        else if (number == SYS_WRITE) { handleWrite(); }
+        else if (number == SYS_READ) { handleRead(); }
+        else if (number == SYS_OPEN) { handleOpen() }
+        else if (number == SYS_CLOSE) { handleClose(); }
+        else if (number == SYS_CREAT) { handleCreat();}
+        else if (number == SYS_TIME) { handleTime(); }
+        else if (number == SYS_CHDIR) { handleChdir(); }
+        else if (number == SYS_EXIT) { handleExit(); }
+        else if (number == SYS_GETPID) { handleGetpid(); }
+        else if (number == SYS_KILL) { handleKill(); }
+        else if (number == SYS_GETCWD) { handleGetcwd(); }
+        else if (number == SYS_BRK) { registers[REG_R0] = memory.length; }
+        else if (number == SYS_MMAP) { handleMmap(); }
+        else if (number == SYS_MUNMAP) { handleMunmap(); }
+        else if (number == SYS_MPROTECT) { handleMprotect(); }
+        else if (number == SYS_IOCTL) { handleIoctl(); }
+        else if (number == SYS_STAT) { handleStat(number); }
+        else if (number == SYS_LSEEK) { handleLseek(); }
+        else if (number == SYS_GETTIMEOFDAY) { handleGettimeofday(); }
+        else if (number == SYS_SIGACTION) { handleSignal(number); }
+        else { registers[REG_R0] = -1; }
     
     // Handlers de syscalls MMU
     
