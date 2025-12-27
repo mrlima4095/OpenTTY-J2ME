@@ -951,7 +951,7 @@ public class ELF implements Runnable {
         if (number == SYS_FORK) { handleFork(); }
         else if (number == SYS_WRITE) { handleWrite(); }
         else if (number == SYS_READ) { handleRead(); }
-        else if (number == SYS_OPEN) { handleOpen() }
+        else if (number == SYS_OPEN) { handleOpen(); }
         else if (number == SYS_CLOSE) { handleClose(); }
         else if (number == SYS_CREAT) { handleCreat();}
         else if (number == SYS_TIME) { handleTime(); }
