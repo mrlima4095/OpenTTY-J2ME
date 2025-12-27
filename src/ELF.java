@@ -1619,13 +1619,6 @@ public class ELF {
         cpsr |= (I_MASK | F_MASK);
         pc = VECTOR_FIQ;
     }
-    
-    // Método para criar processo ELF
-    public void spawnELF(String pid, ELF elf) {
-        Hashtable proc = genprocess("elf", self.id, null);
-        proc.put("elf", elf);
-        sys.put(pid, proc);
-    }
 
     // Método para enviar sinal IRQ
     public void triggerIRQ(String pid) {
