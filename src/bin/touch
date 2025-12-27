@@ -3,18 +3,18 @@
 local libcore = require("libcore")
 
 if arg[1] then
-    local status = io.write(libcore.joinpath(arg[i]), "", "w")
+    local status = io.write(libcore.joinpath(arg[1]), "", "w")
         
     if status == 1 then
-        print("touch: " .. arg[i] .. ": java.io.IOException")
+        print("touch: " .. arg[1] .. ": java.io.IOException")
     elseif status == 5 then
-        print("touch: " .. arg[i] .. ": read-only storage")
+        print("touch: " .. arg[1] .. ": read-only storage")
     elseif status == 13 then
-        print("touch: " .. arg[i] .. ": permission denied")
+        print("touch: " .. arg[1] .. ": permission denied")
     elseif status == 127 then
-        print("touch: " .. arg[i] .. ": not found")
+        print("touch: " .. arg[1] .. ": not found")
     elseif status == 2 then
-        print(libcore.joinpath(arg[i]), "invalid path")
+        print(libcore.joinpath(arg[1]), "invalid path")
     end
 
     os.exit(tonumber(status))
