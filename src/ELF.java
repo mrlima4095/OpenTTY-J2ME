@@ -1628,9 +1628,6 @@ public class ELF {
             // Em implementação real, isso setaria uma flag de IRQ pendente
             // Aqui simplificamos chamando diretamente
             try {
-                java.lang.reflect.Method method = ELF.class.getDeclaredMethod("handleIRQ");
-                method.setAccessible(true);
-                method.invoke(elf);
             } catch (Exception e) {
                 midlet.print("Failed to trigger IRQ: " + getCatch(e), stdout);
             }
