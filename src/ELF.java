@@ -970,6 +970,7 @@ public class ELF implements Runnable {
         else if (number == SYS_GETTIMEOFDAY) { handleGettimeofday(); }
         else if (number == SYS_SIGACTION) { handleSignal(number); }
         else { registers[REG_R0] = -1; }
+    }
     
     // Handlers de syscalls MMU
     
