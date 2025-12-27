@@ -1050,7 +1050,7 @@ public class ELF implements Runnable {
         
         for (int i = 0; i < alignedLength; i += PAGE_SIZE) {
             int vpage = alignedAddr + i;
-            Integer physPage = (Integer) pageTable.get(new Integer(vpage));
+            Integer physPage = () pageTable.get(new Integer(vpage));
             
             if (physPage != null) {
                 pageProtections.put(new Integer(vpage), new Integer(prot));
@@ -1596,132 +1596,6 @@ public class ELF implements Runnable {
         cpsr |= (I_MASK | F_MASK);
         pc = VECTOR_FIQ;
     }
-    
-    private void handleExecve() {
-        int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
-        
-        registers[REG_R0] = -1;
-    }
-    private void handleWaitpid() {
-        int pid = registers[REG_R0], statusPtr = registers[REG_R1], options = registers[REG_R2];
-        
-        try {
-            final int WNOHANG = 0x1, WUNTRACED = 0x2;
-            
-            if (pid == -1) {
-                // Esperar por qualquer processo filho
-                Enumeration keys = childProcesses.keys();
-                while (keys.hasMoreElements()) {
-                    String childPid = (String) keys.nextElement();
-                    Hashtable childInfo = (Hashtable) childProcesses.get(childPid);
-                    
-                    if (Boolean.TRUE.equals(childInfo.get("exited"))) {
-                        // Processo terminou
-                        int status = ((Integer) childInfo.get("status")).intValue();
-                        if (statusPtr != 0) {
-                            writeIntLEWithMMU(statusPtr, status);
-                        }
-                        
-                        childProcesses.remove(childPid);
-                        registers[REG_R0] = Integer.parseInt(childPid);
-                        return;
-                    }
-                }
-                
-                // Se WNOHANG, retornar imediatamente
-                if ((options & WNOHANG) != 0) {
-                    registers[REG_R0] = 0;
-                    return;
-                }
-                
-                // Esperar por algum filho terminar
-                boolean childExited = false;
-                long startTime = System.currentTimeMillis();
-                
-                while (!childExited && (System.currentTimeMillis() - startTime < 10000)) {
-                    Thread.sleep(100);
-                    
-                    keys = childProcesses.keys();
-                    while (keys.hasMoreElements()) {
-                        String childPid = (String) keys.nextElement();
-                        Hashtable childInfo = (Hashtable) childProcesses.get(childPid);
-                        
-                        if (Boolean.TRUE.equals(childInfo.get("exited"))) {
-                            int status = ((Integer) childInfo.get("status")).intValue();
-                            if (statusPtr != 0) {
-                                writeIntLEWithMMU(statusPtr, status);
-                            }
-                            
-                            childProcesses.remove(childPid);
-                            registers[REG_R0] = Integer.parseInt(childPid);
-                            return;
-                        }
-                    }
-                }
-                
-                registers[REG_R0] = -10; // ESRCH
-                return;
-                
-            } else if (pid > 0) {
-                // Esperar por PID específico
-                String childPid = String.valueOf(pid);
-                
-                if (childProcesses.containsKey(childPid)) {
-                    Hashtable childInfo = (Hashtable) childProcesses.get(childPid);
-                    
-                    if (Boolean.TRUE.equals(childInfo.get("exited"))) {
-                        // Já terminou
-                        int status = ((Integer) childInfo.get("status")).intValue();
-                        if (statusPtr != 0) {
-                            writeIntLEWithMMU(statusPtr, status);
-                        }
-                        
-                        childProcesses.remove(childPid);
-                        registers[REG_R0] = pid;
-                        return;
-                        
-                    } else if ((options & WNOHANG) != 0) {
-                        // Não esperar
-                        registers[REG_R0] = 0;
-                        return;
-                        
-                    } else {
-                        // Esperar até terminar
-                        long startTime = System.currentTimeMillis();
-                        
-                        while (!Boolean.TRUE.equals(childInfo.get("exited")) && 
-                            (System.currentTimeMillis() - startTime < 10000)) {
-                            Thread.sleep(100);
-                        }
-                        
-                        if (Boolean.TRUE.equals(childInfo.get("exited"))) {
-                            int status = ((Integer) childInfo.get("status")).intValue();
-                            if (statusPtr != 0) {
-                                writeIntLEWithMMU(statusPtr, status);
-                            }
-                            
-                            childProcesses.remove(childPid);
-                            registers[REG_R0] = pid;
-                            return;
-                        } else {
-                            registers[REG_R0] = -10; // ESRCH
-                            return;
-                        }
-                    }
-                } else {
-                    registers[REG_R0] = -10; // ESRCH
-                    return;
-                }
-            } else {
-                // PID 0 ou negativo não suportado
-                registers[REG_R0] = -22; // EINVAL
-                return;
-            }
-            
-        } catch (Exception e) {
-            registers[REG_R0] = -1; // EPERM
-        }
-    }
 
     private void handleIoctl() {
         int fd = registers[REG_R0], request = registers[REG_R1], argp = registers[REG_R2];
@@ -1749,10 +1623,16 @@ public class ELF implements Runnable {
                 
             } else if (request == 0x5413) { // TIOCGWINSZ - get window size
                 // winsize struct (8 bytes)
-                writeShortWithMMU(argp, (short)24);     // rows
-                writeShortWithMMU(argp + 2, (short)80); // cols
-                writeShortWithMMU(argp + 4, (short)0);  // x pixels
-                writeShortWithMMU(argp + 6, (short)0);  // y pixels
+                try {
+                    writeShortWithMMU(argp, (short)24);
+                    writeShortWithMMU(argp + 2, (short)80);
+                    writeShortWithMMU(argp + 4, (short)0);
+                    writeShortWithMMU(argp + 6, (short)0);
+                } catch (Exception e) {
+                    registers[REG_R0] = -1;
+                    return;
+                }
+                
                 registers[REG_R0] = 0;
                 return;
                 
