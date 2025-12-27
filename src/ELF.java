@@ -36,6 +36,11 @@ public class ELF implements Runnable {
     private static final int Z_MASK = 1 << CPSR_Z;
     private static final int C_MASK = 1 << CPSR_C;
     private static final int V_MASK = 1 << CPSR_V;
+
+    // Adicione estas constantes na seção de constantes:
+    private static final int SEEK_SET = 0;
+    private static final int SEEK_CUR = 1;
+    private static final int SEEK_END = 2;
     
     // Syscalls Linux ARM (EABI) - Atualizadas
     private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6;
@@ -106,7 +111,7 @@ public class ELF implements Runnable {
     
     // Estruturas MMU
     private Hashtable pageTable, pageProtections;  // Proteções por página
-    private Hashtable childProcesses, pendingSignals, signalHandler;
+    private Hashtable childProcesses, pendingSignals, signalHandlers;
     private int nextMmapAddr;
     
     // Registradores do CP15 (simplificados)
@@ -283,6 +288,7 @@ public class ELF implements Runnable {
             default: return 2; // Default para SVC
         }
     }
+
 
     // Obter modo atual
     private int getCurrentMode() { return cpsr & MODE_MASK; }
@@ -757,8 +763,13 @@ public class ELF implements Runnable {
             throw new Exception("Page fault at address " + toHex(vaddr) + " - not mapped");
         }
         
-        int prot = ((Integer) pageProtections.get(new Integer(vpage))).intValue();
-        
+        // Corrigir o cast aqui
+        Integer protObj = (Integer) pageProtections.get(new Integer(vpage));
+        if (protObj == null) {
+            throw new Exception("Page fault at address " + toHex(vaddr) + " - no protection info");
+        }
+        int prot = protObj.intValue();
+    
         // Verificar permissões
         if (isWrite && (prot & PROT_WRITE) == 0) {
             throw new Exception("Page fault at address " + toHex(vaddr) + " - write protection");
@@ -2183,10 +2194,30 @@ public class ELF implements Runnable {
         }
     }
 
-    private void writeShortWithMMU(int addr, short value) throws Exception { int physAddr = translateAddress(addr, true, false); if (physAddr >= 0 && physAddr + 1 < memory.length) { memory[physAddr] = (byte)(value & 0xFF); memory[physAddr + 1] = (byte)((value >> 8) & 0xFF); } }
-
-    private byte readByteFromPath(String path, int offset) { try { InputStream is = midlet.getInputStream(path); if (is != null) { is.skip(offset); int b = is.read(); is.close(); return (byte)(b & 0xFF); } } catch (Exception e) { } return 0; }
-
+    private void writeShortWithMMU(int addr, short value) throws Exception {
+        int physAddr = translateAddress(addr, true, false);
+        if (physAddr >= 0 && physAddr + 1 < memory.length) {
+            memory[physAddr] = (byte)(value & 0xFF);
+            memory[physAddr + 1] = (byte)((value >> 8) & 0xFF);
+        }
+    }
+    private byte readByteFromPath(String path, int offset) {
+        try {
+            InputStream is = midlet.getInputStream(path);
+            if (is != null) {
+                // Corrigir: skip retorna long
+                long skipped = is.skip(offset);
+                int b = is.read();
+                is.close();
+                if (b != -1) {
+                    return (byte) b;  // byte primitivo
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;  // byte primitivo
+    }
     private void prepareElfStack(ELF elf, Vector args) {
         try {
             int sp = elf.registers[REG_SP];
