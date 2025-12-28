@@ -2371,6 +2371,31 @@ public class Lua {
                         else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); }
                         else { return new Double(2); }
                     }
+
+                    else if (payload.equals("serve")) {
+                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        else {
+                            String program = toLuaString(arg);
+                            
+                            try {
+                                String code = midlet.read(program), pid = midlet.genpid();
+                                Hashtable process = midlet.genprocess("lua", id, null);
+
+                                Lua lua = new Lua(midlet, owner, pid, process, out, scope);
+                                Hashtable arg = new Hashtable();
+                                arg.put(new Double(0), program);
+                                arg.put(new Double(1), "--deamon");
+
+                                Object handler = lua.run(program, code, arg);
+
+                                if (handler instanceof LuaFunction) {
+                                    process.put("handler", handler);
+                                }
+                            } catch (Exception e) {
+                                return new Double(1);
+                            }
+                        }
+                    }
                 }
             }
 
