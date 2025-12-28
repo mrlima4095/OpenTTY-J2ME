@@ -83,13 +83,7 @@ graphics = {
     --[=[Set current screen]=]
     display = function (...) end,
     --[=[Generate new Screen Object (`alert`, `screen`, `list`, `edit`)]=]
-    new = function (type, title, ...)
-        if type == "alert" then
-        elseif type == "screen" then
-        elseif type == "list" then
-        elseif type == "edit" then
-        end
-    end,
+    new = function (type, title, ...) end,
     --[=[Set title of screen]=]
     SetTitle = function (screen, title) end,
     --[=[Set ticker of screen]=]
