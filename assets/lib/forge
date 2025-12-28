@@ -8,7 +8,7 @@ local forge = {
 if arg[1] == "--deamon" then
     os.setproc("name", "forge")
     return function (payload, args, pid, id)
-
+        print("Payload '" .. payload .. "' recieved by forge")
     end
 end
 if arg[0] == "/lib/forge" then
