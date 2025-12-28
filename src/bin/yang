@@ -37,7 +37,14 @@ local mirror = {
 }
 
 local function connect(payload)
-    return true
+    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
+
+    io.write(payload, o)
+    local content = io.read(i, 4096)
+
+    pcall(io.close, conn, i, o)
+
+    return content
 end
 
 local function installed(pkg)
@@ -46,7 +53,7 @@ local function installed(pkg)
     end
 
     local content = io.read(mirror[pkg].here)
-    return content and content ~= ""
+    return content ~= ""
 end
 
 local function install(pkg, verbose)
