@@ -8,18 +8,7 @@ function libcore.joinpath(pwd)
     elseif string.sub(pwd, 1, 1) == "/" then
         return pwd
     end
-    
-    -- Adiciona barra se necessário - VERSÃO DEBUG
-    local cwd = os.getcwd()
-    print("DEBUG: cwd = '" .. cwd .. "'")
-    print("DEBUG: pwd = '" .. pwd .. "'")
-    
-    if string.sub(cwd, -1) ~= "/" then
-        cwd = cwd .. "/"
-    end
-    
-    local result = cwd .. pwd
-    print("DEBUG: result = '" .. result .. "'")
+
     return result
 end
 
