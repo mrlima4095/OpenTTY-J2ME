@@ -1,6 +1,6 @@
 #!/bin/lua
 
-if #arg[1] then
+if arg[1] then
     local status = pcall(io.write, arg[1], "/etc/hostname")
 
     if status == 13 then
