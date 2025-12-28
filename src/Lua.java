@@ -2381,7 +2381,7 @@ public class Lua {
                                 String code = midlet.read(program), pid = midlet.genpid();
                                 Hashtable process = midlet.genprocess("lua", id, null);
 
-                                Lua lua = new Lua(midlet, owner, pid, process, out, scope);
+                                Lua lua = new Lua(midlet, (String) father.get("USER"), pid, process, out, scope);
                                 Hashtable arg = new Hashtable();
                                 arg.put(new Double(0), program);
                                 arg.put(new Double(1), "--deamon");
