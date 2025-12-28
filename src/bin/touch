@@ -7,7 +7,7 @@ if arg[1] then
     local path = libcore.joinpath(arg[1])
     print("Caminho gerado: '" .. path .. "'")
     
-    local status = io.write(path, "", "w")
+    local status = io.write("", path, "w")
     print("Status retornado: " .. tostring(status))
         
     if status == 1 then
