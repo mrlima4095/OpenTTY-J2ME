@@ -34,7 +34,9 @@ local function shell(args, enable, aliases, stdout, scope)
 
     if cmd == "" then
 
-    elseif enable and aliases[cmd] then print(aliases[cmd]) return shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
+    elseif enable and aliases[cmd] then
+        print(aliases[cmd])
+        return shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
     elseif io.open("/bin/" .. cmd) then
         local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
         status = res.status
