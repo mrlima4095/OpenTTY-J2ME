@@ -1551,12 +1551,7 @@ public class Lua {
                         outputStream.flush();
                         return new Double(0);
                     }
-                    else if (target instanceof StringBuffer) {
-                        StringBuffer sb = (StringBuffer) target;
-                        String content = toLuaString(buffer);
-                        sb.append(content);
-                        return new Double(0);
-                    }
+                    else if (target instanceof StringBuffer) { StringBuffer sb = (StringBuffer) target; String content = toLuaString(buffer); sb.append(content); return new Double(0); }
                     else if (buffer instanceof ByteArrayOutputStream) {
                         ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
                         byte[] bytes = baos.toByteArray();
@@ -1565,8 +1560,7 @@ public class Lua {
                         else { return new Double(midlet.write(filename, bytes, id)); }
                     }
                     else {
-                        String content = toLuaString(buffer);
-                        String filename = target != null ? toLuaString(target) : "/dev/stdout";
+                        String content = toLuaString(buffer), filename = target != null ? toLuaString(target) : "/dev/stdout";
                         return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, father) + content : content, id));
                     }
                 }
