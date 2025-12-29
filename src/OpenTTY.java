@@ -50,7 +50,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
         }
         catch (Exception e) { warn("SandBox", getCatch(e)); }
-        catch (Throwable e) { display.getCurrent().setTicker(new Ticker(e.getMessage() != null ? e.getMessage() : e.getClass().getName())); /*warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName());*/ }
+        catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
     }
     // | (Installation)
     private void login(boolean user, boolean pword) {
