@@ -38,9 +38,6 @@ public class Lua {
         this.tokenIndex = 0; this.PID = pid == null ? midlet.genpid() : pid;
         this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
         
-        initGlobals();
-    }
-    private void initGlobals() {
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable();
         String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "sudo", "su", "remove", "scope" }; 
         int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SUDO, SU, REMOVE, SCOPE };
