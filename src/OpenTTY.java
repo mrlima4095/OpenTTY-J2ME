@@ -36,7 +36,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Boot)
     public void init() {
         try { 
-            Hashtable proc = new Hashtable(), args = new Hashtable();
+            warn("Where?", "Debugging from init");
+            /*Hashtable proc = new Hashtable(), args = new Hashtable();
             args.put(new Double(0), "/bin/init");
             globals.put("PWD", "/home/"); globals.put("USER", "root");
             proc.put("name", "init"); proc.put("owner", "root");
@@ -47,7 +48,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             lua.tokens = lua.tokenize(read("/bin/init"));
 
-            while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
+            while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }*/
         }
         catch (Exception e) { warn("SandBox", getCatch(e)); }
         catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
