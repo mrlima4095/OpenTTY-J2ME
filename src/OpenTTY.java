@@ -36,12 +36,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Boot)
     public void init() {
         try { 
-            warn("Where?", "Debugging from init");
-            /*Hashtable proc = new Hashtable(), args = new Hashtable();
+            Hashtable proc = new Hashtable(), args = new Hashtable();
             args.put(new Double(0), "/bin/init");
             globals.put("PWD", "/home/"); globals.put("USER", "root");
             proc.put("name", "init"); proc.put("owner", "root");
 
+            warn("Where?", "Debugging from mappings");/*
             Lua lua = new Lua(this, 0, "1", proc, stdout, globals);
             sys.put("1", proc); lua.globals.put("arg", args);
             proc.put("lua", lua); proc.put("handler", lua.getKernel());
