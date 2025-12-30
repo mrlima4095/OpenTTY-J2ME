@@ -1751,21 +1751,21 @@ public class Lua {
                     try {
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
                             outputStream.write(buffer, 0, bytesRead);
+                            outputStream.flush();
                         }
-                        outputStream.flush();
 
                         if (outputStream instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) outputStream).toByteArray(); }
                     } catch (IOException e) {
                         return new Double(101);
                     }
 
-                    /*if (destination instanceof StringBuffer) {
+                    if (destination instanceof StringBuffer) {
                         ((StringBuffer) destination).append(new String(data, "UTF-8"));
                     }
                     else if (output != null) {
                         int status = midlet.write(output, data, id);
                         if (status > 0) { return new Double(status); }
-                    }*/
+                    }
                     
                     return Boolean.TRUE;
                 } catch (Exception e) {
