@@ -1733,17 +1733,6 @@ public class Lua {
                             inputStream = new ByteArrayInputStream(filename.getBytes("UTF-8"));
                         }
                     } 
-                    /*else if (source instanceof SocketConnection || source instanceof StreamConnection) {
-                        try {
-                            if (source instanceof SocketConnection) {
-                                inputStream = ((SocketConnection) source).openInputStream();
-                            } else if (source instanceof StreamConnection) {
-                                inputStream = ((StreamConnection) source).openInputStream();
-                            }
-                        } catch (IOException e) {
-                            return new Double(1);
-                        }
-                    }*/
                     else { return gotbad(1, "copy", "invalid source type: " + type(source)); }
                     
                     if (inputStream == null) { return new Double(2); }
@@ -1753,7 +1742,7 @@ public class Lua {
                     else if (destination instanceof StringBuffer) { outputStream = new ByteArrayOutputStream(); } 
                     else { output = toLuaString(destination); }
                     
-                    if (outputStream == null || output == null) { return new Double(1); }
+                    if (outputStream == null) { return new Double(1); }
                     
                     byte[] buffer = new byte[4096];
                     int bytesRead;
@@ -1765,10 +1754,7 @@ public class Lua {
                         outputStream.flush();
                     } catch (IOException e) {
                         return new Double(101);
-                    } finally {
-                        try { inputStream.close(); } catch (Exception e) { }
-                        try { outputStream.close(); } catch (Exception e) { }
-                    }
+                    } 
                     
                     if (destination instanceof StringBuffer) {
                         ByteArrayOutputStream baos = (ByteArrayOutputStream) outputStream;
@@ -1783,6 +1769,9 @@ public class Lua {
                             return new Double(status);
                         }
                     }
+
+                    try { inputStream.close(); } catch (Exception e) { }
+                    try { outputStream.close(); } catch (Exception e) { }
                     
                     return Boolean.TRUE;
                 } catch (Exception e) {
