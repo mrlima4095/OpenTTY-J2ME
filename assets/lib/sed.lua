@@ -16,7 +16,7 @@ if not file then
     print("sed [PATTERN] [file]")
 end
 
-local content = io.read(file)
+local content = io.read(os.join(file))
 if content == "" then print("sed: empty content") return end
 
 local is_delete = string.sub(cmd, -2) == "/d"
