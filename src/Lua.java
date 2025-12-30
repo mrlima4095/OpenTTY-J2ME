@@ -1743,25 +1743,26 @@ public class Lua {
                     else if (destination instanceof StringBuffer) { outputStream = new ByteArrayOutputStream(); } 
                     else { outputStream = new ByteArrayOutputStream(); output = toLuaString(destination); }
                     
-                    if (outputStream == null && output == null) { return new Double(1); }
+                    if (output == null) { return new Double(1); }
                     
                     byte[] buffer = new byte[4096];
                     int bytesRead;
                     
                     try {
-                        while ((bytesRead = inputStream.read(buffer)) != -1) {
-                            outputStream.write(buffer, 0, bytesRead);
+                        if (outputStream != null) {
+                            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                                outputStream.write(buffer, 0, bytesRead);
+                            }
+                            outputStream.flush();
                         }
-                        outputStream.flush();
+                        
 
                         if (outputStream instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) outputStream).toByteArray(); }
                     } catch (IOException e) {
                         return new Double(101);
                     }
 
-                    if (destination instanceof StringBuffer) {
-                        ((StringBuffer) destination).append(new String(data, "UTF-8"));
-                    }
+                    if (destination instanceof StringBuffer) { ((StringBuffer) destination).append(new String(data, "UTF-8")); }
                     else if (output != null) {
                         int status = midlet.write(output, data, id);
                         if (status > 0) { return new Double(status); }
