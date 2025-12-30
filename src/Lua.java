@@ -1777,7 +1777,7 @@ else if (MOD == COPY) {
 
         /* ========= COPY LOOP ========= */
 
-        byte[] buffer = new byte[4096];
+        byte[] buffer = new byte[64];
         int n;
 
         while ((n = inputStream.read(buffer)) != -1) {
