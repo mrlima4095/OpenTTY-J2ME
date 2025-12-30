@@ -2022,7 +2022,7 @@ public class Lua {
                 else {
                     ServerSocketConnection server = Connector.open("socket://:" + toLuaString(args.elementAt(0)));
                     midlet.network.put(server, "server");
-                    return server
+                    return server;
                 }
             }
             else if (MOD == ACCEPT) {
