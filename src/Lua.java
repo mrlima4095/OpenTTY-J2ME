@@ -1719,7 +1719,7 @@ public class Lua {
                 Object source = args.elementAt(0), destination = args.elementAt(1);
                 
                 try {
-                    /*InputStream inputStream = null;
+                    InputStream inputStream = null;
                     OutputStream outputStream = null;
                     String output = null;
                     byte[] data = null;
@@ -1736,7 +1736,7 @@ public class Lua {
                     } 
                     else { return gotbad(1, "copy", "invalid source type: " + type(source)); }
                     
-                    if (inputStream == null) { return new Double(2); }
+                    /*if (inputStream == null) { return new Double(2); }
 
                     if (destination instanceof OutputStream) { outputStream = (OutputStream) destination; }
                     else if (destination instanceof ByteArrayOutputStream) { outputStream = (ByteArrayOutputStream) destination; } 
