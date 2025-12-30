@@ -1718,7 +1718,7 @@ public class Lua {
                 
                 Object source = args.elementAt(0), destination = args.elementAt(1);
                 
-                try {
+                /*try {
                     InputStream inputStream = null;
                     OutputStream outputStream = null;
                     String output = null;
@@ -1773,7 +1773,7 @@ public class Lua {
                     return Boolean.TRUE;
                 } catch (Exception e) {
                     return new Double(1);
-                }
+                }*/
             }
             // Package: table
             else if (MOD == TB_INSERT) {
