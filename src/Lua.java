@@ -1743,7 +1743,7 @@ public class Lua {
                     else if (destination instanceof StringBuffer) { outputStream = new ByteArrayOutputStream(); } 
                     else { output = toLuaString(destination); }
                     
-                    if (outputStream == null) { return new Double(1); }
+                    if (outputStream == null && output == null) { return new Double(1); }
                     
                     byte[] buffer = new byte[4096];
                     int bytesRead;
