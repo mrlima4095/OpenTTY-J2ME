@@ -1784,7 +1784,7 @@ public class Lua {
                     
                     if (target instanceof OutputStream) { OutputStream os = (OutputStream) target; os.write(data); os.flush(); } 
                     else if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); } 
-                    else if (target instanceof String) { return new Double(midlet.write(target, data, id)); }
+                    else if (target instanceof String) { return new Double(midlet.write(toLuaString(target), data, id)); }
                 }
 
                 return new Double(0);
