@@ -1749,11 +1749,12 @@ public class Lua {
                     int bytesRead;
                     
                     try {
-                        if (out instanceof OutputStream && out.getClass() == OutputStream.class) {
-                            while ((bytesRead = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, bytesRead);
+                        while ((bytesRead = in.read(buffer)) != -1) {
+                            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                                for (int i = 0; i < bytesRead; i++) {
+                                    outputStream.write(buffer[i]);
+                                }
                             }
-                            out.flush();
                         }
                         
 
