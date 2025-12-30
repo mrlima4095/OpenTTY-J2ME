@@ -17,7 +17,8 @@ os = {
     scope = function (...) return {} end,
     sudo = function (password) return 0 end,
     su = function (username, password) return 0 end,
-    remove = function (file) return 0 end
+    remove = function (file) return 0 end,
+    join = function (pwd) end
 }
 
 package = { loadlib = function (libname, funcname) end, loaded = {} }

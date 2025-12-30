@@ -337,6 +337,51 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0; 
     }
+    // | (Normalize Path)
+public String joinpath(String file, Hashtable scope) {
+    String pwd = scope.containsKey("PWD") ? (String) scope.get("PWD") : "/";
+   
+    if (file.startsWith("/")) { return file; }
+    
+    String fullPath = pwd + file;
+
+    Vector components = new Vector();
+    String[] parts = split(fullPath, '/');
+    
+    for (int i = 0; i < parts.length; i++) {
+        String part = parts[i];
+        
+        if (part.equals(".")) {
+            continue;
+        } else if (part.equals("..")) {
+            if (components.size() > 0) {
+                if (!components.lastElement().equals("")) {
+                    components.removeElementAt(components.size() - 1);
+                }
+            }
+        } else {
+            components.addElement(part);
+        }
+    }
+
+    if (components.size() == 0) { return "/"; }
+    StringBuffer result = new StringBuffer();
+
+    for (int i = 0; i < components.size(); i++) {
+        String comp = (String) components.elementAt(i);
+        if (i == 0 && comp.equals("")) { result.append("/"); } 
+        else if (i > 0 || !comp.equals("")) {
+            result.append(comp);
+            if (i < components.size() - 1) { result.append("/"); }
+        }
+    }
+
+    if (fullPath.endsWith("/") && !result.toString().endsWith("/")) {
+        result.append("/");
+    }
+    
+    return result.toString();
+}
     // | (Archive Structures)
     public int addFile(String filename, String content, String archive, String base) { return writeRMS("OpenRMS", (delFile(filename, archive) + "[\1BEGIN:" + filename + "\1]\n" + content + "\n[\1END\1]\n").getBytes(), base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4); }
     public String delFile(String filename, String content) { String startTag = "[\1BEGIN:" + filename + "\1]"; int start = content.indexOf(startTag); if (start == -1) { return content; } int end = content.indexOf("[\1END\1]", start); if (end == -1) { return content; } end += "[\1END\1]".length(); return content.substring(0, start) + content.substring(end); }
