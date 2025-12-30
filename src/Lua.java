@@ -1736,7 +1736,7 @@ public class Lua {
                     } 
                     else { return gotbad(1, "copy", "invalid source type: " + type(source)); }
                     
-                    /*if (inputStream == null) { return new Double(2); }
+                    if (inputStream == null) { return new Double(2); }
 
                     if (destination instanceof OutputStream) { outputStream = (OutputStream) destination; }
                     else if (destination instanceof ByteArrayOutputStream) { outputStream = (ByteArrayOutputStream) destination; } 
@@ -1745,7 +1745,7 @@ public class Lua {
                     
                     if (outputStream == null) { return new Double(1); }
                     
-                    byte[] buffer = new byte[4096];
+                    /*byte[] buffer = new byte[4096];
                     int bytesRead;
                     
                     try {
