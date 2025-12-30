@@ -2519,7 +2519,7 @@ public class Lua {
                     os.flush(); os.close();
                 }
 
-                is = conn.openInputStream(); if (toget) { Vector result = new Vector(); result.addElement(in); result.addElement(new Double(new Double(conn.getResponseCode()))); return result; }
+                is = conn.openInputStream(); if (toget) { Vector result = new Vector(); result.addElement(is); result.addElement(new Double(new Double(conn.getResponseCode()))); return result; }
                 baos = new ByteArrayOutputStream();
                 int ch;
                 while ((ch = is.read()) != -1) { baos.write(ch); }
