@@ -1754,7 +1754,7 @@ public class Lua {
                         }
                         outputStream.flush();
 
-                        if (outputStream instanceof ByteArrayOutputStream) { resultData = ((ByteArrayOutputStream) outputStream).toByteArray(); }
+                        if (outputStream instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) outputStream).toByteArray(); }
                     } catch (IOException e) {
                         return new Double(101);
                     } finally {
@@ -1763,10 +1763,10 @@ public class Lua {
                     }
 
                     if (destination instanceof StringBuffer) {
-                        ((StringBuffer) destination).append(new String(resultData, "UTF-8"));
+                        ((StringBuffer) destination).append(new String(data, "UTF-8"));
                     }
                     else if (output != null) {
-                        int status = midlet.write(output, resultData, id);
+                        int status = midlet.write(output, data, id);
                         if (status > 0) { return new Double(status); }
                     }
                     
