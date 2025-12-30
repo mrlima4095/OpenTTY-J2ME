@@ -1577,6 +1577,8 @@ public class Lua {
                         else if (arg instanceof OutputStream) { ((OutputStream) arg).close(); }
                         else if (arg instanceof StringBuffer || arg instanceof StringItem) { }
                         else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
+
+                        midlet.network.remove(arg);
                     }
                 } 
             }
