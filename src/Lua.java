@@ -1757,12 +1757,10 @@ public class Lua {
                     
                     byte[] buffer = new byte[4096];
                     int bytesRead;
-                    long totalBytes = 0;
                     
                     try {
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
                             outputStream.write(buffer, 0, bytesRead);
-                            totalBytes += bytesRead;
                         }
                         outputStream.flush();
                     } catch (IOException e) {
