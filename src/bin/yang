@@ -41,7 +41,7 @@ local function connect(payload)
     local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
 
     io.write(payload, o)
-    local content = io.read(i, 4096)
+    local content = io.read(i, 8192)
 
     pcall(io.close, conn, i, o)
 
