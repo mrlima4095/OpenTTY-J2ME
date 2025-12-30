@@ -1750,7 +1750,7 @@ public class Lua {
                     
                     try {
                         while ((bytesRead = in.read(buffer)) != -1) {
-                            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            while ((bytesRead = in.read(buffer)) != -1) {
                                 for (int i = 0; i < bytesRead; i++) {
                                     out.write(buffer[i]);
                                 }
