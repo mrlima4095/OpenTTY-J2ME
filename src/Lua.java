@@ -1740,27 +1740,26 @@ public class Lua {
 
                     if (destination instanceof OutputStream) { out = (OutputStream) destination; }
                     else if (destination instanceof ByteArrayOutputStream) { out = (ByteArrayOutputStream) destination; } 
-                    else if (destination instanceof StringBuffer) { out = new ByteArrayOutputStream(); } 
-                    else { out = new ByteArrayOutputStream(); output = toLuaString(destination); }
+                    else if (destination instanceof StringBuffer) { } 
+                    else { output = toLuaString(destination); }
                     
                     if (out == null && output == null) { return new Double(1); }
                     
                     byte[] buffer = new byte[4096];
                     int bytesRead;
                     
-                    try {
+                    if (out instanceof ByteArrayOutputStream) {
                         while ((bytesRead = in.read(buffer)) != -1) {
-                            while ((bytesRead = in.read(buffer)) != -1) {
-                                for (int i = 0; i < bytesRead; i++) {
-                                    out.write(buffer[i]);
-                                }
-                            }
+                            out.write(buffer, 0, bytesRead);
                         }
-                        
-
-                        if (out instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) out).toByteArray(); }
-                    } catch (IOException e) {
-                        return new Double(101);
+                        data = ((ByteArrayOutputStream) out).toByteArray();
+                    } else if (out instanceof OutputStream) {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        while ((bytesRead = in.read(buffer)) != -1) {
+                            baos.write(buffer, 0, bytesRead);
+                        }
+                        baos.writeTo(out);
+                        baos.close();
                     }
 
                     if (destination instanceof StringBuffer) { ((StringBuffer) destination).append(new String(data, "UTF-8")); }
