@@ -1,9 +1,7 @@
 #!/bin/lua
 
-local libcore = require("libcore")
-
 if arg[1] and arg[2] then
-    print(pcall(io.copy, libcore.joinpath(arg[1]), libcore.joinpath(arg[2])))
+    print(pcall(io.copy, os.join(arg[1]), os.join(arg[2])))
 else
     print("cp: usage: cp [source] [copyname]")
 end
