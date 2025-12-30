@@ -17,7 +17,7 @@ io.mount(io.read("/etc/fstab"))
 
 print(string.env(io.read("/etc/motd")))
 
-os.request("1", "setsh", shell)
+--os.request("1", "setsh", shell)
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
