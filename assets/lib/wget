@@ -1,25 +1,21 @@
 #!/bin/lua
 
+local libcore = require("libcore")
+
 local function parse_url(url)
     if string.sub(url, 1, 4) == "http:" or string.sub(url, 0, 6) == "https:" then return url end
     return "http://" .. url
 end
-local function joinpath(pwd)
-    if string.sub(pwd, 1, 1) ~= "/" then
-        return os.getcwd() .. pwd
-    end
-    return pwd
-end
 
-local function save(file, content)
-    if file then io.write(content, joinpath(file))
-    else io.write(content, "nano") end
-end
-
-if arg[1] then
+if arg[1] and arg[2] then
     local url = parse_url(arg[1])
+    local ok, i, status = pcall(socket.http.rget, url)
+    if ok then
+        io.copy(i, libcore.joinpath(arg[2]))
+    else
+        print("wget: (6) Could not resolve host: " .. arg[1])
+    end
+else
+    print("wget [url] [file]")
+end
 
-    local body, status = socket.http.get(url)
-    if status == 200 then save(arg[2], body)
-    else print("wget: " .. url .. " (status: " .. status .. ")") end
-else print("wget [url] [file]") end
