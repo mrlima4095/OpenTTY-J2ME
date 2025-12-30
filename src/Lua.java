@@ -1750,7 +1750,7 @@ public class Lua {
 
                     if (destination instanceof OutputStream) { outputStream = (OutputStream) destination; }
                     else if (destination instanceof ByteArrayOutputStream) { outputStream = (ByteArrayOutputStream) destination; } 
-                    else if (destination instanceof StringBuffer) { outputStream = new ByteArrayOutputStream(); destinationIsStringBuffer = true; } 
+                    else if (destination instanceof StringBuffer) { outputStream = new ByteArrayOutputStream(); } 
                     else { output = toLuaString(destination); }
                     
                     if (outputStream == null || output == null) { return new Double(1); }
@@ -2022,7 +2022,7 @@ public class Lua {
                 else {
                     ServerSocketConnection server = Connector.open("socket://:" + toLuaString(args.elementAt(0)));
                     midlet.network.put(server, "server");
-                    return server;
+                    return server
                 }
             }
             else if (MOD == ACCEPT) {
