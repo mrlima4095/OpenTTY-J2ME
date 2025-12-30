@@ -1757,9 +1757,6 @@ public class Lua {
                         if (outputStream instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) outputStream).toByteArray(); }
                     } catch (IOException e) {
                         return new Double(101);
-                    } finally {
-                        try { inputStream.close(); } catch (Exception e) { }
-                        try { outputStream.close(); } catch (Exception e) { }
                     }
 
                     /*if (destination instanceof StringBuffer) {
