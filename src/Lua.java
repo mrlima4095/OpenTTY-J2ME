@@ -1713,66 +1713,97 @@ public class Lua {
                 }
             }
             else if (MOD == GEN) { return new StringBuffer(); }
-            else if (MOD == COPY) {
-                if (args.size() < 2) { return gotbad(1, "copy", "wrong number of arguments (need source and destination)"); }
-                
-                Object source = args.elementAt(0), destination = args.elementAt(1);
-                
-                try {
-                    InputStream inputStream = null;
-                    OutputStream outputStream = null;
-                    String output = null;
-                    byte[] data = null;
-                    
-                    if (source instanceof InputStream) { inputStream = (InputStream) source; } 
-                    else if (source instanceof ByteArrayOutputStream) { byte[] bytes = ((ByteArrayOutputStream) source).toByteArray(); inputStream = new ByteArrayInputStream(bytes); } 
-                    else if (source instanceof StringBuffer) { String content = ((StringBuffer) source).toString(); inputStream = new ByteArrayInputStream(content.getBytes("UTF-8")); }
-                    else if (source instanceof String) {
-                        String filename = toLuaString(source);
-                        inputStream = midlet.getInputStream(filename);
-                        if (inputStream == null) {
-                            inputStream = new ByteArrayInputStream(filename.getBytes("UTF-8"));
-                        }
-                    } 
-                    else { return gotbad(1, "copy", "invalid source type: " + type(source)); }
-                    
-                    if (inputStream == null) { return new Double(2); }
+else if (MOD == COPY) {
 
-                    if (destination instanceof OutputStream) { outputStream = (OutputStream) destination; }
-                    else if (destination instanceof ByteArrayOutputStream) { outputStream = (ByteArrayOutputStream) destination; } 
-                    else if (destination instanceof StringBuffer) { outputStream = new ByteArrayOutputStream(); } 
-                    else { outputStream = new ByteArrayOutputStream(); output = toLuaString(destination); }
-                    
-                    if (output == null) { return new Double(1); }
-                    
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    
-                    try {
-                        if (outputStream != null) {
-                            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                                outputStream.write(buffer, 0, bytesRead);
-                            }
-                            outputStream.flush();
-                        }
-                        
+    if (args.size() < 2) {
+        return gotbad(1, "copy", "wrong number of arguments (need source and destination)");
+    }
 
-                        if (outputStream instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) outputStream).toByteArray(); }
-                    } catch (IOException e) {
-                        return new Double(101);
-                    }
+    Object source = args.elementAt(0);
+    Object destination = args.elementAt(1);
 
-                    if (destination instanceof StringBuffer) { ((StringBuffer) destination).append(new String(data, "UTF-8")); }
-                    else if (output != null) {
-                        int status = midlet.write(output, data, id);
-                        if (status > 0) { return new Double(status); }
-                    }
-                    
-                    return Boolean.TRUE;
-                } catch (Exception e) {
-                    return new Double(1);
-                }
+    InputStream inputStream = null;
+    OutputStream outputStream = null;
+
+    boolean needBuffer = false;
+    String outputFile = null;
+
+    try {
+        /* ========= SOURCE ========= */
+
+        if (source instanceof InputStream) {
+            inputStream = (InputStream) source;
+
+        } else if (source instanceof ByteArrayOutputStream) {
+            byte[] b = ((ByteArrayOutputStream) source).toByteArray();
+            inputStream = new ByteArrayInputStream(b);
+
+        } else if (source instanceof StringBuffer) {
+            byte[] b = source.toString().getBytes("UTF-8");
+            inputStream = new ByteArrayInputStream(b);
+
+        } else if (source instanceof String) {
+            String name = toLuaString(source);
+            inputStream = midlet.getInputStream(name);
+            if (inputStream == null) {
+                inputStream = new ByteArrayInputStream(name.getBytes("UTF-8"));
             }
+
+        } else {
+            return gotbad(1, "copy", "invalid source type: " + type(source));
+        }
+
+        if (inputStream == null) {
+            return new Double(2);
+        }
+
+        /* ========= DESTINATION ========= */
+
+        if (destination instanceof OutputStream) {
+            // escreve direto
+            outputStream = (OutputStream) destination;
+
+        } else if (destination instanceof StringBuffer) {
+            // precisa buffer intermediário
+            outputStream = new ByteArrayOutputStream();
+            needBuffer = true;
+
+        } else {
+            // destino é arquivo (String)
+            outputFile = toLuaString(destination);
+            outputStream = new ByteArrayOutputStream();
+            needBuffer = true;
+        }
+
+        /* ========= COPY LOOP ========= */
+
+        byte[] buffer = new byte[4096];
+        int n;
+
+        while ((n = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, n);
+        }
+
+        /* ========= POST PROCESS ========= */
+
+        if (needBuffer) {
+            byte[] data = ((ByteArrayOutputStream) outputStream).toByteArray();
+
+            if (destination instanceof StringBuffer) {
+                ((StringBuffer) destination).append(new String(data, "UTF-8"));
+            } else {
+                int status = midlet.write(outputFile, data, id);
+                if (status > 0) return new Double(status);
+            }
+        }
+
+        return Boolean.TRUE;
+
+    } catch (Exception e) {
+        return new Double(1);
+    }
+}
+
             // Package: table
             else if (MOD == TB_INSERT) {
                 if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
