@@ -1752,26 +1752,26 @@ public class Lua {
                             outputStream.write(buffer, 0, bytesRead);
                         }
                         outputStream.flush();
+                        
+                        if (destination instanceof StringBuffer) {
+                            ByteArrayOutputStream baos = (ByteArrayOutputStream) outputStream;
+                            String content = new String(baos.toByteArray(), "UTF-8");
+                            ((StringBuffer) destination).append(content);
+                        }
+                        else if (output != null) {
+                            ByteArrayOutputStream baos = (ByteArrayOutputStream) outputStream;
+                            byte[] data = baos.toByteArray();
+                            int status = midlet.write(output, data, id);
+                            if (status > 0) {
+                                return new Double(status);
+                            }
+                        }
                     } catch (IOException e) {
                         return new Double(101);
-                    } 
-                    
-                    if (destination instanceof StringBuffer) {
-                        ByteArrayOutputStream baos = (ByteArrayOutputStream) outputStream;
-                        String content = new String(baos.toByteArray(), "UTF-8");
-                        ((StringBuffer) destination).append(content);
+                    } finally {
+                        try { inputStream.close(); } catch (Exception e) { }
+                        try { outputStream.close(); } catch (Exception e) { }
                     }
-                    else if (output != null) {
-                        ByteArrayOutputStream baos = (ByteArrayOutputStream) outputStream;
-                        byte[] data = baos.toByteArray();
-                        int status = midlet.write(output, data, id);
-                        if (status > 0) {
-                            return new Double(status);
-                        }
-                    }
-
-                    try { inputStream.close(); } catch (Exception e) { }
-                    try { outputStream.close(); } catch (Exception e) { }
                     
                     return Boolean.TRUE;
                 } catch (Exception e) {
