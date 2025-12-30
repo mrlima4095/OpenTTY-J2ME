@@ -1722,7 +1722,7 @@ public class Lua {
                     InputStream in = (InputStream) source;
 
                     if (target instanceof OutputStream) {
-                        OutputStream os = (OutputStream) destination;
+                        OutputStream os = (OutputStream) target;
                         
                         byte[] buffer = new byte[1024];
                         int bytesRead;
@@ -1738,7 +1738,7 @@ public class Lua {
 
                         data = baos.toByteArray(); baos.close();    
                     
-                        if (target instanceof StringBuffer) { ((StringBuffer) destination).append(new String(data, "UTF-8")); return new Double(0); }
+                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); return new Double(0); }
                         else { return new Double(midlet.write(target, data, id)); }
                     }
                 }
@@ -1746,13 +1746,13 @@ public class Lua {
                     StringBuffer in = (StringBuffer) source;
 
                     if (target instanceof OutputStream) {
-                        OutputStream os = (OutputStream) destination;
+                        OutputStream os = (OutputStream) target;
                         
                         os.write(in.toString().getBytes("UTF-8")); os.flush();
                         return new Double(0);
                     }
                     else if (target instanceof StringBuffer || target instanceof String) {
-                        if (target instanceof StringBuffer) { ((StringBuffer) destination).append(in.toString()); return new Double(0); }
+                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(in.toString()); return new Double(0); }
                         else { return new Double(midlet.write(target, in.toString().getBytes("UTF-8"), id)); }
                     }
                 }
@@ -1760,7 +1760,7 @@ public class Lua {
                     String file = (String) source;
 
                     if (target instanceof OutputStream) {
-                        OutputStream os = (OutputStream) destination;
+                        OutputStream os = (OutputStream) target;
                         
                         InputStream is = midlet.getInputStream(file);
                         if (is == null) { return new Double(127); }
@@ -1774,7 +1774,7 @@ public class Lua {
                     else if (target instanceof StringBuffer || target instanceof String) {
                         String content = midlet.read(file);
                     
-                        if (target instanceof StringBuffer) { ((StringBuffer) destination).append(content); }
+                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(content); }
                         else { return new Double(midlet.write(target, content.getBytes("UTF-8"), id)); }
                     }
                 }
@@ -1782,9 +1782,9 @@ public class Lua {
                     ByteArrayOutputStream baos = (ByteArrayOutputStream) source;
                     byte[] data = baos.toByteArray();
                     
-                    if (destination instanceof OutputStream) { OutputStream os = (OutputStream) destination; os.write(data); os.flush(); } 
-                    else if (destination instanceof StringBuffer) { ((StringBuffer) destination).append(new String(data, "UTF-8")); } 
-                    else if (destination instanceof String) { return new Double(midlet.write(destination, data, id)); }
+                    if (target instanceof OutputStream) { OutputStream os = (OutputStream) target; os.write(data); os.flush(); } 
+                    else if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); } 
+                    else if (target instanceof String) { return new Double(midlet.write(target, data, id)); }
                 }
 
                 return new Double(0);
