@@ -62,7 +62,9 @@ socket = {
 
     http = {
         get = function (url, headers) return "", 200 end,
-        post = function (url, data, headers) return "", 200 end
+        post = function (url, data, headers) return "", 200 end,
+        rget = function (url, headers) return "", 200 end,
+        rpost = function (url, data, headers) return "", 200 end
     }
 }
 
