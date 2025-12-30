@@ -18,9 +18,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // System Objects
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
+    public Object shell;
 
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(),  graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable();
-    public String username = read("/home/OpenRMS"), build = "2025-1.17-03x05";
+    public String username = read("/home/OpenRMS"), build = "2025-1.17-03x06";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -29,7 +30,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Loader
     // | (Triggers)
-    public void startApp() { if (sys.containsKey("1")) { } else { init(); } }
+    public void startApp() { if (sys.containsKey("1")) { } else { login(username.equals(""), passwd().equals("")); } }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
     // | (Boot)
@@ -42,12 +43,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             Lua lua = new Lua(this, 0, "1", proc, stdout, globals);
             sys.put("1", proc); lua.globals.put("arg", args);
+            proc.put("lua", lua); proc.put("handler", lua.getKernel());
 
             lua.tokens = lua.tokenize(read("/bin/init"));
 
             while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
-            proc.put("lua", lua); proc.put("handler", lua.getKernel());
-
         }
         catch (Exception e) { warn("SandBox", getCatch(e)); }
         catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
@@ -56,19 +56,42 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void login(boolean user, boolean pword) {
         if (user || pword) {
             Form screen = new Form("OpenTTY - Login");
-            screen.append(env(read("/etc/motd") + "\n:: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
+            screen.append(env(":: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
             if (user) { screen.append(new TextField("Username", "", 256, TextField.ANY)); }
             if (pword) { screen.append(new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); }
             screen.addCommand(new Command("Login", Command.OK, 1));
             screen.addCommand(new Command("Exit", Command.SCREEN, 1));
             screen.setCommandListener(this);
             display.setCurrent(screen);
+        } else {
+            init();
         }
     }
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
         else {
-            
+            int size = ((Form) d).size();
+            if (size == 2) {
+                TextField userquest = (TextField) ((Form) d).get(1);
+                String value = userquest.getString().trim();
+                if (value.equals("")) { warn("Login", "Missing Credentials!"); }
+                else if (userquest.getLabel().equals("Username")) {
+                    if (value.equals("root")) { warn("Login", "Invalid user name!"); }
+                    else { writeRMS("OpenRMS", value.getBytes(), 1); username = value; init(); }
+                }
+                else { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); init(); }
+            } else {
+                TextField userquest = (TextField) ((Form) d).get(1), pwquest = (TextField) ((Form) d).get(2);
+                
+                String user = userquest.getString().trim(), password = pwquest.getString().trim();
+                if (user.equals("") || password.equals("")) { warn("Login", "Missing Credentials!"); }
+                else if (user.equals("root")) { warn("Login", "Invalid user name!"); } 
+                else {
+                    writeRMS("OpenRMS", user.getBytes(), 1); username = user;
+                    writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2);
+                    init();
+                }
+            }
         }
     }
     // |
@@ -92,10 +115,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     private String basename(String path) { if (path == null || path.length() == 0) { return ""; } if (path.endsWith("/")) { path = path.substring(0, path.length() - 1); } int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == -1) { return path; } return path.substring(lastSlashIndex + 1); }
     private String dirname(String path) { if (path == null || path.length() == 0) { return ""; } if (path.endsWith("/")) { path = path.substring(0, path.length() - 1); } int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == -1) { return path; } return path.substring(0, lastSlashIndex + 1); }
-    // | 
-    private String extractTitle(String htmlContent, String fallback) { return extractTag(htmlContent, "title", fallback); }
-    private String extractTag(String htmlContent, String tag, String fallback) { String startTag = "<" + tag + ">", endTag = "</" + tag + ">"; int start = htmlContent.indexOf(startTag), end = htmlContent.indexOf(endTag); if (start != -1 && end != -1 && end > start) { return htmlContent.substring(start + startTag.length(), end).trim(); } else { return fallback; } }
-    private String html2text(String htmlContent) { StringBuffer text = new StringBuffer(); boolean inTag = false, inStyle = false, inScript = false, inTitle = false; for (int i = 0; i < htmlContent.length(); i++) { char c = htmlContent.charAt(i); if (c == '<') { inTag = true; if (htmlContent.regionMatches(true, i, "<title>", 0, 7)) { inTitle = true; } else if (htmlContent.regionMatches(true, i, "<style>", 0, 7)) { inStyle = true; } else if (htmlContent.regionMatches(true, i, "<script>", 0, 8)) { inScript = true; } else if (htmlContent.regionMatches(true, i, "</title>", 0, 8)) { inTitle = false; } else if (htmlContent.regionMatches(true, i, "</style>", 0, 8)) { inStyle = false; } else if (htmlContent.regionMatches(true, i, "</script>", 0, 9)) { inScript = false; } } else if (c == '>') { inTag = false; } else if (!inTag && !inStyle && !inScript && !inTitle) { text.append(c); } } return text.toString().trim(); }
     // |
     public String getcontent(String file, Hashtable scope) { return file.startsWith("/") ? read(file) : read(((String) scope.get("PWD")) + file); }
     public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
@@ -264,7 +283,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             if (filename.equals("")) { return 2; } 
             else if (id != 0) { return 13; }
-            else if (filename.equals("sh") || filename.equals("lua")) { return 5; }
             else { if (useCache) { cache.put("/" + base + "/" + filename, new String(data)); } return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4), base); }
         }
         else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { return 5; } }
