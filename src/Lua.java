@@ -1741,7 +1741,7 @@ public class Lua {
                     if (destination instanceof OutputStream) { outputStream = (OutputStream) destination; }
                     else if (destination instanceof ByteArrayOutputStream) { outputStream = (ByteArrayOutputStream) destination; } 
                     else if (destination instanceof StringBuffer) { outputStream = new ByteArrayOutputStream(); } 
-                    else { output = toLuaString(destination); }
+                    else { outputStream = new ByteArrayOutputStream(); output = toLuaString(destination); }
                     
                     if (outputStream == null && output == null) { return new Double(1); }
                     
@@ -1752,7 +1752,7 @@ public class Lua {
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
                             outputStream.write(buffer, 0, bytesRead);
                         }
-                        //outputStream.flush();
+                        outputStream.flush();
 
                         if (outputStream instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) outputStream).toByteArray(); }
                     } catch (IOException e) {
