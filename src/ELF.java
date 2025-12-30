@@ -1,5 +1,3 @@
-import javax.microedition.io.file.*;
-import javax.microedition.io.*;
 import java.util.*;
 import java.io.*;
 
@@ -13,8 +11,9 @@ public class ELF {
     // Memória e registradores
     private byte[] memory;
     private int[] registers;
-    private int pc, stackPointer;
+    private int pc;
     private boolean running;
+    private int stackPointer;
     
     // Registrador de flags CPSR
     private int cpsr;
@@ -24,12 +23,22 @@ public class ELF {
     private int nextFd;
     
     // Constantes ELF
-    private static final int EI_NIDENT = 16, EM_ARM = 40;
-    private static final int ELFCLASS32 = 1, ELFDATA2LSB = 1;
-    private static final int PT_LOAD = 1, ET_EXEC = 2;
+    private static final int EI_NIDENT = 16;
+    private static final int ELFCLASS32 = 1;
+    private static final int ELFDATA2LSB = 1;
+    private static final int EM_ARM = 40;
+    private static final int ET_EXEC = 2;
+    private static final int PT_LOAD = 1;
     
     // Constantes ARM
-    private static final int REG_R0 = 0, REG_R1 = 1, REG_R2 = 2, REG_R3 = 3, REG_R7 = 7, REG_SP = 13, REG_LR = 14, REG_PC = 15;
+    private static final int REG_R0 = 0;
+    private static final int REG_R1 = 1;
+    private static final int REG_R2 = 2;
+    private static final int REG_R3 = 3;
+    private static final int REG_R7 = 7;
+    private static final int REG_SP = 13;
+    private static final int REG_LR = 14;
+    private static final int REG_PC = 15;
     
     // Bits do CPSR
     private static final int CPSR_N = 31; // Negative/Less than
@@ -38,10 +47,18 @@ public class ELF {
     private static final int CPSR_V = 28; // Overflow
     
     // Máscaras para bits do CPSR
-    private static final int N_MASK = 1 << CPSR_N, Z_MASK = 1 << CPSR_Z, C_MASK = 1 << CPSR_C, V_MASK = 1 << CPSR_V;
+    private static final int N_MASK = 1 << CPSR_N;
+    private static final int Z_MASK = 1 << CPSR_Z;
+    private static final int C_MASK = 1 << CPSR_C;
+    private static final int V_MASK = 1 << CPSR_V;
     
     // Syscalls Linux ARM (EABI) - Atualizadas
-    private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6;
+    private static final int SYS_EXIT = 1;
+    private static final int SYS_FORK = 2;
+    private static final int SYS_READ = 3;
+    private static final int SYS_WRITE = 4;
+    private static final int SYS_OPEN = 5;
+    private static final int SYS_CLOSE = 6;
     private static final int SYS_CREAT = 8;
     private static final int SYS_TIME = 13;
     private static final int SYS_CHDIR = 12;
@@ -51,7 +68,9 @@ public class ELF {
     private static final int SYS_GETCWD = 183;
     
     // Flags de open
-    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2;
+    private static final int O_RDONLY = 0;
+    private static final int O_WRONLY = 1;
+    private static final int O_RDWR = 2;
     private static final int O_CREAT = 64;
     private static final int O_APPEND = 1024;
     private static final int O_TRUNC = 512;
@@ -84,26 +103,38 @@ public class ELF {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         int bytesRead;
-        while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
+        while ((bytesRead = is.read(buffer)) != -1) {
+            baos.write(buffer, 0, bytesRead);
+        }
         byte[] elfData = baos.toByteArray();
         
         if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout); return false; }
         if (elfData[4] != ELFCLASS32) { midlet.print("Only 32-bit ELF supported", stdout); return false; }
         if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout); return false; }
         
-        int e_type = readShortLE(elfData, 16), e_machine = readShortLE(elfData, 18), e_entry = readIntLE(elfData, 24), e_phoff = readIntLE(elfData, 28), e_phnum = readShortLE(elfData, 44), e_phentsize = readShortLE(elfData, 42);
+        int e_type = readShortLE(elfData, 16);
+        int e_machine = readShortLE(elfData, 18);
+        int e_entry = readIntLE(elfData, 24);
+        int e_phoff = readIntLE(elfData, 28);
+        int e_phnum = readShortLE(elfData, 44);
+        int e_phentsize = readShortLE(elfData, 42);
         
         if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout); return false; }
         if (e_machine != EM_ARM) { midlet.print("Not an ARM executable", stdout); return false; }
         
         pc = e_entry;
-        registers[REG_SP] = stackPointer; registers[REG_LR] = 0xFFFFFFFF;
+        registers[REG_SP] = stackPointer;
+        registers[REG_LR] = 0xFFFFFFFF;
         
         for (int i = 0; i < e_phnum; i++) {
-            int phdrOffset = e_phoff + i * e_phentsize, p_type = readIntLE(elfData, phdrOffset);
+            int phdrOffset = e_phoff + i * e_phentsize;
+            int p_type = readIntLE(elfData, phdrOffset);
             
             if (p_type == PT_LOAD) {
-                int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16), p_memsz = readIntLE(elfData, phdrOffset + 20);
+                int p_offset = readIntLE(elfData, phdrOffset + 4);
+                int p_vaddr = readIntLE(elfData, phdrOffset + 8);
+                int p_filesz = readIntLE(elfData, phdrOffset + 16);
+                int p_memsz = readIntLE(elfData, phdrOffset + 20);
                 
                 for (int j = 0; j < p_filesz && j < memory.length; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = elfData[p_offset + j]; } }
                 for (int j = p_filesz; j < p_memsz; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = 0; } }
@@ -328,29 +359,49 @@ public class ELF {
             
             if (isLoad) {
                 if (address >= 0 && address < memory.length) {
-                    if (isByte) { registers[rd] = memory[address] & 0xFF; } 
-                    else {
+                    if (isByte) {
+                        registers[rd] = memory[address] & 0xFF;
+                    } else {
                         // Alinhar para palavra (4 bytes)
                         int alignedAddr = address & ~3;
-                        if (alignedAddr + 3 < memory.length) { registers[rd] = readIntLE(memory, alignedAddr); }
+                        if (alignedAddr + 3 < memory.length) {
+                            registers[rd] = readIntLE(memory, alignedAddr);
+                        }
                     }
                 }
-            } 
-            else { if (address >= 0 && address < memory.length) { if (isByte) { memory[address] = (byte)(registers[rd] & 0xFF); } else { writeIntLE(memory, address, registers[rd]); } } }
+            } else {
+                if (address >= 0 && address < memory.length) {
+                    if (isByte) {
+                        memory[address] = (byte)(registers[rd] & 0xFF);
+                    } else {
+                        writeIntLE(memory, address, registers[rd]);
+                    }
+                }
+            }
             
-            if (!preIndexed) { if (addOffset) { registers[rn] += offset; } else { registers[rn] -= offset; } }
+            if (!preIndexed) {
+                if (addOffset) {
+                    registers[rn] += offset;
+                } else {
+                    registers[rn] -= offset;
+                }
+            }
             return;
         }
         
         // Branch Instructions
         if ((instruction & 0x0E000000) == 0x0A000000) {
             int offset = instruction & 0x00FFFFFF;
-            if ((offset & 0x00800000) != 0) { offset |= 0xFF000000; }
+            if ((offset & 0x00800000) != 0) {
+                offset |= 0xFF000000;
+            }
             offset <<= 2;
             
             boolean link = (instruction & (1 << 24)) != 0;
             
-            if (link) { registers[REG_LR] = pc; }
+            if (link) {
+                registers[REG_LR] = pc;
+            }
             
             pc = pc + offset - 4;
             return;
@@ -366,26 +417,40 @@ public class ELF {
             
             int pcValue = pc + 4;
             
-            if (isAdd) { registers[rd] = pcValue + offset; } else { registers[rd] = pcValue - offset; }
+            if (isAdd) { 
+                registers[rd] = pcValue + offset; 
+            } else { 
+                registers[rd] = pcValue - offset; 
+            }
 
             return;
         }
 
         // NOP
-        if (instruction == 0xE1A00000) { return; }
+        if (instruction == 0xE1A00000) {
+            return;
+        }
     }
     
     private int applyShift(int value, int shift_type, int shift_amount, int carry_in) {
-        if (shift_amount == 0) { return value; }
+        if (shift_amount == 0) {
+            return value;
+        }
         
         switch (shift_type) {
             case 0: // LSL (Logical Shift Left)
-                if (shift_amount >= 32) { cpsr = (cpsr & ~C_MASK) | ((value << (shift_amount - 1)) >>> 31) << CPSR_C; return 0; }
+                if (shift_amount >= 32) {
+                    cpsr = (cpsr & ~C_MASK) | ((value << (shift_amount - 1)) >>> 31) << CPSR_C;
+                    return 0;
+                }
                 cpsr = (cpsr & ~C_MASK) | ((value << (shift_amount - 1)) >>> 31) << CPSR_C;
                 return value << shift_amount;
                 
             case 1: // LSR (Logical Shift Right)
-                if (shift_amount >= 32) { cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C; return 0; }
+                if (shift_amount >= 32) {
+                    cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C;
+                    return 0;
+                }
                 cpsr = (cpsr & ~C_MASK) | ((value >>> (shift_amount - 1)) & 1) << CPSR_C;
                 return value >>> shift_amount;
                 
@@ -416,13 +481,27 @@ public class ELF {
     
     private void updateFlags(int result, int carry) {
         // Atualizar flag N (Negative)
-        if ((result & 0x80000000) != 0) { cpsr |= N_MASK; } else { cpsr &= ~N_MASK; }
+        if ((result & 0x80000000) != 0) {
+            cpsr |= N_MASK;
+        } else {
+            cpsr &= ~N_MASK;
+        }
         
         // Atualizar flag Z (Zero)
-        if (result == 0) { cpsr |= Z_MASK; } else { cpsr &= ~Z_MASK; }
+        if (result == 0) {
+            cpsr |= Z_MASK;
+        } else {
+            cpsr &= ~Z_MASK;
+        }
         
         // Atualizar flag C (Carry) se fornecido
-        if (carry >= 0) { if (carry != 0) { cpsr |= C_MASK; } else { cpsr &= ~C_MASK; } }
+        if (carry >= 0) {
+            if (carry != 0) {
+                cpsr |= C_MASK;
+            } else {
+                cpsr &= ~C_MASK;
+            }
+        }
     }
     
     private void updateOverflow(int operand1, int operand2, int result, int opcode) {
@@ -442,7 +521,11 @@ public class ELF {
                 break;
         }
         
-        if (overflow) { cpsr |= V_MASK; } else { cpsr &= ~V_MASK; }
+        if (overflow) {
+            cpsr |= V_MASK;
+        } else {
+            cpsr &= ~V_MASK;
+        }
     }
     
     private void handleSyscall(int number) {
@@ -525,16 +608,16 @@ public class ELF {
         Integer fdKey = new Integer(fd);
         
         if (fd == 1 || fd == 2) {
+            // stdout/stderr - escrever no OpenTTY
             StringBuffer sb = new StringBuffer();
             for (int i = 0; i < count && buf + i < memory.length; i++) {
-                char c = (char)(memory[buf + i] & 0xFF);
-                if (c >= 32 || c == '\n' || c == '\r' || c == '\t') {
-                    sb.append(c);
-                }
+                sb.append((char)(memory[buf + i] & 0xFF));
             }
             
             midlet.print(sb.toString(), stdout, id);
+            
             registers[REG_R0] = count;
+            
         } else if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
             
@@ -608,12 +691,18 @@ public class ELF {
         int flags = registers[REG_R1];
         int mode = registers[REG_R2];
         
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        if (pathAddr < 0 || pathAddr >= memory.length) {
+            registers[REG_R0] = -1;
+            return;
+        }
         
         // Ler o caminho da memória
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
-        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
         String path = pathBuf.toString();
         
         try {
@@ -810,14 +899,23 @@ public class ELF {
         }
     }
     
-    private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_R0] = pidValue; } catch (NumberFormatException e) { registers[REG_R0] = 1; } }
+    private void handleGetpid() {
+        try {
+            int pidValue = Integer.parseInt(this.pid);
+            registers[REG_R0] = pidValue;
+        } catch (NumberFormatException e) {
+            registers[REG_R0] = 1; // Fallback para PID 1 (init)
+        }
+    }
     
     private void handleKill() {
         int pid = registers[REG_R0];
         int sig = registers[REG_R1];
-
+        
+        // Converter PID para string
         String targetPid = String.valueOf(pid);
-
+        
+        // Verificar se o processo existe
         if (!midlet.sys.containsKey(targetPid)) {
             registers[REG_R0] = -3; // ESRCH - No such process
             return;
