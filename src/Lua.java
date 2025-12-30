@@ -1758,7 +1758,8 @@ public class Lua {
                         while ((bytesRead = in.read(buffer)) != -1) {
                             baos.write(buffer, 0, bytesRead);
                         }
-                        baos.writeTo(out);
+                        ((OutputStream) out).write(baos.toByteArray());
+                        ((OutputStream) out).flush();
                         baos.close();
                     }
 
