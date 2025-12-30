@@ -174,3 +174,4 @@
 [2025-1.17-03x04] Removed buffer
 [2025-1.17-03x05] ELF32
 [2025-1.17-03x06] MMU Support on ELF ARM 32 Module
+[2025-1.17-03x07] Lua - Table with open servers and connections

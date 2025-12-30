@@ -1998,9 +1998,7 @@ public class Lua {
 
                     SocketConnection conn = (SocketConnection) Connector.open(toLuaString(args.elementAt(0)));
                         
-                    result.addElement(conn);
-                    result.addElement(conn.openInputStream());
-                    result.addElement(conn.openOutputStream());
+                    result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream());
                     midlet.network.put(conn, result);
 
                     return result;
@@ -2031,12 +2029,10 @@ public class Lua {
                 if (args.isEmpty() || !(args.elementAt(0) instanceof ServerSocketConnection)) { return gotbad(1, "server" , "server expected, got " + (args.isEmpty() ? " no value" : type(args.elementAt(0)))); }
                 else {
                     Vector result = new Vector();
-                    
+
                     SocketConnection conn = (SocketConnection) ((ServerSocketConnection) args.elementAt(0)).acceptAndOpen();
                         
-                    result.addElement(conn);
-                    result.addElement(conn.openInputStream());
-                    result.addElement(conn.openOutputStream());
+                    result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream());
                     midlet.network.put(conn, result);
 
                     return result;
