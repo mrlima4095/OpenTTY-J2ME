@@ -1730,7 +1730,7 @@ public class Lua {
                         String filename = toLuaString(source);
                         inputStream = midlet.getInputStream(filename);
                         if (inputStream == null) {
-                            inputStream = new ByteArrayInputStream("".getBytes("UTF-8"));
+                            inputStream = new ByteArrayInputStream(filename.getBytes("UTF-8"));
                         }
                     } 
                     else if (source instanceof SocketConnection || source instanceof StreamConnection) {
