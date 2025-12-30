@@ -1,5 +1,16 @@
 #!/bin/lua
 
+if arg[1] == "-e" then
+    if arg[2] then
+        return load(arg[2])
+    else
+        print("lua: usage: lua -e [script]")
+    end
+
+    os.exit(2)
+end
+
+
 local previous = graphics.getCurrent()
 
 local term = graphics.new("screen", _VERSION)
@@ -9,7 +20,7 @@ local clear = graphics.new("command", { label = "Clear", type = "screen", priori
 local output = graphics.new("buffer", {})
 local input = graphics.new("field", { type = "field", label = ">" })
 
-local scope = { clear = function () graphics.SetText(output, "") end }
+local scope = { ["clear"] = function () graphics.SetText(output, "") end }
 io.setstdout(output)
 
 graphics.append(term, output)
