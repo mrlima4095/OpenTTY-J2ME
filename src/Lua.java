@@ -1713,7 +1713,7 @@ public class Lua {
                 }
             }
             else if (MOD == GEN) { return new StringBuffer(); }
-            /*else if (MOD == COPY) {
+            else if (MOD == COPY) {
                 if (args.size() < 2) { return gotbad(1, "copy", "wrong number of arguments (need source and destination)"); }
                 
                 Object source = args.elementAt(0), destination = args.elementAt(1);
@@ -1755,7 +1755,7 @@ public class Lua {
                     
                     if (outputStream == null || output == null) { return new Double(1); }
                     
-                    byte[] buffer = new byte[8192];
+                    byte[] buffer = new byte[4096];
                     int bytesRead;
                     long totalBytes = 0;
                     
@@ -1788,7 +1788,7 @@ public class Lua {
                 } catch (Exception e) {
                     return new Double(1);
                 }
-            }*/
+            }
             // Package: table
             else if (MOD == TB_INSERT) {
                 if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
