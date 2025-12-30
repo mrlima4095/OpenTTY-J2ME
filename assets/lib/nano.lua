@@ -6,11 +6,8 @@ local app = {
     clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
 }
 
-local libcore = require("libcore")
-
-
 if arg[1] then
-    app.content = io.read(libcore.joinpath(arg[1]))
+    app.content = io.read(os.join(arg[1]))
     app.editor = graphics.new("edit", "Nano - " .. arg[1])
     graphics.SetText(app.editor, app.content)
 else
@@ -22,7 +19,7 @@ graphics.addCommand(app.editor, app.back)
 graphics.addCommand(app.editor, app.clear)
 graphics.handler(app.editor, {
     [app.back] = function (content)
-        local status = io.write(content, libcore.joinpath(arg[1]))
+        local status = io.write(content, os.join(arg[1]))
         graphics.display(previous)
         os.exit(tonumber(status))
     end,
