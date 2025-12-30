@@ -1,12 +1,5 @@
 #!/bin/lua
 
-local function joinpath(pwd)
-    if string.sub(pwd, 1, 1) ~= "/" then
-        return os.getcwd() .. pwd
-    end
-    return pwd
-end
-
 local cmd, file = arg[1], arg[2]
 if not cmd or cmd == "-h" or cmd == "--help" then
     print("Usage: sed [PATTERN] [file]")
@@ -159,4 +152,4 @@ else
 end
 
 local result = table.concat(result_lines, "\n")
-os.exit(tonumber(io.write(result, joinpath(file))))
+os.exit(tonumber(io.write(result, os.join(file))))
