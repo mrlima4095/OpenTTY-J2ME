@@ -2444,24 +2444,18 @@ public class Lua {
                     else if (payload.equals("serve")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else {
-                            String program = toLuaString(arg);
-                            
-                            try {
-                                String code = midlet.read(program), pid = midlet.genpid();
-                                Hashtable process = midlet.genprocess("lua", id, null);
+                            String program = toLuaString(arg), code = midlet.read(program), pid = midlet.genpid();
+                            Hashtable process = midlet.genprocess("lua", id, null);
 
-                                Lua lua = new Lua(midlet, id, pid, process, stdout, father);
-                                Hashtable arg = new Hashtable();
-                                arg.put(new Double(0), program);
-                                arg.put(new Double(1), "--deamon");
+                            Lua lua = new Lua(midlet, id, pid, process, stdout, father);
+                            Hashtable arg = new Hashtable();
+                            arg.put(new Double(0), program);
+                            arg.put(new Double(1), "--deamon");
 
-                                Object handler = lua.run(program, code, arg);
+                            Object handler = lua.run(program, code, arg);
 
-                                if (handler instanceof LuaFunction) {
-                                    process.put("handler", handler);
-                                }
-                            } catch (Exception e) {
-                                return new Double(1);
+                            if (handler instanceof LuaFunction) {
+                                process.put("handler", handler);
                             }
                         }
                     }
