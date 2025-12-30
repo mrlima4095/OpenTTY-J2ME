@@ -53,8 +53,7 @@ local function installed(pkg)
         return false
     end
 
-    local content = io.open(mirror[pkg].here)
-    return content ~= nil
+    return io.open(mirror[pkg].here)
 end
 
 local function install(pkg, verbose)
