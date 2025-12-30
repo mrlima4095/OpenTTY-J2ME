@@ -1726,7 +1726,7 @@ public class Lua {
                         
                         byte[] buffer = new byte[1024];
                         int bytesRead;
-                        while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
+                        while ((bytesRead = in.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
                         os.flush();
                         return new Double(0);
                     }
