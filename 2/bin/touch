@@ -1,0 +1,10 @@
+#!/bin/lua
+
+local libcore = require("libcore")
+
+if arg[1] then
+    io.write("", libcore.joinpath(arg[1]))
+else
+    print("touch: usage: touch [file]")
+    os.exit(2)
+end

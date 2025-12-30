@@ -5,7 +5,10 @@ local libcore = require("libcore")
 local function shell(args, enable, aliases, stdout, scope)
     local status, redirect = 0, string.find(args, ">") ~= nil
 
-    args = string.env(args)
+    if string.sub(args, 1, 4) ~= "exec" then
+        args = string.env(args)
+    end
+
     local cmd, argument = string.getCommand(args), string.getArgument(args)
     args = string.split(argument, nil)
 
@@ -31,7 +34,9 @@ local function shell(args, enable, aliases, stdout, scope)
 
     if cmd == "" then
 
-    elseif enable and aliases[cmd] then print(aliases[cmd]) return shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
+    elseif enable and aliases[cmd] then
+        print(aliases[cmd])
+        return shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
     elseif io.open("/bin/" .. cmd) then
         local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
         status = res.status
@@ -97,8 +102,7 @@ local function shell(args, enable, aliases, stdout, scope)
             graphics.display(graphics.new("alert", args[1], args[2]))
         end
     -- | changes title of current screen
-    elseif cmd == "title" then 
-        graphics.SetTitle(graphics.getCurrent(), argument)
+    elseif cmd == "title" then graphics.SetTitle(graphics.getCurrent(), argument)
 
     -- Shell Utils
     -- (Alias Manager)
@@ -139,9 +143,8 @@ local function shell(args, enable, aliases, stdout, scope)
         if argument == "" then for k,v in pairs(os.getenv()) do print(k .. "=" .. v) end
         elseif string.find(argument, "=") then
             local index = string.find(argument, "=")
-            local alias, mean = string.sub(argument, 1, index - 1), string.sub(argument, index + 1)
 
-            if alias ~= "" then aliases[alias] = mean end
+            os.setenv(string.sub(argument, 1, index - 1), string.sub(argument, index + 1))
         else
             for i = 1, #args do
                 if os.getenv(args[i]) then print(args[i] .. "=" .. os.getenv(args[i]))
@@ -163,14 +166,8 @@ local function shell(args, enable, aliases, stdout, scope)
 
     elseif cmd == "eval" then if argument == "" then else print(shell(argument, true, aliases, stdout, scope)) end
     elseif cmd == "echo" then print(argument)
+    elseif cmd == "date" then print(os.date())
     elseif cmd == "clear" then graphics.SetText(io.stdout, "")
-
-    elseif cmd == "hostname" then
-        if argument == "" then
-            print(os.getenv("HOSTNAME") or "localhost")
-        else
-            os.setenv("HOSTNAME", argument)
-        end
 
     -- File Utils
     elseif cmd == "pwd" then print(os.getcwd())
@@ -186,8 +183,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 print("cd: " .. argument .. ": not found")
             elseif status == 20 then
                 print("cd: " .. argument .. ": not a directory")
-            elseif status == 1 then
-                print("cd: no parent directory")
+            
             end
         end
     elseif cmd == "cat" then

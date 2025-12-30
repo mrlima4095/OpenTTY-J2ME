@@ -10,7 +10,7 @@ public class Lua {
     public boolean breakLoop = false, doreturn = false, kill = true, gc = true;
     private OpenTTY midlet;
     private Object stdout;
-    public String PID = null;
+    public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
     public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable();
@@ -39,9 +39,9 @@ public class Lua {
         this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
         
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable();
-        String[] funcs = new String[] { "execute", "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "sudo", "su", "remove", "scope" }; 
-        int[] loaders = new int[] { EXEC, GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SUDO, SU, REMOVE, SCOPE };
-        for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("os", os);
+        String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "sudo", "su", "remove", "scope" }; 
+        int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SUDO, SU, REMOVE, SCOPE };
+        for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
 
         funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout", "mount", "new" }; 
         loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN, DIRS, SETOUT, MOUNT, GEN };
@@ -66,7 +66,7 @@ public class Lua {
 
         funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText" }; 
         loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, LABEL, SETTEXT, GETLABEL, GETTEXT };
-        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); globals.put("graphics", graphics);
+        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics);  globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument", "env" }; 
         loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT, GETCMD, GETARGS, ENV };
@@ -1429,7 +1429,7 @@ public class Lua {
                 if (args.isEmpty()) { return father.get("PWD"); }
                 else {
                     String pwd = (String) father.get("PWD"), target = toLuaString(args.elementAt(0));
-                    if (target.equals("")) { father.put("PWD", "/home/"); return new Double(0); }
+                    if (target.equals("") || target == null) { father.put("PWD", "/home/"); return new Double(0); }
                     else if (target.equals("..")) {
                         if (pwd.equals("/")) { return new Double(1); }
                         
@@ -1551,12 +1551,7 @@ public class Lua {
                         outputStream.flush();
                         return new Double(0);
                     }
-                    else if (target instanceof StringBuffer) {
-                        StringBuffer sb = (StringBuffer) target;
-                        String content = toLuaString(buffer);
-                        sb.append(content);
-                        return new Double(0);
-                    }
+                    else if (target instanceof StringBuffer) { StringBuffer sb = (StringBuffer) target; String content = toLuaString(buffer); sb.append(content); return new Double(0); }
                     else if (buffer instanceof ByteArrayOutputStream) {
                         ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
                         byte[] bytes = baos.toByteArray();
@@ -1565,8 +1560,7 @@ public class Lua {
                         else { return new Double(midlet.write(filename, bytes, id)); }
                     }
                     else {
-                        String content = toLuaString(buffer);
-                        String filename = target != null ? toLuaString(target) : "/dev/stdout";
+                        String content = toLuaString(buffer), filename = target != null ? toLuaString(target) : "/dev/stdout";
                         return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, father) + content : content, id));
                     }
                 }
@@ -1625,9 +1619,8 @@ public class Lua {
                                 result.addElement(out instanceof StringBuffer ? out.toString() : out);
                                 return result;
                             }
-                        } else {
-                            return new Double(127);
-                        }
+                        } 
+                        else { return new Double(127); }
                     } catch (Exception e) {
                         return new Double(1);
                     }
@@ -2365,6 +2358,42 @@ public class Lua {
                             if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
                             else if (midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
                             else { return new Double(13); }
+                        }
+                    }
+                    else if (payload.equals("setsh")) {
+                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        else if (arg instanceof LuaFunction) { midlet.shell = arg; }
+                        else { return new Double(2); }
+                    }
+                    else if (payload.equals("cache")) { 
+                        if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); }
+                        else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; }
+                        else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); }
+                        else { return new Double(2); }
+                    }
+
+                    else if (payload.equals("serve")) {
+                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        else {
+                            String program = toLuaString(arg);
+                            
+                            try {
+                                String code = midlet.read(program), pid = midlet.genpid();
+                                Hashtable process = midlet.genprocess("lua", id, null);
+
+                                Lua lua = new Lua(midlet, id, pid, process, stdout, father);
+                                Hashtable arg = new Hashtable();
+                                arg.put(new Double(0), program);
+                                arg.put(new Double(1), "--deamon");
+
+                                Object handler = lua.run(program, code, arg);
+
+                                if (handler instanceof LuaFunction) {
+                                    process.put("handler", handler);
+                                }
+                            } catch (Exception e) {
+                                return new Double(1);
+                            }
                         }
                     }
                 }
