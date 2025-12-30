@@ -1713,177 +1713,82 @@ public class Lua {
                 }
             }
             else if (MOD == GEN) { return new StringBuffer(); }
-// No método internals da classe LuaFunction, após o handler GEN (linha ~1276):
-else if (MOD == COPY) {
-    if (args.size() < 2) {
-        return gotbad(1, "copy", "wrong number of arguments");
-    }
-    
-    Object source = args.elementAt(0);
-    Object destination = args.elementAt(1);
-    
-    try {
-        // Caso 1: De InputStream para OutputStream
-        if (source instanceof InputStream && destination instanceof OutputStream) {
-            InputStream is = (InputStream) source;
-            OutputStream os = (OutputStream) destination;
-            
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1) {
-                os.write(buffer, 0, bytesRead);
-            }
-            os.flush();
-            return new Double(0);
-        }
-        
-        // Caso 2: De InputStream para StringBuffer
-        else if (source instanceof InputStream && destination instanceof StringBuffer) {
-            InputStream is = (InputStream) source;
-            StringBuffer sb = (StringBuffer) destination;
-            
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1) {
-                baos.write(buffer, 0, bytesRead);
-            }
-            
-            sb.append(new String(baos.toByteArray(), "UTF-8"));
-            return new Double(0);
-        }
-        
-        // Caso 3: De StringBuffer para OutputStream
-        else if (source instanceof StringBuffer && destination instanceof OutputStream) {
-            StringBuffer sb = (StringBuffer) source;
-            OutputStream os = (OutputStream) destination;
-            
-            os.write(sb.toString().getBytes("UTF-8"));
-            os.flush();
-            return new Double(0);
-        }
-        
-        // Caso 4: De StringBuffer para StringBuffer (copia o conteúdo)
-        else if (source instanceof StringBuffer && destination instanceof StringBuffer) {
-            StringBuffer src = (StringBuffer) source;
-            StringBuffer dest = (StringBuffer) destination;
-            
-            dest.append(src.toString());
-            return new Double(0);
-        }
-        
-        // Caso 5: De InputStream para arquivo (string com nome de arquivo)
-        else if (source instanceof InputStream && destination instanceof String) {
-            InputStream is = (InputStream) source;
-            String filename = toLuaString(destination);
-            
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1) {
-                baos.write(buffer, 0, bytesRead);
-            }
-            
-            return new Double(midlet.write(filename, baos.toByteArray(), id));
-        }
-        
-        // Caso 6: De StringBuffer para arquivo
-        else if (source instanceof StringBuffer && destination instanceof String) {
-            StringBuffer sb = (StringBuffer) source;
-            String filename = toLuaString(destination);
-            
-            return new Double(midlet.write(filename, sb.toString().getBytes("UTF-8"), id));
-        }
-        
-        // Caso 7: De arquivo para OutputStream
-        else if (source instanceof String && destination instanceof OutputStream) {
-            String filename = toLuaString(source);
-            OutputStream os = (OutputStream) destination;
-            
-            try {
-                InputStream is = midlet.getInputStream(filename);
-                if (is == null) {
-                    return new Double(127); // Arquivo não encontrado
-                }
+            else if (MOD == COPY) {
+                if (args.size() < 2) { return gotbad(1, "copy", "wrong number of arguments"); }
                 
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    os.write(buffer, 0, bytesRead);
+                Object source = args.elementAt(0), target = args.elementAt(1);
+
+                if (source instanceof InputStream) {
+                    InputStream in = (InputStream) source;
+
+                    if (target instanceof OutputStream) {
+                        OutputStream os = (OutputStream) destination;
+                        
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
+                        os.flush();
+                        return new Double(0);
+                    }
+                    else if (target instanceof StringBuffer || target instanceof String) {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[1024], data;
+                        int bytesRead;
+                        while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
+
+                        data = baos.toByteArray(); baos.close();    
+                    
+                        if (target instanceof StringBuffer) { ((StringBuffer) destination).append(new String(data, "UTF-8")); return new Double(0); }
+                        else { return new Double(midlet.write(target, data, id)); }
+                    }
                 }
-                os.flush();
-                is.close();
-                return new Double(0);
-            } catch (Exception e) {
-                return new Double(1); // Erro de leitura
-            }
-        }
-        
-        // Caso 8: De arquivo para StringBuffer
-        else if (source instanceof String && destination instanceof StringBuffer) {
-            String filename = toLuaString(source);
-            StringBuffer sb = (StringBuffer) destination;
-            
-            String content = midlet.read(filename);
-            sb.append(content);
-            return new Double(0);
-        }
-        
-        // Caso 9: De arquivo para arquivo
-        else if (source instanceof String && destination instanceof String) {
-            String srcFile = toLuaString(source);
-            String destFile = toLuaString(destination);
-            
-            try {
-                InputStream is = midlet.getInputStream(srcFile);
-                if (is == null) {
-                    return new Double(127); // Arquivo fonte não encontrado
+                else if (source instanceof StringBuffer) {
+                    StringBuffer in = (StringBuffer) source;
+
+                    if (target instanceof OutputStream) {
+                        OutputStream os = (OutputStream) destination;
+                        
+                        os.write(in.toString().getBytes("UTF-8")); os.flush();
+                        return new Double(0);
+                    }
+                    else if (target instanceof StringBuffer || target instanceof String) {
+                        if (target instanceof StringBuffer) { ((StringBuffer) destination).append(in.toString()); return new Double(0); }
+                        else { return new Double(midlet.write(target, in.toString().getBytes("UTF-8"), id)); }
+                    }
                 }
-                
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    baos.write(buffer, 0, bytesRead);
+                else if (source instanceof String) {
+                    String file = (String) source;
+
+                    if (target instanceof OutputStream) {
+                        OutputStream os = (OutputStream) destination;
+                        
+                        InputStream is = midlet.getInputStream(file);
+                        if (is == null) { return new Double(127); }
+                        
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
+                        os.flush(); is.close();
+                        return new Double(0);
+                    }
+                    else if (target instanceof StringBuffer || target instanceof String) {
+                        String content = midlet.read(file);
+                    
+                        if (target instanceof StringBuffer) { ((StringBuffer) destination).append(content); }
+                        else { return new Double(midlet.write(target, content.getBytes("UTF-8"), id)); }
+                    }
                 }
-                is.close();
-                
-                return new Double(midlet.write(destFile, baos.toByteArray(), id));
-            } catch (Exception e) {
-                return new Double(1);
-            }
-        }
-        
-        // Caso 10: De ByteArrayOutputStream para qualquer destino
-        else if (source instanceof ByteArrayOutputStream) {
-            ByteArrayOutputStream baos = (ByteArrayOutputStream) source;
-            byte[] data = baos.toByteArray();
-            
-            if (destination instanceof OutputStream) {
-                OutputStream os = (OutputStream) destination;
-                os.write(data);
-                os.flush();
+                else if (source instanceof ByteArrayOutputStream) {
+                    ByteArrayOutputStream baos = (ByteArrayOutputStream) source;
+                    byte[] data = baos.toByteArray();
+                    
+                    if (destination instanceof OutputStream) { OutputStream os = (OutputStream) destination; os.write(data); os.flush(); } 
+                    else if (destination instanceof StringBuffer) { ((StringBuffer) destination).append(new String(data, "UTF-8")); } 
+                    else if (destination instanceof String) { return new Double(midlet.write(destination, data, id)); }
+                }
+
                 return new Double(0);
-            } else if (destination instanceof StringBuffer) {
-                StringBuffer sb = (StringBuffer) destination;
-                sb.append(new String(data, "UTF-8"));
-                return new Double(0);
-            } else if (destination instanceof String) {
-                String filename = toLuaString(destination);
-                return new Double(midlet.write(filename, data, id));
             }
-        }
-        
-        // Caso não suportado
-        else {
-            return gotbad(1, "copy", "unsupported source/destination combination. Source type: " + 
-                type(source) + ", Destination type: " + type(destination));
-        }
-    } catch (Exception e) {
-        // Em caso de erro, retornar código de erro 1
-        return new Double(1);
-    }
-}
             // Package: table
             else if (MOD == TB_INSERT) {
                 if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
