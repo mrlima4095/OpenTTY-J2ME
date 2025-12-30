@@ -1733,7 +1733,7 @@ public class Lua {
                             inputStream = new ByteArrayInputStream(filename.getBytes("UTF-8"));
                         }
                     } 
-                    else if (source instanceof SocketConnection || source instanceof StreamConnection) {
+                    /*else if (source instanceof SocketConnection || source instanceof StreamConnection) {
                         try {
                             if (source instanceof SocketConnection) {
                                 inputStream = ((SocketConnection) source).openInputStream();
@@ -1743,7 +1743,7 @@ public class Lua {
                         } catch (IOException e) {
                             return new Double(1);
                         }
-                    }
+                    }*/
                     else { return gotbad(1, "copy", "invalid source type: " + type(source)); }
                     
                     if (inputStream == null) { return new Double(2); }
