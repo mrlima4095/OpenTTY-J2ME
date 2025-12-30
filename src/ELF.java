@@ -3,7 +3,7 @@ public class ELF {
     public String getPid() { return "-1"; }
     public void kill() { }
     
-    public boolean load(Object is) throws Exception { }
+    public boolean load(Object is) throws Exception { return false; }
 
     public void run() { }
 }
