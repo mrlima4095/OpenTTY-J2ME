@@ -1718,8 +1718,8 @@ public class Lua {
                 
                 Object source = args.elementAt(0), destination = args.elementAt(1);
                 
-                /*try {
-                    InputStream inputStream = null;
+                try {
+                    /*InputStream inputStream = null;
                     OutputStream outputStream = null;
                     String output = null;
                     byte[] data = null;
@@ -1768,12 +1768,12 @@ public class Lua {
                     else if (output != null) {
                         int status = midlet.write(output, data, id);
                         if (status > 0) { return new Double(status); }
-                    }
+                    }*/
                     
                     return Boolean.TRUE;
                 } catch (Exception e) {
                     return new Double(1);
-                }*/
+                }
             }
             // Package: table
             else if (MOD == TB_INSERT) {
