@@ -1748,7 +1748,7 @@ public class Lua {
                     byte[] buffer = new byte[4096];
                     int bytesRead;
                     
-                    try {
+                    /*try {
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
                             outputStream.write(buffer, 0, bytesRead);
                             outputStream.flush();
@@ -1757,7 +1757,7 @@ public class Lua {
                         if (outputStream instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) outputStream).toByteArray(); }
                     } catch (IOException e) {
                         return new Double(101);
-                    }
+                    }*/
 
                     if (destination instanceof StringBuffer) {
                         ((StringBuffer) destination).append(new String(data, "UTF-8"));
