@@ -2021,7 +2021,7 @@ public class Lua {
             else if (MOD == SERVER) {
                 if (args.isEmpty() || !(args.elementAt(0) instanceof Double)) { return gotbad(1, "server" , "number expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
                 else {
-                    ServerSocketConnection server = Connector.open("socket://:" + toLuaString(args.elementAt(0)));
+                    ServerSocketConnection server = (ServerSocketConnection) Connector.open("socket://:" + toLuaString(args.elementAt(0)));
                     midlet.network.put(server, "server");
                     return server;
                 }
