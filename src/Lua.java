@@ -1726,12 +1726,12 @@ public class Lua {
                     
                     if (source instanceof InputStream) { in = (InputStream) source; } 
                     else if (source instanceof ByteArrayOutputStream) { byte[] bytes = ((ByteArrayOutputStream) source).toByteArray(); in = new ByteArrayInputStream(bytes); } 
-                    else if (source instanceof StringBuffer) { String content = ((StringBuffer) source).toString(); in = new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                    else if (source instanceof StringBuffer) { String content = ((StringBuffer) source).toString(); in = new ByteArrayInputStream(content.getBytes()); }
                     else if (source instanceof String) {
                         String filename = toLuaString(source);
                         in = midlet.getInputStream(filename);
                         if (in == null) {
-                            in = new ByteArrayInputStream(filename.getBytes("UTF-8"));
+                            in = new ByteArrayInputStream(filename.getBytes());
                         }
                     } 
                     else { return gotbad(1, "copy", "invalid source type: " + type(source)); }
