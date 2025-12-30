@@ -167,7 +167,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append("\n").append(message); }
         else if (stdout instanceof String) { write((String) stdout, read((String) stdout) + "\n" + message, 1000); }
         else if (stdout instanceof OutputStream) {
-            try { ((OutputStream) stdout).write((message + "\n").getBytes());  ((OutputStream) stdout).flush(); } 
+            try { ((OutputStream) stdout).write((message + "\n").getBytes()); ((OutputStream) stdout).flush(); } 
             catch (Exception e) { }
         }
     }
