@@ -1778,7 +1778,7 @@ public class Lua {
                         ((StringBuffer) destination).append(content);
                     }
                     else if (output != null) {
-                        int status = write(output, ((ByteArrayOutputStream) outputStream).toByteArray(), id);
+                        int status = midlet.write(output, ((ByteArrayOutputStream) outputStream).toByteArray(), id);
                         if (status > 0) {
                             return new Double(status);
                         }
