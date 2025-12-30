@@ -1,6 +1,5 @@
 #!/bin/lua
 
-
 local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
 if not ok then
     print(arg[0] .. ": " .. tostring(conn))
