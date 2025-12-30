@@ -4,7 +4,7 @@ local version = "1.5"
 
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
-    ["armitage"] = { remote = "armitage", here = "/bin/armitage", description = "OpenTTY Network Tools" },
+    ["armitage"] = { remote = "armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
     ["autogc"] = { remote = "autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
     ["cmatrix"] = { remote = "cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
     ["curl"] = { remote = "curl.lua", here = "/bin/curl", description = "Connect with a Server" },
@@ -17,6 +17,7 @@ local mirror = {
     ["head"] = { remote = "head", here = "/bin/head", description = "Prints first lines of a file" },
     ["hostname"] = { remote = "hostname.lua", here = "/bin/hostname", description = "Manage Host Name" },
     ["htop"] = { remote = "htop", here = "/bin/htop", description = "System Monitor" },
+    ["ifconfig"] = { remote = "ifconfig.lua", here = "/bin/ifconfig", description = "Network Informations" },
     ["jauth2"] = { remote = "jauth2", here = "/lib/jauth2", description = "Credentials Manager" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
     ["nano"] = { remote = "nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
@@ -30,7 +31,7 @@ local mirror = {
     ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
     ["wget"] = { remote = "wget", here = "/bin/wget", description = "Download files from Network" },
 
-    ["net"] = { description = "Network Utilities", packages = { "curl", "ping", "webproxy" } },
+    ["net"] = { description = "Network Utilities", packages = { "curl", "ifconfig", "ping", "webproxy" } },
     ["file"] = { description = "File Utitlities", packages = { "find", "grep", "hash", "head", "nano", "sed" } },
     ["dev"] = { description = "Development Tools", packages = { "forge", "jdb", "sdk" } },
     ["sys"] = { description = "System Utitlities", packages = { "autogc", "hostname", "htop" } }
