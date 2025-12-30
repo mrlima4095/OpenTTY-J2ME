@@ -3,36 +3,31 @@ Copyright (C) 2025 - Mr. Lima
 
 ---
 
+The new OpenTTY
+
+- OpenTTY now is totally controlled by Lua, shell and commands are provided by lua scripts and binaries on `/bin/`
+
+
 ## 🚀 Updates
 
 ### 📁 File System & Directories
 - **Directory tree modified**
-- Initialization script changed to `.initrc`
-- `.initrc` will be executed considering shebangs
-- Fixed `pushd` invalid directories stacking
+- User init script changed by lua script in `/home/.initrc` 
 - File System optimized and new `/etc/fstab` format
 
 ### 🔒 Security
 - **Fixed** Lua security error that allowed access to process **owner** field
-- **Removed** default parser commands `vnt`
-- **Removed** symbolic link `/bin/java`
-- **Fixed** security bug with `case user (any name) ...` command getting root permission
 
 ### 🎨 Interface & Usability
 - Default title for `view` command now matches Main Window title
-- **File Explorer** improved
 - **Font Generator** enhanced
-- Process viewer added new **Refresh** button
-- **File Explorer** Delete button no longer requests to remove `..` directory
-- **X Server** updated to *0.7*
 - Support for **Screen**, **List**, **Quest** and **Canvas** removed, usage **Lua Graphics API**
 
 ### ⚙️ Features & API
 - **Lua** added function `ipairs`
 - **Lua** added function `os.getcwd()` to read current working directory
-- **Lua Graphics API** - _BuildScreen_ can now build Images from all sources
 - **Lua** functions `io.read` and `io.write` now require using `/dev/stdin` and `/dev/stdout`
-- **Lua** added default library `java` for minimal direct access and handling of Java VM resources
+- **Lua** added default library `java` for direct access and handling resources of Java VM
 - **Lua** added function `graphics.render(file)` to get **Image** item
 - **Lua** function `random(max)` moved to `math.random()` by default
 - **Lua** function `require` searching module on `/lib/` if file not found in current working directory 
@@ -41,39 +36,83 @@ Copyright (C) 2025 - Mr. Lima
 - **Lua** added minimal support for **metatables**
 - **Lua** fixed `break` token not working in `while` and `repeat` loops
 - **Lua** functions `socket.peer` and `socket.device` now returns **IP Address** and **Connection Port**
-- **Lua** function `os.execute` reading args `command` and a boolean to block run a command as super-user if the script are running as root
-- **Lua** added function `string.uuid()` and command `uuid` have been removed
-- **Lua** added function `os.getuid()` thats returns the ID of user that calls this *Lua Script*
+- **Lua** function `os.execute` sends commands to shell
+- **Lua** added function `string.uuid()`
+- **Lua** added function `os.getuid()` thats returns the ID of current running user
 - MIDlet initial message now comes from `/etc/motd` file
-- Merged build tools **Lua**, **Shell Script** and **Packages**; utility `.` considers _shebangs_ for building
-- `cp` command now using raw _byte-array_
-- `bind` command must read port from argument line, no default port in environment key anymore
-- Errors in `/etc/init` now throw a _Kernel Panic_ and cause **MIDlet** termination
+- MIDlet is launched by `/etc/init` if an error occured here, it crashes
 - New default environment key `SHELL`
 - **Super-user** now allowed to write to `/bin/` (**Applications**), `/etc/` (**Settings**) and `/lib/` (**Package**)
-- Fixed a bug that when you kill process `sh` as user `root` MIDlet doesn't closes
 - Fixed **MIDlet** login for user-only prompt
-- Added support for `list.default` that runs by default on all List choices
-- Added button **Refresh** in _Process Viewer_
-- Command `start` can start services installed on `/etc/services`
-- Command `netstat` have been rewrote
-- Functions and Shells removed
-- Tools `prscan` and `gobuster` have been removed
-- Command `exec` and `execute` have been rewrote
-- Command `expr`, `hash`, `ping`, `pong`, `query` and `wget` can be installed from yang
-- Alias `raw` to `cat` disabled and `rraw` removed
-- Removed commands `seed`, `genip`, `about`, `
-- **Nano** now requires a file and commands `add`, `install`, `get`, `getty` and other related have been removed too
-
-### 📦 Packages
-- **JBuntu** updated to _1.4_
-- **JBenchmark** updated for _1.3_ (Migrated to Lua)
-- **Bind** process objects `InputStream` and `OutputStream` moved to keys `in` and `out`
 
 ### 🏗️ Architecture
-- Source code split into `OpenTTY.java` (Main Class), `Lua.java` (Lua Runtime) and `MIDletCanvas.java` (Canvas Builder)
-- Removed unfunctional Command `wrl`
-- Removed Command `sed`
+- Source code split into `OpenTTY.java` (Main Class), `Lua.java` (Lua Runtime) and `ELF.java` (ELF ARM 32 Emulator)
+- Support for native OpenTTY applications have been removed, usage Lua
+- **X Server** is not native anymore, install it with `yang`, native interfaces using Lua
+- All commands written with Java have been removed
+
+Native shell commands: 
+
+- `exec [commands...]`: run more then 1 commands in a single prompt
+- `gc`: run garbage collector
+- `ps`: show running process
+- `su [password]`: switch to root and default user
+- `whoami`: prints user name
+- `id`: prints id of logged user
+- `exit`: exit from MIDlet (OpenTTY)
+- `xterm`: display main screen
+- `warn [title] [message]`: display an alert with title and message
+- `title`: changes title of current screen
+- `alias [name]=<expression>`: manage aliases
+- `unalias [alias]`: delete an alias
+- `env [key]`: prints environment key value
+- `set [key]=[value]`: create an environment key
+- `unset [key]`: delete an environment key
+- `eval [expression]`: evaluate an expression on shell
+- `echo [message]`: prints message
+- `date`: prints current date-time
+- `clear`: clears default stdout
+- `pwd`: prints current path
+- `cd [path]`: change current working directory
+- `cat [file]`: prints file content
+- `ls`: prints directory content
+- `open [uri]`: request device API to open URI 
+- `true`: do nothing, sucessfully
+- `false`: do nothing, but fail
+
+Programs included on `/bin/`:
+
+- `curl`: make requests to web, socket and OpenTTY services
+- `kill`: kill a process
+- `lua`: lua interative terminall
+- `rm`: remove a file or directory
+- `sh`: shell
+- `touch`: create or clear a file content
+- `yang`: package manager
+
+
+Commands that is already portable and can be installed with yang:
+
+- `autogc`: program garbage collector to run periodically
+- `cmatrix`: matrix effect
+- `expr [expression]`: build a lua expression and prints result
+- `find`:
+- `grep`:
+- `hash [file]`: prints hash code of file content 
+- `head [file]`: prints first lines of a file
+- `hostname`: prints and changes hostname
+- `htop`: memory panel
+- `jdb [commands]`: OpenTTY debuggers
+- `nano [file]`: file editor
+- `pastebin`: pastebin client
+- `ping [url]`: pings a website
+- `sed [expr] [file]`: string editor
+- `sdk`: Lua SDK
+- `sync`: check for updates of OpenTTY
+- `uname`: informations about software and device
+- `axrz`: ViaVersion client interface
+- `shprxy [password]`: WebProxy server 
+- `wget [url] [file]`: Download binaries
 
 ---
 
@@ -82,6 +121,4 @@ Copyright (C) 2025 - Mr. Lima
 - Files written in **/tmp/** will be deleted when MIDlet closes
 - **OpenTTY API** official development programming language is now **Lua**
 - A **Lua** service call `arg[1]` is argument `--deamon`
-- In limited memory devices you can disable shell **PATH** search by running `stty classpath=false`
-- To use command `sed` download it in **PackJ**, this package is named _StringEditor_
-- Documentation available on Github Wiki page
+- In limited memory devices you can disable reading cache and Lua 
