@@ -23,13 +23,22 @@ os = {
 package = { loadlib = function (libname, funcname) end, loaded = {} }
 
 io = {
+    --[=[Reads a file or stream]=]
     read = function (file, lenght) end,
+    --[=[Writes on a file or stream]=]
     write = function (text, file, mode) return 0 end,
+    --[=[Closes files, streams, and connections]=]
     close = function (...) end,
+    --[=[Opens applications and manipulates it]=]
     popen = function (program, argument, sudo, out, scope) return 0, "" end,
-    dirs = function (pwd) return {} end,
+    --[=[Returns directory content]=]
+    dirs = function (pwd) return { ".." } end,
+    --[=[Set program stdout]=]
     setstdout = function (file) end,
-    mount = function (struct) end
+    --[=[Mount a file system or device]=]
+    mount = function (struct) end,
+    --[=[Copy a stream into a file]=]
+    copy = function (stream, file) end
 }
 
 table = {
