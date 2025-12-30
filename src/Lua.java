@@ -1722,6 +1722,7 @@ public class Lua {
                     InputStream inputStream = null;
                     OutputStream outputStream = null;
                     String output = null;
+                    byte[] data = null;
                     
                     if (source instanceof InputStream) { inputStream = (InputStream) source; } 
                     else if (source instanceof ByteArrayOutputStream) { byte[] bytes = ((ByteArrayOutputStream) source).toByteArray(); inputStream = new ByteArrayInputStream(bytes); } 
@@ -1752,25 +1753,21 @@ public class Lua {
                             outputStream.write(buffer, 0, bytesRead);
                         }
                         outputStream.flush();
-                        
-                        if (destination instanceof StringBuffer) {
-                            ByteArrayOutputStream baos = (ByteArrayOutputStream) outputStream;
-                            String content = new String(baos.toByteArray(), "UTF-8");
-                            ((StringBuffer) destination).append(content);
-                        }
-                        else if (output != null) {
-                            ByteArrayOutputStream baos = (ByteArrayOutputStream) outputStream;
-                            byte[] data = baos.toByteArray();
-                            int status = midlet.write(output, data, id);
-                            if (status > 0) {
-                                return new Double(status);
-                            }
-                        }
+
+                        if (outputStream instanceof ByteArrayOutputStream) { resultData = ((ByteArrayOutputStream) outputStream).toByteArray(); }
                     } catch (IOException e) {
                         return new Double(101);
                     } finally {
                         try { inputStream.close(); } catch (Exception e) { }
                         try { outputStream.close(); } catch (Exception e) { }
+                    }
+
+                    if (destination instanceof StringBuffer) {
+                        ((StringBuffer) destination).append(new String(resultData, "UTF-8"));
+                    }
+                    else if (output != null) {
+                        int status = midlet.write(output, resultData, id);
+                        if (status > 0) { return new Double(status); }
                     }
                     
                     return Boolean.TRUE;
