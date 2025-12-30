@@ -4,7 +4,7 @@
 .data
 msg:
     .ascii "Hello, World!\n"
-    len = . - msg
+len = . - msg
 
 .text
 .global _start
@@ -13,7 +13,8 @@ _start:
     // write(1, msg, len)
     mov r0, #1          // stdout
     ldr r1, =msg        // mensagem
-    mov r2, #len        // tamanho
+    ldr r2, =len        // tamanho (via endereço)
+    ldr r2, [r2]        // carregar valor
     mov r7, #4          // syscall write
     swi #0
 
