@@ -1719,45 +1719,45 @@ public class Lua {
                 Object source = args.elementAt(0), destination = args.elementAt(1);
                 
                 try {
-                    InputStream inputStream = null;
-                    OutputStream outputStream = null;
+                    InputStream in = null;
+                    OutputStream out = null;
                     String output = null;
                     byte[] data = null;
                     
-                    if (source instanceof InputStream) { inputStream = (InputStream) source; } 
-                    else if (source instanceof ByteArrayOutputStream) { byte[] bytes = ((ByteArrayOutputStream) source).toByteArray(); inputStream = new ByteArrayInputStream(bytes); } 
-                    else if (source instanceof StringBuffer) { String content = ((StringBuffer) source).toString(); inputStream = new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                    if (source instanceof InputStream) { in = (InputStream) source; } 
+                    else if (source instanceof ByteArrayOutputStream) { byte[] bytes = ((ByteArrayOutputStream) source).toByteArray(); in = new ByteArrayInputStream(bytes); } 
+                    else if (source instanceof StringBuffer) { String content = ((StringBuffer) source).toString(); in = new ByteArrayInputStream(content.getBytes("UTF-8")); }
                     else if (source instanceof String) {
                         String filename = toLuaString(source);
-                        inputStream = midlet.getInputStream(filename);
-                        if (inputStream == null) {
-                            inputStream = new ByteArrayInputStream(filename.getBytes("UTF-8"));
+                        in = midlet.getInputStream(filename);
+                        if (in == null) {
+                            in = new ByteArrayInputStream(filename.getBytes("UTF-8"));
                         }
                     } 
                     else { return gotbad(1, "copy", "invalid source type: " + type(source)); }
                     
-                    if (inputStream == null) { return new Double(2); }
+                    if (in == null) { return new Double(2); }
 
-                    if (destination instanceof OutputStream) { outputStream = (OutputStream) destination; }
-                    else if (destination instanceof ByteArrayOutputStream) { outputStream = (ByteArrayOutputStream) destination; } 
-                    else if (destination instanceof StringBuffer) { outputStream = new ByteArrayOutputStream(); } 
-                    else { outputStream = new ByteArrayOutputStream(); output = toLuaString(destination); }
+                    if (destination instanceof OutputStream) { out = (OutputStream) destination; }
+                    else if (destination instanceof ByteArrayOutputStream) { out = (ByteArrayOutputStream) destination; } 
+                    else if (destination instanceof StringBuffer) { out = new ByteArrayOutputStream(); } 
+                    else { out = new ByteArrayOutputStream(); output = toLuaString(destination); }
                     
-                    if (outputStream == null && output == null) { return new Double(1); }
+                    if (out == null && output == null) { return new Double(1); }
                     
                     byte[] buffer = new byte[4096];
                     int bytesRead;
                     
                     try {
-                        if (outputStream instanceof OutputStream && outputStream.getClass() == OutputStream.class) {
-                            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                                outputStream.write(buffer, 0, bytesRead);
+                        if (out instanceof OutputStream && out.getClass() == OutputStream.class) {
+                            while ((bytesRead = in.read(buffer)) != -1) {
+                                out.write(buffer, 0, bytesRead);
                             }
-                            outputStream.flush();
+                            out.flush();
                         }
                         
 
-                        if (outputStream instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) outputStream).toByteArray(); }
+                        if (out instanceof ByteArrayOutputStream) { data = ((ByteArrayOutputStream) out).toByteArray(); }
                     } catch (IOException e) {
                         return new Double(101);
                     }
