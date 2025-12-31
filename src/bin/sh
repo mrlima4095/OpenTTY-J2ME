@@ -47,7 +47,12 @@ local function shell(args, enable, aliases, stdout, scope)
             local program = os.join(args[1])
             table.remove(args, 1)
             local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
-            status = res.status
+            
+            if type(res) == "number" then
+                status = res
+            elseif type(res) == "table" then
+                status = res.status
+            end
         end
 
     elseif cmd == "builtin" or cmd == "command" then
@@ -79,7 +84,7 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
     -- | prints uptime
     elseif cmd == "uptime" then
-        print("")
+        print(java.midlet.uptime())
     -- (Permissions)
     -- | change your user
     elseif cmd == "su" then
