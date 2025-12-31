@@ -173,7 +173,9 @@ java = {
         --[=[Cached Content from Archive Strucutres]=]
         cache = { ["/bin/shprxy"] = "Cached file" },
         --[=[OpenTTY Build Code]=]
-        build = "2025-1.17-02x96"
+        build = "2025-1.17-02x96",
+        --[=[Returns MIDlet uptime's]=]
+        uptime = function () end
     }
 }
 
