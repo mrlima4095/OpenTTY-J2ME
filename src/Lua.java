@@ -1609,7 +1609,7 @@ public class Lua {
                             ByteArrayInputStream bais = new ByteArrayInputStream(data);
                             ELF elf = new ELF(midlet, out, scope, owner, null, null);
                             
-                            if (elf.load(bais)) { result.addElement(new Double(elf.run())); } else { result.addElement(new Double(1)); }
+                            if (elf.load(bais)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
                             return result;
                         } else {
