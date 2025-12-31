@@ -201,7 +201,6 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     elseif cmd == "ls" then
         local pwd = os.join(argument)
-
         local buff = ""
         for k,v in pairs(io.dirs(pwd)) do
             if string.sub(v, 1, 1) ~= "." then
