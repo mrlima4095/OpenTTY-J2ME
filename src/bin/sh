@@ -38,7 +38,10 @@ local function shell(args, enable, aliases, stdout, scope)
         status = shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
     elseif io.open("/bin/" .. cmd) then
         local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
-        status = res.status
+        if redirect then
+            io.setstdout(stdout)
+        end
+        return res.status
     elseif cmd == "." then
         if arg[1] then
             local program = os.join(args[1])
