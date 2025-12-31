@@ -14,10 +14,8 @@ local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.ge
 label()
 
 io.mount(io.read("/etc/fstab"))
-
-print(string.env(io.read("/etc/motd")))
-
 os.request("1", "setsh", shell)
+print(string.env(io.read("/etc/motd")))
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
