@@ -54,7 +54,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Kernel Panic)
     private void panic(Throwable e) {
         Form screen = new Form(e instanceof Exception ? "SandBox" : "Kernel Panic");
-        screen.append("An error occurred while OpenTTY tried to start!\n\nError: " .. getCatch(e));
+        screen.append("An error occurred while OpenTTY tried to start!\n\nError: " + getCatch(e));
         if (e instanceof Exception) {
             screen.append("If you tried to install a program in /bin/init it can be the error");
         } else {
