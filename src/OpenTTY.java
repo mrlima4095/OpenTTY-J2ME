@@ -49,8 +49,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
         }
-        catch (Exception e) { warn("SandBox", getCatch(e)); }
-        catch (Throwable e) { warn("Kernel Panic", e.getMessage() != null ? e.getMessage() : e.getClass().getName()); }
+        catch (Throwable e) { panic(e); }
+    }
+    // | (Kernel Panic)
+    private void panic(Throwable e) {
+        Form screen = new Form(e instanceof Exception ? "SandBox" : "Kernel Panic");
+        screen.append("An error occurred while OpenTTY tried to start!\n\nError: " .. getCatch(e));
+        if (e instanceof Exception) {
+            screen.append("If you tried to install a program in /bin/init it can be the error");
+        } else {
+            screen.append("Try to clear your data or update OpenTTY");
+        }
+        screen.addCommand(new Command("Exit", Command.OK, 1));
+        screen.addCommand(new Command("Update", Command.SCREEN, 1));
+        screen.addCommand(new Command("Remove init", Command.SCREEN, 1));
+        screen.addCommand(new Command("Clear data", Command.SCREEN, 1));
     }
     // | (Installation)
     private void login(boolean user, boolean pword) {
@@ -67,8 +80,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
             init();
         }
     }
+    // | (Graphical Handler)
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
+        if (c.getLabel() == "Update") { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
+        if (c.getLabel() == "Remove init") { warn("SandBox", "Impossible!"); }
+        if (c.getLabel() == "Clear data") { warn("SandBox", "Impossible!"); }
         else {
             int size = ((Form) d).size();
             if (size == 2) {
