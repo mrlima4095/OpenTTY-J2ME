@@ -43,7 +43,6 @@ function math.max(...)
     return max_val
 end
 
-function math.random(max) return random(max) end
 function math.tointeger(x)
     x = tonumber(x)
 
