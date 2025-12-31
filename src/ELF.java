@@ -64,7 +64,6 @@ public class ELF {
     private static final int SYS_BRK = 45;
     private static final int SYS_GETCWD = 183;
     // Novas syscalls adicionadas
-    private static final int SYS_GETTIMEOFDAY = 78;   // gettimeofday
     private static final int SYS_GETPPID = 64;        // getppid
     private static final int SYS_GETUID32 = 199;      // getuid32
     private static final int SYS_GETEUID32 = 201;     // geteuid32
@@ -583,9 +582,6 @@ public class ELF {
                 break;
                 
             // Novas syscalls
-            case SYS_GETTIMEOFDAY:
-                handleGettimeofday();
-                break;
 
             case SYS_GETPPID:
                 handleGetppid();
@@ -1006,40 +1002,6 @@ public class ELF {
         registers[REG_R0] = buf;
     }
     
-    private void handleGettimeofday() {
-        int tvAddr = registers[REG_R0];
-        int tzAddr = registers[REG_R1];
-        
-        long currentTime = System.currentTimeMillis();
-        long seconds = currentTime / 1000;
-        long microseconds = (currentTime % 1000) * 1000;
-        
-        // Escrever estrutura timeval
-        if (tvAddr != 0 && tvAddr + 7 < memory.length) {
-            writeIntLE(memory, tvAddr, (int)seconds);
-            writeIntLE(memory, tvAddr + 4, (int)microseconds);
-        }
-        
-        // Estrutura timezone (geralmente ignorada)
-        if (tzAddr != 0 && tzAddr + 7 < memory.length) {
-            writeIntLE(memory, tzAddr, 0); // minutes west of Greenwich
-            writeIntLE(memory, tzAddr + 4, 0); // DST correction
-        }
-        
-        registers[REG_R0] = 0; // Sucesso
-    }
-
-    private void handleTime() {
-        // Retornar o tempo atual em segundos desde a época (1970-01-01 00:00:00 UTC)
-        long currentTime = System.currentTimeMillis() / 1000;
-        registers[REG_R0] = (int) currentTime;
-        
-        // Se o ponteiro para time_t foi fornecido (R0 != 0), escrever o tempo lá também
-        int timePtr = registers[REG_R1];
-        if (timePtr != 0 && timePtr >= 0 && timePtr + 3 < memory.length) {
-            writeIntLE(memory, timePtr, (int) currentTime);
-        }
-    }
 
     private void handleGetppid() { registers[REG_R0] = 1; }
 
