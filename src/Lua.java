@@ -1773,10 +1773,10 @@ public class Lua {
                         return new Double(0);
                     }
                     else if (target instanceof StringBuffer || target instanceof String) {
-                        String content = midlet.read(file);
+                        
                     
-                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(content); }
-                        else { return new Double(midlet.write(toLuaString(target), content.getBytes("UTF-8"), id)); }
+                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(midlet.read(file)); }
+                        else { return new Double(midlet.write(toLuaString(target), midlet.getInputStream(file), id)); }
                     }
                 }
                 else if (source instanceof ByteArrayOutputStream) {
