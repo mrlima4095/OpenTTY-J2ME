@@ -1593,44 +1593,40 @@ public class Lua {
                     Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
                     Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
 
-                    try {
-                        InputStream is = midlet.getInputStream(program);
-                        if (is != null) {
-                            byte[] header = new byte[4];
-                            int bytesRead = is.read(header);
-                            is.close();
+                    InputStream is = midlet.getInputStream(program);
+                    if (is != null) {
+                        byte[] header = new byte[4];
+                        int bytesRead = is.read(header);
+                        is.close();
 
-                            boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
-                            if (isElf) {
-                                InputStream elfStream = midlet.getInputStream(program);
-                                ELF elf = new ELF(midlet, out, scope, owner, null, null);
+                        boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
+                        if (isElf) {
+                            InputStream elfStream = midlet.getInputStream(program);
+                            ELF elf = new ELF(midlet, out, scope, owner, null, null);
 
-                                Vector result = new Vector();
-                                
-                                if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
-                                result.addElement(out instanceof StringBuffer ? out.toString() : out);
-                                return result;
-                            } else {
-                                String code = midlet.read(program);
+                            Vector result = new Vector();
+                            
+                            if (elf.load(elfStream)) { result.addElement(new Double(elf.run())); } else { result.addElement(new Double(1)); }
+                            result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                            return result;
+                        } else {
+                            String code = midlet.read(program);
 
-                                Lua lua = new Lua(midlet, owner, null, null, out, scope);
-                                Hashtable arg = new Hashtable();
-                                arg.put(new Double(0), program);
-                                String[] list = midlet.splitArgs(arguments);
-                                for (int i = 0; i < list.length; i++) { 
-                                    arg.put(new Double(i + 1), list[i]); 
-                                }
-
-                                Vector result = new Vector();
-                                result.addElement(lua.run(program, code, arg));
-                                result.addElement(out instanceof StringBuffer ? out.toString() : out);
-                                return result;
+                            Lua lua = new Lua(midlet, owner, null, null, out, scope);
+                            Hashtable arg = new Hashtable();
+                            arg.put(new Double(0), program);
+                            String[] list = midlet.splitArgs(arguments);
+                            for (int i = 0; i < list.length; i++) { 
+                                arg.put(new Double(i + 1), list[i]); 
                             }
-                        } 
-                        else { return new Double(127); }
-                    } catch (Exception e) {
-                        return new Double(1);
-                    }
+
+                            
+                            result.addElement(lua.run(program, code, arg));
+                            result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                            return result;
+                        }
+                    } 
+                    else { throw new RuntimeException("File not found"); }
                 }
             } 
             else if (MOD == DIRS) {
