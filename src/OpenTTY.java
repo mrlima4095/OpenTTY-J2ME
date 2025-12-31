@@ -64,6 +64,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         screen.addCommand(new Command("Update", Command.SCREEN, 1));
         screen.addCommand(new Command("Remove init", Command.SCREEN, 1));
         screen.addCommand(new Command("Clear data", Command.SCREEN, 1));
+        screen.setCommandListener(this);
+        display.setCurrent(screen);
     }
     // | (Installation)
     private void login(boolean user, boolean pword) {
