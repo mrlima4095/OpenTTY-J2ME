@@ -1621,7 +1621,6 @@ public class Lua {
                             String[] list = midlet.splitArgs(arguments);
                             for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
 
-                            
                             result.addElement(lua.run(program, code, arg));
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
                             return result;
