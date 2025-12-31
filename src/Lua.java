@@ -2005,8 +2005,8 @@ public class Lua {
                 return packed;
             }
             // Package: socket.http
-            else if (MOD == HTTP_GET || MOD == HTTP_POST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : (MOD == HTTP_GET ? http("GET", toLuaString(args.elementAt(0)), null, args.size() > 1 ? (Hashtable) args.elementAt(1) : null, false) : http("POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, false))); }
-            else if (MOD == HTTP_RGET || MOD == HTTP_RPOST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : (MOD == HTTP_GET ? http("GET", toLuaString(args.elementAt(0)), null, args.size() > 1 ? (Hashtable) args.elementAt(1) : null, true) : http("POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, true))); }
+            else if (MOD == HTTP_GET || MOD == HTTP_POST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, false)); }
+            else if (MOD == HTTP_RGET || MOD == HTTP_RPOST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, true)); }
             // Package: socket
             else if (MOD == CONNECT) {
                 if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "connect", "string expected, got no value"); }
