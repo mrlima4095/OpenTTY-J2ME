@@ -1,7 +1,23 @@
 #!/bin/lua
 
-if arg[1] then
-    io.write("", os.join(arg[1]))
+if #arg > 1 then
+    for i = 1, #arg - 1 do
+        local status = os.remove(os.join(arg[i]))
+
+        if status == 1 then
+            print("touch: " .. arg[i] .. ": java.io.IOException")
+        elseif status == 5 then
+            print("touch: " .. arg[i] .. ": read-only storage")
+        elseif status == 13 then
+            print("touch: " .. arg[i] .. ": permission denied")
+        elseif status == 127 then
+            print("touch: " .. arg[i] .. ": not found")
+        end
+
+        if status > 0 then
+            os.exit(status)
+        end
+    end
 else
     print("touch: usage: touch [file]")
     os.exit(2)
