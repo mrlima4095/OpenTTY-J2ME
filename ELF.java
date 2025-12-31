@@ -644,56 +644,6 @@ public class ELF {
     }
     
     private void handleWrite() {
-        int fd = registers[REG_R0];
-        int buf = registers[REG_R1];
-        int count = registers[REG_R2];
-        
-        if (count <= 0 || buf < 0 || buf >= memory.length) {
-            registers[REG_R0] = -1;
-            return;
-        }
-        
-        Integer fdKey = new Integer(fd);
-        
-        if (fd == 1 || fd == 2) {
-            // stdout/stderr - escrever no OpenTTY
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < count && buf + i < memory.length; i++) {
-                sb.append((char)(memory[buf + i] & 0xFF));
-            }
-            
-            midlet.print(sb.toString(), stdout, id);
-            
-            registers[REG_R0] = count;
-            
-        } else if (fileDescriptors.containsKey(fdKey)) {
-            Object stream = fileDescriptors.get(fdKey);
-            
-            if (stream instanceof OutputStream) {
-                try {
-                    OutputStream os = (OutputStream) stream;
-                    for (int i = 0; i < count && buf + i < memory.length; i++) {
-                        os.write(memory[buf + i]);
-                    }
-                    os.flush();
-                    registers[REG_R0] = count;
-                } catch (Exception e) {
-                    registers[REG_R0] = -1;
-                }
-            } else if (stream instanceof StringBuffer) {
-                StringBuffer sb = (StringBuffer) stream;
-                for (int i = 0; i < count && buf + i < memory.length; i++) {
-                    sb.append((char)(memory[buf + i] & 0xFF));
-                }
-                registers[REG_R0] = count;
-            } else {
-                registers[REG_R0] = -1;
-            }
-        } else {
-            registers[REG_R0] = -1;
-        }
-    }
-    private void handleWrite() {
         int fd = registers[REG_R0], buf = registers[REG_R1], count = registers[REG_R2];
         
         if (count <= 0 || buf < 0 || buf >= memory.length) { registers[REG_R0] = -1; return; }
@@ -1279,10 +1229,7 @@ public class ELF {
         registers[REG_R0] = offset; // Retorna nova posição
     }
 
-    private void handleGetppid() {
-        // Para processos não-filhos, retornamos 1 (init)
-        registers[REG_R0] = 1;
-    }
+    private void handleGetppid() { registers[REG_R0] = 1; }
 
     private void handleGetuid() { registers[REG_R0] = id; }
 
