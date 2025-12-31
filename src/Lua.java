@@ -2493,10 +2493,10 @@ public class Lua {
                             arg.put(new Double(0), program);
                             arg.put(new Double(1), "--deamon");
 
-                            Object handler = lua.run(program, code, arg);
+                            Hashtable res = lua.run(program, code, arg);
 
-                            if (handler instanceof LuaFunction) {
-                                process.put("handler", handler);
+                            if (res.get("object") instanceof LuaFunction) {
+                                process.put("handler", res.get("object"));
                             }
                         }
                     }
