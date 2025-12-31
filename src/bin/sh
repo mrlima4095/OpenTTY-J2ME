@@ -50,6 +50,16 @@ local function shell(args, enable, aliases, stdout, scope)
             status = res.status
         end
 
+    elseif cmd == "builtin" or cmd == "command" then
+        if argument == "" then
+        else
+            status = shell(argument, false, aliases, stdout, scope)
+        end
+    elseif cmd == "bg" then
+        if argument == "" then
+        else
+            java.run(function () shell(argument, true, aliases, stdout, scope) end, "Background")
+        end
     elseif cmd == "exec" then
         if argument == "" then
         else

@@ -62,6 +62,8 @@ graphics.render(file) -- Loads images (new Image type)
 | Command | Description |
 |---------|-----------|
 | `exec [commands...]` | Executes multiple commands |
+| `builtin [command...]` | Executes commands ignoring aliases |
+| `bg [command...]` | Executes command in another thread |
 | `gc` | Runs garbage collector |
 | `ps` | Lists active processes |
 | `su [password]` | Switches between root/user |
