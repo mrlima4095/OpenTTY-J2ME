@@ -35,13 +35,12 @@ local function shell(args, enable, aliases, stdout, scope)
     if cmd == "" then
 
     elseif enable and aliases[cmd] then
-        print(aliases[cmd])
         return shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
     elseif io.open("/bin/" .. cmd) then
         local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
         status = res.status
     elseif cmd == "." then
-        if argument ~= "" then
+        if arg[1] then
             local program = os.join(args[1])
             table.remove(args, 1)
             local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
@@ -70,6 +69,8 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "su" then
         if os.getuid() == 0 then
             os.su(java.midlet.username)
+            graphics.SetText(io.stdout, "")
+            print(string.env(io.read("/etc/motd")))
         elseif argument == "" then
             print("su: usage: su [user] [passwd]")
         else
