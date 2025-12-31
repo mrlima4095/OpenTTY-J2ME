@@ -70,9 +70,7 @@ public class ELF {
     private static final int SYS_GETEUID32 = 201;     // geteuid32
     
     // Flags de open
-    private static final int O_RDONLY = 0;
-    private static final int O_WRONLY = 1;
-    private static final int O_RDWR = 2;
+    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2;
     private static final int O_CREAT = 64;
     private static final int O_APPEND = 1024;
     private static final int O_TRUNC = 512;
