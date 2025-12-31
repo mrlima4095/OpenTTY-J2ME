@@ -1595,28 +1595,31 @@ public class Lua {
                     InputStream is = midlet.getInputStream(program);
                     Vector result = new Vector();
                     if (is != null) {
-                        byte[] header = new byte[4];
-                        int bytesRead = is.read(header);
+                        InputStream is = midlet.getInputStream(program);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
                         is.close();
 
-                        boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
+                        byte[] data = baos.toByteArray();
+
+                        boolean isElf = (data.length >= 4 && data[0] == 0x7F && data[1] == 'E' && data[2] == 'L' && data[3] == 'F');
                         if (isElf) {
-                            InputStream elfStream = midlet.getInputStream(program);
+                            ByteArrayInputStream bais = new ByteArrayInputStream(data);
                             ELF elf = new ELF(midlet, out, scope, owner, null, null);
                             
-                            if (elf.load(elfStream)) { result.addElement(new Double(elf.run())); } else { result.addElement(new Double(1)); }
+                            if (elf.load(bais)) { result.addElement(new Double(elf.run())); } else { result.addElement(new Double(1)); }
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
                             return result;
                         } else {
-                            String code = midlet.read(program);
+                            String code = new String(data, "UTF-8");
 
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
                             Hashtable arg = new Hashtable();
                             arg.put(new Double(0), program);
                             String[] list = midlet.splitArgs(arguments);
-                            for (int i = 0; i < list.length; i++) { 
-                                arg.put(new Double(i + 1), list[i]); 
-                            }
+                            for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
 
                             
                             result.addElement(lua.run(program, code, arg));
