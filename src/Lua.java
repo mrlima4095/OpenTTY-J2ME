@@ -2451,6 +2451,7 @@ public class Lua {
                     else if (payload.equals("proc")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
+                            midlet.print("DEBUG: id=" + id + ", owner=" + midlet.getobject((String) arg, "owner") + ", scope USER=" + ((Hashtable) scope).get("USER"));
                             if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { return midlet.sys.get(arg); } 
                             else { return new Double(13); }
                         }
