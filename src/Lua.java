@@ -2446,7 +2446,6 @@ public class Lua {
                     else if (payload.equals("proc")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
-                            midlet.print("DEBUG: id=" + uid + ", owner=" + midlet.getobject((String) arg, "owner") + ", scope USER=" + ((Hashtable) scope).get("USER"), stdout, id);
                             if (id == 0) { return midlet.sys.get(arg); } 
                             if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER"))) { return midlet.sys.get(arg); } 
                             else { return new Double(13); }
@@ -2460,7 +2459,7 @@ public class Lua {
                             String old = (String) query.get("old"), newpw = (String) query.get("new");
 
                             if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
-                            else if (midlet.passwd(old) || id == 0) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
+                            else if (id == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
                             else { return new Double(13); }
                         }
                     }
