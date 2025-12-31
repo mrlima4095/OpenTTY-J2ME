@@ -105,7 +105,7 @@ local function remove(pkg, verbose)
 
         if verbose then
             if status == 0 then
-                print(":: Remvoed " .. info.here)
+                print(":: Removed " .. info.here)
             else
                 print(":: Removing error for " .. pkg)
             end
