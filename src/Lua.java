@@ -1604,8 +1604,12 @@ public class Lua {
                             if (isElf) {
                                 InputStream elfStream = midlet.getInputStream(program);
                                 ELF elf = new ELF(midlet, out, scope, owner, null, null);
+
+                                Vector result = new Vector();
                                 
-                                if (elf.load(elfStream)) { elf.run(); } else { return new Double(1); }
+                                if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
+                                result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                                return result;
                             } else {
                                 String code = midlet.read(program);
 
