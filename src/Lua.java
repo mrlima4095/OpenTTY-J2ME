@@ -1784,7 +1784,7 @@ public class Lua {
 
                             byte[] buffer = new byte[1024];
                             int bytesRead;
-                            while ((bytesRead = is.read(buffer)) != -1) { obas.write(buffer, 0, bytesRead); }
+                            while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
 
                             return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id));
                         }
