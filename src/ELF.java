@@ -144,10 +144,10 @@ public class ELF {
         return true;
     }
     
-    public int run() {
+    public Hashtable run() {
         running = true;
         
-        Hashtable proc = midlet.genprocess("elf", id, null);
+        Hashtable proc = midlet.genprocess("elf", id, null), ITEM = new Hashtable();
         proc.put("elf", this); midlet.sys.put(pid, proc);
         
         try {
@@ -160,7 +160,8 @@ public class ELF {
         catch (Exception e) { midlet.print("ELF execution error: " + e.toString(), stdout); running = false; } 
         finally { if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); } }
 
-        return 0;
+        ITEM.put("status", new Double(0));
+        return ITEM;
     }
     
     private void executeInstruction(int instruction) {
