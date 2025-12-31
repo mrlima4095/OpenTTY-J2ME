@@ -144,7 +144,7 @@ public class ELF {
         return true;
     }
     
-    public void run() {
+    public int run() {
         running = true;
         
         Hashtable proc = midlet.genprocess("elf", id, null);
@@ -159,6 +159,8 @@ public class ELF {
         } 
         catch (Exception e) { midlet.print("ELF execution error: " + e.toString(), stdout); running = false; } 
         finally { if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); } }
+
+        return new Double(0);
     }
     
     private void executeInstruction(int instruction) {
