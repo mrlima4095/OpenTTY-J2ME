@@ -1,23 +1,42 @@
 os = {
-    execute = function (command, sudo) return 0 end,
+    --[=[Execute command in installed shell]=]
+    execute = function (command, ...) return 0 end,
+    --[=[Get an environment value]=]
     getenv = function (...) return nil or ... end,
+    --[=[Set an environment value]=]
     setenv = function (key, value) return value end,
+    --[=[How much time this process is active]=]
     clock = function () end,
+    --[=[Set locale of System]=]
     setlocale = function (locale) end,
+    --[=[Exit from program or MIDlet]=]
     exit = function (status) os.exit(status, true) end,
+    --[=[Get current date-time]=]
     date = function () end,
+    --[=[Get Process ID current process or another]=]
     getpid = function (proc) end,
+    --[=[Get data of a process]=]
     getproc = function (pid, field) return {} end,
+    --[=[Set a information of current process]=]
     setproc = function (field, value) end,
+    --[=[Returns current path]=]
     getcwd = function () return "/home/" end,
+    --[=[Change current working directory]=]
     chdir = function (pwd) return 0 end,
+    --[=[Make a request to a Service API]=]
     request = function(pid, payload, args) return {} end,
+    --[=[Get UID of current user]=]
     getuid = function () return 1000 end,
+    --[=[Make a request to Device API to perform opening of URI]=]
     open = function (uri) return true end,
+    --[=[Change current scope]=]
     scope = function (...) return {} end,
     sudo = function (password) return 0 end,
+    --[=[Change current user]=]
     su = function (username, password) return 0 end,
+    --[=[Delete files]=]
     remove = function (file) return 0 end,
+    --[=[Build PATH questions]=]
     join = function (pwd) return "/bin/sh" end
 }
 
@@ -54,17 +73,27 @@ table = {
 }
 
 socket = {
+    --[=[Connect with Socket]=]
     connect = function (address) return "conn", "inputstream", "outputstream" end,
+    --[=[Open a Server]=]
     server = function (port) return "server" end,
+    --[=[Accept clients on Server]=]
     accept = function (server) end,
 
+    --[=[Get informations about other side of connection]=]
     peer = function (conn) return "opentty.xyz", 31522 end,
+    --[=[Get informations about current device on connection]=]
     device = function (conn) return "127.0.0.1", 31522 end,
 
+    --[=[HTTP library]=]
     http = {
+        --[=[Make a HTTP GET request]=]
         get = function (url, headers) return "", 200 end,
+        --[=[Make a HTTP POST request]=]
         post = function (url, data, headers) return "", 200 end,
+        --[=[Make a HTTP GET request, returns the stream object]=]
         rget = function (url, headers) return "", 200 end,
+        --[=[Make a HTTP POST request, returns the stream object]=]
         rpost = function (url, data, headers) return "", 200 end
     }
 }
