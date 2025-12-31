@@ -2488,10 +2488,9 @@ public class Lua {
                             String program = toLuaString(arg), code = midlet.read(program), pid = midlet.genpid();
                             Hashtable process = midlet.genprocess("lua", id, null);
 
-                            Lua lua = new Lua(midlet, id, pid, process, stdout, father);
+                            Lua lua = new Lua(midlet, id, pid, process, stdout, father); lua.kill = false;
                             Hashtable arg = new Hashtable();
-                            arg.put(new Double(0), program);
-                            arg.put(new Double(1), "--deamon");
+                            arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
 
                             Hashtable res = lua.run(program, code, arg);
 
