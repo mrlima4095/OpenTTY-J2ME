@@ -18,7 +18,7 @@ os = {
     sudo = function (password) return 0 end,
     su = function (username, password) return 0 end,
     remove = function (file) return 0 end,
-    join = function (pwd) end
+    join = function (pwd) return "/bin/sh" end
 }
 
 package = { loadlib = function (libname, funcname) end, loaded = {} }
