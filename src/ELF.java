@@ -64,6 +64,7 @@ public class ELF {
     private static final int SYS_BRK = 45;
     private static final int SYS_GETCWD = 183;
     // Novas syscalls adicionadas
+    private static final int SYS_GETTIMEOFDAY = 78;
     private static final int SYS_GETPPID = 64;        // getppid
     private static final int SYS_GETUID32 = 199;      // getuid32
     private static final int SYS_GETEUID32 = 201;     // geteuid32
