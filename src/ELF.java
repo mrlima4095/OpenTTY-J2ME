@@ -65,16 +65,9 @@ public class ELF {
     private static final int SYS_GETCWD = 183;
     // Novas syscalls adicionadas
     private static final int SYS_GETTIMEOFDAY = 78;   // gettimeofday
-    private static final int SYS_NANOSLEEP = 162;     // nanosleep
-    private static final int SYS_MMAP2 = 192;         // mmap2
-    private static final int SYS_MUNMAP = 91;         // munmap
-    private static final int SYS_STAT64 = 195;        // stat64
-    private static final int SYS_LSEEK = 19;          // lseek
     private static final int SYS_GETPPID = 64;        // getppid
     private static final int SYS_GETUID32 = 199;      // getuid32
-    private static final int SYS_GETGID32 = 200;      // getgid32
     private static final int SYS_GETEUID32 = 201;     // geteuid32
-    private static final int SYS_GETEGID32 = 202;     // getegid32
     
     // Flags de open
     private static final int O_RDONLY = 0;
@@ -595,39 +588,16 @@ public class ELF {
             case SYS_GETTIMEOFDAY:
                 handleGettimeofday();
                 break;
-                
-            case SYS_NANOSLEEP:
-                handleNanosleep();
-                break;
-                
-            case SYS_MMAP2:
-                handleMmap2();
-                break;
-                
-            case SYS_MUNMAP:
-                handleMunmap();
-                break;
-                
-            case SYS_STAT64:
-                handleStat64();
-                break;
-                
-            case SYS_LSEEK:
-                handleLseek();
-                break;
-                
+
             case SYS_GETPPID:
                 handleGetppid();
                 break;
                 
             case SYS_GETUID32:
-            case SYS_GETEUID32:
                 handleGetuid();
                 break;
-                
-            case SYS_GETGID32:
-            case SYS_GETEGID32:
-                handleGetgid();
+            case SYS_GETEUID32:
+                handleGetuid();
                 break;
                 
             default:
@@ -1071,170 +1041,6 @@ public class ELF {
         if (timePtr != 0 && timePtr >= 0 && timePtr + 3 < memory.length) {
             writeIntLE(memory, timePtr, (int) currentTime);
         }
-    }
-
-    private void handleNanosleep() {
-        /*int reqAddr = registers[REG_R0];
-        int remAddr = registers[REG_R1];
-        
-        if (reqAddr == 0 || reqAddr >= memory.length - 7) {
-            registers[REG_R0] = -1; // EINVAL
-            return;
-        }
-        
-        // Ler os tempos solicitados
-        int reqSec = readIntLE(memory, reqAddr);
-        int reqNsec = readIntLE(memory, reqAddr + 4);
-        
-        // Converter para milissegundos
-        long sleepTime = reqSec * 1000L + reqNsec / 1000000L;
-        
-        if (sleepTime > 0) {
-            try {
-                Thread.sleep(sleepTime);
-            } catch (InterruptedException e) {
-                registers[REG_R0] = -1; // EINTR
-                return;
-            }
-        }
-        
-        // Se remAddr não for NULL, escrever tempo restante (zero)
-        if (remAddr != 0 && remAddr < memory.length - 7) {
-            writeIntLE(memory, remAddr, 0);
-            writeIntLE(memory, remAddr + 4, 0);
-        }
-        
-        registers[REG_R0] = 0; // Sucesso*/
-    }
-
-    private void handleMmap2() {
-        int addr = registers[REG_R0];      // endereço sugerido (geralmente 0)
-        int length = registers[REG_R1];    // tamanho
-        int prot = registers[REG_R2];      // proteção
-        int flags = registers[REG_R3];     // flags
-        int fd = (int)stackPointer - 4;    // fd (da pilha)
-        int offset = (int)stackPointer - 8; // offset (da pilha)
-        
-        // Para simplificação, apenas alocamos memória
-        // Em um emulador completo, isso seria mais complexo
-        if (length <= 0 || length > memory.length) {
-            registers[REG_R0] = -1; // ENOMEM
-            return;
-        }
-        
-        // Encontrar uma região livre na memória
-        // (implementação simplificada - sempre retorna um endereço fixo)
-        int allocatedAddr = 0x40000000; // Endereço arbitrário
-        
-        registers[REG_R0] = allocatedAddr;
-    }
-
-    private void handleMunmap() {
-        int addr = registers[REG_R0];
-        int length = registers[REG_R1];
-        
-        // Em nossa implementação simplificada, apenas retornamos sucesso
-        // Em um emulador real, liberaríamos a memória mapeada
-        registers[REG_R0] = 0; // Sucesso
-    }
-
-    private void handleStat64() {
-        /*int pathAddr = registers[REG_R0];
-        int statbufAddr = registers[REG_R1];
-        
-        if (pathAddr < 0 || pathAddr >= memory.length || 
-            statbufAddr < 0 || statbufAddr >= memory.length - 128) {
-            registers[REG_R0] = -1; // EFAULT
-            return;
-        }
-        
-        // Ler caminho
-        StringBuffer pathBuf = new StringBuffer();
-        int i = 0;
-        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
-            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
-            i++;
-        }
-        String path = pathBuf.toString();
-        
-        // Verificar se arquivo existe
-        boolean exists = false;
-        try {
-            InputStream is = midlet.getInputStream(path);
-            exists = (is != null);
-            if (is != null) is.close();
-        } catch (Exception e) {
-            exists = false;
-        }
-        
-        if (!exists) {
-            registers[REG_R0] = -2; // ENOENT
-            return;
-        }
-        
-        // Preencher estrutura stat64 (simplificada)
-        // Offset 0: st_dev (dispositivo)
-        writeIntLE(memory, statbufAddr, 0);
-        
-        // Offset 12: st_ino (inode)
-        writeIntLE(memory, statbufAddr + 12, path.hashCode() & 0x7FFFFFFF);
-        
-        // Offset 16: st_mode (modo/permissões)
-        int mode = 0x81A4; // -rw-r--r-- para arquivos regulares
-        if (path.endsWith("/")) {
-            mode = 0x41FF; // drwxr-xr-x para diretórios
-        }
-        writeIntLE(memory, statbufAddr + 16, mode);
-        
-        // Offset 24: st_nlink (número de links)
-        writeIntLE(memory, statbufAddr + 24, 1);
-        
-        // Offset 28: st_uid (ID do usuário)
-        writeIntLE(memory, statbufAddr + 28, 1000); // UID padrão
-        
-        // Offset 32: st_gid (ID do grupo)
-        writeIntLE(memory, statbufAddr + 32, 1000); // GID padrão
-        
-        // Offset 40: st_size (tamanho)
-        try {
-            InputStream is = midlet.getInputStream(path);
-            byte[] buffer = new byte[4096];
-            int size = 0, read;
-            while ((read = is.read(buffer)) != -1) {
-                size += read;
-            }
-            is.close();
-            writeIntLE(memory, statbufAddr + 40, size);
-        } catch (Exception e) {
-            writeIntLE(memory, statbufAddr + 40, 0);
-        }
-        
-        // Timestamps (simplificado para tempo atual)
-        long currentTime = System.currentTimeMillis() / 1000;
-        writeIntLE(memory, statbufAddr + 72, (int)currentTime); // st_atime
-        writeIntLE(memory, statbufAddr + 88, (int)currentTime); // st_mtime
-        writeIntLE(memory, statbufAddr + 104, (int)currentTime); // st_ctime
-        
-        registers[REG_R0] = 0; // Sucesso*/
-    }
-
-    private void handleLseek() {
-        int fd = registers[REG_R0];
-        int offset = registers[REG_R1];
-        int whence = registers[REG_R2];
-        
-        Integer fdKey = new Integer(fd);
-        
-        if (!fileDescriptors.containsKey(fdKey)) {
-            registers[REG_R0] = -1; // EBADF
-            return;
-        }
-        
-        Object stream = fileDescriptors.get(fdKey);
-        
-        // Em nossa implementação simplificada, apenas retornamos sucesso
-        // Em um emulador real, implementaríamos o reposicionamento real
-        registers[REG_R0] = offset; // Retorna nova posição
     }
 
     private void handleGetppid() { registers[REG_R0] = 1; }
