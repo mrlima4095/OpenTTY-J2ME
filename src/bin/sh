@@ -64,6 +64,9 @@ local function shell(args, enable, aliases, stdout, scope)
     -- | prints running process
     elseif cmd == "gc" then collectgarbage()
     elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
+    -- | prints uptime
+    elseif cmd == "uptime" then
+        print("")
     -- (Permissions)
     -- | change your user
     elseif cmd == "su" then

@@ -160,7 +160,7 @@ public class ELF {
         catch (Exception e) { midlet.print("ELF execution error: " + e.toString(), stdout); running = false; } 
         finally { if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); } }
 
-        return new Double(0);
+        return 0;
     }
     
     private void executeInstruction(int instruction) {
