@@ -582,6 +582,10 @@ public class ELF {
                 break;
                 
             // Novas syscalls
+            
+            case SYS_GETTIMEOFDAY:
+                handleGettimeofday();
+                break;
 
             case SYS_GETPPID:
                 handleGetppid();
@@ -1002,6 +1006,30 @@ public class ELF {
         registers[REG_R0] = buf;
     }
     
+    private void handleGettimeofday() {
+        int tvPtr = registers[REG_R0];
+        int tzPtr = registers[REG_R1];
+        
+        // Obter tempo atual
+        long currentTimeMillis = System.currentTimeMillis();
+        int seconds = (int)(currentTimeMillis / 1000);
+        int microseconds = (int)((currentTimeMillis % 1000) * 1000);
+        
+        // Escrever struct timeval se tvPtr for válido
+        if (tvPtr != 0 && tvPtr >= 0 && tvPtr + 7 < memory.length) {
+            writeIntLE(memory, tvPtr, seconds);        // tv_sec
+            writeIntLE(memory, tvPtr + 4, microseconds); // tv_usec
+        }
+        
+        // A struct timezone é obsoleta, geralmente definimos como NULL
+        // Mas se tzPtr for fornecido, escrevemos zeros
+        if (tzPtr != 0 && tzPtr >= 0 && tzPtr + 7 < memory.length) {
+            writeIntLE(memory, tzPtr, 0);     // tz_minuteswest
+            writeIntLE(memory, tzPtr + 4, 0); // tz_dsttime
+        }
+        
+        registers[REG_R0] = 0; // Sucesso
+    }
 
     private void handleGetppid() { registers[REG_R0] = 1; }
 

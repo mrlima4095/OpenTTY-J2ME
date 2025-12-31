@@ -1,6 +1,3 @@
-.syntax unified
-.arm
-
 .data
 msg:
     .ascii "Hello, World!\n"
