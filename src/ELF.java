@@ -106,8 +106,8 @@ public class ELF {
         while ((bytesRead = is.read(buffer)) != -1) {
             baos.write(buffer, 0, bytesRead);
         }
-        byte[] elfData = baos.toByteArray();
-        
+        return load(baos.toByteArray());
+    public boolean load(byte[] elfData) throws Expection {
         if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout); return false; }
         if (elfData[4] != ELFCLASS32) { midlet.print("Only 32-bit ELF supported", stdout); return false; }
         if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout); return false; }

@@ -1606,10 +1606,9 @@ public class Lua {
 
                         boolean isElf = (data.length >= 4 && data[0] == 0x7F && data[1] == 'E' && data[2] == 'L' && data[3] == 'F');
                         if (isElf) {
-                            ByteArrayInputStream bais = new ByteArrayInputStream(data);
                             ELF elf = new ELF(midlet, out, scope, owner, null, null);
                             
-                            if (elf.load(bais)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
+                            if (elf.load(data)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
                             return result;
                         } else {
