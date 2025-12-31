@@ -103,9 +103,8 @@ public class ELF {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         int bytesRead;
-        while ((bytesRead = is.read(buffer)) != -1) {
-            baos.write(buffer, 0, bytesRead);
-        }
+        while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); } 
+        is.close();
         return load(baos.toByteArray());
     }
     public boolean load(byte[] elfData) throws Exception {
