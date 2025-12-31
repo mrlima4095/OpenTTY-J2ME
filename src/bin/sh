@@ -17,7 +17,7 @@ local function shell(args, enable, aliases, stdout, scope)
             if args[i] == ">" then
                 local std = args[i + 1]
                 if std then
-                    io.setstdout(libcore.joinpath(std))
+                    io.setstdout(os.join(std))
                 end
 
                 for j = 1, #args do
@@ -42,7 +42,7 @@ local function shell(args, enable, aliases, stdout, scope)
         status = res.status
     elseif cmd == "." then
         if argument then
-            local program = libcore.joinpath(args[1])
+            local program = os.join(args[1])
             table.remove(args, 1)
             local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
             status = res.status
@@ -174,7 +174,7 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "cd" then
         if argument == "" then os.chdir("/home/")
         else
-            argument = libcore.joinpath(argument)
+            argument = os.join(argument)
 
             if string.sub(argument, -1) ~= "/" then argument = argument .. "/" end
 
@@ -183,12 +183,12 @@ local function shell(args, enable, aliases, stdout, scope)
                 print("cd: " .. argument .. ": not found")
             elseif status == 20 then
                 print("cd: " .. argument .. ": not a directory")
-            
+
             end
         end
     elseif cmd == "cat" then
         for i = 1, #args do
-            local fpwd = libcore.joinpath(args[i])
+            local fpwd = os.join(args[i])
 
             local ok, file = pcall(io.open, fpwd)
             if ok and file then
@@ -199,7 +199,7 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
     elseif cmd == "ls" then
-        local pwd = libcore.joinpath(argument)
+        local pwd = os.join(argument)
 
         local buff = ""
         for k,v in pairs(io.dirs(pwd)) do
