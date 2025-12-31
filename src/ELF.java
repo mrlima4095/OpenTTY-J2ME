@@ -8,7 +8,7 @@ public class ELF {
     private Object stdout;
     private Hashtable scope;
     private String pid;
-    private int id;
+    private int id = 1000;
     
     // Memória e registradores
     private byte[] memory;
