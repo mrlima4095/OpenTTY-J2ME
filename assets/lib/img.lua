@@ -5,7 +5,7 @@ if arg[1] then
     local viewer = graphics.new("screen", "Viewer")
     local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
 
-    graphics.append(viewer, graphics.render(os.join(arg[1])))
+    graphics.append(viewer, { type = "image", img = os.join(arg[1])})
     graphics.addCommand(viewer, back)
     graphics.handler(viewer, {
         [back] = function ()
