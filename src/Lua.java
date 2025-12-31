@@ -1773,10 +1773,21 @@ public class Lua {
                         return new Double(0);
                     }
                     else if (target instanceof StringBuffer || target instanceof String) {
-                        
-                    
+
+
                         if (target instanceof StringBuffer) { ((StringBuffer) target).append(midlet.read(file)); }
-                        else { return new Double(midlet.write(toLuaString(target), midlet.getInputStream(file), id)); }
+                        else { 
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                            InputStream is = midlet.getInputStream(file);
+                            if (is == null) { return new Double(127); }
+
+                            byte[] buffer = new byte[1024];
+                            int bytesRead;
+                            while ((bytesRead = is.read(buffer)) != -1) { obas.write(buffer, 0, bytesRead); }
+
+                            return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id));
+                        }
                     }
                 }
                 else if (source instanceof ByteArrayOutputStream) {
