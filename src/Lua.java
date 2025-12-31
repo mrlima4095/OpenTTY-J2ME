@@ -2128,8 +2128,13 @@ public class Lua {
                         String type = getFieldValue(field, "type", "text");
                         
                         if (type.equals("image")) {
-                            String imgPath = getFieldValue(field, "img", "");
-                            if (!imgPath.equals("")) { form.append(midlet.readImg(imgPath)); }
+                            if (field.containsKey("img") && field.get("img") instanceof Image) {
+                                form.append((Image) field.get("img"));
+                            } else {
+                                String imgPath = getFieldValue(field, "img", "");
+                                if (!imgPath.equals("")) { form.append(midlet.readImg(imgPath)); }
+                            }
+                            
                         } 
                         else if (type.equals("text")) {
                             String layout = getFieldValue(field, "layout", "default");
