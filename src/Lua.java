@@ -2023,7 +2023,7 @@ public class Lua {
                 if (args.isEmpty() || !(args.elementAt(0) instanceof Double)) { return gotbad(1, "server" , "number expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
                 else {
                     ServerSocketConnection server = (ServerSocketConnection) Connector.open("socket://:" + toLuaString(args.elementAt(0)));
-                    midlet.network.put(server, "server");
+                    midlet.network.put(server, args.elementAt(0));
                     return server;
                 }
             }
@@ -2454,6 +2454,9 @@ public class Lua {
                         else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; }
                         else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); }
                         else { return new Double(2); }
+                    }
+                    else if (payload.equals("netsh")) {
+                        
                     }
 
                     else if (payload.equals("serve")) {
