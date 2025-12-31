@@ -2447,7 +2447,8 @@ public class Lua {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
                             midlet.print("DEBUG: id=" + uid + ", owner=" + midlet.getobject((String) arg, "owner") + ", scope USER=" + ((Hashtable) scope).get("USER"), stdout, id);
-                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { return midlet.sys.get(arg); } 
+                            if (id == 0) { return midlet.sys.get(arg); } 
+                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER"))) { return midlet.sys.get(arg); } 
                             else { return new Double(13); }
                         }
                         else { return new Double(127); }
