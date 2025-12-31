@@ -2451,7 +2451,7 @@ public class Lua {
                     else if (payload.equals("proc")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
-                            midlet.print("DEBUG: id=" + id + ", owner=" + midlet.getobject((String) arg, "owner") + ", scope USER=" + ((Hashtable) scope).get("USER"), stdout, id);
+                            midlet.print("DEBUG: id=" + uid + ", owner=" + midlet.getobject((String) arg, "owner") + ", scope USER=" + ((Hashtable) scope).get("USER"), stdout, id);
                             if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { return midlet.sys.get(arg); } 
                             else { return new Double(13); }
                         }
@@ -2503,9 +2503,9 @@ public class Lua {
 
                     else if (payload.equals("rms")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
-                        else if (arg.equals("/bin/")) { writeRMS("OpenRMS", new byte[0], 3); }
-                        else if (arg.equals("/etc/")) { writeRMS("OpenRMS", new byte[0], 5); }
-                        else if (arg.equals("/lib/")) { writeRMS("OpenRMS", new byte[0], 4); }
+                        else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
+                        else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
+                        else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
                     }
                 }
             }
