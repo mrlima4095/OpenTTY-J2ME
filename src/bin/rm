@@ -1,7 +1,13 @@
 #!/bin/lua
 
 if arg[1] then
-    os.remove(os.join(arg[1]))
+    for i = 1, #arg - 1 do
+        local status os.remove(os.join(arg[1]))
+
+        if status == 1 then
+            
+        end
+    end
 else
     print("rm: usage: rm [file]")
     os.exit(2)
