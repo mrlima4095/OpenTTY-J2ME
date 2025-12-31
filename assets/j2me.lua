@@ -170,8 +170,6 @@ java = {
     midlet = {
         --[=[MIDlet Default User Name]=]
         username = "myuser",
-        --[=[Registred Network Connections]=]
-        net = { },
         --[=[Cached Content from Archive Strucutres]=]
         cache = { ["/bin/shprxy"] = "Cached file" },
         --[=[OpenTTY Build Code]=]
