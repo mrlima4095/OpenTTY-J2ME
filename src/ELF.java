@@ -1066,7 +1066,7 @@ public class ELF {
     }
 
     private void handleNanosleep() {
-        int reqAddr = registers[REG_R0];
+        /*int reqAddr = registers[REG_R0];
         int remAddr = registers[REG_R1];
         
         if (reqAddr == 0 || reqAddr >= memory.length - 7) {
@@ -1096,7 +1096,7 @@ public class ELF {
             writeIntLE(memory, remAddr + 4, 0);
         }
         
-        registers[REG_R0] = 0; // Sucesso
+        registers[REG_R0] = 0; // Sucesso*/
     }
 
     private void handleMmap2() {
@@ -1131,7 +1131,7 @@ public class ELF {
     }
 
     private void handleStat64() {
-        int pathAddr = registers[REG_R0];
+        /*int pathAddr = registers[REG_R0];
         int statbufAddr = registers[REG_R1];
         
         if (pathAddr < 0 || pathAddr >= memory.length || 
@@ -1207,7 +1207,7 @@ public class ELF {
         writeIntLE(memory, statbufAddr + 88, (int)currentTime); // st_mtime
         writeIntLE(memory, statbufAddr + 104, (int)currentTime); // st_ctime
         
-        registers[REG_R0] = 0; // Sucesso
+        registers[REG_R0] = 0; // Sucesso*/
     }
 
     private void handleLseek() {
