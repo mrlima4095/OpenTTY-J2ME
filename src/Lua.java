@@ -2499,7 +2499,10 @@ public class Lua {
                     }
 
                     else if (payload.equals("rms")) {
-
+                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        else if (arg.equals("/bin/")) { writeRMS("OpenRMS", new byte[0], 3); }
+                        else if (arg.equals("/etc/")) { writeRMS("OpenRMS", new byte[0], 5); }
+                        else if (arg.equals("/lib/")) { writeRMS("OpenRMS", new byte[0], 4); }
                     }
                 }
             }
