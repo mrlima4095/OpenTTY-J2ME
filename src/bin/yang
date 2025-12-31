@@ -27,6 +27,7 @@ local mirror = {
     ["sdk"] = { remote = "sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
     ["sync"] = { remote = "sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
     ["uname"] = { remote = "uname", here = "/bin/uname", description = "System Informations" },
+    ["viewer"] = { remote = "img.lua", here = "/bin/view", description = "View Images" },
     ["viaversion"] = { remote = "viaversion", here = "/bin/axrz", description = "Change OpenTTY API on Runtime" },
     ["webproxy"] = { remote = "proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
     ["wget"] = { remote = "wget", here = "/bin/wget", description = "Download files from Network" },
