@@ -19,15 +19,77 @@ local function whois(domain)
     end
 end
 local function ifconfig()
-    local status, output = io.popen("ifconfig")
-    if status == 200 and output ~= "null" then
-        return output
+    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
+    if not ok then
+        return tostring(conn)
+    end
+
+    local address = socket.device(conn)
+    pcall(io.close, conn, i, o)
+
+    return address
+end
+
+local function quest(info)
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("screen", info.title)
+    local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+    local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+
+    graphics.append(screen, { type = "field", label = info.label, value = info.value })
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, open)
+    graphics.handler(screen, {
+        [back] = function () graphics.display(previous) end,
+        [open] = info.open
+    })
+end
+
+local function load(opt)
+    if opt == "Get Local Address" then graphics.display(graphics.new("alert", "IP Address", ifconfig()))
+    elseif opt == "WhoIS Search" then
+        quest({
+            title = "Armitage - WhoIS",
+            label = "Domain",
+            value = "",
+            open = function (domain)
+                local previous = graphics.getCurrent()
+                local screen = graphics.new("screen", "WhoIS - " .. domain)
+                local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+
+                graphics.append(screen, whois(domain))
+                graphics.addCommand(screen, back)
+                graphics.handler(screen, { [back] = function () graphics.display(previous) end })
+            end
+        })
     else
-        return "Not connected"
+        graphics.display(graphics.new("alert", "Armitage", "Still development!"))
     end
 end
 
 local function menu()
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("list", "Armitage Tools")
+    local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+    local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+
+    graphics.append(screen, "Get Local Address")
+    graphics.append(screen, "WhoIS Search")
+    graphics.append(screen, "Port Scanner")
+    graphics.append(screen, "Ping a WebSite")
+    graphics.append(screen, "Ping a Server")
+    graphics.append(screen, "HTTPS Requester")
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, open)
+    graphics.handler(screen, {
+        [back] = function ()
+            graphics.display(previous)
+            os.exit(0)
+        end,
+        [open] = load,
+        [graphics.fire] = load
+    })
+
     graphics.display(graphics.BuildList({
         title = "Armitage Tools",
         back = { label = "Back", root = os.exit },
