@@ -446,9 +446,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (content.startsWith("[B64]")) { return decodeBase64(content.substring(5)); } 
         else { return content.getBytes(); }
     }
-
     // | (Base64)
-    // Método para codificar Base64
     public String encodeBase64(byte[] data) {
         String base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         StringBuffer result = new StringBuffer();
