@@ -2591,7 +2591,14 @@ public class Lua {
 
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
 
-        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout); } } }
+        public void run() {
+            if (root instanceof LuaFunction) {
+                Vector arg = new Vector();
+
+                try { ((LuaFunction) root).call(arg); }
+                catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout); } 
+            }
+        }
 
         public void commandAction(Command c, Displayable d) {
             try {
