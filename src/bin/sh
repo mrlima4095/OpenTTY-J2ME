@@ -43,8 +43,9 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "." then
         if args[1] then
             pcall(function ()
+                local program = os.join(args[1])
                 table.remove(args, 1)
-                    local res = io.popen(os.join(args[1]), table.concat(args, " "), true, stdout, scope)
+                    local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
                     
                     if type(res) == "number" then
                         status = res
