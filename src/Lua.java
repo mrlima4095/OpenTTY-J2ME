@@ -2523,8 +2523,15 @@ public class Lua {
                             Hashtable res = lua.run(program, code, arg);
                             midlet.print(res.get("object").toString(), "/dev/stdout", 0);
 
-                            process.put("lua", lua); process.put("handler", res.get("object"));
-                            
+                            Object obj = res.get("object");
+                            if (obj instanceof Vector) {
+                                Vector resx = (Vector) obj;
+                                Object handler = resx.elementAt(0);
+                                if (handler instanceof Lua.LuaFunction) {
+                                    process.put("lua", lua);
+                                    process.put("handler", handler);
+                                }
+                            }
                         }
                     }
 
