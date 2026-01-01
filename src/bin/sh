@@ -43,20 +43,14 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "." then
         if args[1] then
             pcall(function ()
-                local program = io.open(os.join(args[1]))
-                if program then
-                    table.remove(args, 1)
-                    local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
+                table.remove(args, 1)
+                    local res = io.popen(os.join(args[1]), table.concat(args, " "), true, stdout, scope)
                     
                     if type(res) == "number" then
                         status = res
                     elseif type(res) == "table" then
                         status = res.status
                     end
-                else
-                    print(args[1] .. ": not found")
-                    status = 127
-                end
             end)
         end
 
