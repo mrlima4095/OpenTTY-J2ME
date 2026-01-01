@@ -244,7 +244,7 @@ local function shell(args, enable, aliases, stdout, scope)
         if args[1] then
             print(args[1] .. #io.open(os.join(args[1])))
         else
-            print("")
+            print("du: usage: du [file]")
         end
     end
     -- 
