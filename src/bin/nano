@@ -22,31 +22,27 @@ function app.quit()
     os.exit(0)
 end
 function app.save(content)
-    if content ~= app.content then
-        local alert = graphics.new("alert", "Nano", "Save Buffer?")
-        graphics.addCommand(alert, app.yes)
-        graphics.addCommand(alert, app.no)
-        graphics.handler(alert, {
-            [app.yes] = function ()
-                local status = io.write(content, os.join(arg[1]))
-                local message
+    local alert = graphics.new("alert", "Nano", "Save Buffer?")
+    graphics.addCommand(alert, app.yes)
+    graphics.addCommand(alert, app.no)
+    graphics.handler(alert, {
+        [app.yes] = function ()
+            local status = io.write(content, os.join(arg[1]))
+            local message
 
-                if status == 1 then message = "java.io.IOException" elseif status == 5 then message = "read-only storage" elseif status == 13 then message = "permission denied" end
-                if status > 0 then
-                    graphics.display(previous)
-                    graphics.display(graphics.new("alert", "Nano", message))
-                    os.exit(status)
-                end
-
+            if status == 1 then message = "java.io.IOException" elseif status == 5 then message = "read-only storage" elseif status == 13 then message = "permission denied" end
+            if status > 0 then
                 graphics.display(previous)
-                os.exit(tonumber(status))
-            end,
-            [app.no] = app.quit()
-        })
-        graphics.display(alert)
-    else
-        app.quit()
-    end
+                graphics.display(graphics.new("alert", "Nano", message))
+                os.exit(status)
+            end
+
+            graphics.display(previous)
+            os.exit(tonumber(status))
+        end,
+        [app.no] = app.quit()
+    })
+    graphics.display(alert)
 end
 
 os.setproc("name", "nano")
