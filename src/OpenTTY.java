@@ -480,8 +480,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public byte[] decodeBase64(String data) {
         String base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         
-        // Remover espaços e quebras de linha
-        data = data.replace("\n", "").replace("\r", "").trim();
+        data = replace(data, "\n", "");
+        data = replace(data, "\r", "");
         
         if (data.length() % 4 != 0) {
             return null;
