@@ -17,10 +17,7 @@ io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
 os.request("1", "setsh", shell)
-
-if io.open("/home/.initrc") then
-    require("/home/.initrc")
-end
+pcall(io.popen, "/home/.initrc")
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
