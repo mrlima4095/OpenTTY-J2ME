@@ -22,14 +22,7 @@ if arg[1] and arg[2] then
     local run = graphics.new("command", { label = "Send", type = "ok", priority = 1 })
     local buffer = graphics.new("buffer", { })
 
-    java.run(function()
-        while running do
-            local x, response = pcall(io.read, i)
-            if x then
-                io.write(response, buffer, "a")
-            end
-        end
-    end, "Background")
+    java.run(function() while running do local x, response = pcall(io.read, i) if x then io.write(response, buffer, "a") end end end, "Background")
 
     graphics.append(screen, buffer)
     graphics.append(screen, { type = "field", label = "Remote (" .. remote .. ")", })
