@@ -1,5 +1,7 @@
 #!/bin/lua
 
+os.setproc("name", "lua")
+
 if arg[1] == "-e" then
     if arg[2] then
         return load(arg[2])
