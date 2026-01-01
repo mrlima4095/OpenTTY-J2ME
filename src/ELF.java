@@ -1010,35 +1010,35 @@ public class ELF {
         registers[REG_R0] = buf;
     }
     
-private void handleGettimeofday() {
-    int tvPtr = registers[REG_R0];
-    int tzPtr = registers[REG_R1];
-    
-    // DEBUG
-    midlet.print("[DEBUG] gettimeofday called: tvPtr=" + toHex(tvPtr) + 
-                 ", tzPtr=" + toHex(tzPtr), stdout);
-    
-    long currentTimeMillis = System.currentTimeMillis();
-    int seconds = (int)(currentTimeMillis / 1000);
-    int microseconds = (int)((currentTimeMillis % 1000) * 1000);
-    
-    // DEBUG
-    midlet.print("[DEBUG] Time values: seconds=" + seconds + 
-                 ", microseconds=" + microseconds, stdout);
-    
-    if (tvPtr != 0 && tvPtr >= 0 && tvPtr + 7 < memory.length) {
-        writeIntLE(memory, tvPtr, seconds);
-        writeIntLE(memory, tvPtr + 4, microseconds);
+    private void handleGettimeofday() {
+        int tvPtr = registers[REG_R0];
+        int tzPtr = registers[REG_R1];
         
-        // DEBUG: verificar o que foi escrito
-        int secRead = readIntLE(memory, tvPtr);
-        int usecRead = readIntLE(memory, tvPtr + 4);
-        midlet.print("[DEBUG] Written to memory: sec=" + secRead + 
-                     ", usec=" + usecRead, stdout);
+        // DEBUG
+        midlet.print("[DEBUG] gettimeofday called: tvPtr=" + toHex(tvPtr) + 
+                    ", tzPtr=" + toHex(tzPtr), stdout);
+        
+        long currentTimeMillis = System.currentTimeMillis();
+        int seconds = (int)(currentTimeMillis / 1000);
+        int microseconds = (int)((currentTimeMillis % 1000) * 1000);
+        
+        // DEBUG
+        midlet.print("[DEBUG] Time values: seconds=" + seconds + 
+                    ", microseconds=" + microseconds, stdout);
+        
+        if (tvPtr != 0 && tvPtr >= 0 && tvPtr + 7 < memory.length) {
+            writeIntLE(memory, tvPtr, seconds);
+            writeIntLE(memory, tvPtr + 4, microseconds);
+            
+            // DEBUG: verificar o que foi escrito
+            int secRead = readIntLE(memory, tvPtr);
+            int usecRead = readIntLE(memory, tvPtr + 4);
+            midlet.print("[DEBUG] Written to memory: sec=" + secRead + 
+                        ", usec=" + usecRead, stdout);
+        }
+        
+        registers[REG_R0] = 0;
     }
-    
-    registers[REG_R0] = 0;
-}
 
     private void handleGetppid() { registers[REG_R0] = 1; }
 
