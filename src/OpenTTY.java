@@ -413,7 +413,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | (Archive Structures)
     public int addFile(String filename, String content, String archive, String base) { return addFile(filename, content.getBytes(), archive, base); }
-    public int addFile(String filename, byte[] data, String archive, String base) { return writeRMS("OpenRMS", (delFile(filename, archive) + ("[\1BEGIN:" + filename + "\1]\n" + (isPureText(data) ? new String(data, "UTF-8") : "[B64]" + encodeBase64(data)) + "\n[\1END\1]\n")).getBytes("UTF-8"), base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4); }
+    public int addFile(String filename, byte[] data, String archive, String base) { return writeRMS("OpenRMS", (delFile(filename, archive) + ("[\1BEGIN:" + filename + "\1]\n" + (isPureText(data) ? new String(data, "UTF-8") : "[B64]" + encodeBase64(data)) + "\n[\1END\1]\n")).getBytes(), base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4); }
 
     public String delFile(String filename, String content) {
         String startTag = "[\1BEGIN:" + filename + "\1]";
