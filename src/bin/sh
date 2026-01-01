@@ -1,7 +1,5 @@
 #!/bin/lua
 
-local libcore = require("libcore")
-
 local function shell(args, enable, aliases, stdout, scope)
     local status, redirect = 0, string.find(args, ">") ~= nil
 
