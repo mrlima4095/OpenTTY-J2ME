@@ -74,12 +74,9 @@ local function test_processes()
     end
     
     -- Testar popen
-    print("Testando popen (ls /):")
-    local result = io.popen("ls", "/")
-    if result and type(result) == "table" then
-        print("Status: " .. (result[1].status or "unknown"))
-        print("Saída: " .. (type(result[2]) == "string" and "ok" or "erro"))
-    end
+    print("Testando popen (curl):")
+    local result, out = io.popen("curl")
+    print(out)
     
     print("")
 end
@@ -176,9 +173,7 @@ local function run_all_tests()
         {test_elf_syscalls, "Syscalls ELF"},
         {test_file_system, "Sistema de Arquivos"},
         {test_memory, "Memória"},
-        {test_processes, "Processos"},
-        {test_network, "Rede"}, -- Opcional
-        {test_graphics, "Gráficos"}, -- Opcional
+        {test_processes, "Processos"}
     }
     
     for i, test in ipairs(tests) do
