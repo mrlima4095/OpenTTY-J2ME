@@ -1354,7 +1354,6 @@ public class Lua {
                 return (mt == LUA_NIL || mt == null) ? null : mt;
             }
             // Package: os
-            //else if (MOD == EXEC) { if (args.isEmpty()) { } else { return new Double(midlet.processCommand(toLuaString(args.elementAt(0)), true, (args.size() < 2) ? new Integer(id) : ((args.elementAt(1) instanceof Boolean) ? new Integer((Boolean) args.elementAt(1) ? 1000 : id) :  (Integer) gotbad(2, "execute", "boolean expected, got " + type(args.elementAt(1)))), PID, stdout, father)); } }
             else if (MOD == GETENV) { return args.isEmpty() ? midlet.attributes : midlet.attributes.get(toLuaString(args.elementAt(0))); }
             else if (MOD == SETENV) { 
                 if (args.isEmpty()) { } 
@@ -2522,6 +2521,7 @@ public class Lua {
                             arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
 
                             Hashtable res = lua.run(program, code, arg);
+                            midlet.print(res.get("object").toString(), "/dev/stdout", 0);
 
                             if (res.get("object") instanceof LuaFunction) {
                                 process.put("handler", res.get("object"));
@@ -2530,10 +2530,14 @@ public class Lua {
                     }
 
                     else if (payload.equals("rms")) {
-                        if (arg == null || arg.equals("")) { return new Double(2); }
-                        else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
-                        else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
-                        else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
+                        if (uid == 0) {
+                            if (arg == null || arg.equals("")) { return new Double(2); }
+                            else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
+                            else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
+                            else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
+                        } else {
+                            return new Double(13);
+                        }
                     }
                 }
             }
