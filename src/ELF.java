@@ -108,7 +108,6 @@ public class ELF {
         return load(baos.toByteArray());
     }
     public boolean load(byte[] elfData) throws Exception {
-        midlet.print("CHEGOU AQUI!", stdout, id);
         if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout); return false; }
         if (elfData[4] != ELFCLASS32) { midlet.print("Only 32-bit ELF supported", stdout); return false; }
         if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout); return false; }
@@ -147,8 +146,7 @@ public class ELF {
     
     public Hashtable run() {
         running = true;
-        midlet.print("MANDANDO RODAR!", stdout, id);
-        
+
         Hashtable proc = midlet.genprocess("elf", id, null), ITEM = new Hashtable();
         proc.put("elf", this); midlet.sys.put(pid, proc);
         
