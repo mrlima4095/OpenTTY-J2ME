@@ -1,24 +1,7 @@
 #!/bin/lua
 
 local app, args = {}, {}
-local services = {
-    ["x11-wm"] = {
-        process = "x11-wm",
-        root = function ()
-            local debug = app.__debug("x11-wm")
-
-            return debug
-        end
-    },
-    ["system"] = {
-        process = "sh",
-        root = function ()
-            local debug = app.__debug("sh")
-
-            return debug
-        end
-    }
-}
+local services = { }
 
 function app.__debug(pname)
     local struct = {}
@@ -44,7 +27,7 @@ function app.shell()
             for k,_ in services do app.dumpsys(k) end
         else app.dumpsys(3) end
     elseif args[2] == "su" then
-
+        
     end
 end
 
