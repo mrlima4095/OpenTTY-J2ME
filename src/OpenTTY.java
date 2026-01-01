@@ -86,7 +86,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
         if (c.getLabel() == "Update") { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
-        if (c.getLabel() == "Remove init") { warn("SandBox", "Impossible!"); }
+        if (c.getLabel() == "Remove init") { writeRMS(".initrc", "", 0); warn("SandBox", "File '/gome"); }
         if (c.getLabel() == "Clear data") { warn("SandBox", "Impossible!"); }
         else {
             int size = ((Form) d).size();
