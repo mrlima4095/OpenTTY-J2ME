@@ -4,6 +4,7 @@ public class ELF {
     public void kill() { }
     
     public boolean load(Object is) throws Exception { return false; }
+    public boolean load(byte[] is) throws Exception { return false; }
 
     public Hashtable run() { }
 }
