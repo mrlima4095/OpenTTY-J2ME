@@ -21,6 +21,7 @@ local mirror = {
     ["jauth2"] = { remote = "jauth2", here = "/lib/jauth2", description = "Credentials Manager" },
     ["jdb"] = { remote = "debuggers", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
     ["nano"] = { remote = "nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
+    ["nc"] = { remote = "netcat.lua", here = "/bin/nc", description = "Connect with Remote Interfaces" },
     ["pastebin"] = { remote = "pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
     ["ping"] = { remote = "ping.lua", here = "/bin/ping", description = "Test connection delay" },
     ["sed"] = { remote = "sed.lua", here = "/bin/sed", description = "String Editor" },
