@@ -40,7 +40,7 @@ local mirror = {
 }
 
 local function connect(payload)
-    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
+    local ok, conn, i, o = pcall(socket.connect, server)
 
     io.write(payload, o)
     local content = io.read(i, 8192)
@@ -223,7 +223,7 @@ local function main()
                     print("Package: " .. pkg)
                     print("Description: " .. info.description)
                     print("Path: " .. info.here)
-                    
+
                     if info.depends then
                         print("Dependencies: " .. table.concat(info.depends, ", "))
                     end
