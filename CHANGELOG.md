@@ -117,6 +117,7 @@ graphics.render(file) -- Loads images (new Image type)
 - `rm` - Removes files/directories
 - `touch` - Creates/clears files
 - `kill` - Terminates processes
+- `nano` - Text editor
 
 ---
 
