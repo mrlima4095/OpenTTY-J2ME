@@ -43,6 +43,13 @@ local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
 
 local app = {}
 
+app.handler = function (opt)
+    if option == "New Paste" then
+    elseif option == "View Paste" then
+    elseif option == "Config. PasteBin API KEY" then
+    end
+end
+
 app.main = function ()
     local previous = graphics.getCurrent()
     local menu = graphics.new("list", "PasteBin")
@@ -58,12 +65,8 @@ app.main = function ()
     end
     graphics.addCommand(menu, back)
     graphics.addCommand(menu, select)
-    graphics.handler(menu, { [back] = function () graphics.display(previous) os.exit(0) end, [select] = function (option)
-        if option == "New Paste" then
-        elseif option == "View Paste" then
-        elseif option == "Config. PasteBin API KEY" then
-        end
-    end })
+    graphics.handler(menu, { [back] = function () graphics.display(previous) os.exit(0) end, [select] = app.handler, [graphics.fire] = app.handler })
+    graphics.display(menu)
 end
 
 os.setproc("name", "pastebin")
