@@ -100,7 +100,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (value.equals("")) { warn("Login", "Missing Credentials!"); }
                 else if (userquest.getLabel().equals("Username")) {
                     if (value.equals("root")) { warn("Login", "Invalid user name!"); }
-                    else { writeRMS("OpenRMS", value.getBytes(), 1); username = value; logged(); }
+                    else { writeRMS("OpenRMS", value.getBytes(), 1); logged(); }
                 }
                 else { writeRMS("OpenRMS", String.valueOf(value.hashCode()).getBytes(), 2); logged(); }
             } else {
@@ -110,7 +110,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (user.equals("") || password.equals("")) { warn("Login", "Missing Credentials!"); }
                 else if (user.equals("root")) { warn("Login", "Invalid user name!"); } 
                 else {
-                    writeRMS("OpenRMS", user.getBytes(), 1); username = user;
+                    writeRMS("OpenRMS", user.getBytes(), 1);
                     writeRMS("OpenRMS", String.valueOf(password.hashCode()).getBytes(), 2);
                     logged();
                 }
