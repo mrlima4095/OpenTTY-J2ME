@@ -2530,7 +2530,7 @@ public class Lua {
                     }
 
                     else if (payload.equals("rms")) {
-                        if (uid == 0) {
+                        if (((Double) uid).intValue() == 0) {
                             if (arg == null || arg.equals("")) { return new Double(2); }
                             else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
                             else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
