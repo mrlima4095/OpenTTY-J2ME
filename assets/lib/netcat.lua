@@ -47,5 +47,6 @@ if arg[1] and arg[2] then
         [info] = function () graphics.display(graphics.new("alert", "Informations", "")) end,
         [run] = function (payload) pcall(io.write, payload, o) end
     })
+    graphics.display(screen)
 
 end
