@@ -1654,7 +1654,8 @@ public class Lua {
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
                             return result;
                         } else {
-                            String code = midlet.read(program);
+                            String code; midlet.read(program);
+                            if
 
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
                             Hashtable arg = new Hashtable();
