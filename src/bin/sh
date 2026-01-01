@@ -59,6 +59,19 @@ local function shell(args, enable, aliases, stdout, scope)
         if argument ~= "" then
             status = shell(argument, false, aliases, stdout, scope)
         end
+    elseif cmd == "source" then
+        if argument ~= "" then
+            local script = io.read(os.join(argument))
+            if string.trim(script) ~= "" then
+                local cmds = string.split(script, "\n")
+                for _,c in ipairs(cmds) do
+                    status = shell(c, false, aliases, stdout, scope)
+                    if status ~= 0 then
+                        break
+                    end
+                end
+            end
+        end
     elseif cmd == "bg" then
         if argument ~= "" then
             java.run(function() shell(argument, true, aliases, stdout, scope) end, "Background")
