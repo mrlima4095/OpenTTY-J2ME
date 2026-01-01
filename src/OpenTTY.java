@@ -299,7 +299,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int write(String filename, String data, int id) { return write(filename, data.getBytes(), id); }
     public int write(String filename, byte[] data, int id) { 
         if (filename == null || filename.length() == 0) { return 2; } 
-        else if (filename.startsWith("/mnt/")) { try { FileConnection CONN = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!CONN.exists()) { CONN.create(); } OutputStream OUT = CONN.openOutputStream(); OUT.write(data); OUT.flush(); OUT.close(); CONN.close(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } } 
+        else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { out.close(); fs.close(); } } 
         else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
         else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
             String base = filename.substring(1, 4); filename = filename.substring(5);
@@ -457,27 +457,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String encodeBase64(byte[] data) {
         String base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         StringBuffer result = new StringBuffer();
-        int padding = 0;
         
         for (int i = 0; i < data.length; i += 3) {
             int b1 = data[i] & 0xFF;
             int b2 = (i + 1 < data.length) ? data[i + 1] & 0xFF : 0;
             int b3 = (i + 2 < data.length) ? data[i + 2] & 0xFF : 0;
             
-            if (i + 1 >= data.length) padding = 2;
-            else if (i + 2 >= data.length) padding = 1;
-            else padding = 0;
-            
             int triple = (b1 << 16) | (b2 << 8) | b3;
             
             result.append(base64Chars.charAt((triple >> 18) & 0x3F));
             result.append(base64Chars.charAt((triple >> 12) & 0x3F));
             
-            if (padding < 2) { result.append(base64Chars.charAt((triple >> 6) & 0x3F)); } else { result.append('='); }
-            if (padding < 1) { result.append(base64Chars.charAt(triple & 0x3F)); } else { result.append('='); }
-            
-            // Adicionar quebra de linha a cada 76 caracteres para legibilidade
-            if (((i / 3) * 4) % 76 == 0 && i > 0) { result.append('\n'); }
+            if (i + 1 < data.length) { result.append(base64Chars.charAt((triple >> 6) & 0x3F)); } else { result.append('='); }
+            if (i + 2 < data.length) { result.append(base64Chars.charAt(triple & 0x3F)); } else { result.append('='); }
         }
         
         return result.toString();
@@ -485,12 +477,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public byte[] decodeBase64(String data) {
         String base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         
-        data = replace(data, "\n", "");
-        data = replace(data, "\r", "");
-        
-        if (data.length() % 4 != 0) {
-            return null;
+        StringBuffer clean = new StringBuffer();
+        for (int i = 0; i < data.length(); i++) {
+            char c = data.charAt(i);
+            if (c != '\n' && c != '\r' && c != ' ' && c != '\t') {
+                clean.append(c);
+            }
         }
+        data = clean.toString();
+        
+        if (data.length() % 4 != 0) { return null; }
         
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         
@@ -500,8 +496,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
             
             for (int j = 0; j < 4; j++) {
                 char c = data.charAt(i + j);
-                if (c == '=') { padding++; sextets[j] = 0; }
-                else { sextets[j] = base64Chars.indexOf(c); if (sextets[j] < 0) { return null; } }
+                if (c == '=') { 
+                    padding++; 
+                    sextets[j] = 0; 
+                } else { 
+                    sextets[j] = base64Chars.indexOf(c); 
+                    if (sextets[j] < 0) { 
+                        return null; 
+                    } 
+                }
             }
             
             int triple = (sextets[0] << 18) | (sextets[1] << 12) | (sextets[2] << 6) | sextets[3];
