@@ -1654,24 +1654,20 @@ public class Lua {
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
                             return result;
                         } else {
-                            String code; midlet.read(program);
-                            if
+                            String code = midlet.read(program);
 
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
                             Hashtable arg = new Hashtable();
                             arg.put(new Double(0), program);
                             String[] list = midlet.splitArgs(arguments);
-                            for (int i = 0; i < list.length; i++) { 
-                                arg.put(new Double(i + 1), list[i]); 
-                            }
+                            for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
 
-                            
                             result.addElement(lua.run(program, code, arg));
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
                             return result;
                         }
                     } 
-                    else { throw new RuntimeException("File not found"); }
+                    else { return new Double(127); }
                 }
             } 
             else if (MOD == DIRS) {
