@@ -1583,7 +1583,7 @@ public class Lua {
                 } 
             }
             else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
-            else if (MOD == POPEN) { 
+            /*else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
                 else {
                     String program = toLuaString(args.elementAt(0)), arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
@@ -1627,6 +1627,83 @@ public class Lua {
                     } catch (Exception e) {
                         return new Double(1);
                     }
+                }
+            }*/
+            else if (MOD == POPEN) { 
+                if (args.isEmpty()) { } 
+                else {
+                    String program = toLuaString(args.elementAt(0)), arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
+                    int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
+                    Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
+                    Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
+
+                    /*InputStream is = midlet.getInputStream(program);
+                    Vector result = new Vector();
+                    if (is != null) {
+                        InputStream is = midlet.getInputStream(program);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
+                        is.close();
+
+                        byte[] data = baos.toByteArray();
+
+                        boolean isElf = (data.length >= 4 && data[0] == 0x7F && data[1] == 'E' && data[2] == 'L' && data[3] == 'F');
+                        if (isElf) {
+                            ELF elf = new ELF(midlet, out, scope, owner, null, null);
+                            
+                            if (elf.load(data)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
+                            result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                            return result;
+                        } else {
+                            String code = new String(data, "UTF-8");
+
+                            Lua lua = new Lua(midlet, owner, null, null, out, scope);
+                            Hashtable arg = new Hashtable();
+                            arg.put(new Double(0), program);
+                            String[] list = midlet.splitArgs(arguments);
+                            for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
+
+                            result.addElement(lua.run(program, code, arg));
+                            result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                            return result;
+                        }
+                    } 
+                    else { throw new RuntimeException("File not found"); }*/
+                    InputStream is = midlet.getInputStream(program);
+                    Vector result = new Vector();
+                    if (is != null) {
+                        byte[] header = new byte[4];
+                        int bytesRead = is.read(header);
+                        is.close();
+
+                        boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
+                        if (isElf) {
+                            InputStream elfStream = midlet.getInputStream(program);
+                            ELF elf = new ELF(midlet, out, scope, owner, null, null);
+                            
+                            if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
+                            result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                            return result;
+                        } else {
+                            String code = midlet.read(program);
+
+                            Lua lua = new Lua(midlet, owner, null, null, out, scope);
+                            Hashtable arg = new Hashtable();
+                            arg.put(new Double(0), program);
+                            String[] list = midlet.splitArgs(arguments);
+                            for (int i = 0; i < list.length; i++) { 
+                                arg.put(new Double(i + 1), list[i]); 
+                            }
+
+                            
+                            result.addElement(lua.run(program, code, arg));
+                            result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                            return result;
+                        }
+                    } 
+                    else { throw new RuntimeException("File not found"); }
                 }
             } 
             else if (MOD == DIRS) {
