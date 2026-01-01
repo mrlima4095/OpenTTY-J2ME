@@ -153,7 +153,7 @@ graphics.render(file) -- Loads images (new Image type)
 ## 💡 Important Notes
 
 ### 🚨 **Breaking Changes**
-1. **Graphics API removed** (Screen, List, Quest, Canvas) - Use **Lua Graphics API**
+1. **X Apps removed** (Screen, List, Quest, Canvas) - Use **Lua Graphics API**
 2. **Java commands eliminated** - Migrate to Lua solutions
 3. **MIDlet startup message** now comes from `/etc/motd`
 4. **MIDlet initialized** by `/etc/init` - Errors here cause a crash
