@@ -2065,10 +2065,7 @@ public class Lua {
                 if (args.isEmpty() || !(args.elementAt(0) instanceof Double)) { return gotbad(1, "server" , "number expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
                 else {
                     ServerSocketConnection server = (ServerSocketConnection) Connector.open("socket://:" + toLuaString(args.elementAt(0)));
-                    Vector result = new Vector();
-                    result.addElement(args.elementAt(0));
-                    result.addElement(new Double(id));
-                    midlet.network.put(server, result);
+                    midlet.network.put(server, new Double(id));
                     return server;
                 }
             }
