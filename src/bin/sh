@@ -208,9 +208,7 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     elseif cmd == "cat" then
         for i = 1, #args do
-            local fpwd = os.join(args[i])
-
-            local ok, file = pcall(io.open, fpwd)
+            local ok, file = pcall(io.open, os.join(args[i]))
             if ok and file then
                 print(string.env(io.read(file)))
             else
