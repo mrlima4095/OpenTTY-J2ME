@@ -146,11 +146,6 @@ local function main()
                         print(":: Collection installation complete!")
                         print("-> Sucessfully installed: " .. sucess_count .. "/" .. total_count .. " packages")
                     elseif mirror[pkg].remote then
-                        if installed(pkg) then
-                            print(":: Package '" .. pkg .. "' already installed, updating...")
-                            print("")
-                        end
-
                         install(pkg, true)
                     else
                         print("yang: install: " .. pkg .. ": invalid package (not remote source)")
