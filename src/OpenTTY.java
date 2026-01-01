@@ -444,7 +444,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String content = archive.substring(headerEnd, endTag).trim();
         
         if (content.startsWith("[B64]")) { return decodeBase64(content.substring(5)); } 
-        else { return content.getBytes("UTF-8"); }
+        else { return content.getBytes(); }
     }
 
 public String read(String filename) {
