@@ -240,6 +240,13 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
         print(string.trim(buff))
+    elseif cmd == "du" then
+        if args[1] then
+            print(args[1] .. #io.open(os.join(args[1])))
+        else
+            print("")
+        end
+    end
     -- 
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
     elseif cmd == "open" then
