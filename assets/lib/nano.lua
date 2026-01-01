@@ -26,9 +26,7 @@ function app.write(content)
 
     if status == 1 then message = "java.io.IOException" elseif status == 5 then message = "read-only storage" elseif status == 13 then message = "permission denied" end
     if status > 0 then
-        graphics.display(previous)
         graphics.display(graphics.new("alert", "Nano", message))
-        os.exit(status)
     end
 
     graphics.display(previous)
@@ -38,6 +36,7 @@ end
 os.setproc("name", "nano")
 
 graphics.addCommand(app.editor, app.back)
+graphics.addCommand(app.editor, app.save)
 graphics.addCommand(app.editor, app.clear)
 graphics.handler(app.editor, { [app.back] = app.quit, [app.clear] = function () graphics.SetText(app.editor, "") end, [app.save] = app.write })
 graphics.display(app.editor)
