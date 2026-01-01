@@ -77,9 +77,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.addCommand(new Command("Exit", Command.SCREEN, 1));
             screen.setCommandListener(this);
             display.setCurrent(screen);
-        } else {
-            init();
-        }
+        } 
+        else { init(); }
+    }
+    private void logged() {
+        Alert alert = new Alert("OpenTTY", "Reopen MIDlet to access console", AlertType.INFO);
+        alert.setImage(readImg("/icon.png"));
+        alert.setTimeout(Alert.FOREVER);
+        alert.addCommand(new Command("Exit", Command.EXIT, 1));
+        alert.setCommandListener(this);
+        display.display(alert);
     }
     // | (Graphical Handler)
     public void commandAction(Command c, Displayable d) {
