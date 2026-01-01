@@ -447,50 +447,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else { return content.getBytes(); }
     }
 
-public String read(String filename) {
-    try {
-        if (filename.startsWith("/tmp/")) { 
-            return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; 
-        }
-        
-        // Para arquivos virtuais
-        if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
-            byte[] data = readBinary(filename.substring(5), 
-                                    loadRMS("OpenRMS", 
-                                           filename.startsWith("/bin/") ? 3 : 
-                                           filename.startsWith("/etc/") ? 5 : 4));
-            
-            if (data != null) {
-                try {
-                    // Tentar converter para string
-                    return new String(data, "UTF-8");
-                } catch (Exception e) {
-                    // Se não for UTF-8 válido, retornar informação sobre binário
-                    return "[Binary data, " + data.length + " bytes]";
-                }
-            }
-        }
-        
-        // Método original para outros arquivos
-        InputStream is = getInputStream(filename);
-        if (is == null) { 
-            return ""; 
-        }
-        
-        InputStreamReader reader = new InputStreamReader(is, "UTF-8");
-        StringBuffer sb = new StringBuffer();
-        int ch;
-        while ((ch = reader.read()) != -1) { 
-            sb.append((char) ch); 
-        }
-        reader.close();
-        is.close();
-        
-        return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
-    } catch (Exception e) { 
-        return ""; 
-    }
-}
     // | (Base64)
     // Método para codificar Base64
     public String encodeBase64(byte[] data) {
