@@ -5,5 +5,5 @@ public class ELF {
     
     public boolean load(Object is) throws Exception { return false; }
 
-    public void run() { }
+    public Hashtable run() { }
 }
