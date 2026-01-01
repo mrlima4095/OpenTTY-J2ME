@@ -1583,52 +1583,6 @@ public class Lua {
                 } 
             }
             else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
-            /*else if (MOD == POPEN) { 
-                if (args.isEmpty()) { } 
-                else {
-                    String program = toLuaString(args.elementAt(0)), arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
-                    int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
-                    Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
-                    Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
-
-                    try {
-                        InputStream is = midlet.getInputStream(program);
-                        if (is != null) {
-                            byte[] header = new byte[4];
-                            int bytesRead = is.read(header);
-                            is.close();
-
-                            boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
-                            midlet.print("Running " + program + " as " + (isElf ? "ELF" : "Lua Script"), stdout, id);
-                            if (isElf) {
-                                InputStream elfStream = midlet.getInputStream(program);
-                                ELF elf = new ELF(midlet, out, scope, owner, null, null);
-                                
-                                if (elf.load(elfStream)) { elf.run(); } else { return new Double(1); }
-                            } else {
-                                String code = midlet.read(program);
-
-                                Lua lua = new Lua(midlet, owner, null, null, out, scope);
-                                Hashtable arg = new Hashtable();
-                                arg.put(new Double(0), program);
-                                String[] list = midlet.splitArgs(arguments);
-                                for (int i = 0; i < list.length; i++) { 
-                                    arg.put(new Double(i + 1), list[i]); 
-                                }
-
-                                Vector result = new Vector();
-                                result.addElement(lua.run(program, code, arg));
-                                result.addElement(out instanceof StringBuffer ? out.toString() : out);
-                                return result;
-                            }
-                        } else {
-                            return new Double(127);
-                        }
-                    } catch (Exception e) {
-                        return new Double(1);
-                    }
-                }
-            }*/
             else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
                 else {
@@ -2637,14 +2591,7 @@ public class Lua {
 
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
 
-        public void run() {
-            if (root instanceof LuaFunction) {
-                Vector arg = new Vector();
-
-                try { ((LuaFunction) root).call(arg); }
-                catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout); } 
-            }
-        }
+        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout); } } }
 
         public void commandAction(Command c, Displayable d) {
             try {
