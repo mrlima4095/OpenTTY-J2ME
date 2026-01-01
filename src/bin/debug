@@ -177,8 +177,8 @@ local function run_all_tests()
         {test_file_system, "Sistema de Arquivos"},
         {test_memory, "Memória"},
         {test_processes, "Processos"},
-        -- {test_network, "Rede"}, -- Opcional
-        -- {test_graphics, "Gráficos"}, -- Opcional
+        {test_network, "Rede"}, -- Opcional
+        {test_graphics, "Gráficos"}, -- Opcional
     }
     
     for i, test in ipairs(tests) do
@@ -187,7 +187,6 @@ local function run_all_tests()
         if not ok then
             print("❌ Erro em " .. test[2] .. ": " .. err)
         end
-        os.execute("sleep 0.1") -- Pequena pausa
     end
     
     print("✅ Debug completo!")
