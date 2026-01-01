@@ -223,7 +223,7 @@ local function main()
                     print("Package: " .. pkg)
                     print("Description: " .. info.description)
                     print("Path: " .. info.here)
-                    
+
                     if info.depends then
                         print("Dependencies: " .. table.concat(info.depends, ", "))
                     end
