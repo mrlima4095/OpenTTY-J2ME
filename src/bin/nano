@@ -28,9 +28,6 @@ function app.write(content)
     if status > 0 then
         graphics.display(graphics.new("alert", "Nano", message))
     end
-
-    graphics.display(previous)
-    os.exit(tonumber(status))
 end
 
 os.setproc("name", "nano")
