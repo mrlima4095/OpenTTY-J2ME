@@ -85,7 +85,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         alert.setTimeout(Alert.FOREVER);
         alert.addCommand(new Command("Exit", Command.EXIT, 1));
         alert.setCommandListener(this);
-        display.display(alert);
+        display.setCurrent(alert);
     }
     // | (Graphical Handler)
     public void commandAction(Command c, Displayable d) {
