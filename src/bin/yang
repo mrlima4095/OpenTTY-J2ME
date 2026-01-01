@@ -50,14 +50,6 @@ local function connect(payload)
     return content
 end
 
-local function installed(pkg)
-    if not mirror[pkg] or not mirror[pkg].here then
-        return false
-    end
-
-    return io.open(mirror[pkg].here)
-end
-
 local function install(pkg, verbose)
     if verbose then
         print(":: Installing " .. pkg .. "...")
@@ -68,9 +60,7 @@ local function install(pkg, verbose)
     if info.depends then
         print(":: Building dependencies")
         for _, dep in ipairs(info.depends) do
-            if not installed(dep) then
-                install(pkg, verbose)
-            end
+            install(dep, verbose)
         end
     end
 
@@ -102,19 +92,19 @@ local function remove(pkg, verbose)
 
     local info = mirror[pkg]
 
-    if installed(pkg) then
-        local status = os.remove(info.here)
+    local status = os.remove(info.here)
 
-        if verbose then
-            if status == 0 then
-                print(":: Removed " .. info.here)
-            else
-                print(":: Removing error for " .. pkg)
-            end
+    if verbose then
+        if status == 0 then
+            print(":: Removed " .. info.here)
+        elseif status == 127 then
+            print(":: Package not installed")
+        else
+            print(":: Removing error for " .. pkg)
         end
-
-        return status == 0
     end
+
+    return status == 0
 end
 
 local function main()
@@ -199,11 +189,7 @@ local function main()
 
                         print(":: Removed " .. remove_count .. " packages from collection '" .. pkg .. "'")
                     elseif mirror[pkg].remote then
-                        if not installed(pkg) then
-                            print(":: Package '" .. pkg .. "' not installed")
-                        else
-                            remove(pkg, true)
-                        end
+                        remove(pkg, true)
                     else
                         print("yang: remove: " .. pkg .. ": invalid package")
                         os.exit(2)
@@ -228,12 +214,7 @@ local function main()
         print("Available packages:")
         for name, info in pairs(mirror) do
             if not info.packages then
-                local status = ""
-                if installed(name) then
-                    status = " [INSTALLED]"
-                end
-
-                print("- " .. name .. ": " .. info.description .. status)
+                print("- " .. name .. ": " .. info.description)
             end
         end
     elseif arg[1] == "info" then
@@ -250,12 +231,6 @@ local function main()
                     
                     if info.depends then
                         print("Dependencies: " .. table.concat(info.depends, ", "))
-                    end
-                    
-                    if installed(pkg) then
-                        print("Status: Installed")
-                    else
-                        print("Status: Uninstalled")
                     end
                 end
             else
