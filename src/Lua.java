@@ -1599,7 +1599,7 @@ public class Lua {
                             is.close();
 
                             boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
-                            midlet.print("Running " + program + " as " + (isElf ? "ELF" : "Lua Script"))
+                            midlet.print("Running " + program + " as " + (isElf ? "ELF" : "Lua Script"));
                             if (isElf) {
                                 InputStream elfStream = midlet.getInputStream(program);
                                 ELF elf = new ELF(midlet, out, scope, owner, null, null);
