@@ -140,7 +140,7 @@ graphics.render(file) -- Loads images (new Image type)
 - `htop` - Memory/process panel
 - `sync` - Update checker
 - `autogc` - Automatic garbage collector
-- `hash` - Hash generator
+- `hash` - Gets file hashCode
 
 ### 🎨 **Entertainment and Effects**
 - `cmatrix` - Matrix effect
