@@ -23,7 +23,7 @@ function app.quit()
 end
 function app.save(content)
     if content ~= app.content then
-        local alert = graphics.display(graphics.new("alert", "Nano", "Save Buffer?"))
+        local alert = graphics.new("alert", "Nano", "Save Buffer?")
         graphics.addCommand(alert, app.yes)
         graphics.addCommand(alert, app.no)
         graphics.handler(alert, {
@@ -43,6 +43,7 @@ function app.save(content)
             end,
             [app.no] = app.quit()
         })
+        graphics.display(alert)
 
         return
     else
