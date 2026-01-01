@@ -36,6 +36,7 @@ end
 os.setproc("name", "nano")
 
 graphics.addCommand(app.editor, app.back)
+graphics.addCommand(app.editor, app.save)
 graphics.addCommand(app.editor, app.clear)
 graphics.handler(app.editor, { [app.back] = app.quit, [app.clear] = function () graphics.SetText(app.editor, "") end, [app.save] = app.write })
 graphics.display(app.editor)
