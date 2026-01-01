@@ -21,7 +21,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
 
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable();
-    public String username = read("/home/OpenRMS"), build = "2025-1.17-03x07";
+    public String username = read("/home/OpenRMS"), build = "2026-1.17-03x08";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -230,7 +230,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return null;
         } 
         else if (filename.startsWith("/mnt/")) { return ((FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ)).openInputStream(); } 
-        else if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? new ByteArrayInputStream(((String) tmp.get(filename)).getBytes("UTF-8")) : null; } 
+        else if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? new ByteArrayInputStream((byte[]) tmp.get(filename)) : null; } 
         else {
             if (filename.startsWith("/dev/")) {
                 filename = filename.substring(5);
@@ -241,28 +241,28 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (filename.startsWith("/bin/")) {
                 filename = filename.substring(5);
-                if (useCache && cache.containsKey("/bin/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/bin/" + filename)).getBytes("UTF-8")); }
+                if (useCache && cache.containsKey("/bin/" + filename)) { return new ByteArrayInputStream((byte[]) cache.get("/bin/" + filename)); }
 
-                String content = read(filename, loadRMS("OpenRMS", 3));
-                if (content != null) { if (useCache) { cache.put("/bin/" + filename, content); } return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                byte[] content = read(filename, loadRMS("OpenRMS", 3));
+                if (content != null) { if (useCache) { cache.put("/bin/" + filename, content); } return new ByteArrayInputStream(content); }
 
                 filename = "/bin/" + filename;
             }
             else if (filename.startsWith("/etc/")) {
                 filename = filename.substring(5);
-                if (useCache && cache.containsKey("/etc/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/etc/" + filename)).getBytes("UTF-8")); }
+                if (useCache && cache.containsKey("/etc/" + filename)) { return new ByteArrayInputStream((byte[]) cache.get("/etc/" + filename)); }
 
-                String content = read(filename, loadRMS("OpenRMS", 5));
-                if (content != null) { if (useCache) { cache.put("/etc/" + filename, content); } return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                byte[] content = read(filename, loadRMS("OpenRMS", 5));
+                if (content != null) { if (useCache) { cache.put("/etc/" + filename, content); } return new ByteArrayInputStream(content); }
 
                 filename = "/etc/" + filename;
             }
             else if (filename.startsWith("/lib/")) {
                 filename = filename.substring(5);
-                if (useCache && cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream(((String) cache.get("/lib/" + filename)).getBytes("UTF-8")); }
+                if (useCache && cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream((byte[]) cache.get("/lib/" + filename)); }
 
-                String content = read(filename, loadRMS("OpenRMS", 4));
-                if (content != null) { if (useCache) { cache.put("/lib/" + filename, content); } return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+                byte[] content = read(filename, loadRMS("OpenRMS", 4));
+                if (content != null) { if (useCache) { cache.put("/lib/" + filename, content); } return new ByteArrayInputStream(content); }
 
                 filename = "/lib/" + filename;
             }
@@ -274,7 +274,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Image readImg(String filename) { try { InputStream is = getInputStream(filename); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
     public String read(String filename) {
         try {
-            if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; }
             InputStream is = getInputStream(filename);
             if (is == null) { return ""; }
             
@@ -302,8 +301,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (id != 0) { return 13; }
             else { if (useCache) { cache.put("/" + base + "/" + filename, new String(data)); } return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4), base); }
         }
+        else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
+            String base = filename.substring(1, 4); filename = filename.substring(5);
+
+            if (filename.equals("")) { return 2; } 
+            else if (id != 0) { return 13; }
+            else { 
+                if (useCache) { cache.put("/" + base + "/" + filename, data); } 
+
+                int index = base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4;
+                String archive = loadRMS("OpenRMS", index);
+                return addFile(filename, data, archive, base);
+            }
+        }
         else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { return 5; } }
-        else if (filename.startsWith("/tmp/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else { tmp.put(filename, new String(data)); } }
+        else if (filename.startsWith("/tmp/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else { tmp.put(filename, data); } }
         else if (filename.startsWith("/")) { return 5; }
         
         return 0; 
@@ -400,9 +412,159 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return result.toString();
     }
     // | (Archive Structures)
-    public int addFile(String filename, String content, String archive, String base) { return writeRMS("OpenRMS", (delFile(filename, archive) + "[\1BEGIN:" + filename + "\1]\n" + content + "\n[\1END\1]\n").getBytes(), base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4); }
-    public String delFile(String filename, String content) { String startTag = "[\1BEGIN:" + filename + "\1]"; int start = content.indexOf(startTag); if (start == -1) { return content; } int end = content.indexOf("[\1END\1]", start); if (end == -1) { return content; } end += "[\1END\1]".length(); return content.substring(0, start) + content.substring(end); }
-    public String read(String filename, String content) { String startTag = "[\1BEGIN:" + filename + "\1]"; int start = content.indexOf(startTag); if (start == -1) { return null; } start += startTag.length() + 1; int end = content.indexOf("[\1END\1]", start); if (end == -1) { return null; } return content.substring(start, end).trim(); }
+    public int addFile(String filename, String content, String archive, String base) { return addFile(filename, content.getBytes("UTF-8"), archive, base); }
+    public int addFile(String filename, byte[] data, String archive, String base) { return writeRMS("OpenRMS", (delFile(filename, archive) + ("[\1BEGIN:" + filename + "\1]\n" + (isPureText(data) ? new String(data, "UTF-8") : "[B64]" + encodeBase64(data)) + "\n[\1END\1]\n")).getBytes("UTF-8"), base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4); }
+
+    public String delFile(String filename, String content) {
+        String startTag = "[\1BEGIN:" + filename + "\1]";
+        int start = content.indexOf(startTag);
+        if (start == -1) { return content; }
+        
+        int end = content.indexOf("[\1END\1]", start);
+        if (end == -1) { return content; }
+        
+        end += "[\1END\1]".length();
+        
+        if (end < content.length() && content.charAt(end) == '\n') { end++; }
+        
+        return content.substring(0, start) + content.substring(end);
+    }
+    public byte[] read(String filename, String archive) {
+        String startTag = "[\1BEGIN:" + filename + "\1]";
+        int start = archive.indexOf(startTag);
+        if (start == -1) { return null; }
+        
+        int headerEnd = archive.indexOf('\n', start);
+        if (headerEnd == -1) { return null; }
+        headerEnd++; 
+        
+        int endTag = archive.indexOf("[\1END\1]", headerEnd);
+        if (endTag == -1) { return null; }
+        
+        String content = archive.substring(headerEnd, endTag).trim();
+        
+        if (content.startsWith("[B64]")) { return decodeBase64(content.substring(5)); } 
+        else { return content.getBytes("UTF-8"); }
+    }
+
+public String read(String filename) {
+    try {
+        if (filename.startsWith("/tmp/")) { 
+            return tmp.containsKey(filename = filename.substring(5)) ? (String) tmp.get(filename) : ""; 
+        }
+        
+        // Para arquivos virtuais
+        if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
+            byte[] data = readBinary(filename.substring(5), 
+                                    loadRMS("OpenRMS", 
+                                           filename.startsWith("/bin/") ? 3 : 
+                                           filename.startsWith("/etc/") ? 5 : 4));
+            
+            if (data != null) {
+                try {
+                    // Tentar converter para string
+                    return new String(data, "UTF-8");
+                } catch (Exception e) {
+                    // Se não for UTF-8 válido, retornar informação sobre binário
+                    return "[Binary data, " + data.length + " bytes]";
+                }
+            }
+        }
+        
+        // Método original para outros arquivos
+        InputStream is = getInputStream(filename);
+        if (is == null) { 
+            return ""; 
+        }
+        
+        InputStreamReader reader = new InputStreamReader(is, "UTF-8");
+        StringBuffer sb = new StringBuffer();
+        int ch;
+        while ((ch = reader.read()) != -1) { 
+            sb.append((char) ch); 
+        }
+        reader.close();
+        is.close();
+        
+        return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
+    } catch (Exception e) { 
+        return ""; 
+    }
+}
+    // | (Base64)
+    // Método para codificar Base64
+    public String encodeBase64(byte[] data) {
+        String base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        StringBuffer result = new StringBuffer();
+        int padding = 0;
+        
+        for (int i = 0; i < data.length; i += 3) {
+            int b1 = data[i] & 0xFF;
+            int b2 = (i + 1 < data.length) ? data[i + 1] & 0xFF : 0;
+            int b3 = (i + 2 < data.length) ? data[i + 2] & 0xFF : 0;
+            
+            if (i + 1 >= data.length) padding = 2;
+            else if (i + 2 >= data.length) padding = 1;
+            else padding = 0;
+            
+            int triple = (b1 << 16) | (b2 << 8) | b3;
+            
+            result.append(base64Chars.charAt((triple >> 18) & 0x3F));
+            result.append(base64Chars.charAt((triple >> 12) & 0x3F));
+            
+            if (padding < 2) { result.append(base64Chars.charAt((triple >> 6) & 0x3F)); } else { result.append('='); }
+            if (padding < 1) { result.append(base64Chars.charAt(triple & 0x3F)); } else { result.append('='); }
+            
+            // Adicionar quebra de linha a cada 76 caracteres para legibilidade
+            if (((i / 3) * 4) % 76 == 0 && i > 0) { result.append('\n'); }
+        }
+        
+        return result.toString();
+    }
+    public byte[] decodeBase64(String data) {
+        String base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        
+        // Remover espaços e quebras de linha
+        data = data.replace("\n", "").replace("\r", "").trim();
+        
+        if (data.length() % 4 != 0) {
+            return null;
+        }
+        
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        
+        for (int i = 0; i < data.length(); i += 4) {
+            int[] sextets = new int[4];
+            int padding = 0;
+            
+            for (int j = 0; j < 4; j++) {
+                char c = data.charAt(i + j);
+                if (c == '=') { padding++; sextets[j] = 0; }
+                else { sextets[j] = base64Chars.indexOf(c); if (sextets[j] < 0) { return null; } }
+            }
+            
+            int triple = (sextets[0] << 18) | (sextets[1] << 12) | (sextets[2] << 6) | sextets[3];
+            
+            baos.write((triple >> 16) & 0xFF);
+            if (padding < 2) { baos.write((triple >> 8) & 0xFF); }
+            if (padding < 1) { baos.write(triple & 0xFF); }
+        }
+        
+        return baos.toByteArray();
+    }
+    private boolean isPureText(byte[] data) {
+        int textCount = 0;
+        int sampleSize = Math.min(data.length, 100);
+        
+        for (int i = 0; i < sampleSize; i++) {
+            byte b = data[i];
+            if ((b >= 32 && b <= 126) || b == 9 || b == 10 || b == 13) {
+                textCount++;
+            }
+        }
+        
+        return (textCount * 100 / sampleSize) > 95; // 95% de caracteres textuais
+    }    
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
     // Java Virtual Machine
