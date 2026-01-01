@@ -17,7 +17,10 @@ io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
 os.request("1", "setsh", shell)
-_ = load(io.read("/home/.initrc"))
+
+if io.open("/home/.initrc") then
+    require("/home/.initrc")
+end
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
