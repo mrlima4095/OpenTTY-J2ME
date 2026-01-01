@@ -44,8 +44,6 @@ function app.save(content)
             [app.no] = app.quit()
         })
         graphics.display(alert)
-
-        return
     else
         app.quit()
     end
