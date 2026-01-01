@@ -43,7 +43,7 @@ local function shell(args, enable, aliases, stdout, scope)
         end
         return res.status
     elseif cmd == "." then
-        if arg[1] then
+        if args[1] then
             local program = os.join(args[1])
             table.remove(args, 1)
             local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
