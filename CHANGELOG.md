@@ -134,7 +134,7 @@ graphics.render(file) -- Loads images (new Image type)
 - `wget` - File download
 - `pastebin` - Pastebin client
 - `shprxy` - WebProxy server
-- `axrz` - ViaVersion interface
+- `nc` - Interactive Connection
 
 ### 📊 **System and Monitoring**
 - `htop` - Memory/process panel
