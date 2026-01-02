@@ -239,42 +239,42 @@ public Hashtable run() {
     midlet.sys.put(pid, proc);
     
     try {
-        System.out.println("=== ELF START DEBUG ===");
-        System.out.println("PC start: " + toHex(pc));
-        System.out.println("SP: " + toHex(registers[REG_SP]));
+        midelt.print("=== ELF START DEBUG ===", stdout, id);
+        midelt.print("PC start: " + toHex(pc), stdout, id);
+        midelt.print("SP: " + toHex(registers[REG_SP]), stdout, id);
         
         int instructionCount = 0;
         while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
             if (instructionCount++ > 1000) {
-                System.out.println("DEBUG: Stopping after 1000 instructions");
+                midelt.print("DEBUG: Stopping after 1000 instructions", stdout, id);
                 break;
             }
             
-            System.out.println("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7]);
+            midelt.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7]);
             
             int instruction = readIntLE(memory, pc);
-            System.out.println("DEBUG: Instr at PC: " + toHex(instruction));
+            midelt.print("DEBUG: Instr at PC: " + toHex(instruction), stdout, id);
             pc += 4;
             
             try {
                 executeInstruction(instruction);
             } catch (Exception e) {
-                System.out.println("DEBUG: Exception in executeInstruction: " + e);
+                midelt.print("DEBUG: Exception in executeInstruction: " + e, stdout, id);
                 e.printStackTrace();
                 running = false;
                 break;
             }
         }
-        System.out.println("=== ELF END DEBUG ===");
+        midelt.print("=== ELF END DEBUG ===", stdout, id);
     } 
     catch (Throwable e) {  // ← Catch Throwable, não apenas Exception
-        System.out.println("=== ELF CRASH DEBUG ===");
-        System.out.println("CRASH: " + e.getClass().getName() + ": " + e.getMessage());
+        midelt.print("=== ELF CRASH DEBUG ===", stdout, id);
+        midelt.print("CRASH: " + e.getClass().getName() + ": " + e.getMessage(), stdout, id);
         e.printStackTrace();
         running = false; 
     } 
     finally { 
-        System.out.println("=== ELF FINALLY DEBUG ===");
+        midelt.print("=== ELF FINALLY DEBUG ===", stdout, id);
         if (midlet.sys.containsKey(pid)) { 
             midlet.sys.remove(pid); 
         } 
