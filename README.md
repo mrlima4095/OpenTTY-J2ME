@@ -84,10 +84,48 @@ It exposes a SandBox with Lua interpreter and an ARM 32 ELF emulator (in develop
 - Set up username and password
 - Restart MIDlet after configuration
 
-### 2. **Basic Commands**
-```shell
+### 2. **Commands**
+# 📋 OpenTTY Shell Commands Table
 
-```
+| Category | Command | Description | Usage Example | Status Codes |
+|----------|---------|-------------|---------------|--------------|
+| **Process Management** | `ps` | List running processes | `ps` | Always 0 |
+| | `bg` | Run command in background | `bg sleep 5` | Command exit code |
+| | `exec` | Execute multiple commands | `exec ls pwd whoami "echo gg"` | Last command exit code |
+| **Permissions & Users** | `su` | Switch user (to root or other) | `su` or `su root password` | 0=Success, 13=Permission denied |
+| | `whoami` | Show current username | `whoami` | Always 0 |
+| | `logname` | Show login name | `logname` | Always 0 |
+| | `id` | Show user ID | `id` | Always 0 |
+| **Session Control** | `exit` | Exit/close the MIDlet | `exit` | Terminates session |
+| **Shell Management** | `alias` | Create/view shell aliases | `alias ll='ls -l'` or `alias` | 127=Alias not found |
+| | `unalias` | Remove shell aliases | `unalias ll` | 127=Alias not found |
+| | `env` | Set/view environment variables | `env PATH=/bin` or `env` | 127=Var not found |
+| | `set` | Same as `env` | `set` | 127=Var not found |
+| | `export` | Same as `env` | `export` | 127=Var not found |
+| | `unset` | Remove environment variables | `unset PATH` | Always 0 |
+| **Shell Utilities** | `eval` | Evaluate shell command string | `eval "echo hello"` | Command exit code |
+| | `echo` | Print text to stdout | `echo "Hello World"` | Always 0 |
+| | `date` | Show current date/time | `date` | Always 0 |
+| | `clear` | Clear the screen | `clear` | Always 0 |
+| | `builtin` | Execute builtin ignoring aliases | `builtin ls` | Command exit code |
+| | `command` | Same as `builtin` | `command ls` | Command exit code |
+| | `source` | Execute commands from file | `source script.sh` | Last command exit code |
+| **File System** | `pwd` | Print working directory | `pwd` | Always 0 |
+| | `cd` | Change directory | `cd /home/` | 0=Success, 127=Not found, 20=Not a directory |
+| | `cat` | Display file contents | `cat /etc/motd` | 127=File not found |
+| | `ls` | List directory contents | `ls` or `ls /home/` | Always 0 |
+| | `open` | Open file/connection | `open http://example.com` | 127=Not found, 1=Error |
+| **System Info** | `uptime` | Show system uptime | `uptime` | Always 0 |
+| **Window/Graphics** | `xterm` | Switch to default terminal screen | `xterm` | Always 0 |
+| | `warn` | Display alert dialog | `warn "Title" "Message"` | Always 0 |
+| | `title` | Change window title | `title "My Terminal"` | Always 0 |
+| | `buff` | Set stdin buffer text | `buff "command to run"` | Always 0 |
+| **System Control** | `gc` | Run garbage collector | `gc` | Always 0 |
+| **Placeholders** | `true` | Always succeeds (no-op) | `true` | Always 0 |
+| | `false` | Always fails | `false` | Always 255 |
+| **Comment** | `#` | Comment (ignored) | `# This is a comment` | Always 0 |
+| **Special** | `.` | Execute program (current dir) | `. program` | Program exit code |
+| **Redirection** | `>` | Redirect output to file | `echo hello > file.txt` | Command exit code |
 
 ### 3. **Lua Script Examples**
 ```lua
