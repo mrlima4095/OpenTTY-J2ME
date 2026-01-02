@@ -190,12 +190,8 @@ public class ELF {
         int e_phnum = readShortLE(elfData, 44);
         int e_phentsize = readShortLE(elfData, 42);
         
-        if (e_type != ET_EXEC) { 
-            midlet.print("Not an executable ELF", stdout); return false; 
-        }
-        if (e_machine != EM_ARM) { 
-            midlet.print("Not an ARM executable", stdout); return false; 
-        }
+        if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout); return false; }
+        if (e_machine != EM_ARM) { midlet.print("Not an ARM executable", stdout); return false; }
         
         pc = e_entry;
         registers[REG_SP] = stackPointer;
@@ -1689,8 +1685,7 @@ public class ELF {
     }
 
     private void handleMkdir() {
-        int pathAddr = registers[REG_R0];
-        int mode = registers[REG_R1];
+        int pathAddr = registers[REG_R0], mode = registers[REG_R1];
         
         if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
         
@@ -1723,10 +1718,7 @@ public class ELF {
     private void handleRmdir() {
         int pathAddr = registers[REG_R0];
         
-        if (pathAddr < 0 || pathAddr >= memory.length) {
-            registers[REG_R0] = -1; // EFAULT
-            return;
-        }
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
         
         // Ler caminho
         StringBuffer pathBuf = new StringBuffer();
@@ -1737,54 +1729,31 @@ public class ELF {
         }
         String path = pathBuf.toString();
         
-        if (path.startsWith("/home/")) {
-            // Não suportado em /home/
-            registers[REG_R0] = -38; // ENOSYS
-            return;
-        }
-        
         if (path.startsWith("/mnt/")) {
             try {
                 FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
-                if (!conn.exists()) {
-                    conn.close();
-                    registers[REG_R0] = -2; // ENOENT
-                    return;
-                }
-                if (!conn.isDirectory()) {
-                    conn.close();
-                    registers[REG_R0] = -20; // ENOTDIR
-                    return;
-                }
+                if (!conn.exists()) { conn.close(); registers[REG_R0] = -2; return; }
+                if (!conn.isDirectory()) { conn.close(); registers[REG_R0] = -20; return; }
                 
                 // Verificar se diretório está vazio
                 Enumeration list = conn.list();
                 if (list != null && list.hasMoreElements()) {
                     conn.close();
-                    registers[REG_R0] = -39; // ENOTEMPTY
+                    registers[REG_R0] = -39; 
                     return;
                 }
                 
                 conn.delete();
                 conn.close();
                 registers[REG_R0] = 0; // Sucesso
-            } catch (Exception e) {
-                registers[REG_R0] = -1; // EPERM
-            }
-        } else {
-            // Outras estruturas não suportam diretórios
-            registers[REG_R0] = -38; // ENOSYS
-        }
+            } catch (Exception e) { registers[REG_R0] = -1; }
+        } else { registers[REG_R0] = -38; }
     }
 
     private void handleStat() {
-        int pathAddr = registers[REG_R0];
-        int statbufAddr = registers[REG_R1];
+        int pathAddr = registers[REG_R0], statbufAddr = registers[REG_R1];
         
-        if (pathAddr < 0 || pathAddr >= memory.length || statbufAddr < 0 || statbufAddr >= memory.length) {
-            registers[REG_R0] = -1; // EFAULT
-            return;
-        }
+        if (pathAddr < 0 || pathAddr >= memory.length || statbufAddr < 0 || statbufAddr >= memory.length) { registers[REG_R0] = -1; return; }
         
         // Ler caminho
         StringBuffer pathBuf = new StringBuffer();
@@ -1805,11 +1774,9 @@ public class ELF {
         
         // st_mode
         int st_mode = 0;
-        if (path.endsWith("/")) {
-            st_mode |= S_IFDIR | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
-        } else {
-            st_mode |= 0100644; // Arquivo regular
-        }
+        if (path.endsWith("/")) { st_mode |= S_IFDIR | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH; } 
+        else { st_mode |= 0100644; } // Arquivo regular
+
         writeIntLE(memory, statbufAddr + 16, st_mode);
         
         // st_size
@@ -1828,7 +1795,7 @@ public class ELF {
         }
         writeIntLE(memory, statbufAddr + 44, st_size);
         
-        registers[REG_R0] = 0; // Sucesso
+        registers[REG_R0] = 0;
     }
 
     private void handleFstat() {
@@ -1841,11 +1808,7 @@ public class ELF {
         }
         
         // Zerar buffer
-        for (int i = 0; i < 108; i++) {
-            if (statbufAddr + i < memory.length) {
-                memory[statbufAddr + i] = 0;
-            }
-        }
+        for (int i = 0; i < 108; i++) { if (statbufAddr + i < memory.length) { memory[statbufAddr + i] = 0; } }
         
         Integer fdKey = new Integer(fd);
         
@@ -1947,44 +1910,26 @@ public class ELF {
     }
 
     private void handleGetpriority() {
-        int which = registers[REG_R0];
-        int who = registers[REG_R1];
-        
-        // Verificar processo atual
+        int which = registers[REG_R0], who = registers[REG_R1];
+ 
         if (who == 0) {
-            // Retornar prioridade do processo atual
             Object priorityObj = proc.get("priority");
-            if (priorityObj instanceof Integer) {
-                registers[REG_R0] = ((Integer) priorityObj).intValue();
-            } else {
-                // Prioridade padrão: 20 (nice value)
-                registers[REG_R0] = 20;
-            }
-        } else {
-            // Apenas suporta processo atual
-            registers[REG_R0] = -22; // EINVAL
-        }
+            if (priorityObj instanceof Integer) { registers[REG_R0] = ((Integer) priorityObj).intValue(); }
+            else { registers[REG_R0] = 20; }
+        } else { registers[REG_R0] = -22; }
     }
 
     private void handleSetpriority() {
-        int which = registers[REG_R0];
-        int who = registers[REG_R1];
-        int prio = registers[REG_R2];
-        
-        // Apenas suporta processo atual
+        int which = registers[REG_R0], who = registers[REG_R1], prio = registers[REG_R2];
+
         if (who == 0) {
-            // Armazenar no hashtable do processo
             proc.put("priority", new Integer(prio));
-            registers[REG_R0] = 0; // Sucesso
-        } else {
-            registers[REG_R0] = -22; // EINVAL
-        }
+            registers[REG_R0] = 0;
+        } else { registers[REG_R0] = -22; }
     }
 
     private void handleLseek() {
-        int fd = registers[REG_R0];
-        int offset = registers[REG_R1];
-        int whence = registers[REG_R2];
+        int fd = registers[REG_R0], offset = registers[REG_R1], whence = registers[REG_R2];
         
         Integer fdKey = new Integer(fd);
         
@@ -2040,10 +1985,7 @@ public class ELF {
         
         Integer oldKey = new Integer(oldfd);
         
-        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) {
-            registers[REG_R0] = -9; // EBADF
-            return;
-        }
+        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) { registers[REG_R0] = -9; return; }
         
         // Fechar newfd se estiver aberto
         Integer newKey = new Integer(newfd);
@@ -2072,12 +2014,8 @@ public class ELF {
     private void handleUnlink() {
         int pathAddr = registers[REG_R0];
         
-        if (pathAddr < 0 || pathAddr >= memory.length) {
-            registers[REG_R0] = -1; // EFAULT
-            return;
-        }
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
         
-        // Ler caminho
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
         while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
@@ -2085,8 +2023,7 @@ public class ELF {
             i++;
         }
         String path = pathBuf.toString();
-        
-        // Usar a função deleteFile existente do OpenTTY
+
         int result = midlet.deleteFile(path, id);
         
         // Converter código de retorno do OpenTTY para errno
@@ -2099,8 +2036,6 @@ public class ELF {
             default: registers[REG_R0] = -1; break; // EPERM
         }
     }
-
-
 
 
     // Métodos auxiliares para leitura/escrita little-endian
