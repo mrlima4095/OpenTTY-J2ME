@@ -250,7 +250,7 @@ public Hashtable run() {
                 break;
             }
             
-            midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7]);
+            midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id);
             
             int instruction = readIntLE(memory, pc);
             midlet.print("DEBUG: Instr at PC: " + toHex(instruction), stdout, id);
