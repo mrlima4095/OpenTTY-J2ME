@@ -4,135 +4,261 @@
 
 
 **OpenTTY** — a lightweight, MIDlet-based terminal / shell environment inspired by classic Unix tools, written in Java for J2ME devices.  
-It exposes a shell-like interface, a small process manager, a simple file API (RMS + mountable roots), networking utilities (bind, port scanner, gobuster, net tools), a logging manager, and Lua programming language support.
+It exposes a SandBox with Lua interpreter and an ARM 32 ELF emulator (in development), enabling scripting and native binary execution in constrained mobile environments.
 
 ---
 
-## 🌐 Overview
-OpenTTY provides an interactive shell and a small runtime for running scripts and lightweight services on constrained Java ME devices.  
-It mixes traditional shell primitives (aliases, environment variables, `sh`/`login`), a MIDlet UI (xterm/x11 modes), process tracking, simple file abstractions (RMS and mount points), and a handful of networking and inspection utilities.
+## 🌟 Key Features
+
+### 🐚 **Integrated Shell**
+- Lua 5.x interpreter with support for functions, tables, loops, and error handling
+- Virtual Unix-like filesystem structure (`/bin`, `/etc`, `/home`, `/lib`, `/mnt`, `/tmp`)
+- Support for pipes, redirection, and command execution
+- Multi-process environment with PID control
+
+### 🏗️ **ARM ELF Emulator**
+- 32-bit ARM executable (ELF) emulator
+- Linux ARM syscall implementation (EABI)
+- 1MB virtual memory with segment management
+- Support for basic ARM instructions and syscalls
+
+### 📂 **File System**
+- Hierarchical Unix-style system
+- Persistent storage support via RecordStore
+- Real device filesystem mounting (`/mnt/`)
+- Caching system for better performance
+
+### 🎨 **Graphical Interface**
+- Integrated LCDUI display
+- Forms, alerts, lists, and input fields
+- Custom font and layout support
+- Event and command system
+
+### 🔌 **Network and Connectivity**
+- TCP/IP socket support
+- HTTP/HTTPS client
+- Network connections management
+- Inter-process communication
 
 ---
 
-## ⚙️ Basic Commands
-Below are commonly used commands. See the in-app `man` / `help` for details.
+## 🗂️ Directory Structure
 
-- `sh`, `login` — start shell or run a script.  
-- `exit`, `logout`, `quit` — leave session / close app.  
-- `env`, `set`, `unset`, `export` — manage environment variables.  
-- `alias`, `unalias` — create / remove aliases.  
-- `ls`, `pwd`, `cd`, `dir` — filesystem navigation & listing.  
-- `nano` — text editor.  
-- `ps`, `start`, `stop`, `kill`, `top` — process management and inspection.  
-- `log`, `logcat` — logging manager and dump.  
-- `wget`, `curl` — HTTP fetch tools.  
-- `lua` — run Lua scripts (if Lua support is built in).
-
----
-
-## 🌱 Environment Variables
-OpenTTY stores environment-like keys in an internal attributes table. Use:
-
-- `set KEY=value` — set a variable.  
-- `unset KEY` — remove it.  
-- `env` — list variables.  
-- `export` — shorthand to set or print environment items.  
-
-Common internal variables include `$VERSION`, `$HOSTNAME`, `$TYPE`, `$LOCALE`, and build-related keys.
-
----
-
-## 🧩 Exit Codes
-Standard exit codes used across OpenTTY subsystems:
-
-| Code | Meaning |
-|------|----------|
-| `0` | Success |
-| `1` | General I/O or runtime error |
-| `2` | Missing argument / bad usage |
-| `3` | Unsupported API or feature not available |
-| `5` | Tried to write on a read-only storage |
-| `13` | Permission denied / security exception |
-| `68` | Service is already running |
-| `69` | Service is unavailable |
-| `101` | Network related error |
-| `127` | Not found |
-| `128–254` | Reserved for subsystem-specific errors |
-| `255` | Caused by command `false` |
+```
+/
+├── 📁 bin/        # Executables and scripts
+│   ├── 📄 cp      # Copy files
+│   ├── 📄 curl    # HTTP client
+│   ├── 📄 init    # Initialization script
+│   ├── 📄 kill    # Kill processes
+│   ├── 📄 lua     # Lua interpreter
+│   ├── 📄 nano    # Text editor
+│   ├── 📄 rm      # Remove files
+│   ├── 📄 sh      # Basic shell
+│   ├── 📄 touch   # Create files
+│   └── 📄 yang    # Package manager
+├── 📁 dev/        # Devices
+│   ├── 📄 null    # Null device
+│   ├── 📄 random  # Random number generator
+│   ├── 📄 stdin   # Standard input
+│   ├── 📄 stdout  # Standard output
+│   └── 📄 zero    # Zero device
+├── 📁 etc/        # Configuration
+│   ├── 📄 fstab       # Filesystem table
+│   ├── 📄 hostname    # Host name
+│   ├── 📄 motd        # Initial message
+│   └── 📄 os-release  # Release information
+├── 📁 home/        # User files
+├── 📁 lib/         # Libraries
+│   └── 📄 libcore.so # System core library
+├── 📁 mnt/         # Mount points
+└── 📁 tmp/         # Temporary files
+```
 
 ---
 
-## 🧠 Process System
-OpenTTY implements a lightweight process table (`trace`), with a PID generator and utilities to start/stop/kill processes.
+## 🚀 Quick Start
 
-- `start <app>` — allocates a PID and spawns a process.  
-- `stop <name>` — stops a process by name.  
-- `kill <PID>` — terminates a process by PID.  
-- `ps` — prints running processes.  
-- `top` / `trace` — opens process and memory monitor.
+### 1. **First Execution**
+- On first run, credential creation will be requested
+- Set up username and password
+- Restart MIDlet after configuration
 
-Each process stores metadata such as owner, collector, I/O streams, and screen handles.
+### 2. **Basic Commands**
+```shell
 
----
+```
 
-## 📂 File System
-OpenTTY exposes several storage layers:
+### 3. **Lua Script Examples**
+```lua
+-- Hello World
+print("Hello OpenTTY!")
 
-- **RMS (`/home/`)** — local RecordStore storage (e.g., `/home/nano`, `/home/man.html`).  
-- **`/mnt/`** — mount points for the device file system.  
-- **`/tmp/`** — temporary in-memory store.  
+-- File manipulation
+local file = io.write("content", "/tmp/test.txt")
 
-### Commands:
-`mount`, `umount`, `mkdir`, `cp`, `rm`, `touch`, `ls`, `fdisk`, `lsblk`, `dir`
-
-Some operations may be restricted by the MIDlet sandbox.
-
----
-
-## 🧰 Utilities
-
-### 🔗 Bind (server)
-`bind <port> [db] [proc_name]` — opens a listening socket on the specified port and manages connections as processes.
-
-### 🚪 Port Scanner
-`prscan <host> [start]` — scans TCP ports and lists open ones.
-
-### 🕵️ GoBuster
-`gobuster <host> [wordlist]` — performs HTTP wordlist enumeration and lists valid paths.
-
-### 📜 History
-`history` — opens the command history UI, allowing you to rerun or edit past commands.
-
-### 🗂️ File Explorer
-`dir` — graphical file browser for RMS, `/mnt/`, and `/tmp/`.
+-- HTTP request
+local response, code = socket.http.get("http://example.com")
+print("Code:", code)
+print("Response:", response)
+```
 
 ---
 
-## 📋 Logs Management
-OpenTTY includes a built-in logging manager.
+## 🛠️ Lua API
 
-- `log add <level> <message>` — append a log entry (`info`, `warn`, `debug`, `error`).  
-- `log view` — view current logs.  
-- `log swap <name>` — archive current log buffer.  
-- `log clear` — clear logs.  
-- `logcat` — dump logs to stdout.
+### 📦 **Available Modules**
 
-Logs can also be managed via `MIDletLogs(...)` when extending subsystems.
+| Module | Description | Main Functions |
+|--------|-----------|-------------------|
+| `os` | System operations | `execute`, `getenv`, `setenv`, `exit`, `date` |
+| `io` | Input/Output | `read`, `write`, `open`, `close`, `dirs` |
+| `string` | String manipulation | `upper`, `lower`, `sub`, `find`, `match` |
+| `table` | Table manipulation | `insert`, `remove`, `concat`, `sort` |
+| `socket` | Network and sockets | `connect`, `http.get`, `http.post` |
+| `graphics` | Graphical interface | `display`, `new`, `append`, `handler` |
+| `java` | Java integration | `class`, `getName`, `run`, `thread` |
 
 ---
 
-## 🐍 Lua Scripting
-OpenTTY can execute Lua scripts when the Lua bridge is enabled.
+## ⚙️ ARM ELF Emulator
 
-Use:
-```sh
-lua [file]
-lua -e "print('Hello, Lua!')"
-````
+### 🎯 **Features**
+- ✅ 32-bit ARM ELF executable loading
+- ✅ Basic ARM instruction emulation
+- ✅ Linux ARM syscalls (EABI)
+- ✅ Memory management (1MB)
+- ✅ File descriptors and I/O
+- ✅ Registers and CPSR flags
 
-> **Note:**
-> If Lua is not built into the current MIDlet version, it will return an unsupported feature error.
-> For learning Lua, read the official documentation: [https://www.lua.org/manual/](https://www.lua.org/manual/)
+### 🔌 **Supported Syscalls**
+- `exit`, `fork`, `read`, `write`
+- `open`, `close`, `creat`
+- `time`, `gettimeofday`, `kill`
+- `getpid`, `getppid`, `getuid`
+- `brk`, `getcwd`, `chdir`
+
+---
+
+## 📡 Network and Communication
+
+### 🌐 **Supported Protocols**
+- **HTTP/HTTPS**: GET, POST, custom headers
+- **TCP Sockets**: Client and server
+- **Socket Streams**: Asynchronous read/write
+
+### 🔗 **Connection Example**
+```lua
+-- HTTP client
+local response, code = socket.http.get("http://api.example.com/data")
+
+-- TCP Socket
+local conn, input, output = socket.connect("example.com:80")
+io.write("GET / HTTP/1.0\r\n\r\n", output)
+local response = io.read(input, 4096)
+io.close(conn, output, input)
+```
+
+---
+
+## 🎨 Graphical Interface
+
+### 🖼️ **Available Components**
+- `Form`: Forms with multiple items
+- `Alert`: Dialog boxes
+- `List`: Selectable lists
+- `TextBox`: Text input fields
+- `StringItem`: Formatted text items
+- `Image`: Image display
+
+### 🎮 **UI Example**
+```lua
+-- Create form
+local form = graphics.new("screen", "My App")
+
+-- Add components
+graphics.append(form, {
+    type = "text",
+    label = "Name:",
+    value = "Enter your name"
+})
+
+graphics.append(form, {
+    type = "field",
+    label = "Password:",
+    mode = "password"
+})
+
+-- Display
+graphics.display(form)
+```
+
+---
+
+## 🔒 Security and Permissions
+
+### 👤 **User System**
+- Root user (UID 0) with full privileges
+- Normal users (UID 1000+) with restrictions
+- File and process access control
+- Password authentication system
+
+### 🛡️ **Protections**
+- Process sandboxing
+- Syscall validation
+- Filesystem access control
+- Resource limits per process
+
+---
+
+## ⚡ Performance
+
+### 🚀 **Optimizations**
+- Lua token caching for frequent scripts
+- Shared memory between processes
+- Efficient J2ME resource management
+- Configurable garbage collection
+
+### 📊 **Monitoring**
+```lua
+-- Memory status
+local free = collectgarbage("free")     -- Free memory (KB)
+local total = collectgarbage("total")   -- Total memory (KB)
+local used = collectgarbage("count")    -- Used memory (KB)
+
+-- System information
+print("Uptime:", java.midlet.uptime())
+print("Build:", java.midlet.build)
+```
+
+---
+
+## 🔄 Updates and Maintenance
+
+### 📦 **Package System**
+```bash
+# Update mirrors
+yang update
+
+# Change to root
+su [password]
+
+# Install package
+yang install package
+
+# Remove package
+yang remove package
+
+# List installed packages
+yang list
+```
+
+## 📚 Additional Resources
+
+### 🎓 **Learn More**
+- [Lua 5.1 Documentation](https://www.lua.org/manual/5.1/)
+- [ELF Specification](https://refspecs.linuxfoundation.org/elf/elf.pdf)
+- [ARM Architecture Reference](https://developer.arm.com/documentation/ddi0406/latest/)
 
 ---
 
@@ -151,6 +277,7 @@ For detailed build instructions and installation guide, check out our complete d
 ---
 
 ## 🤝 Contributing & Collaborators
+
 OpenTTY is actively developed by the community.
 If you want to contribute, open issues or pull requests on GitHub.
 
