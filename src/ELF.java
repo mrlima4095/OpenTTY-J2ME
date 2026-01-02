@@ -98,7 +98,7 @@ public class ELF {
     private static final int SYS_FSTAT = 108;
     private static final int SYS_CLONE = 120;
     private static final int SYS_GETPRIORITY = 140;
-    private static final int SYS_SETPRIORITY = 141
+    private static final int SYS_SETPRIORITY = 141;
 
     // Adicionar constantes para flags de ioctl (simplificadas)
     private static final int TCGETS = 0x5401;
