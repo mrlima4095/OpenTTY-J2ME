@@ -1563,216 +1563,99 @@ public Hashtable run() {
         else { registers[REG_R0] = -2; }
     }
     private void handleGetdents() {
-        int fd = registers[REG_R0], dirp = registers[REG_R1], count = registers[REG_R2];
-        if (dirp < 0 || dirp >= memory.length || count <= 0) { registers[REG_R0] = -1; return; }
+        int fd = registers[REG_R0], int dirp = registers[REG_R1], count = registers[REG_R2];
         
-        midlet.print("fd: " + registers[REG_R0], stdout, id);
-        midlet.print("buf: " + registers[REG_R1], stdout, id);
-        midlet.print("count: " + registers[REG_R2], stdout, id);
-
+        if (dirp < 0 || dirp >= memory.length) { registers[REG_R0] = -1; return; }
+        
         Integer fdKey = new Integer(fd);
+        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_R0] = -9; return; }
         
-        if (!fileDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
-        
-        Object dirObj = fileDescriptors.get(fdKey);
-
-        if (!(dirObj instanceof Hashtable)) {
-            // Tentar obter o caminho do diretório
-            String pathKey = fd + ":path";
-            if (!fileDescriptors.containsKey(pathKey)) {
-                registers[REG_R0] = -9; // EBADF (não é diretório)
-                return;
+        // Obter caminho do diretório a partir do file descriptor
+        String dirPath = null;
+        if (fileDescriptors.containsKey(fdKey)) {
+            Object obj = fileDescriptors.get(fdKey);
+            if (obj instanceof String) { dirPath = (String) obj; }
+            else if (obj instanceof StringBuffer) {
+                // Verificar se há caminho associado
+                String pathKey = fd + ":path";
+                if (fileDescriptors.containsKey(pathKey)) { dirPath = (String) fileDescriptors.get(pathKey); }
             }
-            
-            String dirPath = (String) fileDescriptors.get(pathKey);
-            
-            // Usar lógica similar ao io.dirs() do Lua
-            Hashtable dirEntries = new Hashtable();
-            int index = 1;
-            
-            if (dirPath.startsWith("/tmp/")) {
-                for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) {
-                    String filename = (String) files.nextElement();
-                    dirEntries.put(new Double(index), filename);
-                    index++;
-                }
-            } else if (dirPath.equals("/mnt/")) {
-                try {
-                    Enumeration roots = FileSystemRegistry.listRoots();
-                    while (roots.hasMoreElements()) {
-                        String root = (String) roots.nextElement();
-                        dirEntries.put(new Double(index), root);
-                        index++;
-                    }
-                } catch (Exception e) {
-                    registers[REG_R0] = -5; // EIO
-                    return;
-                }
-            } else if (dirPath.startsWith("/mnt/")) {
-                // Listar diretório no sistema de arquivos real
-                try {
-                    FileConnection conn = (FileConnection) Connector.open("file:///" + dirPath.substring(5), Connector.READ);
-                    Enumeration files = conn.list();
-                    while (files.hasMoreElements()) {
-                        String filename = (String) files.nextElement();
-                        dirEntries.put(new Double(index), filename);
-                        index++;
-                    }
-                    conn.close();
-                } catch (Exception e) {
-                    registers[REG_R0] = -5; // EIO
-                    return;
-                }
-            } else if (dirPath.equals("/bin/") || dirPath.equals("/etc/") || dirPath.equals("/lib/")) {
-                // Listar arquivos embutidos
-                int rmsIndex = dirPath.equals("/bin/") ? 3 : dirPath.equals("/etc/") ? 5 : 4;
-                String content = midlet.loadRMS("OpenRMS", rmsIndex);
+        }
+        
+        if (dirPath == null) { registers[REG_R0] = -20; return; }
+        
+        // Normalizar caminho (garantir que termina com /)
+        String pwd = midlet.joinpath(dirPath, scope);
+        if (!pwd.endsWith("/")) { pwd = pwd + "/"; }
+        
+        // Coletar arquivos em um Vector
+        Vector fileList = new Vector();
+        
+        try {
+            if (pwd.equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { fileList.addElement((String) files.nextElement()); } }
+            else if (pwd.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { fileList.addElement((String) roots.nextElement()); } }
+            else if (pwd.startsWith("/mnt/")) {
+                FileConnection CONN = (FileConnection) Connector.open("file:///" + pwd.substring(5), Connector.READ);
+                for (Enumeration files = CONN.list(); files.hasMoreElements();) { fileList.addElement((String) files.nextElement()); }
+                CONN.close();
+            }
+            else if (pwd.equals("/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
+                String content = midlet.loadRMS("OpenRMS", pwd.equals("/bin/") ? 3 : pwd.equals("/etc/") ? 5 : 4);
                 int i = 0;
-                
+
                 while (true) {
                     int start = content.indexOf("[\1BEGIN:", i);
-                    if (start == -1) break;
-                    
+                    if (start == -1) { break; }
+
                     int end = content.indexOf("\1]", start);
-                    if (end == -1) break;
-                    
-                    String filename = content.substring(start + "[\1BEGIN:".length(), end);
-                    dirEntries.put(new Double(index), filename);
-                    index++;
-                    
+                    if (end == -1) { break; }
+
+                    fileList.addElement(content.substring(start + "[\1BEGIN:".length(), end));
+
                     i = content.indexOf("[\1END\1]", end);
-                    if (i == -1) break;
+                    if (i == -1) { break; }
+
                     i += "[\1END\1]".length();
                 }
-            } else if (dirPath.equals("/home/")) {
-                // Listar record stores
-                String[] files = RecordStore.listRecordStores();
-                if (files != null) {
-                    for (int i = 0; i < files.length; i++) {
-                        dirEntries.put(new Double(index), files[i]);
-                        index++;
-                    }
-                }
-            } else if (midlet.fs.containsKey(dirPath)) {
-                // Listar do filesystem virtual
-                Vector struct = (Vector) midlet.fs.get(dirPath);
-                for (int i = 0; i < struct.size(); i++) {
-                    dirEntries.put(new Double(index), (String) struct.elementAt(i));
-                    index++;
-                }
-            } else {
-                registers[REG_R0] = -20; // ENOTDIR
-                return;
             }
-
-            if (!dirPath.equals("/tmp/") && !dirPath.equals("/mnt/") && 
-                !dirPath.equals("/home/") && !dirPath.equals("/bin/") && 
-                !dirPath.equals("/etc/") && !dirPath.equals("/lib/")) {
-                
-                Hashtable entriesWithDot = new Hashtable();
-                entriesWithDot.put(new Double(1), ".");
-                entriesWithDot.put(new Double(2), "..");
-                
-                for (int i = 1; i <= dirEntries.size(); i++) {
-                    entriesWithDot.put(new Double(i + 2), dirEntries.get(new Double(i)));
-                }
-                
-                dirEntries = entriesWithDot;
+            else if (pwd.equals("/home/")) { String[] files = RecordStore.listRecordStores(); if (files != null) { for (int i = 0; i < files.length; i++) { fileList.addElement(files[i]); } } }
+            
+            if (midlet.fs.containsKey(pwd)) {
+                Vector struct = (Vector) midlet.fs.get(pwd);
+                for (int i = 0; i < struct.size(); i++) { fileList.addElement(struct.elementAt(i)); }
             }
+        } catch (Exception e) { registers[REG_R0] = -1; return; }
+        
+        // Estrutura linux_dirent simplificada
+        // d_ino (4 bytes), d_off (4 bytes), d_reclen (2 bytes), d_name (variável)
+        int offset = 0, written = 0;
+        
+        for (int i = 0; i < fileList.size(); i++) {
+            String fileName = (String) fileList.elementAt(i);
+            byte[] nameBytes = fileName.getBytes();
+            int nameLen = nameBytes.length;
             
-            // Armazenar cache do diretório
-            fileDescriptors.put(fdKey, dirEntries);
-            fileDescriptors.put(fd + ":index", new Integer(1)); // Índice atual
-            dirObj = dirEntries;
-        }
-        
-        if (!(dirObj instanceof Hashtable)) {
-            registers[REG_R0] = -20; // ENOTDIR
-            return;
-        }
-        
-        Hashtable dirEntries = (Hashtable) dirObj;
-        Integer currentIndexObj = (Integer) fileDescriptors.get(fd + ":index");
-        int currentIndex = (currentIndexObj != null) ? currentIndexObj.intValue() : 1;
-        
-        // Estrutura linux_dirent (simplificada para ARM 32-bit)
-        // struct linux_dirent {
-        //     long           d_ino;      /* Inode number */
-        //     long           d_off;      /* Offset to next linux_dirent */
-        //     unsigned short d_reclen;   /* Length of this linux_dirent */
-        //     char           d_name[];   /* Filename (null-terminated) */
-        // };
-        
-        int bufPos = dirp;
-        int entriesReturned = 0;
-        
-        while (currentIndex <= dirEntries.size()) {
-            String filename = (String) dirEntries.get(new Double(currentIndex));
-            if (filename == null) {
-                currentIndex++;
-                continue;
-            }
-            
-            // Calcular tamanho total da entrada
-            // ino (4 bytes) + off (4 bytes) + reclen (2 bytes) + name + null terminator
-            int nameLen = filename.length();
-            int totalLen = 4 + 4 + 2 + nameLen + 1;
-            
-            // Arredondar para múltiplo de 4 para alinhamento
-            totalLen = (totalLen + 3) & ~3;
+            // Tamanho do registro: 4 + 4 + 2 + nameLen + 1 (null terminator)
+            int reclen = 10 + nameLen + 1;
             
             // Verificar se cabe no buffer
-            if (bufPos + totalLen > dirp + count) {
-                break; // Buffer cheio
-            }
+            if (offset + reclen > count || dirp + offset + reclen > memory.length) { break; }
             
-            // d_ino - número inode fictício
-            writeIntLE(memory, bufPos, currentIndex); // Usar índice como inode
-            bufPos += 4;
             
-            // d_off - offset para próxima entrada
-            writeIntLE(memory, bufPos, bufPos + totalLen - dirp);
-            bufPos += 4;
+            writeIntLE(memory, dirp + offset, i + 1); // d_ino (inode number - simplificado)
+            writeIntLE(memory, dirp + offset + 4, offset + reclen); // d_off (offset - simplificado) 
+            writeShortLE(memory, dirp + offset + 8, (short)reclen); // d_reclen
             
-            // d_reclen - tamanho desta entrada
-            writeShortLE(memory, bufPos, (short)totalLen);
-            bufPos += 2;
-            
-            // d_name - nome do arquivo
-            byte[] nameBytes = filename.getBytes();
-            for (int i = 0; i < nameLen; i++) {
-                if (bufPos < memory.length) {
-                    memory[bufPos++] = nameBytes[i];
-                }
-            }
+            // d_name
+            for (int j = 0; j < nameLen; j++) { memory[dirp + offset + 10 + j] = nameBytes[j]; }
             
             // Null terminator
-            if (bufPos < memory.length) {
-                memory[bufPos++] = 0;
-            }
-            
-            // Preencher padding
-            while ((bufPos - dirp) % 4 != 0 && bufPos < memory.length) {
-                memory[bufPos++] = 0;
-            }
-            
-            entriesReturned++;
-            currentIndex++;
+            memory[dirp + offset + 10 + nameLen] = 0; offset += reclen; written++;
         }
         
-        // Atualizar índice para próxima chamada
-        fileDescriptors.put(fd + ":index", new Integer(currentIndex));
-        
-        if (entriesReturned == 0) {
-            // Fim do diretório
-            registers[REG_R0] = 0;
-        } else {
-            registers[REG_R0] = bufPos - dirp; // Bytes escritos
-        }
-
-        midlet.print("getdents returning: " + registers[REG_R0], stdout, id);
+        if (written == 0) { registers[REG_R0] = 0; }
+        else { registers[REG_R0] = offset; }
     }
-
     private void handleDup() {
         int oldfd = registers[REG_R0];
         Integer oldKey = new Integer(oldfd);
@@ -1834,11 +1717,6 @@ public Hashtable run() {
         
         try {
             boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR, forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR, create = (flags & O_CREAT) != 0, append = (flags & O_APPEND) != 0, truncate = (flags & O_TRUNC) != 0, isDirectory = (flags & 0x10000) != 0;
-        
-            if (isDirectory) {
-                try { midlet.print("O_DIRECTORY flag set - opening directory", stdout, id); openDirectory(path); } catch (Exception e) { registers[REG_R0] = -2; }
-                return;
-            }
 
             String fullPath = midlet.joinpath(path, scope);
             
@@ -1890,51 +1768,6 @@ public Hashtable run() {
         } catch (Exception e) {
             registers[REG_R0] = -1;
         }
-    }
-    private void openDirectory(String path) throws Exception {
-        // Verificar se é um diretório
-        String fullPath = midlet.joinpath(path, scope);
-        if (!fullPath.endsWith("/")) {
-            fullPath = fullPath + "/";
-        }
-        
-        // Verificar se diretório existe
-        boolean dirExists = false;
-        
-        if (fullPath.equals("/home/") || fullPath.equals("/tmp/") || 
-            fullPath.equals("/mnt/") || fullPath.equals("/bin/") || 
-            fullPath.equals("/etc/") || fullPath.equals("/lib/")) { 
-            dirExists = true; 
-        }
-        else if (fullPath.startsWith("/mnt/")) { 
-            try {
-                FileConnection conn = (FileConnection) Connector.open(
-                    "file:///" + fullPath.substring(5), Connector.READ);
-                dirExists = conn.exists() && conn.isDirectory();
-                conn.close();
-            } catch (Exception e) {
-                dirExists = false;
-            }
-        } else if (midlet.fs.containsKey(fullPath)) {
-            dirExists = true;
-        }
-        
-        if (!dirExists) { 
-            throw new Exception("Directory not found: " + fullPath); 
-        }
-        
-        Integer fd = new Integer(nextFd++);
-        
-        // Criar cache vazio do diretório
-        Hashtable dirCache = new Hashtable();
-        fileDescriptors.put(fd, dirCache);
-        fileDescriptors.put(fd + ":path", fullPath);
-        fileDescriptors.put(fd + ":index", new Integer(1)); // Índice inicial
-        
-        // DEBUG
-        midlet.print("DEBUG: Opened directory fd=" + fd + " path=" + fullPath, stdout, id);
-        
-        registers[REG_R0] = fd.intValue();
     }
     private void handleClose() {
         int fd = registers[REG_R0];
