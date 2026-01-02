@@ -1563,7 +1563,7 @@ public Hashtable run() {
         else { registers[REG_R0] = -2; }
     }
     private void handleGetdents() {
-        int fd = registers[REG_R0], int dirp = registers[REG_R1], count = registers[REG_R2];
+        int fd = registers[REG_R0], dirp = registers[REG_R1], count = registers[REG_R2];
         
         if (dirp < 0 || dirp >= memory.length) { registers[REG_R0] = -1; return; }
         
