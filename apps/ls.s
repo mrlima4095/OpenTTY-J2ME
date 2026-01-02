@@ -1,6 +1,6 @@
 @ simple_test_dir.s
 .section .data
-dir:    .asciz "/"
+dir:    .asciz "/home/"
 msg1:   .asciz "Opening directory...\n"
 msg2:   .asciz "Success! Reading entries...\n"
 msg3:   .asciz "Done.\n"
