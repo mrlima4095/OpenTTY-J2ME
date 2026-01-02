@@ -1532,12 +1532,208 @@ public class ELF {
         else { registers[REG_R0] = -2; }
     }
     private void handleGetdents() {
-        int fd = registers[REG_R0];
-        int dirp = registers[REG_R1];
-        int count = registers[REG_R2];
+        int fd = registers[REG_R0], dirp = registers[REG_R1], count = registers[REG_R2];
+        if (dirp < 0 || dirp >= memory.length || count <= 0) { registers[REG_R0] = -1; return; }
         
-        // Não implementado - sempre retorna 0 (fim do diretório)
-        registers[REG_R0] = 0;
+        Integer fdKey = new Integer(fd);
+        
+        if (!fileDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
+        
+        Object dirObj = fileDescriptors.get(fdKey);
+
+        if (!(dirObj instanceof Hashtable)) {
+            // Tentar obter o caminho do diretório
+            String pathKey = fd + ":path";
+            if (!fileDescriptors.containsKey(pathKey)) {
+                registers[REG_R0] = -9; // EBADF (não é diretório)
+                return;
+            }
+            
+            String dirPath = (String) fileDescriptors.get(pathKey);
+            
+            // Usar lógica similar ao io.dirs() do Lua
+            Hashtable dirEntries = new Hashtable();
+            int index = 1;
+            
+            if (dirPath.startsWith("/tmp/")) {
+                for (Enumeration files = tmp.keys(); files.hasMoreElements();) {
+                    String filename = (String) files.nextElement();
+                    dirEntries.put(new Double(index), filename);
+                    index++;
+                }
+            } else if (dirPath.equals("/mnt/")) {
+                try {
+                    Enumeration roots = FileSystemRegistry.listRoots();
+                    while (roots.hasMoreElements()) {
+                        String root = (String) roots.nextElement();
+                        dirEntries.put(new Double(index), root);
+                        index++;
+                    }
+                } catch (Exception e) {
+                    registers[REG_R0] = -5; // EIO
+                    return;
+                }
+            } else if (dirPath.startsWith("/mnt/")) {
+                // Listar diretório no sistema de arquivos real
+                try {
+                    FileConnection conn = (FileConnection) Connector.open("file:///" + dirPath.substring(5), Connector.READ);
+                    Enumeration files = conn.list();
+                    while (files.hasMoreElements()) {
+                        String filename = (String) files.nextElement();
+                        dirEntries.put(new Double(index), filename);
+                        index++;
+                    }
+                    conn.close();
+                } catch (Exception e) {
+                    registers[REG_R0] = -5; // EIO
+                    return;
+                }
+            } else if (dirPath.equals("/bin/") || dirPath.equals("/etc/") || dirPath.equals("/lib/")) {
+                // Listar arquivos embutidos
+                int rmsIndex = dirPath.equals("/bin/") ? 3 : dirPath.equals("/etc/") ? 5 : 4;
+                String content = midlet.loadRMS("OpenRMS", rmsIndex);
+                int i = 0;
+                
+                while (true) {
+                    int start = content.indexOf("[\1BEGIN:", i);
+                    if (start == -1) break;
+                    
+                    int end = content.indexOf("\1]", start);
+                    if (end == -1) break;
+                    
+                    String filename = content.substring(start + "[\1BEGIN:".length(), end);
+                    dirEntries.put(new Double(index), filename);
+                    index++;
+                    
+                    i = content.indexOf("[\1END\1]", end);
+                    if (i == -1) break;
+                    i += "[\1END\1]".length();
+                }
+            } else if (dirPath.equals("/home/")) {
+                // Listar record stores
+                String[] files = RecordStore.listRecordStores();
+                if (files != null) {
+                    for (int i = 0; i < files.length; i++) {
+                        dirEntries.put(new Double(index), files[i]);
+                        index++;
+                    }
+                }
+            } else if (midlet.fs.containsKey(dirPath)) {
+                // Listar do filesystem virtual
+                Vector struct = (Vector) midlet.fs.get(dirPath);
+                for (int i = 0; i < struct.size(); i++) {
+                    dirEntries.put(new Double(index), (String) struct.elementAt(i));
+                    index++;
+                }
+            } else {
+                registers[REG_R0] = -20; // ENOTDIR
+                return;
+            }
+
+            if (!dirPath.equals("/tmp/") && !dirPath.equals("/mnt/") && 
+                !dirPath.equals("/home/") && !dirPath.equals("/bin/") && 
+                !dirPath.equals("/etc/") && !dirPath.equals("/lib/")) {
+                
+                Hashtable entriesWithDot = new Hashtable();
+                entriesWithDot.put(new Double(1), ".");
+                entriesWithDot.put(new Double(2), "..");
+                
+                for (int i = 1; i <= dirEntries.size(); i++) {
+                    entriesWithDot.put(new Double(i + 2), dirEntries.get(new Double(i)));
+                }
+                
+                dirEntries = entriesWithDot;
+            }
+            
+            // Armazenar cache do diretório
+            fileDescriptors.put(fdKey, dirEntries);
+            fileDescriptors.put(fd + ":index", new Integer(1)); // Índice atual
+            dirObj = dirEntries;
+        }
+        
+        if (!(dirObj instanceof Hashtable)) {
+            registers[REG_R0] = -20; // ENOTDIR
+            return;
+        }
+        
+        Hashtable dirEntries = (Hashtable) dirObj;
+        Integer currentIndexObj = (Integer) fileDescriptors.get(fd + ":index");
+        int currentIndex = (currentIndexObj != null) ? currentIndexObj.intValue() : 1;
+        
+        // Estrutura linux_dirent (simplificada para ARM 32-bit)
+        // struct linux_dirent {
+        //     long           d_ino;      /* Inode number */
+        //     long           d_off;      /* Offset to next linux_dirent */
+        //     unsigned short d_reclen;   /* Length of this linux_dirent */
+        //     char           d_name[];   /* Filename (null-terminated) */
+        // };
+        
+        int bufPos = dirp;
+        int entriesReturned = 0;
+        
+        while (currentIndex <= dirEntries.size()) {
+            String filename = (String) dirEntries.get(new Double(currentIndex));
+            if (filename == null) {
+                currentIndex++;
+                continue;
+            }
+            
+            // Calcular tamanho total da entrada
+            // ino (4 bytes) + off (4 bytes) + reclen (2 bytes) + name + null terminator
+            int nameLen = filename.length();
+            int totalLen = 4 + 4 + 2 + nameLen + 1;
+            
+            // Arredondar para múltiplo de 4 para alinhamento
+            totalLen = (totalLen + 3) & ~3;
+            
+            // Verificar se cabe no buffer
+            if (bufPos + totalLen > dirp + count) {
+                break; // Buffer cheio
+            }
+            
+            // d_ino - número inode fictício
+            writeIntLE(memory, bufPos, currentIndex); // Usar índice como inode
+            bufPos += 4;
+            
+            // d_off - offset para próxima entrada
+            writeIntLE(memory, bufPos, bufPos + totalLen - dirp);
+            bufPos += 4;
+            
+            // d_reclen - tamanho desta entrada
+            writeShortLE(memory, bufPos, (short)totalLen);
+            bufPos += 2;
+            
+            // d_name - nome do arquivo
+            byte[] nameBytes = filename.getBytes();
+            for (int i = 0; i < nameLen; i++) {
+                if (bufPos < memory.length) {
+                    memory[bufPos++] = nameBytes[i];
+                }
+            }
+            
+            // Null terminator
+            if (bufPos < memory.length) {
+                memory[bufPos++] = 0;
+            }
+            
+            // Preencher padding
+            while ((bufPos - dirp) % 4 != 0 && bufPos < memory.length) {
+                memory[bufPos++] = 0;
+            }
+            
+            entriesReturned++;
+            currentIndex++;
+        }
+        
+        // Atualizar índice para próxima chamada
+        fileDescriptors.put(fd + ":index", new Integer(currentIndex));
+        
+        if (entriesReturned == 0) {
+            // Fim do diretório
+            registers[REG_R0] = 0;
+        } else {
+            registers[REG_R0] = bufPos - dirp; // Bytes escritos
+        }
     }
 
     private void handleDup() {
@@ -1920,6 +2116,7 @@ public class ELF {
     
     private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length || offset < 0) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
     private void writeIntLE(byte[] data, int offset, int value) { if (offset + 3 >= data.length || offset < 0) { return; } data[offset] = (byte)(value & 0xFF); data[offset + 1] = (byte)((value >> 8) & 0xFF); data[offset + 2] = (byte)((value >> 16) & 0xFF); data[offset + 3] = (byte)((value >> 24) & 0xFF); }
-    
+    private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length || offset < 0) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
+
     private int rotateRight(int value, int amount) { amount &= 31; return (value >>> amount) | (value << (32 - amount)); }
 }
