@@ -232,34 +232,57 @@ public class ELF {
         return true;
     }
     
-    public Hashtable run() {
-        running = true;
-
-        proc = proc == null ? midlet.genprocess("elf", id, null) : proc;
-        Hashtable ITEM = new Hashtable();
-        proc.put("elf", this); 
-        midlet.sys.put(pid, proc);
+public Hashtable run() {
+    running = true;
+    Hashtable proc = midlet.genprocess("elf", id, null), ITEM = new Hashtable();
+    proc.put("elf", this); 
+    midlet.sys.put(pid, proc);
+    
+    try {
+        System.out.println("=== ELF START DEBUG ===");
+        System.out.println("PC start: " + toHex(pc));
+        System.out.println("SP: " + toHex(registers[REG_SP]));
         
-        try {
-            while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
-                int instruction = readIntLE(memory, pc);
-                pc += 4;
-                executeInstruction(instruction);
+        int instructionCount = 0;
+        while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
+            if (instructionCount++ > 1000) {
+                System.out.println("DEBUG: Stopping after 1000 instructions");
+                break;
             }
-        } 
-        catch (Exception e) { 
-            midlet.print("ELF execution error: " + e.toString(), stdout); 
-            running = false; 
-        } 
-        finally { 
-            if (midlet.sys.containsKey(pid)) { 
-                midlet.sys.remove(pid); 
-            } 
+            
+            System.out.println("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7]);
+            
+            int instruction = readIntLE(memory, pc);
+            System.out.println("DEBUG: Instr at PC: " + toHex(instruction));
+            pc += 4;
+            
+            try {
+                executeInstruction(instruction);
+            } catch (Exception e) {
+                System.out.println("DEBUG: Exception in executeInstruction: " + e);
+                e.printStackTrace();
+                running = false;
+                break;
+            }
         }
-
-        ITEM.put("status", new Double(0));
-        return ITEM;
+        System.out.println("=== ELF END DEBUG ===");
+    } 
+    catch (Throwable e) {  // ← Catch Throwable, não apenas Exception
+        System.out.println("=== ELF CRASH DEBUG ===");
+        System.out.println("CRASH: " + e.getClass().getName() + ": " + e.getMessage());
+        e.printStackTrace();
+        running = false; 
+    } 
+    finally { 
+        System.out.println("=== ELF FINALLY DEBUG ===");
+        if (midlet.sys.containsKey(pid)) { 
+            midlet.sys.remove(pid); 
+        } 
     }
+
+    ITEM.put("status", new Double(0));
+    return ITEM;
+}
     
     private void executeInstruction(int instruction) {
         // Extrair condição (bits 28-31)
