@@ -1,135 +1,90 @@
-@ listdir_full.s - Lista diretório completo com EABI
+@ simple_test_dir.s
 .section .data
-dir:        .asciz "/mnt/"
-buffer:     .space 4096
-newline:    .asciz "\n"
-found_msg:  .asciz "Found: "
-error_msg:  .asciz "Error opening directory\n"
-empty_msg:  .asciz "Directory empty\n"
+dir:    .asciz "/"
+msg1:   .asciz "Opening directory...\n"
+msg2:   .asciz "Success! Reading entries...\n"
+msg3:   .asciz "Done.\n"
+buffer: .space 512
 
 .section .text
 .global _start
 
-@ Syscall numbers (ARM EABI)
-.equ SYS_EXIT, 1
-.equ SYS_WRITE, 4
-.equ SYS_OPEN, 5
-.equ SYS_CLOSE, 6
-.equ SYS_GETDENTS, 217  @ EABI value
-
-@ Flags
-.equ O_RDONLY, 0
-.equ O_DIRECTORY, 0x10000
-
 _start:
-    @ Abrir diretório /mnt/
+    @ Escrever mensagem inicial
+    ldr r1, =msg1
+    mov r2, #21
+    bl write
+    
+    @ Tentar abrir diretório
     ldr r0, =dir
-    ldr r1, =#(O_RDONLY | O_DIRECTORY)
-    mov r2, #0
-    mov r7, #SYS_OPEN
+    mov r1, #0x10000   @ O_DIRECTORY
+    mov r7, #5         @ SYS_OPEN
     svc 0
     
-    @ Verificar erro
     cmp r0, #0
-    bgt open_ok
+    ble error
     
-    @ Erro ao abrir
-    ldr r1, =error_msg
-    mov r2, #24
-    bl write_str
-    mov r0, #1
-    b exit
+    mov r4, r0         @ salvar fd
     
-open_ok:
-    mov r8, r0          @ r8 = fd
+    @ Mensagem de sucesso
+    ldr r1, =msg2
+    mov r2, #28
+    bl write
     
-read_dir:
-    @ Ler entradas do diretório
-    mov r0, r8
+    @ Tentar getdents (EABI = 217)
+    mov r0, r4
     ldr r1, =buffer
-    mov r2, #4096
-    mov r7, #SYS_GETDENTS
+    mov r2, #512
+    mov r7, #217       @ SYS_GETDENTS EABI
     svc 0
     
-    @ Verificar resultado
+    @ Se retornou > 0, sucesso
     cmp r0, #0
-    beq directory_empty
-    blt read_error
+    ble no_entries
     
-    @ r0 = bytes lidos
-    mov r9, r0          @ r9 = bytes lidos
-    ldr r10, =buffer    @ r10 = ponteiro atual
+    @ Imprimir quantos bytes foram lidos
+    @ Converter número para string
+    mov r5, r0         @ salvar bytes lidos
     
-process_entries:
-    cmp r9, #0
-    ble read_dir        @ Voltar para ler mais
+    ldr r1, =msg3
+    mov r2, #6
+    bl write
     
-    @ Extrair d_reclen (offset 8)
-    ldrb r0, [r10, #8]   @ byte baixo
-    ldrb r1, [r10, #9]   @ byte alto
-    orr r2, r0, r1, lsl #8  @ r2 = d_reclen
-    
-    cmp r2, #0
-    ble read_dir        @ reclen inválido
-    
-    @ Imprimir "Found: "
-    ldr r1, =found_msg
-    mov r2, #7
-    bl write_str
-    
-    @ Imprimir nome do arquivo (offset 10)
-    add r1, r10, #10
-    mov r2, #0
-    
-count_loop:
-    ldrb r0, [r1, r2]
-    cmp r0, #0
-    beq print_filename
-    add r2, r2, #1
-    b count_loop
-    
-print_filename:
-    bl write_str
-    
-    @ Nova linha
-    ldr r1, =newline
-    mov r2, #1
-    bl write_str
-    
-    @ Avançar para próxima entrada
-    add r10, r10, r2    @ buffer += d_reclen
-    sub r9, r9, r2      @ bytes_restantes -= d_reclen
-    b process_entries
-
-directory_empty:
-    @ Diretório vazio
-    ldr r1, =empty_msg
-    mov r2, #16
-    bl write_str
-    b close_dir
-
-read_error:
-    @ Erro na leitura (não faz nada)
-
-close_dir:
-    @ Fechar diretório
-    mov r0, r8
-    mov r7, #SYS_CLOSE
+    @ Fechar
+    mov r0, r4
+    mov r7, #6         @ SYS_CLOSE
     svc 0
     
-    @ Sair com sucesso
-    mov r0, #0
+    @ Sair com bytes lidos como código
+    mov r0, r5
     b exit
 
-@ Função: write_str(r1=string, r2=length)
-write_str:
-    push {r0, r7, lr}
-    mov r0, #1          @ stdout
-    mov r7, #SYS_WRITE
+no_entries:
+    ldr r1, =msg3
+    mov r2, #6
+    bl write
+    mov r0, #0
+    b close_and_exit
+
+error:
+    mov r0, #1
+
+close_and_exit:
+    @ Fechar se estiver aberto
+    cmp r4, #0
+    ble exit
+    mov r0, r4
+    mov r7, #6
     svc 0
-    pop {r0, r7, lr}
-    bx lr
 
 exit:
-    mov r7, #SYS_EXIT
+    mov r7, #1         @ SYS_EXIT
     svc 0
+
+write:
+    push {r0, r7}
+    mov r0, #1
+    mov r7, #4
+    svc 0
+    pop {r0, r7}
+    bx lr
