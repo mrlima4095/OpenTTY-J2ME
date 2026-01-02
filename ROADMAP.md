@@ -1,18 +1,14 @@
-# 1.17
+# 1.17.1
 
-Default
-SandBox
-ELF (ARM 32)
+release date: 25/01/2026
 
-## Packages 
-
-- Vim
-- Clang
-
-## Resources
-
-- MIDletCanvas
-
-## Commands
-
-- 
+- MIDletCanvas (Optional)
+- ELF - More syscalls and structure loading
+- Network Controller
+- Fix `io.popen` crash when not found app on shell
+- Applications Menu-like `/bin/init`
+- Documentation
+- Lua - Base64 Support
+- Better Kernel Panic Screens
+- OpenTTY Recovery Mode
+- OpenSSH J2ME
