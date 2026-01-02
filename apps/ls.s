@@ -1,118 +1,93 @@
-@ test_open_only.s
-.section .data
-msg1:   .asciz "1: Starting\n"
-msg2:   .asciz "2: Testing open('/')\n"
-msg3:   .asciz "3: Open returned: "
-msg4:   .asciz "4: Exiting\n"
-nl:     .asciz "\n"
-dir:    .asciz "/"
-hex:    .asciz "0123456789ABCDEF"
+.data
+dir_path:   .asciz "/tmp/"
+buffer:     .space 512
 
-.section .text
+.text
 .global _start
 
 _start:
-    @ 1. Starting
-    mov r0, #1
-    ldr r1, =msg1
-    mov r2, #12
-    mov r7, #4
-    svc 0
+    @ Abrir /tmp/
+    ldr r0, =dir_path
+    mov r1, #0
+    mov r7, #5
+    swi 0
     
-    @ 2. Message before open
-    mov r0, #1
-    ldr r1, =msg2
-    mov r2, #21
-    mov r7, #4
-    svc 0
+    @ Verificar erro
+    cmp r0, #0
+    blt _exit_error
     
-    @ 3. Open directory (JUST TEST, don't store)
-    ldr r0, =dir
-    mov r1, #0x10000   @ O_DIRECTORY
-    mov r7, #5         @ SYS_OPEN
-    svc 0
+    mov r4, r0  @ fd
     
-    @ Result is in r0, but we'll just print it
-    @ 4. Print "Open returned: "
-    mov r4, r0         @ Temporarily save
-    mov r0, #1
-    ldr r1, =msg3
-    mov r2, #19
-    mov r7, #4
-    svc 0
-    
-    @ Print the return value in hex
+read_dir:
+    @ getdents
     mov r0, r4
-    bl print_hex_short
+    ldr r1, =buffer
+    mov r2, #512
+    mov r7, #217
+    swi 0
     
-    @ Newline
-    mov r0, #1
-    ldr r1, =nl
-    mov r2, #1
+    cmp r0, #0
+    beq close_and_exit
+    blt _exit_error
+    
+    @ Percorrer entradas
+    mov r5, r0  @ bytes lidos
+    mov r6, #0  @ offset
+    
+next_entry:
+    cmp r6, r5
+    bge read_dir
+    
+    ldr r8, =buffer
+    add r8, r8, r6
+    
+    @ Obter d_reclen
+    ldrb r9, [r8, #8]
+    ldrb r10, [r8, #9]
+    orr r9, r9, r10, lsl #8
+    
+    @ Imprimir nome (offset 10)
+    add r0, r8, #10
+    
+    @ Calcular tamanho do nome
+    mov r1, r0
+    mov r2, #0
+calc_len:
+    ldrb r3, [r1, r2]
+    cmp r3, #0
+    beq print_it
+    add r2, r2, #1
+    b calc_len
+    
+print_it:
+    mov r0, #1  @ stdout
+    mov r7, #4  @ SYS_WRITE
+    swi 0
+    
+    @ Imprimir nova linha
+    ldr r0, =nl
+    mov r1, #1
     mov r7, #4
-    svc 0
+    swi 0
     
-    @ 5. If fd > 0, close it
-    cmp r4, #0
-    ble no_close
-    
+    add r6, r6, r9
+    b next_entry
+
+close_and_exit:
+    @ Fechar diretório
     mov r0, r4
-    mov r7, #6         @ SYS_CLOSE
-    svc 0
+    mov r7, #6
+    swi 0
     
-no_close:
-    @ 6. Final message
-    mov r0, #1
-    ldr r1, =msg4
-    mov r2, #11
-    mov r7, #4
-    svc 0
-    
-    @ 7. Exit with code based on open result
-    @ 0 = success (fd > 0)
-    @ 1 = failure (fd <= 0)
-    cmp r4, #0
-    bgt exit_success
-    
-exit_fail:
-    mov r0, #1
-    b exit
-    
-exit_success:
+    @ Sair
     mov r0, #0
-
-exit:
     mov r7, #1
-    svc 0
+    swi 0
 
-@ Simple hex print (2 digits)
-print_hex_short:
-    push {r4-r5, lr}
-    mov r4, r0
-    ldr r5, =hexbuf
-    
-    @ High nibble
-    mov r0, r4, lsr #4
-    and r0, r0, #0xF
-    ldr r1, =hex
-    ldrb r0, [r1, r0]
-    strb r0, [r5, #0]
-    
-    @ Low nibble
-    mov r0, r4
-    and r0, r0, #0xF
-    ldr r1, =hex
-    ldrb r0, [r1, r0]
-    strb r0, [r5, #1]
-    
-    @ Print
+_exit_error:
     mov r0, #1
-    ldr r1, =hexbuf
-    mov r2, #2
-    mov r7, #4
-    svc 0
-    
-    pop {r4-r5, pc}
+    mov r7, #1
+    swi 0
 
-.section .bss
-hexbuf: .space 3
+.data
+nl: .asciz "\n"
