@@ -8,3 +8,8 @@ ELF
 - add support for fpu controller
 - add support for more operations
 - add support for syscalls `execve` `mkdir` `rmdir` `stat` `fstat` `ioctl` `clone` `getpriority` `setpriority` `lseek` `getdents` `dup` `dup2` `unlink`
+
+
+Bug fixes
+
+- fixed a bug with invalid caching
