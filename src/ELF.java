@@ -232,57 +232,57 @@ public class ELF {
         return true;
     }
     
-public Hashtable run() {
-    running = true;
-    Hashtable proc = midlet.genprocess("elf", id, null), ITEM = new Hashtable();
-    proc.put("elf", this); 
-    midlet.sys.put(pid, proc);
-    
-    try {
-        midlet.print("=== ELF START DEBUG ===", stdout, id);
-        midlet.print("PC start: " + toHex(pc), stdout, id);
-        midlet.print("SP: " + toHex(registers[REG_SP]), stdout, id);
+    public Hashtable run() {
+        running = true;
+        Hashtable proc = midlet.genprocess("elf", id, null), ITEM = new Hashtable();
+        proc.put("elf", this); 
+        midlet.sys.put(pid, proc);
         
-        int instructionCount = 0;
-        while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
-            if (instructionCount++ > 1000) {
-                midlet.print("DEBUG: Stopping after 1000 instructions", stdout, id);
-                break;
+        try {
+            midlet.print("=== ELF START DEBUG ===", stdout, id);
+            midlet.print("PC start: " + toHex(pc), stdout, id);
+            midlet.print("SP: " + toHex(registers[REG_SP]), stdout, id);
+            
+            int instructionCount = 0;
+            while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
+                if (instructionCount++ > 1000) {
+                    midlet.print("DEBUG: Stopping after 1000 instructions", stdout, id);
+                    break;
+                }
+                
+                midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id);
+                
+                int instruction = readIntLE(memory, pc);
+                midlet.print("DEBUG: Instr at PC: " + toHex(instruction), stdout, id);
+                pc += 4;
+                
+                try {
+                    executeInstruction(instruction);
+                } catch (Exception e) {
+                    midlet.print("DEBUG: Exception in executeInstruction: " + e, stdout, id);
+                    e.printStackTrace();
+                    running = false;
+                    break;
+                }
             }
-            
-            midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id);
-            
-            int instruction = readIntLE(memory, pc);
-            midlet.print("DEBUG: Instr at PC: " + toHex(instruction), stdout, id);
-            pc += 4;
-            
-            try {
-                executeInstruction(instruction);
-            } catch (Exception e) {
-                midlet.print("DEBUG: Exception in executeInstruction: " + e, stdout, id);
-                e.printStackTrace();
-                running = false;
-                break;
-            }
-        }
-        midlet.print("=== ELF END DEBUG ===", stdout, id);
-    } 
-    catch (Throwable e) {  // ← Catch Throwable, não apenas Exception
-        midlet.print("=== ELF CRASH DEBUG ===", stdout, id);
-        midlet.print("CRASH: " + e.getClass().getName() + ": " + e.getMessage(), stdout, id);
-        e.printStackTrace();
-        running = false; 
-    } 
-    finally { 
-        midlet.print("=== ELF FINALLY DEBUG ===", stdout, id);
-        if (midlet.sys.containsKey(pid)) { 
-            midlet.sys.remove(pid); 
+            midlet.print("=== ELF END DEBUG ===", stdout, id);
         } 
-    }
+        catch (Throwable e) {  // ← Catch Throwable, não apenas Exception
+            midlet.print("=== ELF CRASH DEBUG ===", stdout, id);
+            midlet.print("CRASH: " + e.getClass().getName() + ": " + e.getMessage(), stdout, id);
+            e.printStackTrace();
+            running = false; 
+        } 
+        finally { 
+            midlet.print("=== ELF FINALLY DEBUG ===", stdout, id);
+            if (midlet.sys.containsKey(pid)) { 
+                midlet.sys.remove(pid); 
+            } 
+        }
 
-    ITEM.put("status", new Double(0));
-    return ITEM;
-}
+        ITEM.put("status", new Double(0));
+        return ITEM;
+    }
     
     private void executeInstruction(int instruction) {
         // Extrair condição (bits 28-31)
