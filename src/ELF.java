@@ -234,7 +234,8 @@ public class ELF {
     public Hashtable run() {
         running = true;
 
-        proc = proc == null ? midlet.genprocess("elf", id, null) : proc, ITEM = new Hashtable();
+        proc = proc == null ? midlet.genprocess("elf", id, null) : proc;
+        Hashtable ITEM = new Hashtable();
         proc.put("elf", this); 
         midlet.sys.put(pid, proc);
         
