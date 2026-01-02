@@ -1,5 +1,3 @@
-[file name]: ELF.java
-[file content begin]
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import java.util.*;
