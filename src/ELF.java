@@ -6,7 +6,7 @@ import java.io.*;
 public class ELF {
     private OpenTTY midlet;
     private Object stdout;
-    private Hashtable scope;
+    private Hashtable scope, proc;
     private String pid;
     private int id = 1000;
     
@@ -148,6 +148,7 @@ public class ELF {
         this.midlet = midlet;
         this.stdout = stdout;
         this.scope = scope;
+        this.proc = proc;
         this.id = id;
         this.pid = pid == null ? midlet.genpid() : pid;
         this.memory = new byte[1024 * 1024]; // 1MB de memória
@@ -233,7 +234,7 @@ public class ELF {
     public Hashtable run() {
         running = true;
 
-        Hashtable proc = midlet.genprocess("elf", id, null), ITEM = new Hashtable();
+        proc = proc == null ? midlet.genprocess("elf", id, null), ITEM = new Hashtable() : proc;
         proc.put("elf", this); 
         midlet.sys.put(pid, proc);
         
