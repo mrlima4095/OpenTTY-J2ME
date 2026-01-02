@@ -14,6 +14,7 @@ public class ELF {
     // Memória e registradores
     private byte[] memory;
     private int[] registers;
+    private int[] signalHandlers;
     private int pc;
     private boolean running;
     private int stackPointer;
@@ -22,8 +23,15 @@ public class ELF {
     private int cpsr;
     
     // File descriptors
-    private Hashtable fileDescriptors;
+    private Hashtable fileDescriptors, socketDescriptors;
     private int nextFd;
+
+    private Hashtable jmpBufs;
+    private int nextJmpBufId;
+
+    // Heap management
+    private int heapStart, heapEnd;
+    private Hashtable allocatedBlocks;
     
     // Constantes ELF
     private static final int EI_NIDENT = 16;
@@ -105,6 +113,53 @@ public class ELF {
     private static final int SYS_GETPRIORITY = 140;  // ← CORRIGIDO (era 141)
     private static final int SYS_SETPRIORITY = 141;  // ← CORRIGIDO
     private static final int SYS_GETDENTS = 217;     // ← DUPLICADO! Remover ou mudar
+    private static final int SYS_SOCKET = 281;      // socket
+    private static final int SYS_BIND = 282;        // bind
+    private static final int SYS_CONNECT = 283;     // connect
+    private static final int SYS_LISTEN = 284;      // listen
+    private static final int SYS_ACCEPT = 285;      // accept
+    private static final int SYS_SEND = 289;        // send
+    private static final int SYS_RECV = 291;        // recv
+    private static final int SYS_SHUTDOWN = 293;    // shutdown
+    private static final int SYS_SETSOCKOPT = 294;  // setsockopt
+    private static final int SYS_GETSOCKOPT = 295;  // getsockopt
+    private static final int SYS_SENDTO = 290;      // sendto
+    private static final int SYS_RECVFROM = 292;    // recvfrom
+    private static final int SYS_GETSOCKNAME = 286; // getsockname
+    private static final int SYS_GETPEERNAME = 287; // getpeername
+    private static final int SYS_SIGNAL = 48;       // signal (old)
+    private static final int SYS_SIGACTION = 67;    // sigaction
+    private static final int SYS_SIGPROCMASK = 126; // sigprocmask
+    private static final int SYS_SIGRETURN = 119;   // sigreturn
+    private static final int SYS_SETJMP = 96;       // setjmp (simulado)
+    private static final int SYS_LONGJMP = 97;      // longjmp (simulado)
+    private static final int SYS_GETTID = 224;      // gettid
+    private static final int SYS_NANOSLEEP = 162;   // nanosleep
+    private static final int SYS_PIPE = 42;         // pipe
+    private static final int SYS_SELECT = 142;      // select
+    private static final int SYS_POLL = 168;        // poll
+    private static final int SYS_FSYNC = 118;       // fsync
+
+    // Constantes para socket
+    private static final int AF_INET = 2;
+    private static final int SOCK_STREAM = 1;
+    private static final int SOCK_DGRAM = 2;
+    private static final int IPPROTO_TCP = 6;
+    private static final int IPPROTO_UDP = 17;
+
+    // Constantes para sinal
+    private static final int SIG_DFL = 0;
+    private static final int SIG_IGN = 1;
+    private static final int SIG_ERR = -1;
+    private static final int SIGKILL = 9;
+    private static final int SIGTERM = 15;
+    private static final int SIGINT = 2;
+    private static final int SIGSEGV = 11;
+    private static final int SIGPIPE = 13;
+    private static final int SIGCHLD = 17;
+    private static final int SIGCONT = 18;
+    private static final int SIGSTOP = 19;
+    private static final int NSIG = 32;
 
     // Adicionar constantes para flags de ioctl (simplificadas)
     private static final int TCGETS = 0x5401;
@@ -158,9 +213,18 @@ public class ELF {
         this.cpsr = 0;
         this.fpscr = 0;
         this.running = false;
+        this.nextJmpBufId = 1;
         this.stackPointer = memory.length - 1024;
+        this.jmpBufs = new Hashtable();
+        this.socketDescriptors = new Hashtable();
+        this.allocatedBlocks = new Hashtable();
         this.fileDescriptors = new Hashtable();
         this.nextFd = 3; // 0=stdin, 1=stdout, 2=stderr
+        this.heapStart = 0x100000; // 1MB - início do heap
+        this.heapEnd = heapStart;
+
+        this.signalHandlers = new int[NSIG];
+        for (int i = 0; i < NSIG; i++) { signalHandlers[i] = SIG_DFL; }
         
         // Inicializar file descriptors padrão
         fileDescriptors.put(new Integer(1), stdout); // stdout
@@ -1179,6 +1243,78 @@ public class ELF {
             case SYS_UNLINK:
                 handleUnlink();
                 break;
+            case SYS_SOCKET:
+                handleSocket();
+                break;
+            case SYS_CONNECT:
+                handleConnect();
+                break;
+            case SYS_SEND:
+                handleSend();
+                break;
+            case SYS_RECV:
+                handleRecv();
+                break;
+            case SYS_BIND:
+                handleBind();
+                break;
+            case SYS_LISTEN:
+                handleListen();
+                break;
+            case SYS_ACCEPT:
+                handleAccept();
+                break;
+            case SYS_SHUTDOWN:
+                handleShutdown();
+                break;
+            case SYS_SETSOCKOPT:
+                handleSetsockopt();
+                break;
+            case SYS_GETSOCKOPT:
+                handleGetsockopt();
+                break;
+            case SYS_SENDTO:
+                handleSendto();
+                break;
+            case SYS_RECVFROM:
+                handleRecvfrom();
+                break;
+            case SYS_GETSOCKNAME:
+                handleGetsockname();
+                break;
+            case SYS_GETPEERNAME:
+                handleGetpeername();
+                break;
+            case SYS_SIGNAL:
+                handleSignal();
+                break;
+            case SYS_SIGACTION:
+                handleSigaction();
+                break;
+            case SYS_SETJMP:
+                handleSetjmp();
+                break;
+            case SYS_LONGJMP:
+                handleLongjmp();
+                break;
+            case SYS_GETTID:
+                handleGettid();
+                break;
+            case SYS_NANOSLEEP:
+                handleNanosleep();
+                break;
+            case SYS_PIPE:
+                handlePipe();
+                break;
+            case SYS_SELECT:
+                handleSelect();
+                break;
+            case SYS_POLL:
+                handlePoll();
+                break;
+            case SYS_FSYNC:
+                handleFsync();
+                break;
             default:
                 registers[REG_R0] = -1; // Syscall não implementada
                 break;
@@ -1318,24 +1454,48 @@ public class ELF {
     }
     private void handleGetpriority() { int which = registers[REG_R0], who = registers[REG_R1]; if (who == 0) { Object priorityObj = proc.get("priority"); if (priorityObj instanceof Integer) { registers[REG_R0] = ((Integer) priorityObj).intValue(); } else { registers[REG_R0] = 20; } } else { registers[REG_R0] = -22; } }
     private void handleSetpriority() { int which = registers[REG_R0], who = registers[REG_R1], prio = registers[REG_R2]; if (who == 0) { proc.put("priority", new Integer(prio)); registers[REG_R0] = 0; } else { registers[REG_R0] = -22; } }
+    // |
+    private void handleSignal() {
+        int signum = registers[REG_R0], handler = registers[REG_R1];
+        
+        if (signum <= 0 || signum >= NSIG) { registers[REG_R0] = SIG_ERR; return; }
+        
+        int oldHandler = signalHandlers[signum];
+        signalHandlers[signum] = handler;
+        
+        registers[REG_R0] = oldHandler;
+    }
+    private void handleSigaction() {
+        int signum = registers[REG_R0], actPtr = registers[REG_R1], oldactPtr = registers[REG_R2];
+
+        if (signum <= 0 || signum >= NSIG) { registers[REG_R0] = -22; return; }
+ 
+        // Salvar o antigo handler se oldactPtr não for nulo
+        if (oldactPtr != 0 && oldactPtr + 12 <= memory.length) {
+            writeIntLE(memory, oldactPtr, signalHandlers[signum]);
+            writeIntLE(memory, oldactPtr + 4, 0); // sa_mask
+            writeIntLE(memory, oldactPtr + 8, 0); // sa_flags
+        }
+
+        if (actPtr != 0 && actPtr + 4 <= memory.length) {
+            int newHandler = readIntLE(memory, actPtr);
+            signalHandlers[signum] = newHandler;
+        }
+        
+        registers[REG_R0] = 0;
+    }
     private void handleKill() {
-        int pid = registers[REG_R0];
-        int sig = registers[REG_R1];
+        int pid = registers[REG_R0], sig = registers[REG_R1];
         
         String targetPid = String.valueOf(pid);
         
-        if (!midlet.sys.containsKey(targetPid)) {
-            registers[REG_R0] = -3; // ESRCH - No such process
-            return;
-        }
+        if (!midlet.sys.containsKey(targetPid)) { registers[REG_R0] = -3; return; }
+        if (this.id != 0 && !targetPid.equals(this.pid)) { registers[REG_R0] = -1; return; }
         
-        if (this.id != 0 && !targetPid.equals(this.pid)) {
-            registers[REG_R0] = -1; // EPERM - Operation not permitted
-            return;
-        }
+        Object procObj = midlet.sys.get(targetPid);
         
-        if (sig == 9) {
-            Object procObj = midlet.sys.get(targetPid);
+        // Para sinais de terminação
+        if (sig == SIGKILL || sig == SIGTERM) {
             if (procObj instanceof Hashtable) {
                 Hashtable proc = (Hashtable) procObj;
                 if (proc.containsKey("elf")) {
@@ -1345,18 +1505,32 @@ public class ELF {
             }
             midlet.sys.remove(targetPid);
             registers[REG_R0] = 0;
-        } else if (sig == 15) {
-            midlet.sys.remove(targetPid);
-            registers[REG_R0] = 0;
-        } else {
-            registers[REG_R0] = -22; // EINVAL - Invalid argument
+            return;
         }
+        
+        // Para sinais que podem ser ignorados ou manipulados
+        if (sig == SIGINT || sig == SIGCONT || sig == SIGSTOP) {
+            // Enviar sinal para o processo (simulado)
+            if (procObj instanceof Hashtable) {
+                Hashtable proc = (Hashtable) procObj;
+                if (proc.containsKey("elf")) {
+                    ELF elf = (ELF) proc.get("elf");
+                    // Em uma implementação real, armazenaríamos o sinal pendente
+                    // e o processaríamos na próxima syscall ou no retorno de syscall
+                }
+            }
+            registers[REG_R0] = 0;
+            return;
+        }
+        
+        if (sig == 0) { registers[REG_R0] = 0; }
+        else { registers[REG_R0] = -22; }
     }
     // |
     private void handleExit() {
         int status = registers[REG_R0];
         running = false;
-        
+
         Enumeration keys = fileDescriptors.keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
@@ -1371,16 +1545,94 @@ public class ELF {
                 }
             }
         }
+
+        keys = socketDescriptors.keys();
+        while (keys.hasMoreElements()) {
+            Object key = keys.nextElement();
+            Hashtable socketInfo = (Hashtable) socketDescriptors.get(key);
+            if (socketInfo.containsKey("connection")) { try { ((StreamConnection) socketInfo.get("connection")).close(); } catch (Exception e) { } }
+            if (socketInfo.containsKey("server")) { try { ((StreamConnectionNotifier) socketInfo.get("server")).close(); } catch (Exception e) { } }
+        }
+        
+        fileDescriptors.clear(); socketDescriptors.clear();
+        allocatedBlocks.clear(); jmpBufs.clear();
     }
     // |
     private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_R0] = pidValue; } catch (NumberFormatException e) { registers[REG_R0] = 1; } }
     private void handleGetppid() { registers[REG_R0] = 1; }
     private void handleGetuid() { registers[REG_R0] = id; }
+    private void handleGettid() { registers[REG_R0] = id; }
     private void handleGetgid() { registers[REG_R0] = 1000; }
+    // | (Threading)
+    private void handleNanosleep() {
+        int reqPtr = registers[REG_R0], remPtr = registers[REG_R1];
+        
+        if (reqPtr == 0 || reqPtr + 8 > memory.length) { registers[REG_R0] = -14; return; }
+        
+        int sec = readIntLE(memory, reqPtr), nsec = readIntLE(memory, reqPtr + 4);
+        
+        long sleepMillis = sec * 1000 + nsec / 1000000;
+        
+        if (sleepMillis > 0) {
+            try { Thread.sleep(sleepMillis); }
+            catch (InterruptedException e) { registers[REG_R0] = -4; return; }
+        }
+        
+        registers[REG_R0] = 0;
+    }
     // | (Users)
 
     // | (Memory)
-
+    private void handleBrk() {
+        int newBrk = registers[REG_R0];
+        if (newBrk == 0) { registers[REG_R0] = heapEnd; return; }
+        if (newBrk < heapStart) { registers[REG_R0] = -1; return; }
+        
+        // Verificar se estamos liberando memória
+        if (newBrk < heapEnd) {
+            // Liberar blocos alocados que estão além do novo break
+            Vector keysToRemove = new Vector();
+            Enumeration keys = allocatedBlocks.keys();
+            while (keys.hasMoreElements()) {
+                Integer addr = (Integer) keys.nextElement(), size = (Integer) allocatedBlocks.get(addr);
+                if (addr.intValue() + size.intValue() > newBrk) { keysToRemove.addElement(addr); }
+            }
+            
+            for (int i = 0; i < keysToRemove.size(); i++) { allocatedBlocks.remove(keysToRemove.elementAt(i)); }
+        }
+        
+        heapEnd = newBrk;
+        registers[REG_R0] = heapEnd;
+    }
+    // |
+    private void handleSetjmp() {
+        int jmpBufPtr = registers[REG_R0];
+        if (jmpBufPtr + 48 > memory.length) { registers[REG_R0] = -14; return; }
+        
+        // Salvar registradores no jmp_buf
+        for (int i = 0; i < 16; i++) { writeIntLE(memory, jmpBufPtr + i * 4, registers[i]); }
+        
+        // Salvar PC atual (é o endereço de retorno de setjmp)
+        writeIntLE(memory, jmpBufPtr + 64, pc);
+        
+        int jmpBufId = nextJmpBufId++;
+        jmpBufs.put(new Integer(jmpBufId), new Integer(jmpBufPtr));
+        
+        registers[REG_R0] = 0; // Primeira chamada retorna 0
+    }
+    private void handleLongjmp() {
+        int jmpBufPtr = registers[REG_R0], val = registers[REG_R1];
+        if (jmpBufPtr + 48 > memory.length) { running = false; return; }
+        
+        // Restaurar registradores
+        for (int i = 0; i < 16; i++) { registers[i] = readIntLE(memory, jmpBufPtr + i * 4); }
+        
+        // Restaurar PC
+        pc = readIntLE(memory, jmpBufPtr + 64);
+        
+        // Retornar valor não-zero
+        registers[REG_R0] = (val == 0) ? 1 : val;
+    }
     // |
     private void handleIoctl() {
         int fd = registers[REG_R0];
@@ -2008,8 +2260,151 @@ public class ELF {
         // Em uma implementação real, precisaríamos controlar a posição do arquivo
         registers[REG_R0] = 0; // Sucesso (sempre na posição 0)
     }
+    private void handleFsync() {
+        int fd = registers[REG_R0];
+        Integer fdKey = new Integer(fd);
+        
+        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_R0] = -9; return; }
+
+        try {
+            if (fileDescriptors.containsKey(fdKey)) {
+                Object stream = fileDescriptors.get(fdKey);
+                if (stream instanceof OutputStream) { ((OutputStream) stream).flush(); }
+            }
+            registers[REG_R0] = 0;
+        } catch (Exception e) { registers[REG_R0] = -1; }
+    }
+    // |
+    // Network
+    // | (Open and Connect)
+    private void handleSocket() {
+        int domain = registers[REG_R0], type = registers[REG_R1], protocol = registers[REG_R2];
+        if (domain != AF_INET) { registers[REG_R0] = -97; return; }
+        if (type != SOCK_STREAM && type != SOCK_DGRAM) { registers[REG_R0] = -22; return; }
+        
+        try {
+            String protocolStr = (type == SOCK_STREAM) ? "tcp" : "udp";
+            String url = "socket://0.0.0.0";
+            
+            StreamConnectionNotifier server = null;
+            if (type == SOCK_STREAM) { server = (StreamConnectionNotifier) Connector.open("socket://:0"); }
+            
+            int fd = nextFd++;
+            Hashtable socketInfo = new Hashtable();
+            socketInfo.put("type", new Integer(type));
+            socketInfo.put("protocol", new Integer(protocol));
+            socketInfo.put("server", server);
+            socketInfo.put("connected", Boolean.FALSE);
+            
+            socketDescriptors.put(new Integer(fd), socketInfo);
+            fileDescriptors.put(new Integer(fd), null); // Placeholder
+            
+            registers[REG_R0] = fd;
+        } catch (Exception e) { registers[REG_R0] = -1; }
+    }
+    private void handleConnect() {
+        int fd = registers[REG_R0], sockaddrPtr = registers[REG_R1], addrlen = registers[REG_R2];
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        int type = ((Integer) socketInfo.get("type")).intValue();
+        
+        // Ler estrutura sockaddr_in da memória
+        if (sockaddrPtr + 16 > memory.length) { registers[REG_R0] = -14; return; }
+        
+        int sin_family = readShortLE(memory, sockaddrPtr), sin_port = readShortLE(memory, sockaddrPtr + 2);
+        byte[] sin_addr = new byte[4];
+        for (int i = 0; i < 4; i++) { sin_addr[i] = memory[sockaddrPtr + 4 + i]; }
+        if (sin_family != AF_INET) { registers[REG_R0] = -97; return; }
+        
+        String host = (sin_addr[0] & 0xFF) + "." + (sin_addr[1] & 0xFF) + "." + (sin_addr[2] & 0xFF) + "." + (sin_addr[3] & 0xFF), port = String.valueOf(sin_port & 0xFFFF);
+        
+        try {
+            SocketConnection conn = (SocketConnection) Connector.open("socket://" + host + ":" + port);
+            
+            socketInfo.put("connection", conn);
+            socketInfo.put("connected", Boolean.TRUE);
+            
+            if (type == SOCK_STREAM) {
+                InputStream is = conn.openInputStream();
+                OutputStream os = conn.openOutputStream();
+                
+                fileDescriptors.put(fdKey, is);
+                socketInfo.put("outputStream", os);
+            }
+            
+            registers[REG_R0] = 0;
+        } catch (Exception e) { registers[REG_R0] = -111; }
+    }
+    // | (Read and Write)
+    private void handleSend() {
+        int fd = registers[REG_R0], buf = registers[REG_R1], len = registers[REG_R2], flags = registers[REG_R3];
+        Integer fdKey = new Integer(fd);
+
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        if (!((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_R0] = -107; return; }
+        
+        try {
+            OutputStream os = (OutputStream) socketInfo.get("outputStream");
+            if (os == null) { registers[REG_R0] = -9; return; }
+            
+            byte[] data = new byte[len];
+            for (int i = 0; i < len && buf + i < memory.length; i++) { data[i] = memory[buf + i]; }
+            
+            os.write(data); os.flush();
+            
+            registers[REG_R0] = len;
+        } catch (Exception e) { registers[REG_R0] = -32; }
+    }
+    private void handleRecv() {
+        int fd = registers[REG_R0], buf = registers[REG_R1], len = registers[REG_R2], flags = registers[REG_R3];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        if (!((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_R0] = -107; return; }
+        
+        try {
+            InputStream is = (InputStream) fileDescriptors.get(fdKey);
+            if (is == null) { registers[REG_R0] = -9; return; }
+            
+            int bytesRead = 0;
+            for (int i = 0; i < len && buf + i < memory.length; i++) {
+                int b = is.read();
+                if (b == -1) {
+                    if (bytesRead == 0) { registers[REG_R0] = 0; }
+                    else { registers[REG_R0] = bytesRead; }
+
+                    return;
+                }
+                memory[buf + i] = (byte) b;
+                bytesRead++;
+            }
+            
+            registers[REG_R0] = bytesRead;
+        } catch (Exception e) { registers[REG_R0] = -104; }
+    }
+    // |
+    private void handleBind() { registers[REG_R0] = -1; } // Não implementado
+    private void handleListen() { registers[REG_R0] = -1; } // Não implementado
+    private void handleAccept() { registers[REG_R0] = -1; } // Não implementado
+    private void handleShutdown() { registers[REG_R0] = -1; } // Não implementado
+    private void handleSetsockopt() { registers[REG_R0] = -1; } // Não implementado
+    private void handleGetsockopt() { registers[REG_R0] = -1; } // Não implementado
+    private void handleSendto() { registers[REG_R0] = -1; } // Não implementado
+    private void handleRecvfrom() { registers[REG_R0] = -1; } // Não implementado
+    private void handleGetsockname() { registers[REG_R0] = -1; } // Não implementado
+    private void handleGetpeername() { registers[REG_R0] = -1; } // Não implementado
 
 
+    private void handleSelect() { int nfds = registers[REG_R0], readfds = registers[REG_R1], writefds = registers[REG_R2], exceptfds = registers[REG_R3], timeoutPtr = pc + 16; registers[REG_R0] = 0; }
+    private void handlePoll() { int fdsPtr = registers[REG_R0], nfds = registers[REG_R1], timeout = registers[REG_R2]; registers[REG_R0] = 0; }
 
     // Métodos auxiliares para leitura/escrita little-endian
     private int readIntLE(byte[] data, int offset) { if (offset + 3 >= data.length || offset < 0) { return 0; } return ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24)); } 
