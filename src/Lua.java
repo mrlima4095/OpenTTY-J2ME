@@ -2461,12 +2461,8 @@ public class Lua {
                         else if (arg instanceof LuaFunction) { midlet.shell = arg; }
                         else { return new Double(2); }
                     }
-                    else if (payload.equals("cache")) { 
-                        if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); }
-                        else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; }
-                        else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); }
-                        else { return new Double(2); }
-                    }
+                    else if (payload.equals("cache")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); } else { return new Double(2); } }
+                    else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
                     else if (payload.equals("netsh")) {
                         
                     }
