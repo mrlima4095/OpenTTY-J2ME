@@ -1901,10 +1901,15 @@ public Hashtable run() {
         // Verificar se diretório existe
         boolean dirExists = false;
         
-        if (fullPath.equals("/home/") || fullPath.equals("/tmp/") || fullPath.equals("/mnt/") || fullPath.equals("/bin/") || fullPath.equals("/etc/") || fullPath.equals("/lib/")) { dirExists = true; }
+        if (fullPath.equals("/home/") || fullPath.equals("/tmp/") || 
+            fullPath.equals("/mnt/") || fullPath.equals("/bin/") || 
+            fullPath.equals("/etc/") || fullPath.equals("/lib/")) { 
+            dirExists = true; 
+        }
         else if (fullPath.startsWith("/mnt/")) { 
             try {
-                FileConnection conn = (FileConnection) Connector.open("file:///" + fullPath.substring(5), Connector.READ);
+                FileConnection conn = (FileConnection) Connector.open(
+                    "file:///" + fullPath.substring(5), Connector.READ);
                 dirExists = conn.exists() && conn.isDirectory();
                 conn.close();
             } catch (Exception e) {
@@ -1914,11 +1919,20 @@ public Hashtable run() {
             dirExists = true;
         }
         
-        if (!dirExists) { throw new Exception("Directory not found"); }
+        if (!dirExists) { 
+            throw new Exception("Directory not found: " + fullPath); 
+        }
         
         Integer fd = new Integer(nextFd++);
-        fileDescriptors.put(fd, new Hashtable()); // Placeholder - será preenchido no getdents
+        
+        // Criar cache vazio do diretório
+        Hashtable dirCache = new Hashtable();
+        fileDescriptors.put(fd, dirCache);
         fileDescriptors.put(fd + ":path", fullPath);
+        fileDescriptors.put(fd + ":index", new Integer(1)); // Índice inicial
+        
+        // DEBUG
+        midlet.print("DEBUG: Opened directory fd=" + fd + " path=" + fullPath, stdout, id);
         
         registers[REG_R0] = fd.intValue();
     }
