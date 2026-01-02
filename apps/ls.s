@@ -19,6 +19,22 @@ _start:
     mov r2, #15
     bl write
     
+    @ open("/", O_DIRECTORY)
+    ldr r0, =dir
+    mov r1, #0x10000   @ O_DIRECTORY
+    mov r7, #5         @ SYS_OPEN
+    svc 0
+    
+    mov r4, r0         @ salvar fd
+    
+    @ Passo 2 - mostrar fd
+    ldr r1, =step2
+    mov r2, #19
+    bl write
+    mov r0, r4
+    bl print_hex
+    bl print_nl
+    
     cmp r4, #0
     ble error_exit
     
@@ -27,7 +43,22 @@ _start:
     mov r2, #19
     bl write
     
+    @ getdents(fd, buffer, 1024)
+    mov r0, r4
+    ldr r1, =buffer
+    mov r2, #1024
+    mov r7, #217       @ SYS_GETDENTS EABI
+    svc 0
+    
     mov r5, r0         @ salvar retorno
+    
+    @ Passo 4 - mostrar retorno do getdents
+    ldr r1, =step4
+    mov r2, #24
+    bl write
+    mov r0, r5
+    bl print_hex
+    bl print_nl
     
     @ Passo 5
     ldr r1, =step5

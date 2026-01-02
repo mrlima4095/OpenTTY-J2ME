@@ -1543,6 +1543,10 @@ public class ELF {
         int fd = registers[REG_R0], dirp = registers[REG_R1], count = registers[REG_R2];
         if (dirp < 0 || dirp >= memory.length || count <= 0) { registers[REG_R0] = -1; return; }
         
+        midlet.print("fd: " + registers[REG_R0], stdout, id);
+        midlet.print("buf: " + registers[REG_R1], stdout, id);
+        midlet.print("count: " + registers[REG_R2], stdout, id);
+
         Integer fdKey = new Integer(fd);
         
         if (!fileDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
@@ -1742,6 +1746,8 @@ public class ELF {
         } else {
             registers[REG_R0] = bufPos - dirp; // Bytes escritos
         }
+
+        midlet.print("getdents returning: " + registers[REG_R0], stdout, id);
     }
 
     private void handleDup() {
@@ -1804,10 +1810,10 @@ public class ELF {
         String path = pathBuf.toString();
         
         try {
-            boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR, forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR, create = (flags & O_CREAT) != 0, append = (flags & O_APPEND) != 0, truncate = (flags & O_TRUNC) != 0, isDirectory = (flags & O_DIRECTORY) != 0;
+            boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR, forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR, create = (flags & O_CREAT) != 0, append = (flags & O_APPEND) != 0, truncate = (flags & O_TRUNC) != 0, isDirectory = (flags & 0x10000) != 0;
         
             if (isDirectory) {
-                try { openDirectory(path); } catch (Exception e) { registers[REG_R0] = -2; }
+                try { midlet.print("O_DIRECTORY flag set - opening directory", stdout, id); openDirectory(path); } catch (Exception e) { registers[REG_R0] = -2; }
                 return;
             }
 
