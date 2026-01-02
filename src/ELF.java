@@ -85,7 +85,48 @@ public class ELF {
     private static final int SYS_GETPPID = 64;
     private static final int SYS_GETUID32 = 199;
     private static final int SYS_GETEUID32 = 201;
+    private static final int SYS_EXECVE = 11;
+    private static final int SYS_MKDIR = 39;
+    private static final int SYS_RMDIR = 40;
+    private static final int SYS_DUP = 41;
+    private static final int SYS_DUP2 = 63;
+    private static final int SYS_GETDENTS = 141;
+    private static final int SYS_IOCTL = 54;
+    private static final int SYS_LSEEK = 19;
+    private static final int SYS_UNLINK = 10;
+    private static final int SYS_STAT = 106;
+    private static final int SYS_FSTAT = 108;
+    private static final int SYS_CLONE = 120;
+    private static final int SYS_GETPRIORITY = 140;
+    private static final int SYS_SETPRIORITY = 141
+
+    // Adicionar constantes para flags de ioctl (simplificadas)
+    private static final int TCGETS = 0x5401;
+    private static final int TCSETS = 0x5402;
+    private static final int TIOCGWINSZ = 0x5413;
+    private static final int TIOCSWINSZ = 0x5414;
+    private static final int FIONREAD = 0x541B;
+
+    // Adicionar constantes para mode de mkdir
+    private static final int S_IRWXU = 0700;  // RWX mask for owner
+    private static final int S_IRUSR = 0400;  // R for owner
+    private static final int S_IWUSR = 0200;  // W for owner
+    private static final int S_IXUSR = 0100;  // X for owner
+    private static final int S_IRWXG = 0070;  // RWX mask for group
+    private static final int S_IRGRP = 0040;  // R for group
+    private static final int S_IWGRP = 0020;  // W for group
+    private static final int S_IXGRP = 0010;  // X for group
+    private static final int S_IRWXO = 0007;  // RWX mask for other
+    private static final int S_IROTH = 0004;  // R for other
+    private static final int S_IWOTH = 0002;  // W for other
+    private static final int S_IXOTH = 0001;  // X for other
+    private static final int S_IFDIR = 0040000; // Directory
     
+    // Adicionar constante para SEEK
+    private static final int SEEK_SET = 0;
+    private static final int SEEK_CUR = 1;
+    private static final int SEEK_END = 2;
+
     // Flags de open
     private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2;
     private static final int O_CREAT = 64;
@@ -1051,6 +1092,61 @@ public class ELF {
                 handleGetuid();
                 break;
                 
+            case SYS_EXECVE:
+                handleExecve();
+                break;
+                
+            case SYS_MKDIR:
+                handleMkdir();
+                break;
+                
+            case SYS_RMDIR:
+                handleRmdir();
+                break;
+                
+            case SYS_STAT:
+                handleStat();
+                break;
+                
+            case SYS_FSTAT:
+                handleFstat();
+                break;
+                
+            case SYS_IOCTL:
+                handleIoctl();
+                break;
+                
+            case SYS_CLONE:
+                handleClone();
+                break;
+                
+            case SYS_GETPRIORITY:
+                handleGetpriority();
+                break;
+                
+            case SYS_SETPRIORITY:
+                handleSetpriority();
+                break;
+                
+            case SYS_LSEEK:
+                handleLseek();
+                break;
+                
+            case SYS_GETDENTS:
+                handleGetdents();
+                break;
+                
+            case SYS_DUP:
+                handleDup();
+                break;
+                
+            case SYS_DUP2:
+                handleDup2();
+                break;
+                
+            case SYS_UNLINK:
+                handleUnlink();
+                break;
             default:
                 registers[REG_R0] = -1; // Syscall não implementada
                 break;
@@ -1461,6 +1557,550 @@ public class ELF {
     private void handleGetuid() { registers[REG_R0] = id; }
 
     private void handleGetgid() { registers[REG_R0] = 1000; }
+
+    private void handleExecve() {
+        int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
+        String path = pathBuf.toString();
+        
+        // Construir argumentos (similar ao io.popen do Lua)
+        Vector argsVec = new Vector();
+        if (argvAddr != 0) {
+            int argPtr = readIntLE(memory, argvAddr);
+            int argIndex = 0;
+            
+            while (argPtr != 0 && argIndex < 64) {
+                StringBuffer argBuf = new StringBuffer();
+                int j = 0;
+                while (argPtr + j < memory.length && memory[argPtr + j] != 0 && j < 256) {
+                    argBuf.append((char)(memory[argPtr + j] & 0xFF));
+                    j++;
+                }
+                argsVec.addElement(argBuf.toString());
+                
+                argvAddr += 4;
+                argPtr = readIntLE(memory, argvAddr);
+                argIndex++;
+            }
+        }
+        
+        // Construir string de argumentos
+        StringBuffer argsStr = new StringBuffer();
+        for (i = 1; i < argsVec.size(); i++) {
+            if (i > 1) argsStr.append(" ");
+            argsStr.append((String)argsVec.elementAt(i));
+        }
+        
+        try {
+            // Verificar se é ELF ou Lua
+            InputStream is = midlet.getInputStream(path);
+            if (is == null) { registers[REG_R0] = -2; return; }
+            
+            byte[] header = new byte[4];
+            int bytesRead = is.read(header);
+            is.close();
+            
+            boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
+            
+            if (isElf) {
+                // Executar ELF (similar ao fork+exec)
+                InputStream elfStream = midlet.getInputStream(path);
+                ELF elf = new ELF(midlet, stdout, scope, id, null, null);
+                
+                if (elf.load(elfStream)) {
+                    // Fechar file descriptors (exceto 0,1,2)
+                    Enumeration keys = fileDescriptors.keys();
+                    while (keys.hasMoreElements()) {
+                        Object key = keys.nextElement();
+                        if (key instanceof Integer) {
+                            Integer fd = (Integer) key;
+                            if (fd.intValue() >= 3) {
+                                Object stream = fileDescriptors.get(fd);
+                                try {
+                                    if (stream instanceof InputStream) { ((InputStream) stream).close(); }
+                                    else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
+                                } catch (Exception e) {}
+                            }
+                        }
+                    }
+                    fileDescriptors.clear();
+                    
+                    // Reabrir stdin/stdout/stderr
+                    fileDescriptors.put(new Integer(1), stdout);
+                    fileDescriptors.put(new Integer(2), stdout);
+                    
+                    // Executar novo programa
+                    Hashtable proc = midlet.genprocess("elf", id, null);
+                    proc.put("elf", elf);
+                    midlet.sys.put(pid, proc);
+                    
+                    // Configurar stack para argumentos
+                    // (simplificado - na prática precisaria configurar argc/argv na stack)
+                    
+                    registers[REG_R0] = 0; // Sucesso
+                } else {
+                    registers[REG_R0] = -8; // ENOEXEC
+                }
+            } else {
+                // Executar Lua
+                String code = midlet.read(path);
+                if (code == null || code.equals("")) { registers[REG_R0] = -2; return; }
+                
+                // Fechar file descriptors (exceto 0,1,2)
+                Enumeration keys = fileDescriptors.keys();
+                while (keys.hasMoreElements()) {
+                    Object key = keys.nextElement();
+                    if (key instanceof Integer) {
+                        Integer fd = (Integer) key;
+                        if (fd.intValue() >= 3) {
+                            Object stream = fileDescriptors.get(fd);
+                            try {
+                                if (stream instanceof InputStream) { ((InputStream) stream).close(); }
+                                else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
+                            } catch (Exception e) {}
+                        }
+                    }
+                }
+                fileDescriptors.clear();
+                
+                // Reabrir stdin/stdout/stderr
+                fileDescriptors.put(new Integer(1), stdout);
+                fileDescriptors.put(new Integer(2), stdout);
+                
+                // Executar Lua (similar ao io.popen)
+                Hashtable arg = new Hashtable();
+                arg.put(new Double(0), path);
+                String[] argList = midlet.splitArgs(argsStr.toString());
+                for (i = 0; i < argList.length; i++) { arg.put(new Double(i + 1), argList[i]); }
+                
+                Lua lua = new Lua(midlet, id, pid, null, stdout, scope);
+                lua.run(path, code, arg);
+                
+                registers[REG_R0] = 0;
+            }
+        } catch (Exception e) {
+            registers[REG_R0] = -1; // EPERM ou outro erro
+        }
+    }
+
+    private void handleMkdir() {
+        int pathAddr = registers[REG_R0];
+        int mode = registers[REG_R1];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        
+        // Ler caminho
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
+        String path = pathBuf.toString();
+
+        if (path.startsWith("/mnt/")) {
+            try {
+                FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
+                if (conn.exists()) {
+                    conn.close();
+                    registers[REG_R0] = -17; // EEXIST
+                    return;
+                }
+                conn.mkdir();
+                conn.close();
+                registers[REG_R0] = 0; // Sucesso
+            } catch (Exception e) {
+                registers[REG_R0] = -1; // EPERM
+            }
+        } else { registers[REG_R0] = -38; return; }
+    }
+
+    private void handleRmdir() {
+        int pathAddr = registers[REG_R0];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length) {
+            registers[REG_R0] = -1; // EFAULT
+            return;
+        }
+        
+        // Ler caminho
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
+        String path = pathBuf.toString();
+        
+        if (path.startsWith("/home/")) {
+            // Não suportado em /home/
+            registers[REG_R0] = -38; // ENOSYS
+            return;
+        }
+        
+        if (path.startsWith("/mnt/")) {
+            try {
+                FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
+                if (!conn.exists()) {
+                    conn.close();
+                    registers[REG_R0] = -2; // ENOENT
+                    return;
+                }
+                if (!conn.isDirectory()) {
+                    conn.close();
+                    registers[REG_R0] = -20; // ENOTDIR
+                    return;
+                }
+                
+                // Verificar se diretório está vazio
+                Enumeration list = conn.list();
+                if (list != null && list.hasMoreElements()) {
+                    conn.close();
+                    registers[REG_R0] = -39; // ENOTEMPTY
+                    return;
+                }
+                
+                conn.delete();
+                conn.close();
+                registers[REG_R0] = 0; // Sucesso
+            } catch (Exception e) {
+                registers[REG_R0] = -1; // EPERM
+            }
+        } else {
+            // Outras estruturas não suportam diretórios
+            registers[REG_R0] = -38; // ENOSYS
+        }
+    }
+
+    private void handleStat() {
+        int pathAddr = registers[REG_R0];
+        int statbufAddr = registers[REG_R1];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length || statbufAddr < 0 || statbufAddr >= memory.length) {
+            registers[REG_R0] = -1; // EFAULT
+            return;
+        }
+        
+        // Ler caminho
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
+        String path = pathBuf.toString();
+        
+        // Implementação simplificada de struct stat
+        // Preencher com valores básicos
+        for (i = 0; i < 108; i++) { // Tamanho aproximado de struct stat
+            if (statbufAddr + i < memory.length) {
+                memory[statbufAddr + i] = 0;
+            }
+        }
+        
+        // st_mode
+        int st_mode = 0;
+        if (path.endsWith("/")) {
+            st_mode |= S_IFDIR | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
+        } else {
+            st_mode |= 0100644; // Arquivo regular
+        }
+        writeIntLE(memory, statbufAddr + 16, st_mode);
+        
+        // st_size
+        int st_size = 0;
+        if (!path.endsWith("/")) {
+            try {
+                InputStream is = midlet.getInputStream(path);
+                if (is != null) {
+                    int available = is.available();
+                    if (available > 0) {
+                        st_size = available;
+                    }
+                    is.close();
+                }
+            } catch (Exception e) {}
+        }
+        writeIntLE(memory, statbufAddr + 44, st_size);
+        
+        registers[REG_R0] = 0; // Sucesso
+    }
+
+    private void handleFstat() {
+        int fd = registers[REG_R0];
+        int statbufAddr = registers[REG_R1];
+        
+        if (statbufAddr < 0 || statbufAddr >= memory.length) {
+            registers[REG_R0] = -1; // EFAULT
+            return;
+        }
+        
+        // Zerar buffer
+        for (int i = 0; i < 108; i++) {
+            if (statbufAddr + i < memory.length) {
+                memory[statbufAddr + i] = 0;
+            }
+        }
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (fd == 0 || fd == 1 || fd == 2) {
+            // stdin/stdout/stderr - dispositivo de caractere
+            writeIntLE(memory, statbufAddr + 16, 020000); // st_mode: character device
+        } else if (fileDescriptors.containsKey(fdKey)) {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            if (stream instanceof InputStream || stream instanceof OutputStream) {
+                // Arquivo regular
+                writeIntLE(memory, statbufAddr + 16, 0100644); // st_mode: regular file
+                
+                // Tentar obter tamanho
+                try {
+                    if (stream instanceof InputStream) {
+                        int available = ((InputStream) stream).available();
+                        writeIntLE(memory, statbufAddr + 44, available);
+                    }
+                } catch (Exception e) {}
+            } else {
+                // Dispositivo desconhecido
+                writeIntLE(memory, statbufAddr + 16, 020000);
+            }
+        } else {
+            registers[REG_R0] = -9; // EBADF
+            return;
+        }
+        
+        registers[REG_R0] = 0; // Sucesso
+    }
+
+    private void handleIoctl() {
+        int fd = registers[REG_R0];
+        int request = registers[REG_R1];
+        int argp = registers[REG_R2];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) {
+            registers[REG_R0] = -9; // EBADF
+            return;
+        }
+        
+        switch (request) {
+            case TCGETS:
+            case TIOCGWINSZ:
+                // Retornar estrutura terminal (simplificada)
+                if (argp >= 0 && argp + 8 < memory.length) {
+                    // Preencher com valores padrão
+                    for (int i = 0; i < 8; i++) {
+                        memory[argp + i] = 0;
+                    }
+                    // 80x25 terminal
+                    memory[argp] = 80; // colunas
+                    memory[argp + 2] = 25; // linhas
+                }
+                registers[REG_R0] = 0;
+                break;
+                
+            case TCSETS:
+            case TIOCSWINSZ:
+                // Ignorar - terminal não configurável
+                registers[REG_R0] = 0;
+                break;
+                
+            case FIONREAD:
+                // Retornar bytes disponíveis para leitura
+                int bytesAvailable = 0;
+                if (fd == 0) {
+                    // stdin - sempre 0 por enquanto
+                    bytesAvailable = 0;
+                } else if (fileDescriptors.containsKey(fdKey)) {
+                    Object stream = fileDescriptors.get(fdKey);
+                    if (stream instanceof InputStream) {
+                        try {
+                            bytesAvailable = ((InputStream) stream).available();
+                        } catch (Exception e) {
+                            bytesAvailable = 0;
+                        }
+                    }
+                }
+                if (argp >= 0 && argp + 4 < memory.length) {
+                    writeIntLE(memory, argp, bytesAvailable);
+                }
+                registers[REG_R0] = 0;
+                break;
+                
+            default:
+                // IOCTL não suportado
+                registers[REG_R0] = -25; // ENOTTY
+                break;
+        }
+    }
+
+    private void handleClone() {
+        // Implementação simplificada - sempre falha (não suportado)
+        registers[REG_R0] = -38; // ENOSYS
+    }
+
+    private void handleGetpriority() {
+        int which = registers[REG_R0];
+        int who = registers[REG_R1];
+        
+        // Verificar processo atual
+        if (who == 0) {
+            // Retornar prioridade do processo atual
+            Object priorityObj = proc.get("priority");
+            if (priorityObj instanceof Integer) {
+                registers[REG_R0] = ((Integer) priorityObj).intValue();
+            } else {
+                // Prioridade padrão: 20 (nice value)
+                registers[REG_R0] = 20;
+            }
+        } else {
+            // Apenas suporta processo atual
+            registers[REG_R0] = -22; // EINVAL
+        }
+    }
+
+    private void handleSetpriority() {
+        int which = registers[REG_R0];
+        int who = registers[REG_R1];
+        int prio = registers[REG_R2];
+        
+        // Apenas suporta processo atual
+        if (who == 0) {
+            // Armazenar no hashtable do processo
+            proc.put("priority", new Integer(prio));
+            registers[REG_R0] = 0; // Sucesso
+        } else {
+            registers[REG_R0] = -22; // EINVAL
+        }
+    }
+
+    private void handleLseek() {
+        int fd = registers[REG_R0];
+        int offset = registers[REG_R1];
+        int whence = registers[REG_R2];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) {
+            registers[REG_R0] = -9; // EBADF
+            return;
+        }
+        
+        // Implementação simplificada - sempre retorna sucesso mas não faz nada
+        // Em uma implementação real, precisaríamos controlar a posição do arquivo
+        registers[REG_R0] = 0; // Sucesso (sempre na posição 0)
+    }
+
+    private void handleGetdents() {
+        int fd = registers[REG_R0];
+        int dirp = registers[REG_R1];
+        int count = registers[REG_R2];
+        
+        // Não implementado - sempre retorna 0 (fim do diretório)
+        registers[REG_R0] = 0;
+    }
+
+    private void handleDup() {
+        int oldfd = registers[REG_R0];
+        
+        Integer oldKey = new Integer(oldfd);
+        
+        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) {
+            registers[REG_R0] = -9; // EBADF
+            return;
+        }
+        
+        // Encontrar novo fd
+        int newfd = nextFd++;
+        while (fileDescriptors.containsKey(new Integer(newfd))) {
+            newfd++;
+        }
+        
+        // Duplicar entrada
+        if (oldfd == 0 || oldfd == 1 || oldfd == 2) {
+            // stdin/stdout/stderr
+            fileDescriptors.put(new Integer(newfd), (oldfd == 1 || oldfd == 2) ? stdout : null);
+        } else {
+            fileDescriptors.put(new Integer(newfd), fileDescriptors.get(oldKey));
+        }
+        
+        registers[REG_R0] = newfd;
+    }
+
+    private void handleDup2() {
+        int oldfd = registers[REG_R0];
+        int newfd = registers[REG_R1];
+        
+        Integer oldKey = new Integer(oldfd);
+        
+        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) {
+            registers[REG_R0] = -9; // EBADF
+            return;
+        }
+        
+        // Fechar newfd se estiver aberto
+        Integer newKey = new Integer(newfd);
+        if (fileDescriptors.containsKey(newKey)) {
+            Object stream = fileDescriptors.get(newKey);
+            try {
+                if (stream instanceof InputStream) {
+                    ((InputStream) stream).close();
+                } else if (stream instanceof OutputStream) {
+                    ((OutputStream) stream).close();
+                }
+            } catch (Exception e) {}
+            fileDescriptors.remove(newKey);
+        }
+        
+        // Duplicar
+        if (oldfd == 0 || oldfd == 1 || oldfd == 2) {
+            fileDescriptors.put(newKey, (oldfd == 1 || oldfd == 2) ? stdout : null);
+        } else {
+            fileDescriptors.put(newKey, fileDescriptors.get(oldKey));
+        }
+        
+        registers[REG_R0] = newfd;
+    }
+
+    private void handleUnlink() {
+        int pathAddr = registers[REG_R0];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length) {
+            registers[REG_R0] = -1; // EFAULT
+            return;
+        }
+        
+        // Ler caminho
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
+        String path = pathBuf.toString();
+        
+        // Usar a função deleteFile existente do OpenTTY
+        int result = midlet.deleteFile(path, id);
+        
+        // Converter código de retorno do OpenTTY para errno
+        switch (result) {
+            case 0:  registers[REG_R0] = 0; break; // Sucesso
+            case 2:  registers[REG_R0] = -22; break; // EINVAL
+            case 5:  registers[REG_R0] = -2; break; // ENOENT
+            case 13: registers[REG_R0] = -13; break; // EACCES
+            case 127: registers[REG_R0] = -2; break; // ENOENT
+            default: registers[REG_R0] = -1; break; // EPERM
+        }
+    }
+
+
 
 
     // Métodos auxiliares para leitura/escrita little-endian
