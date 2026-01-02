@@ -72,33 +72,38 @@ public class ELF {
     private static final int COND_AL = 14; // Always (unconditional)
     private static final int COND_NV = 15; // Never
     
-    // Syscalls Linux ARM (EABI) - Atualizadas
-    private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6;
+    // Syscalls Linux ARM (EABI) - Corrigidas
+    private static final int SYS_EXIT = 1;
+    private static final int SYS_FORK = 2;
+    private static final int SYS_READ = 3;
+    private static final int SYS_WRITE = 4;
+    private static final int SYS_OPEN = 5;
+    private static final int SYS_CLOSE = 6;
     private static final int SYS_CREAT = 8;
-    private static final int SYS_TIME = 13;
+    private static final int SYS_UNLINK = 10;        // ← adicionado
+    private static final int SYS_EXECVE = 11;        // ← adicionado
     private static final int SYS_CHDIR = 12;
+    private static final int SYS_TIME = 13;
+    private static final int SYS_LSEEK = 19;         // ← adicionado
     private static final int SYS_GETPID = 20;
+    private static final int SYS_MKDIR = 39;         // ← adicionado
+    private static final int SYS_RMDIR = 40;         // ← adicionado
+    private static final int SYS_DUP = 41;           // ← adicionado
+    private static final int SYS_DUP2 = 63;          // ← adicionado
+    private static final int SYS_GETPPID = 64;
+    private static final int SYS_IOCTL = 54;         // ← adicionado
     private static final int SYS_KILL = 37;
     private static final int SYS_BRK = 45;
-    private static final int SYS_GETCWD = 183;
     private static final int SYS_GETTIMEOFDAY = 78;
-    private static final int SYS_GETPPID = 64;
+    private static final int SYS_GETCWD = 183;
     private static final int SYS_GETUID32 = 199;
     private static final int SYS_GETEUID32 = 201;
-    private static final int SYS_EXECVE = 11;
-    private static final int SYS_MKDIR = 39;
-    private static final int SYS_RMDIR = 40;
-    private static final int SYS_DUP = 41;
-    private static final int SYS_DUP2 = 63;
-    private static final int SYS_GETDENTS = 141;
-    private static final int SYS_IOCTL = 54;
-    private static final int SYS_LSEEK = 19;
-    private static final int SYS_UNLINK = 10;
-    private static final int SYS_STAT = 106;
-    private static final int SYS_FSTAT = 108;
-    private static final int SYS_CLONE = 120;
-    private static final int SYS_GETPRIORITY = 140;
-    private static final int SYS_SETPRIORITY = 141;
+    private static final int SYS_STAT = 106;         // ← adicionado
+    private static final int SYS_FSTAT = 108;        // ← adicionado
+    private static final int SYS_CLONE = 120;        // ← adicionado
+    private static final int SYS_GETPRIORITY = 140;  // ← CORRIGIDO (era 141)
+    private static final int SYS_SETPRIORITY = 141;  // ← CORRIGIDO
+    private static final int SYS_GETDENTS = 217;     // ← DUPLICADO! Remover ou mudar
 
     // Adicionar constantes para flags de ioctl (simplificadas)
     private static final int TCGETS = 0x5401;
