@@ -1707,7 +1707,6 @@ public Hashtable run() {
     }
     private void handleOpen() {
         int pathAddr = registers[REG_R0], flags = registers[REG_R1], mode = registers[REG_R2];
-        
         if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
         
         StringBuffer pathBuf = new StringBuffer();
@@ -1716,10 +1715,37 @@ public Hashtable run() {
         String path = pathBuf.toString();
         
         try {
-            boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR, forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR, create = (flags & O_CREAT) != 0, append = (flags & O_APPEND) != 0, truncate = (flags & O_TRUNC) != 0, isDirectory = (flags & 0x10000) != 0;
+            boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR, 
+                    forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR, 
+                    create = (flags & O_CREAT) != 0, append = (flags & O_APPEND) != 0, 
+                    truncate = (flags & O_TRUNC) != 0, isDirectory = (flags & O_DIRECTORY) != 0;
 
             String fullPath = midlet.joinpath(path, scope);
             
+            // Se for diretório, tratar diferente
+            if (isDirectory) {
+                boolean isDir = false;
+                
+                if (fullPath.equals("/") || fullPath.equals("/home/") || fullPath.equals("/tmp/") || fullPath.equals("/bin/") || fullPath.equals("/etc/") || fullPath.equals("/lib/")) { isDir = true; } 
+                else if (fullPath.startsWith("/mnt/")) {
+                    try {
+                        FileConnection conn = (FileConnection) Connector.open("file:///" + fullPath.substring(5), Connector.READ);
+                        isDir = conn.exists() && conn.isDirectory();
+                        conn.close();
+                    } catch (Exception e) { isDir = false; }
+                }
+                else if (midlet.fs.containsKey(fullPath)) { isDir = true; }
+                
+                if (isDir) {
+                    Integer fd = new Integer(nextFd++);
+                    fileDescriptors.put(fd, fullPath); // Armazenar caminho como String
+                    registers[REG_R0] = fd.intValue();
+                } 
+                else { registers[REG_R0] = -20; }
+                return;
+            }
+            
+            // Resto do código para arquivos...
             if (forReading) {
                 InputStream is = midlet.getInputStream(fullPath);
                 if (is != null) {
@@ -1733,12 +1759,8 @@ public Hashtable run() {
                         Integer fd = new Integer(nextFd++);
                         fileDescriptors.put(fd, is2);
                         registers[REG_R0] = fd.intValue();
-                    } else {
-                        registers[REG_R0] = -1;
-                    }
-                } else {
-                    registers[REG_R0] = -2; // ENOENT
-                }
+                    } else { registers[REG_R0] = -1; }
+                } else { registers[REG_R0] = -2; }
             } else if (forWriting) {
                 // Para escrita, usamos um ByteArrayOutputStream temporário
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -1748,9 +1770,7 @@ public Hashtable run() {
                     InputStream existing = midlet.getInputStream(fullPath);
                     if (existing != null) {
                         int b;
-                        while ((b = existing.read()) != -1) {
-                            baos.write(b);
-                        }
+                        while ((b = existing.read()) != -1) { baos.write(b); }
                         existing.close();
                     }
                 }
@@ -1761,13 +1781,8 @@ public Hashtable run() {
                 
                 // Guardar o caminho para uso no close/flush
                 fileDescriptors.put(fd + ":path", fullPath);
-            } else {
-                registers[REG_R0] = -1;
-            }
-            
-        } catch (Exception e) {
-            registers[REG_R0] = -1;
-        }
+            } else { registers[REG_R0] = -1; }
+        } catch (Exception e) { registers[REG_R0] = -1; }
     }
     private void handleClose() {
         int fd = registers[REG_R0];
