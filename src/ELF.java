@@ -239,9 +239,11 @@ public class ELF {
         midlet.sys.put(pid, proc);
         
         try {
-            midlet.print("=== ELF START DEBUG ===", stdout, id);
-            midlet.print("PC start: " + toHex(pc), stdout, id);
-            midlet.print("SP: " + toHex(registers[REG_SP]), stdout, id);
+            if (midlet.debug) { 
+                midlet.print("=== ELF START DEBUG ===", stdout, id);
+                midlet.print("PC start: " + toHex(pc), stdout, id);
+                midlet.print("SP: " + toHex(registers[REG_SP]), stdout, id);
+            }
             
             int instructionCount = 0;
             while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
@@ -250,16 +252,16 @@ public class ELF {
                     break;
                 }
                 
-                midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id);
+                if (midlet.debug) midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id);
                 
                 int instruction = readIntLE(memory, pc);
-                midlet.print("DEBUG: Instr at PC: " + toHex(instruction), stdout, id);
+                if (midlet.debug) midlet.print("DEBUG: Instr at PC: " + toHex(instruction), stdout, id);
                 pc += 4;
                 
                 try {
                     executeInstruction(instruction);
                 } catch (Exception e) {
-                    midlet.print("DEBUG: Exception in executeInstruction: " + e, stdout, id);
+                    if (midlet.debug) midlet.print("DEBUG: Exception in executeInstruction: " + e, stdout, id);
                     e.printStackTrace();
                     running = false;
                     break;
@@ -267,14 +269,13 @@ public class ELF {
             }
             midlet.print("=== ELF END DEBUG ===", stdout, id);
         } 
-        catch (Throwable e) {  // ← Catch Throwable, não apenas Exception
-            midlet.print("=== ELF CRASH DEBUG ===", stdout, id);
-            midlet.print("CRASH: " + e.getClass().getName() + ": " + e.getMessage(), stdout, id);
+        catch (Throwable e) { 
+            if (midlet.debug) midlet.print("=== ELF CRASH DEBUG ===\nCRASH: " + e.getClass().getName() + ": " + e.getMessage(), stdout, id);
             e.printStackTrace();
             running = false; 
         } 
         finally { 
-            midlet.print("=== ELF FINALLY DEBUG ===", stdout, id);
+            if (midlet.debug) midlet.print("=== ELF FINALLY DEBUG ===", stdout, id);
             if (midlet.sys.containsKey(pid)) { 
                 midlet.sys.remove(pid); 
             } 
