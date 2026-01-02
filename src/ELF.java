@@ -132,6 +132,8 @@ public class ELF {
     private static final int O_CREAT = 64;
     private static final int O_APPEND = 1024;
     private static final int O_TRUNC = 512;
+
+    private static final int O_DIRECTORY = 0x10000;
     
     // Coprocessador (simulado para FPU)
     private float[] fpuRegisters;
@@ -1018,6 +1020,8 @@ public class ELF {
         }
     }
     
+    // Syscalls Handler
+    // |
     private void handleSyscall(int number) {
         switch (number) {
             case SYS_FORK:
@@ -1148,412 +1152,11 @@ public class ELF {
                 break;
         }
     }
-    
-    private void handleFork() {
-        registers[REG_R0] = -1; // ENOSYS - Function not implemented
-    }
-    
-    private void handleWrite() {
-        int fd = registers[REG_R0];
-        int buf = registers[REG_R1];
-        int count = registers[REG_R2];
-        
-        if (count <= 0 || buf < 0 || buf >= memory.length) {
-            registers[REG_R0] = -1;
-            return;
-        }
-        
-        Integer fdKey = new Integer(fd);
-        
-        if (fd == 1 || fd == 2) {
-            // stdout/stderr - escrever no OpenTTY
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < count && buf + i < memory.length; i++) {
-                sb.append((char)(memory[buf + i] & 0xFF));
-            }
-            
-            midlet.print(sb.toString(), stdout, id);
-            
-            registers[REG_R0] = count;
-            
-        } else if (fileDescriptors.containsKey(fdKey)) {
-            Object stream = fileDescriptors.get(fdKey);
-            
-            if (stream instanceof OutputStream) {
-                try {
-                    OutputStream os = (OutputStream) stream;
-                    for (int i = 0; i < count && buf + i < memory.length; i++) {
-                        os.write(memory[buf + i]);
-                    }
-                    os.flush();
-                    registers[REG_R0] = count;
-                } catch (Exception e) {
-                    registers[REG_R0] = -1;
-                }
-            } else if (stream instanceof StringBuffer) {
-                StringBuffer sb = (StringBuffer) stream;
-                for (int i = 0; i < count && buf + i < memory.length; i++) {
-                    sb.append((char)(memory[buf + i] & 0xFF));
-                }
-                registers[REG_R0] = count;
-            } else {
-                registers[REG_R0] = -1;
-            }
-        } else {
-            registers[REG_R0] = -1;
-        }
-    }
-    
-    private void handleRead() {
-        int fd = registers[REG_R0];
-        int buf = registers[REG_R1];
-        int count = registers[REG_R2];
-        
-        if (count <= 0 || buf < 0 || buf >= memory.length) {
-            registers[REG_R0] = -1;
-            return;
-        }
-        
-        Integer fdKey = new Integer(fd);
-        
-        if (fd == 0) {
-            // stdin - não implementado por enquanto
-            registers[REG_R0] = 0;
-        } else if (fileDescriptors.containsKey(fdKey)) {
-            Object stream = fileDescriptors.get(fdKey);
-            
-            if (stream instanceof InputStream) {
-                try {
-                    InputStream is = (InputStream) stream;
-                    int bytesRead = 0;
-                    for (int i = 0; i < count && buf + i < memory.length; i++) {
-                        int b = is.read();
-                        if (b == -1) break;
-                        memory[buf + i] = (byte) b;
-                        bytesRead++;
-                    }
-                    registers[REG_R0] = bytesRead;
-                } catch (Exception e) {
-                    registers[REG_R0] = -1;
-                }
-            } else {
-                registers[REG_R0] = -1;
-            }
-        } else {
-            registers[REG_R0] = -1;
-        }
-    }
-    
-    private void handleOpen() {
-        int pathAddr = registers[REG_R0];
-        int flags = registers[REG_R1];
-        int mode = registers[REG_R2];
-        
-        if (pathAddr < 0 || pathAddr >= memory.length) {
-            registers[REG_R0] = -1;
-            return;
-        }
-        
-        // Ler o caminho da memória
-        StringBuffer pathBuf = new StringBuffer();
-        int i = 0;
-        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
-            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
-            i++;
-        }
-        String path = pathBuf.toString();
-        
-        try {
-            boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR;
-            boolean forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR;
-            boolean create = (flags & O_CREAT) != 0;
-            boolean append = (flags & O_APPEND) != 0;
-            boolean truncate = (flags & O_TRUNC) != 0;
-            
-            // Resolver caminho relativo
-            String fullPath = path;
-            if (!path.startsWith("/")) {
-                String pwd = (String) scope.get("PWD");
-                if (pwd == null) { pwd = "/home/"; }
-                fullPath = pwd + (pwd.endsWith("/") ? "" : "/") + path;
-            }
-            
-            if (forReading) {
-                InputStream is = midlet.getInputStream(fullPath);
-                if (is != null) {
-                    Integer fd = new Integer(nextFd++);
-                    fileDescriptors.put(fd, is);
-                    registers[REG_R0] = fd.intValue();
-                } else if (create) {
-                    midlet.write(fullPath, "", id);
-                    InputStream is2 = midlet.getInputStream(fullPath);
-                    if (is2 != null) {
-                        Integer fd = new Integer(nextFd++);
-                        fileDescriptors.put(fd, is2);
-                        registers[REG_R0] = fd.intValue();
-                    } else {
-                        registers[REG_R0] = -1;
-                    }
-                } else {
-                    registers[REG_R0] = -2; // ENOENT
-                }
-            } else if (forWriting) {
-                // Para escrita, usamos um ByteArrayOutputStream temporário
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                
-                // Se for append, carregar conteúdo existente
-                if (append && !truncate) {
-                    InputStream existing = midlet.getInputStream(fullPath);
-                    if (existing != null) {
-                        int b;
-                        while ((b = existing.read()) != -1) {
-                            baos.write(b);
-                        }
-                        existing.close();
-                    }
-                }
-                
-                Integer fd = new Integer(nextFd++);
-                fileDescriptors.put(fd, baos);
-                registers[REG_R0] = fd.intValue();
-                
-                // Guardar o caminho para uso no close/flush
-                fileDescriptors.put(fd + ":path", fullPath);
-            } else {
-                registers[REG_R0] = -1;
-            }
-            
-        } catch (Exception e) {
-            registers[REG_R0] = -1;
-        }
-    }
-    
-    private void handleCreat() {
-        // creat(path, mode) é equivalente a open(path, O_CREAT | O_WRONLY | O_TRUNC, mode)
-        int pathAddr = registers[REG_R0];
-        int mode = registers[REG_R1];
-        
-        // Simular open com flags O_CREAT | O_WRONLY | O_TRUNC
-        registers[REG_R1] = O_CREAT | O_WRONLY | O_TRUNC;
-        registers[REG_R2] = mode;
-        
-        handleOpen();
-    }
-    
-    private void handleClose() {
-        int fd = registers[REG_R0];
-        Integer fdKey = new Integer(fd);
-        
-        if (fd == 0 || fd == 1 || fd == 2) {
-            // Não fechar stdin/stdout/stderr
-            registers[REG_R0] = 0;
-            return;
-        }
-        
-        if (fileDescriptors.containsKey(fdKey)) {
-            Object stream = fileDescriptors.get(fdKey);
-            
-            try {
-                if (stream instanceof InputStream) {
-                    ((InputStream) stream).close();
-                } else if (stream instanceof OutputStream) {
-                    OutputStream os = (OutputStream) stream;
-                    os.close();
-                    
-                    // Se for ByteArrayOutputStream, salvar no arquivo
-                    if (stream instanceof ByteArrayOutputStream) {
-                        ByteArrayOutputStream baos = (ByteArrayOutputStream) stream;
-                        String pathKey = fd + ":path";
-                        if (fileDescriptors.containsKey(pathKey)) {
-                            String path = (String) fileDescriptors.get(pathKey);
-                            byte[] data = baos.toByteArray();
-                            midlet.write(path, data, id);
-                        }
-                    }
-                }
-                
-                fileDescriptors.remove(fd);
-                fileDescriptors.remove(fd + ":path");
-                registers[REG_R0] = 0;
-                
-            } catch (Exception e) {
-                registers[REG_R0] = -1;
-            }
-        } else {
-            registers[REG_R0] = -1;
-        }
-    }
-    
-    private void handleTime() {
-        long currentTime = System.currentTimeMillis() / 1000;
-        registers[REG_R0] = (int) currentTime;
-        
-        int timePtr = registers[REG_R1];
-        if (timePtr != 0 && timePtr >= 0 && timePtr + 3 < memory.length) {
-            writeIntLE(memory, timePtr, (int) currentTime);
-        }
-    }
-    
-    private void handleChdir() {
-        int pathAddr = registers[REG_R0];
-        
-        if (pathAddr < 0 || pathAddr >= memory.length) {
-            registers[REG_R0] = -1; // EFAULT
-            return;
-        }
-        
-        // Ler o caminho da memória
-        StringBuffer pathBuf = new StringBuffer();
-        int i = 0;
-        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
-            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
-            i++;
-        }
-        String path = pathBuf.toString();
-        
-        if (path.equals("") || path.equals(".")) {
-            registers[REG_R0] = 0; // Sucesso
-            return;
-        }
-        
-        String fullPath = path;
-        if (!path.startsWith("/")) {
-            String pwd = (String) scope.get("PWD");
-            if (pwd == null) { pwd = "/home/"; }
-            fullPath = pwd + (pwd.endsWith("/") ? "" : "/") + path;
-        }
-        
-        if (!fullPath.endsWith("/")) {
-            fullPath = fullPath + "/";
-        }
-        
-        boolean dirExists = false;
-        
-        if (fullPath.equals("/home/")) {
-            dirExists = true;
-        } else if (fullPath.startsWith("/mnt/")) {
-            try {
-                FileConnection conn = (FileConnection) Connector.open("file:///" + fullPath.substring(5), Connector.READ);
-                dirExists = conn.exists() && conn.isDirectory();
-                conn.close();
-            } catch (Exception e) {
-                dirExists = false;
-            }
-        } else if (midlet.fs.containsKey(fullPath)) {
-            dirExists = true;
-        }
-        
-        if (dirExists) {
-            scope.put("PWD", fullPath);
-            registers[REG_R0] = 0; // Sucesso
-        } else {
-            registers[REG_R0] = -2; // ENOENT - No such file or directory
-        }
-    }
-    
-    private void handleGetpid() {
-        try {
-            int pidValue = Integer.parseInt(this.pid);
-            registers[REG_R0] = pidValue;
-        } catch (NumberFormatException e) {
-            registers[REG_R0] = 1;
-        }
-    }
-    
-    private void handleKill() {
-        int pid = registers[REG_R0];
-        int sig = registers[REG_R1];
-        
-        String targetPid = String.valueOf(pid);
-        
-        if (!midlet.sys.containsKey(targetPid)) {
-            registers[REG_R0] = -3; // ESRCH - No such process
-            return;
-        }
-        
-        if (this.id != 0 && !targetPid.equals(this.pid)) {
-            registers[REG_R0] = -1; // EPERM - Operation not permitted
-            return;
-        }
-        
-        if (sig == 9) {
-            Object procObj = midlet.sys.get(targetPid);
-            if (procObj instanceof Hashtable) {
-                Hashtable proc = (Hashtable) procObj;
-                if (proc.containsKey("elf")) {
-                    ELF elf = (ELF) proc.get("elf");
-                    elf.kill();
-                }
-            }
-            midlet.sys.remove(targetPid);
-            registers[REG_R0] = 0;
-        } else if (sig == 15) {
-            midlet.sys.remove(targetPid);
-            registers[REG_R0] = 0;
-        } else {
-            registers[REG_R0] = -22; // EINVAL - Invalid argument
-        }
-    }
-    
-    private void handleExit() {
-        int status = registers[REG_R0];
-        running = false;
-        
-        Enumeration keys = fileDescriptors.keys();
-        while (keys.hasMoreElements()) {
-            Object key = keys.nextElement();
-            if (key instanceof Integer) {
-                Integer fd = (Integer) key;
-                if (fd.intValue() >= 3) {
-                    Object stream = fileDescriptors.get(fd);
-                    try {
-                        if (stream instanceof InputStream) { ((InputStream) stream).close(); } 
-                        else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
-                    } catch (Exception e) { }
-                }
-            }
-        }
-    }
-    
-    private void handleGetcwd() {
-        int buf = registers[REG_R0];
-        int size = registers[REG_R1];
-        
-        String cwd = (String) scope.get("PWD");
-        if (cwd == null) cwd = "/home/";
-        
-        byte[] cwdBytes = cwd.getBytes();
-        int len = Math.min(cwdBytes.length, size - 1);
-        
-        for (int i = 0; i < len && buf + i < memory.length; i++) { memory[buf + i] = cwdBytes[i]; }
-        
-        if (buf + len < memory.length) { memory[buf + len] = 0; }
-        
-        registers[REG_R0] = buf;
-    }
-    
-    private void handleGettimeofday() {
-        int tvPtr = registers[REG_R0];
-        int tzPtr = registers[REG_R1];
-        
-        long currentTimeMillis = System.currentTimeMillis();
-        int seconds = (int)(currentTimeMillis / 1000);
-        int microseconds = (int)((currentTimeMillis % 1000) * 1000);
-        
-        if (tvPtr != 0 && tvPtr >= 0 && tvPtr + 7 < memory.length) {
-            writeIntLE(memory, tvPtr, seconds);
-            writeIntLE(memory, tvPtr + 4, microseconds);
-        }
-        
-        registers[REG_R0] = 0;
-    }
-
-    private void handleGetppid() { registers[REG_R0] = 1; }
-
-    private void handleGetuid() { registers[REG_R0] = id; }
-
-    private void handleGetgid() { registers[REG_R0] = 1000; }
-
+    // |
+    // | Kernel
+    // | (Process)
+    private void handleFork() { registers[REG_R0] = -1; }
+    private void handleClone() { registers[REG_R0] = -38; } // Implementação simplificada - sempre falha (não suportado)
     private void handleExecve() {
         int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
         
@@ -1679,168 +1282,74 @@ public class ELF {
                 
                 registers[REG_R0] = 0;
             }
-        } catch (Exception e) {
-            registers[REG_R0] = -1; // EPERM ou outro erro
-        }
+        } catch (Exception e) { registers[REG_R0] = -1; }
     }
-
-    private void handleMkdir() {
-        int pathAddr = registers[REG_R0], mode = registers[REG_R1];
+    private void handleGetpriority() { int which = registers[REG_R0], who = registers[REG_R1]; if (who == 0) { Object priorityObj = proc.get("priority"); if (priorityObj instanceof Integer) { registers[REG_R0] = ((Integer) priorityObj).intValue(); } else { registers[REG_R0] = 20; } } else { registers[REG_R0] = -22; } }
+    private void handleSetpriority() { int which = registers[REG_R0], who = registers[REG_R1], prio = registers[REG_R2]; if (who == 0) { proc.put("priority", new Integer(prio)); registers[REG_R0] = 0; } else { registers[REG_R0] = -22; } }
+    private void handleKill() {
+        int pid = registers[REG_R0];
+        int sig = registers[REG_R1];
         
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        String targetPid = String.valueOf(pid);
         
-        // Ler caminho
-        StringBuffer pathBuf = new StringBuffer();
-        int i = 0;
-        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
-            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
-            i++;
-        }
-        String path = pathBuf.toString();
-
-        if (path.startsWith("/mnt/")) {
-            try {
-                FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
-                if (conn.exists()) {
-                    conn.close();
-                    registers[REG_R0] = -17; // EEXIST
-                    return;
-                }
-                conn.mkdir();
-                conn.close();
-                registers[REG_R0] = 0; // Sucesso
-            } catch (Exception e) {
-                registers[REG_R0] = -1; // EPERM
-            }
-        } else { registers[REG_R0] = -38; return; }
-    }
-
-    private void handleRmdir() {
-        int pathAddr = registers[REG_R0];
-        
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
-        
-        // Ler caminho
-        StringBuffer pathBuf = new StringBuffer();
-        int i = 0;
-        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
-            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
-            i++;
-        }
-        String path = pathBuf.toString();
-        
-        if (path.startsWith("/mnt/")) {
-            try {
-                FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
-                if (!conn.exists()) { conn.close(); registers[REG_R0] = -2; return; }
-                if (!conn.isDirectory()) { conn.close(); registers[REG_R0] = -20; return; }
-                
-                // Verificar se diretório está vazio
-                Enumeration list = conn.list();
-                if (list != null && list.hasMoreElements()) {
-                    conn.close();
-                    registers[REG_R0] = -39; 
-                    return;
-                }
-                
-                conn.delete();
-                conn.close();
-                registers[REG_R0] = 0; // Sucesso
-            } catch (Exception e) { registers[REG_R0] = -1; }
-        } else { registers[REG_R0] = -38; }
-    }
-
-    private void handleStat() {
-        int pathAddr = registers[REG_R0], statbufAddr = registers[REG_R1];
-        
-        if (pathAddr < 0 || pathAddr >= memory.length || statbufAddr < 0 || statbufAddr >= memory.length) { registers[REG_R0] = -1; return; }
-        
-        // Ler caminho
-        StringBuffer pathBuf = new StringBuffer();
-        int i = 0;
-        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
-            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
-            i++;
-        }
-        String path = pathBuf.toString();
-        
-        // Implementação simplificada de struct stat
-        // Preencher com valores básicos
-        for (i = 0; i < 108; i++) { // Tamanho aproximado de struct stat
-            if (statbufAddr + i < memory.length) {
-                memory[statbufAddr + i] = 0;
-            }
-        }
-        
-        // st_mode
-        int st_mode = 0;
-        if (path.endsWith("/")) { st_mode |= S_IFDIR | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH; } 
-        else { st_mode |= 0100644; } // Arquivo regular
-
-        writeIntLE(memory, statbufAddr + 16, st_mode);
-        
-        // st_size
-        int st_size = 0;
-        if (!path.endsWith("/")) {
-            try {
-                InputStream is = midlet.getInputStream(path);
-                if (is != null) {
-                    int available = is.available();
-                    if (available > 0) {
-                        st_size = available;
-                    }
-                    is.close();
-                }
-            } catch (Exception e) {}
-        }
-        writeIntLE(memory, statbufAddr + 44, st_size);
-        
-        registers[REG_R0] = 0;
-    }
-
-    private void handleFstat() {
-        int fd = registers[REG_R0];
-        int statbufAddr = registers[REG_R1];
-        
-        if (statbufAddr < 0 || statbufAddr >= memory.length) {
-            registers[REG_R0] = -1; // EFAULT
+        if (!midlet.sys.containsKey(targetPid)) {
+            registers[REG_R0] = -3; // ESRCH - No such process
             return;
         }
         
-        // Zerar buffer
-        for (int i = 0; i < 108; i++) { if (statbufAddr + i < memory.length) { memory[statbufAddr + i] = 0; } }
+        if (this.id != 0 && !targetPid.equals(this.pid)) {
+            registers[REG_R0] = -1; // EPERM - Operation not permitted
+            return;
+        }
         
-        Integer fdKey = new Integer(fd);
-        
-        if (fd == 0 || fd == 1 || fd == 2) {
-            // stdin/stdout/stderr - dispositivo de caractere
-            writeIntLE(memory, statbufAddr + 16, 020000); // st_mode: character device
-        } else if (fileDescriptors.containsKey(fdKey)) {
-            Object stream = fileDescriptors.get(fdKey);
-            
-            if (stream instanceof InputStream || stream instanceof OutputStream) {
-                // Arquivo regular
-                writeIntLE(memory, statbufAddr + 16, 0100644); // st_mode: regular file
-                
-                // Tentar obter tamanho
-                try {
-                    if (stream instanceof InputStream) {
-                        int available = ((InputStream) stream).available();
-                        writeIntLE(memory, statbufAddr + 44, available);
-                    }
-                } catch (Exception e) {}
-            } else {
-                // Dispositivo desconhecido
-                writeIntLE(memory, statbufAddr + 16, 020000);
+        if (sig == 9) {
+            Object procObj = midlet.sys.get(targetPid);
+            if (procObj instanceof Hashtable) {
+                Hashtable proc = (Hashtable) procObj;
+                if (proc.containsKey("elf")) {
+                    ELF elf = (ELF) proc.get("elf");
+                    elf.kill();
+                }
             }
+            midlet.sys.remove(targetPid);
+            registers[REG_R0] = 0;
+        } else if (sig == 15) {
+            midlet.sys.remove(targetPid);
+            registers[REG_R0] = 0;
         } else {
-            registers[REG_R0] = -9; // EBADF
-            return;
+            registers[REG_R0] = -22; // EINVAL - Invalid argument
         }
-        
-        registers[REG_R0] = 0; // Sucesso
     }
+    // |
+    private void handleExit() {
+        int status = registers[REG_R0];
+        running = false;
+        
+        Enumeration keys = fileDescriptors.keys();
+        while (keys.hasMoreElements()) {
+            Object key = keys.nextElement();
+            if (key instanceof Integer) {
+                Integer fd = (Integer) key;
+                if (fd.intValue() >= 3) {
+                    Object stream = fileDescriptors.get(fd);
+                    try {
+                        if (stream instanceof InputStream) { ((InputStream) stream).close(); } 
+                        else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
+                    } catch (Exception e) { }
+                }
+            }
+        }
+    }
+    // |
+    private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_R0] = pidValue; } catch (NumberFormatException e) { registers[REG_R0] = 1; } }
+    private void handleGetppid() { registers[REG_R0] = 1; }
+    private void handleGetuid() { registers[REG_R0] = id; }
+    private void handleGetgid() { registers[REG_R0] = 1000; }
+    // | (Users)
 
+    // | (Memory)
+
+    // |
     private void handleIoctl() {
         int fd = registers[REG_R0];
         int request = registers[REG_R1];
@@ -1903,46 +1412,125 @@ public class ELF {
                 break;
         }
     }
-
-    private void handleClone() {
-        // Implementação simplificada - sempre falha (não suportado)
-        registers[REG_R0] = -38; // ENOSYS
-    }
-
-    private void handleGetpriority() {
-        int which = registers[REG_R0], who = registers[REG_R1];
- 
-        if (who == 0) {
-            Object priorityObj = proc.get("priority");
-            if (priorityObj instanceof Integer) { registers[REG_R0] = ((Integer) priorityObj).intValue(); }
-            else { registers[REG_R0] = 20; }
-        } else { registers[REG_R0] = -22; }
-    }
-
-    private void handleSetpriority() {
-        int which = registers[REG_R0], who = registers[REG_R1], prio = registers[REG_R2];
-
-        if (who == 0) {
-            proc.put("priority", new Integer(prio));
-            registers[REG_R0] = 0;
-        } else { registers[REG_R0] = -22; }
-    }
-
-    private void handleLseek() {
-        int fd = registers[REG_R0], offset = registers[REG_R1], whence = registers[REG_R2];
+    // | (Time)
+    private void handleTime() { long currentTime = System.currentTimeMillis() / 1000; registers[REG_R0] = (int) currentTime; int timePtr = registers[REG_R1]; if (timePtr != 0 && timePtr >= 0 && timePtr + 3 < memory.length) { writeIntLE(memory, timePtr, (int) currentTime); } }
+    private void handleGettimeofday() {
+        int tvPtr = registers[REG_R0];
+        int tzPtr = registers[REG_R1];
         
-        Integer fdKey = new Integer(fd);
+        long currentTimeMillis = System.currentTimeMillis();
+        int seconds = (int)(currentTimeMillis / 1000);
+        int microseconds = (int)((currentTimeMillis % 1000) * 1000);
         
-        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) {
-            registers[REG_R0] = -9; // EBADF
-            return;
+        if (tvPtr != 0 && tvPtr >= 0 && tvPtr + 7 < memory.length) {
+            writeIntLE(memory, tvPtr, seconds);
+            writeIntLE(memory, tvPtr + 4, microseconds);
         }
         
-        // Implementação simplificada - sempre retorna sucesso mas não faz nada
-        // Em uma implementação real, precisaríamos controlar a posição do arquivo
-        registers[REG_R0] = 0; // Sucesso (sempre na posição 0)
+        registers[REG_R0] = 0;
     }
+    // |
+    // | File System
+    // | (Directories)
+    private void handleMkdir() {
+        int pathAddr = registers[REG_R0], mode = registers[REG_R1];
 
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
+        String path = pathBuf.toString();
+
+        if (path.startsWith("/mnt/")) {
+            try {
+                FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
+                if (conn.exists()) {
+                    conn.close();
+                    registers[REG_R0] = -17; // EEXIST
+                    return;
+                }
+                conn.mkdir(); conn.close();
+                registers[REG_R0] = 0; // Sucesso
+            } catch (Exception e) { registers[REG_R0] = -1; }
+        } else { registers[REG_R0] = -38; return; }
+    }
+    private void handleRmdir() {
+        int pathAddr = registers[REG_R0];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
+        String path = pathBuf.toString();
+        
+        if (path.startsWith("/mnt/")) {
+            try {
+                FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
+                if (!conn.exists()) { conn.close(); registers[REG_R0] = -2; return; }
+                if (!conn.isDirectory()) { conn.close(); registers[REG_R0] = -20; return; }
+
+                Enumeration list = conn.list();
+                if (list != null && list.hasMoreElements()) {
+                    conn.close();
+                    registers[REG_R0] = -39; 
+                    return;
+                }
+                
+                conn.delete(); conn.close();
+                registers[REG_R0] = 0; // Sucesso
+            } catch (Exception e) { registers[REG_R0] = -1; }
+        } else { registers[REG_R0] = -38; }
+    }
+    private void handleGetcwd() {
+        int buf = registers[REG_R0], size = registers[REG_R1];
+        
+        String cwd = (String) scope.get("PWD");
+        if (cwd == null) { cwd = "/home/"; }
+        
+        byte[] cwdBytes = cwd.getBytes();
+        int len = Math.min(cwdBytes.length, size - 1);
+        
+        for (int i = 0; i < len && buf + i < memory.length; i++) { memory[buf + i] = cwdBytes[i]; }
+        
+        if (buf + len < memory.length) { memory[buf + len] = 0; }
+        
+        registers[REG_R0] = buf;
+    }
+    private void handleChdir() {
+        int pathAddr = registers[REG_R0];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
+        String path = pathBuf.toString();
+        
+        if (path.equals("") || path.equals(".")) { registers[REG_R0] = 0; return; }
+        
+        String fullPath = path;
+        if (!path.startsWith("/")) {
+            String pwd = (String) scope.get("PWD");
+            if (pwd == null) { pwd = "/home/"; }
+            fullPath = pwd + (pwd.endsWith("/") ? "" : "/") + path;
+        }
+        
+        if (!fullPath.endsWith("/")) { fullPath = fullPath + "/"; }
+        
+        boolean dirExists = false;
+        
+        if (fullPath.equals("/home/")) { dirExists = true; }
+        else if (fullPath.startsWith("/mnt/")) {
+            try {
+                FileConnection conn = (FileConnection) Connector.open("file:///" + fullPath.substring(5), Connector.READ);
+                dirExists = conn.exists() && conn.isDirectory();
+                conn.close();
+            } catch (Exception e) { dirExists = false; }
+        } else if (midlet.fs.containsKey(fullPath)) { dirExists = true; }
+        
+        if (dirExists) { scope.put("PWD", fullPath); registers[REG_R0] = 0; }
+        else { registers[REG_R0] = -2; }
+    }
     private void handleGetdents() {
         int fd = registers[REG_R0];
         int dirp = registers[REG_R1];
@@ -1954,34 +1542,21 @@ public class ELF {
 
     private void handleDup() {
         int oldfd = registers[REG_R0];
-        
         Integer oldKey = new Integer(oldfd);
         
-        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) {
-            registers[REG_R0] = -9; // EBADF
-            return;
-        }
+        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) { registers[REG_R0] = -9; return; }
         
         // Encontrar novo fd
         int newfd = nextFd++;
-        while (fileDescriptors.containsKey(new Integer(newfd))) {
-            newfd++;
-        }
-        
-        // Duplicar entrada
-        if (oldfd == 0 || oldfd == 1 || oldfd == 2) {
-            // stdin/stdout/stderr
-            fileDescriptors.put(new Integer(newfd), (oldfd == 1 || oldfd == 2) ? stdout : null);
-        } else {
-            fileDescriptors.put(new Integer(newfd), fileDescriptors.get(oldKey));
-        }
+        while (fileDescriptors.containsKey(new Integer(newfd))) { newfd++; }
+
+        if (oldfd == 0 || oldfd == 1 || oldfd == 2) { fileDescriptors.put(new Integer(newfd), (oldfd == 1 || oldfd == 2) ? stdout : null); }
+        else { fileDescriptors.put(new Integer(newfd), fileDescriptors.get(oldKey)); }
         
         registers[REG_R0] = newfd;
     }
-
     private void handleDup2() {
-        int oldfd = registers[REG_R0];
-        int newfd = registers[REG_R1];
+        int oldfd = registers[REG_R0], newfd = registers[REG_R1];
         
         Integer oldKey = new Integer(oldfd);
         
@@ -1992,28 +1567,168 @@ public class ELF {
         if (fileDescriptors.containsKey(newKey)) {
             Object stream = fileDescriptors.get(newKey);
             try {
-                if (stream instanceof InputStream) {
-                    ((InputStream) stream).close();
-                } else if (stream instanceof OutputStream) {
-                    ((OutputStream) stream).close();
-                }
-            } catch (Exception e) {}
+                if (stream instanceof InputStream) { ((InputStream) stream).close(); }
+                else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
+            } catch (Exception e) { }
             fileDescriptors.remove(newKey);
         }
         
         // Duplicar
-        if (oldfd == 0 || oldfd == 1 || oldfd == 2) {
-            fileDescriptors.put(newKey, (oldfd == 1 || oldfd == 2) ? stdout : null);
-        } else {
-            fileDescriptors.put(newKey, fileDescriptors.get(oldKey));
-        }
+        if (oldfd == 0 || oldfd == 1 || oldfd == 2) { fileDescriptors.put(newKey, (oldfd == 1 || oldfd == 2) ? stdout : null); }
+        else { fileDescriptors.put(newKey, fileDescriptors.get(oldKey)); }
         
         registers[REG_R0] = newfd;
     }
+    // | (Operations)
+    private void handleCreat() {
+        // creat(path, mode) é equivalente a open(path, O_CREAT | O_WRONLY | O_TRUNC, mode)
+        int pathAddr = registers[REG_R0], mode = registers[REG_R1];
+        
+        registers[REG_R1] = O_CREAT | O_WRONLY | O_TRUNC;
+        registers[REG_R2] = mode;
+        
+        handleOpen();
+    }
+    private void handleOpen() {
+        int pathAddr = registers[REG_R0], flags = registers[REG_R1], mode = registers[REG_R2];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
+        String path = pathBuf.toString();
+        
+        try {
+            boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR, forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR, create = (flags & O_CREAT) != 0, append = (flags & O_APPEND) != 0, truncate = (flags & O_TRUNC) != 0, isDirectory = (flags & O_DIRECTORY) != 0;
+        
+            if (isDirectory) {
+                try { openDirectory(path); } catch (Exception e) { registers[REG_R0] = -2; }
+                return;
+            }
 
+            String fullPath = midlet.joinpath(path, scope);
+            
+            if (forReading) {
+                InputStream is = midlet.getInputStream(fullPath);
+                if (is != null) {
+                    Integer fd = new Integer(nextFd++);
+                    fileDescriptors.put(fd, is);
+                    registers[REG_R0] = fd.intValue();
+                } else if (create) {
+                    midlet.write(fullPath, "", id);
+                    InputStream is2 = midlet.getInputStream(fullPath);
+                    if (is2 != null) {
+                        Integer fd = new Integer(nextFd++);
+                        fileDescriptors.put(fd, is2);
+                        registers[REG_R0] = fd.intValue();
+                    } else {
+                        registers[REG_R0] = -1;
+                    }
+                } else {
+                    registers[REG_R0] = -2; // ENOENT
+                }
+            } else if (forWriting) {
+                // Para escrita, usamos um ByteArrayOutputStream temporário
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                
+                // Se for append, carregar conteúdo existente
+                if (append && !truncate) {
+                    InputStream existing = midlet.getInputStream(fullPath);
+                    if (existing != null) {
+                        int b;
+                        while ((b = existing.read()) != -1) {
+                            baos.write(b);
+                        }
+                        existing.close();
+                    }
+                }
+                
+                Integer fd = new Integer(nextFd++);
+                fileDescriptors.put(fd, baos);
+                registers[REG_R0] = fd.intValue();
+                
+                // Guardar o caminho para uso no close/flush
+                fileDescriptors.put(fd + ":path", fullPath);
+            } else {
+                registers[REG_R0] = -1;
+            }
+            
+        } catch (Exception e) {
+            registers[REG_R0] = -1;
+        }
+    }
+    private void openDirectory(String path) throws Exception {
+        // Verificar se é um diretório
+        String fullPath = midlet.joinpath(path, scope);
+        if (!fullPath.endsWith("/")) {
+            fullPath = fullPath + "/";
+        }
+        
+        // Verificar se diretório existe
+        boolean dirExists = false;
+        
+        if (fullPath.equals("/home/") || fullPath.equals("/tmp/") || fullPath.equals("/mnt/") || fullPath.equals("/bin/") || fullPath.equals("/etc/") || fullPath.equals("/lib/")) { dirExists = true; }
+        else if (fullPath.startsWith("/mnt/")) { 
+            try {
+                FileConnection conn = (FileConnection) Connector.open("file:///" + fullPath.substring(5), Connector.READ);
+                dirExists = conn.exists() && conn.isDirectory();
+                conn.close();
+            } catch (Exception e) {
+                dirExists = false;
+            }
+        } else if (midlet.fs.containsKey(fullPath)) {
+            dirExists = true;
+        }
+        
+        if (!dirExists) { throw new Exception("Directory not found"); }
+        
+        Integer fd = new Integer(nextFd++);
+        fileDescriptors.put(fd, new Hashtable()); // Placeholder - será preenchido no getdents
+        fileDescriptors.put(fd + ":path", fullPath);
+        
+        registers[REG_R0] = fd.intValue();
+    }
+    private void handleClose() {
+        int fd = registers[REG_R0];
+        Integer fdKey = new Integer(fd);
+        
+        if (fd == 0 || fd == 1 || fd == 2) {
+            // Não fechar stdin/stdout/stderr
+            registers[REG_R0] = 0;
+            return;
+        }
+        
+        if (fileDescriptors.containsKey(fdKey)) {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            try {
+                if (stream instanceof InputStream) {
+                    ((InputStream) stream).close();
+                } else if (stream instanceof OutputStream) {
+                    OutputStream os = (OutputStream) stream;
+                    os.close();
+                    
+                    // Se for ByteArrayOutputStream, salvar no arquivo
+                    if (stream instanceof ByteArrayOutputStream) {
+                        ByteArrayOutputStream baos = (ByteArrayOutputStream) stream;
+                        String pathKey = fd + ":path";
+                        if (fileDescriptors.containsKey(pathKey)) {
+                            String path = (String) fileDescriptors.get(pathKey);
+                            byte[] data = baos.toByteArray();
+                            midlet.write(path, data, id);
+                        }
+                    }
+                }
+                
+                fileDescriptors.remove(fd);
+                fileDescriptors.remove(fd + ":path");
+                registers[REG_R0] = 0;
+            } catch (Exception e) { registers[REG_R0] = -1; }
+        } else { registers[REG_R0] = -1; }
+    }
     private void handleUnlink() {
         int pathAddr = registers[REG_R0];
-        
         if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
         
         StringBuffer pathBuf = new StringBuffer();
@@ -2036,6 +1751,168 @@ public class ELF {
             default: registers[REG_R0] = -1; break; // EPERM
         }
     }
+    // |
+    private void handleRead() {
+        int fd = registers[REG_R0], buf = registers[REG_R1], count = registers[REG_R2];
+        if (count <= 0 || buf < 0 || buf >= memory.length) { registers[REG_R0] = -1; return; }
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (fd == 0) {
+            // stdin - não implementado por enquanto
+            registers[REG_R0] = 0;
+        } else if (fileDescriptors.containsKey(fdKey)) {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            if (stream instanceof InputStream) {
+                try {
+                    InputStream is = (InputStream) stream;
+                    int bytesRead = 0;
+                    for (int i = 0; i < count && buf + i < memory.length; i++) {
+                        int b = is.read();
+                        if (b == -1) break;
+                        memory[buf + i] = (byte) b;
+                        bytesRead++;
+                    }
+                    registers[REG_R0] = bytesRead;
+                } catch (Exception e) { registers[REG_R0] = -1; }
+            } else { registers[REG_R0] = -1; }
+        } else { registers[REG_R0] = -1; }
+    }
+    private void handleWrite() {
+        int fd = registers[REG_R0], buf = registers[REG_R1], count = registers[REG_R2];
+        if (count <= 0 || buf < 0 || buf >= memory.length) { registers[REG_R0] = -1; return; }
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (fd == 1 || fd == 2) {
+            // stdout/stderr - escrever no OpenTTY
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < count && buf + i < memory.length; i++) { sb.append((char)(memory[buf + i] & 0xFF)); }
+            
+            midlet.print(sb.toString(), stdout, id);
+            
+            registers[REG_R0] = count;
+            
+        } else if (fileDescriptors.containsKey(fdKey)) {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            if (stream instanceof OutputStream) {
+                try {
+                    OutputStream os = (OutputStream) stream;
+                    for (int i = 0; i < count && buf + i < memory.length; i++) { os.write(memory[buf + i]); }
+                    os.flush();
+                    registers[REG_R0] = count;
+                } catch (Exception e) { registers[REG_R0] = -1; }
+            } else if (stream instanceof StringBuffer) {
+                StringBuffer sb = (StringBuffer) stream;
+                for (int i = 0; i < count && buf + i < memory.length; i++) { sb.append((char)(memory[buf + i] & 0xFF)); }
+                registers[REG_R0] = count;
+            } else { registers[REG_R0] = -1; }
+        } else { registers[REG_R0] = -1; }
+    }
+    // | (Informations)
+    private void handleStat() {
+        int pathAddr = registers[REG_R0], statbufAddr = registers[REG_R1];
+        
+        if (pathAddr < 0 || pathAddr >= memory.length || statbufAddr < 0 || statbufAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        
+        // Ler caminho
+        StringBuffer pathBuf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            pathBuf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
+        String path = pathBuf.toString();
+        
+        // Implementação simplificada de struct stat
+        // Preencher com valores básicos
+        for (i = 0; i < 108; i++) { // Tamanho aproximado de struct stat
+            if (statbufAddr + i < memory.length) {
+                memory[statbufAddr + i] = 0;
+            }
+        }
+        
+        // st_mode
+        int st_mode = 0;
+        if (path.endsWith("/")) { st_mode |= S_IFDIR | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH; } 
+        else { st_mode |= 0100644; } // Arquivo regular
+
+        writeIntLE(memory, statbufAddr + 16, st_mode);
+        
+        // st_size
+        int st_size = 0;
+        if (!path.endsWith("/")) {
+            try {
+                InputStream is = midlet.getInputStream(path);
+                if (is != null) {
+                    int available = is.available();
+                    if (available > 0) {
+                        st_size = available;
+                    }
+                    is.close();
+                }
+            } catch (Exception e) {}
+        }
+        writeIntLE(memory, statbufAddr + 44, st_size);
+        
+        registers[REG_R0] = 0;
+    }
+    private void handleFstat() {
+        int fd = registers[REG_R0];
+        int statbufAddr = registers[REG_R1];
+        
+        if (statbufAddr < 0 || statbufAddr >= memory.length) {
+            registers[REG_R0] = -1; // EFAULT
+            return;
+        }
+        
+        // Zerar buffer
+        for (int i = 0; i < 108; i++) { if (statbufAddr + i < memory.length) { memory[statbufAddr + i] = 0; } }
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (fd == 0 || fd == 1 || fd == 2) {
+            // stdin/stdout/stderr - dispositivo de caractere
+            writeIntLE(memory, statbufAddr + 16, 020000); // st_mode: character device
+        } else if (fileDescriptors.containsKey(fdKey)) {
+            Object stream = fileDescriptors.get(fdKey);
+            
+            if (stream instanceof InputStream || stream instanceof OutputStream) {
+                // Arquivo regular
+                writeIntLE(memory, statbufAddr + 16, 0100644); // st_mode: regular file
+                
+                // Tentar obter tamanho
+                try {
+                    if (stream instanceof InputStream) {
+                        int available = ((InputStream) stream).available();
+                        writeIntLE(memory, statbufAddr + 44, available);
+                    }
+                } catch (Exception e) {}
+            } else {
+                // Dispositivo desconhecido
+                writeIntLE(memory, statbufAddr + 16, 020000);
+            }
+        } else {
+            registers[REG_R0] = -9; // EBADF
+            return;
+        }
+        
+        registers[REG_R0] = 0; // Sucesso
+    }
+    private void handleLseek() {
+        int fd = registers[REG_R0], offset = registers[REG_R1], whence = registers[REG_R2];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_R0] = -9; return; } // EBADF
+        
+        // Implementação simplificada - sempre retorna sucesso mas não faz nada
+        // Em uma implementação real, precisaríamos controlar a posição do arquivo
+        registers[REG_R0] = 0; // Sucesso (sempre na posição 0)
+    }
+
 
 
     // Métodos auxiliares para leitura/escrita little-endian
