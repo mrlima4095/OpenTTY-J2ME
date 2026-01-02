@@ -238,7 +238,7 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
         print(string.trim(buff))
-    
+
     -- 
     elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
     elseif cmd == "open" then
@@ -264,6 +264,15 @@ local function shell(args, enable, aliases, stdout, scope)
     end
 
     return status
+end
+
+if arg[1] == "-c" then
+    if arg[2] then
+        os.exit(shell(arg[2], true, {}, io.stdout, os.scope()))
+    else
+        print("sh: 0: -c requires an argument")
+        os.exit(2)
+    end
 end
 
 if arg[0] == "/bin/sh" then
