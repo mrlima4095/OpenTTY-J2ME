@@ -2124,13 +2124,7 @@ public class ELF {
     
     private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length || offset < 0) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
     private void writeIntLE(byte[] data, int offset, int value) { if (offset + 3 >= data.length || offset < 0) { return; } data[offset] = (byte)(value & 0xFF); data[offset + 1] = (byte)((value >> 8) & 0xFF); data[offset + 2] = (byte)((value >> 16) & 0xFF); data[offset + 3] = (byte)((value >> 24) & 0xFF); }
-    private void writeShortLE(byte[] data, int offset, short value) { 
-        if (offset + 1 >= data.length || offset < 0) { 
-            return; 
-        } 
-        data[offset] = (byte)(value & 0xFF); 
-        data[offset + 1] = (byte)((value >> 8) & 0xFF); 
-    }
+    private void writeShortLE(byte[] data, int offset, short value) { if (offset + 1 >= data.length || offset < 0) { return; } data[offset] = (byte)(value & 0xFF); data[offset + 1] = (byte)((value >> 8) & 0xFF); }
 
     private int rotateRight(int value, int amount) { amount &= 31; return (value >>> amount) | (value << (32 - amount)); }
 }
