@@ -1563,7 +1563,7 @@ public class ELF {
             int index = 1;
             
             if (dirPath.startsWith("/tmp/")) {
-                for (Enumeration files = tmp.keys(); files.hasMoreElements();) {
+                for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) {
                     String filename = (String) files.nextElement();
                     dirEntries.put(new Double(index), filename);
                     index++;
