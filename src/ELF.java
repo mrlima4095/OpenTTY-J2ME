@@ -1413,6 +1413,8 @@ public class ELF {
         if (midlet.debug && number != SYS_GETTIMEOFDAY && number != SYS_GETPID) {
             midlet.print("Syscall " + number + " (R7=" + registers[REG_R7] + ")", stdout, id);
         }
+        int savedPC = pc;
+    
         
         switch (number) {
             case SYS_FORK:
@@ -1680,26 +1682,55 @@ public class ELF {
         int child_stack = registers[REG_R1];
         int parent_tid = registers[REG_R2];
         int child_tid = registers[REG_R3];
-        int tls = registers[REG_R4];
+        
+        // Quinto parâmetro (tls) está na stack!
+        // Na ARM EABI, quando uma função é chamada, o quinto+ parâmetro vai para a stack
+        // Para syscalls, precisamos ler da stack também
+        int sp = registers[REG_SP];
+        int tls = 0;
+        
+        // A stack contém: [SP] = ret addr, [SP+4] = primeiro parâmetro extra
+        if (sp + 7 < memory.length) {
+            // O quinto parâmetro está em [SP+4] (após o endereço de retorno)
+            tls = readIntLE(memory, sp + 4);
+        }
+        
+        // Debug
+        if (midlet.debug) { midlet.print("clone() flags=" + toHex(flags) + " child_stack=" + toHex(child_stack) + " tls=" + toHex(tls), stdout, id); }
         
         // Flags importantes
         boolean cloneThread = (flags & 0x00010000) != 0; // CLONE_THREAD
         boolean cloneVm = (flags & 0x00000100) != 0;    // CLONE_VM
         boolean cloneFiles = (flags & 0x00000400) != 0; // CLONE_FILES
+        boolean cloneSighand = (flags & 0x00000800) != 0; // CLONE_SIGHAND
         
         if (cloneThread) {
             // Criar nova thread
             Hashtable newThread = new Hashtable();
-            newThread.put("tid", new Integer(nextTid++));
+            int tid = nextTid++;
+            newThread.put("tid", new Integer(tid));
             newThread.put("pc", new Integer(pc));
             newThread.put("sp", new Integer(child_stack != 0 ? child_stack : registers[REG_SP] - 4096));
             newThread.put("registers", registers.clone());
+            newThread.put("state", "RUNNING");
+            
+            // Copiar registradores para nova thread
+            int[] threadRegs = (int[]) newThread.get("registers");
+            threadRegs[REG_R0] = 0; // Valor de retorno da thread
             
             threads.addElement(newThread);
-            registers[REG_R0] = ((Integer)newThread.get("tid")).intValue();
+            
+            // Retornar TID para o pai
+            registers[REG_R0] = tid;
+            
+            // Se parent_tidptr não for NULL, escrever TID
+            if (parent_tid != 0 && parent_tid + 3 < memory.length) { writeIntLE(memory, parent_tid, tid); }
+            
+            if (midlet.debug) { midlet.print("Thread created: TID=" + tid, stdout, id); }
         } else {
             // Criar novo processo (fork-like)
-            registers[REG_R0] = -38; // ENOSYS por enquanto
+            // Não implementado completamente
+            registers[REG_R0] = -38; // ENOSYS
         }
     }
     
