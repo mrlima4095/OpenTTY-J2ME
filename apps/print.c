@@ -1,111 +1,184 @@
 #define STDOUT_FILENO 1
 
-// Função de saída usando syscall exit
-__attribute__((naked, noreturn))
-void sys_exit(int code) {
-    asm volatile (
-        "mov r0, %0\n"    // Código de saída
-        "mov r7, #1\n"    // SYS_exit = 1
-        "swi #0\n"        // Chamada de sistema
-        : : "r"(code)
-        : "r0", "r7"
-    );
-    // Loop infinito se a syscall falhar
-    asm volatile ("b .");
-}
+// Ponto de entrada totalmente em assembly
+asm(
+".global _start\n"
+"_start:\n"
+    // argc está em r0, argv em r1
+    "push {r0, r1, lr}\n"      // Salvar registradores
+    
+    // Imprimir "argc = "
+    "ldr r0, =msg_argc\n"
+    "mov r1, #7\n"            // Comprimento da string
+    "bl print_msg\n"
+    
+    // Imprimir número (argc)
+    "pop {r0, r1, lr}\n"      // Restaurar argc
+    "push {r0, r1, lr}\n"     // Salvar novamente
+    "bl print_num\n"
+    
+    // Imprimir nova linha
+    "ldr r0, =newline\n"
+    "mov r1, #1\n"
+    "bl print_msg\n"
+    
+    // Imprimir argumentos
+    "pop {r0, r1, lr}\n"      // r0=argc, r1=argv
+    "cmp r0, #0\n"
+    "beq exit\n"
+    
+    "mov r4, r0\n"            // r4 = argc
+    "mov r5, r1\n"            // r5 = argv
+    "mov r6, #0\n"            // r6 = i = 0
+    
+"print_loop:\n"
+    // Imprimir "argv["
+    "ldr r0, =msg_argv\n"
+    "mov r1, #6\n"
+    "bl print_msg\n"
+    
+    // Imprimir índice
+    "mov r0, r6\n"
+    "bl print_num\n"
+    
+    // Imprimir "] = "
+    "ldr r0, =msg_equals\n"
+    "mov r1, #4\n"
+    "bl print_msg\n"
+    
+    // Imprimir string do argumento
+    "ldr r0, [r5, r6, lsl #2]\n"  // argv[i]
+    "bl print_string\n"
+    
+    // Nova linha
+    "ldr r0, =newline\n"
+    "mov r1, #1\n"
+    "bl print_msg\n"
+    
+    // Próximo argumento
+    "add r6, r6, #1\n"
+    "cmp r6, r4\n"
+    "blt print_loop\n"
+    
+"exit:\n"
+    // Sair com código 0
+    "mov r0, #0\n"
+    "mov r7, #1\n"      // SYS_exit
+    "swi #0\n"
+    
+    // Loop infinito se syscall falhar
+    "b .\n"
 
-// Função write usando syscall write
-void sys_write(int fd, const char *buf, int count) {
-    asm volatile (
-        "mov r0, %0\n"    // fd
-        "mov r1, %1\n"    // buf
-        "mov r2, %2\n"    // count
-        "mov r7, #4\n"    // SYS_write = 4
-        "swi #0\n"        // Chamada de sistema
-        : : "r"(fd), "r"(buf), "r"(count)
-        : "r0", "r1", "r2", "r7"
-    );
-}
+// Função: print_msg(r0=string, r1=length)
+"print_msg:\n"
+    "push {r7, lr}\n"
+    "mov r2, r1\n"      // length
+    "mov r1, r0\n"      // string
+    "mov r0, #1\n"      // STDOUT_FILENO
+    "mov r7, #4\n"      // SYS_write
+    "swi #0\n"
+    "pop {r7, pc}\n"
 
-// Função para imprimir string
-void print(const char *s) {
-    int len = 0;
-    while (s[len]) len++;
-    sys_write(STDOUT_FILENO, s, len);
-}
+// Função: print_string(r0=string)
+"print_string:\n"
+    "push {r4, lr}\n"
+    "mov r4, r0\n"      // Salvar ponteiro da string
+    
+    // Calcular comprimento
+    "mov r1, #0\n"
+"strlen_loop:\n"
+    "ldrb r2, [r4, r1]\n"
+    "cmp r2, #0\n"
+    "beq strlen_done\n"
+    "add r1, r1, #1\n"
+    "b strlen_loop\n"
+"strlen_done:\n"
+    
+    // Imprimir string
+    "mov r0, #1\n"      // STDOUT_FILENO
+    "mov r2, r1\n"      // length
+    "mov r1, r4\n"      // string
+    "mov r7, #4\n"      // SYS_write
+    "swi #0\n"
+    
+    "pop {r4, pc}\n"
 
-// Função para imprimir número
-void print_num(int num) {
-    char buffer[12];
-    int i = 0;
-    int is_negative = 0;
+// Função: print_num(r0=number)
+"print_num:\n"
+    "push {r4, r5, r6, r7, lr}\n"
+    "sub sp, sp, #16\n"  // Buffer na stack
     
-    if (num < 0) {
-        is_negative = 1;
-        num = -num;
-    }
+    "mov r4, r0\n"       // Número
+    "mov r5, sp\n"       // Buffer
+    "mov r6, #0\n"       // Índice
     
-    // Converter para string (ao contrário)
-    do {
-        buffer[i++] = (num % 10) + '0';
-        num /= 10;
-    } while (num > 0);
+    // Tratar negativo
+    "cmp r4, #0\n"
+    "bge convert\n"
+    "mov r0, #1\n"
+    "mov r1, #45\n"      // '-'
+    "strb r1, [r5]\n"
+    "add r5, r5, #1\n"
+    "neg r4, r4\n"
     
-    if (is_negative) {
-        buffer[i++] = '-';
-    }
+"convert:\n"
+    // Converter dígitos
+    "mov r0, r4\n"
+    "mov r1, #10\n"
+"convert_loop:\n"
+    "bl divide\n"        // r0 / 10, resto em r1
+    "add r1, r1, #48\n"  // Converter para ASCII
+    "strb r1, [r5, r6]\n"
+    "add r6, r6, #1\n"
+    "cmp r0, #0\n"
+    "bne convert_loop\n"
     
-    // Inverter a string
-    for (int j = 0; j < i/2; j++) {
-        char temp = buffer[j];
-        buffer[j] = buffer[i-1-j];
-        buffer[i-1-j] = temp;
-    }
+    // Inverter string
+    "mov r7, #0\n"       // i = 0
+"reverse_loop:\n"
+    "sub r2, r6, r7\n"
+    "sub r2, r2, #1\n"   // j = len-i-1
+    "cmp r7, r2\n"
+    "bge reverse_done\n"
     
-    buffer[i] = '\0';
-    print(buffer);
-}
+    // Trocar buffer[i] e buffer[j]
+    "ldrb r0, [r5, r7]\n"
+    "ldrb r1, [r5, r2]\n"
+    "strb r1, [r5, r7]\n"
+    "strb r0, [r5, r2]\n"
+    
+    "add r7, r7, #1\n"
+    "b reverse_loop\n"
+    
+"reverse_done:\n"
+    // Imprimir número
+    "mov r0, #1\n"       // STDOUT_FILENO
+    "mov r1, sp\n"       // Buffer
+    "mov r2, r6\n"       // Comprimento
+    "mov r7, #4\n"       // SYS_write
+    "swi #0\n"
+    
+    "add sp, sp, #16\n"
+    "pop {r4, r5, r6, r7, pc}\n"
 
-// Ponto de entrada - NAKED (sem prólogo/epílogo do compilador)
-__attribute__((naked, noreturn))
-void _start() {
-    asm volatile (
-        // Salvar argc e argv da stack
-        "push {r0, r1, lr}\n"
-        
-        // Verificar se temos argumentos
-        "cmp r0, #0\n"
-        "beq 1f\n"
-        
-        // argc > 0, imprimir
-        "bl print_args\n"
-        
-        // Sair
-        "1:\n"
-        "mov r0, #0\n"      // Código de saída 0
-        "mov r7, #1\n"      // SYS_exit
-        "swi #0\n"
-        
-        // Se falhar, loop infinito
-        "b .\n"
-    );
-}
+// Função: divide(r0=dividendo, r1=divisor) -> r0=quociente, r1=resto
+"divide:\n"
+    "mov r2, #0\n"       // Quociente
+"divide_loop:\n"
+    "cmp r0, r1\n"
+    "blt divide_done\n"
+    "sub r0, r0, r1\n"
+    "add r2, r2, #1\n"
+    "b divide_loop\n"
+"divide_done:\n"
+    "mov r1, r0\n"       // Resto
+    "mov r0, r2\n"       // Quociente
+    "bx lr\n"
 
-// Função para imprimir argumentos
-void print_args(int argc, char **argv) {
-    print("argc = ");
-    print_num(argc);
-    print("\n");
-    
-    for (int i = 0; i < argc; i++) {
-        print("argv[");
-        print_num(i);
-        print("] = ");
-        print(argv[i]);
-        print("\n");
-    }
-    
-    print("Programa executado com sucesso!\n");
-}
-
-asm(".global _start");
+// Strings
+"msg_argc: .asciz \"argc = \"\n"
+"msg_argv: .asciz \"argv[\"\n"
+"msg_equals: .asciz \"] = \"\n"
+"newline: .asciz \"\\n\"\n"
+".align 2\n"
+);
