@@ -47,9 +47,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 table.remove(args, 1)
                 local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
                 
-                if type(res) == "number" then
-                    status = res
-                elseif type(res) == "table" then
+                if type(res) == "table" then
                     status = res.status
                 end
             end)
