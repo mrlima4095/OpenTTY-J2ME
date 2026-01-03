@@ -242,7 +242,7 @@ public class ELF {
     private Vector signalStack;
     
     // Futex management
-    private Hashtable futexWaiter, args;
+    private Hashtable futexWaiters, args;
     
     public ELF(OpenTTY midlet, Hashtable args, Object stdout, Hashtable scope, int id, String pid, Hashtable proc) {
         this.midlet = midlet; this.stdout = stdout; this.id = id;
