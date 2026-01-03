@@ -242,20 +242,16 @@ public class ELF {
     private Vector signalStack;
     
     // Futex management
-    private Hashtable futexWaiters;
+    private Hashtable futexWaiter, args;
     
-    public ELF(OpenTTY midlet, Object stdout, Hashtable scope, int id, String pid, Hashtable proc) {
-        this.midlet = midlet;
-        this.stdout = stdout;
-        this.scope = scope;
-        this.proc = proc;
-        this.id = id;
+    public ELF(OpenTTY midlet, Hashtable args, Object stdout, Hashtable scope, int id, String pid, Hashtable proc) {
+        this.midlet = midlet; this.stdout = stdout; this.id = id;
+        this.scope = scope; this.proc = proc; this.args = args;
         this.pid = pid == null ? midlet.genpid() : pid;
-        this.memory = new byte[1 * 1024 * 1024]; // 32MB de memória
+        this.memory = new byte[1 * 1024 * 1024]; 
         this.registers = new int[16];
         this.fpuRegisters = new float[32]; // S0-S31 (single precision)
-        this.cpsr = 0;
-        this.fpscr = 0;
+        this.cpsr = 0; this.fpscr = 0;
         this.running = false;
         this.nextJmpBufId = 1;
         this.stackPointer = memory.length - 1024;
@@ -1336,9 +1332,9 @@ public class ELF {
         writeIntLE(memory, sp - 8, 0);
         sp -= 8;
         
-        // Environment variables
+        // Environment variables (mantenha como está)
         Vector envVars = new Vector();
-        envVars.addElement("PATH=/bin:/usr/bin");
+        envVars.addElement("PATH=/bin");
         envVars.addElement("USER=" + (id == 0 ? "root" : midlet.username));
         envVars.addElement("HOME=/home");
         envVars.addElement("SHELL=/bin/sh");
@@ -1359,14 +1355,20 @@ public class ELF {
         writeIntLE(memory, envpStart + envVars.size() * 4, 0); // NULL terminator
         sp = envpStart;
         
-        // Argumentos do programa
-        Vector args = new Vector();
-        args.addElement("program"); // argv[0]
+        // Argumentos do programa (AGORA USANDO OS ARGUMENTOS REAIS)
+        Vector argsVec = new Vector();
+        
+        for (int i = 0; i < args.size(); i++){
+            argsVec.addElement(args.get(new Double(i)));
+        }
+        
+        // Se não houver argumentos, usar o padrão
+        if (argsVec.size() == 0) { argsVec.addElement("program"); }
         
         // Ponteiros para args
-        int argvStart = sp - (args.size() + 1) * 4;
-        for (int i = 0; i < args.size(); i++) {
-            String arg = (String) args.elementAt(i);
+        int argvStart = sp - (argsVec.size() + 1) * 4;
+        for (int i = 0; i < argsVec.size(); i++) {
+            String arg = (String) argsVec.elementAt(i);
             byte[] argBytes = arg.getBytes();
             sp -= argBytes.length + 1;
             for (int j = 0; j < argBytes.length; j++) {
@@ -1375,19 +1377,28 @@ public class ELF {
             memory[sp + argBytes.length] = 0;
             writeIntLE(memory, argvStart + i * 4, sp);
         }
-        writeIntLE(memory, argvStart + args.size() * 4, 0); // NULL terminator
+        writeIntLE(memory, argvStart + argsVec.size() * 4, 0); // NULL terminator
         sp = argvStart;
         
         // argc
         sp -= 4;
-        writeIntLE(memory, sp, args.size());
+        writeIntLE(memory, sp, argsVec.size());
+        
+        // Armazenar argc e argv[0] para uso posterior (opcional)
+        elfInfo.put("argc", new Integer(argsVec.size()));
+        if (argsVec.size() > 0) {
+            elfInfo.put("argv0", argsVec.elementAt(0));
+        }
         
         // Configurar stack pointer
         registers[REG_SP] = sp;
         
         if (midlet.debug) {
             midlet.print("Stack setup: SP=" + toHex(registers[REG_SP]), stdout);
-            midlet.print("argc=" + args.size(), stdout);
+            midlet.print("argc=" + argsVec.size(), stdout);
+            for (int i = 0; i < argsVec.size(); i++) {
+                midlet.print("argv[" + i + "]=" + argsVec.elementAt(i), stdout);
+            }
         }
     }
     

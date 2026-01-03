@@ -1599,10 +1599,15 @@ public class Lua {
                         int bytesRead = is.read(header);
                         is.close();
 
+                        Hashtable arg = new Hashtable();
+                        arg.put(new Double(0), program);
+                        String[] list = midlet.splitArgs(arguments);
+                        for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
+
                         boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
                         if (isElf) {
                             InputStream elfStream = midlet.getInputStream(program);
-                            ELF elf = new ELF(midlet, out, scope, owner, null, null);
+                            ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
                             
                             if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
@@ -1611,10 +1616,6 @@ public class Lua {
                             String code = midlet.read(program);
 
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
-                            Hashtable arg = new Hashtable();
-                            arg.put(new Double(0), program);
-                            String[] list = midlet.splitArgs(arguments);
-                            for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
 
                             result.addElement(lua.run(program, code, arg));
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
