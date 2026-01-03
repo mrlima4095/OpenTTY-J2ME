@@ -93,7 +93,7 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
     -- | prints uptime
     elseif cmd == "uptime" then
-        print(java.midlet.uptime())
+        print(java.midlet.uptime() / 1000)
     -- (Permissions)
     -- | change your user
     elseif cmd == "su" then

@@ -14,3 +14,7 @@ ELF
 Bug fixes
 
 - fixed a bug with invalid caching
+
+FileSystem
+
+- added `/proc/` support

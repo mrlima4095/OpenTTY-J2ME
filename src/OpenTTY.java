@@ -21,7 +21,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
 
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable();
-    public String username = read("/home/OpenRMS"), build = "2026-1.17.1-03x11";
+    public String username = read("/home/OpenRMS"), build = "2026-1.17.1-03x12";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -272,6 +272,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (content != null) { if (useCache) { cache.put("/lib/" + filename, content); } return new ByteArrayInputStream(content); }
 
                 filename = "/lib/" + filename;
+            }
+            else if (filename.startsWith("/proc/")) {
+                filename = filename.substring(5);
+                String content = filename.equals("uptime") ? (System.currentTimeMillis() - uptime) / 1000 : null;
+                if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
+
+                filename = "/proc/" + filename;
             }
 
             InputStream is = getClass().getResourceAsStream(filename);
