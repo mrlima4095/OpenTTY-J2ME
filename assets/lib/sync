@@ -13,7 +13,7 @@ local function handler()
     if opt == "Check for Updates" then
 
     elseif opt == "Go to releases" then
-        os.open("http://opentty.xyz/dist/versions/")
+        os.open("http://opentty.xyz/dist/")
     elseif opt == "Download 1.16 LTS" then
         os.open("http://opentty.xyz/dist/versions/OpenTTY-1.16.jar")
     else
