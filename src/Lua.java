@@ -2487,7 +2487,6 @@ public class Lua {
                                 if (handler instanceof Lua.LuaFunction) {
                                     process.put("lua", lua);
                                     process.put("handler", handler);
-                                    return handler;
                                 }
                             }
                         }
