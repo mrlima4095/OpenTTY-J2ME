@@ -1700,6 +1700,8 @@ public class ELF {
         boolean cloneVm = (flags & 0x00000100) != 0;    // CLONE_VM
         boolean cloneFiles = (flags & 0x00000400) != 0; // CLONE_FILES
         boolean cloneSighand = (flags & 0x00000800) != 0; // CLONE_SIGHAND
+        boolean cloneParent = (flags & 0x00008000) != 0; // CLONE_PARENT
+        boolean cloneChildClearTid = (flags & 0x00200000) != 0; // CLONE_CHILD_CLEARTID
         
         if (cloneThread) {
             // Criar nova thread
@@ -1707,24 +1709,45 @@ public class ELF {
             int tid = nextTid++;
             newThread.put("tid", new Integer(tid));
             newThread.put("pc", new Integer(pc));
+            newThread.put("elf", this); // Referência para o objeto ELF
             
             // Usar stack fornecida ou alocar nova
             int threadSp = child_stack;
             if (threadSp == 0) {
+                // Alocar nova stack (descendo de SP atual)
                 threadSp = registers[REG_SP] - 8192; // 8KB stack
+                // Garantir alinhamento
+                threadSp = threadSp & ~7;
             }
             newThread.put("sp", new Integer(threadSp));
             
-            // Copiar registradores
-            int[] threadRegs = registers.clone();
-            threadRegs[REG_R0] = 0; // Valor de retorno da thread
-            threadRegs[REG_SP] = threadSp;
+            // Copiar registradores manualmente (clone() retorna Object)
+            int[] threadRegs = new int[registers.length];
+            for (int i = 0; i < registers.length; i++) {
+                threadRegs[i] = registers[i];
+            }
+            
+            // Ajustar registradores para nova thread
+            threadRegs[REG_R0] = 0; // Valor de retorno da thread (será sobrescrito)
+            threadRegs[REG_SP] = threadSp; // Nova stack
+            threadRegs[REG_PC] = pc; // Começa na instrução após clone
+            
+            // Se tls for especificado, ajustar
+            if (tls != 0) {
+                // Em ARM, o registrador de thread pointer pode ser implementado
+                // threadRegs[REG_R9] = tls; // R9 é frequentemente usado como TP
+            }
+            
             newThread.put("registers", threadRegs);
             newThread.put("state", "RUNNING");
+            newThread.put("exit_code", new Integer(0));
             
-            threads.addElement(newThread);
+            // Adicionar à lista de threads
+            synchronized (threads) {
+                threads.addElement(newThread);
+            }
             
-            // Retornar TID para o pai
+            // Retornar TID para o pai (em R0)
             registers[REG_R0] = tid;
             
             // Se parent_tidptr não for NULL, escrever TID
@@ -1732,11 +1755,27 @@ public class ELF {
                 writeIntLE(memory, parent_tid, tid);
             }
             
-            if (midlet.debug) {
-                midlet.print("Thread created: TID=" + tid + " SP=" + toHex(threadSp), stdout, id);
+            // Se child_tidptr não for NULL, escrever TID
+            if (child_tid != 0 && child_tid + 3 < memory.length) {
+                writeIntLE(memory, child_tid, tid);
             }
+            
+            // Se CLONE_CHILD_CLEARTID estiver setado, armazenar child_tid para limpeza futura
+            if (cloneChildClearTid && child_tid != 0) {
+                newThread.put("clear_tid", new Integer(child_tid));
+            }
+            
+            if (midlet.debug) {
+                midlet.print("Thread " + tid + " created: SP=" + toHex(threadSp) + 
+                            " PC=" + toHex(pc), stdout, id);
+            }
+            
+        } else if ((flags & 0x00000111) == 0) {
+            // Fork simples (CLONE_VFORK | CLONE_VM não setados)
+            // Implementação simplificada de fork
+            registers[REG_R0] = -38; // ENOSYS por enquanto
         } else {
-            // Criar novo processo (fork-like) - não implementado
+            // Outras combinações de flags não suportadas
             registers[REG_R0] = -38; // ENOSYS
         }
     }
