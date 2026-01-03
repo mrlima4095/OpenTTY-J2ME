@@ -1,72 +1,33 @@
 #define STDOUT_FILENO 1
 
-void exit(int code) {
-    asm volatile (
-        "mov r0, %0\n"
-        "mov r7, #1\n"
-        "swi #0"
-        : : "r"(code) : "r0", "r7"
-    );
+void sys_exit(int code) {
+    asm volatile ("mov r0,%0; mov r7,#1; swi #0" : : "r"(code) : "r0", "r7");
+    while(1);
+}
+
+void sys_write(int fd, const char *buf, int count) {
+    asm volatile ("mov r0,%0; mov r1,%1; mov r2,%2; mov r7,#4; swi #0" 
+                 : : "r"(fd), "r"(buf), "r"(count) : "r0", "r1", "r2", "r7");
 }
 
 void print(const char *s) {
     int len = 0;
     while (s[len]) len++;
-    
-    asm volatile (
-        "mov r0, %0\n"
-        "mov r1, %1\n"
-        "mov r2, %2\n"
-        "mov r7, #4\n"
-        "swi #0"
-        : : "r"(STDOUT_FILENO), "r"(s), "r"(len)
-        : "r0", "r1", "r2", "r7"
-    );
+    sys_write(STDOUT_FILENO, s, len);
 }
 
-void print_num(int num) {
-    char buffer[12];
-    int i = 0;
-    int is_negative = 0;
+void _start() {
+    int argc;
+    char **argv;
     
-    if (num < 0) {
-        is_negative = 1;
-        num = -num;
-    }
-    
-    do {
-        buffer[i++] = (num % 10) + '0';
-        num /= 10;
-    } while (num > 0);
-    
-    if (is_negative) {
-        buffer[i++] = '-';
-    }
-    
-    for (int j = 0; j < i/2; j++) {
-        char temp = buffer[j];
-        buffer[j] = buffer[i-1-j];
-        buffer[i-1-j] = temp;
-    }
-    
-    buffer[i] = '\0';
-    print(buffer);
-}
-
-int main(int argc, char *argv[]) {
-    print("argc = ");
-    print_num(argc);
-    print("\n");
+    asm volatile ("mov %0,r0; mov %1,r1" : "=r"(argc), "=r"(argv));
     
     for (int i = 0; i < argc; i++) {
-        print("argv[");
-        print_num(i);
-        print("] = ");
         print(argv[i]);
         print("\n");
     }
     
-    print("Programa executado com sucesso!\n");
-    
-    2exit(0); // Usa _exit da libc
+    sys_exit(0);
 }
+
+asm(".global _start");
