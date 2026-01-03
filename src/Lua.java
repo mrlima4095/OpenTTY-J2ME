@@ -2478,7 +2478,6 @@ public class Lua {
                             arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
 
                             Hashtable res = lua.run(program, code, arg);
-                            midlet.print(res.get("object").toString(), "/dev/stdout", 0);
 
                             Object obj = res.get("object");
                             if (obj instanceof Vector) {
@@ -2487,6 +2486,7 @@ public class Lua {
                                 if (handler instanceof Lua.LuaFunction) {
                                     process.put("lua", lua);
                                     process.put("handler", handler);
+                                    return handler;
                                 }
                             }
                         }
