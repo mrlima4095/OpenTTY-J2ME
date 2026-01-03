@@ -2478,7 +2478,7 @@ public class Lua {
                     Player player = (Player) args.elementAt(0);
                     VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
 
-                    if (args.size() > 1 || arg instanceof Double) {
+                    if (args.size() > 1 || args.elementAt(1) instanceof Double) {
                         int value = ((Double) args.elementAt(1)).intValue();
                         if (vc != null) { vc.setLevel(value); return new Double(0); }
                     } else {
@@ -2499,8 +2499,8 @@ public class Lua {
                 else {
                     Player player = (Player) args.elementAt(0);
 
-                    if (args.size() > 1 || arg instanceof Double) {
-                        long time = (long) (((Double) timeObj).doubleValue() * 1000);
+                    if (args.size() > 1 || args.elementAt(1) instanceof Double) {
+                        long time = (long) (((Double) args.elementAt(1)).doubleValue() * 1000);
                         player.setMediaTime(time); return new Double(0);
                     } else {
                         long time = player.getMediaTime();
