@@ -180,3 +180,4 @@
 [2026-1.17.1-03x10] 1.17.1 Suite case
 [2026-1.17.1-03x11] Fixed caching saving error
 [2026-1.17.1-03x12] Added /proc/ filesystem
+[2026-1.17.1-03x13] Lua Global Template Caching

@@ -18,3 +18,7 @@ Bug fixes
 FileSystem
 
 - added `/proc/` support
+
+Lua
+
+- global functions caching

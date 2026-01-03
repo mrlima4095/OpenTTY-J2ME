@@ -26,6 +26,7 @@ public class Lua {
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
     public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613;
     public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, KERNEL = 1000;
+    public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
 
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
     public static final Object LUA_NIL = new Object();
@@ -37,19 +38,59 @@ public class Lua {
         this.midlet = midlet; this.id = id; this.stdout = stdout; this.father = scope;
         this.tokenIndex = 0; this.PID = pid == null ? midlet.genpid() : pid;
         this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
-        
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable();
+
+        if (midlet.funcs == null) { build(); }
+
+        for (Enumeration e = midlet.funcs.keys(); e.hasMoreElements();) {
+            Object key = e.nextElement(), value = midlet.funcs.get(key);
+            
+            if (value instanceof Hashtable) {
+                Hashtable module = (Hashtable) value, moduleCopy = new Hashtable();
+                
+                for (Enumeration modKeys = module.keys(); modKeys.hasMoreElements();) {
+                    Object modKey = modKeys.nextElement(), modValue = module.get(modKey);
+                    
+                    if (modValue instanceof Hashtable) {
+                        Hashtable module2 = (Hashtable) modValue, module2Copy = new Hashtable();
+                
+                        for (Enumeration mod2Keys = module2.keys(); mod2Keys.hasMoreElements();) {
+                            Object mod2Key = mod2Keys.nextElement(), mod2Value = module2.get(mod2Key);
+                            
+                            module2Copy.put(mod2Key, mod2Value);
+                        }
+                        
+                        moduleCopy.put(modKey, module2Copy);
+                    } else {
+                        moduleCopy.put(modKey, modValue);
+                    }
+                }
+                
+                copy.put(key, moduleCopy);
+            } else {
+                copy.put(key, value);
+            }
+        }
+    }
+    // | (Build Globals)
+    public void build() {
+        midlet.funcs = new Hashtable();
+
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable();
         String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "sudo", "su", "remove", "scope", "join" }; 
         int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SUDO, SU, REMOVE, SCOPE, JOIN };
-        for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
+        for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); midlet.funcs.put("os", os);
 
         funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout", "mount", "new", "copy" }; 
         loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN, DIRS, SETOUT, MOUNT, GEN, COPY };
-        for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } io.put("stdout", stdout); io.put("stdin", midlet.stdin); globals.put("io", io);
+        for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } io.put("stdout", stdout); io.put("stdin", midlet.stdin); midlet.funcs.put("io", io);
 
         funcs = new String[] { "insert", "concat", "remove", "sort", "move", "unpack", "pack", "decode" }; 
         loaders = new int[] { TB_INSERT, TB_CONCAT, TB_REMOVE, TB_SORT, TB_MOVE, TB_UNPACK, TB_PACK, TB_DECODE };
-        for (int i = 0; i < funcs.length; i++) { table.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("table", table);
+        for (int i = 0; i < funcs.length; i++) { table.put(funcs[i], new LuaFunction(loaders[i])); } midlet.funcs.put("table", table);
+
+        funcs = new String[] { "load", "play", "pause", "volume", "duration", "time" };
+        loaders = new int[] { AUDIO_LOAD, AUDIO_PLAY, AUDIO_PAUSE, AUDIO_VOLUME, AUDIO_DURATION, AUDIO_TIME };
+        for (int i = 0; i < funcs.length; i++) { audio.put(funcs[i], new LuaFunction(loaders[i])); } midlet.funcs.put("audio", audio);
 
         funcs = new String[] { "get", "post", "rget", "rpost" }; 
         loaders = new int[] { HTTP_GET, HTTP_POST, HTTP_RGET, HTTP_RPOST };
@@ -58,27 +99,27 @@ public class Lua {
         funcs = new String[] { "class", "getName", "delete", "run", "thread" }; 
         loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
-        jdb.put("username", midlet.username); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
+        jdb.put("username", midlet.username); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); midlet.funcs.put("java", java);
 
         funcs = new String[] { "connect", "peer", "device", "server", "accept" }; 
         loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
-        for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
+        for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } midlet.funcs.put("socket", socket);
 
         funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText" }; 
         loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, LABEL, SETTEXT, GETLABEL, GETTEXT };
-        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); globals.put("graphics", graphics);
+        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); midlet.funcs.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument", "env" }; 
         loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT, GETCMD, GETARGS, ENV };
-        for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
+        for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } midlet.funcs.put("string", string);
 
         funcs = new String[] { "print", "error", "pcall", "require", "load", "pairs", "ipairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty", "setmetatable", "getmetatable" }; 
         loaders = new int[] { PRINT, ERROR, PCALL, REQUIRE, LOADS, PAIRS, IPAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY, SETMETATABLE, GETMETATABLE };
-        for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
+        for (int i = 0; i < funcs.length; i++) { midlet.funcs.put(funcs[i], new LuaFunction(loaders[i])); }
 
-        pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
-        math.put("random", new LuaFunction(RANDOM)); globals.put("math", math);
-        globals.put("_VERSION", "Lua J2ME");
+        pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); midlet.funcs.put("package", pkg);
+        math.put("random", new LuaFunction(RANDOM)); midlet.funcs.put("math", math);
+        midlet.funcs.put("_VERSION", "Lua J2ME");
     }
     // | (Run Source code)
     public Hashtable run(String source, String code, Hashtable args) { 
@@ -1576,6 +1617,7 @@ public class Lua {
                         else if (arg instanceof InputStream) { ((InputStream) arg).close(); }
                         else if (arg instanceof OutputStream) { ((OutputStream) arg).close(); }
                         else if (arg instanceof StringBuffer || arg instanceof StringItem) { }
+                        else if (arg instanceof Player) { player.stop(); player.deallocate(); player.close(); }
                         else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
 
                         midlet.network.remove(arg);
@@ -2407,6 +2449,63 @@ public class Lua {
             else if (MOD == GETCMD) { return args.isEmpty() ? null : midlet.getCommand(toLuaString(args.elementAt(0))); } 
             else if (MOD == GETARGS) { return args.isEmpty() ? null : midlet.getArgument(toLuaString(args.elementAt(0))); }
             else if (MOD == ENV) { return args.isEmpty() ? null : midlet.env(toLuaString(args.elementAt(0))); }
+            // Package: audio
+            else if (MOD == AUDIO_LOAD) {
+                if (args.isEmpty()) { return gotbad(1, "load", "string expected, got no value"); }
+                else {
+                    InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)));
+                    if (is != null) {
+                        Player player = Manager.createPlayer(is, args.size() > 1 ? toLuaString(args.elementAt(1)) : "audio/mpeg"); 
+                        player.prefetch();
+                        
+                        return player;
+                    }
+                }
+            }
+            else if (MOD == AUDIO_PLAY) {
+                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "play", "audio object expected"); }
+                else { ((Player) args.elementAt(0)).start(); return new Double(0); }
+            }
+            else if (MOD == AUDIO_PAUSE) {
+                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); }
+                else { ((Player) args.elementAt(0)).stop(); return new Double(0); }
+            }
+            else if (MOD == AUDIO_VOLUME) {
+                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); }
+                else {
+                    Player player = (Player) args.elementAt(0);
+                    VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
+
+                    if (args.size() > 1 || arg instanceof Double) {
+                        int value = ((Double) args.elementAt(1)).intValue();
+                        if (vc != null) { vc.setLevel(value); return new Double(0); }
+                    } else {
+                        return new Double(vc.getLevel());
+                    }
+                }
+            }
+            else if (MOD == AUDIO_DURATION) {
+                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); }
+                else {
+                    Player player = (Player) args.elementAt(0);
+                    long duration = player.getDuration();
+                    return new Double(duration == Player.TIME_UNKNOWN ? -1 : duration / 1000.0);
+                }
+            }
+            else if (MOD == AUDIO_TIME) {
+                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "time", "audio object expected"); }
+                else {
+                    Player player = (Player) args.elementAt(0);
+
+                    if (args.size() > 1 || arg instanceof Double) {
+                        long time = (long) (((Double) timeObj).doubleValue() * 1000);
+                        player.setMediaTime(time); return new Double(0);
+                    } else {
+                        long time = player.getMediaTime();
+                        return new Double(time == Player.TIME_UNKNOWN ? -1 : time / 1000.0);
+                    }
+                }
+            }
             // Package: java
             else if (MOD == CLASS) { if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "class", "string expected, got no value"); } else { return new Boolean(midlet.javaClass(toLuaString(args.elementAt(0))) == 0); } }
             else if (MOD == NAME) { return midlet.getName(); } 
@@ -2509,7 +2608,7 @@ public class Lua {
         }
         // |
         private Object exec(String code, Hashtable scope) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = scope == null ? new Hashtable() : scope; for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
-        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : item instanceof Image ? "image" : item instanceof StringItem ? "output" : item instanceof Command ? "button" : "userdata"; }
+        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : item instanceof Image ? "image" : item instanceof StringItem ? "output" : item instanceof Command ? "button" : item instanceof Player ? "audio" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
         private Object http(String method, String url, String data, Object item, boolean toget) throws Exception {
