@@ -1,0 +1,20 @@
+# Makefile para programas ELF
+CC = arm-none-eabi-gcc
+CFLAGS = -nostdlib -ffreestanding -O1 -mcpu=arm7tdmi
+
+# Linker script simples
+LDSCRIPT = -Ttext=0x10000
+
+all: exemplo.elf
+
+exemplo.elf: exemplo.o minilibc.o
+	$(CC) $(LDSCRIPT) -o $@ $^
+
+exemplo.o: exemplo.c minilibc.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+minilibc.o: minilibc.c minilibc.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm -f *.o *.elf
