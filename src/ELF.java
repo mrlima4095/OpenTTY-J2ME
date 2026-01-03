@@ -1508,7 +1508,7 @@ public class ELF {
                 break;
                 
             case SYS_CLONE:
-                handleCloneReal();
+                handleClone();
                 break;
                 
             case SYS_GETPRIORITY:
