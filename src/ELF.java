@@ -1654,7 +1654,7 @@ public class ELF {
                 handleNanosleep();
                 break;
             case SYS_PIPE:
-                handlePipe();
+                registers[REG_R0] = -38; //handlePipe();
                 break;
             case SYS_SELECT:
                 handleSelect();
