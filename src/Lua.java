@@ -1,5 +1,6 @@
 import javax.microedition.lcdui.*;
 import javax.microedition.io.file.*;
+import javax.microedition.media.control.*;
 import javax.microedition.media.*;
 import javax.microedition.rms.*;
 import javax.microedition.io.*;
