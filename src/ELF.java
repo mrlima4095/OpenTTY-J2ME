@@ -2962,6 +2962,7 @@ public class ELF {
     private void handleListen() { registers[REG_R0] = -1; } // Não implementado
     private void handleAccept() { registers[REG_R0] = -1; } // Não implementado
     private void handleShutdown() { registers[REG_R0] = -1; } // Não implementado
+    private void handleNanosleep() { registers[REG_R0] = -1; } // Não implementado
     private void handleGetsockname() { registers[REG_R0] = -1; } // Não implementado
     private void handleGetpeername() { registers[REG_R0] = -1; } // Não implementado
 
