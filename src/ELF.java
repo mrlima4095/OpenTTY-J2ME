@@ -251,7 +251,7 @@ public class ELF {
         this.proc = proc;
         this.id = id;
         this.pid = pid == null ? midlet.genpid() : pid;
-        this.memory = new byte[32 * 1024 * 1024]; // 32MB de memória
+        this.memory = new byte[1 * 1024 * 1024]; // 32MB de memória
         this.registers = new int[16];
         this.fpuRegisters = new float[32]; // S0-S31 (single precision)
         this.cpsr = 0;
