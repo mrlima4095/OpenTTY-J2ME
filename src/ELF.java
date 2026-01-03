@@ -1715,13 +1715,18 @@ public class ELF {
             byte[] header = new byte[4];
             int bytesRead = is.read(header);
             is.close();
+
+            Hashtable arg = new Hashtable();
+            arg.put(new Double(0), path);
+            String[] argList = midlet.splitArgs(argsStr.toString());
+            for (i = 0; i < argList.length; i++) { arg.put(new Double(i + 1), argList[i]); }
             
             boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
             
             if (isElf) {
                 // Executar ELF (similar ao fork+exec)
                 InputStream elfStream = midlet.getInputStream(path);
-                ELF elf = new ELF(midlet, stdout, scope, id, null, null);
+                ELF elf = new ELF(midlet, arg, stdout, scope, id, null, null);
                 
                 if (elf.load(elfStream)) {
                     // Fechar file descriptors (exceto 0,1,2)
@@ -1782,12 +1787,6 @@ public class ELF {
                 // Reabrir stdin/stdout/stderr
                 fileDescriptors.put(new Integer(1), stdout);
                 fileDescriptors.put(new Integer(2), stdout);
-                
-                // Executar Lua (similar ao io.popen)
-                Hashtable arg = new Hashtable();
-                arg.put(new Double(0), path);
-                String[] argList = midlet.splitArgs(argsStr.toString());
-                for (i = 0; i < argList.length; i++) { arg.put(new Double(i + 1), argList[i]); }
                 
                 Lua lua = new Lua(midlet, id, pid, null, stdout, scope);
                 lua.run(path, code, arg);
