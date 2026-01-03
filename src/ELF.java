@@ -1678,25 +1678,22 @@ public class ELF {
     // | (Process)
     private void handleFork() { registers[REG_R0] = -1; }
     private void handleClone() {
+        // Parâmetros 1-4 em R0-R3
         int flags = registers[REG_R0];
         int child_stack = registers[REG_R1];
         int parent_tid = registers[REG_R2];
         int child_tid = registers[REG_R3];
         
-        // Quinto parâmetro (tls) está na stack!
-        // Na ARM EABI, quando uma função é chamada, o quinto+ parâmetro vai para a stack
-        // Para syscalls, precisamos ler da stack também
-        int sp = registers[REG_SP];
-        int tls = 0;
+        // Parâmetro 5 na stack
+        int tls = getSyscallParam(4);
         
-        // A stack contém: [SP] = ret addr, [SP+4] = primeiro parâmetro extra
-        if (sp + 7 < memory.length) {
-            // O quinto parâmetro está em [SP+4] (após o endereço de retorno)
-            tls = readIntLE(memory, sp + 4);
+        if (midlet.debug) {
+            midlet.print("clone: flags=" + toHex(flags) + 
+                        " stack=" + toHex(child_stack) +
+                        " ptid=" + toHex(parent_tid) +
+                        " ctid=" + toHex(child_tid) +
+                        " tls=" + toHex(tls), stdout, id);
         }
-        
-        // Debug
-        if (midlet.debug) { midlet.print("clone() flags=" + toHex(flags) + " child_stack=" + toHex(child_stack) + " tls=" + toHex(tls), stdout, id); }
         
         // Flags importantes
         boolean cloneThread = (flags & 0x00010000) != 0; // CLONE_THREAD
@@ -1710,13 +1707,20 @@ public class ELF {
             int tid = nextTid++;
             newThread.put("tid", new Integer(tid));
             newThread.put("pc", new Integer(pc));
-            newThread.put("sp", new Integer(child_stack != 0 ? child_stack : registers[REG_SP] - 4096));
-            newThread.put("registers", registers.clone());
-            newThread.put("state", "RUNNING");
             
-            // Copiar registradores para nova thread
-            int[] threadRegs = (int[]) newThread.get("registers");
+            // Usar stack fornecida ou alocar nova
+            int threadSp = child_stack;
+            if (threadSp == 0) {
+                threadSp = registers[REG_SP] - 8192; // 8KB stack
+            }
+            newThread.put("sp", new Integer(threadSp));
+            
+            // Copiar registradores
+            int[] threadRegs = registers.clone();
             threadRegs[REG_R0] = 0; // Valor de retorno da thread
+            threadRegs[REG_SP] = threadSp;
+            newThread.put("registers", threadRegs);
+            newThread.put("state", "RUNNING");
             
             threads.addElement(newThread);
             
@@ -1724,16 +1728,18 @@ public class ELF {
             registers[REG_R0] = tid;
             
             // Se parent_tidptr não for NULL, escrever TID
-            if (parent_tid != 0 && parent_tid + 3 < memory.length) { writeIntLE(memory, parent_tid, tid); }
+            if (parent_tid != 0 && parent_tid + 3 < memory.length) {
+                writeIntLE(memory, parent_tid, tid);
+            }
             
-            if (midlet.debug) { midlet.print("Thread created: TID=" + tid, stdout, id); }
+            if (midlet.debug) {
+                midlet.print("Thread created: TID=" + tid + " SP=" + toHex(threadSp), stdout, id);
+            }
         } else {
-            // Criar novo processo (fork-like)
-            // Não implementado completamente
+            // Criar novo processo (fork-like) - não implementado
             registers[REG_R0] = -38; // ENOSYS
         }
     }
-    
     private void handleExecve() {
         int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
         
@@ -2018,12 +2024,21 @@ public class ELF {
 
     // | (Memory)
     private void handleMmap() {
+        // Parâmetros 1-4 em R0-R3
         int addr = registers[REG_R0];
         int length = registers[REG_R1];
         int prot = registers[REG_R2];
         int flags = registers[REG_R3];
-        int fd = registers[REG_R4];
-        int offset = registers[REG_R5];
+        
+        // Parâmetros 5-6 na stack (R4 e R5 não são usados!)
+        int fd = getSyscallParam(4);    // Parâmetro 5 (índice 4)
+        int offset = getSyscallParam(5); // Parâmetro 6 (índice 5)
+        
+        if (midlet.debug) {
+            midlet.print("mmap: addr=" + toHex(addr) + " length=" + length + 
+                        " prot=" + prot + " flags=" + toHex(flags) + 
+                        " fd=" + fd + " offset=" + offset, stdout, id);
+        }
         
         if (length <= 0) {
             registers[REG_R0] = -22; // EINVAL
@@ -2068,8 +2083,6 @@ public class ELF {
         }
         
         registers[REG_R0] = addr;
-        
-        if (midlet.debug) { midlet.print("mmap: addr=" + toHex(addr) + " length=" + length + " prot=" + prot + " flags=" + flags, stdout, id); }
     }
     private void handleMunmap() {
         int addr = registers[REG_R0];
@@ -2119,11 +2132,20 @@ public class ELF {
     }
     
     private void handleMremap() {
+        // Parâmetros 1-4 em R0-R3
         int old_addr = registers[REG_R0];
         int old_size = registers[REG_R1];
         int new_size = registers[REG_R2];
         int flags = registers[REG_R3];
-        int new_addr = registers[REG_R4];
+        
+        // Parâmetro 5 na stack
+        int new_addr = getSyscallParam(4);
+        
+        if (midlet.debug) {
+            midlet.print("mremap: old=" + toHex(old_addr) + " oldsize=" + old_size +
+                        " newsize=" + new_size + " flags=" + flags +
+                        " newaddr=" + toHex(new_addr), stdout, id);
+        }
         
         // Implementação simplificada
         if (new_addr == 0) {
@@ -2944,6 +2966,20 @@ public class ELF {
             registers[REG_R0] = len;
         } catch (Exception e) { registers[REG_R0] = -32; }
     }
+    private void handleSendto() {
+        // Parâmetros 1-6 (R0-R3 + stack)
+        int fd = registers[REG_R0];
+        int buf = registers[REG_R1];
+        int len = registers[REG_R2];
+        int flags = registers[REG_R3];
+        
+        // Parâmetros 5-6 na stack
+        int dest_addr = getSyscallParam(4);
+        int addrlen = getSyscallParam(5);
+        
+        // Implementação simplificada - usa send normal
+        handleSend();
+    }
     private void handleRecv() {
         int fd = registers[REG_R0], buf = registers[REG_R1], len = registers[REG_R2], flags = registers[REG_R3];
         
@@ -2974,25 +3010,72 @@ public class ELF {
             registers[REG_R0] = bytesRead;
         } catch (Exception e) { registers[REG_R0] = -104; }
     }
+    private void handleRecvfrom() {
+        // Parâmetros 1-6 (R0-R3 + stack)
+        int fd = registers[REG_R0];
+        int buf = registers[REG_R1];
+        int len = registers[REG_R2];
+        int flags = registers[REG_R3];
+        
+        // Parâmetros 5-6 na stack
+        int src_addr = getSyscallParam(4);
+        int addrlen = getSyscallParam(5);
+        
+        // Implementação simplificada - usa recv normal
+        handleRecv();
+    }
+    // | (Socket Params)
+    private void handleSetsockopt() {
+        // Parâmetros 1-5 (R0-R3 + stack)
+        int fd = registers[REG_R0];
+        int level = registers[REG_R1];
+        int optname = registers[REG_R2];
+        int optval = registers[REG_R3];
+        
+        // Parâmetro 5 na stack
+        int optlen = getSyscallParam(4);
+        
+        // Implementação simplificada
+        registers[REG_R0] = 0;
+    }
+    private void handleGetsockopt() {
+        // Parâmetros 1-5 (R0-R3 + stack)
+        int fd = registers[REG_R0];
+        int level = registers[REG_R1];
+        int optname = registers[REG_R2];
+        int optval = registers[REG_R3];
+        
+        // Parâmetro 5 na stack
+        int optlen = getSyscallParam(4);
+        
+        // Implementação simplificada
+        registers[REG_R0] = 0;
+    }
     // |
     private void handleBind() { registers[REG_R0] = -1; } // Não implementado
     private void handleListen() { registers[REG_R0] = -1; } // Não implementado
     private void handleAccept() { registers[REG_R0] = -1; } // Não implementado
     private void handleShutdown() { registers[REG_R0] = -1; } // Não implementado
-    private void handleSetsockopt() { registers[REG_R0] = -1; } // Não implementado
-    private void handleGetsockopt() { registers[REG_R0] = -1; } // Não implementado
     private void handleSendto() { registers[REG_R0] = -1; } // Não implementado
     private void handleRecvfrom() { registers[REG_R0] = -1; } // Não implementado
     private void handleGetsockname() { registers[REG_R0] = -1; } // Não implementado
     private void handleGetpeername() { registers[REG_R0] = -1; } // Não implementado
 
     private void handleFutex() {
+        // Parâmetros 1-4 em R0-R3
         int uaddr = registers[REG_R0];
         int op = registers[REG_R1];
         int val = registers[REG_R2];
         int timeout = registers[REG_R3];
-        int uaddr2 = registers[REG_R4];
-        int val3 = registers[REG_R5];
+        
+        // Parâmetros 5-6 na stack
+        int uaddr2 = getSyscallParam(4);
+        int val3 = getSyscallParam(5);
+        
+        if (midlet.debug) {
+            midlet.print("futex: uaddr=" + toHex(uaddr) + " op=" + op +
+                        " val=" + val + " timeout=" + timeout, stdout, id);
+        }
         
         // Implementação simplificada
         switch (op & 0x7F) { // Mask out flags
@@ -3220,6 +3303,23 @@ public class ELF {
         }
         return true;
     }
+    private int getSyscallParam(int paramIndex) {
+        // Parâmetros 0-3 estão em R0-R3
+        if (paramIndex < 4) {
+            return registers[paramIndex];
+        }
+        
+        // Parâmetros 4+ estão na stack
+        int sp = registers[REG_SP];
+        int offset = 4 + (paramIndex - 4) * 4;
+        
+        if (sp + offset + 3 < memory.length && sp + offset >= 0) {
+            return readIntLE(memory, sp + offset);
+        }
+        
+        return 0;
+    }
+
 
     private String readString(byte[] data, int offset, int maxLen) {
         StringBuffer sb = new StringBuffer();
