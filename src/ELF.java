@@ -36,10 +36,6 @@ public class ELF {
     // Mapeamentos de memória
     private Vector memoryMappings;
     
-    // Thread management
-    private Vector threads;
-    private int nextTid;
-    
     // Constantes ELF
     private static final int EI_NIDENT = 16;
     private static final int ELFCLASS32 = 1;
@@ -119,7 +115,6 @@ public class ELF {
     private static final int SYS_GETEUID32 = 201;
     private static final int SYS_STAT = 106;
     private static final int SYS_FSTAT = 108;
-    private static final int SYS_CLONE = 120;
     private static final int SYS_GETPRIORITY = 140;
     private static final int SYS_SETPRIORITY = 141;
     private static final int SYS_GETDENTS = 217;
@@ -278,8 +273,6 @@ public class ELF {
         this.signalStack = new Vector();
         this.futexWaiters = new Hashtable();
         this.memoryMappings = new Vector();
-        this.threads = new Vector();
-        this.nextTid = 1;
 
         this.signalHandlers = new int[NSIG];
         for (int i = 0; i < NSIG; i++) { signalHandlers[i] = SIG_DFL; }
@@ -287,14 +280,6 @@ public class ELF {
         // Inicializar file descriptors padrão
         fileDescriptors.put(new Integer(1), stdout); // stdout
         fileDescriptors.put(new Integer(2), stdout); // stderr
-        
-        // Thread principal
-        Hashtable mainThread = new Hashtable();
-        mainThread.put("tid", new Integer(nextTid++));
-        mainThread.put("pc", new Integer(0));
-        mainThread.put("sp", new Integer(stackPointer));
-        mainThread.put("registers", registers.clone());
-        threads.addElement(mainThread);
     }
     
     public String getPid() { return pid; }
@@ -410,16 +395,12 @@ public class ELF {
                     break;
                 }
                 
-                // Executar threads (round-robin simplificado)
-                runThreads();
-                
                 // Verificar sinais pendentes
                 checkPendingSignals();
                 
                 // Debug avançado
                 if (midlet.debug && instructionCount % 10000 == 0) {
-                    midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7] + 
-                                ", Threads: " + threads.size(), stdout, id);
+                    midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id);
                 }
                 
                 // Executar instrução com cache
@@ -440,18 +421,9 @@ public class ELF {
                 }
             }
             
-            // Sinalizar que todas as threads devem terminar
-            synchronized (threads) {
-                for (int i = 0; i < threads.size(); i++) {
-                    Hashtable thread = (Hashtable) threads.elementAt(i);
-                    thread.put("state", "EXITED");
-                }
-            }
-            
             if (midlet.debug) {
                 midlet.print("=== ELF END DEBUG ===", stdout, id);
                 midlet.print("Instructions executed: " + instructionCount, stdout, id);
-                midlet.print("Threads created: " + (nextTid - 1), stdout, id);
             }
         } 
         catch (Throwable e) { 
@@ -468,110 +440,6 @@ public class ELF {
 
         ITEM.put("status", new Double(0));
         return ITEM;
-    }
-
-    private void runThreads() {
-        synchronized (threads) {
-            for (int i = 0; i < threads.size(); i++) {
-                Hashtable thread = (Hashtable) threads.elementAt(i);
-                String state = (String) thread.get("state");
-                
-                if ("RUNNING".equals(state)) {
-                    // Executar instrução da thread
-                    executeThreadInstruction(thread);
-                } else if ("EXITED".equals(state)) {
-                    // Thread finalizada - limpar
-                    Integer clearTid = (Integer) thread.get("clear_tid");
-                    if (clearTid != null && clearTid.intValue() != 0) {
-                        // Zerar child_tid para notificar joiner
-                        int addr = clearTid.intValue();
-                        if (addr + 3 < memory.length) {
-                            writeIntLE(memory, addr, 0);
-                        }
-                    }
-                    threads.removeElementAt(i);
-                    i--; // Ajustar índice após remoção
-                }
-            }
-        }
-    }
-
-    private void threadExit(int code) {
-        synchronized (threads) {
-            for (int i = 0; i < threads.size(); i++) {
-                Hashtable thread = (Hashtable) threads.elementAt(i);
-                int[] threadRegs = (int[]) thread.get("registers");
-                
-                // Verificar se é esta thread (comparando SP ou PC)
-                if (threadRegs == registers) {
-                    thread.put("state", "EXITED");
-                    thread.put("exit_code", new Integer(code));
-                    
-                    // Limpar clear_tid se existir
-                    Integer clearTid = (Integer) thread.get("clear_tid");
-                    if (clearTid != null && clearTid.intValue() != 0) {
-                        int addr = clearTid.intValue();
-                        if (addr + 3 < memory.length) { writeIntLE(memory, addr, 0); }
-                    }
-                    
-                    // Sinalizar futex se estiver esperando
-                    // (implementação simplificada)
-                    break;
-                }
-            }
-        }
-        
-        // Esta thread para de executar
-        running = false;
-    }
-    
-    private void executeThreadInstruction(Hashtable thread) {
-        int[] savedRegisters = new int[registers.length];
-        for (int i = 0; i < registers.length; i++) { savedRegisters[i] = registers[i]; }
-            
-        int savedPC = pc;
-        int savedCPSR = cpsr;
-        
-        try {
-            // Restaurar contexto da thread
-            registers = (int[]) thread.get("registers");
-            pc = ((Integer) thread.get("pc")).intValue();
-            
-            // Executar uma instrução
-            if (pc < memory.length - 3) {
-                int instruction = fetchInstruction(pc);
-                pc += 4;
-                executeInstruction(instruction);
-                
-                // Salvar contexto atualizado
-                thread.put("registers", registers.clone());
-                thread.put("pc", new Integer(pc));
-                
-                // Verificar se thread chamou exit
-                if (!running) {
-                    thread.put("state", "EXITED");
-                    int exitCode = registers[REG_R0];
-                    thread.put("exit_code", new Integer(exitCode));
-                }
-            } else {
-                // PC fora da memória - matar thread
-                thread.put("state", "EXITED");
-                thread.put("exit_code", new Integer(139)); // SIGSEGV
-            }
-            
-        } catch (Exception e) {
-            // Erro na thread
-            if (midlet.debug) {
-                midlet.print("Thread error: " + e, stdout, id);
-            }
-            thread.put("state", "EXITED");
-            thread.put("exit_code", new Integer(139));
-        } finally {
-            // Restaurar contexto principal
-            registers = savedRegisters;
-            pc = savedPC;
-            cpsr = savedCPSR;
-        }
     }
 
     private int fetchInstruction(int addr) {
@@ -1626,10 +1494,6 @@ public class ELF {
                 handleIoctl();
                 break;
                 
-            case SYS_CLONE:
-                handleClone();
-                break;
-                
             case SYS_GETPRIORITY:
                 handleGetpriority();
                 break;
@@ -1794,106 +1658,6 @@ public class ELF {
     // | Kernel
     // | (Process)
     private void handleFork() { registers[REG_R0] = -1; }
-    private void handleClone() {
-        // Parâmetros 1-4 em R0-R3
-        int flags = registers[REG_R0];
-        int child_stack = registers[REG_R1];
-        int parent_tid = registers[REG_R2];
-        int child_tid = registers[REG_R3];
-        
-        // Parâmetro 5 na stack
-        int tls = getSyscallParam(4);
-        
-        if (midlet.debug) {
-            midlet.print("clone: flags=" + toHex(flags) + 
-                        " stack=" + toHex(child_stack) +
-                        " ptid=" + toHex(parent_tid) +
-                        " ctid=" + toHex(child_tid) +
-                        " tls=" + toHex(tls), stdout, id);
-        }
-        
-        // Flags importantes
-        boolean cloneThread = (flags & 0x00010000) != 0; // CLONE_THREAD
-        boolean cloneVm = (flags & 0x00000100) != 0;    // CLONE_VM
-        boolean cloneFiles = (flags & 0x00000400) != 0; // CLONE_FILES
-        boolean cloneSighand = (flags & 0x00000800) != 0; // CLONE_SIGHAND
-        boolean cloneParent = (flags & 0x00008000) != 0; // CLONE_PARENT
-        boolean cloneChildClearTid = (flags & 0x00200000) != 0; // CLONE_CHILD_CLEARTID
-        
-        if (cloneThread) {
-            // Criar nova thread
-            Hashtable newThread = new Hashtable();
-            int tid = nextTid++;
-            newThread.put("tid", new Integer(tid));
-            newThread.put("pc", new Integer(pc));
-            newThread.put("elf", this); // Referência para o objeto ELF
-            
-            // Usar stack fornecida ou alocar nova
-            int threadSp = child_stack;
-            if (threadSp == 0) {
-                // Alocar nova stack (descendo de SP atual)
-                threadSp = registers[REG_SP] - 8192; // 8KB stack
-                // Garantir alinhamento
-                threadSp = threadSp & ~7;
-            }
-            newThread.put("sp", new Integer(threadSp));
-            
-            // Copiar registradores manualmente (clone() retorna Object)
-            int[] threadRegs = new int[registers.length];
-            for (int i = 0; i < registers.length; i++) { threadRegs[i] = registers[i]; }
-            
-            // Ajustar registradores para nova thread
-            threadRegs[REG_R0] = 0; // Valor de retorno da thread (será sobrescrito)
-            threadRegs[REG_SP] = threadSp; // Nova stack
-            threadRegs[REG_PC] = pc; // Começa na instrução após clone
-            
-            // Se tls for especificado, ajustar
-            if (tls != 0) {
-                // Em ARM, o registrador de thread pointer pode ser implementado
-                // threadRegs[REG_R9] = tls; // R9 é frequentemente usado como TP
-            }
-            
-            newThread.put("registers", threadRegs);
-            newThread.put("state", "RUNNING");
-            newThread.put("exit_code", new Integer(0));
-            
-            // Adicionar à lista de threads
-            synchronized (threads) {
-                threads.addElement(newThread);
-            }
-            
-            // Retornar TID para o pai (em R0)
-            registers[REG_R0] = tid;
-            
-            // Se parent_tidptr não for NULL, escrever TID
-            if (parent_tid != 0 && parent_tid + 3 < memory.length) {
-                writeIntLE(memory, parent_tid, tid);
-            }
-            
-            // Se child_tidptr não for NULL, escrever TID
-            if (child_tid != 0 && child_tid + 3 < memory.length) {
-                writeIntLE(memory, child_tid, tid);
-            }
-            
-            // Se CLONE_CHILD_CLEARTID estiver setado, armazenar child_tid para limpeza futura
-            if (cloneChildClearTid && child_tid != 0) {
-                newThread.put("clear_tid", new Integer(child_tid));
-            }
-            
-            if (midlet.debug) {
-                midlet.print("Thread " + tid + " created: SP=" + toHex(threadSp) + 
-                            " PC=" + toHex(pc), stdout, id);
-            }
-            
-        } else if ((flags & 0x00000111) == 0) {
-            // Fork simples (CLONE_VFORK | CLONE_VM não setados)
-            // Implementação simplificada de fork
-            registers[REG_R0] = -38; // ENOSYS por enquanto
-        } else {
-            // Outras combinações de flags não suportadas
-            registers[REG_R0] = -38; // ENOSYS
-        }
-    }
     private void handleExecve() {
         int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
         
@@ -2123,25 +1887,8 @@ public class ELF {
     // |
     private void handleExit() {
         int status = registers[REG_R0];
-        
-        // Verificar se é thread ou processo principal
-        boolean isMainThread = true;
-        synchronized (threads) {
-            for (int i = 0; i < threads.size(); i++) {
-                Hashtable thread = (Hashtable) threads.elementAt(i);
-                int[] threadRegs = (int[]) thread.get("registers");
-                if (threadRegs == registers) {
-                    isMainThread = false;
-                    threadExit(status);
-                    break;
-                }
-            }
-        }
-        
-        if (isMainThread) {
-            running = false;
-            cleanup();
-        }
+        running = false;
+        cleanup();
     }
     private void cleanup() {
         // Fechar todos os file descriptors
@@ -2173,33 +1920,12 @@ public class ELF {
         fileDescriptors.clear(); socketDescriptors.clear();
         allocatedBlocks.clear(); instructionCache.clear(); jmpBufs.clear();
         memoryMappings.removeAllElements();
-        
-        // Terminar todas as threads
-        synchronized (threads) { threads.removeAllElements(); }
     }
     // |
     private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_R0] = pidValue; } catch (NumberFormatException e) { registers[REG_R0] = 1; } }
     private void handleGetppid() { registers[REG_R0] = 1; }
     private void handleGetuid() { registers[REG_R0] = id; }
     private void handleGettid() { registers[REG_R0] = id; }
-    private void handleGetgid() { registers[REG_R0] = 1000; }
-    // | (Threading)
-    private void handleNanosleep() {
-        int reqPtr = registers[REG_R0], remPtr = registers[REG_R1];
-        
-        if (reqPtr == 0 || reqPtr + 8 > memory.length) { registers[REG_R0] = -14; return; }
-        
-        int sec = readIntLE(memory, reqPtr), nsec = readIntLE(memory, reqPtr + 4);
-        
-        long sleepMillis = sec * 1000 + nsec / 1000000;
-        
-        if (sleepMillis > 0) {
-            try { Thread.sleep(sleepMillis); }
-            catch (InterruptedException e) { registers[REG_R0] = -4; return; }
-        }
-        
-        registers[REG_R0] = 0;
-    }
     // | (Users)
 
     // | (Memory)
@@ -3236,8 +2962,6 @@ public class ELF {
     private void handleListen() { registers[REG_R0] = -1; } // Não implementado
     private void handleAccept() { registers[REG_R0] = -1; } // Não implementado
     private void handleShutdown() { registers[REG_R0] = -1; } // Não implementado
-    private void handleSendto() { registers[REG_R0] = -1; } // Não implementado
-    private void handleRecvfrom() { registers[REG_R0] = -1; } // Não implementado
     private void handleGetsockname() { registers[REG_R0] = -1; } // Não implementado
     private void handleGetpeername() { registers[REG_R0] = -1; } // Não implementado
 
