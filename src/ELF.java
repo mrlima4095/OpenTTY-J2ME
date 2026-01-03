@@ -56,6 +56,7 @@ public class ELF {
     private static final int REG_R1 = 1;
     private static final int REG_R2 = 2;
     private static final int REG_R3 = 3;
+    private static final int REG_R4 = 4;
     private static final int REG_R7 = 7;
     private static final int REG_SP = 13;
     private static final int REG_LR = 14;
