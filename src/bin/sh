@@ -7,7 +7,7 @@ local function shell(args, enable, aliases, stdout, scope)
         args = string.env(args)
     end
 
-    local cmd, argument = string.getCommand(args), string.getArgument(args)
+    local cmd, argument, bkp = string.getCommand(args), string.getArgument(args), args
     args = string.split(argument, nil)
 
     if redirect then
@@ -44,14 +44,14 @@ local function shell(args, enable, aliases, stdout, scope)
         if args[1] then
             pcall(function ()
                 local program = os.join(args[1])
-                table.remove(args, 1)
-                    local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
-                    
-                    if type(res) == "number" then
-                        status = res
-                    elseif type(res) == "table" then
-                        status = res.status
-                    end
+                table.remove(bkp, 1)
+                local res = io.popen(program, table.concat(bkp, " "), true, stdout, scope)
+                
+                if type(res) == "number" then
+                    status = res
+                elseif type(res) == "table" then
+                    status = res.status
+                end
             end)
         end
 
