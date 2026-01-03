@@ -65,9 +65,9 @@ public class Lua {
                     }
                 }
                 
-                copy.put(key, moduleCopy);
+                globals.put(key, moduleCopy);
             } else {
-                copy.put(key, value);
+                globals.put(key, value);
             }
         }
     }
