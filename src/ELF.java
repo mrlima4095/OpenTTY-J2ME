@@ -1339,6 +1339,9 @@ public class ELF {
         envVars.addElement("HOME=/home");
         envVars.addElement("SHELL=/bin/sh");
         envVars.addElement("TERM=vt100");
+        for (Enumeration e = midlet.attributes.keys(); e.hasMoreElements();) {
+            envVars.addElement(midlet.attributes.get(e.nextElement()));
+        }
         
         // Ponteiros para env vars
         int envpStart = sp - (envVars.size() + 1) * 4;
