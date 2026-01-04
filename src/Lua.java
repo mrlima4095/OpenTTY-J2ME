@@ -1620,8 +1620,7 @@ public class Lua {
             else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
                 else {
-                    String program = toLuaString(args.elementAt(0));
-                    String arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
+                    String program = toLuaString(args.elementAt(0)), arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
                     int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
                     Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
                     Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
@@ -1629,7 +1628,7 @@ public class Lua {
                     InputStream is = midlet.getInputStream(program);
                     Vector result = new Vector();
                     if (is != null) {
-                        byte[] header = new byte[4];
+                        byte[] header = new byte[100];
                         int bytesRead = is.read(header);
                         is.close();
 
@@ -1638,27 +1637,97 @@ public class Lua {
                         String[] list = midlet.splitArgs(arguments);
                         for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
 
-                        boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
-                        if (isElf) {
-                            InputStream elfStream = midlet.getInputStream(program);
-                            ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
-                            
-                            if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(1); }
-                            result.addElement(out instanceof StringBuffer ? out.toString() : out);
-                            return result;
-                        } else {
+                        if (midlet.isPureText(header)) {
                             String code = midlet.read(program);
 
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
 
                             result.addElement(lua.run(program, code, arg));
-                            result.addElement(out instanceof StringBuffer ? out.toString() : out);
-                            return result;
+                        } else {
+                            InputStream elfStream = midlet.getInputStream(program);
+                            ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
+                            
+                            if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(1); }
                         }
+                        
+                        result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                        return result;
                     } 
                     else { return new Double(127); }
                 }
             } 
+            else if (MOD == POPEN) { 
+    if (args.isEmpty()) { } 
+    else {
+        String program = toLuaString(args.elementAt(0));
+        String arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
+        int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
+        Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
+        Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
+
+        InputStream is = midlet.getInputStream(program);
+        Vector result = new Vector();
+        if (is != null) {
+            // Ler os primeiros bytes para verificar o tipo
+            byte[] header = new byte[100]; // Ler um pouco mais para análise de texto
+            int bytesRead = is.read(header);
+            is.close();
+            
+            Hashtable arg = new Hashtable();
+            arg.put(new Double(0), program);
+            String[] list = midlet.splitArgs(arguments);
+            for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
+
+            // Verificar se é ELF primeiro (mais confiável)
+            boolean isElf = (bytesRead >= 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
+            
+            if (isElf) {
+                // É um ELF, executar via ELF
+                InputStream elfStream = midlet.getInputStream(program);
+                ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
+                
+                if (elf.load(elfStream)) { 
+                    result.addElement(elf.run()); 
+                } else { 
+                    result.addElement(1); 
+                }
+                result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                return result;
+            } else {
+                // Não é ELF, verificar se é texto (Lua)
+                
+                
+                if (isText) {
+                    // É texto, tentar executar como Lua
+                    String code = midlet.read(program);
+                    
+                    Lua lua = new Lua(midlet, owner, null, null, out, scope);
+                    
+                    result.addElement(lua.run(program, code, arg));
+                    result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                    return result;
+                } else {
+                    // Não é texto nem ELF, provavelmente outro binário
+                    if (out instanceof StringBuffer) {
+                        ((StringBuffer) out).append("Cannot execute " + program + ": not a valid executable or script\n");
+                    }
+                    result.addElement(126); // Código de erro padrão para "not executable"
+                    result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                    return result;
+                }
+            }
+        } 
+        else { 
+            // Arquivo não encontrado
+            if (out instanceof StringBuffer) {
+                ((StringBuffer) out).append(program + ": not found\n");
+            }
+            result.addElement(127);
+            result.addElement(out instanceof StringBuffer ? out.toString() : out);
+            return result;
+        }
+    }
+}
             else if (MOD == DIRS) {
                 String pwd = args.isEmpty() ? (String) father.get("PWD") : toLuaString(args.elementAt(0));
                 int index = 1;
