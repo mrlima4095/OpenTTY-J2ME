@@ -151,6 +151,25 @@ graphics = {
     db = {}
 }
 
+--[=[
+Audio API
+]=]
+audio = {
+    --[=[Get player from audio file]=]
+    load = function (file, mimeType) end,
+    --[=[Start player]=]
+    play = function (player) end,
+    --[=[Pause player]=]
+    pause = function (player) end,
+    --[=[Get or set player volume]=]
+    volume = function (player, level) end,
+    --[=[Get total durantion of audio on player]=]
+    duration = function (player) end,
+    --[=[Get or set player current time]=]
+    time = function (player, seek) end,
+
+}
+
 --[=[ 
 Lua J2ME - Control MIDlet Suite with Lua
 ]=]
