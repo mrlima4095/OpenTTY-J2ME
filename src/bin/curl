@@ -43,7 +43,12 @@ elseif arg[1] == "-t" then
                 pcall(io.write, arg[4], o)
             end
 
-            print(io.read, i, 2048)
+            local o, msg = pcall(io.read, i, 2048)
+            if o then
+                print(msg)
+            else
+                print("curl: " .. tostring(conn))
+            end
         else
             print("curl: " .. tostring(conn))
         end
