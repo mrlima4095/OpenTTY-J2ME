@@ -109,7 +109,7 @@ public class Lua {
     }
     // | (Build Globals)
     public void build() {
-        //midlet.funcs = new Hashtable();
+        midlet.funcs = new Hashtable();
 
         
     }
@@ -1617,7 +1617,7 @@ public class Lua {
                 } 
             }
             else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
-            else if (MOD == POPEN) { 
+             else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
                 else {
                     String program = toLuaString(args.elementAt(0));

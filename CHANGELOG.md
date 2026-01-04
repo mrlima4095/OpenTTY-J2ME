@@ -22,7 +22,3 @@ FileSystem
 Lua
 
 - global functions caching
-
-Programs
-
-- Cannot invoke `/bin/init` in runtime
