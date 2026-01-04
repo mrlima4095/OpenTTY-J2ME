@@ -1633,7 +1633,7 @@ public class Lua {
                         int bytesRead = is.read(header);
                         is.close();
 
-                        Hashtable arg;
+                        Hashtable arg = null;
                         if (arguments instanceof Hashtable) {
                             arg = (Hashtable) arguments;
                             arg.put(new Double(0), program);
