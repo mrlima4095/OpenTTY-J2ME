@@ -45,14 +45,35 @@ local function shell(args, enable, aliases, stdout, scope)
             pcall(function ()
                 local program = os.join(args[1])
                 table.remove(args, 1)
-                local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
+                
+                -- Criar tabela de argumentos explicitamente
+                local argTable = {}
+                argTable[0] = program
+                for i, v in ipairs(args) do
+                    argTable[i] = v
+                end
+                
+                -- Converter para string de argumentos segura
+                local argStr = ""
+                for i, v in ipairs(args) do
+                    if i > 1 then argStr = argStr .. " " end
+                    -- Escapar argumentos se necessário
+                    if string.find(v, " ") then
+                        argStr = argStr .. "'" .. v .. "'"
+                    else
+                        argStr = argStr .. v
+                    end
+                end
+                
+                print("DEBUG: Chamando popen com argStr='" .. argStr .. "'")
+                local res = io.popen(program, argStr, true, stdout, scope)
                 
                 if type(res) == "table" then
                     status = res.status
                 end
             end)
         end
-
+    end
     elseif cmd == "builtin" or cmd == "command" then
         if argument ~= "" then
             status = shell(argument, false, aliases, stdout, scope)
