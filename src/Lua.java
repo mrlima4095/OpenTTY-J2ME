@@ -1637,7 +1637,7 @@ public class Lua {
                         if (arguments instanceof Hashtable) {
                             arg = (Hashtable) arguments;
                             arg.put(new Double(0), program);
-                        } else {
+                        } else if (arguments != null) {
                             arg = new Hashtable();
                             arg.put(new Double(0), program);
                             String args = toLuaString(arguments);
