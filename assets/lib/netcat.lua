@@ -31,7 +31,7 @@ if arg[1] and arg[2] then
     graphics.addCommand(screen, run)
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, clear)
-    graphics.handler({
+    graphics.handler(screen, {
         [back] = function ()
             graphics.display(previous)
             running = false
