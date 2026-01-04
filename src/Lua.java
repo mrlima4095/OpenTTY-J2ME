@@ -1643,6 +1643,8 @@ public class Lua {
                             String args = toLuaString(arguments);
                             String[] list = midlet.splitArgs(args);
                             for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
+                        } else {
+                            arg = new Hashtable();
                         }
                         
 
