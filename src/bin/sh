@@ -64,8 +64,6 @@ local function shell(args, enable, aliases, stdout, scope)
                         argStr = argStr .. v
                     end
                 end
-                
-                print("DEBUG: Chamando popen com argStr='" .. argStr .. "'")
                 local res = io.popen(program, argStr, true, stdout, scope)
                 
                 if type(res) == "table" then
