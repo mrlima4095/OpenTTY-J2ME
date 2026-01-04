@@ -1643,7 +1643,7 @@ public class Lua {
                             InputStream elfStream = midlet.getInputStream(program);
                             ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
                             
-                            if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(new Double(1)); }
+                            if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(1); }
                             result.addElement(out instanceof StringBuffer ? out.toString() : out);
                             return result;
                         } else {
