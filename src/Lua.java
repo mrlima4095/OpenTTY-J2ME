@@ -109,7 +109,7 @@ public class Lua {
     }
     // | (Build Globals)
     public void build() {
-        midlet.funcs = new Hashtable();
+        //midlet.funcs = new Hashtable();
 
         
     }
