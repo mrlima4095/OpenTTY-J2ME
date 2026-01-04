@@ -46,7 +46,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 local program = os.join(args[1])
                 table.remove(args, 1)
                 
-                local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
+                local res = io.popen(program, args, true, stdout, scope)
                 
                 if type(res) == "table" then
                     status = res.status
