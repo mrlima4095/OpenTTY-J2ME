@@ -52,19 +52,7 @@ public class Lua {
                 for (Enumeration modKeys = module.keys(); modKeys.hasMoreElements();) {
                     Object modKey = modKeys.nextElement(), modValue = module.get(modKey);
                     
-                    if (modValue instanceof Hashtable) {
-                        Hashtable module2 = (Hashtable) modValue, module2Copy = new Hashtable();
-                
-                        for (Enumeration mod2Keys = module2.keys(); mod2Keys.hasMoreElements();) {
-                            Object mod2Key = mod2Keys.nextElement(), mod2Value = module2.get(mod2Key);
-                            
-                            module2Copy.put(mod2Key, mod2Value);
-                        }
-                        
-                        moduleCopy.put(modKey, module2Copy);
-                    } else {
-                        moduleCopy.put(modKey, modValue);
-                    }
+                    moduleCopy.put(modKey, modValue);
                 }
                 
                 globals.put(key, moduleCopy);
