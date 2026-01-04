@@ -47,7 +47,7 @@ elseif arg[1] == "-t" then
             if o then
                 print(msg)
             else
-                print("curl: " .. tostring(conn))
+                print("curl: " .. tostring(msh))
             end
         else
             print("curl: " .. tostring(conn))
