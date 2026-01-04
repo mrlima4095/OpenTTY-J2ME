@@ -1,39 +1,47 @@
 #!/bin/lua
 
-local previous = graphics.getCurrent()
-local app = {
-    back = graphics.new("command", { label = "Back", type = "back", priority = 1 }),
-    clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 }),
-    save = graphics.new("command", { label = "Save", type = "screen", priority = 1 })
-}
+local version = "1.0.0"
 
-if arg[1] then
-    app.content = io.read(os.join(arg[1]))
-    app.editor = graphics.new("edit", "Nano - " .. arg[1])
-    graphics.SetText(app.editor, app.content)
+os.setproc("name", "nc")
+
+if arg[1] and arg[2] then
+    local remote, port = arg[1], arg[2]
+    local running = false
+
+    local ok, conn, i, o = pcall(socket.connect, "socket://" .. remote .. ":" .. port)
+    if not ok then
+        print("nc: " .. tostring(conn))
+        os.exit(101)
+    else
+        running = true
+    end
+
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
+    local back = graphics.new("command", { label = "Back", type = "screen", priority = 1 })
+    local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
+    local run = graphics.new("command", { label = "Send", type = "ok", priority = 1 })
+    local buffer = graphics.new("buffer", { })
+
+    local function reading() while running do local x, response = pcall(io.read, i) if x then io.write(response, buffer, "a") end end end
+    java.run(reading)
+
+    graphics.append(screen, buffer)
+    graphics.append(screen, { type = "field", label = "Remote (" .. remote .. ")", })
+    graphics.addCommand(screen, run)
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, clear)
+    graphics.handler({
+        [back] = function ()
+            graphics.display(previous)
+            running = false
+            os.exit(0)
+        end,
+        [clear] = function () graphics.SetText(buffer, "") end,
+        [run] = function (payload) pcall(io.write, payload, o) end
+    })
+    graphics.display(screen)
 else
-    print("nano: usage: nano [file]")
+    print("nc: usage: nc [host] [port]")
     os.exit(2)
 end
-
-function app.quit()
-    graphics.display(previous)
-    os.exit(0)
-end
-function app.write(content)
-    local status = io.write(content, os.join(arg[1]))
-    local message
-
-    if status == 1 then message = "java.io.IOException" elseif status == 5 then message = "read-only storage" elseif status == 13 then message = "permission denied" end
-    if status > 0 then
-        graphics.display(graphics.new("alert", "Nano", message))
-    end
-end
-
-os.setproc("name", "nano")
-
-graphics.addCommand(app.editor, app.back)
-graphics.addCommand(app.editor, app.save)
-graphics.addCommand(app.editor, app.clear)
-graphics.handler(app.editor, { [app.back] = app.quit, [app.clear] = function () graphics.SetText(app.editor, "") end, [app.save] = app.write })
-graphics.display(app.editor)

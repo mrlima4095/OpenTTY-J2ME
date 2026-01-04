@@ -24,10 +24,8 @@ function app.write(content)
     local status = io.write(content, os.join(arg[1]))
     local message
 
-    if status == 1 then message = "java.io.IOException" elseif status == 5 then message = "read-only storage" elseif status == 13 then message = "permission denied" end
-    if status > 0 then
-        graphics.display(graphics.new("alert", "Nano", message))
-    end
+    if status == 5 then message = "read-only storage" elseif status == 13 then message = "permission denied" else message = "java.io.IOException" end
+    if status > 0 then graphics.display(graphics.new("alert", "Nano", message)) end
 end
 
 os.setproc("name", "nano")
