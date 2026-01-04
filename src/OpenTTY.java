@@ -37,7 +37,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void init() {
         try { 
             Hashtable proc = new Hashtable(), args = new Hashtable();
-            args.put(new Double(0), "/bin/init");
+            args.put(new Double(0), "/bin/init"); args.put(new Double(1), "--boot");
             globals.put("PWD", "/home/"); globals.put("USER", "root");
             proc.put("name", "init"); proc.put("owner", "root");
 

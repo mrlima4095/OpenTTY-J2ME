@@ -1,5 +1,10 @@
 #!/bin/lua
 
+if arg[1] ~= "--boot" then
+    print("init: already running")
+    os.exit(68)
+end
+
 for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
