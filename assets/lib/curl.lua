@@ -37,13 +37,14 @@ if arg[1] == "-o" then
     end
 elseif arg[1] == "-t" then
     if arg[2] and arg[3] then
-        local ok, conn, i, o = pcall(socket.connect, "socket://" .. arg[2] .. arg[3])
+        local ok, conn, i, o = pcall(socket.connect, "socket://" .. arg[2] .. ":" .. arg[3])
         if ok then
             if arg[4] then
                 pcall(io.write, arg[4], o)
             end
 
-            print(io.read, i, 2048)
+            local _, msg = pcall(io.read, i, 2048)
+            print(msg)
         else
             print("curl: " .. tostring(conn))
         end
