@@ -27,7 +27,7 @@ if arg[1] and arg[2] then
     java.run(reading)
 
     graphics.append(screen, buffer)
-    graphics.append(screen, { type = "field", label = "Remote (" .. remote .. ")", })
+    graphics.append(screen, { type = "field", label = "Remote (" .. remote .. ")" })
     graphics.addCommand(screen, run)
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, clear)
