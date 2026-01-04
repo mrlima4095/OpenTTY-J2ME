@@ -523,7 +523,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return baos.toByteArray();
     }
-    private boolean isPureText(byte[] data) {
+    public boolean isPureText(byte[] data) {
         int textCount = 0;
         int sampleSize = Math.min(data.length, 100);
         
