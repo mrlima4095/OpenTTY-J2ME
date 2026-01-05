@@ -26,7 +26,7 @@ public class Lua {
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SUDO = 317, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321;
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
-    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613;
+    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614;
     public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
 
@@ -71,8 +71,8 @@ public class Lua {
         loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
-        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText" }; 
-        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, LABEL, SETTEXT, GETLABEL, GETTEXT };
+        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear" }; 
+        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, LABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument", "env" }; 
@@ -86,32 +86,6 @@ public class Lua {
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
         math.put("random", new LuaFunction(RANDOM)); globals.put("math", math);
         globals.put("_VERSION", "Lua J2ME");
-
-        //if (midlet.funcs == null) { build(); }
-
-        /*for (Enumeration e = midlet.funcs.keys(); e.hasMoreElements();) {
-            Object key = e.nextElement(), value = midlet.funcs.get(key);
-            
-            if (value instanceof Hashtable) {
-                Hashtable module = (Hashtable) value, moduleCopy = new Hashtable();
-                
-                for (Enumeration modKeys = module.keys(); modKeys.hasMoreElements();) {
-                    Object modKey = modKeys.nextElement(), modValue = module.get(modKey);
-                    
-                    moduleCopy.put(modKey, modValue);
-                }
-                
-                globals.put(key, moduleCopy);
-            } else {
-                globals.put(key, value);
-            }
-        }*/
-    }
-    // | (Build Globals)
-    public void build() {
-        midlet.funcs = new Hashtable();
-
-        
     }
     // | (Run Source code)
     public Hashtable run(String source, String code, Hashtable args) { 
@@ -2288,6 +2262,16 @@ public class Lua {
                     Object i = args.elementAt(0); 
                     return i instanceof StringItem ? ((StringItem) i).getText() : i instanceof TextField ? ((TextField) i).getString() : i instanceof TextBox ? ((TextBox) i).getString() : gotbad(1, "GetText", "Item expected"); 
                 } 
+            }
+            else if (MOD == CLEAR_SCREEN) {
+                if (args.isEmpty()) { return gotbad(1, "clear", "screen expected, got no value"); }
+                else {
+                    Object screen = args.elementAt(0);
+
+                    if (screen instanceof Form) { ((Displayable) args.elementAt(0)).deleteAll() }
+                    else if (screen instanceof List) { ((Displayable) args.elementAt(0)).deleteAll(); }
+                    else { return gotbad(1, "clear", "screen expected, got" + type(args.elementAt(0))); }
+                }
             }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
