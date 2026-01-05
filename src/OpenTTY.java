@@ -274,7 +274,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 filename = "/lib/" + filename;
             }
             else if (filename.startsWith("/proc/")) {
-                filename = filename.substring(5);
+                filename = filename.substring(6);
                 String content = filename.equals("uptime") ? "" + ((System.currentTimeMillis() - uptime) / 1000) : null;
                 if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
