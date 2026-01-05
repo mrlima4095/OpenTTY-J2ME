@@ -2268,7 +2268,7 @@ public class Lua {
                 else {
                     Object screen = args.elementAt(0);
 
-                    if (screen instanceof Form) { ((Displayable) args.elementAt(0)).deleteAll() }
+                    if (screen instanceof Form) { ((Displayable) args.elementAt(0)).deleteAll(); }
                     else if (screen instanceof List) { ((Displayable) args.elementAt(0)).deleteAll(); }
                     else { return gotbad(1, "clear", "screen expected, got" + type(args.elementAt(0))); }
                 }
