@@ -24,12 +24,13 @@ function app.quit(content)
         os.exit(0)
     end
 
-    local quest = graphics.new("alert", "Nano", "Buffer Modified")
+    local quest = graphics.new("alert", "Nano", "Save modified buffer?")
     graphics.addCommand(quest, app.back)
     graphics.addCommand(quest, app.save)
     graphics.handler(quest, {
         [app.back] = function ()
-            graphics.display(app.editor)
+            graphics.display(previous)
+            os.exit(0)
         end,
         [app.save] = function ()
             graphics.display(previous)
