@@ -10,6 +10,14 @@ if arg[1] == "-e" then
     end
 
     os.exit(2)
+elseif arg[1] then
+    local script, args = os.join(arg[1]), {}
+    for i = 2, #arg - 2 do
+        args[#args + 1] = arg[i]
+    end
+
+    local res = io.popen(script, args, true, io.stdout)
+    os.exit(res.status)
 end
 
 
