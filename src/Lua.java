@@ -1634,10 +1634,8 @@ public class Lua {
                         is.close();
 
                         Hashtable arg = null;
-                        if (arguments instanceof Hashtable) {
-                            arg = (Hashtable) arguments;
-                            arg.put(new Double(0), program);
-                        } else if (arguments != null) {
+                        if (arguments instanceof Hashtable) { arg = (Hashtable) arguments; arg.put(new Double(0), program); }
+                        else if (arguments != null) {
                             arg = new Hashtable();
                             arg.put(new Double(0), program);
                             String args = toLuaString(arguments);
@@ -1652,7 +1650,6 @@ public class Lua {
 
                         if (midlet.isPureText(header)) {
                             String code = midlet.read(program);
-
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
 
                             result.addElement(lua.run(program, code, arg));
