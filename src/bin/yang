@@ -5,6 +5,7 @@ local version = "1.5"
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
     ["armitage"] = { remote = "armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
+    ["appmenu"] = { remote = "appmenu", here = "/bin/init", description = "Application Menu" },
     ["autogc"] = { remote = "autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
     ["cmatrix"] = { remote = "cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
     ["curl"] = { remote = "curl.lua", here = "/bin/curl", description = "Connect with a Server" },
