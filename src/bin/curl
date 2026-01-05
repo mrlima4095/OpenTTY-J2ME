@@ -4,6 +4,15 @@ local function parse_url(url)
     if string.sub(url, 1, 4) == "http:" or string.sub(url, 0, 6) == "https:" then return url end
     return "http://" .. url
 end
+local function get_errors(code)
+    if code == 13 then
+        return "permission denied"
+    elseif code == 5 then
+        return "read-only storage"
+    end
+
+    return "java.io.IOException"
+end
 
 os.setproc("name", "curl")
 
@@ -13,19 +22,13 @@ if arg[1] == "-o" then
         local ok, body, status = pcall(socket.http.get, url)
         if ok then
             if status ~= 200 then
-                print("status: " .. status)
-                print("---")
-                print(body)
+                print("HTTP " .. status)
                 print("---")
             end
 
             local code = io.write(body, os.join(arg[2]))
-            if code == 13 then
-                print("curl: permission denied")
-            elseif code == 5 then
-                print("curl: read-only storage")
-            elseif code == 1 then
-                print("curl: java.io.IOException")
+            if code ~= 0 then
+                print("curl: " .. get_errors(code))
             end
 
             os.exit(tonumber(code))
