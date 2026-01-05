@@ -15,6 +15,7 @@ pcall(io.popen, "/home/.initrc")
 local appmenu = graphics.new("list", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local launch = graphics.new("command", { label = "Launch", type = "ok", priority = 1 })
 local refresh = graphics.new("command", { label = "Refresh", type = "ok", priority = 1 })
+local config = graphics.new("command", { label = "Config", type = "ok", priority = 1 })
 local quit = graphics.new("command", { label = "Quit", type = "ok", priority = 1 })
 local menu = graphics.new("command", { label = "Menu", type = "ok", priority = 1 })
 
@@ -25,8 +26,7 @@ local function load()
 
     local file = io.open("/home/.desktop")
     if not file then
-        local content = "Terminal,/bin/xterm,\nMonitor,/bin/htop,,"
-        io.write(content, "/home/.desktop")
+        return
     end
 
     local content = io.read("/home/.desktop")
@@ -48,12 +48,16 @@ load()
 graphics.addCommand(appmenu, menu)
 graphics.addCommand(appmenu, launch)
 graphics.addCommand(appmenu, refresh)
+graphics.addCommand(appmenu, config)
 graphics.addCommand(appmenu, quit)
 graphics.handler(appmenu, {
     [menu] = function ()
         graphics.display(graphics.new("alert", "Menu", "In development!"))
     end,
     [quit] = function () os.exit(nil) end,
+    [config] = function ()
+        
+    end
     [refresh] = load,
     [launch] = launcher,
     [graphics.fire] = launcher,
