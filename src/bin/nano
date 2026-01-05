@@ -1,5 +1,7 @@
 #!/bin/lua
 
+local libcore = require("libcore")
+
 local previous = graphics.getCurrent()
 local app = {
     back = graphics.new("command", { label = "Back", type = "back", priority = 1 }),
@@ -16,16 +18,32 @@ else
     os.exit(2)
 end
 
-function app.quit()
-    graphics.display(previous)
-    os.exit(0)
+function app.quit(content)
+    if app.content == content then
+        graphics.display(previous)
+        os.exit(0)
+    end
+
+    local quest = graphics.new("alert", "Nano", "Buffer Modified")
+    graphics.addCommand(quest, app.back)
+    graphics.addCommand(quest, app.save)
+    graphics.handler(quest, {
+        [app.back] = function ()
+            graphics.display(app.editor)
+        end,
+        [app.save] = function ()
+            graphics.display(previous)
+            app.write(content)
+        end
+    })
+
+    graphics.display(quest)
 end
 function app.write(content)
+    app.content = content
     local status = io.write(content, os.join(arg[1]))
-    local message
 
-    if status == 5 then message = "read-only storage" elseif status == 13 then message = "permission denied" else message = "java.io.IOException" end
-    if status > 0 then graphics.display(graphics.new("alert", "Nano", message)) end
+    if status > 0 then graphics.display(graphics.new("alert", "Nano", libcore.errormsg(status))) end
 end
 
 os.setproc("name", "nano")
