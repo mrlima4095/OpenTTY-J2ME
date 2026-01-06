@@ -13,7 +13,10 @@ if arg[1] then
                 os.exit(2)
             end
 
-            if proge
+            local args = {}
+            for i = 4, #arg do
+                
+            end
         else
             print("sudo -y [passwd] [program] [args**]")
             os.exit(2)
