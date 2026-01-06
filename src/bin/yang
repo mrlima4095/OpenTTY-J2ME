@@ -28,6 +28,7 @@ local mirror = {
     ["sdk"] = { remote = "sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
     ["sync"] = { remote = "sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
     ["svchost"] = { remote = "svchost.lua", here = "/bin/svchost", description = "Quick Launch Services" },
+    ["sudo"] = { remote = "sudo.lua", here = "/bin/sudo", description = "" },
     ["uname"] = { remote = "uname", here = "/bin/uname", description = "System Informations" },
     ["viewer"] = { remote = "img.lua", here = "/bin/view", description = "View Images" },
     ["viaversion"] = { remote = "viaversion", here = "/bin/axrz", description = "Change OpenTTY API on Runtime" },
