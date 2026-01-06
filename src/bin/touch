@@ -9,7 +9,7 @@ if #arg > 1 then
         if status > 0 then
             local message = libcore.errormsg(status)
 
-            print("touch: " .. arg[i] .. ": " .. message)
+            print("touch: " .. arg[i] .. " " .. message)
             os.exit(status)
         end
     end

@@ -20,7 +20,7 @@ if arg[1] == "-o" then
 
             local code = io.write(body, os.join(arg[2]))
             if code ~= 0 then
-                print("curl: " .. libcore.errormsg(code))
+                print(libcore.errormsg(code))
             end
 
             os.exit(tonumber(code))
