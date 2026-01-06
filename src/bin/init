@@ -9,7 +9,7 @@ local alias, scope = {}, { PWD = "/home/", USER = java.midlet.username }
 local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
-local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " $") end
+local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " " .. (os.getuid() == 0 and "#" or "$")) end
 
 label()
 
