@@ -524,7 +524,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return baos.toByteArray();
     }
     public boolean isPureText(byte[] data) {
-        int textCount = 0;
+        /*int textCount = 0;
         int sampleSize = Math.min(data.length, 100);
         
         for (int i = 0; i < sampleSize; i++) {
@@ -534,7 +534,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         
-        return (textCount * 100) > (sampleSize * 95);
+        return (textCount * 100) > (sampleSize * 95);//
+        try {
+            String text = new String(data, "UTF-8");
+            // Se conseguiu decodificar como UTF-8 sem erro, é texto
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }    
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
