@@ -34,7 +34,7 @@ function app.quit(content)
         end,
         [app.save] = function ()
             graphics.display(previous)
-            app.write(content)
+            os.exit(app.write(content))
         end
     })
 
@@ -45,6 +45,7 @@ function app.write(content)
     local status = io.write(content, os.join(arg[1]))
 
     if status > 0 then graphics.display(graphics.new("alert", "Nano", libcore.errormsg(status))) end
+    return tonumber(status)
 end
 
 os.setproc("name", "nano")
