@@ -1,14 +1,6 @@
 #!/bin/lua
 
 
-function app.GetPaste() graphics.display(graphics.BuildEdit({ title = "Paste Content", back = { root = app.main }, button = { label = "Create", root = app.paste } })) end
-function app.SaveFile(content, screen) graphics.display(graphics.BuildQuest({ title = "PasteBin", label = "File to Save", back = { root = function () graphics.display(graphics.BuildScreen(screen)) end }, button = { label = "Save", root = function (filename) io.write(content, filename) graphics.display(graphics.BuildScreen(screen)) end } })) end
-
-function app.Preview(id)
-    
-end
-function app.GetURL() graphics.display(graphics.BuildQuest({ title = "PasteBin", label = "Paste ID", back = { root = app.main }, button = { label = "View", root = app.Preview } })) end
-
 local PASTEBIN_API = os.getenv("PASTEBIN_API")
 local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
 local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
