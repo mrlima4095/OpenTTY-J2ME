@@ -1603,9 +1603,13 @@ public class Lua {
                     InputStream is = midlet.getInputStream(program);
                     Vector result = new Vector();
                     if (is != null) {
-                        byte[] header = new byte[100];
-                        int bytesRead = is.read(header);
-                        is.close();
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        
+                        while ((length = is.read(buffer)) != -1) { baos.write(buffer, 0, length); }
+                        
+                        byte[] data = baos.toByteArray(); baos.close();
 
                         Hashtable arg = null;
                         if (arguments instanceof Hashtable) { arg = (Hashtable) arguments; arg.put(new Double(0), program); }
@@ -1621,13 +1625,13 @@ public class Lua {
                         
 
                         if (midlet.isPureText(header)) {
-                            String code = midlet.read(program);
+                            String code = new String(data, "UTF-8");
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
 
                             result.addElement(lua.run(program, code, arg));
                         }
                         else {
-                            InputStream elfStream = midlet.getInputStream(program);
+                            InputStream elfStream = new ByteArrayInputStream(data);
                             ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
                             
                             if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(1); }
