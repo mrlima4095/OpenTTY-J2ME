@@ -7,7 +7,9 @@ if #arg > 1 then
         local status = os.remove(os.join(arg[i]))
 
         if status > 0 then
-            print("rm: " .. arg[i] .. ": " .. libcore.errormsg(status))
+            local message = libcore.errormsg(status)
+
+            print("rm: " .. arg[i] .. ": " .. message)
             os.exit(status)
         end
     end
