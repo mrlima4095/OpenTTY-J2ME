@@ -1591,7 +1591,7 @@ public class Lua {
                 } 
             }
             else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
-             else if (MOD == POPEN) { 
+            else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
                 else {
                     String program = toLuaString(args.elementAt(0));
@@ -1617,9 +1617,7 @@ public class Lua {
                             for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
                         } 
                         
-                        if (arg == null) {
-                            arg = new Hashtable();
-                        }
+                        if (arg == null) { arg = new Hashtable(); }
                         
 
                         if (midlet.isPureText(header)) {
@@ -1627,7 +1625,8 @@ public class Lua {
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
 
                             result.addElement(lua.run(program, code, arg));
-                        } else {
+                        }
+                        else {
                             InputStream elfStream = midlet.getInputStream(program);
                             ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
                             
