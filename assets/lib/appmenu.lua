@@ -57,7 +57,7 @@ graphics.handler(appmenu, {
     [quit] = function () os.exit(nil) end,
     [config] = function ()
         
-    end
+    end,
     [refresh] = load,
     [launch] = launcher,
     [graphics.fire] = launcher,
