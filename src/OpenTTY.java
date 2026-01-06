@@ -534,7 +534,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         }
         
-        return (textCount * 100.0 / sampleSize) >= 95.0; // 95% de caracteres textuais
+        return (textCount * 100) > (sampleSize * 95);
     }    
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
