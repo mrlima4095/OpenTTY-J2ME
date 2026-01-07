@@ -27,7 +27,7 @@ public class Lua {
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
     public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614;
-    public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, KERNEL = 1000;
+    public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
 
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
@@ -62,8 +62,8 @@ public class Lua {
         loaders = new int[] { HTTP_GET, HTTP_POST, HTTP_RGET, HTTP_RPOST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "class", "getName", "delete", "run", "thread" }; 
-        loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD };
+        funcs = new String[] { "class", "getName", "delete", "run", "thread", "sleep" }; 
+        loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD, SLEEP };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); }
         jdb.put("username", midlet.username); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
 
@@ -2465,9 +2465,8 @@ public class Lua {
                     if (args.size() > 1 || args.elementAt(1) instanceof Double) {
                         int value = ((Double) args.elementAt(1)).intValue();
                         if (vc != null) { vc.setLevel(value); return new Double(0); }
-                    } else {
-                        return new Double(vc.getLevel());
                     }
+                    else { return new Double(vc.getLevel()); }
                 }
             }
             else if (MOD == AUDIO_DURATION) {
@@ -2478,7 +2477,7 @@ public class Lua {
                     return new Double(duration == Player.TIME_UNKNOWN ? -1 : duration / 1000.0);
                 }
             }
-            else if (MOD == AUDIO_TIME) {
+            else if (MOD == AUDIO_TIME) { Thread.sleep()
                 if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "time", "audio object expected"); }
                 else {
                     Player player = (Player) args.elementAt(0);
@@ -2504,6 +2503,17 @@ public class Lua {
             else if (MOD == PREQ) { if (args.isEmpty()) { } else { return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); } }
             else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
             else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
+            else if (MOD == SLEEP) {
+                if (args.isEmpty()) { }
+                else {
+                    Object arg = args.elementAt(0);
+                    if (arg instanceof Double) {
+                        Thread.sleep(((Double) arg).longValue())
+                    } else {
+                        return gotbad(1, "sleep", "number expected, got " + type(arg));
+                    }
+                }
+            }
 
             else if (MOD == KERNEL) {
                 Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3), uid = args.elementAt(4);
