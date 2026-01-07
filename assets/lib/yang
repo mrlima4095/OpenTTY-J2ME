@@ -6,6 +6,7 @@ local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
     ["armitage"] = { remote = "armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
     ["autogc"] = { remote = "autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
+    ["audio"] = { remote = "audio.lua", here = "/bin/audio", description = "Audio Codec Manager" },
     ["cmatrix"] = { remote = "cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
     ["curl"] = { remote = "curl.lua", here = "/bin/curl", description = "Connect with a Server" },
     ["docker"] = { remote = "docker.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
