@@ -11,7 +11,23 @@ local open = graphics.new("command", { label = "Open", type = "screen", priority
 
 local function handler(opt)
     if opt == "Check for Updates" then
+        local version = getAppProperty("MIDlet-Version")
+        local ok, online, status = pcall(socket.http.get, "http://opentty.xyz/assets/root/latest")
+        graphics.display(previous)
 
+        if ok then
+            if version == online then
+                print(":: opentty is updated")
+                os.exit(0)
+            else
+                print(":: local release " .. version)
+                print(":: online " .. online)
+                os.open("http://opentty.xyz/dist/OpenTTY.jar")
+            end
+        else
+            print("sync: network error")
+            os.exit(101)
+        end
     elseif opt == "Go to releases" then
         os.open("http://opentty.xyz/dist/")
     elseif opt == "Download 1.16 LTS" then
