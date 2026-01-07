@@ -1,63 +1,11 @@
 #!/bin/lua
 
---[[
-[ Config ]
-
-name=ViaVersion
-version=1.1
-description=Charges OpenTTY API
-
-command=axrz
-
-axrz=execute axrz list;
-
-shell.name=axrz
-shell.args=list,run,update,query
-
-list=execute x11 list /lib/viaversion; warn Downgrade to versions before 1.17 may perform MIDlet damages!; true
-run=execute log add debug ViaVersion - Modified from $VERSION to $REQUEST; set VERSION=$REQUEST; unset REQUEST; sh; 
-update=sudo execute install nano; tick Downloading...; proxy raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/lib/viaversion; install /lib/viaversion; import /lib/viaversion; tick; 
-query=execute x11 quest /lib/viaversion;
-
-[ DISPLAY ]
-
-quest.title=Select API
-quest.label=Version
-quest.key=REQUEST
-quest.cmd=execute find $REQUEST /lib/viaversion; if ($OUTPUT == null) exec echo [ ViaVersion ] Invalid API '$REQUEST' & @alert & set OUTPUT=true; $OUTPUT;
-
-
-list.title=Select API
-list.content=1.8.5,1.8.6,1.8.9,1.9,1.9.1,1.10,1.11,1.11.1,1.12,1.12.1,1.12.2,1.13,1.14,1.14.1,1.14.2,1.14.3,1.14.4,1.15,1.16,1.16.1,1.16.2
-
-1.8.5=execute set REQUEST=1.8.5; set PATCH=Netman Update; axrz run;
-1.8.6=execute set REQUEST=1.8.6; set PATCH=Netman Update; axrz run;
-1.8.9=execute set REQUEST=1.8.9; set PATCH=Netman Update (Enhanced); axrz run;
-1.9=execute set REQUEST=1.9; set PATCH=OpenTTY Revolution; axrz run;
-1.9.1=execute set REQUEST=1.9.1; set PATCH=The Revolution; axrz run;
-1.10=execute set REQUEST=1.10; set PATCH=Misc Update; axrz run;
-1.11=execute set REQUEST=1.11; set PATCH=API Update; axrz run;
-1.11.1=execute set REQUEST=1.11.1; set PATCH=API Update; axrz run;
-1.12=execute set REQUEST=1.12; set PATCH=UI Update; axrz run;
-1.12.1=execute set REQUEST=1.12.1; set PATCH=UI Update; axrz run;
-1.12.2=execute set REQUEST=1.12.2; set PATCH=UI Update; axrz run;
-1.13=execute set REQUEST=1.13; set PATCH=Runtime Update; axrz run;
-1.14=execute set REQUEST=1.14; set PATCH=Renders Update; axrz run;
-1.14.1=execute set REQUEST=1.14.1; set PATCH=Renders Update; axrz run;
-1.14.2=execute set REQUEST=1.14.2; set PATCH=Renders Update; axrz run;
-1.14.3=execute set REQUEST=1.14.3; set PATCH=Renders Update; axrz run;
-1.14.4=execute set REQUEST=1.14.4; set PATCH=Renders Update; axrz run;
-1.15=execute set REQUEST=1.15; set PATCH=Hidden Void; axrz run;
-1.16=execute set REQUEST=1.16; set PATCH=Absurd Anvil; axrz run;
-1.16.1=execute set REQUEST=1.16.1; set PATCH=Absurd Anvil; axrz run;
-1.16.2=execute set REQUEST=1.16.2; set PATCH=Absurd Anvil; axrz run;
-]]
-
 local db = {
     { version = "1.16", patch = "Absurd Anvil", release = "stable", lts = true },
     { version = "1.16.1", patch = "Absurd Anvil", release = "mod" },
     { version = "1.16.2", patch = "Absurd Anvil", release = "beta" },
     { version = "1.17", patch = "Fear Fog", release = "stable" },
+    { version = "1.17.1", patch = "Fear Fog", release = "stable" },
 }
 
 local previous = graphics.getCurrent()
