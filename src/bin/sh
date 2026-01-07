@@ -94,7 +94,14 @@ local function shell(args, enable, aliases, stdout, scope)
     -- | prints uptime
     elseif cmd == "uptime" then
         print(java.midlet.uptime() / 1000)
-    -- (Permissions)
+    elseif cmd == "time" then
+        if args[1] then
+            local init_time = java.midlet.uptime()
+            status = shell(argument .. " " .. argument, enable, aliases, stdout, scope)
+            print("at " .. (java.midlet.uptime() - init_time) .. " ms")
+        end
+    end
+        -- (Permissions)
     -- | change your user
     elseif cmd == "su" then
         if os.getuid() == 0 then
