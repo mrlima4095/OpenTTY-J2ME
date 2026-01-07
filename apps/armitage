@@ -8,12 +8,8 @@ local function whois(domain)
         pcall(io.write, domain, o)
         ok, response = pcall(io.read, i)
         pcall(io.close, conn, i, o)
-        
-        if ok then
-            return response
-        else
-            return "Server error!"
-        end
+
+        return ok and response or "Server error!"
     else
         return "Connection error!"
     end
@@ -43,6 +39,7 @@ local function quest(info)
         [back] = function () graphics.display(previous) end,
         [open] = info.open
     })
+    graphics.display(screen)
 end
 
 local function load(opt)
@@ -89,27 +86,7 @@ local function menu()
         [open] = load,
         [graphics.fire] = load
     })
-
-    graphics.display(graphics.BuildList({
-        title = "Armitage Tools",
-        back = { label = "Back", root = os.exit },
-        button = {
-            label = "Open",
-            root = function (opt)
-                
-            end
-        },
-
-        fields = {
-            "Connect",
-            "Get Local Address",
-            "WhoIS Search",
-            "Port Scanner",
-            "Ping a WebSite",
-            "Ping a Server",
-            "HTTPS Requester"
-        }
-    }))
+    graphics.display(screen)
 end
 
 os.setproc("name", "armitage")
