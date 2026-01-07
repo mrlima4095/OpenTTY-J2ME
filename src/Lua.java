@@ -1624,7 +1624,7 @@ public class Lua {
                         if (arg == null) { arg = new Hashtable(); }
                         
 
-                        if (midlet.isPureText(header)) {
+                        if (midlet.isPureText(data)) {
                             String code = new String(data, "UTF-8");
                             Lua lua = new Lua(midlet, owner, null, null, out, scope);
 
