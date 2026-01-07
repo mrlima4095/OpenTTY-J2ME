@@ -1,0 +1,3 @@
+#!/bin/lua
+
+java.run(function () while true do os.execute("gc") os.execute("sleep " .. (os.getenv("TIMEOUT_GC") or 10)) end end)
