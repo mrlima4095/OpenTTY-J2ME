@@ -1,0 +1,54 @@
+#!/bin/lua
+
+os.setproc("name", "sync")
+
+local proxy = getAppProperty("MIDlet-Proxy") or "http://nnp.nnchan.ru/proxy.php?"
+
+local previous = graphics.getCurrent()
+local menu = graphics.new("list", "MIDlet Updater")
+local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+local open = graphics.new("command", { label = "Open", type = "screen", priority = 1 })
+
+local function handler(opt)
+    if opt == "Check for Updates" then
+        local version = getAppProperty("MIDlet-Version")
+        local ok, online, status = pcall(socket.http.get, "http://opentty.xyz/assets/root/latest")
+        graphics.display(previous)
+
+        if ok then
+            if version == online then
+                print(":: opentty is updated")
+                os.exit(0)
+            else
+                print(":: local release " .. version)
+                print(":: online " .. online)
+                os.open("http://opentty.xyz/dist/OpenTTY.jar")
+            end
+        else
+            print("sync: network error")
+            os.exit(101)
+        end
+    elseif opt == "Go to releases" then
+        os.open("http://opentty.xyz/dist/")
+    elseif opt == "Download 1.16 LTS" then
+        os.open("http://opentty.xyz/dist/versions/OpenTTY-1.16.jar")
+    else
+        os.open("http://opentty.xyz/dist/OpenTTY.jar")
+    end
+
+    graphics.display(previous)
+    os.exit(0)
+end
+
+graphics.append(menu, "Check for Updates")
+graphics.append(menu, "Go to releases archive")
+graphics.append(menu, "Download 1.16 LTS")
+graphics.append(menu, "Download (Beta)")
+graphics.addCommand(menu, back)
+graphics.addCommand(menu, open)
+graphics.handler(menu, {
+    [back] = function () graphics.display(previous) os.exit(0) end,
+    [open] = handler,
+    [graphics.fire] = handler
+})
+graphics.display(menu)
