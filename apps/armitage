@@ -1,0 +1,126 @@
+#!/bin/lua
+
+local function whois(domain)
+    local ok, conn, i, o = pcall(socket.connect, "socket://whois.iana.org:43")
+    local response
+
+    if ok then
+        pcall(io.write, domain, o)
+        ok, response = pcall(io.read, i)
+        pcall(io.close, conn, i, o)
+        
+        if ok then
+            return response
+        else
+            return "Server error!"
+        end
+    else
+        return "Connection error!"
+    end
+end
+local function ifconfig()
+    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
+    if not ok then
+        return tostring(conn)
+    end
+
+    local address = socket.device(conn)
+    pcall(io.close, conn, i, o)
+
+    return address
+end
+
+local function quest(info)
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("screen", info.title)
+    local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+    local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+
+    graphics.append(screen, { type = "field", label = info.label, value = info.value })
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, open)
+    graphics.handler(screen, {
+        [back] = function () graphics.display(previous) end,
+        [open] = info.open
+    })
+end
+
+local function load(opt)
+    if opt == "Get Local Address" then graphics.display(graphics.new("alert", "IP Address", ifconfig()))
+    elseif opt == "WhoIS Search" then
+        quest({
+            title = "Armitage - WhoIS",
+            label = "Domain",
+            value = "",
+            open = function (domain)
+                local previous = graphics.getCurrent()
+                local screen = graphics.new("screen", "WhoIS - " .. domain)
+                local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+
+                graphics.append(screen, whois(domain))
+                graphics.addCommand(screen, back)
+                graphics.handler(screen, { [back] = function () graphics.display(previous) end })
+            end
+        })
+    else
+        graphics.display(graphics.new("alert", "Armitage", "Still development!"))
+    end
+end
+
+local function menu()
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("list", "Armitage Tools")
+    local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+    local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+
+    graphics.append(screen, "Get Local Address")
+    graphics.append(screen, "WhoIS Search")
+    graphics.append(screen, "Port Scanner")
+    graphics.append(screen, "Ping a WebSite")
+    graphics.append(screen, "Ping a Server")
+    graphics.append(screen, "HTTPS Requester")
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, open)
+    graphics.handler(screen, {
+        [back] = function ()
+            graphics.display(previous)
+            os.exit(0)
+        end,
+        [open] = load,
+        [graphics.fire] = load
+    })
+
+    graphics.display(graphics.BuildList({
+        title = "Armitage Tools",
+        back = { label = "Back", root = os.exit },
+        button = {
+            label = "Open",
+            root = function (opt)
+                
+            end
+        },
+
+        fields = {
+            "Connect",
+            "Get Local Address",
+            "WhoIS Search",
+            "Port Scanner",
+            "Ping a WebSite",
+            "Ping a Server",
+            "HTTPS Requester"
+        }
+    }))
+end
+
+os.setproc("name", "armitage")
+
+
+if arg[1] == nil then menu()
+elseif arg[1] == "whois" then
+    if arg[2] then
+        print(whois(arg[2]))
+    else
+        print("Usage: " .. arg[0] .. " whois [domain]")
+        os.exit(2)
+    end
+end
