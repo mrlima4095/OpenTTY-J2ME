@@ -9,7 +9,7 @@ local menu = graphics.new("list", "MIDlet Updater")
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
 local open = graphics.new("command", { label = "Open", type = "screen", priority = 1 })
 
-local function handler()
+local function handler(opt)
     if opt == "Check for Updates" then
 
     elseif opt == "Go to releases" then
