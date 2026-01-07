@@ -6,54 +6,27 @@ if arg[1] == "--deamon" then
 
     return function (payload, args, scope, pid, uid)
         if payload == "play" then
-            ok, player = pcall(audio.load, args)
-            if ok then
-                ok, status = pcall(audio.play, player)
-                if ok then
-                    return ":: playing"
-                else
-                    pcall(io.close, player)
-                    player = nil
-                    return ":: failed to play"
-                end
-            else
-                return ":: loading failed - " .. tostring(player)
-            end
+            player = audio.load(args)
+            audio.play(player)
+            return ":: playing"
         elseif player == "pause" then
-            if player == nil then
-                return ": no running audio"
-            end
+            if player == nil then return ": no running audio" end
 
-            ok, status = pcall(audio.pause, player)
-            if ok and status == 0 then
-                return ":: paused"
-            else
-                return ":: failed to pause"
-            end
+            status = audio.pause(player)
+            return status == 0 and ":: paused" or ":: failed to pause"
         elseif player == "resume" then
-            if player == nil then
-                return ":: no running audio"
-            end
+            if player == nil then return ":: no running audio" end
 
-            ok, status = pcall(audio.play, player)
-            if ok and status == 0 then
-                return ":: resumed"
-            else
-                return ":: failed to resume"
-            end
+            status = pcall(audio.play, player)
+            return status == 0 and ":: resumed" or ":: failed to resume"
         elseif player == "stop" then
-            if player == nil then
-                return ":: no running audio"
-            end
+            if player == nil then return ":: no running audio" end
 
-            ok, status = pcall(audio.play, player)
             ok, status = pcall(io.close, player)
             player = nil
             return ":: stopped"
         elseif player == "volume" then
-            if player == nil then
-                return ":: no running audio"
-            end
+            if player == nil then return ":: no running audio" end
 
             if args then
                 ok, status = pcall(audio.volume, player, tonumber(args))
