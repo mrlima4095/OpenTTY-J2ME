@@ -1,4 +1,4 @@
-MIDlet-1: MIDlet-1: OpenTTY,/icon.png,OpenTTY
+MIDlet-1: OpenTTY,/icon.png,OpenTTY
 MIDlet-Name: OpenTTY
 MIDlet-Vendor: Mr Lima
 MIDlet-Version: 1.17.1
