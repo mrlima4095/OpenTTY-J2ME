@@ -86,7 +86,7 @@ else {
     <body>
         <main class="card" role="main" aria-labelledby="title">
             <header class="header">
-                <div class="logo" aria-hidden><img src="src/res/img/sh.png" height="32" width="32"></div>
+                <div class="logo" aria-hidden><img src="src/icon.png" height="32" width="32"></div>
                 <div>
                     <h1 id="title">OpenTTY</h1>
                     <p class="lead">Services Center</p>
