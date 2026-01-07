@@ -1,0 +1,902 @@
+[ Config ]
+
+name=Manual
+version=1.0
+description=Manual Pages
+
+[ HTML ]
+
+<about>
+Usage: about [FILE]
+* Print information about FILE if it is a Package.
+</about>
+<add>
+Usage: add [TEXT]
+* Add TEXT in nano buffer, without TEXT add a line break.
+</add>
+<alias>
+Usage: alias [NAME]=[COMMAND]
+* Create or view aliases.
+
+	Without arguments, 'alias' prints the list of aliases;
+	Otherwise, an alias is defined for each NAME whose COMMAND is given;
+	When only NAME is found and it is an alias prints it value.
+</alias>
+<audio>
+Usage: audio [OPTIONS] [FILE]
+* MIDlet Audio Manager.
+
+OPTIONS:
+	volume [LEVEL]
+	| Set volume LEVEL. Without LEVEL, 'audio' prints current setting.
+	play [FILE]
+	| Start codec and play FILE.
+	stop
+	| Stop codec.
+	pause
+	| Pause playing codec.
+	resume
+	| Resume playing codec.
+	status
+	| Audio codec is running? Prints 'true' or 'false'
+
+	Volume LEVEL changing is only possible while codec is playing.
+	Only supported source audio FILEs from Device Storage.
+
+Supported Media Type:
+	amr  wav  mpeg
+</audio>
+<basename>
+Usage: basename [PATH]
+* Print the final component of PATH, removing all leading directories.
+</basename>
+<bg>
+Usage: bg [COMMAND]
+* Run COMMAND in Background.
+</bg>
+<bind>
+Usage: bind [PORT]
+* Remote Shell server.
+
+	Listen at PORT for connections, without PORT take from environment key.
+	Connect it, the received payloads is executed and the output is sent as response.
+</bind>
+<bruteforce>
+Usage: bruteforce [COMMAND]
+* Run COMMAND while process 'bruteforce' is alive.
+
+	Use command 'kill [PID]' or 'stop bruteforce' to kill it. 
+</bruteforce>
+<buff>
+Usage: buff [TEXT]
+* Set content of standard input (stdin) as TEXT.
+</buff>
+<builtin>
+Usage: builtin [COMMAND]
+* Run COMMAND bypassing aliases.
+</builtin>
+<call>
+Usage: call [PHONE]
+* Request Device API make a call to PHONE number.
+</call>
+<case>
+Usage: case [CONTEXT] ([NAME]) [COMMAND]
+* Look for NAME in CONTEXT. If found, run COMMAND.
+	
+	Supported CONTEXTs:
+	alias  key  file  root
+	screen  display thread
+	trace  user
+
+	Use '!' before EXPRESSION to negate the result.
+	NAME must be enclosed in parentheses.
+</case>
+<cat>
+Usage: cat [FILE]
+* Print content of FILE.
+</cat>
+<catch>
+Usage: catch [COMMAND]
+* Run command, but always return a successfully status.
+</catch>
+<cd>
+Usage: cd [PATH]
+* Change current directory to PATH.
+
+	Without PATH return to path '/home/'.
+	See also page 'lsblk' to read about mount points.
+</cd>
+<chmod>
+Usage: chmod [NODE]
+* Request Device API looking for Permission NODE.
+
+	Permission NODEs:
+	http  socket  file  prg
+
+	Log NODE status into MIDlet Logs.
+</chmod>
+<clear>
+Usage: clear [PAGE]
+* Clear PAGE content.
+
+	MIDlet PAGEs:
+	stdin  stdout  history  logs
+
+	Without PAGE, clear console (stdout).
+</clear>
+<clone>
+Usage: clone [URL]
+* Make a HTTP GET request in URL and run response as script.
+
+	This command uses MIDlet-Proxy by default. Some J2ME Devices don't have support for certificates and without this cannot connect directly in a HTTPS server. 
+</clone>
+<conf>
+Usage: conf [FILE]
+* Prints FILE in INI format;
+
+	Parsing only works if source FILE is in JSON format.
+</conf>
+<command>
+Usage: command [COMMAND]
+* Run COMMAND bypassing aliases.
+</command>
+<cp>
+Usage: cp [SOURCE] [COPY]
+* Make a copy of SOURCE.
+
+	Copy SOURCE into COPY;
+	Without COPY the new FILE name is 'SOURCE-copy'.
+</cp>
+<cron>
+Usage: cron [TIME] [COMMAND]
+* Wait TIME before run COMMAND.
+</cron>
+<curl>
+Usage: curl [URL]
+* Make a HTTP GET request in URL and print response.
+</curl>
+<date>
+Usage: date
+* Print Device date and time.
+</date>
+<debug>
+Usage: debug
+* Run MIDlet debug script.
+</debug>
+<diff>
+Usage: diff [file] [file]
+* Print differences between FILEs.
+</diff>
+<dir>
+Usage: dir [OPTIONS]
+* Print FILES of current directory.
+
+OPTIONS:
+	-a
+	| Include hidden files in listing.
+	-v
+	| Prints listing when you're in home.
+
+	If you're in home directory it open File Explorer.
+</dir>
+<du>
+Usage: du [FILE]
+* Print length (in Bytes) of FILE.
+</du>
+<echo>
+Usage: echo [TEXT]
+* Print TEXT, without TEXT print a line break.
+</echo>
+<env>
+Usage: env [KEY]
+* Print VALUE of KEY, without KEY list all environment keys.
+</env>
+<eval>
+Usage: eval [COMMAND]
+* Run COMMAND and prints it exit code.
+
+CODES:
+	0
+	| OK, successfully;
+	1
+	| Generic error;
+	2 
+	| Missed or invalid arguments;
+	3
+	| Unsupported API;
+	5
+	| Read-only storage;
+	13
+	| Permission denied;
+	68
+	| Service running;
+	69
+	| Service unavailable;
+	100
+	| Data parsing error;
+	101
+	| Network error;
+	127
+	| Not found.
+	255
+	| Caused by false.
+</eval>
+<exec>
+Usage: exec [COMMAND &]
+* Run more then one command in a process.
+
+	Split COMMAND's by char '&'.
+</exec>
+<execute>
+Usage: execute [COMMAND ;]
+* Run more then one command in a process.
+
+	Split COMMAND's by char ';'.
+</execute>
+<exit>
+Usage: exit
+* Close MIDlet.
+</exit>
+<expr>
+Usage: expr [EXPRESSION]
+* Perform a math EXPRESSION and print it result.
+</expr>
+<export>
+Usage: export [KEY]
+* Clear VALUE of KEY, without KEY list all environment keys.
+</export>
+<false>
+Usage: false [TEXT]
+* Do anything, return false.
+</false>
+<file>
+Usage: file [FILE]
+* Prints information about FILE.
+</file>
+<find>
+Usage: find [PATTERN] [FILE]
+* Search PATTERN in FILE, print VALUE in standard output (stdout).
+
+	If PATTERN not found in FILE, it will print 'null'.
+	The search only work if source FILE is in INI format.
+</find>
+<for>
+Usage: for [KEY] ([FILE]) [COMMAND]
+* Read the FILE and execute the COMMAND for each line with the KEY VALUE being the current line.
+</for>
+<fw>
+Usage: fw [ADDRESS]
+* Look for information about an IP ADDRESS.
+
+	This command uses API at 'http://ipinfo.io'.
+</fw>
+<gaddr>
+Usage: gaddr [DOMAIN] [DNS]
+* Resolve IP Address of DOMAIN.
+
+	Without DNS, 'gaddr' uses by default Cloudflare DNS (1.1.1.1:53).
+</gaddr>
+<gauge>
+Usage: gauge [TEXT]
+* Display an Alert with TEXT with a loading progress bar.
+</gauge>
+<gc>
+Usage: gc
+* Trigger Garbage Collector.
+</gc>
+<genip>
+Usage: genip
+* Generate a random IP Address.
+</genip>
+<get>
+Usage: get [FILE]
+* Replace nano buffer by content of FILE.
+</get>
+<getopt>
+Usage: getopt [TEXT]
+* Print argument part of TEXT.
+</getopt>
+<getty>
+Usage: getty
+* Replace nano buffer by content of standard output (stdout).
+</getty>
+<gobuster>
+Usage: gobuster [URL] [WORDLIST]
+* Run GoBuster in URL.
+
+	GoBuster search for valid files and directories at a WebServer.
+	Without WORDLIST file, it uses file '/home/gobuster'. The default WORDLIST can be downloaded with Yang.
+</gobuster>
+<grep>
+Usage: grep [PATTERN] [FILE]
+* Look for PATTERN in FILE, print 'true' or 'false'.
+</grep>
+<hash>
+Usage: hash [FILE]
+* Print hash of FILE.
+</hash>
+<head>
+Usage: head [FILE]
+* Print first 10 lines of FILE.
+</head>
+<help>
+Usage: help
+* Display MIDlet default help.
+</help>
+<history>
+Usage: history
+* Display commands history of current session.
+</history>
+<hostname>
+Usage: hostname
+* Print MIDlet host name.
+<hostid>
+Usage: hostid
+* Print MIDlet host id.
+</hostid>
+<htop>
+Usage: htop
+* Display Memory Usage Panel.
+
+	Button 'Refresh' triggers Garbage Collector.
+</htop>
+<http>
+Usage: http [URL]
+* Make a HTTP request with customized Headers.
+
+	Display a Editor to change Headers.
+	It given options to run 'curl' and 'wget' with the customized Headers.
+
+	In newer releases, this command have been disbled. To make an request with custom headers usage (ex. `curl [DOMAIN] [HEADER FILE]', it works with 'curl', 'wget', 'proxy' and 'clone' commands).
+</http>
+<html>
+Usage: html
+* View content in nano buffer as HTML.
+</html>
+<if>
+Usage: if ([EXPRESSION]) [COMMAND]
+* Perform EXPRESSION to run COMMAND.
+
+	Supported operators:
+	==  !=  >  <  >=  <=
+	startswith  endswith  contains
+
+	Use '!' before EXPRESSION to negate the result.
+	The expression must be enclosed in parentheses.
+</if>
+<ifconfig>
+Usage: ifconfig
+* Print Device IP Address.
+</ifconfig>
+<import>
+Usage: import [FILE]
+* Load an OpenTTY Package from FILE.
+
+	Packages bring modifications to your OpenTTY, you can use it to improve your experience.
+
+	Default Packages:
+	yang netkit settings
+
+	These are at directory '/java/lib' and you can import.
+	See also their pages.
+</import>
+<install>
+Usage: install [FILE]
+* Save nano buffer into FILE.
+</install>
+<java>
+Usage: java [OPTIONS...] [FILE]
+* Virtual Java Runtime.
+
+OPTIONS:
+	--version
+	| Print Java version.
+	-class [CLASS]
+	| Look for CLASS, print 'true' or 'false'.
+
+	With FILE, run it as a Java Class.
+</java>
+<kill>
+Usage: kill [PID]
+* Kill process of PID.
+</kill>
+<lua>
+Usage: lua [FILE]
+* Run a Lua source code.
+</lua>
+<locale>
+Usage: locale
+* Print MIDlet language settings.
+</locale>
+<login>
+Usage: login
+* This command is disabled until 1.8.4 release. Now you requires to login with a username in MIDlet loading.
+</login>
+<log>
+Usage: log [OPTIONS ...]
+* Manage MIDlet logs.
+
+OPTIONS:
+	view
+	| Display logs.
+	clear
+	| Clear logs.
+	swap [FILE]
+	| Save logs in FILE.
+	add [TYPE] [TEXT] 
+	| Add a new log with TEXT in context of TYPE.
+	
+	LOG Types:
+	info  debug  warn  error
+</log>
+<logcat>
+Usage: logcat
+* Print logs.
+</logcat>
+<logname>
+Usage: logname
+* Print session user name.
+</logname>
+<logout>
+Usage: logout
+* End user session and close MIDlet.
+
+	If you are logged as superuser 'root', it returns to your user.
+</logout>
+<ls>
+Usage: ls
+* Display File Explorer.
+</ls>
+<lsblk>
+Usage: lsblk [OPTIONS]
+* View information about Device Storage.
+
+OPTIONS:
+	-x
+	| Print in digested format.
+
+	MIDlet Mount points:
+	/
+	| Name: Assets
+	| Type: read
+
+	/mnt/
+	| Name: Device 
+	| Type: read,write
+
+	/home/
+	| Name: RMS
+	| Type: read,write
+</lsblk>
+<man>
+Usage: man [OPTIONS...] [PAGE]
+* Display manual PAGE.
+
+	All MIDlet Commands have a manual page.
+	
+OPTIONS:
+	-v
+	| Print manual PAGE.
+	--update
+	| Download an newer version of manual.
+</man>
+<mkdir>
+Usage: mkdir [NAME]
+* Create a new directory with NAME.
+
+	Only can create directories in Device Storage. 
+</mkdir>
+<mmspt>
+Usage: mmspt [PRIORITY]
+* Current Thread Manager.
+
+	When no arguments are given, show Thread name.
+	If argument is word 'priority' prints this value of current Thread.
+	If argument is a number between 0-10 set it as priority of current Thread. 
+</mmspt>
+<mount>
+Usage: mount [FILE]
+* Mount a Storage from FILE.
+</mount>
+<nano>
+Usage: nano [FILE]
+* Display Nano Editor
+
+	Without FILE continue editing last buffer.
+	Otherwise if FILE is given buffer is replaced by the FILE content.
+</nano>
+<nc>
+Usage: nc [HOST:PORT]
+* Connect to HOST at PORT.
+</nc>
+<netstat>
+Usage: netstat
+* Look for network connection, print 'true' or 'false'.
+</netstat>
+<open>
+Usage: open [API]
+* Request Device API.
+
+	Supported APIs:
+	http  https  mailto
+	tel  sms  mms
+</open>
+<passwd>
+Usage: passwd [PASSWORD]
+* Change user password.
+
+	This command requires super user privileges, try run 'sudo passwd [PASSWORD]'.
+</passwd>
+<ping>
+Usage: ping [DOMAIN]
+* Meter time to connect into DOMAIN.
+</ping>
+<pkg>
+Usage: pkg [SPEC]
+* Look for a MIDlet or System Property and print it VALUE.
+
+	Use '/' before SPEC to recover a System Property.
+	Otherwise, recover SPEC from MIDlet Properties.	
+</pkg>
+<pinc>
+Usage: pinc
+* Parse content of nano buffer to INI format.
+
+	The parsing only work if content at buffer is in JSON format.
+</pinc>
+<ph2s>
+Usage: ph2s
+* Save session commands history in nano buffer.
+</ph2s>
+<pjnc>
+Usage: pjnc
+* Parse content of nano buffer to JSON format.
+
+	The parsing only work if content at buffer is in INI format.
+</pjnc>
+<pong>
+Usage: pong [HOST:PORT]
+* Meter time to connect into HOST at PORT.
+</pong>
+<prg>
+Usage: prg [TIME] [MIDlet]
+* Create an Alarm to MIDlet.
+
+	The MIDlet need to be in attached into Jar/ JAD Package.
+	Available only if Device supports JSR-118.
+</prg>
+<prscan>
+Usage: prscan [ADDRESS] [INIT]
+* Look for open ports at ADDRESS.
+
+	Without INIT the scanning starts in PORT 0.
+</prscan>
+<proxy>
+Usage: proxy [URL]
+* Make a HTTP GET request in URL and print response.
+
+	This command uses MIDlet-Proxy by default. Some J2ME Devices don't have support for certificates and without this cannot connect directly in a HTTPS server. 
+</proxy>
+<ps>
+Usage: ps
+* Display running process.
+</ps>
+<pushd>
+Usage: pushd [PATH]
+* Add current PATH to stack and change current directory to PATH.
+
+	Without PATH 'pushd' prints directories stack.
+	See also page 'lsblk' to read about mount points.
+</pushd>
+<pwd>
+Usage: pwd
+* Print current directory.
+</pwd>
+<query>
+Usage: query [PROTOCOL://ADDRESS]
+* Connect to ADDRESS using PROTOCOL.
+
+	Supported PROTOCOLs:
+	socket  datagram  http  file
+</query>
+<raw>
+Usage: raw
+* Print nano buffer content.
+</raw>
+<read>
+Usage: read [KEY] [FILE]
+* Set VALUE of environment KEY as FILE content.
+</read>
+<report>
+Usage: report
+* Open your mail client to send a message to MIDlet developer.
+</report>
+<return>
+Usage: return [CODE]
+* Return CODE.
+
+	See also page 'eval' to read about return/ exit codes.
+</return>
+<rm>
+Usage: rm [FILE]
+* Delete FILE.
+</rm>
+<rmsfix>
+Usage: rmsfix [OPTION]
+* Manage RMS archive strutures
+
+	Run with super-user permissions
+
+OPTIONS:
+	read [STRUCT]
+	| Prints structure in stdout
+	swap [STRUCT] [FILE]
+	| Save structure in file
+	[STRUCT]
+	| Clear current structure
+
+	Available stuctures:
+	/bin/ -> Applications
+	/lib/ -> Shared packages
+	/etc/ -> Configuration's files
+</rmsfix>
+<rraw>
+Usage: rraw
+* Clear standard output (stdout) and print nano buffer content.
+</rraw>
+<set>
+Usage: set [KEY]=[VALUE]
+* Set VALUE of environment KEY.
+</set>
+<sh>
+OpenTTY $VERSION - $PATCH
+Copyright (C) 2026 - Mr. Lima
+
+	OpenTTY is an Unix-Based Terminal Emulator for J2ME Devices. This MIDlet includes more then 100 commands and supports Packages to bring third-party modifications to improve your experience. 
+</sh>
+<sleep>
+Usage: sleep [TIME]
+* Hold current Thread by TIME.
+</sleep>
+<start>
+Usage: start [PROCESS]
+* Start a virtual PROCESS. 
+
+	It don't call any program, but generate a process that can be used to track an API or Package.
+</start>
+<stop>
+Usage: stop [PROCESS]
+* Stop a virtual PROCESS.
+</stop>
+<stty>
+Usage: stty [VALUE]
+* Change max tty size as VALUE.
+
+	To remove max limit set VALUE as -1.
+</stty>
+<su>
+Usage: su
+* Switch user (root/ you).
+
+	Granted privileges can be accessed by all interfaces. Be careful!
+</su>
+<sudo>
+Usage: sudo [COMMAND]
+* Run COMMAND with super user privileges.
+
+	'sudo' will ask your password in a Quest Window, it block calls from remote interfaces.
+</sudo>
+<svchost>
+Usage: svchost [PID] [REQUEST]
+* Make a Request to an OpenTTY Service
+
+	Can set service for 'sh' process with 'sudo svchost set [file]'.
+</svchost>
+<tail>
+Usage: tail [FILE]
+* Print last 10 lines of FILE.
+</tail>
+<tick>
+Usage: tick [TEXT]
+* Display TEXT in top of current screen.
+
+	When argument TEXT is word 'label', it prints the VALUE of a existent tick at current screen.
+</tick>
+<time>
+Usage: time [COMMAND]
+* Meter used time to run COMMAND, and print it.
+</time>
+<title>
+Usage: title [TEXT]
+* Set Main title as TEXT, without TEXT set the default title.
+</title>
+<top>
+Usage: top [OPTIONS]
+* Print information about memory usage.
+
+OPTIONS:
+	free  used  total
+</top>
+<touch>
+Usage: touch [FILE]
+* Clear content of FILE.
+	
+	Without FILE, clear nano buffer.
+	If FILE not found, 'touch' creates it.
+</touch>
+<trace>
+Usage: trace [OPTIONS ...]
+* Look for state of a PROCESS or PID.
+
+OPTIONS:
+	pid [PID]
+	| Print associated PROCESS name of PID.
+	check [PROCESS]
+	| Print 'true' or 'false' for PROCESS status (is alive).
+</trace> 
+<trim>
+</trim>
+<true>
+Usage: true [TEXT]
+* Do anything, return true.
+</true>
+<tty>
+Usage: tty
+* Print TTY FILE.
+</tty>
+<ttysize>
+Usage: ttysize
+* Print length of TTY (in Bytes).
+</ttysize>
+<uname>
+Usage: uname [OPTIONS]
+* Print information about Device.
+	
+	Without OPTIONS, print Device Identifier.
+
+OPTIONS:
+	-a --all
+	| All information.
+	-r --release
+	| MIDlet release.
+	-v --build
+	| MIDlet build code.
+	-m
+	| Machine JVM Profile.
+	-p
+	| JVM Configuration.
+	-n
+	| Node name.
+</uname>
+<unalias>
+Usage: unalias [NAME]
+* Remove alias with NAME.
+</unalias>
+<unset>
+Usage: unset [KEY]
+* Remove environment KEY.
+</unset>
+<uuid>
+Usage: uuid
+* Generate random UUID 4.
+</uuid>
+<vendor>
+Usage: vendor
+* Print MIDlet vendor.
+</vendor>
+<view>
+Usage: view [TEXT]
+* View TEXT in HTML Viewer.
+</view>
+<warn>
+Usage: warn [TEXT]
+* Display an Alert with TEXT.
+</warn>
+<wc>
+Usage: wc [OPTIONS ...] [FILE]
+* Print metrics for FILE.
+
+OPTIONS:
+	-c
+	| Only bytes
+	-w
+	| Only words
+	-l
+	| Only lines
+</wc>
+<wget>
+Usage: wget [URL]
+* Make a HTTP GET request in URL and save response in nano buffer.
+</wget>
+<which>
+Usage: which [COMMAND]
+* Print COMMAND source.
+	
+	MIDlet builtins and not found don't show anything.
+	shell  alias  function
+</which>
+<who>
+Usage: who
+* Print all IP Addresses of connected interfaces.
+</who>
+<whoami>
+Usage: whoami
+* Print session user name.
+</whoami>
+<wrl>
+Usage: wrl [OPTIONS ...]
+* WMA Client
+
+	Wireless Messasing API Client for OpenTTY J2ME. This tool is at developmenting.
+
+OPTIONS:
+	id
+	| Wireless ID
+</wrl>
+<x11>
+Usage: x11 [OPTIONS ...]
+* Graphical Server Client.
+
+OPTIONS:
+	term
+	| Display MIDlet Terminal.
+	init
+	| Start X11 Graphical Server.
+	stop
+	| Unload Terminal and stop X11.
+	xfinit [INTERFACE]
+	| Force an interface loading.
+	title [TEXT]
+	| Change current screen title.
+	font [STYLE] 
+	| Change standard output (stdout) font.
+	tick [TEXT] 
+	| Set screen tick as TEXT.
+	set [NAME] 
+	| Save current screen with NAME.
+	load [NAME] 
+	| Load saved screen with NAME.
+	make [FILE] 
+	| Display a basic screen from FILE.
+	list [FILE] 
+	| Display a list from FILE.
+	item [FILE] 
+	| Load item from FILE.
+	quest [FILE] 
+	| Display a quest from FILE.
+	canvas [FILE] 
+	| Display canvas from FILE.
+</x11>
+<xterm>
+Usage: xterm
+* Display MIDlet Terminal.
+
+	To replace the default MIDlet screen, set an alias overwriting this command.
+</xterm>
+
+
+<yang>
+Usage: yang [OPTIONS]
+* Default Package Manager.
+
+	When run command 'yang' it displays the repository with available packages to install.
+
+OPTIONS:
+	info
+	| Print version of running PackJ.
+	update
+	| Download latest version of PackJ.
+	query
+	| Open a Quest for Package FILE name to install. 
+	setrepo
+	| Open a Quest for IP Address of OpenTTY Server.
+
+	To load PackJ import:
+	- '/lib/yang' to the default version for this release.
+</yang>
+<settings>
+Usage: cfg
+* Default Settings Manager
+
+	To load Settings use command 'import /lib/settings'.
+</settings> 
