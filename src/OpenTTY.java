@@ -56,11 +56,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private void panic(Throwable e) {
         Form screen = new Form(e instanceof Exception ? "SandBox" : "Kernel Panic");
         screen.append("An error occurred while OpenTTY tried to start!\n\nError: " + getCatch(e));
-        if (e instanceof Exception) {
-            screen.append("If you tried to install a program in /bin/init it can be the error");
-        } else {
-            screen.append("Try to clear your data or update OpenTTY");
-        }
+        screen.append(e instanceof Exception ? "If you tried to install a program in /bin/init it can be the error" : "Try to clear your data or update OpenTTY");
+
         screen.addCommand(new Command("Exit", Command.OK, 1));
         screen.addCommand(new Command("Update", Command.SCREEN, 1));
         screen.addCommand(new Command("Clear data", Command.SCREEN, 1));
@@ -523,6 +520,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return baos.toByteArray();
     }
+    // |
     public boolean isPureText(byte[] data) {
         int textCount = 0;
         int sampleSize = Math.min(data.length, 100);
