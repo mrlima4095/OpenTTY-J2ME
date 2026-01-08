@@ -2508,7 +2508,7 @@ public class Lua {
                 else {
                     Object arg = args.elementAt(0);
                     if (arg instanceof Double) {
-                        Thread.sleep(((Double) arg).longValue())
+                        Thread.sleep(((Double) arg).longValue());
                     } else {
                         return gotbad(1, "sleep", "number expected, got " + type(arg));
                     }
