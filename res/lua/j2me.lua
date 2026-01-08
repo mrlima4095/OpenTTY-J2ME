@@ -136,7 +136,7 @@ graphics = {
     --[=[Get label of Item]=]
     GetLabel = function (field, text) end,
     --[=[Get text of Item or Editor Screen]=]
-    GetText = function (field, text) end,
+    GetText = function (field) end,
     --[=[Get current displayed scrren]=]
     getCurrent = function () end,
     --[=[Render Image]=]
