@@ -48,10 +48,10 @@ local function shell(args, enable, aliases, stdout, scope)
                 if stream then
                     table.remove(args, 1)
                     local res = io.popen(program, args, true, stdout, scope, stream)
-                    
+
                     if type(res) == "table" then
                         status = res.status
-                    end 
+                    end
                 end
             end)
         end
