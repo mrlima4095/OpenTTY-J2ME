@@ -47,7 +47,9 @@ local function shell(args, enable, aliases, stdout, scope)
                 table.remove(args, 1)
                 local res = io.popen(program, args, true, stdout, scope)
                 
-                if type(res) == "table" then
+                if res == 127 then
+                    print(". " .. program .. ": not found")
+                elseif type(res) == "table" then
                     status = res.status
                 end
             end)

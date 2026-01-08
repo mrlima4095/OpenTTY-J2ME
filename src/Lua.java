@@ -1602,7 +1602,8 @@ public class Lua {
 
                     InputStream is = midlet.getInputStream(program);
                     Vector result = new Vector();
-                    if (is != null) {
+                    if (is == null) { return new Double(127); }
+                    else {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         byte[] buffer = new byte[1024];
                         int length;
@@ -1639,8 +1640,7 @@ public class Lua {
                         
                         result.addElement(out instanceof StringBuffer ? out.toString() : out);
                         return result;
-                    } 
-                    else { return new Double(127); }
+                    }
                 }
             } 
             else if (MOD == DIRS) {
