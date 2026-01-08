@@ -73,10 +73,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 end
             end
         end
-    elseif cmd == "bg" then
-        if argument ~= "" then
-            java.run(function() shell(argument, true, aliases, stdout, scope) end, "Background")
-        end
+    elseif cmd == "bg" then if argument ~= "" then java.run(function() shell(argument, true, aliases, stdout, scope) end, "Background") end
     elseif cmd == "exec" then
         if argument == "" then
         else
@@ -94,9 +91,7 @@ local function shell(args, enable, aliases, stdout, scope)
     -- | prints running process
     elseif cmd == "gc" then collectgarbage()
     elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
-    -- | prints uptime
-    elseif cmd == "uptime" then
-        print(java.midlet.uptime() / 1000)
+    elseif cmd == "uptime" then print(java.midlet.uptime() / 1000)
     elseif cmd == "time" then
         if args[1] then
             local init_time = java.midlet.uptime()
