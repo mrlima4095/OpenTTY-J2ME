@@ -1599,8 +1599,8 @@ public class Lua {
                     int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
                     Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
                     Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
+                    InputStream is = (args.size() < 6) ? midlet.getInputStream(program) : (InputStream) args.elementAt(5);
 
-                    InputStream is = midlet.getInputStream(program);
                     Vector result = new Vector();
                     if (is == null) { return new Double(127); }
                     else {
