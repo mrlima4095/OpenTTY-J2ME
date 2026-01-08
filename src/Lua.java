@@ -2477,7 +2477,7 @@ public class Lua {
                     return new Double(duration == Player.TIME_UNKNOWN ? -1 : duration / 1000.0);
                 }
             }
-            else if (MOD == AUDIO_TIME) { Thread.sleep()
+            else if (MOD == AUDIO_TIME) { 
                 if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "time", "audio object expected"); }
                 else {
                     Player player = (Player) args.elementAt(0);
