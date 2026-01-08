@@ -97,7 +97,7 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "time" then
         if args[1] then
             local init_time = java.midlet.uptime()
-            status = shell(argument .. " " .. argument, enable, aliases, stdout, scope)
+            status = shell(argument, enable, aliases, stdout, scope)
             print("at " .. (java.midlet.uptime() - init_time) .. " ms")
         end
 
