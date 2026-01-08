@@ -44,7 +44,7 @@ local function shell(args, enable, aliases, stdout, scope)
         if args[1] then
             pcall(function ()
                 local program = os.join(args[1])
-                local stream = io.popen(program)
+                local stream = io.open(program)
                 if stream then
                     table.remove(args, 1)
                     local res = io.popen(program, args, true, stdout, scope, stream)
