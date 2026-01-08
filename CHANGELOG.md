@@ -27,3 +27,7 @@ General
 
 - added debug mode
 - input char changing `$` to normal user and `#` to root
+
+Commands
+
+- added command `time`
