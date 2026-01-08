@@ -44,13 +44,14 @@ local function shell(args, enable, aliases, stdout, scope)
         if args[1] then
             pcall(function ()
                 local program = os.join(args[1])
-                table.remove(args, 1)
-                local res = io.popen(program, args, true, stdout, scope)
-                
-                if res == 127 then
-                    print(". " .. program .. ": not found")
-                elseif type(res) == "table" then
-                    status = res.status
+                local stream = io.popen(program)
+                if stream then
+                    table.remove(args, 1)
+                    local res = io.popen(program, args, true, stdout, scope, stream)
+                    
+                    if type(res) == "table" then
+                        status = res.status
+                    end 
                 end
             end)
         end
