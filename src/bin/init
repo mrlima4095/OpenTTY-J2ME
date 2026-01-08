@@ -11,13 +11,16 @@ local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 }
 
 local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " " .. (os.getuid() == 0 and "#" or "$")) end
 
-label()
 
 io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
+os.scope(scope)
+os.su(java.midlet.username)
 os.request("1", "setsh", shell)
+
 pcall(io.popen, "/home/.initrc")
+label()
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
@@ -37,6 +40,3 @@ graphics.handler(xterm, {
 })
 graphics.db["xterm"] = xterm
 graphics.display(xterm)
-
-os.scope(scope)
-os.su(java.midlet.username)
