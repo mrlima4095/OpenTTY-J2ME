@@ -575,10 +575,10 @@ public class ELF {
                     Hashtable libSyms = new Hashtable();
                     
                     // Adicionar símbolos básicos baseados no nome da lib
-                    if (libName.contains("c")) {
+                    if (libName.indexOf("c") != -1) {
                         libSyms.put("printf", globalSymbols.get("libc.so.6"));
                     }
-                    if (libName.contains("m")) { // math
+                    if (libName.indexOf("m") != -1) { // math
                         libSyms.put("sin", new Integer(createSimpleStub(32)));
                         libSyms.put("cos", new Integer(createSimpleStub(32)));
                     }
