@@ -4677,6 +4677,127 @@ public class ELF {
         return stubAddr;
     }
 
+    private int handleWriteToStdout(int bufPtr, int count) {
+        try {
+            if (bufPtr < 0 || bufPtr >= memory.length || count <= 0) {
+                return -22; // EINVAL
+            }
+            
+            int bytesToWrite = Math.min(count, memory.length - bufPtr);
+            if (bytesToWrite <= 0) {
+                return 0;
+            }
+            
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < bytesToWrite; i++) {
+                byte b = memory[bufPtr + i];
+                sb.append((char)(b & 0xFF));
+            }
+            
+            // Escrever no stdout do OpenTTY
+            midlet.print(sb.toString(), stdout, id);
+            
+            return bytesToWrite;
+        } catch (Exception e) {
+            return -1; // Erro geral
+        }
+    }
+
+    private int handleReadFromStdin(int bufPtr, int count) {
+        try {
+            if (bufPtr < 0 || bufPtr >= memory.length || count <= 0) {
+                return -22; // EINVAL
+            }
+            
+            // Para stdin, precisamos de uma implementação que obtenha entrada
+            // Vamos implementar um buffer de entrada simples
+            
+            int bytesRead = 0;
+            int maxBytes = Math.min(count, memory.length - bufPtr);
+            
+            if (maxBytes <= 0) {
+                return 0;
+            }
+            
+            // Verificar se há dados no buffer de entrada
+            if (elfInfo.containsKey("stdin_buffer")) {
+                Vector stdinBuffer = (Vector) elfInfo.get("stdin_buffer");
+                Integer stdinIndex = (Integer) elfInfo.get("stdin_index");
+                
+                if (stdinBuffer != null && stdinIndex != null) {
+                    int index = stdinIndex.intValue();
+                    
+                    while (bytesRead < maxBytes && index < stdinBuffer.size()) {
+                        Integer ch = (Integer) stdinBuffer.elementAt(index);
+                        memory[bufPtr + bytesRead] = (byte)(ch.intValue() & 0xFF);
+                        bytesRead++;
+                        index++;
+                    }
+                    
+                    elfInfo.put("stdin_index", new Integer(index));
+                    return bytesRead;
+                }
+            }
+            
+            // Se não há buffer de entrada, retornar EOF ou 0
+            return 0; // EOF ou nenhum dado disponível
+        } catch (Exception e) {
+            return -1; // Erro geral
+        }
+    }
+
+    // Adicionar estes métodos auxiliares para gerenciar entrada
+
+    private void setupStdinBuffer() {
+        // Inicializar buffer de stdin se não existir
+        if (!elfInfo.containsKey("stdin_buffer")) {
+            Vector stdinBuffer = new Vector();
+            elfInfo.put("stdin_buffer", stdinBuffer);
+            elfInfo.put("stdin_index", new Integer(0));
+            
+            // Adicionar algum texto de exemplo para teste
+            String testInput = "Test input from stdin\n";
+            for (int i = 0; i < testInput.length(); i++) {
+                stdinBuffer.addElement(new Integer(testInput.charAt(i)));
+            }
+        }
+    }
+
+    // Método para adicionar entrada ao buffer (pode ser chamado de fora)
+    public void addStdinInput(String input) {
+        if (input == null || input.length() == 0) return;
+        
+        Vector stdinBuffer;
+        if (elfInfo.containsKey("stdin_buffer")) {
+            stdinBuffer = (Vector) elfInfo.get("stdin_buffer");
+        } else {
+            stdinBuffer = new Vector();
+            elfInfo.put("stdin_buffer", stdinBuffer);
+            elfInfo.put("stdin_index", new Integer(0));
+        }
+        
+        for (int i = 0; i < input.length(); i++) {
+            stdinBuffer.addElement(new Integer(input.charAt(i)));
+        }
+    }
+
+    // Método para limpar/resetar o buffer de stdin
+    public void clearStdinBuffer() {
+        Vector stdinBuffer = new Vector();
+        elfInfo.put("stdin_buffer", stdinBuffer);
+        elfInfo.put("stdin_index", new Integer(0));
+    }
+
+    // Método para simular EOF (Ctrl+D)
+    public void sendEOF() {
+        // Adicionar caractere EOF (0x04) ou simplesmente marcar como finalizado
+        if (elfInfo.containsKey("stdin_buffer")) {
+            Vector stdinBuffer = (Vector) elfInfo.get("stdin_buffer");
+            // Adicionar -1 como indicador de EOF
+            stdinBuffer.addElement(new Integer(-1));
+        }
+    }
+
     // Syscalls Handler
     // |
     private void handleSyscall(int number) {
