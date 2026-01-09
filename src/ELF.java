@@ -3209,7 +3209,7 @@ public class ELF {
             return registers[REG_R0];
         } else if (syscallName.equals("exit")) {
             registers[REG_R0] = args[0];
-            handleExit(args[0]);
+            handleExit();
             return registers[REG_R0];
         }
         
