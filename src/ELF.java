@@ -2185,25 +2185,24 @@ public class ELF {
             writeIntLE(memory, stubAddr, 0xE3A00000);
             // bx lr
             writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (symbolName.startsWith("set") || symbolName.endsWith("init") || 
-                symbolName.endsWith("start")) {
+        } else if (symbolName.startsWith("set") || symbolName.endsWith("init") || symbolName.endsWith("start")) {
             // Funções setter/init - retornam void/sucesso
             // Não faz nada, apenas retorna
             // bx lr
             writeIntLE(memory, stubAddr, 0xE12FFF1E);
-        } else if (symbolName.contains("open") || symbolName.contains("create")) {
+        } else if (symbolName.indexOf("open") != -1 || symbolName.indexOf("create") != -1) {
             // Funções de abertura - retornam file descriptor simulado
             // mov r0, #3 (próximo fd disponível)
             writeIntLE(memory, stubAddr, 0xE3A00003);
             // bx lr
             writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (symbolName.contains("close") || symbolName.contains("free")) {
+        } else if (symbolName.indexOf("close") != -1 || symbolName.indexOf("free") != -1) {
             // Funções de fechamento - retornam sucesso
             // mov r0, #0 (sucesso)
             writeIntLE(memory, stubAddr, 0xE3A00000);
             // bx lr
             writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (symbolName.contains("read") || symbolName.contains("write")) {
+        } else if (symbolName.indexOf("read") != -1 || symbolName.indexOf("write") != -1) {
             // Funções de I/O - retornam número de bytes
             // ldr r0, [sp, #0] (primeiro parâmetro da stack - count)
             writeIntLE(memory, stubAddr, 0xE59D0000);
@@ -2231,43 +2230,43 @@ public class ELF {
         String lowerName = name.toLowerCase();
         
         // Mapeamento de syscalls comuns
-        if (lowerName.contains("exit")) return SYS_EXIT;
-        if (lowerName.contains("fork")) return SYS_FORK;
-        if (lowerName.contains("read")) return SYS_READ;
-        if (lowerName.contains("write")) return SYS_WRITE;
-        if (lowerName.contains("open")) return SYS_OPEN;
-        if (lowerName.contains("close")) return SYS_CLOSE;
-        if (lowerName.contains("creat")) return SYS_CREAT;
-        if (lowerName.contains("unlink")) return SYS_UNLINK;
-        if (lowerName.contains("exec")) return SYS_EXECVE;
-        if (lowerName.contains("chdir")) return SYS_CHDIR;
-        if (lowerName.contains("time")) return SYS_TIME;
-        if (lowerName.contains("lseek")) return SYS_LSEEK;
-        if (lowerName.contains("getpid")) return SYS_GETPID;
-        if (lowerName.contains("mkdir")) return SYS_MKDIR;
-        if (lowerName.contains("rmdir")) return SYS_RMDIR;
-        if (lowerName.contains("dup")) return SYS_DUP;
-        if (lowerName.contains("dup2")) return SYS_DUP2;
-        if (lowerName.contains("getppid")) return SYS_GETPPID;
-        if (lowerName.contains("ioctl")) return SYS_IOCTL;
-        if (lowerName.contains("kill")) return SYS_KILL;
-        if (lowerName.contains("brk")) return SYS_BRK;
-        if (lowerName.contains("gettimeofday")) return SYS_GETTIMEOFDAY;
-        if (lowerName.contains("getcwd")) return SYS_GETCWD;
-        if (lowerName.contains("getuid")) return SYS_GETUID32;
-        if (lowerName.contains("geteuid")) return SYS_GETEUID32;
-        if (lowerName.contains("stat")) return SYS_STAT;
-        if (lowerName.contains("fstat")) return SYS_FSTAT;
-        if (lowerName.contains("getpriority")) return SYS_GETPRIORITY;
-        if (lowerName.contains("setpriority")) return SYS_SETPRIORITY;
-        if (lowerName.contains("getdents")) return SYS_GETDENTS;
-        if (lowerName.contains("socket")) return SYS_SOCKET;
-        if (lowerName.contains("bind")) return SYS_BIND;
-        if (lowerName.contains("connect")) return SYS_CONNECT;
-        if (lowerName.contains("listen")) return SYS_LISTEN;
-        if (lowerName.contains("accept")) return SYS_ACCEPT;
-        if (lowerName.contains("send")) return SYS_SEND;
-        if (lowerName.contains("recv")) return SYS_RECV;
+        if (lowerName.indexOf("exit") != -1) return SYS_EXIT;
+        if (lowerName.indexOf("fork") != -1) return SYS_FORK;
+        if (lowerName.indexOf("read") != -1) return SYS_READ;
+        if (lowerName.indexOf("write") != -1) return SYS_WRITE;
+        if (lowerName.indexOf("open") != -1) return SYS_OPEN;
+        if (lowerName.indexOf("close") != -1) return SYS_CLOSE;
+        if (lowerName.indexOf("creat") != -1) return SYS_CREAT;
+        if (lowerName.indexOf("unlink") != -1) return SYS_UNLINK;
+        if (lowerName.indexOf("exec") != -1) return SYS_EXECVE;
+        if (lowerName.indexOf("chdir") != -1) return SYS_CHDIR;
+        if (lowerName.indexOf("time") != -1) return SYS_TIME;
+        if (lowerName.indexOf("lseek") != -1) return SYS_LSEEK;
+        if (lowerName.indexOf("getpid") != -1) return SYS_GETPID;
+        if (lowerName.indexOf("mkdir") != -1) return SYS_MKDIR;
+        if (lowerName.indexOf("rmdir") != -1) return SYS_RMDIR;
+        if (lowerName.indexOf("dup") != -1) return SYS_DUP;
+        if (lowerName.indexOf("dup2") != -1) return SYS_DUP2;
+        if (lowerName.indexOf("getppid") != -1) return SYS_GETPPID;
+        if (lowerName.indexOf("ioctl") != -1) return SYS_IOCTL;
+        if (lowerName.indexOf("kill") != -1) return SYS_KILL;
+        if (lowerName.indexOf("brk") != -1) return SYS_BRK;
+        if (lowerName.indexOf("gettimeofday") != -1) return SYS_GETTIMEOFDAY;
+        if (lowerName.indexOf("getcwd") != -1) return SYS_GETCWD;
+        if (lowerName.indexOf("getuid") != -1) return SYS_GETUID32;
+        if (lowerName.indexOf("geteuid") != -1) return SYS_GETEUID32;
+        if (lowerName.indexOf("stat") != -1) return SYS_STAT;
+        if (lowerName.indexOf("fstat") != -1) return SYS_FSTAT;
+        if (lowerName.indexOf("getpriority") != -1) return SYS_GETPRIORITY;
+        if (lowerName.indexOf("setpriority") != -1) return SYS_SETPRIORITY;
+        if (lowerName.indexOf("getdents") != -1) return SYS_GETDENTS;
+        if (lowerName.indexOf("socket") != -1) return SYS_SOCKET;
+        if (lowerName.indexOf("bind") != -1) return SYS_BIND;
+        if (lowerName.indexOf("connect") != -1) return SYS_CONNECT;
+        if (lowerName.indexOf("listen") != -1) return SYS_LISTEN;
+        if (lowerName.indexOf("accept") != -1) return SYS_ACCEPT;
+        if (lowerName.indexOf("send") != -1) return SYS_SEND;
+        if (lowerName.indexOf("recv") != -1) return SYS_RECV;
         
         return 0; // Desconhecido
     }
