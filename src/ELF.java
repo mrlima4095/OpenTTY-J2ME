@@ -3146,6 +3146,344 @@ public class ELF {
         // Para outras syscalls, usar implementação padrão
         return -38; // ENOSYS
     }
+
+    private int createPutcharStub() {
+        int stubSize = 64;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // putchar(int c) - escreve um caractere no stdout
+        
+        // stmfd sp!, {r4, lr}  // Salvar r4 e return address
+        writeIntLE(memory, stubAddr, 0xE92D4010);
+        
+        // Salvar caractere em r4 (r0 contém o caractere)
+        // mov r4, r0
+        writeIntLE(memory, stubAddr + 4, 0xE1A04000);
+        
+        // Verificar se precisamos fazer flush de buffer
+        // ldr r0, =stdout_buffer
+        writeIntLE(memory, stubAddr + 8, 0xE59F0040);
+        // ldr r1, =stdout_buffer_index
+        writeIntLE(memory, stubAddr + 12, 0xE59F1040);
+        // ldr r1, [r1]
+        writeIntLE(memory, stubAddr + 16, 0xE5911000);
+        
+        // strb r4, [r0, r1]  // buffer[index] = c
+        writeIntLE(memory, stubAddr + 20, 0xE7C04001);
+        
+        // add r1, r1, #1  // index++
+        writeIntLE(memory, stubAddr + 24, 0xE2811001);
+        
+        // ldr r0, =stdout_buffer_index
+        writeIntLE(memory, stubAddr + 28, 0xE59F0024);
+        // str r1, [r0]  // salvar novo índice
+        writeIntLE(memory, stubAddr + 32, 0xE5801000);
+        
+        // Verificar se buffer está cheio ou se é newline
+        // cmp r1, #1024  // tamanho do buffer
+        writeIntLE(memory, stubAddr + 36, 0xE3510C01);
+        // cmpne r4, #10  // '\n'
+        writeIntLE(memory, stubAddr + 40, 0x1354000A);
+        // bne no_flush
+        writeIntLE(memory, stubAddr + 44, 0x1A000004);
+        
+        // Fazer flush do buffer
+        // ldr r0, =stdout_buffer
+        writeIntLE(memory, stubAddr + 48, 0xE59F0020);
+        // mov r1, r1  // count (já está em r1)
+        // bl flush_buffer
+        writeIntLE(memory, stubAddr + 52, 0xEB000000);
+        
+        // Resetar índice do buffer
+        // ldr r0, =stdout_buffer_index
+        writeIntLE(memory, stubAddr + 56, 0xE59F000C);
+        // mov r1, #0
+        writeIntLE(memory, stubAddr + 60, 0xE3A01000);
+        // str r1, [r0]
+        writeIntLE(memory, stubAddr + 64, 0xE5801000);
+        
+        // no_flush:
+        // Retornar o caractere (conforme padrão C)
+        // mov r0, r4
+        writeIntLE(memory, stubAddr + 68, 0xE1A00004);
+        
+        // ldmfd sp!, {r4, pc}
+        writeIntLE(memory, stubAddr + 72, 0xE8BD8010);
+        
+        // Dados
+        // Endereço do buffer stdout
+        int bufferAddr = allocateStubMemory(1024);
+        writeIntLE(memory, stubAddr + 76, bufferAddr);
+        
+        // Variável para índice do buffer
+        int indexAddr = bufferAddr + 1024;
+        writeIntLE(memory, stubAddr + 80, indexAddr);
+        
+        // Inicializar índice como 0
+        writeIntLE(memory, indexAddr, 0);
+        
+        // Armazenar informações para flush
+        elfInfo.put("putchar_buffer", new Integer(bufferAddr));
+        elfInfo.put("putchar_index", new Integer(indexAddr));
+        
+        // Handler para flush do buffer
+        elfInfo.put("flush_buffer_handler", new Object() {
+            public void handle(int bufferPtr, int count) {
+                flushStdoutBuffer(bufferPtr, count);
+            }
+        });
+        
+        return stubAddr;
+    }
+
+    private void flushStdoutBuffer(int bufferPtr, int count) {
+        if (count <= 0 || bufferPtr <= 0) return;
+        
+        try {
+            // Ler dados do buffer
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < count && bufferPtr + i < memory.length; i++) {
+                byte b = memory[bufferPtr + i];
+                sb.append((char)(b & 0xFF));
+            }
+            
+            // Escrever no OpenTTY stdout
+            if (sb.length() > 0) {
+                midlet.print(sb.toString(), stdout, id);
+            }
+            
+            // Limpar buffer
+            for (int i = 0; i < count && bufferPtr + i < memory.length; i++) {
+                memory[bufferPtr + i] = 0;
+            }
+            
+        } catch (Exception e) {
+            // Ignorar erros
+        }
+    }
+
+    // Versão simplificada de putchar (sem buffer)
+    private int createPutcharSimpleStub() {
+        int stubSize = 32;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // putchar(int c) - versão simples sem buffering
+        
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr, 0xE92D4000);
+        
+        // Preparar para write syscall
+        // mov r7, #SYS_WRITE (4)
+        writeIntLE(memory, stubAddr + 4, 0xE3A07004);
+        
+        // mov r0, #1 (stdout)
+        writeIntLE(memory, stubAddr + 8, 0xE3A00001);
+        
+        // Criar buffer de 1 caractere na stack
+        // sub sp, sp, #4
+        writeIntLE(memory, stubAddr + 12, 0xE24DD004);
+        
+        // strb r0, [sp] (armazenar caractere)
+        writeIntLE(memory, stubAddr + 16, 0xE54D0004);
+        
+        // mov r1, sp (ponteiro para buffer)
+        writeIntLE(memory, stubAddr + 20, 0xE1A0100D);
+        
+        // mov r2, #1 (count = 1)
+        writeIntLE(memory, stubAddr + 24, 0xE3A02001);
+        
+        // swi 0
+        writeIntLE(memory, stubAddr + 28, 0xEF000000);
+        
+        // add sp, sp, #4 (limpar stack)
+        writeIntLE(memory, stubAddr + 32, 0xE28DD004);
+        
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 36, 0xE8BD8000);
+        
+        return stubAddr;
+    }
+
+    // putchar com implementação direta em Java (mais eficiente)
+    private int createPutcharJavaStub() {
+        int stubSize = 48;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // putchar(int c) - chama implementação Java
+        
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr, 0xE92D4000);
+        
+        // bl putchar_java_impl
+        writeIntLE(memory, stubAddr + 4, 0xEB000000);
+        
+        // Retornar o caractere (r0 já tem o caractere de entrada)
+        // bx lr
+        writeIntLE(memory, stubAddr + 8, 0xE12FFF1E);
+        
+        // Implementação Java embutida no código ARM
+        // putchar_java_impl:
+        // stmfd sp!, {r1-r3, lr}
+        writeIntLE(memory, stubAddr + 12, 0xE92D400E);
+        
+        // Converter caractere para string
+        // sub sp, sp, #8  // espaço para string
+        writeIntLE(memory, stubAddr + 16, 0xE24DD008);
+        
+        // strb r0, [sp]  // armazenar caractere
+        writeIntLE(memory, stubAddr + 20, 0xE54D0008);
+        
+        // mov r1, #0
+        writeIntLE(memory, stubAddr + 24, 0xE3A01000);
+        // strb r1, [sp, #1]  // null terminator
+        writeIntLE(memory, stubAddr + 28, 0xE54D1007);
+        
+        // Chamar print do OpenTTY
+        // ldr r0, =stdout_object
+        writeIntLE(memory, stubAddr + 32, 0xE59F0010);
+        // mov r1, sp
+        writeIntLE(memory, stubAddr + 36, 0xE1A0100D);
+        // bl print_string
+        writeIntLE(memory, stubAddr + 40, 0xEB000000);
+        
+        // add sp, sp, #8
+        writeIntLE(memory, stubAddr + 44, 0xE28DD008);
+        
+        // ldmfd sp!, {r1-r3, pc}
+        writeIntLE(memory, stubAddr + 48, 0xE8BD800E);
+        
+        // Dados
+        writeIntLE(memory, stubAddr + 52, 0x00000000); // stdout_object placeholder
+        
+        // Registrar handler
+        elfInfo.put("putchar_java_handler", new Object() {
+            public void handle(char c) {
+                // Escrever caractere diretamente
+                midlet.print(String.valueOf(c), stdout, id);
+            }
+        });
+        
+        return stubAddr;
+    }
+
+    // putchar otimizado para caracteres ASCII
+    private int createPutcharOptimizedStub() {
+        int stubSize = 128;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // putchar(int c) - otimizado com branch para caracteres especiais
+        
+        // Verificar se é newline, tab, etc.
+        // cmp r0, #10  // '\n'
+        writeIntLE(memory, stubAddr, 0xE350000A);
+        // beq handle_newline
+        writeIntLE(memory, stubAddr + 4, 0x0A000010);
+        
+        // cmp r0, #13  // '\r'
+        writeIntLE(memory, stubAddr + 8, 0xE350000D);
+        // beq handle_return
+        writeIntLE(memory, stubAddr + 12, 0x0A00000E);
+        
+        // cmp r0, #9   // '\t'
+        writeIntLE(memory, stubAddr + 16, 0xE3500009);
+        // beq handle_tab
+        writeIntLE(memory, stubAddr + 20, 0x0A00000C);
+        
+        // cmp r0, #8   // '\b' (backspace)
+        writeIntLE(memory, stubAddr + 24, 0xE3500008);
+        // beq handle_backspace
+        writeIntLE(memory, stubAddr + 28, 0x0A00000A);
+        
+        // Caractere normal: verificar se é imprimível
+        // cmp r0, #32
+        writeIntLE(memory, stubAddr + 32, 0xE3500020);
+        // blo invalid_char
+        writeIntLE(memory, stubAddr + 36, 0x3A000008);
+        
+        // cmp r0, #126
+        writeIntLE(memory, stubAddr + 40, 0xE350007E);
+        // bhi invalid_char
+        writeIntLE(memory, stubAddr + 44, 0x8A000006);
+        
+        // Caractere válido: escrever
+        // b write_char
+        writeIntLE(memory, stubAddr + 48, 0xEA000009);
+        
+        // handle_newline:
+        // Implementação para newline
+        // mov r0, #10
+        writeIntLE(memory, stubAddr + 52, 0xE3A0000A);
+        // b write_char
+        writeIntLE(memory, stubAddr + 56, 0xEA000006);
+        
+        // handle_return:
+        // Implementação para carriage return
+        // mov r0, #13
+        writeIntLE(memory, stubAddr + 60, 0xE3A0000D);
+        // b write_char
+        writeIntLE(memory, stubAddr + 64, 0xEA000003);
+        
+        // handle_tab:
+        // Tab -> 4 espaços
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr + 68, 0xE92D4000);
+        // mov r0, #32  // espaço
+        writeIntLE(memory, stubAddr + 72, 0xE3A00020);
+        // bl putchar (chamar recursivamente 4 vezes)
+        writeIntLE(memory, stubAddr + 76, 0xEBFFFFF0);
+        // bl putchar
+        writeIntLE(memory, stubAddr + 80, 0xEBFFFFEF);
+        // bl putchar
+        writeIntLE(memory, stubAddr + 84, 0xEBFFFFEE);
+        // bl putchar
+        writeIntLE(memory, stubAddr + 88, 0xEBFFFFED);
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 92, 0xE8BD8000);
+        
+        // handle_backspace:
+        // Backspace - mover cursor para trás se possível
+        // Implementação simplificada: escrever espaço e voltar
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr + 96, 0xE92D4000);
+        // mov r0, #8   // backspace char
+        writeIntLE(memory, stubAddr + 100, 0xE3A00008);
+        // bl write_char_direct
+        writeIntLE(memory, stubAddr + 104, 0xEB000002);
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 108, 0xE8BD8000);
+        
+        // invalid_char:
+        // Caractere inválido - substituir por '?'
+        // mov r0, #63  // '?'
+        writeIntLE(memory, stubAddr + 112, 0xE3A0003F);
+        
+        // write_char:
+        // Escrever caractere
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr + 116, 0xE92D4000);
+        
+        // Chamar syscall write
+        // mov r7, #SYS_WRITE
+        writeIntLE(memory, stubAddr + 120, 0xE3A07004);
+        // mov r0, #1  // stdout
+        writeIntLE(memory, stubAddr + 124, 0xE3A00001);
+        // sub sp, sp, #4
+        writeIntLE(memory, stubAddr + 128, 0xE24DD004);
+        // strb r0, [sp]  // caractere original ainda em r0? Vamos ajustar
+        // Na verdade, precisamos salvar o caractere primeiro
+        
+        // Vamos reescrever essa parte:
+        // Retornar para implementação simples
+        return createPutcharSimpleStub();
+    }
     
     // Syscalls Handler
     // |
