@@ -2254,12 +2254,12 @@ public class ELF {
         
         // === ESPECIAL ===
         libcSymbols.put("__libc_start_main", new Integer(createLibcStartMainStub()));
-        libcSymbols.put("__errno_location", new Integer(createErrnoLocationStub()));
+        /*libcSymbols.put("__errno_location", new Integer(createErrnoLocationStub()));
         libcSymbols.put("abort", new Integer(createAbortStub()));
         libcSymbols.put("abs", new Integer(createAbsStub()));
         libcSymbols.put("labs", new Integer(createLabsStub()));
         libcSymbols.put("qsort", new Integer(createQsortStub()));
-        libcSymbols.put("bsearch", new Integer(createBsearchStub()));
+        libcSymbols.put("bsearch", new Integer(createBsearchStub()));*/
         
         // Adicionar à tabela global
         globalSymbols.put("libc.so.6", libcSymbols);
@@ -2267,9 +2267,9 @@ public class ELF {
         
         // Criar ld-linux.so.3 simulado também
         Hashtable ldLinux = new Hashtable();
-        ldLinux.put("_dl_start", new Integer(createDlStartStub()));
+        /*ldLinux.put("_dl_start", new Integer(createDlStartStub()));
         ldLinux.put("_dl_sym", new Integer(createDlSymStub()));
-        ldLinux.put("_dl_error", new Integer(createDlErrorStub()));
+        ldLinux.put("_dl_error", new Integer(createDlErrorStub()));*/
         globalSymbols.put("ld-linux.so.3", ldLinux);
         loadedLibraries.addElement("ld-linux.so.3");
         
