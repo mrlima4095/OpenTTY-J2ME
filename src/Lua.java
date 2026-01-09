@@ -2561,7 +2561,7 @@ public class Lua {
                     else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
                     else if (payload.equals("netsh")) {
                         for (Enumeration keys = midlet.network.keys(); keys.hasMoreElements();) {
-
+                            
                         }
                     }
 
@@ -2577,7 +2577,7 @@ public class Lua {
 
                             Hashtable res = lua.run(program, code, arg);
 
-                            Object handler = res.get("object");
+                            Object handler = res.get("object"), ;
                             if (handler instanceof Vector) {
                                 Vector resx = (Vector) handler;
                                 handler = resx.elementAt(0);
