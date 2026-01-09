@@ -9,7 +9,7 @@ if #arg > 1 then
         if status > 0 then
             local message = libcore.errormsg(status)
 
-            print("rm: " .. arg[i] .. " " .. message)
+            print("rm: " .. arg[i] .. ": " .. message)
             os.exit(status)
         end
     end
