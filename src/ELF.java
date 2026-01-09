@@ -1608,669 +1608,7 @@ public class ELF {
     
     }
 
-    private Hashtable parseSOFile(String path) {
-        Hashtable symbols = new Hashtable();
-        
-        try {
-            InputStream is = midlet.getInputStream(path);
-            byte[] data = new byte[is.available()];
-            is.read(data);
-            is.close();
-            
-            // Verificar se é ELF
-            if (data[0] != 0x7F || data[1] != 'E' || data[2] != 'L' || data[3] != 'F') {
-                return symbols;
-            }
-            
-            // Ler cabeçalho ELF
-            int e_shoff = readIntLE(data, 32);
-            int e_shnum = readShortLE(data, 48);
-            int e_shentsize = readShortLE(data, 46);
-            
-            // Encontrar .dynsym e .dynstr
-            int dynsymOffset = -1;
-            int dynstrOffset = -1;
-            int strtabOffset = -1;
-            
-            for (int i = 0; i < e_shnum; i++) {
-                int shdrOffset = e_shoff + i * e_shentsize;
-                int sh_type = readIntLE(data, shdrOffset + 4);
-                int sh_name = readIntLE(data, shdrOffset);
-                int sh_offset = readIntLE(data, shdrOffset + 16);
-                int sh_size = readIntLE(data, shdrOffset + 20);
-                
-                // Encontrar .shstrtab primeiro
-                if (sh_type == 3 && strtabOffset == -1) { // SHT_STRTAB
-                    strtabOffset = sh_offset;
-                }
-            }
-            
-            // Agora ler nomes das seções
-            for (int i = 0; i < e_shnum; i++) {
-                int shdrOffset = e_shoff + i * e_shentsize;
-                int sh_type = readIntLE(data, shdrOffset + 4);
-                int sh_name = readIntLE(data, shdrOffset);
-                int sh_offset = readIntLE(data, shdrOffset + 16);
-                int sh_size = readIntLE(data, shdrOffset + 20);
-                
-                if (strtabOffset > 0 && sh_name > 0) {
-                    String name = readString(data, strtabOffset + sh_name, 32);
-                    
-                    if (".dynsym".equals(name)) {
-                        dynsymOffset = sh_offset;
-                    } else if (".dynstr".equals(name)) {
-                        dynstrOffset = sh_offset;
-                    }
-                }
-            }
-            
-            // Ler símbolos se encontrou as seções
-            if (dynsymOffset != -1 && dynstrOffset != -1) {
-                int symentSize = 16; // Tamanho padrão Elf32_Sym
-                
-                for (int offset = dynsymOffset; offset < dynsymOffset + 1024; offset += symentSize) {
-                    int st_name = readIntLE(data, offset);
-                    int st_value = readIntLE(data, offset + 4);
-                    int st_info = data[offset + 12] & 0xFF;
-                    
-                    if (st_name == 0 && st_value == 0 && st_info == 0) {
-                        break; // Símbolo nulo
-                    }
-                    
-                    String symName = readString(data, dynstrOffset + st_name, 256);
 
-                    if (symName != null && symName.length() > 0) {
-                        int binding = (st_info >> 4) & 0xF;
-                        int type = st_info & 0xF;
-                        
-                        // Aceitar mais tipos de símbolos
-                        if (type == 2 || type == 1 || type == 0) { // STT_FUNC, STT_OBJECT, STT_NOTYPE
-                            if (binding == 0 || binding == 1) { // STB_LOCAL, STB_GLOBAL
-                                // Ignorar símbolos locais começando com "."
-                                if (!symName.startsWith(".") && !symName.startsWith("_") && 
-                                    symName.length() > 1) {
-                                    
-                                    // Criar stub para esta função
-                                    int stubAddr = createLibraryStub(symName);
-                                    if (stubAddr != 0) {
-                                        symbols.put(symName, new Integer(stubAddr));
-                                        
-                                        if (midlet.debug) {
-                                            midlet.print("Lib symbol: " + symName + " -> " + 
-                                                    toHex(stubAddr), stdout);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-        } catch (Exception e) {
-            if (midlet.debug) {
-                midlet.print("Error parsing " + path + ": " + e.getMessage(), stdout);
-            }
-        }
-        
-        return symbols;
-    }
-
-    private int createLibraryStub(String symbolName) {
-        int stubSize = 128; // Tamanho típico para um stub
-    
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) {
-            // Fallback para findFreeMemoryRegion
-            stubAddr = findFreeMemoryRegion(stubSize);
-            if (stubAddr == 0) return 0;
-        }
-        
-        // Mapear símbolos conhecidos para implementações específicas
-        if (symbolName.equals("printf") || symbolName.equals("puts") || 
-            symbolName.equals("fprintf") || symbolName.equals("vprintf")) {
-            return createPrintStub(symbolName);
-        } else if (symbolName.equals("malloc") || symbolName.equals("calloc")) {
-            return createMallocStub();
-        } else if (symbolName.equals("free")) {
-            return createFreeStub();
-        } else if (symbolName.equals("strlen")) {
-            return createStrlenStub();
-        } else if (symbolName.equals("strcpy") || symbolName.equals("strncpy")) {
-            return createStrcpyStub(symbolName);
-        } else if (symbolName.equals("strcmp") || symbolName.equals("strncmp")) {
-            return createStrcmpStub(symbolName);
-        } else if (symbolName.equals("memcpy")) {
-            return createMemcpyStub();
-        } else if (symbolName.equals("memset")) {
-            return createMemsetStub();
-        } else if (symbolName.equals("exit") || symbolName.equals("_exit")) {
-            return createExitStub();
-        } else if (symbolName.equals("__libc_start_main")) {
-            return createLibcStartMainStub();
-        } else if (symbolName.startsWith("sys_")) {
-            return createSyscallStub(symbolName.substring(4));
-        } else {
-            // Stub genérico
-            return createGenericStub(symbolName);
-        }
-    }
-    private int createPrintStub(String funcName) {
-        int stubSize = 128;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        if (funcName.equals("puts")) {
-            // puts(const char *s) - sempre retorna não-negativo
-            // mov r0, #1 (retorna 1 = sucesso)
-            writeIntLE(memory, stubAddr, 0xE3A00001);
-            // bx lr
-            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else {
-            // printf/fprintf - retorna número de caracteres "impressos"
-            // Para simplificar, retorna comprimento do formato
-            // stmfd sp!, {r0, lr}
-            writeIntLE(memory, stubAddr, 0xE92D4001);
-            
-            // ldr r1, [sp, #4] (format string)
-            writeIntLE(memory, stubAddr + 4, 0xE59D1004);
-            
-            // bl strlen
-            writeIntLE(memory, stubAddr + 8, 0xEB000000);
-            
-            // str r0, [sp, #4] (armazena resultado)
-            writeIntLE(memory, stubAddr + 12, 0xE58D0004);
-            
-            // ldmfd sp!, {r0, pc}
-            writeIntLE(memory, stubAddr + 16, 0xE8BD8001);
-        }
-        
-        return stubAddr;
-    }
-
-    private int createMallocStub() {
-        int stubSize = 64;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // malloc(size_t size) - implementação simplificada
-        // stmfd sp!, {r4, lr}
-        writeIntLE(memory, stubAddr, 0xE92D4010);
-        
-        // mov r4, r0 (salvar tamanho)
-        writeIntLE(memory, stubAddr + 4, 0xE1A04000);
-        
-        // Chamar brk(0) para obter break atual
-        // mov r7, #SYS_BRK
-        writeIntLE(memory, stubAddr + 8, 0xE3A07045);
-        // mov r0, #0
-        writeIntLE(memory, stubAddr + 12, 0xE3A00000);
-        // swi 0
-        writeIntLE(memory, stubAddr + 16, 0xEF000000);
-        
-        // mov r1, r0 (break atual)
-        writeIntLE(memory, stubAddr + 20, 0xE1A01000);
-        
-        // add r0, r0, r4 (novo break = atual + tamanho)
-        writeIntLE(memory, stubAddr + 24, 0xE0800004);
-        
-        // Chamar brk(novo) para alocar
-        // mov r7, #SYS_BRK
-        writeIntLE(memory, stubAddr + 28, 0xE3A07045);
-        // swi 0
-        writeIntLE(memory, stubAddr + 32, 0xEF000000);
-        
-        // mov r0, r1 (retornar endereço antigo)
-        writeIntLE(memory, stubAddr + 36, 0xE1A00001);
-        
-        // ldmfd sp!, {r4, pc}
-        writeIntLE(memory, stubAddr + 40, 0xE8BD8010);
-        
-        return stubAddr;
-    }
-
-    private int createFreeStub() {
-        int stubSize = 16;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // free(void *ptr) - não faz nada
-        // bx lr
-        writeIntLE(memory, stubAddr, 0xE12FFF1E);
-        
-        return stubAddr;
-    }
-
-    private int createStrlenStub() {
-        int stubSize = 64;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // strlen(const char *s)
-        // mov r1, r0 (cópia do ponteiro)
-        writeIntLE(memory, stubAddr, 0xE1A01000);
-        
-        // loop: ldrb r2, [r1], #1
-        writeIntLE(memory, stubAddr + 4, 0xE4D12001);
-        
-        // cmp r2, #0
-        writeIntLE(memory, stubAddr + 8, 0xE3520000);
-        
-        // bne loop
-        writeIntLE(memory, stubAddr + 12, 0x1AFFFFFB);
-        
-        // sub r0, r1, r0
-        writeIntLE(memory, stubAddr + 16, 0xE0400001);
-        
-        // sub r0, r0, #1
-        writeIntLE(memory, stubAddr + 20, 0xE2400001);
-        
-        // bx lr
-        writeIntLE(memory, stubAddr + 24, 0xE12FFF1E);
-        
-        return stubAddr;
-    }
-
-    private int createStrcpyStub(String funcName) {
-        int stubSize = 48;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // strcpy/strncpy(char *dest, const char *src, [size_t n])
-        // stmfd sp!, {r0, lr} (salvar dest e return address)
-        writeIntLE(memory, stubAddr, 0xE92D4001);
-        
-        if (funcName.equals("strncpy")) {
-            // strncpy: tem terceiro parâmetro n
-            // ldr r3, [sp, #8] (n)
-            writeIntLE(memory, stubAddr + 4, 0xE59D3008);
-            // cmp r3, #0
-            writeIntLE(memory, stubAddr + 8, 0xE3530000);
-            // beq end
-            writeIntLE(memory, stubAddr + 12, 0x0A000008);
-        }
-        
-        // loop: ldrb r3, [r1], #1
-        writeIntLE(memory, stubAddr + 16, 0xE4D13001);
-        
-        // strb r3, [r0], #1
-        writeIntLE(memory, stubAddr + 20, 0xE4C03001);
-        
-        // cmp r3, #0
-        writeIntLE(memory, stubAddr + 24, 0xE3530000);
-        
-        if (funcName.equals("strncpy")) {
-            // strncpy: também verifica contador
-            // subs r2, r2, #1
-            writeIntLE(memory, stubAddr + 28, 0xE2522001);
-            // bne loop
-            writeIntLE(memory, stubAddr + 32, 0x1AFFFFF9);
-        } else {
-            // strcpy: só verifica null terminator
-            // bne loop
-            writeIntLE(memory, stubAddr + 28, 0x1AFFFFFA);
-        }
-        
-        // end: ldmfd sp!, {r0, pc}
-        int endAddr = funcName.equals("strncpy") ? 36 : 32;
-        writeIntLE(memory, stubAddr + endAddr, 0xE8BD8001);
-        
-        return stubAddr;
-    }
-
-    private int createStrcmpStub(String funcName) {
-        int stubSize = 64;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // strcmp/strncmp(const char *s1, const char *s2, [size_t n])
-        if (funcName.equals("strncmp")) {
-            // strncpy: tem contador
-            // ldr r3, [sp, #0] (n - está na stack)
-            writeIntLE(memory, stubAddr, 0xE59D3000);
-            // cmp r3, #0
-            writeIntLE(memory, stubAddr + 4, 0xE3530000);
-            // moveq r0, #0 (se n == 0, retorna 0)
-            writeIntLE(memory, stubAddr + 8, 0x03A00000);
-            // bxeq lr
-            writeIntLE(memory, stubAddr + 12, 0x012FFF1E);
-        }
-        
-        // loop: ldrb r3, [r0], #1
-        int loopStart = funcName.equals("strncmp") ? 16 : 0;
-        writeIntLE(memory, stubAddr + loopStart, 0xE4D03001);
-        
-        // ldrb r12, [r1], #1
-        writeIntLE(memory, stubAddr + loopStart + 4, 0xE4D1C001);
-        
-        // cmp r3, #0
-        writeIntLE(memory, stubAddr + loopStart + 8, 0xE3530000);
-        
-        // cmpne r12, #0
-        writeIntLE(memory, stubAddr + loopStart + 12, 0x135C0000);
-        
-        // beq end
-        writeIntLE(memory, stubAddr + loopStart + 16, 0x0A000006);
-        
-        // sub r3, r3, r12
-        writeIntLE(memory, stubAddr + loopStart + 20, 0xE043300C);
-        
-        // cmp r3, #0
-        writeIntLE(memory, stubAddr + loopStart + 24, 0xE3530000);
-        
-        // bne end
-        writeIntLE(memory, stubAddr + loopStart + 28, 0x1A000002);
-        
-        if (funcName.equals("strncmp")) {
-            // strncmp: decrementa contador
-            // subs r2, r2, #1
-            writeIntLE(memory, stubAddr + loopStart + 32, 0xE2522001);
-            // bne loop
-            writeIntLE(memory, stubAddr + loopStart + 36, 0x1AFFFFF2);
-        } else {
-            // strcmp: loop infinito até diferença ou null
-            // b loop
-            writeIntLE(memory, stubAddr + loopStart + 32, 0xEAFFFFEF);
-        }
-        
-        // end: mov r0, r3 (ou já está em r3)
-        int endAddr = funcName.equals("strncmp") ? loopStart + 40 : loopStart + 36;
-        writeIntLE(memory, stubAddr + endAddr, 0xE1A00003);
-        
-        // bx lr
-        writeIntLE(memory, stubAddr + endAddr + 4, 0xE12FFF1E);
-        
-        return stubAddr;
-    }
-
-    private int createMemcpyStub() {
-        int stubSize = 48;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // memcpy(void *dest, const void *src, size_t n)
-        // cmp r2, #0
-        writeIntLE(memory, stubAddr, 0xE3520000);
-        
-        // bxeq lr (se n == 0, retorna dest)
-        writeIntLE(memory, stubAddr + 4, 0x012FFF1E);
-        
-        // stmfd sp!, {r0, lr} (salvar dest e return address)
-        writeIntLE(memory, stubAddr + 8, 0xE92D4001);
-        
-        // loop: ldrb r3, [r1], #1
-        writeIntLE(memory, stubAddr + 12, 0xE4D13001);
-        
-        // strb r3, [r0], #1
-        writeIntLE(memory, stubAddr + 16, 0xE4C03001);
-        
-        // subs r2, r2, #1
-        writeIntLE(memory, stubAddr + 20, 0xE2522001);
-        
-        // bne loop
-        writeIntLE(memory, stubAddr + 24, 0x1AFFFFFB);
-        
-        // ldmfd sp!, {r0, pc} (restaurar dest e retornar)
-        writeIntLE(memory, stubAddr + 28, 0xE8BD8001);
-        
-        return stubAddr;
-    }
-
-    private int createMemsetStub() {
-        int stubSize = 48;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // memset(void *s, int c, size_t n)
-        // cmp r2, #0
-        writeIntLE(memory, stubAddr, 0xE3520000);
-        
-        // bxeq lr (se n == 0, retorna s)
-        writeIntLE(memory, stubAddr + 4, 0x012FFF1E);
-        
-        // stmfd sp!, {r0, lr} (salvar s e return address)
-        writeIntLE(memory, stubAddr + 8, 0xE92D4001);
-        
-        // and r1, r1, #0xFF (garantir que c é byte)
-        writeIntLE(memory, stubAddr + 12, 0xE20110FF);
-        
-        // loop: strb r1, [r0], #1
-        writeIntLE(memory, stubAddr + 16, 0xE4C01001);
-        
-        // subs r2, r2, #1
-        writeIntLE(memory, stubAddr + 20, 0xE2522001);
-        
-        // bne loop
-        writeIntLE(memory, stubAddr + 24, 0x1AFFFFFC);
-        
-        // ldmfd sp!, {r0, pc} (restaurar s e retornar)
-        writeIntLE(memory, stubAddr + 28, 0xE8BD8001);
-        
-        return stubAddr;
-    }
-
-    private int createExitStub() {
-        int stubSize = 16;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // exit(int status)
-        // mov r7, #SYS_EXIT
-        writeIntLE(memory, stubAddr, 0xE3A07001);
-        // mov r0, r0 (status já está em r0)
-        writeIntLE(memory, stubAddr + 4, 0xE1A00000);
-        // swi 0
-        writeIntLE(memory, stubAddr + 8, 0xEF000000);
-        // bx lr (nunca alcançado, mas por segurança)
-        writeIntLE(memory, stubAddr + 12, 0xE12FFF1E);
-        
-        return stubAddr;
-    }
-
-    private int createLibcStartMainStub() {
-        int stubSize = 96;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // __libc_start_main(int (*main)(int, char**, char**), 
-        //                   int argc, char **argv, 
-        //                   void (*init)(void), void (*fini)(void), 
-        //                   void (*rtld_fini)(void), void *stack_end)
-        
-        // stmfd sp!, {r4-r6, lr}
-        writeIntLE(memory, stubAddr, 0xE92D4070);
-        
-        // salvar parâmetros importantes
-        // mov r4, r0 (main)
-        writeIntLE(memory, stubAddr + 4, 0xE1A04000);
-        // mov r5, r1 (argc)
-        writeIntLE(memory, stubAddr + 8, 0xE1A05001);
-        // mov r6, r2 (argv)
-        writeIntLE(memory, stubAddr + 12, 0xE1A06002);
-        
-        // Chamar init se não for null
-        // cmp r3, #0 (init)
-        writeIntLE(memory, stubAddr + 16, 0xE3530000);
-        // beq skip_init
-        writeIntLE(memory, stubAddr + 20, 0x0A000001);
-        // blx r3 (chamar init)
-        writeIntLE(memory, stubAddr + 24, 0xE12FFF33);
-        // skip_init:
-        
-        // Configurar parâmetros para main
-        // mov r0, r5 (argc)
-        writeIntLE(memory, stubAddr + 28, 0xE1A00005);
-        // mov r1, r6 (argv)
-        writeIntLE(memory, stubAddr + 32, 0xE1A01006);
-        // ldr r2, [sp, #16] (envp - está na stack)
-        writeIntLE(memory, stubAddr + 36, 0xE59D2010);
-        
-        // Chamar main
-        // blx r4
-        writeIntLE(memory, stubAddr + 40, 0xE12FFF34);
-        
-        // Passar resultado para exit
-        // mov r7, #SYS_EXIT
-        writeIntLE(memory, stubAddr + 44, 0xE3A07001);
-        // swi 0
-        writeIntLE(memory, stubAddr + 48, 0xEF000000);
-        
-        // Nunca alcançado, mas por segurança:
-        // ldmfd sp!, {r4-r6, pc}
-        writeIntLE(memory, stubAddr + 52, 0xE8BD8070);
-        
-        return stubAddr;
-    }
-
-    private int createSyscallStub(String syscallName) {
-        int stubSize = 32;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // Mapear nome para número
-        int syscallNum = mapSyscallName(syscallName);
-        
-        if (syscallNum <= 0) {
-            // syscall desconhecida - criar stub que retorna -ENOSYS
-            // mov r0, #-38 (ENOSYS)
-            writeIntLE(memory, stubAddr, 0xE3E00025);
-            // bx lr
-            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-            return stubAddr;
-        }
-        
-        // Stub para syscall
-        // mov r7, #syscall_number
-        writeIntLE(memory, stubAddr, 0xE3A07000 | (syscallNum & 0xFF));
-        if (syscallNum > 255) {
-            // Se número maior que 255, usar instrução adicional
-            // orr r7, r7, #(syscallNum & 0xFF00)
-            writeIntLE(memory, stubAddr + 4, 0xE3877000 | ((syscallNum >> 8) & 0xFF));
-            // swi 0
-            writeIntLE(memory, stubAddr + 8, 0xEF000000);
-            // bx lr
-            writeIntLE(memory, stubAddr + 12, 0xE12FFF1E);
-        } else {
-            // swi 0
-            writeIntLE(memory, stubAddr + 4, 0xEF000000);
-            // bx lr
-            writeIntLE(memory, stubAddr + 8, 0xE12FFF1E);
-        }
-        
-        return stubAddr;
-    }
-
-    private int createGenericStub(String symbolName) {
-        int stubSize = 32;
-        int stubAddr = allocateStubMemory(stubSize);
-        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
-        if (stubAddr == 0) return 0;
-        
-        // Stub genérico baseado no tipo de função
-        
-        if (symbolName.startsWith("get") || symbolName.startsWith("is")) {
-            // Funções getter/is - retornam 0/false
-            // mov r0, #0
-            writeIntLE(memory, stubAddr, 0xE3A00000);
-            // bx lr
-            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (symbolName.startsWith("set") || symbolName.endsWith("init") || symbolName.endsWith("start")) {
-            // Funções setter/init - retornam void/sucesso
-            // Não faz nada, apenas retorna
-            // bx lr
-            writeIntLE(memory, stubAddr, 0xE12FFF1E);
-        } else if (symbolName.indexOf("open") != -1 || symbolName.indexOf("create") != -1) {
-            // Funções de abertura - retornam file descriptor simulado
-            // mov r0, #3 (próximo fd disponível)
-            writeIntLE(memory, stubAddr, 0xE3A00003);
-            // bx lr
-            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (symbolName.indexOf("close") != -1 || symbolName.indexOf("free") != -1) {
-            // Funções de fechamento - retornam sucesso
-            // mov r0, #0 (sucesso)
-            writeIntLE(memory, stubAddr, 0xE3A00000);
-            // bx lr
-            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (symbolName.indexOf("read") != -1 || symbolName.indexOf("write") != -1) {
-            // Funções de I/O - retornam número de bytes
-            // ldr r0, [sp, #0] (primeiro parâmetro da stack - count)
-            writeIntLE(memory, stubAddr, 0xE59D0000);
-            // bx lr
-            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else {
-            // Função genérica - retorna 0/sucesso
-            // mov r0, #0
-            writeIntLE(memory, stubAddr, 0xE3A00000);
-            // bx lr
-            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        }
-        
-        // Preencher resto com nops
-        for (int i = 8; i < stubSize; i += 4) {
-            writeIntLE(memory, stubAddr + i, 0xE1A00000); // nop
-        }
-        
-        return stubAddr;
-    }
-
-    // Método auxiliar para mapear nomes de syscalls
-    private int mapSyscallName(String name) {
-        // Converter para minúsculas para comparação
-        String lowerName = name.toLowerCase();
-        
-        // Mapeamento de syscalls comuns
-        if (lowerName.indexOf("exit") != -1) return SYS_EXIT;
-        if (lowerName.indexOf("fork") != -1) return SYS_FORK;
-        if (lowerName.indexOf("read") != -1) return SYS_READ;
-        if (lowerName.indexOf("write") != -1) return SYS_WRITE;
-        if (lowerName.indexOf("open") != -1) return SYS_OPEN;
-        if (lowerName.indexOf("close") != -1) return SYS_CLOSE;
-        if (lowerName.indexOf("creat") != -1) return SYS_CREAT;
-        if (lowerName.indexOf("unlink") != -1) return SYS_UNLINK;
-        if (lowerName.indexOf("exec") != -1) return SYS_EXECVE;
-        if (lowerName.indexOf("chdir") != -1) return SYS_CHDIR;
-        if (lowerName.indexOf("time") != -1) return SYS_TIME;
-        if (lowerName.indexOf("lseek") != -1) return SYS_LSEEK;
-        if (lowerName.indexOf("getpid") != -1) return SYS_GETPID;
-        if (lowerName.indexOf("mkdir") != -1) return SYS_MKDIR;
-        if (lowerName.indexOf("rmdir") != -1) return SYS_RMDIR;
-        if (lowerName.indexOf("dup") != -1) return SYS_DUP;
-        if (lowerName.indexOf("dup2") != -1) return SYS_DUP2;
-        if (lowerName.indexOf("getppid") != -1) return SYS_GETPPID;
-        if (lowerName.indexOf("ioctl") != -1) return SYS_IOCTL;
-        if (lowerName.indexOf("kill") != -1) return SYS_KILL;
-        if (lowerName.indexOf("brk") != -1) return SYS_BRK;
-        if (lowerName.indexOf("gettimeofday") != -1) return SYS_GETTIMEOFDAY;
-        if (lowerName.indexOf("getcwd") != -1) return SYS_GETCWD;
-        if (lowerName.indexOf("getuid") != -1) return SYS_GETUID32;
-        if (lowerName.indexOf("geteuid") != -1) return SYS_GETEUID32;
-        if (lowerName.indexOf("stat") != -1) return SYS_STAT;
-        if (lowerName.indexOf("fstat") != -1) return SYS_FSTAT;
-        if (lowerName.indexOf("getpriority") != -1) return SYS_GETPRIORITY;
-        if (lowerName.indexOf("setpriority") != -1) return SYS_SETPRIORITY;
-        if (lowerName.indexOf("getdents") != -1) return SYS_GETDENTS;
-        if (lowerName.indexOf("socket") != -1) return SYS_SOCKET;
-        if (lowerName.indexOf("bind") != -1) return SYS_BIND;
-        if (lowerName.indexOf("connect") != -1) return SYS_CONNECT;
-        if (lowerName.indexOf("listen") != -1) return SYS_LISTEN;
-        if (lowerName.indexOf("accept") != -1) return SYS_ACCEPT;
-        if (lowerName.indexOf("send") != -1) return SYS_SEND;
-        if (lowerName.indexOf("recv") != -1) return SYS_RECV;
-        
-        return 0; // Desconhecido
-    }
-    
     private void initializeBSS(Hashtable sections) {
         // Zerar seções .bss e .sbss
         Enumeration keys = sections.keys();
@@ -2606,7 +1944,7 @@ public class ELF {
         writeIntLE(memory, pltGotAddr + 8, resolveFuncAddr);
     }
 
-    private void setupCRTStack() {
+    /*private void setupCRTStack() {
         // Configurar stack para C Runtime
         // Argumentos: argc, argv[], envp[], auxv[]
         
@@ -2688,6 +2026,95 @@ public class ELF {
                 midlet.print("argv[" + i + "]=" + argsVec.elementAt(i), stdout);
             }
         }
+    }*/
+    private void setupCRTStack() {
+        int sp = registers[REG_SP];
+        
+        // Argumentos do programa
+        Vector argsVec = new Vector();
+        for (int i = 0; i < args.size(); i++) { argsVec.addElement(args.get(new Double(i))); }
+        if (argsVec.size() == 0) { argsVec.addElement("program"); }
+        
+        // Environment variables
+        Vector envVars = new Vector();
+        envVars.addElement("PATH=/bin");
+        envVars.addElement("USER=" + (id == 0 ? "root" : midlet.username));
+        envVars.addElement("HOME=/home");
+        envVars.addElement("SHELL=/bin/sh");
+        envVars.addElement("TERM=vt100");
+        
+        // AUX Vector (para programas dinâmicos)
+        boolean isDynamic = dynamicSectionAddr != 0;
+        
+        if (isDynamic) {
+            // AT_NULL
+            writeIntLE(memory, sp - 8, 0);
+            writeIntLE(memory, sp - 4, 0);
+            sp -= 8;
+            
+            // AT_ENTRY
+            writeIntLE(memory, sp - 8, 9); // AT_ENTRY
+            writeIntLE(memory, sp - 4, pc);
+            sp -= 8;
+            
+            // Redirecionar para __libc_start_main
+            Integer libcStartMain = resolveSymbol("__libc_start_main");
+            if (libcStartMain != null) {
+                // Empurrar argumentos para __libc_start_main
+                // main function (entry point)
+                sp -= 4;
+                writeIntLE(memory, sp, pc);
+                
+                // argc
+                sp -= 4;
+                writeIntLE(memory, sp, argsVec.size());
+                
+                // argv
+                int argvStart = sp - (argsVec.size() + 1) * 4;
+                for (int i = 0; i < argsVec.size(); i++) {
+                    String arg = (String) argsVec.elementAt(i);
+                    byte[] argBytes = arg.getBytes();
+                    sp -= argBytes.length + 1;
+                    for (int j = 0; j < argBytes.length; j++) {
+                        memory[sp + j] = argBytes[j];
+                    }
+                    memory[sp + argBytes.length] = 0;
+                    writeIntLE(memory, argvStart + i * 4, sp);
+                }
+                writeIntLE(memory, argvStart + argsVec.size() * 4, 0);
+                sp = argvStart;
+                
+                // envp
+                int envpStart = sp - (envVars.size() + 1) * 4;
+                for (int i = 0; i < envVars.size(); i++) {
+                    String env = (String) envVars.elementAt(i);
+                    byte[] envBytes = env.getBytes();
+                    sp -= envBytes.length + 1;
+                    for (int j = 0; j < envBytes.length; j++) {
+                        memory[sp + j] = envBytes[j];
+                    }
+                    memory[sp + envBytes.length] = 0;
+                    writeIntLE(memory, envpStart + i * 4, sp);
+                }
+                writeIntLE(memory, envpStart + envVars.size() * 4, 0);
+                sp = envpStart;
+                
+                // Configurar chamada para __libc_start_main
+                registers[REG_R0] = pc;  // main
+                registers[REG_R1] = argsVec.size();  // argc
+                registers[REG_R2] = argvStart;  // argv
+                registers[REG_R3] = 0;  // init (null)
+                
+                pc = libcStartMain.intValue();
+                
+                if (midlet.debug) {
+                    midlet.print("Redirecting to __libc_start_main at " + 
+                            toHex(pc), stdout);
+                }
+            }
+        }
+        
+        registers[REG_SP] = sp;
     }
 
     private void handlePLTCall(int stubAddr) {
@@ -2735,6 +2162,546 @@ public class ELF {
             midlet.print("  " + name + " -> " + toHex(value), stdout);
             count++;
         }
+    }
+
+
+    private void initLibc() {
+        libcSymbols = new Hashtable();
+        
+        // === FUNÇÕES DE I/O ===
+        libcSymbols.put("printf", new Integer(createPrintfStub()));
+        libcSymbols.put("puts", new Integer(createPutsStub()));
+        libcSymbols.put("putchar", new Integer(createPutcharStub()));
+        libcSymbols.put("getchar", new Integer(createGetcharStub()));
+        libcSymbols.put("scanf", new Integer(createScanfStub()));
+        libcSymbols.put("fprintf", new Integer(createFprintfStub()));
+        libcSymbols.put("fputs", new Integer(createFputsStub()));
+        libcSymbols.put("fputc", new Integer(createFputcStub()));
+        libcSymbols.put("fgetc", new Integer(createFgetcStub()));
+        
+        // === MEMÓRIA ===
+        libcSymbols.put("malloc", new Integer(createMallocStub()));
+        libcSymbols.put("free", new Integer(createFreeStub()));
+        libcSymbols.put("calloc", new Integer(createCallocStub()));
+        libcSymbols.put("realloc", new Integer(createReallocStub()));
+        
+        // === STRINGS ===
+        libcSymbols.put("strlen", new Integer(createStrlenStub()));
+        libcSymbols.put("strcpy", new Integer(createStrcpyStub()));
+        libcSymbols.put("strncpy", new Integer(createStrncpyStub()));
+        libcSymbols.put("strcat", new Integer(createStrcatStub()));
+        libcSymbols.put("strncat", new Integer(createStrncatStub()));
+        libcSymbols.put("strcmp", new Integer(createStrcmpStub()));
+        libcSymbols.put("strncmp", new Integer(createStrncmpStub()));
+        libcSymbols.put("strstr", new Integer(createStrstrStub()));
+        libcSymbols.put("strchr", new Integer(createStrchrStub()));
+        libcSymbols.put("strrchr", new Integer(createStrrchrStub()));
+        
+        // === MEMÓRIA (raw) ===
+        libcSymbols.put("memcpy", new Integer(createMemcpyStub()));
+        libcSymbols.put("memmove", new Integer(createMemmoveStub()));
+        libcSymbols.put("memset", new Integer(createMemsetStub()));
+        libcSymbols.put("memcmp", new Integer(createMemcmpStub()));
+        libcSymbols.put("memchr", new Integer(createMemchrStub()));
+        
+        // === ARQUIVOS ===
+        libcSymbols.put("fopen", new Integer(createFopenStub()));
+        libcSymbols.put("fclose", new Integer(createFcloseStub()));
+        libcSymbols.put("fread", new Integer(createFreadStub()));
+        libcSymbols.put("fwrite", new Integer(createFwriteStub()));
+        libcSymbols.put("fseek", new Integer(createFseekStub()));
+        libcSymbols.put("ftell", new Integer(createFtellStub()));
+        libcSymbols.put("rewind", new Integer(createRewindStub()));
+        libcSymbols.put("feof", new Integer(createFeofStub()));
+        
+        // === SISTEMA ===
+        libcSymbols.put("exit", new Integer(createExitStub()));
+        libcSymbols.put("_exit", new Integer(createExitStub()));
+        libcSymbols.put("atexit", new Integer(createAtexitStub()));
+        
+        // === AMBIENTE ===
+        libcSymbols.put("getenv", new Integer(createGetenvStub()));
+        libcSymbols.put("setenv", new Integer(createSetenvStub()));
+        libcSymbols.put("putenv", new Integer(createPutenvStub()));
+        
+        // === TEMPO ===
+        libcSymbols.put("time", new Integer(createTimeStub()));
+        libcSymbols.put("localtime", new Integer(createLocaltimeStub()));
+        libcSymbols.put("gmtime", new Integer(createGmtimeStub()));
+        libcSymbols.put("strftime", new Integer(createStrftimeStub()));
+        
+        // === RANDOM ===
+        libcSymbols.put("rand", new Integer(createRandStub()));
+        libcSymbols.put("srand", new Integer(createSrandStub()));
+        
+        // === MATH ===
+        libcSymbols.put("sin", new Integer(createSinStub()));
+        libcSymbols.put("cos", new Integer(createCosStub()));
+        libcSymbols.put("tan", new Integer(createTanStub()));
+        libcSymbols.put("asin", new Integer(createAsinStub()));
+        libcSymbols.put("acos", new Integer(createAcosStub()));
+        libcSymbols.put("atan", new Integer(createAtanStub()));
+        libcSymbols.put("atan2", new Integer(createAtan2Stub()));
+        libcSymbols.put("sqrt", new Integer(createSqrtStub()));
+        libcSymbols.put("pow", new Integer(createPowStub()));
+        libcSymbols.put("exp", new Integer(createExpStub()));
+        libcSymbols.put("log", new Integer(createLogStub()));
+        libcSymbols.put("log10", new Integer(createLog10Stub()));
+        libcSymbols.put("floor", new Integer(createFloorStub()));
+        libcSymbols.put("ceil", new Integer(createCeilStub()));
+        libcSymbols.put("fabs", new Integer(createFabsStub()));
+        
+        // === ESPECIAL ===
+        libcSymbols.put("__libc_start_main", new Integer(createLibcStartMainStub()));
+        libcSymbols.put("__errno_location", new Integer(createErrnoLocationStub()));
+        libcSymbols.put("abort", new Integer(createAbortStub()));
+        libcSymbols.put("abs", new Integer(createAbsStub()));
+        libcSymbols.put("labs", new Integer(createLabsStub()));
+        libcSymbols.put("qsort", new Integer(createQsortStub()));
+        libcSymbols.put("bsearch", new Integer(createBsearchStub()));
+        
+        // Adicionar à tabela global
+        globalSymbols.put("libc.so.6", libcSymbols);
+        loadedLibraries.addElement("libc.so.6");
+        
+        // Criar ld-linux.so.3 simulado também
+        Hashtable ldLinux = new Hashtable();
+        ldLinux.put("_dl_start", new Integer(createDlStartStub()));
+        ldLinux.put("_dl_sym", new Integer(createDlSymStub()));
+        ldLinux.put("_dl_error", new Integer(createDlErrorStub()));
+        globalSymbols.put("ld-linux.so.3", ldLinux);
+        loadedLibraries.addElement("ld-linux.so.3");
+        
+        if (midlet.debug) {
+            midlet.print("Libc emulation initialized with " + libcSymbols.size() + " functions", stdout);
+        }
+    }
+    // Stubs
+    // |
+    // === I/O FUNCTIONS ===
+    private int createPrintfStub() {
+        int stubAddr = allocateStubMemory(256);
+        if (stubAddr == 0) return 0;
+        
+        // printf(const char *format, ...)
+        // Vamos implementar um printf simples que suporta:
+        // %s, %d, %c, %x, %%
+        
+        // ARM assembly para chamar nossa função Java
+        // stmfd sp!, {r0-r3, lr}  // Salvar argumentos e return address
+        writeIntLE(memory, stubAddr, 0xE92D400F);
+        
+        // ldr r0, [sp, #16]  // format string (está na stack após r0-r3,lr)
+        writeIntLE(memory, stubAddr + 4, 0xE59D0010);
+        
+        // add r1, sp, #20  // ponteiro para outros args
+        writeIntLE(memory, stubAddr + 8, 0xE28D1014);
+        
+        // bl printf_impl
+        writeIntLE(memory, stubAddr + 12, 0xEB000000);
+        
+        // ldmfd sp!, {r0-r3, pc}  // Restaurar e retornar
+        writeIntLE(memory, stubAddr + 16, 0xE8BD800F);
+        
+        // Armazenar handler
+        elfInfo.put("printf_handler@" + stubAddr, new Object() {
+            public int handle(int formatPtr, int argsPtr) {
+                return handlePrintf(formatPtr, argsPtr);
+            }
+        });
+        
+        return stubAddr;
+    }
+
+    private int handlePrintf(int formatPtr, int argsPtr) {
+        try {
+            // Ler string de formato
+            String format = readCString(formatPtr);
+            if (format == null) return -1;
+            
+            StringBuffer result = new StringBuffer();
+            int argIndex = 0;
+            int written = 0;
+            
+            for (int i = 0; i < format.length(); i++) {
+                char c = format.charAt(i);
+                
+                if (c == '%' && i + 1 < format.length()) {
+                    char specifier = format.charAt(i + 1);
+                    i++;
+                    
+                    switch (specifier) {
+                        case 's': // string
+                            int strPtr = readIntLE(memory, argsPtr + argIndex * 4);
+                            String str = readCString(strPtr);
+                            if (str != null) {
+                                result.append(str);
+                                written += str.length();
+                            }
+                            argIndex++;
+                            break;
+                            
+                        case 'd': // decimal
+                        case 'i':
+                            int intValue = readIntLE(memory, argsPtr + argIndex * 4);
+                            String intStr = Integer.toString(intValue);
+                            result.append(intStr);
+                            written += intStr.length();
+                            argIndex++;
+                            break;
+                            
+                        case 'x': // hex
+                        case 'X':
+                            int hexValue = readIntLE(memory, argsPtr + argIndex * 4);
+                            String hexStr = Integer.toHexString(hexValue);
+                            if (specifier == 'X') hexStr = hexStr.toUpperCase();
+                            result.append(hexStr);
+                            written += hexStr.length();
+                            argIndex++;
+                            break;
+                            
+                        case 'c': // char
+                            int charValue = readIntLE(memory, argsPtr + argIndex * 4) & 0xFF;
+                            result.append((char)charValue);
+                            written++;
+                            argIndex++;
+                            break;
+                            
+                        case '%': // literal %
+                            result.append('%');
+                            written++;
+                            break;
+                            
+                        default:
+                            result.append('%').append(specifier);
+                            written += 2;
+                            break;
+                    }
+                } else {
+                    result.append(c);
+                    written++;
+                }
+            }
+            
+            // Escrever no stdout do OpenTTY
+            midlet.print(result.toString(), stdout, id);
+            
+            return written;
+            
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private int createPutsStub() {
+        int stubAddr = allocateStubMemory(64);
+        if (stubAddr == 0) return 0;
+        
+        // puts(const char *s)
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr, 0xE92D4000);
+        
+        // bl puts_impl
+        writeIntLE(memory, stubAddr + 4, 0xEB000000);
+        
+        // mov r0, #0  // sempre retorna não-negativo
+        writeIntLE(memory, stubAddr + 8, 0xE3A00000);
+        
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 12, 0xE8BD8000);
+        
+        elfInfo.put("puts_handler@" + stubAddr, new Object() {
+            public void handle(int strPtr) {
+                handlePuts(strPtr);
+            }
+        });
+        
+        return stubAddr;
+    }
+
+    private void handlePuts(int strPtr) {
+        try {
+            String str = readCString(strPtr);
+            if (str != null) {
+                midlet.print(str, stdout, id);
+            }
+        } catch (Exception e) {
+            // Ignorar erros
+        }
+    }
+
+    // === MEMORY MANAGEMENT ===
+    private int createMallocStub() {
+        int stubAddr = allocateStubMemory(128);
+        if (stubAddr == 0) return 0;
+        
+        // malloc(size_t size) - implementação real com heap
+        // stmfd sp!, {r4, lr}
+        writeIntLE(memory, stubAddr, 0xE92D4010);
+        
+        // mov r4, r0  // salvar tamanho
+        writeIntLE(memory, stubAddr + 4, 0xE1A04000);
+        
+        // Verificar se há memória suficiente
+        // ldr r0, =heap_end
+        writeIntLE(memory, stubAddr + 8, 0xE59F0020);
+        
+        // add r0, r0, r4  // novo heap_end
+        writeIntLE(memory, stubAddr + 12, 0xE0800004);
+        
+        // ldr r1, =memory_size
+        writeIntLE(memory, stubAddr + 16, 0xE59F1018);
+        
+        // cmp r0, r1
+        writeIntLE(memory, stubAddr + 20, 0xE1500001);
+        
+        // bhi out_of_memory
+        writeIntLE(memory, stubAddr + 24, 0x8A000004);
+        
+        // ldr r0, =heap_end  // endereço atual
+        writeIntLE(memory, stubAddr + 28, 0xE59F0010);
+        
+        // ldr r1, =heap_end
+        writeIntLE(memory, stubAddr + 32, 0xE59F100C);
+        
+        // add r1, r1, r4  // novo heap_end
+        writeIntLE(memory, stubAddr + 36, 0xE0811004);
+        
+        // str r1, =heap_end  // atualizar
+        writeIntLE(memory, stubAddr + 40, 0xE58F1000);
+        
+        // ldmfd sp!, {r4, pc}  // retornar
+        writeIntLE(memory, stubAddr + 44, 0xE8BD8010);
+        
+        // out_of_memory:
+        writeIntLE(memory, stubAddr + 48, 0xE3A00000); // mov r0, #0
+        writeIntLE(memory, stubAddr + 52, 0xE8BD8010); // ldmfd sp!, {r4, pc}
+        
+        // Dados embutidos
+        writeIntLE(memory, stubAddr + 56, heapEnd);  // heap_end
+        writeIntLE(memory, stubAddr + 60, memory.length);  // memory_size
+        writeIntLE(memory, stubAddr + 64, heapEnd);  // heap_end (novamente)
+        
+        return stubAddr;
+    }
+
+    // === STRING FUNCTIONS (com implementação real) ===
+    private int createStrlenStub() {
+        int stubAddr = allocateStubMemory(48);
+        if (stubAddr == 0) return 0;
+        
+        // strlen(const char *s) - implementação otimizada
+        // mov r1, r0
+        writeIntLE(memory, stubAddr, 0xE1A01000);
+        
+        // ands r2, r0, #3  // verificar alinhamento
+        writeIntLE(memory, stubAddr + 4, 0xE2102003);
+        
+        // beq aligned
+        writeIntLE(memory, stubAddr + 8, 0x0A000005);
+        
+        // misaligned: ldrb r3, [r1], #1
+        writeIntLE(memory, stubAddr + 12, 0xE4D13001);
+        
+        // cmp r3, #0
+        writeIntLE(memory, stubAddr + 16, 0xE3530000);
+        
+        // bxeq lr
+        writeIntLE(memory, stubAddr + 20, 0x012FFF1E);
+        
+        // subs r2, r2, #1
+        writeIntLE(memory, stubAddr + 24, 0xE2522001);
+        
+        // bne misaligned
+        writeIntLE(memory, stubAddr + 28, 0x1AFFFFF9);
+        
+        // aligned: ldr r3, [r1], #4
+        writeIntLE(memory, stubAddr + 32, 0xE4913004);
+        
+        // sub r2, r3, #0x01010101
+        writeIntLE(memory, stubAddr + 36, 0xE2422201);
+        
+        // bic r2, r2, r3
+        writeIntLE(memory, stubAddr + 40, 0xE1C22003);
+        
+        // ands r2, r2, #0x80808080
+        writeIntLE(memory, stubAddr + 44, 0xE2122C01);
+        
+        // beq aligned
+        writeIntLE(memory, stubAddr + 48, 0x0AFFFFF8);
+        
+        // sub r1, r1, #4
+        writeIntLE(memory, stubAddr + 52, 0xE2411004);
+        
+        // find_null: tst r3, #0xFF
+        writeIntLE(memory, stubAddr + 56, 0xE31300FF);
+        
+        // subeq r1, r1, #3
+        writeIntLE(memory, stubAddr + 60, 0x02411003);
+        
+        // bxeq lr
+        writeIntLE(memory, stubAddr + 64, 0x012FFF1E);
+        
+        // tst r3, #0xFF00
+        writeIntLE(memory, stubAddr + 68, 0xE31308FF);
+        
+        // subeq r1, r1, #2
+        writeIntLE(memory, stubAddr + 72, 0x02411002);
+        
+        // bxeq lr
+        writeIntLE(memory, stubAddr + 76, 0x012FFF1E);
+        
+        // tst r3, #0xFF0000
+        writeIntLE(memory, stubAddr + 80, 0xE31304FF);
+        
+        // subeq r1, r1, #1
+        writeIntLE(memory, stubAddr + 84, 0x02411001);
+        
+        // sub r0, r1, r0
+        writeIntLE(memory, stubAddr + 88, 0xE0400001);
+        
+        // bx lr
+        writeIntLE(memory, stubAddr + 92, 0xE12FFF1E);
+        
+        return stubAddr;
+    }
+
+    // === SYSTEM FUNCTIONS ===
+    private int createLibcStartMainStub() {
+        int stubAddr = allocateStubMemory(96);
+        if (stubAddr == 0) return 0;
+        
+        // __libc_start_main - ponto de entrada para programas C
+        // Parâmetros: main, argc, argv, init, fini, rtld_fini, stack_end
+        
+        // stmfd sp!, {r4-r6, lr}
+        writeIntLE(memory, stubAddr, 0xE92D4070);
+        
+        // salvar parâmetros
+        // mov r4, r0  // main
+        writeIntLE(memory, stubAddr + 4, 0xE1A04000);
+        // mov r5, r1  // argc
+        writeIntLE(memory, stubAddr + 8, 0xE1A05001);
+        // mov r6, r2  // argv
+        writeIntLE(memory, stubAddr + 12, 0xE1A06002);
+        
+        // Chamar init se não for null
+        // cmp r3, #0  // init
+        writeIntLE(memory, stubAddr + 16, 0xE3530000);
+        // beq skip_init
+        writeIntLE(memory, stubAddr + 20, 0x0A000001);
+        // blx r3
+        writeIntLE(memory, stubAddr + 24, 0xE12FFF33);
+        
+        // skip_init:
+        // Configurar ambiente para main
+        // mov r0, r5  // argc
+        writeIntLE(memory, stubAddr + 28, 0xE1A00005);
+        // mov r1, r6  // argv
+        writeIntLE(memory, stubAddr + 32, 0xE1A01006);
+        // ldr r2, [sp, #16]  // envp
+        writeIntLE(memory, stubAddr + 36, 0xE59D2010);
+        
+        // Chamar main
+        // blx r4
+        writeIntLE(memory, stubAddr + 40, 0xE12FFF34);
+        
+        // Passar resultado para exit
+        // mov r7, #SYS_EXIT
+        writeIntLE(memory, stubAddr + 44, 0xE3A07001);
+        // swi 0
+        writeIntLE(memory, stubAddr + 48, 0xEF000000);
+        
+        // Nunca alcançado
+        // ldmfd sp!, {r4-r6, pc}
+        writeIntLE(memory, stubAddr + 52, 0xE8BD8070);
+        
+        return stubAddr;
+    }
+
+    // === HELPER FUNCTIONS ===
+    private String readCString(int ptr) {
+        if (ptr < 0 || ptr >= memory.length) return null;
+        
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; ptr + i < memory.length && i < 1024; i++) {
+            byte b = memory[ptr + i];
+            if (b == 0) break;
+            sb.append((char)(b & 0xFF));
+        }
+        return sb.toString();
+    }
+    private int writeCString(int ptr, String str) {
+        if (ptr < 0 || ptr + str.length() >= memory.length) return -1;
+        
+        byte[] bytes = str.getBytes();
+        for (int i = 0; i < bytes.length; i++) {
+            memory[ptr + i] = bytes[i];
+        }
+        memory[ptr + bytes.length] = 0; // null terminator
+        
+        return bytes.length;
+    }
+    
+    
+    private Integer resolveSymbol(String name) {
+        if (name == null) return null;
+        
+        // 1. Verificar na libc em memória
+        if (libcSymbols != null && libcSymbols.containsKey(name)) {
+            return (Integer) libcSymbols.get(name);
+        }
+        
+        // 2. Verificar em outras bibliotecas simuladas
+        for (int i = 0; i < loadedLibraries.size(); i++) {
+            String libName = (String) loadedLibraries.elementAt(i);
+            Hashtable lib = (Hashtable) globalSymbols.get(libName);
+            
+            if (lib != null && lib.containsKey(name)) {
+                Object symValue = lib.get(name);
+                if (symValue instanceof Integer) {
+                    return (Integer) symValue;
+                }
+            }
+        }
+        
+        // 3. Se for syscall, criar stub
+        if (isSyscallName(name)) {
+            return new Integer(createSyscallStub(name));
+        }
+        
+        // 4. Criar stub genérico
+        int stubAddr = createGenericStub(name);
+        if (stubAddr != 0) {
+            return new Integer(stubAddr);
+        }
+        
+        return null;
+    }
+    private boolean isSyscallName(String name) {
+        // Lista de funções que são wrappers de syscalls
+        String[] syscallWrappers = {
+            "open", "close", "read", "write", "lseek",
+            "fork", "execve", "wait", "waitpid",
+            "pipe", "dup", "dup2",
+            "socket", "connect", "bind", "listen", "accept",
+            "send", "recv", "sendto", "recvfrom",
+            "kill", "signal", "sigaction",
+            "mmap", "munmap", "mprotect", "brk",
+            "getpid", "getppid", "getuid", "getgid",
+            "chdir", "mkdir", "rmdir", "unlink", "link",
+            "stat", "fstat", "lstat",
+            "ioctl", "fcntl",
+            "gettimeofday", "nanosleep", "sleep"
+        };
+        
+        for (int i = 0; i < syscallWrappers.length; i++) {
+            if (name.equals(syscallWrappers[i])) {
+                return true;
+            }
+        }
+        
+        return name.startsWith("sys_");
     }
     
     // Syscalls Handler
