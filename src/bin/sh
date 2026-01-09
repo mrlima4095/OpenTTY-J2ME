@@ -55,7 +55,6 @@ local function shell(args, enable, aliases, stdout, scope)
                 end
             end)
         end
-
     elseif cmd == "builtin" or cmd == "command" then
         if argument ~= "" then
             status = shell(argument, false, aliases, stdout, scope)
