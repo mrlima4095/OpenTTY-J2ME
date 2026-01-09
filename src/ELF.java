@@ -2703,6 +2703,449 @@ public class ELF {
         
         return name.startsWith("sys_");
     }
+
+    private int createSyscallStub(String syscallName) {
+        int stubSize = 64;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // Primeiro, mapear nome para número de syscall
+        int syscallNum = mapSyscallNameToNumber(syscallName);
+        
+        if (syscallNum <= 0) {
+            // Syscall desconhecida - retornar -ENOSYS
+            // mov r0, #-38 (ENOSYS = 38)
+            writeIntLE(memory, stubAddr, 0xE3E00025); // 0xFFFFFFDA = -38
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+            return stubAddr;
+        }
+        
+        // Stub genérico para syscall ARM EABI
+        // Parâmetros: r7 = syscall number, r0-r6 = args
+        
+        // Salvar registradores que podem ser modificados
+        // stmfd sp!, {r4, lr}  // Salvar r4 e return address
+        writeIntLE(memory, stubAddr, 0xE92D4010);
+        
+        // Configurar número da syscall em r7
+        if (syscallNum <= 255) {
+            // mov r7, #syscallNum
+            writeIntLE(memory, stubAddr + 4, 0xE3A07000 | (syscallNum & 0xFF));
+        } else {
+            // Para números maiores que 255
+            // movw r7, #(syscallNum & 0xFFFF)
+            int movwInstr = 0xE3007000 | ((syscallNum & 0xF000) << 4) | (syscallNum & 0x0FFF);
+            writeIntLE(memory, stubAddr + 4, movwInstr);
+            
+            // Se necessário, movt para bits altos (ARMv7)
+            if (syscallNum > 0xFFFF) {
+                // movt r7, #(syscallNum >> 16)
+                int movtInstr = 0xE3407000 | (((syscallNum >> 12) & 0xF000) << 4) | ((syscallNum >> 16) & 0x0FFF);
+                writeIntLE(memory, stubAddr + 8, movtInstr);
+            }
+        }
+        
+        // Chamar syscall (swi 0)
+        int swiOffset = (syscallNum <= 255) ? 8 : (syscallNum <= 0xFFFF ? 12 : 16);
+        writeIntLE(memory, stubAddr + swiOffset, 0xEF000000);
+        
+        // Restaurar registradores e retornar
+        // ldmfd sp!, {r4, pc}
+        writeIntLE(memory, stubAddr + swiOffset + 4, 0xE8BD8010);
+        
+        return stubAddr;
+    }
+
+    // Mapeamento completo de syscalls ARM EABI
+    private int mapSyscallNameToNumber(String name) {
+        // Converter para minúsculas para comparação insensível a caso
+        String lowerName = name.toLowerCase().trim();
+        
+        // Mapeamento direto de funções libc para syscalls
+        if (lowerName.equals("exit") || lowerName.equals("_exit")) return SYS_EXIT;
+        if (lowerName.equals("fork")) return SYS_FORK;
+        if (lowerName.equals("read")) return SYS_READ;
+        if (lowerName.equals("write")) return SYS_WRITE;
+        if (lowerName.equals("open")) return SYS_OPEN;
+        if (lowerName.equals("close")) return SYS_CLOSE;
+        if (lowerName.equals("creat")) return SYS_CREAT;
+        if (lowerName.equals("unlink")) return SYS_UNLINK;
+        if (lowerName.equals("execve") || lowerName.equals("exec")) return SYS_EXECVE;
+        if (lowerName.equals("chdir")) return SYS_CHDIR;
+        if (lowerName.equals("time") || lowerName.equals("gettimeofday")) return SYS_TIME;
+        if (lowerName.equals("lseek")) return SYS_LSEEK;
+        if (lowerName.equals("getpid")) return SYS_GETPID;
+        if (lowerName.equals("mkdir")) return SYS_MKDIR;
+        if (lowerName.equals("rmdir")) return SYS_RMDIR;
+        if (lowerName.equals("dup")) return SYS_DUP;
+        if (lowerName.equals("dup2")) return SYS_DUP2;
+        if (lowerName.equals("getppid")) return SYS_GETPPID;
+        if (lowerName.equals("ioctl")) return SYS_IOCTL;
+        if (lowerName.equals("kill")) return SYS_KILL;
+        if (lowerName.equals("brk")) return SYS_BRK;
+        if (lowerName.equals("getcwd")) return SYS_GETCWD;
+        if (lowerName.equals("getuid")) return SYS_GETUID32;
+        if (lowerName.equals("geteuid")) return SYS_GETEUID32;
+        if (lowerName.equals("stat")) return SYS_STAT;
+        if (lowerName.equals("fstat")) return SYS_FSTAT;
+        if (lowerName.equals("getpriority")) return SYS_GETPRIORITY;
+        if (lowerName.equals("setpriority")) return SYS_SETPRIORITY;
+        if (lowerName.equals("getdents")) return SYS_GETDENTS;
+        if (lowerName.equals("socket")) return SYS_SOCKET;
+        if (lowerName.equals("bind")) return SYS_BIND;
+        if (lowerName.equals("connect")) return SYS_CONNECT;
+        if (lowerName.equals("listen")) return SYS_LISTEN;
+        if (lowerName.equals("accept")) return SYS_ACCEPT;
+        if (lowerName.equals("send")) return SYS_SEND;
+        if (lowerName.equals("recv")) return SYS_RECV;
+        if (lowerName.equals("sendto")) return SYS_SENDTO;
+        if (lowerName.equals("recvfrom")) return SYS_RECVFROM;
+        if (lowerName.equals("shutdown")) return SYS_SHUTDOWN;
+        if (lowerName.equals("setsockopt")) return SYS_SETSOCKOPT;
+        if (lowerName.equals("getsockopt")) return SYS_GETSOCKOPT;
+        if (lowerName.equals("getsockname")) return SYS_GETSOCKNAME;
+        if (lowerName.equals("getpeername")) return SYS_GETPEERNAME;
+        if (lowerName.equals("signal")) return SYS_SIGNAL;
+        if (lowerName.equals("sigaction")) return SYS_SIGACTION;
+        if (lowerName.equals("sigprocmask")) return SYS_SIGPROCMASK;
+        if (lowerName.equals("sigreturn")) return SYS_SIGRETURN;
+        if (lowerName.equals("setjmp")) return SYS_SETJMP;
+        if (lowerName.equals("longjmp")) return SYS_LONGJMP;
+        if (lowerName.equals("gettid")) return SYS_GETTID;
+        if (lowerName.equals("nanosleep") || lowerName.equals("sleep")) return SYS_NANOSLEEP;
+        if (lowerName.equals("pipe")) return SYS_PIPE;
+        if (lowerName.equals("select")) return SYS_SELECT;
+        if (lowerName.equals("poll")) return SYS_POLL;
+        if (lowerName.equals("fsync")) return SYS_FSYNC;
+        if (lowerName.equals("mmap")) return SYS_MMAP;
+        if (lowerName.equals("munmap")) return SYS_MUNMAP;
+        if (lowerName.equals("mprotect")) return SYS_MPROTECT;
+        if (lowerName.equals("mremap")) return SYS_MREMAP;
+        if (lowerName.equals("futex")) return SYS_FUTEX;
+        if (lowerName.equals("sched_yield")) return SYS_SCHED_YIELD;
+        if (lowerName.equals("uname")) return SYS_UNAME;
+        if (lowerName.equals("fcntl")) return SYS_FCNTL;
+        if (lowerName.equals("ftruncate")) return SYS_FTRUNCATE;
+        if (lowerName.equals("truncate")) return SYS_TRUNCATE;
+        if (lowerName.equals("getrlimit")) return SYS_GETRLIMIT;
+        if (lowerName.equals("syscall")) return SYS_SYSCALL; // syscall() genérico
+        
+        // Se o nome já é um número, tentar converter
+        try {
+            // Remover "sys_" se presente
+            if (lowerName.startsWith("sys_")) {
+                lowerName = lowerName.substring(4);
+            }
+            
+            // Tentar converter para número
+            if (lowerName.startsWith("0x")) {
+                return Integer.parseInt(lowerName.substring(2), 16);
+            } else {
+                return Integer.parseInt(lowerName);
+            }
+        } catch (NumberFormatException e) {
+            // Não é um número
+        }
+        
+        return 0; // Syscall desconhecida
+    }
+
+    // Versão alternativa: criar stubs específicos para syscalls importantes
+    private int createSpecificSyscallStub(String syscallName, int syscallNum) {
+        int stubAddr = allocateStubMemory(128);
+        if (stubAddr == 0) return 0;
+        
+        switch (syscallName.toLowerCase()) {
+            case "write":
+                // write(int fd, const void *buf, size_t count)
+                return createWriteStub(stubAddr);
+                
+            case "read":
+                // read(int fd, void *buf, size_t count)
+                return createReadStub(stubAddr);
+                
+            case "open":
+                // open(const char *pathname, int flags, mode_t mode)
+                return createOpenStub(stubAddr);
+                
+            case "close":
+                // close(int fd)
+                return createCloseStub(stubAddr);
+                
+            case "exit":
+                // exit(int status)
+                return createExitSyscallStub(stubAddr);
+                
+            case "brk":
+                // brk(void *addr)
+                return createBrkStub(stubAddr);
+                
+            default:
+                return createGenericSyscallStub(stubAddr, syscallNum);
+        }
+    }
+
+    private int createWriteStub(int stubAddr) {
+        // write(int fd, const void *buf, size_t count)
+        // stmfd sp!, {r4-r5, lr}
+        writeIntLE(memory, stubAddr, 0xE92D4030);
+        
+        // Salvar parâmetros
+        // mov r4, r1  // buf
+        writeIntLE(memory, stubAddr + 4, 0xE1A04001);
+        // mov r5, r2  // count
+        writeIntLE(memory, stubAddr + 8, 0xE1A05002);
+        
+        // Verificar se é stdout/stderr (fd = 1 ou 2)
+        // cmp r0, #1
+        writeIntLE(memory, stubAddr + 12, 0xE3500001);
+        // cmpne r0, #2
+        writeIntLE(memory, stubAddr + 16, 0x13500002);
+        // bne generic_write
+        writeIntLE(memory, stubAddr + 20, 0x1A000008);
+        
+        // stdout/stderr: escrever no OpenTTY
+        // ldr r0, =stdout_object
+        writeIntLE(memory, stubAddr + 24, 0xE59F0020);
+        // mov r1, r4  // buf
+        writeIntLE(memory, stubAddr + 28, 0xE1A01004);
+        // mov r2, r5  // count
+        writeIntLE(memory, stubAddr + 32, 0xE1A02005);
+        
+        // Chamar função Java para imprimir
+        // bl print_buffer
+        writeIntLE(memory, stubAddr + 36, 0xEB000000);
+        
+        // mov r0, r5  // retornar count
+        writeIntLE(memory, stubAddr + 40, 0xE1A00005);
+        // b done
+        writeIntLE(memory, stubAddr + 44, 0xEA000007);
+        
+        // generic_write:
+        // Para outros file descriptors, usar syscall normal
+        // mov r7, #SYS_WRITE
+        writeIntLE(memory, stubAddr + 48, 0xE3A07004);
+        // swi 0
+        writeIntLE(memory, stubAddr + 52, 0xEF000000);
+        
+        // done:
+        // ldmfd sp!, {r4-r5, pc}
+        writeIntLE(memory, stubAddr + 56, 0xE8BD8030);
+        
+        // Dados
+        // stdout_object: .word stdout
+        writeIntLE(memory, stubAddr + 60, 0x00000000); // Será preenchido em runtime
+        
+        // Armazenar referência ao stdout
+        elfInfo.put("write_stdout@" + stubAddr, stdout);
+        
+        return stubAddr;
+    }
+
+    private int createReadStub(int stubAddr) {
+        // read(int fd, void *buf, size_t count)
+        // Para stdin (fd=0), podemos implementar entrada do OpenTTY
+        
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr, 0xE92D4000);
+        
+        // Verificar se é stdin (fd = 0)
+        // cmp r0, #0
+        writeIntLE(memory, stubAddr + 4, 0xE3500000);
+        // bne generic_read
+        writeIntLE(memory, stubAddr + 8, 0x1A000004);
+        
+        // stdin: não implementado por enquanto, retornar 0
+        // mov r0, #0
+        writeIntLE(memory, stubAddr + 12, 0xE3A00000);
+        // b done
+        writeIntLE(memory, stubAddr + 16, 0xEA000003);
+        
+        // generic_read:
+        // mov r7, #SYS_READ
+        writeIntLE(memory, stubAddr + 20, 0xE3A07003);
+        // swi 0
+        writeIntLE(memory, stubAddr + 24, 0xEF000000);
+        
+        // done:
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 28, 0xE8BD8000);
+        
+        return stubAddr;
+    }
+
+    private int createExitSyscallStub(int stubAddr) {
+        // exit(int status)
+        // Esta syscall não retorna
+        
+        // mov r7, #SYS_EXIT
+        writeIntLE(memory, stubAddr, 0xE3A07001);
+        // swi 0
+        writeIntLE(memory, stubAddr + 4, 0xEF000000);
+        
+        // Loop infinito (nunca alcançado, mas por segurança)
+        // b . (branch to self)
+        writeIntLE(memory, stubAddr + 8, 0xEAFFFFFE);
+        
+        return stubAddr;
+    }
+
+    private int createBrkStub(int stubAddr) {
+        // brk(void *addr) - gerenciador de heap
+        
+        // stmfd sp!, {r4, lr}
+        writeIntLE(memory, stubAddr, 0xE92D4010);
+        
+        // Se addr == 0, retornar heap atual
+        // cmp r0, #0
+        writeIntLE(memory, stubAddr + 4, 0xE3500000);
+        // bne set_brk
+        writeIntLE(memory, stubAddr + 8, 0x1A000004);
+        
+        // get_brk:
+        // ldr r0, =heap_end
+        writeIntLE(memory, stubAddr + 12, 0xE59F0020);
+        // b done
+        writeIntLE(memory, stubAddr + 16, 0xEA000009);
+        
+        // set_brk:
+        // mov r4, r0  // salvar novo endereço
+        writeIntLE(memory, stubAddr + 20, 0xE1A04000);
+        
+        // Verificar se é válido
+        // cmp r4, #0x200000  // mínimo 2MB
+        writeIntLE(memory, stubAddr + 24, 0xE3540B02);
+        // blo error
+        writeIntLE(memory, stubAddr + 28, 0x3A000002);
+        
+        // ldr r0, =memory_size
+        writeIntLE(memory, stubAddr + 32, 0xE59F000C);
+        // cmp r4, r0
+        writeIntLE(memory, stubAddr + 36, 0xE1540000);
+        // bhi error
+        writeIntLE(memory, stubAddr + 40, 0x8A000001);
+        
+        // Atualizar heap_end
+        // str r4, =heap_end
+        writeIntLE(memory, stubAddr + 44, 0xE58F4004);
+        // mov r0, r4  // retornar novo brk
+        writeIntLE(memory, stubAddr + 48, 0xE1A00004);
+        // b done
+        writeIntLE(memory, stubAddr + 52, 0xEA000001);
+        
+        // error:
+        // ldr r0, =heap_end  // retornar brk atual
+        writeIntLE(memory, stubAddr + 56, 0xE59F0004);
+        
+        // done:
+        // ldmfd sp!, {r4, pc}
+        writeIntLE(memory, stubAddr + 60, 0xE8BD8010);
+        
+        // Dados
+        writeIntLE(memory, stubAddr + 64, heapEnd);      // heap_end
+        writeIntLE(memory, stubAddr + 68, memory.length); // memory_size
+        writeIntLE(memory, stubAddr + 72, heapEnd);      // heap_end (para store)
+        
+        return stubAddr;
+    }
+
+    private int createGenericSyscallStub(int stubAddr, int syscallNum) {
+        // Stub genérico que apenas chama a syscall
+        
+        // Salvar lr se necessário
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr, 0xE92D4000);
+        
+        // Configurar número da syscall
+        if (syscallNum <= 255) {
+            // mov r7, #syscallNum
+            writeIntLE(memory, stubAddr + 4, 0xE3A07000 | (syscallNum & 0xFF));
+        } else {
+            // movw r7, #(syscallNum & 0xFFFF)
+            int movwInstr = 0xE3007000 | ((syscallNum & 0xF000) << 4) | (syscallNum & 0x0FFF);
+            writeIntLE(memory, stubAddr + 4, movwInstr);
+        }
+        
+        // swi 0
+        int swiOffset = (syscallNum <= 255) ? 8 : 12;
+        writeIntLE(memory, stubAddr + swiOffset, 0xEF000000);
+        
+        // Restaurar e retornar
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + swiOffset + 4, 0xE8BD8000);
+        
+        return stubAddr;
+    }
+
+    // Para syscalls que queremos interceptar e implementar em Java
+    private int createInterceptedSyscallStub(String syscallName) {
+        int stubAddr = allocateStubMemory(96);
+        if (stubAddr == 0) return 0;
+        
+        // Stub que chama nossa implementação Java
+        // stmfd sp!, {r0-r3, lr}  // Salvar argumentos
+        writeIntLE(memory, stubAddr, 0xE92D400F);
+        
+        // Preparar chamada para handler Java
+        // ldr r0, =handler_address
+        writeIntLE(memory, stubAddr + 4, 0xE59F0020);
+        
+        // ldr r1, =syscall_name
+        writeIntLE(memory, stubAddr + 8, 0xE59F1020);
+        
+        // add r2, sp, #0  // ponteiro para argumentos
+        writeIntLE(memory, stubAddr + 12, 0xE28D2000);
+        
+        // bl syscall_handler
+        writeIntLE(memory, stubAddr + 16, 0xEB000000);
+        
+        // ldmfd sp!, {r0-r3, pc}  // Restaurar e retornar (r0 tem retorno)
+        writeIntLE(memory, stubAddr + 20, 0xE8BD800F);
+        
+        // Dados
+        writeIntLE(memory, stubAddr + 24, 0xDEADBEEF); // handler_address placeholder
+        // Nome da syscall como string C
+        byte[] nameBytes = syscallName.getBytes();
+        for (int i = 0; i < nameBytes.length && i < 32; i++) {
+            memory[stubAddr + 28 + i] = nameBytes[i];
+        }
+        memory[stubAddr + 28 + nameBytes.length] = 0;
+        
+        // Registrar handler
+        elfInfo.put("syscall_handler@" + syscallName, new Object() {
+            public int handle(int[] args) {
+                return handleSyscallIntercept(syscallName, args);
+            }
+        });
+        
+        return stubAddr;
+    }
+
+    private int handleSyscallIntercept(String syscallName, int[] args) {
+        // Implementação Java da syscall
+        switch (syscallName) {
+            case "write":
+                if (args[0] == 1 || args[0] == 2) { // stdout/stderr
+                    return handleWriteToStdout(args[1], args[2]);
+                }
+                break;
+            case "read":
+                if (args[0] == 0) { // stdin
+                    return handleReadFromStdin(args[1], args[2]);
+                }
+                break;
+            case "brk":
+                return handleBrk(args[0]);
+            case "exit":
+                handleExit(args[0]);
+                return 0;
+        }
+        
+        // Para outras syscalls, usar implementação padrão
+        return -38; // ENOSYS
+    }
     
     // Syscalls Handler
     // |
