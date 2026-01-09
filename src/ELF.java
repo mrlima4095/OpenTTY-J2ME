@@ -3484,6 +3484,470 @@ public class ELF {
         // Retornar para implementação simples
         return createPutcharSimpleStub();
     }
+
+    private int createGetcharStub() {
+        int stubSize = 96;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // getchar() - lê um caractere do stdin
+        // Retorna o caractere como unsigned char convertido para int, ou EOF (-1)
+        
+        // stmfd sp!, {r4, lr}  // Salvar r4 e return address
+        writeIntLE(memory, stubAddr, 0xE92D4010);
+        
+        // Para stdin (fd=0), temos algumas opções:
+        // 1. Usar syscall read (bloqueante)
+        // 2. Usar buffer pré-carregado
+        // 3. Retornar EOF (-1) por enquanto
+        
+        // Vamos implementar com buffer em memória compartilhada
+        
+        // Verificar se há caracteres no buffer
+        // ldr r0, =stdin_buffer_index
+        writeIntLE(memory, stubAddr + 4, 0xE59F0060);
+        // ldr r0, [r0]
+        writeIntLE(memory, stubAddr + 8, 0xE5900000);
+        
+        // ldr r1, =stdin_buffer_count
+        writeIntLE(memory, stubAddr + 12, 0xE59F1058);
+        // ldr r1, [r1]
+        writeIntLE(memory, stubAddr + 16, 0xE5911000);
+        
+        // cmp r0, r1  // index >= count?
+        writeIntLE(memory, stubAddr + 20, 0xE1500001);
+        
+        // blo buffer_has_data
+        writeIntLE(memory, stubAddr + 24, 0x3A00000C);
+        
+        // Buffer vazio: tentar ler mais dados
+        // bl refill_stdin_buffer
+        writeIntLE(memory, stubAddr + 28, 0xEB00000C);
+        
+        // Verificar resultado
+        // cmp r0, #0
+        writeIntLE(memory, stubAddr + 32, 0xE3500000);
+        
+        // ble eof  // se <= 0, EOF
+        writeIntLE(memory, stubAddr + 36, 0xDA00000D);
+        
+        // buffer_has_data:
+        // Ler próximo caractere do buffer
+        // ldr r0, =stdin_buffer
+        writeIntLE(memory, stubAddr + 40, 0xE59F0034);
+        
+        // ldr r1, =stdin_buffer_index
+        writeIntLE(memory, stubAddr + 44, 0xE59F1020);
+        // ldr r1, [r1]
+        writeIntLE(memory, stubAddr + 48, 0xE5911000);
+        
+        // ldrb r0, [r0, r1]  // buffer[index]
+        writeIntLE(memory, stubAddr + 52, 0xE7D00001);
+        
+        // Incrementar índice
+        // add r1, r1, #1
+        writeIntLE(memory, stubAddr + 56, 0xE2811001);
+        
+        // ldr r2, =stdin_buffer_index
+        writeIntLE(memory, stubAddr + 60, 0xE59F2004);
+        // str r1, [r2]
+        writeIntLE(memory, stubAddr + 64, 0xE5821000);
+        
+        // Retornar caractere (zero-extend para int)
+        // and r0, r0, #0xFF
+        writeIntLE(memory, stubAddr + 68, 0xE20000FF);
+        
+        // b done
+        writeIntLE(memory, stubAddr + 72, 0xEA000003);
+        
+        // eof:
+        // Retornar EOF (-1)
+        // mvn r0, #0  // -1 = 0xFFFFFFFF
+        writeIntLE(memory, stubAddr + 76, 0xE3E00000);
+        
+        // done:
+        // ldmfd sp!, {r4, pc}
+        writeIntLE(memory, stubAddr + 80, 0xE8BD8010);
+        
+        // Sub-rotina: refill_stdin_buffer
+        // refill_stdin_buffer:
+        // stmfd sp!, {r4-r5, lr}
+        writeIntLE(memory, stubAddr + 84, 0xE92D4030);
+        
+        // Chamar syscall read
+        // mov r7, #SYS_READ (3)
+        writeIntLE(memory, stubAddr + 88, 0xE3A07003);
+        // mov r0, #0  // stdin
+        writeIntLE(memory, stubAddr + 92, 0xE3A00000);
+        // ldr r1, =stdin_buffer
+        writeIntLE(memory, stubAddr + 96, 0xE59F1050);
+        // mov r2, #256  // tamanho do buffer
+        writeIntLE(memory, stubAddr + 100, 0xE3A02C01); // 0x100 = 256
+        
+        // swi 0
+        writeIntLE(memory, stubAddr + 104, 0xEF000000);
+        
+        // Verificar resultado
+        // cmp r0, #0
+        writeIntLE(memory, stubAddr + 108, 0xE3500000);
+        
+        // ble read_error  // se <= 0, erro/EOF
+        writeIntLE(memory, stubAddr + 112, 0xDA000006);
+        
+        // Sucesso: atualizar contador
+        // ldr r1, =stdin_buffer_count
+        writeIntLE(memory, stubAddr + 116, 0xE59F1034);
+        // str r0, [r1]
+        writeIntLE(memory, stubAddr + 120, 0xE5810000);
+        
+        // Resetar índice
+        // ldr r1, =stdin_buffer_index
+        writeIntLE(memory, stubAddr + 124, 0xE59F100C);
+        // mov r2, #0
+        writeIntLE(memory, stubAddr + 128, 0xE3A02000);
+        // str r2, [r1]
+        writeIntLE(memory, stubAddr + 132, 0xE5812000);
+        
+        // b refill_done
+        writeIntLE(memory, stubAddr + 136, 0xEA000002);
+        
+        // read_error:
+        // Configurar contador como 0
+        // ldr r1, =stdin_buffer_count
+        writeIntLE(memory, stubAddr + 140, 0xE59F100A);
+        // mov r2, #0
+        writeIntLE(memory, stubAddr + 144, 0xE3A02000);
+        // str r2, [r1]
+        writeIntLE(memory, stubAddr + 148, 0xE5812000);
+        // mov r0, #0  // retornar 0 (EOF)
+        writeIntLE(memory, stubAddr + 152, 0xE3A00000);
+        
+        // refill_done:
+        // ldmfd sp!, {r4-r5, pc}
+        writeIntLE(memory, stubAddr + 156, 0xE8BD8030);
+        
+        // Dados
+        int bufferAddr = allocateStubMemory(256); // Buffer de 256 bytes
+        int indexAddr = bufferAddr + 256;        // Índice atual
+        int countAddr = indexAddr + 4;           // Contador total
+        
+        // Escrever endereços nos locais apropriados
+        writeIntLE(memory, stubAddr + 160, indexAddr);   // stdin_buffer_index
+        writeIntLE(memory, stubAddr + 164, countAddr);   // stdin_buffer_count
+        writeIntLE(memory, stubAddr + 168, bufferAddr);  // stdin_buffer
+        writeIntLE(memory, stubAddr + 172, indexAddr);   // stdin_buffer_index (novamente)
+        writeIntLE(memory, stubAddr + 176, countAddr);   // stdin_buffer_count (novamente)
+        writeIntLE(memory, stubAddr + 180, bufferAddr);  // stdin_buffer (novamente)
+        
+        // Inicializar variáveis
+        writeIntLE(memory, indexAddr, 0);  // índice = 0
+        writeIntLE(memory, countAddr, 0);  // contador = 0
+        
+        // Armazenar referências para uso externo
+        elfInfo.put("stdin_buffer", new Integer(bufferAddr));
+        elfInfo.put("stdin_index", new Integer(indexAddr));
+        elfInfo.put("stdin_count", new Integer(countAddr));
+        
+        // Para testar, pré-carregar buffer com alguns dados
+        String testInput = "Hello from getchar!\n";
+        byte[] testBytes = testInput.getBytes();
+        for (int i = 0; i < testBytes.length && i < 256; i++) {
+            memory[bufferAddr + i] = testBytes[i];
+        }
+        writeIntLE(memory, countAddr, testBytes.length);
+        
+        return stubAddr;
+    }
+
+    // Versão simplificada (não-bloqueante, com dados pré-definidos)
+    private int createGetcharSimpleStub() {
+        int stubSize = 64;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // getchar() - versão simplificada com buffer fixo
+        
+        // stmfd sp!, {r4, lr}
+        writeIntLE(memory, stubAddr, 0xE92D4010);
+        
+        // Verificar se há dados no buffer
+        // ldr r0, =input_buffer
+        writeIntLE(memory, stubAddr + 4, 0xE59F004C);
+        
+        // ldr r1, =input_index
+        writeIntLE(memory, stubAddr + 8, 0xE59F104C);
+        // ldr r1, [r1]
+        writeIntLE(memory, stubAddr + 12, 0xE5911000);
+        
+        // ldrb r4, [r0, r1]  // ler caractere
+        writeIntLE(memory, stubAddr + 16, 0xE7D04001);
+        
+        // Verificar se é fim dos dados (null terminator)
+        // cmp r4, #0
+        writeIntLE(memory, stubAddr + 20, 0xE3540000);
+        
+        // bne has_char
+        writeIntLE(memory, stubAddr + 24, 0x1A000006);
+        
+        // EOF: retornar -1
+        // mvn r0, #0  // -1
+        writeIntLE(memory, stubAddr + 28, 0xE3E00000);
+        // b done
+        writeIntLE(memory, stubAddr + 32, 0xEA00000A);
+        
+        // has_char:
+        // Incrementar índice
+        // add r1, r1, #1
+        writeIntLE(memory, stubAddr + 36, 0xE2811001);
+        
+        // ldr r0, =input_index
+        writeIntLE(memory, stubAddr + 40, 0xE59F0014);
+        // str r1, [r0]
+        writeIntLE(memory, stubAddr + 44, 0xE5801000);
+        
+        // Retornar caractere
+        // mov r0, r4
+        writeIntLE(memory, stubAddr + 48, 0xE1A00004);
+        // and r0, r0, #0xFF  // zero-extend
+        writeIntLE(memory, stubAddr + 52, 0xE20000FF);
+        
+        // done:
+        // ldmfd sp!, {r4, pc}
+        writeIntLE(memory, stubAddr + 56, 0xE8BD8010);
+        
+        // Dados
+        // String de entrada pré-definida
+        String defaultInput = "Test input for getchar\nABCDEFGHIJKLMNOPQRSTUVWXYZ\n0123456789\n";
+        byte[] inputBytes = defaultInput.getBytes();
+        
+        int inputAddr = allocateStubMemory(inputBytes.length + 1);
+        int indexAddr = inputAddr + inputBytes.length + 1;
+        
+        // Copiar dados
+        for (int i = 0; i < inputBytes.length; i++) {
+            memory[inputAddr + i] = inputBytes[i];
+        }
+        memory[inputAddr + inputBytes.length] = 0; // null terminator
+        
+        // Inicializar índice
+        writeIntLE(memory, indexAddr, 0);
+        
+        // Escrever endereços
+        writeIntLE(memory, stubAddr + 60, inputAddr);   // input_buffer
+        writeIntLE(memory, stubAddr + 64, indexAddr);   // input_index
+        writeIntLE(memory, stubAddr + 68, indexAddr);   // input_index (novamente)
+        
+        return stubAddr;
+    }
+
+    // Versão que usa input do OpenTTY (se disponível)
+    private int createGetcharInteractiveStub() {
+        int stubSize = 128;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // getchar() - tentar obter input interativo
+        
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr, 0xE92D4000);
+        
+        // Verificar se há input disponível
+        // bl check_input_available
+        writeIntLE(memory, stubAddr + 4, 0xEB000010);
+        
+        // cmp r0, #0
+        writeIntLE(memory, stubAddr + 8, 0xE3500000);
+        
+        // beq no_input
+        writeIntLE(memory, stubAddr + 12, 0x0A00000C);
+        
+        // Há input: ler um caractere
+        // bl read_input_char
+        writeIntLE(memory, stubAddr + 16, 0xEB00000E);
+        
+        // Verificar se é válido
+        // cmp r0, #0
+        writeIntLE(memory, stubAddr + 20, 0xE3500000);
+        
+        // blt eof
+        writeIntLE(memory, stubAddr + 24, 0xBA000008);
+        
+        // Caractere válido: retornar
+        // and r0, r0, #0xFF  // zero-extend
+        writeIntLE(memory, stubAddr + 28, 0xE20000FF);
+        
+        // b done
+        writeIntLE(memory, stubAddr + 32, 0xEA00000E);
+        
+        // no_input:
+        // Não há input disponível
+        // Podemos:
+        // 1. Retornar EOF
+        // 2. Esperar (bloqueante)
+        // 3. Retornar um valor padrão
+        
+        // Por enquanto, retornar EOF se não houver input
+        // b eof
+        writeIntLE(memory, stubAddr + 36, 0xEA000005);
+        
+        // eof:
+        // Retornar EOF (-1)
+        // mvn r0, #0
+        writeIntLE(memory, stubAddr + 40, 0xE3E00000);
+        
+        // done:
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 44, 0xE8BD8000);
+        
+        // Sub-rotina: check_input_available
+        // check_input_available:
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr + 48, 0xE92D4000);
+        
+        // Verificar com OpenTTY se há input
+        // ldr r0, =midlet_ref
+        writeIntLE(memory, stubAddr + 52, 0xE59F0028);
+        
+        // Chamar método Java
+        // bl java_check_input
+        writeIntLE(memory, stubAddr + 56, 0xEB000006);
+        
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 60, 0xE8BD8000);
+        
+        // Sub-rotina: read_input_char
+        // read_input_char:
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr + 64, 0xE92D4000);
+        
+        // ldr r0, =midlet_ref
+        writeIntLE(memory, stubAddr + 68, 0xE59F0010);
+        
+        // Chamar método Java para ler caractere
+        // bl java_read_char
+        writeIntLE(memory, stubAddr + 72, 0xEB000006);
+        
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 76, 0xE8BD8000);
+        
+        // Dados
+        writeIntLE(memory, stubAddr + 80, 0x00000000); // midlet_ref placeholder
+        
+        // Armazenar handlers
+        elfInfo.put("getchar_check_handler", new Object() {
+            public int check() {
+                // Verificar se há input disponível no OpenTTY
+                // Por enquanto, sempre retorna 1 (tem input)
+                return 1;
+            }
+        });
+        
+        elfInfo.put("getchar_read_handler", new Object() {
+            public int read() {
+                // Ler um caractere do input do OpenTTY
+                // Se não houver input, retornar -1 (EOF)
+                // Implementação simplificada: usar buffer pré-definido
+                return getNextInputChar();
+            }
+        });
+        
+        return stubAddr;
+    }
+
+    // Método auxiliar para gerenciar input
+    private int inputBufferIndex = 0;
+    private String inputBuffer = "Hello from getchar!\nPress any key...\n";
+
+    private int getNextInputChar() {
+        if (inputBufferIndex >= inputBuffer.length()) {
+            return -1; // EOF
+        }
+        
+        char c = inputBuffer.charAt(inputBufferIndex);
+        inputBufferIndex++;
+        
+        return c & 0xFF;
+    }
+
+    // Versão mínima funcional (recomendada para começar)
+    private int createGetcharMinimalStub() {
+        int stubSize = 32;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // getchar() - versão mínima que sempre retorna 'A' (para teste)
+        
+        // Retornar 'A' (65) sempre
+        // mov r0, #65  // 'A'
+        writeIntLE(memory, stubAddr, 0xE3A00041);
+        
+        // bx lr
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        
+        return stubAddr;
+    }
+
+    // Versão que alterna entre caracteres (para teste de loop)
+    private int createGetcharSequentialStub() {
+        int stubSize = 64;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // getchar() - retorna sequência 'A', 'B', 'C', ..., EOF
+        
+        // stmfd sp!, {r4, lr}
+        writeIntLE(memory, stubAddr, 0xE92D4010);
+        
+        // Carregar contador
+        // ldr r4, =char_counter
+        writeIntLE(memory, stubAddr + 4, 0xE59F4028);
+        // ldr r0, [r4]
+        writeIntLE(memory, stubAddr + 8, 0xE5940000);
+        
+        // Verificar se atingiu fim
+        // cmp r0, #26  // A-Z
+        writeIntLE(memory, stubAddr + 12, 0xE350001A);
+        
+        // bge eof
+        writeIntLE(memory, stubAddr + 16, 0xA0000008);
+        
+        // Calcular caractere: 'A' + counter
+        // add r0, r0, #65  // 'A' = 65
+        writeIntLE(memory, stubAddr + 20, 0xE2800041);
+        
+        // Incrementar contador
+        // ldr r1, [r4]
+        writeIntLE(memory, stubAddr + 24, 0xE5941000);
+        // add r1, r1, #1
+        writeIntLE(memory, stubAddr + 28, 0xE2811001);
+        // str r1, [r4]
+        writeIntLE(memory, stubAddr + 32, 0xE5841000);
+        
+        // b done
+        writeIntLE(memory, stubAddr + 36, 0xEA000003);
+        
+        // eof:
+        // Retornar EOF
+        // mvn r0, #0  // -1
+        writeIntLE(memory, stubAddr + 40, 0xE3E00000);
+        
+        // done:
+        // ldmfd sp!, {r4, pc}
+        writeIntLE(memory, stubAddr + 44, 0xE8BD8010);
+        
+        // Dados: contador
+        int counterAddr = allocateStubMemory(4);
+        writeIntLE(memory, counterAddr, 0); // Iniciar em 0
+        
+        writeIntLE(memory, stubAddr + 48, counterAddr); // char_counter
+        
+        return stubAddr;
+    }
     
     // Syscalls Handler
     // |
