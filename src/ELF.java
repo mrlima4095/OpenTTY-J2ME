@@ -2880,33 +2880,28 @@ public class ELF {
         int stubAddr = allocateStubMemory(128);
         if (stubAddr == 0) return 0;
         
-        switch (syscallName.toLowerCase()) {
-            case "write":
-                // write(int fd, const void *buf, size_t count)
-                return createWriteStub(stubAddr);
-                
-            case "read":
-                // read(int fd, void *buf, size_t count)
-                return createReadStub(stubAddr);
-                
-            case "open":
-                // open(const char *pathname, int flags, mode_t mode)
-                return createOpenStub(stubAddr);
-                
-            case "close":
-                // close(int fd)
-                return createCloseStub(stubAddr);
-                
-            case "exit":
-                // exit(int status)
-                return createExitSyscallStub(stubAddr);
-                
-            case "brk":
-                // brk(void *addr)
-                return createBrkStub(stubAddr);
-                
-            default:
-                return createGenericSyscallStub(stubAddr, syscallNum);
+        String lowerName = syscallName.toLowerCase();
+        
+        if (lowerName.equals("write")) {
+            // write(int fd, const void *buf, size_t count)
+            return createWriteStub(stubAddr);
+        } else if (lowerName.equals("read")) {
+            // read(int fd, void *buf, size_t count)
+            return createReadStub(stubAddr);
+        } else if (lowerName.equals("open")) {
+            // open(const char *pathname, int flags, mode_t mode)
+            return createOpenStub(stubAddr);
+        } else if (lowerName.equals("close")) {
+            // close(int fd)
+            return createCloseStub(stubAddr);
+        } else if (lowerName.equals("exit")) {
+            // exit(int status)
+            return createExitSyscallStub(stubAddr);
+        } else if (lowerName.equals("brk")) {
+            // brk(void *addr)
+            return createBrkStub(stubAddr);
+        } else {
+            return createGenericSyscallStub(stubAddr, syscallNum);
         }
     }
 
