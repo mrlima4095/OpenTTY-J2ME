@@ -3201,7 +3201,12 @@ public class ELF {
                 return handleReadFromStdin(args[1], args[2]);
             }
         } else if (syscallName.equals("brk")) {
-            return handleBrk(args[0]);
+            // Configurar registrador R0 com o argumento
+            registers[REG_R0] = args[0];
+            // Chamar o método handleBrk original
+            handleBrk();
+            // Retornar o resultado que está em R0
+            return registers[REG_R0];
         } else if (syscallName.equals("exit")) {
             handleExit(args[0]);
             return 0;
