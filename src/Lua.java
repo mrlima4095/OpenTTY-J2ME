@@ -2577,7 +2577,7 @@ public class Lua {
 
                             Hashtable res = lua.run(program, code, arg);
 
-                            Object handler = res.get("object"), ;
+                            Object handler = res.get("object");
                             if (handler instanceof Vector) {
                                 Vector resx = (Vector) handler;
                                 handler = resx.elementAt(0);
