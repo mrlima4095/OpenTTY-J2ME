@@ -2905,6 +2905,56 @@ public class ELF {
         }
     }
 
+    // Adicionar este método para criar stub da syscall open
+    private int createOpenStub(int stubAddr) {
+        // open(const char *pathname, int flags, mode_t mode)
+        // stmfd sp!, {r4-r6, lr}
+        writeIntLE(memory, stubAddr, 0xE92D4070);
+        
+        // Salvar parâmetros
+        // mov r4, r0  // pathname
+        writeIntLE(memory, stubAddr + 4, 0xE1A04000);
+        // mov r5, r1  // flags
+        writeIntLE(memory, stubAddr + 8, 0xE1A05001);
+        // mov r6, r2  // mode
+        writeIntLE(memory, stubAddr + 12, 0xE1A06002);
+        
+        // Chamar syscall open
+        // mov r7, #SYS_OPEN
+        writeIntLE(memory, stubAddr + 16, 0xE3A07005);
+        
+        // Restaurar parâmetros
+        // mov r0, r4
+        writeIntLE(memory, stubAddr + 20, 0xE1A00004);
+        // mov r1, r5
+        writeIntLE(memory, stubAddr + 24, 0xE1A01005);
+        // mov r2, r6
+        writeIntLE(memory, stubAddr + 28, 0xE1A02006);
+        
+        // swi 0
+        writeIntLE(memory, stubAddr + 32, 0xEF000000);
+        
+        // ldmfd sp!, {r4-r6, pc}
+        writeIntLE(memory, stubAddr + 36, 0xE8BD8070);
+        
+        return stubAddr;
+    }
+
+    // Adicionar também o método createCloseStub que pode estar faltando
+    private int createCloseStub(int stubAddr) {
+        // close(int fd)
+        // mov r7, #SYS_CLOSE
+        writeIntLE(memory, stubAddr, 0xE3A07006);
+        
+        // swi 0
+        writeIntLE(memory, stubAddr + 4, 0xEF000000);
+        
+        // bx lr
+        writeIntLE(memory, stubAddr + 8, 0xE12FFF1E);
+        
+        return stubAddr;
+    }
+
     private int createWriteStub(int stubAddr) {
         // write(int fd, const void *buf, size_t count)
         // stmfd sp!, {r4-r5, lr}
