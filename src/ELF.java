@@ -38,7 +38,7 @@ public class ELF {
     private Hashtable neededLibraries;     // Bibliotecas necessárias
     private Vector loadedLibraries;        // Bibliotecas carregadas
     private Hashtable globalSymbols;       // Tabela global de símbolos
-    private Hashtable pltEntries;          // Entradas PLT: índice -> {symIndex, gotOffset, resolved}
+    private Hashtable pltEntries, libcSymbols;          // Entradas PLT: índice -> {symIndex, gotOffset, resolved}
     private int pltGotAddr;                // Endereço da PLT/GOT
     private int dynamicSectionAddr;        // Endereço da seção dinâmica
     private int gotBase;                   // Base da GOT
