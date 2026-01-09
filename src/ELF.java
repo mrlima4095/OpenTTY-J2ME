@@ -2170,6 +2170,7 @@ public class ELF {
         
         // === FUNÇÕES DE I/O ===
         libcSymbols.put("printf", new Integer(createPrintfStub()));
+        libcSymbols.put("scanf", new Integer(createScanfStub()));
         libcSymbols.put("puts", new Integer(createPutsStub()));
         libcSymbols.put("putchar", new Integer(createPutcharStub()));
         libcSymbols.put("getchar", new Integer(createGetcharStub()));
@@ -3948,7 +3949,33 @@ public class ELF {
         
         return stubAddr;
     }
-    
+
+    private int createScanfStub() {
+        int stubSize = 32;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // scanf(const char *format, ...) - retornar 0 (nenhum item lido)
+        
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr, 0xE92D4000);
+        
+        // Para scanf, podemos:
+        // 1. Retornar 0 (nenhum item lido com sucesso)
+        // 2. Retornar EOF (-1) se falhou
+        // 3. Implementar leitura básica
+        
+        // Vamos implementar scanf que sempre retorna 0
+        // mov r0, #0  // retorna 0 itens lidos
+        writeIntLE(memory, stubAddr + 4, 0xE3A00000);
+        
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 8, 0xE8BD8000);
+        
+        return stubAddr;
+    }
+
     // Syscalls Handler
     // |
     private void handleSyscall(int number) {
