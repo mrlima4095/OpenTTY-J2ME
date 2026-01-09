@@ -1531,6 +1531,38 @@ public class ELF {
     private Hashtable loadSections(byte[] elfData, int shoff, int shnum, int shentsize) {
         Hashtable sections = new Hashtable();
         
+        // Primeiro, encontrar a seção .shstrtab
+        int shstrtabIndex = -1;
+        int shstrtabOffset = 0;
+        
+        for (int i = 0; i < shnum; i++) {
+            int shdrOffset = shoff + i * shentsize;
+            int sh_type = readIntLE(elfData, shdrOffset + 4);
+            int sh_name = readIntLE(elfData, shdrOffset);
+            
+            if (sh_type == 3) { // SHT_STRTAB
+                shstrtabIndex = i;
+                shstrtabOffset = readIntLE(elfData, shdrOffset + 16); // sh_offset
+                break;
+            }
+        }
+        
+        if (shstrtabIndex == -1) {
+            // Sem string table, usar índices
+            for (int i = 0; i < shnum; i++) {
+                Hashtable section = new Hashtable();
+                sections.put("section_" + i, section);
+            }
+            return sections;
+        }
+        
+        // Ler nome da seção .shstrtab primeiro
+        String shstrtabName = readString(elfData, shstrtabOffset, 256);
+        if (midlet.debug && shstrtabName.length() > 0) {
+            midlet.print("Found .shstrtab at offset " + toHex(shstrtabOffset), stdout);
+        }
+        
+        // Agora processar todas as seções
         for (int i = 0; i < shnum; i++) {
             int shdrOffset = shoff + i * shentsize;
             int sh_name = readIntLE(elfData, shdrOffset);
@@ -1555,21 +1587,120 @@ public class ELF {
             section.put("addralign", new Integer(sh_addralign));
             section.put("entsize", new Integer(sh_entsize));
             
-            // Ler nome da seção da string table
-            if (sh_name != 0 && elfInfo.containsKey(".shstrtab")) {
-                int strtabOffset = ((Integer)elfInfo.get(".shstrtab")).intValue();
-                String name = readString(elfData, strtabOffset + sh_name, 64);
-                sections.put(name, section);
-                if (midlet.debug) midlet.print("Section: " + name + " at " + toHex(sh_addr), stdout);
-            }
-            
-            // Armazenar seção de string table
-            if (sh_type == 3) { // SHT_STRTAB
-                elfInfo.put(".shstrtab", new Integer(sh_offset));
+            // Ler nome da seção
+            if (shstrtabOffset > 0 && sh_name > 0) {
+                String name = readString(elfData, shstrtabOffset + sh_name, 64);
+                if (name != null && name.length() > 0) {
+                    sections.put(name, section);
+                    if (midlet.debug) {
+                        midlet.print("Section: " + name + " at " + toHex(sh_addr) + 
+                                " (size: " + sh_size + ")", stdout);
+                    }
+                } else {
+                    sections.put("section_" + i, section);
+                }
+            } else {
+                sections.put("section_" + i, section);
             }
         }
         
         return sections;
+    
+    }
+
+    private Hashtable parseSOFile(String path) {
+        Hashtable symbols = new Hashtable();
+        
+        try {
+            InputStream is = midlet.getInputStream(path);
+            byte[] data = new byte[is.available()];
+            is.read(data);
+            is.close();
+            
+            // Verificar se é ELF
+            if (data[0] != 0x7F || data[1] != 'E' || data[2] != 'L' || data[3] != 'F') {
+                return symbols;
+            }
+            
+            // Ler cabeçalho ELF
+            int e_shoff = readIntLE(data, 32);
+            int e_shnum = readShortLE(data, 48);
+            int e_shentsize = readShortLE(data, 46);
+            
+            // Encontrar .dynsym e .dynstr
+            int dynsymOffset = -1;
+            int dynstrOffset = -1;
+            int strtabOffset = -1;
+            
+            for (int i = 0; i < e_shnum; i++) {
+                int shdrOffset = e_shoff + i * e_shentsize;
+                int sh_type = readIntLE(data, shdrOffset + 4);
+                int sh_name = readIntLE(data, shdrOffset);
+                int sh_offset = readIntLE(data, shdrOffset + 16);
+                int sh_size = readIntLE(data, shdrOffset + 20);
+                
+                // Encontrar .shstrtab primeiro
+                if (sh_type == 3 && strtabOffset == -1) { // SHT_STRTAB
+                    strtabOffset = sh_offset;
+                }
+            }
+            
+            // Agora ler nomes das seções
+            for (int i = 0; i < e_shnum; i++) {
+                int shdrOffset = e_shoff + i * e_shentsize;
+                int sh_type = readIntLE(data, shdrOffset + 4);
+                int sh_name = readIntLE(data, shdrOffset);
+                int sh_offset = readIntLE(data, shdrOffset + 16);
+                int sh_size = readIntLE(data, shdrOffset + 20);
+                
+                if (strtabOffset > 0 && sh_name > 0) {
+                    String name = readString(data, strtabOffset + sh_name, 32);
+                    
+                    if (".dynsym".equals(name)) {
+                        dynsymOffset = sh_offset;
+                    } else if (".dynstr".equals(name)) {
+                        dynstrOffset = sh_offset;
+                    }
+                }
+            }
+            
+            // Ler símbolos se encontrou as seções
+            if (dynsymOffset != -1 && dynstrOffset != -1) {
+                int symentSize = 16; // Tamanho padrão Elf32_Sym
+                
+                for (int offset = dynsymOffset; offset < dynsymOffset + 1024; offset += symentSize) {
+                    int st_name = readIntLE(data, offset);
+                    int st_value = readIntLE(data, offset + 4);
+                    int st_info = data[offset + 12] & 0xFF;
+                    
+                    if (st_name == 0 && st_value == 0 && st_info == 0) {
+                        break; // Símbolo nulo
+                    }
+                    
+                    String symName = readString(data, dynstrOffset + st_name, 256);
+                    
+                    if (symName != null && symName.length() > 0 && 
+                        st_value != 0 && (st_info & 0xF) == 2) { // STT_FUNC
+                        
+                        // Criar stub para esta função
+                        int stubAddr = createLibraryStub(symName);
+                        symbols.put(symName, new Integer(stubAddr));
+                        
+                        if (midlet.debug) {
+                            midlet.print("Found symbol in " + path + ": " + symName + 
+                                    " -> " + toHex(stubAddr), stdout);
+                        }
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            if (midlet.debug) {
+                midlet.print("Error parsing " + path + ": " + e.getMessage(), stdout);
+            }
+        }
+        
+        return symbols;
     }
     
     private void initializeBSS(Hashtable sections) {
