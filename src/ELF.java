@@ -2051,14 +2051,14 @@ public class ELF {
     }
 
     private int mapSyscallName(String name) {
-        if (name.equals("exit") || name.contains("exit")) return SYS_EXIT;
-        if (name.equals("write") || name.contains("write")) return SYS_WRITE;
-        if (name.equals("read") || name.contains("read")) return SYS_READ;
-        if (name.equals("open") || name.contains("open")) return SYS_OPEN;
-        if (name.equals("close") || name.contains("close")) return SYS_CLOSE;
-        if (name.equals("brk") || name.contains("brk")) return SYS_BRK;
-        if (name.equals("fork") || name.contains("fork")) return SYS_FORK;
-        if (name.equals("execve") || name.contains("exec")) return SYS_EXECVE;
+        if (name.equals("exit") || name.indexOf("exit") != -1) return SYS_EXIT;
+        if (name.equals("write") || name.indexOf("write") != -1) return SYS_WRITE;
+        if (name.equals("read") || name.indexOf("read") != -1) return SYS_READ;
+        if (name.equals("open") || name.indexOf("open") != -1) return SYS_OPEN;
+        if (name.equals("close") || name.indexOf("close") != -1) return SYS_CLOSE;
+        if (name.equals("brk") || name.indexOf("brk") != -1) return SYS_BRK;
+        if (name.equals("fork") || name.indexOf("fork") != -1) return SYS_FORK;
+        if (name.equals("execve") || name.indexOf("exec") != -1) return SYS_EXECVE;
         return 0;
     }
     
