@@ -29,6 +29,7 @@ public class Lua {
     public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614;
     public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
+    public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904, PUSH_GET_ALARM = 905;
 
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
     public static final Object LUA_NIL = new Object();
@@ -41,7 +42,7 @@ public class Lua {
         this.tokenIndex = 0; this.PID = pid == null ? midlet.genpid() : pid;
         this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
 
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable();
         String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "sudo", "su", "remove", "scope", "join" }; 
         int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SUDO, SU, REMOVE, SCOPE, JOIN };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
@@ -70,6 +71,10 @@ public class Lua {
         funcs = new String[] { "connect", "peer", "device", "server", "accept" }; 
         loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
+
+        funcs = new String[] { "register", "unregister", "list", "pending", "setAlarm", "getAlarm" };
+        loaders = new int[] { PUSH_REGISTER, PUSH_UNREGISTER, PUSH_LIST, PUSH_PENDING, PUSH_SET_ALARM, PUSH_GET_ALARM };
+        for (int i = 0; i< funcs.length; i++) { push.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("push", push);
 
         funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear" }; 
         loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, LABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN };
@@ -2063,6 +2068,104 @@ public class Lua {
                     midlet.network.put(conn, result);
 
                     return result;
+                }
+            }
+            // Package: push
+            else if (MOD == PUSH_REGISTER) {
+                if (args.size() < 3) { return gotbad(1, "register", "insufficient arguments"); }
+                
+                String connection = toLuaString(args.elementAt(0)), filter = toLuaString(args.elementAt(1));
+                String midletClass = toLuaString(args.elementAt(2)), sender = args.size() > 3 ? toLuaString(args.elementAt(3)) : null;
+                
+                try {
+                    if (sender != null && sender.length() > 0) {
+                        PushRegistry.registerConnection(connection, midletClass, filter, sender);
+                    } else {
+                        PushRegistry.registerConnection(connection, midletClass, filter);
+                    }
+                    return Boolean.TRUE;
+                } catch (ClassNotFoundException e) {
+                    return gotbad(3, "register", "MIDlet class not found: " + midletClass);
+                } catch (Exception e) {
+                    return gotbad(1, "register", midlet.getCatch(e.getMessage()));
+                }
+            }
+            else if (MOD == PUSH_UNREGISTER) {
+                if (args.isEmpty()) { return gotbad(1, "unregister", "connection string expected"); }
+                
+                String connection = toLuaString(args.elementAt(0));
+                
+                try {
+                    boolean result = PushRegistry.unregisterConnection(connection);
+                    return Boolean.valueOf(result);
+                } catch (Exception e) {
+                    return gotbad(1, "unregister", midlet.getCatch(e.getMessage()));
+                }
+            }
+            else if (MOD == PUSH_LIST) {
+                if (args.isEmpty()) { return gotbad(1, "list", "connection string expected"); }
+                
+                String connection = toLuaString(args.elementAt(0));
+                
+                try {
+                    String[] connections = PushRegistry.listConnections(false);
+                    Hashtable result = new Hashtable();
+                    
+                    if (connections != null) {
+                        for (int i = 0; i < connections.length; i++) {
+                            if (connections[i].startsWith(connection) || connection.equals("*")) {
+                                String midlet = PushRegistry.getMidlet(connections[i]);
+                                String filter = PushRegistry.getFilter(connections[i]);
+                                
+                                Hashtable connInfo = new Hashtable();
+                                connInfo.put("midlet", midlet != null ? midlet : "");
+                                connInfo.put("filter", filter != null ? filter : "");
+                                
+                                result.put(connections[i], connInfo);
+                            }
+                        }
+                    }
+                    
+                    return result;
+                } catch (Exception e) {
+                    return gotbad(1, "list", midlet.getCatch(e.getMessage()));
+                }
+            }
+            else if (MOD == PUSH_PENDING) {
+                try {
+                    boolean hasPending = PushRegistry.listConnections(true).length > 0;
+                    return Boolean.valueOf(hasPending);
+                } catch (Exception e) { return gotbad(1, "hasPending", midlet.getCatch(e.getMessage())); }
+            }
+            else if (MOD == PUSH_SET_ALARM) {
+                if (args.size() < 2) {
+                    return gotbad(1, "setAlarm", "insufficient arguments");
+                }
+                
+                String midletClass = toLuaString(args.elementAt(0));
+                long time = ((Double)args.elementAt(1)).longValue();
+                
+                try {
+                    long alarmTime = PushRegistry.registerAlarm(midletClass, time);
+                    return new Double(alarmTime);
+                } catch (ClassNotFoundException e) {
+                    return gotbad(1, "setAlarm", "MIDlet class not found: " + e.getMessage());
+                } catch (ConnectionNotFoundException e) {
+                    return gotbad(1, "setAlarm", "Connection not found: " + e.getMessage());
+                }
+            }
+            else if (MOD == PUSH_GET_ALARM) {
+                if (args.isEmpty()) {
+                    return gotbad(1, "getAlarm", "MIDlet class expected");
+                }
+                
+                String midletClass = toLuaString(args.elementAt(0));
+                
+                try {
+                    long alarmTime = PushRegistry.getMIDlet(midletClass);
+                    return new Double(alarmTime);
+                } catch (Exception e) {
+                    return gotbad(1, "getAlarm", "error: " + e.getMessage());
                 }
             }
             // Package: graphics 
