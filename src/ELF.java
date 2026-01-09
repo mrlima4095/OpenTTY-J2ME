@@ -3181,38 +3181,53 @@ public class ELF {
         }
         memory[stubAddr + 28 + nameBytes.length] = 0;
         
-        // Registrar handler
-        elfInfo.put("syscall_handler@" + syscallName, new Object() {
-            public int handle(int[] args) {
-                return handleSyscallIntercept(syscallName, args);
-            }
-        });
+        // Registrar handler usando um Hashtable simples para mapeamento
+        elfInfo.put("syscall_handler_name_" + syscallName, syscallName);
+        elfInfo.put("syscall_handler_type", "intercepted");
         
         return stubAddr;
     }
+    private int handleInterceptedSyscall(String syscallName, int[] args) { return handleSyscallIntercept(syscallName, args); }
 
     private int handleSyscallIntercept(String syscallName, int[] args) {
         // Implementação Java da syscall
-        switch (syscallName) {
-            case "write":
-                if (args[0] == 1 || args[0] == 2) { // stdout/stderr
-                    return handleWriteToStdout(args[1], args[2]);
-                }
-                break;
-            case "read":
-                if (args[0] == 0) { // stdin
-                    return handleReadFromStdin(args[1], args[2]);
-                }
-                break;
-            case "brk":
-                return handleBrk(args[0]);
-            case "exit":
-                handleExit(args[0]);
-                return 0;
+        
+        if (syscallName.equals("write")) {
+            if (args[0] == 1 || args[0] == 2) { // stdout/stderr
+                return handleWriteToStdout(args[1], args[2]);
+            }
+        } else if (syscallName.equals("read")) {
+            if (args[0] == 0) { // stdin
+                return handleReadFromStdin(args[1], args[2]);
+            }
+        } else if (syscallName.equals("brk")) {
+            return handleBrk(args[0]);
+        } else if (syscallName.equals("exit")) {
+            handleExit(args[0]);
+            return 0;
         }
         
         // Para outras syscalls, usar implementação padrão
         return -38; // ENOSYS
+    }
+
+    private int dispatchInterceptedSyscall(int handlerAddr, int namePtr, int argsPtr) {
+        try {
+            // Ler nome da syscall da memória
+            String syscallName = readCString(namePtr);
+            if (syscallName == null) return -22; // EINVAL
+            
+            // Ler argumentos da stack
+            int[] args = new int[4];
+            for (int i = 0; i < 4; i++) {
+                args[i] = readIntLE(memory, argsPtr + i * 4);
+            }
+            
+            // Chamar handler
+            return handleInterceptedSyscall(syscallName, args);
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     private int createPutcharStub() {
