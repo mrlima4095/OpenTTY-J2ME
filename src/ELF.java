@@ -32,7 +32,20 @@ public class ELF {
     // Heap management
     private int heapStart, heapEnd;
     private Hashtable allocatedBlocks;
-    
+
+    // Dynamic linking structures
+    private Hashtable dynamicSymbols;      // Símbolos dinâmicos: nome -> {value, size, type}
+    private Hashtable neededLibraries;     // Bibliotecas necessárias
+    private Vector loadedLibraries;        // Bibliotecas carregadas
+    private Hashtable globalSymbols;       // Tabela global de símbolos
+    private Hashtable pltEntries;          // Entradas PLT: índice -> {symIndex, gotOffset, resolved}
+    private int pltGotAddr;                // Endereço da PLT/GOT
+    private int dynamicSectionAddr;        // Endereço da seção dinâmica
+    private int gotBase;                   // Base da GOT
+    private int pltBase;                   // Base da PLT
+    private int resolverCodeAddr;          // Endereço do código do resolvedor
+    private int resolveFuncAddr;           // Endereço da função de resolução
+        
     // Mapeamentos de memória
     private Vector memoryMappings;
     
@@ -221,7 +234,45 @@ public class ELF {
     private static final int MAP_PRIVATE = 2;
     private static final int MAP_FIXED = 16;
     private static final int MAP_ANONYMOUS = 32;
-    
+
+    // Dynamic linking constants - adicione com as outras constantes ELF
+    private static final int DT_NULL = 0;
+    private static final int DT_NEEDED = 1;
+    private static final int DT_PLTRELSZ = 2;
+    private static final int DT_PLTGOT = 3;
+    private static final int DT_HASH = 4;
+    private static final int DT_STRTAB = 5;
+    private static final int DT_SYMTAB = 6;
+    private static final int DT_RELA = 7;
+    private static final int DT_RELASZ = 8;
+    private static final int DT_RELAENT = 9;
+    private static final int DT_STRSZ = 10;
+    private static final int DT_SYMENT = 11;
+    private static final int DT_INIT = 12;
+    private static final int DT_FINI = 13;
+    private static final int DT_SONAME = 14;
+    private static final int DT_RPATH = 15;
+    private static final int DT_SYMBOLIC = 16;
+    private static final int DT_REL = 17;
+    private static final int DT_RELSZ = 18;
+    private static final int DT_RELENT = 19;
+    private static final int DT_PLTREL = 20;
+    private static final int DT_DEBUG = 21;
+    private static final int DT_TEXTREL = 22;
+    private static final int DT_JMPREL = 23;
+    private static final int DT_BIND_NOW = 24;
+    private static final int DT_INIT_ARRAY = 25;
+    private static final int DT_FINI_ARRAY = 26;
+    private static final int DT_INIT_ARRAYSZ = 27;
+    private static final int DT_FINI_ARRAYSZ = 28;
+
+    // Relocation types
+    private static final int R_ARM_ABS32 = 2;
+    private static final int R_ARM_REL32 = 3;
+    private static final int R_ARM_GLOB_DAT = 21;
+    private static final int R_ARM_JUMP_SLOT = 22;
+    private static final int R_ARM_RELATIVE = 23;
+        
     // Constantes fcntl
     private static final int F_GETFL = 3;
     private static final int F_SETFL = 4;
@@ -269,6 +320,20 @@ public class ELF {
         this.signalStack = new Vector();
         this.futexWaiters = new Hashtable();
         this.memoryMappings = new Vector();
+        this.dynamicSymbols = new Hashtable();
+        this.neededLibraries = new Hashtable();
+        this.loadedLibraries = new Vector();
+        this.globalSymbols = new Hashtable();
+        this.pltEntries = new Hashtable();
+        this.pltGotAddr = 0;
+        this.dynamicSectionAddr = 0;
+        this.gotBase = 0;
+        this.pltBase = 0;
+        this.resolverCodeAddr = 0;
+        this.resolveFuncAddr = 0;
+
+        // Carregar bibliotecas padrão
+        loadDefaultLibraries();
 
         this.signalHandlers = new int[NSIG];
         for (int i = 0; i < NSIG; i++) { signalHandlers[i] = SIG_DFL; }
@@ -366,8 +431,204 @@ public class ELF {
         
         // Configurar stack para CRT
         setupCRTStack();
+
+        // Processar dynamic segment
+        processDynamicSection(elfData);
+        
+        // Carregar bibliotecas necessárias
+        loadNeededLibraries();
+        
+        // Processar símbolos e realocações
+        processSymbolsAndRelocations(elfData, sectionInfo);
+        
+        // Configurar PLT/GOT
+        setupPLTGOT();
+        
+        // Executar funções de inicialização
+        executeInitFunctions();
         
         return true;
+    }
+
+    private void processDynamicSection(byte[] elfData) {
+        int e_phoff = ((Integer)elfInfo.get("phoff")).intValue();
+        int e_phnum = ((Integer)elfInfo.get("phnum")).intValue();
+        
+        for (int i = 0; i < e_phnum; i++) {
+            int phdrOffset = e_phoff + i * 32;
+            int p_type = readIntLE(elfData, phdrOffset);
+            
+            if (p_type == PT_DYNAMIC) {
+                dynamicSectionAddr = readIntLE(elfData, phdrOffset + 8);
+                int p_filesz = readIntLE(elfData, phdrOffset + 16);
+                processDynamicEntries(elfData, dynamicSectionAddr, p_filesz);
+                break;
+            }
+        }
+    }
+
+    private void processDynamicEntries(byte[] elfData, int dynAddr, int dynSize) {
+        int offset = 0;
+        
+        while (offset < dynSize) {
+            int tag = readIntLE(elfData, dynAddr + offset);
+            int val = readIntLE(elfData, dynAddr + offset + 4);
+            
+            if (tag == DT_NULL) break;
+            
+            switch (tag) {
+                case DT_NEEDED:
+                    String libName = readString(elfData, val, 256);
+                    neededLibraries.put(libName, new Integer(val));
+                    if (midlet.debug) midlet.print("Needed library: " + libName, stdout);
+                    break;
+                    
+                case DT_PLTGOT:
+                    pltGotAddr = val;
+                    if (midlet.debug) midlet.print("PLT/GOT at: " + toHex(val), stdout);
+                    break;
+                    
+                case DT_STRTAB:
+                    elfInfo.put("dynstr", new Integer(val));
+                    break;
+                    
+                case DT_SYMTAB:
+                    elfInfo.put("dynsym", new Integer(val));
+                    break;
+                    
+                case DT_SYMENT:
+                    elfInfo.put("syment", new Integer(val));
+                    break;
+                    
+                case DT_JMPREL:
+                    elfInfo.put("jmprel", new Integer(val));
+                    break;
+                    
+                case DT_PLTRELSZ:
+                    elfInfo.put("pltrelsz", new Integer(val));
+                    break;
+                    
+                case DT_PLTREL:
+                    elfInfo.put("pltrel", new Integer(val));
+                    break;
+                    
+                case DT_REL:
+                    elfInfo.put("rel", new Integer(val));
+                    break;
+                    
+                case DT_RELSZ:
+                    elfInfo.put("relsz", new Integer(val));
+                    break;
+                    
+                case DT_INIT:
+                    elfInfo.put("init", new Integer(val));
+                    break;
+                    
+                case DT_FINI:
+                    elfInfo.put("fini", new Integer(val));
+                    break;
+                    
+                case DT_HASH:
+                    processHashTable(elfData, val);
+                    break;
+            }
+            
+            offset += 8;
+        }
+    }
+
+    private void processHashTable(byte[] elfData, int hashAddr) {
+        int nbucket = readIntLE(elfData, hashAddr);
+        int nchain = readIntLE(elfData, hashAddr + 4);
+        
+        elfInfo.put("nbucket", new Integer(nbucket));
+        elfInfo.put("nchain", new Integer(nchain));
+        elfInfo.put("buckets", new Integer(hashAddr + 8));
+        elfInfo.put("chains", new Integer(hashAddr + 8 + nbucket * 4));
+    }
+
+    private void loadNeededLibraries() {
+        Enumeration libNames = neededLibraries.keys();
+        while (libNames.hasMoreElements()) {
+            String libName = (String) libNames.nextElement();
+            
+            if (!loadedLibraries.contains(libName)) {
+                if (loadLibrary(libName)) {
+                    loadedLibraries.addElement(libName);
+                    if (midlet.debug) midlet.print("Loaded library: " + libName, stdout);
+                } else {
+                    if (midlet.debug) midlet.print("Failed to load: " + libName, stdout);
+                }
+            }
+        }
+    }
+
+    private boolean loadLibrary(String libName) {
+        // Tentar caminhos comuns
+        String[] paths = { "/lib/" + libName, "/usr/lib/" + libName };
+        
+        for (int i = 0; i < paths.length; i++) {
+            try {
+                InputStream is = midlet.getInputStream(paths[i]);
+                if (is != null) {
+                    // Biblioteca encontrada - criar símbolos simulados
+                    Hashtable libSyms = new Hashtable();
+                    
+                    // Adicionar símbolos básicos baseados no nome da lib
+                    if (libName.contains("c")) {
+                        libSyms.put("printf", globalSymbols.get("libc.so.6"));
+                    }
+                    if (libName.contains("m")) { // math
+                        libSyms.put("sin", new Integer(createSimpleStub(32)));
+                        libSyms.put("cos", new Integer(createSimpleStub(32)));
+                    }
+                    
+                    globalSymbols.put(libName, libSyms);
+                    is.close();
+                    return true;
+                }
+            } catch (Exception e) {}
+        }
+        
+        return false;
+    }
+
+    private void loadDefaultLibraries() {
+        // Libc simulada
+        Hashtable libc = new Hashtable();
+        
+        // Adicionar funções básicas
+        libc.put("printf", new Integer(createSyscallStub("write")));
+        libc.put("puts", new Integer(createSyscallStub("write")));
+        libc.put("malloc", new Integer(createSyscallStub("brk")));
+        libc.put("free", new Integer(createSyscallStub("brk")));
+        libc.put("strlen", new Integer(createSimpleStub(16))); // Stub simples
+        libc.put("strcpy", new Integer(createSimpleStub(32)));
+        libc.put("strcmp", new Integer(createSimpleStub(32)));
+        libc.put("memcpy", new Integer(createSimpleStub(48)));
+        libc.put("memset", new Integer(createSimpleStub(32)));
+        libc.put("exit", new Integer(createSyscallStub("exit")));
+        libc.put("open", new Integer(createSyscallStub("open")));
+        libc.put("read", new Integer(createSyscallStub("read")));
+        libc.put("write", new Integer(createSyscallStub("write")));
+        libc.put("close", new Integer(createSyscallStub("close")));
+        
+        globalSymbols.put("libc.so.6", libc);
+        loadedLibraries.addElement("libc.so.6");
+        
+        if (midlet.debug) {
+            midlet.print("Loaded default libraries", stdout);
+        }
+    }
+
+    private int createSimpleStub(int size) {
+        int stubAddr = findFreeMemoryRegion(size);
+        if (stubAddr == 0) { return 0; }
+
+        writeIntLE(memory, stubAddr, 0xE3A00000); // mov r0, #0
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E); // bx lr
+        
+        return stubAddr;
     }
     
     public Hashtable run() {
@@ -465,6 +726,19 @@ public class ELF {
         if (!checkCondition(cond)) {
             return; // Condição falsa, pular instrução
         }
+
+        if ((instruction & 0xFF000000) == 0xEB000000) { // bl
+            int offset = instruction & 0x00FFFFFF;
+            if ((offset & 0x00800000) != 0) offset |= 0xFF000000;
+            offset <<= 2;
+            
+            int target = pc + offset - 4;
+            
+            if (pltBase != 0 && target >= pltBase && target < pltBase + 4096) {
+                handlePLTCall(target);
+                return;
+            }
+        }
         
         // Syscall (SWI)
         if ((instruction & 0x0F000000) == 0x0F000000) {
@@ -533,6 +807,34 @@ public class ELF {
         // Instrução não reconhecida
         if (midlet.debug) {
             midlet.print("[WARN] Unrecognized instruction: " + toHex(instruction) + " at PC: " + toHex(pc-4), stdout);
+        }
+    }
+
+    private void executeInitFunctions() {
+        // .init
+        if (elfInfo.containsKey("init")) {
+            int initAddr = ((Integer)elfInfo.get("init")).intValue();
+            if (initAddr != 0) {
+                int savedPC = pc;
+                int savedSP = registers[REG_SP];
+                
+                registers[REG_LR] = savedPC;
+                pc = initAddr;
+                
+                if (midlet.debug) {
+                    midlet.print("Calling .init at " + toHex(initAddr), stdout);
+                }
+                
+                // Executar brevemente
+                for (int i = 0; i < 100 && running; i++) {
+                    int instruction = fetchInstruction(pc);
+                    pc += 4;
+                    executeInstruction(instruction);
+                }
+                
+                pc = savedPC;
+                registers[REG_SP] = savedSP;
+            }
         }
     }
     
@@ -1319,8 +1621,292 @@ public class ELF {
         }
     }
     
-    private void processSymbolsAndRelocations(byte[] elfData, Hashtable sections) { if (midlet.debug) midlet.print("Symbol processing (simplified)", stdout); }
+    private void processSymbolsAndRelocations(byte[] elfData, Hashtable sections) {
+        if (!elfInfo.containsKey("dynsym") || !elfInfo.containsKey("dynstr")) {
+            return;
+        }
+        
+        int dynsymAddr = ((Integer)elfInfo.get("dynsym")).intValue();
+        int dynstrAddr = ((Integer)elfInfo.get("dynstr")).intValue();
+        int symentSize = elfInfo.containsKey("syment") ? 
+            ((Integer)elfInfo.get("syment")).intValue() : 16;
+        
+        // Processar símbolos
+        int symOffset = dynsymAddr;
+        while (true) {
+            int st_name = readIntLE(elfData, symOffset);
+            int st_value = readIntLE(elfData, symOffset + 4);
+            int st_size = readIntLE(elfData, symOffset + 8);
+            int st_info = elfData[symOffset + 12] & 0xFF;
+            
+            if (st_name == 0 && st_value == 0 && st_size == 0 && st_info == 0) {
+                break;
+            }
+            
+            String symName = readString(elfData, dynstrAddr + st_name, 256);
+            
+            Hashtable symInfo = new Hashtable();
+            symInfo.put("value", new Integer(st_value));
+            symInfo.put("size", new Integer(st_size));
+            symInfo.put("info", new Integer(st_info));
+            symInfo.put("binding", new Integer((st_info >> 4) & 0xF));
+            symInfo.put("type", new Integer(st_info & 0xF));
+            
+            dynamicSymbols.put(symName, symInfo);
+            
+            symOffset += symentSize;
+        }
+        
+        // Processar realocações
+        processRelocations(elfData);
+    }
+
+    private void processRelocations(byte[] elfData) {
+        // REL
+        if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) {
+            int relAddr = ((Integer)elfInfo.get("rel")).intValue();
+            int relsz = ((Integer)elfInfo.get("relsz")).intValue();
+            int relent = 8;
+            
+            for (int i = 0; i < relsz; i += relent) {
+                int offset = relAddr + i;
+                int r_offset = readIntLE(elfData, offset);
+                int r_info = readIntLE(elfData, offset + 4);
+                
+                int symIndex = r_info >> 8;
+                int type = r_info & 0xFF;
+                
+                applyRelocation(r_offset, type, symIndex, 0);
+            }
+        }
+        
+        // JMPREL (PLT)
+        if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) {
+            int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue();
+            int pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue();
+            int pltrel = elfInfo.containsKey("pltrel") ? 
+                ((Integer)elfInfo.get("pltrel")).intValue() : DT_REL;
+            
+            int relent = (pltrel == DT_RELA) ? 12 : 8;
+            int numEntries = pltrelsz / relent;
+            
+            if (gotBase == 0 && pltGotAddr != 0) {
+                gotBase = pltGotAddr + 12;
+            }
+            
+            for (int i = 0; i < numEntries; i++) {
+                int offset = jmprelAddr + i * relent;
+                int r_offset = readIntLE(elfData, offset);
+                int r_info = readIntLE(elfData, offset + 4);
+                
+                int symIndex = r_info >> 8;
+                int type = r_info & 0xFF;
+                
+                if (type == R_ARM_JUMP_SLOT) {
+                    setupLazyBinding(r_offset, symIndex, i);
+                } else {
+                    applyRelocation(r_offset, type, symIndex, 0);
+                }
+            }
+        }
+    }
+
+    private void applyRelocation(int r_offset, int type, int symIndex, int addend) {
+        switch (type) {
+            case R_ARM_ABS32:
+            case R_ARM_GLOB_DAT:
+                String symName = getSymbolNameByIndex(symIndex);
+                Integer symAddr = resolveSymbol(symName);
+                
+                if (symAddr != null) {
+                    writeIntLE(memory, r_offset, symAddr.intValue() + addend);
+                    if (midlet.debug) {
+                        midlet.print("Reloc: " + symName + " -> " + 
+                                toHex(symAddr.intValue()) + " at " + toHex(r_offset), stdout);
+                    }
+                }
+                break;
+                
+            case R_ARM_RELATIVE:
+                int current = readIntLE(memory, r_offset);
+                writeIntLE(memory, r_offset, current + addend);
+                break;
+        }
+    }
+
+    private void setupLazyBinding(int gotOffset, int symIndex, int slotIndex) {
+        int resolverAddr = setupResolverStub(slotIndex);
+        
+        if (resolverAddr != 0) {
+            writeIntLE(memory, gotOffset, resolverAddr);
+            
+            Hashtable pltInfo = new Hashtable();
+            pltInfo.put("symIndex", new Integer(symIndex));
+            pltInfo.put("gotOffset", new Integer(gotOffset));
+            pltInfo.put("resolved", Boolean.FALSE);
+            
+            pltEntries.put("plt_" + slotIndex, pltInfo);
+            
+            if (midlet.debug) {
+                midlet.print("Lazy binding: slot " + slotIndex + " at GOT " + toHex(gotOffset), stdout);
+            }
+        }
+    }
+
+    private int setupResolverStub(int slotIndex) {
+        if (pltBase == 0) {
+            pltBase = findFreeMemoryRegion(4096);
+            if (pltBase == 0) return 0;
+        }
+        
+        int stubAddr = pltBase + slotIndex * 16;
+        
+        // ldr pc, [pc, #-4]
+        writeIntLE(memory, stubAddr, 0xE51FF004);
+        
+        // Endereço do trampoline
+        int trampoline = setupResolverTrampoline();
+        writeIntLE(memory, stubAddr + 4, trampoline + slotIndex * 8);
+        
+        return stubAddr;
+    }
+
+    private int setupResolverTrampoline() {
+        if (resolverCodeAddr == 0) {
+            resolverCodeAddr = findFreeMemoryRegion(256);
+            if (resolverCodeAddr == 0) return 0;
+            
+            // stmfd sp!, {r0-r3, lr}
+            writeIntLE(memory, resolverCodeAddr, 0xE92D400F);
+            
+            // ldr r0, [pc, #4]  ; índice PLT
+            writeIntLE(memory, resolverCodeAddr + 4, 0xE59F0004);
+            
+            // bl resolve_function
+            int resolveAddr = setupResolveFunction();
+            int offset = ((resolveAddr - (resolverCodeAddr + 8 + 8)) >> 2) & 0x00FFFFFF;
+            writeIntLE(memory, resolverCodeAddr + 8, 0xEB000000 | offset);
+            
+            // ldmfd sp!, {r0-r3, lr}
+            writeIntLE(memory, resolverCodeAddr + 12, 0xE8BD400F);
+            
+            // bx r0
+            writeIntLE(memory, resolverCodeAddr + 16, 0xE12FFF10);
+            
+            // .word plt_index
+            writeIntLE(memory, resolverCodeAddr + 20, 0);
+        }
+        
+        return resolverCodeAddr;
+    }
+
+    private int setupResolveFunction() {
+        if (resolveFuncAddr == 0) {
+            resolveFuncAddr = findFreeMemoryRegion(128);
+            if (resolveFuncAddr == 0) return 0;
+            
+            // stmfd sp!, {lr}
+            writeIntLE(memory, resolveFuncAddr, 0xE92D4000);
+            
+            // Implementação da resolução
+            // ldr r0, [r0]  ; obter índice
+            writeIntLE(memory, resolveFuncAddr + 4, 0xE5900000);
+            
+            // Aqui viria o código real de resolução
+            // Por enquanto, chamar resolvePLTSymbol
+            writeIntLE(memory, resolveFuncAddr + 8, 0xE12FFF1E); // bx lr
+            
+            // Armazenar handler
+            elfInfo.put("resolve_handler", new Object() {
+                public int handle(int pltIndex) {
+                    return resolvePLTSymbol(pltIndex);
+                }
+            });
+        }
+        
+        return resolveFuncAddr;
+    }
     
+    private String getSymbolNameByIndex(int index) {
+        Enumeration keys = dynamicSymbols.keys();
+        int current = 0;
+        while (keys.hasMoreElements()) {
+            String name = (String) keys.nextElement();
+            if (current == index) return name;
+            current++;
+        }
+        return null;
+    }
+
+    private int resolvePLTSymbol(int pltIndex) {
+        String key = "plt_" + pltIndex;
+        if (!pltEntries.containsKey(key)) return 0;
+        
+        Hashtable pltInfo = (Hashtable) pltEntries.get(key);
+        int symIndex = ((Integer)pltInfo.get("symIndex")).intValue();
+        int gotOffset = ((Integer)pltInfo.get("gotOffset")).intValue();
+        
+        String symName = getSymbolNameByIndex(symIndex);
+        Integer resolvedAddr = resolveSymbol(symName);
+        
+        if (resolvedAddr != null) {
+            writeIntLE(memory, gotOffset, resolvedAddr.intValue());
+            pltInfo.put("resolved", Boolean.TRUE);
+            
+            if (midlet.debug) {
+                midlet.print("Resolved: " + symName + " -> " + toHex(resolvedAddr.intValue()), stdout);
+            }
+            
+            return resolvedAddr.intValue();
+        }
+        
+        return 0;
+    }
+
+    private Integer resolveSymbol(String name) {
+        // Verificar no executável
+        if (dynamicSymbols.containsKey(name)) {
+            Hashtable symInfo = (Hashtable) dynamicSymbols.get(name);
+            int value = ((Integer)symInfo.get("value")).intValue();
+            if (value != 0) return new Integer(value);
+        }
+        
+        // Verificar em bibliotecas
+        for (int i = 0; i < loadedLibraries.size(); i++) {
+            String libName = (String) loadedLibraries.elementAt(i);
+            Hashtable lib = (Hashtable) globalSymbols.get(libName);
+            
+            if (lib != null && lib.containsKey(name)) {
+                Object symValue = lib.get(name);
+                if (symValue instanceof Hashtable) {
+                    return new Integer(((Integer)((Hashtable)symValue).get("value")).intValue());
+                } else if (symValue instanceof Integer) {
+                    return (Integer) symValue;
+                }
+            }
+        }
+        
+        // Criar stub se for syscall
+        if (name.startsWith("sys_")) {
+            return new Integer(createSyscallStub(name));
+        }
+        
+        return null;
+    }
+
+    private void setupPLTGOT() {
+        if (pltGotAddr == 0) return;
+        
+        // Primeira entrada: dynamic section
+        writeIntLE(memory, pltGotAddr, dynamicSectionAddr);
+        
+        // Segunda entrada: módulo (0)
+        writeIntLE(memory, pltGotAddr + 4, 0);
+        
+        // Terceira entrada: resolvedor
+        writeIntLE(memory, pltGotAddr + 8, resolveFuncAddr);
+    }
+
     private void setupCRTStack() {
         // Configurar stack para C Runtime
         // Argumentos: argc, argv[], envp[], auxv[]
@@ -1403,6 +1989,77 @@ public class ELF {
                 midlet.print("argv[" + i + "]=" + argsVec.elementAt(i), stdout);
             }
         }
+    }
+
+    private void handlePLTCall(int stubAddr) {
+        int pltIndex = (stubAddr - pltBase) / 16;
+        
+        if (pltIndex >= 0) {
+            String key = "plt_" + pltIndex;
+            if (pltEntries.containsKey(key)) {
+                Hashtable pltInfo = (Hashtable) pltEntries.get(key);
+                if (!((Boolean)pltInfo.get("resolved")).booleanValue()) {
+                    resolvePLTSymbol(pltIndex);
+                }
+            }
+            
+            int gotOffset = pltGotAddr + 12 + pltIndex * 4;
+            int realAddr = readIntLE(memory, gotOffset);
+            
+            registers[REG_LR] = pc;
+            pc = realAddr;
+            
+            if (midlet.debug) {
+                midlet.print("PLT call via slot " + pltIndex + " to " + toHex(realAddr), stdout);
+            }
+        }
+    }
+    public void dumpDynamicInfo(Object stdout) {
+        midlet.print("=== Dynamic Linking Info ===", stdout);
+        midlet.print("PLT/GOT: " + toHex(pltGotAddr), stdout);
+        midlet.print("PLT Base: " + toHex(pltBase), stdout);
+        midlet.print("GOT Base: " + toHex(gotBase), stdout);
+        
+        midlet.print("\nLoaded Libraries (" + loadedLibraries.size() + "):", stdout);
+        for (int i = 0; i < loadedLibraries.size(); i++) {
+            midlet.print("  " + loadedLibraries.elementAt(i), stdout);
+        }
+        
+        midlet.print("\nDynamic Symbols (" + dynamicSymbols.size() + "):", stdout);
+        Enumeration keys = dynamicSymbols.keys();
+        int count = 0;
+        while (keys.hasMoreElements() && count < 20) {
+            String name = (String) keys.nextElement();
+            Hashtable sym = (Hashtable) dynamicSymbols.get(name);
+            int value = ((Integer)sym.get("value")).intValue();
+            midlet.print("  " + name + " -> " + toHex(value), stdout);
+            count++;
+        }
+    }
+    private int createSyscallStub(String name) {
+        int stubAddr = findFreeMemoryRegion(32);
+        if (stubAddr == 0) { return 0; }
+        
+        int syscallNum = mapSyscallName(name);
+        
+        // swi #syscallNum
+        writeIntLE(memory, stubAddr, 0xEF000000 | (syscallNum & 0x00FFFFFF));
+        // bx lr
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        
+        return stubAddr;
+    }
+
+    private int mapSyscallName(String name) {
+        if (name.equals("exit") || name.contains("exit")) return SYS_EXIT;
+        if (name.equals("write") || name.contains("write")) return SYS_WRITE;
+        if (name.equals("read") || name.contains("read")) return SYS_READ;
+        if (name.equals("open") || name.contains("open")) return SYS_OPEN;
+        if (name.equals("close") || name.contains("close")) return SYS_CLOSE;
+        if (name.equals("brk") || name.contains("brk")) return SYS_BRK;
+        if (name.equals("fork") || name.contains("fork")) return SYS_FORK;
+        if (name.equals("execve") || name.contains("exec")) return SYS_EXECVE;
+        return 0;
     }
     
     // Syscalls Handler
@@ -3180,31 +3837,17 @@ public class ELF {
     private int rotateRight(int value, int amount) { amount &= 31; return (value >>> amount) | (value << (32 - amount)); }
 
     private int findFreeMemoryRegion(int length) {
-        // Começar depois do heap
         int start = heapEnd;
         
-        // Encontrar região livre
         while (start + length < memory.length) {
             boolean free = true;
             
-            // Verificar mapeamentos existentes
-            for (int i = 0; i < memoryMappings.size(); i++) {
-                Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
-                int maddr = ((Integer)mapping.get("addr")).intValue();
-                int mlen = ((Integer)mapping.get("length")).intValue();
-                
-                if (start < maddr + mlen && start + length > maddr) {
-                    free = false;
-                    start = maddr + mlen;
-                    break;
-                }
-            }
+            // Verificar se sobrepõe com PLT
+            if (pltBase != 0 && start < pltBase + 4096 && start + length > pltBase) { free = false; start = pltBase + 4096; }
             
-            if (free) {
-                // Alinhar para página
-                start = (start + 4095) & ~4095;
-                return start;
-            }
+            // Verificar se sobrepõe com resolvedor
+            if (resolverCodeAddr != 0 && start < resolverCodeAddr + 256 && start + length > resolverCodeAddr) { free = false; start = resolverCodeAddr + 256; }
+            if (free) { start = (start + 4095) & ~4095; return start; }
         }
         
         return 0;
