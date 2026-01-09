@@ -2175,10 +2175,10 @@ public class ELF {
         libcSymbols.put("putchar", new Integer(createPutcharStub()));
         libcSymbols.put("getchar", new Integer(createGetcharStub()));
         libcSymbols.put("scanf", new Integer(createScanfStub()));
-        libcSymbols.put("fprintf", new Integer(createFprintfStub()));
+        /*libcSymbols.put("fprintf", new Integer(createFprintfStub()));
         libcSymbols.put("fputs", new Integer(createFputsStub()));
         libcSymbols.put("fputc", new Integer(createFputcStub()));
-        libcSymbols.put("fgetc", new Integer(createFgetcStub()));
+        libcSymbols.put("fgetc", new Integer(createFgetcStub()));*/
         
         // === MEMÓRIA ===
         libcSymbols.put("malloc", new Integer(createMallocStub()));
