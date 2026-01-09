@@ -3208,8 +3208,9 @@ public class ELF {
             // Retornar o resultado que está em R0
             return registers[REG_R0];
         } else if (syscallName.equals("exit")) {
+            registers[REG_R0] = args[0];
             handleExit(args[0]);
-            return 0;
+            return registers[REG_R0];
         }
         
         // Para outras syscalls, usar implementação padrão
