@@ -2143,7 +2143,7 @@ public class Lua {
                 }
                 
                 String midletClass = toLuaString(args.elementAt(0));
-                long time = ((Double)args.elementAt(1)).longValue();
+                long time = ((Double) args.elementAt(1)).longValue();
                 
                 try {
                     long alarmTime = PushRegistry.registerAlarm(midletClass, time);
