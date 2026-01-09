@@ -4082,15 +4082,15 @@ public class ELF {
             lowerName.endsWith("_proc") ||
             lowerName.startsWith("do_") ||
             lowerName.endsWith("_do") ||
-            lowerName.contains("init") ||
-            lowerName.contains("setup") ||
-            lowerName.contains("start") ||
-            lowerName.contains("stop") ||
-            lowerName.contains("close") ||
-            lowerName.contains("free") ||
-            lowerName.contains("destroy") ||
-            lowerName.contains("cleanup") ||
-            lowerName.contains("finalize")) {
+            lowerName.indexOf("init") != -1 ||
+            lowerName.indexOf("setup") != -1 ||
+            lowerName.indexOf("start") != -1 ||
+            lowerName.indexOf("stop") != -1 ||
+            lowerName.indexOf("close") != -1 ||
+            lowerName.indexOf("free") != -1 ||
+            lowerName.indexOf("destroy") != -1 ||
+            lowerName.indexOf("cleanup") != -1 ||
+            lowerName.indexOf("finalize") != -1) {
             
             return createVoidFunctionStub(stubAddr, symbolName);
         }
