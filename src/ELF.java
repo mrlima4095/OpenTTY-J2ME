@@ -4241,7 +4241,7 @@ public class ELF {
         }*/
         
         // 12. Funções de lock/sincronização
-        else if (lowerName.indexOf("lock") != -1 ||
+        /*else if (lowerName.indexOf("lock") != -1 ||
                 lowerName.indexOf("mutex") != -1 ||
                 lowerName.indexOf("sem") != -1 ||
                 lowerName.indexOf("barrier") != -1 ||
@@ -4249,10 +4249,10 @@ public class ELF {
                 lowerName.indexOf("atomic") != -1) {
             
             return createLockStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 13. Funções de lista/array/coleção
-        else if (lowerName.indexOf("list") != -1 ||
+        /*else if (lowerName.indexOf("list") != -1 ||
                 lowerName.indexOf("array") != -1 ||
                 lowerName.indexOf("vector") != -1 ||
                 lowerName.indexOf("queue") != -1 ||
@@ -4262,10 +4262,10 @@ public class ELF {
                 lowerName.indexOf("tree") != -1) {
             
             return createCollectionStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 14. Funções com "create" ou "new"
-        else if (lowerName.startsWith("create_") ||
+        /*else if (lowerName.startsWith("create_") ||
                 lowerName.startsWith("create") ||
                 lowerName.startsWith("new_") ||
                 lowerName.startsWith("new") ||
@@ -4275,10 +4275,10 @@ public class ELF {
                 lowerName.indexOf("_make") != -1) {
             
             return createFactoryStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 15. Funções com "find" ou "search"
-        else if (lowerName.startsWith("find_") ||
+        /*else if (lowerName.startsWith("find_") ||
                 lowerName.startsWith("find") ||
                 lowerName.startsWith("search_") ||
                 lowerName.startsWith("search") ||
@@ -4288,52 +4288,52 @@ public class ELF {
                 lowerName.indexOf("_locate") != -1) {
             
             return createSearchStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 16. Funções com "compare" ou "cmp"
-        else if (lowerName.indexOf("compare") != -1 ||
+        /*else if (lowerName.indexOf("compare") != -1 ||
                 lowerName.indexOf("cmp") != -1 ||
                 lowerName.indexOf("diff") != -1 ||
                 lowerName.indexOf("equal") != -1 ||
                 lowerName.indexOf("match") != -1) {
             
             return createCompareStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 17. Funções com "copy" ou "clone"
-        else if (lowerName.indexOf("copy") != -1 ||
+        /*else if (lowerName.indexOf("copy") != -1 ||
                 lowerName.indexOf("clone") != -1 ||
                 lowerName.indexOf("duplicate") != -1 ||
                 lowerName.indexOf("replicate") != -1) {
             
             return createCopyStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 18. Funções com "convert" ou "transform"
-        else if (lowerName.indexOf("convert") != -1 ||
+        /*else if (lowerName.indexOf("convert") != -1 ||
                 lowerName.indexOf("transform") != -1 ||
                 lowerName.indexOf("transcode") != -1||
                 lowerName.indexOf("translate") != -1) {
             
             return createConvertStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 19. Funções com "handle" ou "manager"
-        else if (lowerName.indexOf("handle") != -1 ||
+        /*else if (lowerName.indexOf("handle") != -1 ||
                 lowerName.indexOf("manager") != -1 ||
                 lowerName.indexOf("controller") != -1) {
             
             return createHandleStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 20. Funções com "callback" ou "handler"
-        else if (lowerName.indexOf("callback") != -1 ||
+        /*else if (lowerName.indexOf("callback") != -1 ||
                 lowerName.indexOf("handler") != -1 ||
                 lowerName.indexOf("listener") != -1 ||
                 lowerName.indexOf("observer") != -1) {
             
             return createCallbackStub(stubAddr, symbolName);
-        }
+        }*/
         
         // DEFAULT: Função genérica que retorna 0/sucesso
         return createDefaultStub(stubAddr, symbolName);
