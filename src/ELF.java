@@ -4230,7 +4230,7 @@ public class ELF {
         }
         
         // 11. Funções de debug/log
-        else if (lowerName.indexOf("debug") != -1 ||
+        /*else if (lowerName.indexOf("debug") != -1 ||
                 lowerName.indexOf("log") != -1 ||
                 lowerName.indexOf("trace") != -1 ||
                 lowerName.indexOf("print") != -1 ||
@@ -4238,7 +4238,7 @@ public class ELF {
                 lowerName.indexOf("assert") != -1) {
             
             return createDebugStub(stubAddr, symbolName);
-        }
+        }*/
         
         // 12. Funções de lock/sincronização
         else if (lowerName.indexOf("lock") != -1 ||
