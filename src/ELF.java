@@ -1678,17 +1678,30 @@ public class ELF {
                     }
                     
                     String symName = readString(data, dynstrOffset + st_name, 256);
-                    
-                    if (symName != null && symName.length() > 0 && 
-                        st_value != 0 && (st_info & 0xF) == 2) { // STT_FUNC
+
+                    if (symName != null && symName.length() > 0) {
+                        int binding = (st_info >> 4) & 0xF;
+                        int type = st_info & 0xF;
                         
-                        // Criar stub para esta função
-                        int stubAddr = createLibraryStub(symName);
-                        symbols.put(symName, new Integer(stubAddr));
-                        
-                        if (midlet.debug) {
-                            midlet.print("Found symbol in " + path + ": " + symName + 
-                                    " -> " + toHex(stubAddr), stdout);
+                        // Aceitar mais tipos de símbolos
+                        if (type == 2 || type == 1 || type == 0) { // STT_FUNC, STT_OBJECT, STT_NOTYPE
+                            if (binding == 0 || binding == 1) { // STB_LOCAL, STB_GLOBAL
+                                // Ignorar símbolos locais começando com "."
+                                if (!symName.startsWith(".") && !symName.startsWith("_") && 
+                                    symName.length() > 1) {
+                                    
+                                    // Criar stub para esta função
+                                    int stubAddr = createLibraryStub(symName);
+                                    if (stubAddr != 0) {
+                                        symbols.put(symName, new Integer(stubAddr));
+                                        
+                                        if (midlet.debug) {
+                                            midlet.print("Lib symbol: " + symName + " -> " + 
+                                                    toHex(stubAddr), stdout);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1701,6 +1714,218 @@ public class ELF {
         }
         
         return symbols;
+    }
+
+    private int createLibraryStub(String symbolName) {
+        int stubSize = 128; // Tamanho típico para um stub
+    
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) {
+            // Fallback para findFreeMemoryRegion
+            stubAddr = findFreeMemoryRegion(stubSize);
+            if (stubAddr == 0) return 0;
+        }
+        
+        // Mapear símbolos conhecidos para implementações específicas
+        if (symbolName.equals("printf") || symbolName.equals("puts") || 
+            symbolName.equals("fprintf") || symbolName.equals("vprintf")) {
+            return createPrintStub(symbolName);
+        } else if (symbolName.equals("malloc") || symbolName.equals("calloc")) {
+            return createMallocStub();
+        } else if (symbolName.equals("free")) {
+            return createFreeStub();
+        } else if (symbolName.equals("strlen")) {
+            return createStrlenStub();
+        } else if (symbolName.equals("strcpy") || symbolName.equals("strncpy")) {
+            return createStrcpyStub(symbolName);
+        } else if (symbolName.equals("strcmp") || symbolName.equals("strncmp")) {
+            return createStrcmpStub(symbolName);
+        } else if (symbolName.equals("memcpy")) {
+            return createMemcpyStub();
+        } else if (symbolName.equals("memset")) {
+            return createMemsetStub();
+        } else if (symbolName.equals("exit") || symbolName.equals("_exit")) {
+            return createExitStub();
+        } else if (symbolName.equals("__libc_start_main")) {
+            return createLibcStartMainStub();
+        } else if (symbolName.startsWith("sys_")) {
+            return createSyscallStub(symbolName.substring(4));
+        } else {
+            // Stub genérico
+            return createGenericStub(symbolName);
+        }
+    }
+
+    private int createPrintStub(String funcName) {
+        int stubAddr = findFreeMemoryRegion(128);
+        if (stubAddr == 0) return 0;
+        
+        // Stub básico para funções de print
+        // Simplesmente retorna número de caracteres "impressos"
+        
+        if (funcName.equals("puts")) {
+            // puts(const char *s) - retorna não-negativo se OK
+            // mov r0, #1 (sucesso)
+            writeIntLE(memory, stubAddr, 0xE3A00001);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        } else {
+            // printf/fprintf - retorna número de caracteres
+            // mov r0, #0
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        }
+        
+        return stubAddr;
+    }
+
+    private int createMallocStub() {
+        int stubAddr = findFreeMemoryRegion(64);
+        if (stubAddr == 0) return 0;
+        
+        // malloc(size_t size)
+        // Chamar syscall brk para alocar memória
+        
+        // stmfd sp!, {lr}
+        writeIntLE(memory, stubAddr, 0xE92D4000);
+        
+        // mov r7, #SYS_BRK
+        writeIntLE(memory, stubAddr + 4, 0xE3A07045);
+        
+        // mov r0, #0 (get current brk)
+        writeIntLE(memory, stubAddr + 8, 0xE3A00000);
+        
+        // swi 0
+        writeIntLE(memory, stubAddr + 12, 0xEF000000);
+        
+        // add r0, r0, r0 do tamanho solicitado
+        // ldr r1, [sp, #4] (size parameter)
+        writeIntLE(memory, stubAddr + 16, 0xE59D1004);
+        
+        // add r0, r0, r1 (new brk = current + size)
+        writeIntLE(memory, stubAddr + 20, 0xE0800001);
+        
+        // mov r7, #SYS_BRK (set new brk)
+        writeIntLE(memory, stubAddr + 24, 0xE3A07045);
+        
+        // swi 0
+        writeIntLE(memory, stubAddr + 28, 0xEF000000);
+        
+        // ldmfd sp!, {pc}
+        writeIntLE(memory, stubAddr + 32, 0xE8BD8000);
+        
+        return stubAddr;
+    }
+
+    private int createStrlenStub() {
+        int stubAddr = findFreeMemoryRegion(64);
+        if (stubAddr == 0) return 0;
+        
+        // strlen(const char *s) - implementação simplificada
+        // r0 = string pointer
+        
+        // mov r1, r0 (backup)
+        writeIntLE(memory, stubAddr, 0xE1A01000);
+        
+        // loop: ldrb r2, [r1], #1
+        writeIntLE(memory, stubAddr + 4, 0xE4D12001);
+        
+        // cmp r2, #0
+        writeIntLE(memory, stubAddr + 8, 0xE3520000);
+        
+        // bne loop
+        writeIntLE(memory, stubAddr + 12, 0x1AFFFFFB);
+        
+        // sub r0, r1, r0
+        writeIntLE(memory, stubAddr + 16, 0xE0400001);
+        
+        // sub r0, r0, #1
+        writeIntLE(memory, stubAddr + 20, 0xE2400001);
+        
+        // bx lr
+        writeIntLE(memory, stubAddr + 24, 0xE12FFF1E);
+        
+        return stubAddr;
+    }
+
+    private int createMemcpyStub() {
+        int stubAddr = findFreeMemoryRegion(48);
+        if (stubAddr == 0) return 0;
+        
+        // memcpy(void *dest, const void *src, size_t n)
+        // Retorna dest
+        
+        // cmp r2, #0
+        writeIntLE(memory, stubAddr, 0xE3520000);
+        
+        // bxeq lr (se n == 0, retorna)
+        writeIntLE(memory, stubAddr + 4, 0x012FFF1E);
+        
+        // stmfd sp!, {r0, lr} (salvar dest e return address)
+        writeIntLE(memory, stubAddr + 8, 0xE92D4001);
+        
+        // loop: ldrb r3, [r1], #1
+        writeIntLE(memory, stubAddr + 12, 0xE4D13001);
+        
+        // strb r3, [r0], #1
+        writeIntLE(memory, stubAddr + 16, 0xE4C03001);
+        
+        // subs r2, r2, #1
+        writeIntLE(memory, stubAddr + 20, 0xE2522001);
+        
+        // bne loop
+        writeIntLE(memory, stubAddr + 24, 0x1AFFFFFB);
+        
+        // ldmfd sp!, {r0, pc} (restaurar dest e retornar)
+        writeIntLE(memory, stubAddr + 28, 0xE8BD8001);
+        
+        return stubAddr;
+    }
+
+    private int createExitStub() {
+        int stubAddr = findFreeMemoryRegion(16);
+        if (stubAddr == 0) return 0;
+        
+        // exit(int status)
+        // mov r7, #SYS_EXIT
+        writeIntLE(memory, stubAddr, 0xE3A07001);
+        // swi 0
+        writeIntLE(memory, stubAddr + 4, 0xEF000000);
+        // bx lr (nunca alcançado)
+        writeIntLE(memory, stubAddr + 8, 0xE12FFF1E);
+        
+        return stubAddr;
+    }
+
+    private int createGenericStub(String symbolName) {
+        int stubAddr = findFreeMemoryRegion(32);
+        if (stubAddr == 0) return 0;
+        
+        // Stub que retorna 0/sucesso para funções não implementadas
+        
+        if (symbolName.startsWith("get") || symbolName.startsWith("is")) {
+            // Funções getter/is - retornam 0/false
+            // mov r0, #0
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+        } else if (symbolName.startsWith("set") || symbolName.endsWith("init")) {
+            // Funções setter/init - retornam void/sucesso
+            // Não faz nada
+        } else {
+            // Outras funções - retornam 0/sucesso
+            // mov r0, #0
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+        }
+        
+        // bx lr
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        
+        // Se for maior que 8 bytes, preencher com nops
+        for (int i = 8; i < 32; i += 4) {
+            writeIntLE(memory, stubAddr + i, 0xE1A00000); // nop
+        }
+        
+        return stubAddr;
     }
     
     private void initializeBSS(Hashtable sections) {
@@ -3968,19 +4193,71 @@ public class ELF {
     private int rotateRight(int value, int amount) { amount &= 31; return (value >>> amount) | (value << (32 - amount)); }
 
     private int findFreeMemoryRegion(int length) {
+        // Começar após o heap atual
         int start = heapEnd;
+        
+        // Garantir alinhamento mínimo de 4 bytes
+        start = (start + 3) & ~3;
         
         while (start + length < memory.length) {
             boolean free = true;
             
             // Verificar se sobrepõe com PLT
-            if (pltBase != 0 && start < pltBase + 4096 && start + length > pltBase) { free = false; start = pltBase + 4096; }
+            if (pltBase != 0 && start < pltBase + 4096 && start + length > pltBase) {
+                free = false;
+                start = pltBase + 4096;
+            }
             
             // Verificar se sobrepõe com resolvedor
-            if (resolverCodeAddr != 0 && start < resolverCodeAddr + 256 && start + length > resolverCodeAddr) { free = false; start = resolverCodeAddr + 256; }
-            if (free) { start = (start + 4095) & ~4095; return start; }
+            if (resolverCodeAddr != 0 && start < resolverCodeAddr + 256 && start + length > resolverCodeAddr) {
+                free = false;
+                start = resolverCodeAddr + 256;
+            }
+            
+            // Verificar se sobrepõe com stubs existentes
+            if (elfInfo.containsKey("stub_area")) {
+                int stubStart = ((Integer)elfInfo.get("stub_area")).intValue();
+                int stubSize = 65536; // 64KB para stubs
+                if (start < stubStart + stubSize && start + length > stubStart) {
+                    free = false;
+                    start = stubStart + stubSize;
+                }
+            }
+            
+            // Verificar mapeamentos de memória
+            for (int i = 0; i < memoryMappings.size(); i++) {
+                Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
+                int maddr = ((Integer)mapping.get("addr")).intValue();
+                int mlen = ((Integer)mapping.get("length")).intValue();
+                
+                if (start < maddr + mlen && start + length > maddr) {
+                    free = false;
+                    start = maddr + mlen;
+                    break;
+                }
+            }
+            
+            if (free) {
+                // Alinhar para página (opcional, mas bom para stubs de código)
+                if (length >= 4096) {
+                    start = (start + 4095) & ~4095;
+                }
+                return start;
+            }
+            
+            // Se não livre, continuar procurando
+            start += 4096; // Pular uma página
         }
         
+        // Se não encontrou região livre, tentar expandir heap
+        if (heapEnd + length < memory.length) {
+            start = heapEnd;
+            heapEnd = start + length;
+            start = (start + 3) & ~3; // Alinhar
+            return start;
+        }
+        
+        // Sem memória
         return 0;
     }
     private boolean isMemoryRegionFree(int addr, int length) {
@@ -4010,6 +4287,39 @@ public class ELF {
         }
         
         return 0;
+    }
+
+    private int allocateStubMemory(int size) {
+        // Se ainda não tem área de stubs, criar uma
+        if (!elfInfo.containsKey("stub_area")) {
+            int stubArea = findFreeMemoryRegion(65536); // 64KB para stubs
+            if (stubArea == 0) return 0;
+            
+            elfInfo.put("stub_area", new Integer(stubArea));
+            elfInfo.put("stub_next", new Integer(stubArea));
+            elfInfo.put("stub_size", new Integer(65536));
+            
+            if (midlet.debug) {
+                midlet.print("Allocated stub area at " + toHex(stubArea), stdout);
+            }
+        }
+        
+        // Alocar dentro da área de stubs
+        int stubNext = ((Integer)elfInfo.get("stub_next")).intValue();
+        int stubArea = ((Integer)elfInfo.get("stub_area")).intValue();
+        int stubSize = ((Integer)elfInfo.get("stub_size")).intValue();
+        
+        // Alinhar para 4 bytes
+        stubNext = (stubNext + 3) & ~3;
+        
+        // Verificar se cabe
+        if (stubNext + size <= stubArea + stubSize) {
+            elfInfo.put("stub_next", new Integer(stubNext + size));
+            return stubNext;
+        }
+        
+        // Não coube, procurar nova região
+        return findFreeMemoryRegion(size);
     }
 
 
