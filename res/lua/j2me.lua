@@ -200,6 +200,17 @@ java = {
     }
 }
 
+--[=[
+PushRegister Library
+]=]
+push = {
+    register = function (connection, filter, midlet, sender) end,
+    unregister = function (connection) end,
+    list = function (filter) end,
+    pending = function () end,
+    setAlarm = function (midletClass, time) end,
+    getAlarm = function (midletClass) end
+}
 --[=[Get a MIDlet Property Value]=]
 getAppProperty = function (field) end
 --[=[Run code and returns value of code, inject scopes with a table on scope]=]

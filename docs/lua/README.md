@@ -163,6 +163,18 @@ This is a complete implementation of the Lua language for the J2ME (Java Micro E
 | `java.midlet.build` | MIDlet Build Code |
 | `java.midlet.uptime` | MIDlet uptime |
 
+### PushRegistry
+
+| Function | Description |
+|----------|-------------|
+| `push.register(connection, filter, midlet, sender)` | Register Connection |
+| `push.unregister(connection)` | Unregister Connection |
+| `push.list(filter)` | List connections by filter or `*` for all |
+| `push.pending()` | Check if has conncetions active |
+| `push.setAlarm(midletClass, time)` | Set an alarm to MIDlet |
+| `push.getAlarm(midletClass)` | View an alarm |
+
+
 ## 📝 Usage Example
 
 ```lua
