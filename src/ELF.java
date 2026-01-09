@@ -2182,7 +2182,7 @@ public class ELF {
         
         // === MEMÓRIA ===
         libcSymbols.put("malloc", new Integer(createMallocStub()));
-        libcSymbols.put("free", new Integer(createFreeStub()));
+        /*libcSymbols.put("free", new Integer(createFreeStub()));
         libcSymbols.put("calloc", new Integer(createCallocStub()));
         libcSymbols.put("realloc", new Integer(createReallocStub()));
         
@@ -2250,7 +2250,7 @@ public class ELF {
         libcSymbols.put("log10", new Integer(createLog10Stub()));
         libcSymbols.put("floor", new Integer(createFloorStub()));
         libcSymbols.put("ceil", new Integer(createCeilStub()));
-        libcSymbols.put("fabs", new Integer(createFabsStub()));
+        libcSymbols.put("fabs", new Integer(createFabsStub()));*/
         
         // === ESPECIAL ===
         libcSymbols.put("__libc_start_main", new Integer(createLibcStartMainStub()));
