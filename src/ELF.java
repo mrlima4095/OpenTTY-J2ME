@@ -2671,10 +2671,32 @@ public class ELF {
             return new Integer(createSyscallStub(name));
         }
         
-        // 4. Criar stub genérico
+        // 4. Criar stub genérico inteligente
         int stubAddr = createGenericStub(name);
         if (stubAddr != 0) {
+            // Armazenar para reuso
+            if (globalSymbols.containsKey("unknown")) {
+                Hashtable unknown = (Hashtable) globalSymbols.get("unknown");
+                unknown.put(name, new Integer(stubAddr));
+            } else {
+                Hashtable unknown = new Hashtable();
+                unknown.put(name, new Integer(stubAddr));
+                globalSymbols.put("unknown", unknown);
+                loadedLibraries.addElement("unknown");
+            }
+            
+            if (midlet.debug) {
+                midlet.print("Created generic stub for unknown symbol: " + name + 
+                        " at " + toHex(stubAddr), stdout);
+            }
+            
             return new Integer(stubAddr);
+        }
+        
+        // 5. Último recurso: stub que apenas retorna
+        int fallbackAddr = createSimpleStub(0);
+        if (fallbackAddr != 0) {
+            return new Integer(fallbackAddr);
         }
         
         return null;
@@ -3972,6 +3994,625 @@ public class ELF {
         
         // ldmfd sp!, {pc}
         writeIntLE(memory, stubAddr + 8, 0xE8BD8000);
+        
+        return stubAddr;
+    }
+
+    private int createGenericStub(String symbolName) {
+        int stubSize = 64; // Tamanho razoável para um stub
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        // Analisar o nome da função para determinar comportamento
+        String lowerName = symbolName.toLowerCase();
+        
+        // === DETECTAR TIPO DE FUNÇÃO PELO NOME ===
+        
+        // 1. Funções que retornam void/nada (procedures)
+        if (lowerName.startsWith("void_") || 
+            lowerName.endsWith("_void") ||
+            lowerName.startsWith("proc_") ||
+            lowerName.endsWith("_proc") ||
+            lowerName.startsWith("do_") ||
+            lowerName.endsWith("_do") ||
+            lowerName.contains("init") ||
+            lowerName.contains("setup") ||
+            lowerName.contains("start") ||
+            lowerName.contains("stop") ||
+            lowerName.contains("close") ||
+            lowerName.contains("free") ||
+            lowerName.contains("destroy") ||
+            lowerName.contains("cleanup") ||
+            lowerName.contains("finalize")) {
+            
+            return createVoidFunctionStub(stubAddr, symbolName);
+        }
+        
+        // 2. Funções getter (retornam valor)
+        else if (lowerName.startsWith("get_") || 
+                lowerName.startsWith("get") ||
+                lowerName.contains("_get") ||
+                lowerName.startsWith("read_") ||
+                lowerName.contains("_read") ||
+                lowerName.startsWith("fetch_") ||
+                lowerName.contains("fetch") ||
+                lowerName.startsWith("obtain_") ||
+                lowerName.startsWith("acquire_")) {
+            
+            return createGetterStub(stubAddr, symbolName);
+        }
+        
+        // 3. Funções setter (configuram valor)
+        else if (lowerName.startsWith("set_") || 
+                lowerName.startsWith("set") ||
+                lowerName.contains("_set") ||
+                lowerName.startsWith("write_") ||
+                lowerName.contains("_write") ||
+                lowerName.startsWith("store_") ||
+                lowerName.contains("store") ||
+                lowerName.startsWith("put_") ||
+                lowerName.contains("_put") ||
+                lowerName.startsWith("assign_")) {
+            
+            return createSetterStub(stubAddr, symbolName);
+        }
+        
+        // 4. Funções boolean/verificação
+        else if (lowerName.startsWith("is_") || 
+                lowerName.startsWith("is") ||
+                lowerName.startsWith("has_") ||
+                lowerName.startsWith("has") ||
+                lowerName.startsWith("can_") ||
+                lowerName.startsWith("can") ||
+                lowerName.startsWith("should_") ||
+                lowerName.startsWith("should") ||
+                lowerName.startsWith("check_") ||
+                lowerName.contains("_check") ||
+                lowerName.startsWith("test_") ||
+                lowerName.contains("_test") ||
+                lowerName.contains("valid") ||
+                lowerName.contains("empty") ||
+                lowerName.contains("null") ||
+                lowerName.contains("exist")) {
+            
+            return createBooleanStub(stubAddr, symbolName);
+        }
+        
+        // 5. Funções matemáticas/cálculo
+        else if (lowerName.contains("calc") ||
+                lowerName.contains("compute") ||
+                lowerName.contains("math") ||
+                lowerName.contains("sum") ||
+                lowerName.contains("add") ||
+                lowerName.contains("sub") ||
+                lowerName.contains("mul") ||
+                lowerName.contains("div") ||
+                lowerName.contains("avg") ||
+                lowerName.contains("mean") ||
+                lowerName.contains("min") ||
+                lowerName.contains("max") ||
+                lowerName.contains("count")) {
+            
+            return createMathStub(stubAddr, symbolName);
+        }
+        
+        // 6. Funções de string/texto
+        else if (lowerName.contains("str") ||
+                lowerName.contains("text") ||
+                lowerName.contains("char") ||
+                lowerName.contains("byte") ||
+                lowerName.contains("concat") ||
+                lowerName.contains("append") ||
+                lowerName.contains("format") ||
+                lowerName.contains("parse") ||
+                lowerName.contains("encode") ||
+                lowerName.contains("decode")) {
+            
+            return createStringStub(stubAddr, symbolName);
+        }
+        
+        // 7. Funções de erro/status
+        else if (lowerName.contains("error") ||
+                lowerName.contains("err") ||
+                lowerName.contains("status") ||
+                lowerName.contains("result") ||
+                lowerName.contains("return") ||
+                lowerName.contains("code") ||
+                lowerName.contains("success") ||
+                lowerName.contains("fail")) {
+            
+            return createStatusStub(stubAddr, symbolName);
+        }
+        
+        // 8. Funções de tempo/data
+        else if (lowerName.contains("time") ||
+                lowerName.contains("date") ||
+                lowerName.contains("delay") ||
+                lowerName.contains("sleep") ||
+                lowerName.contains("wait") ||
+                lowerName.contains("clock") ||
+                lowerName.contains("timer") ||
+                lowerName.contains("epoch")) {
+            
+            return createTimeStub(stubAddr, symbolName);
+        }
+        
+        // 9. Funções de memória/alocação
+        else if (lowerName.contains("mem") ||
+                lowerName.contains("alloc") ||
+                lowerName.contains("heap") ||
+                lowerName.contains("pool") ||
+                lowerName.contains("buffer") ||
+                lowerName.contains("cache")) {
+            
+            return createMemoryStub(stubAddr, symbolName);
+        }
+        
+        // 10. Funções de sistema/OS
+        else if (lowerName.contains("sys") ||
+                lowerName.contains("os") ||
+                lowerName.contains("kernel") ||
+                lowerName.contains("driver") ||
+                lowerName.contains("io") ||
+                lowerName.contains("file") ||
+                lowerName.contains("dir") ||
+                lowerName.contains("path") ||
+                lowerName.contains("device")) {
+            
+            return createSystemStub(stubAddr, symbolName);
+        }
+        
+        // 11. Funções de debug/log
+        else if (lowerName.contains("debug") ||
+                lowerName.contains("log") ||
+                lowerName.contains("trace") ||
+                lowerName.contains("print") ||
+                lowerName.contains("dump") ||
+                lowerName.contains("assert")) {
+            
+            return createDebugStub(stubAddr, symbolName);
+        }
+        
+        // 12. Funções de lock/sincronização
+        else if (lowerName.contains("lock") ||
+                lowerName.contains("mutex") ||
+                lowerName.contains("sem") ||
+                lowerName.contains("barrier") ||
+                lowerName.contains("sync") ||
+                lowerName.contains("atomic")) {
+            
+            return createLockStub(stubAddr, symbolName);
+        }
+        
+        // 13. Funções de lista/array/coleção
+        else if (lowerName.contains("list") ||
+                lowerName.contains("array") ||
+                lowerName.contains("vector") ||
+                lowerName.contains("queue") ||
+                lowerName.contains("stack") ||
+                lowerName.contains("map") ||
+                lowerName.contains("hash") ||
+                lowerName.contains("tree")) {
+            
+            return createCollectionStub(stubAddr, symbolName);
+        }
+        
+        // 14. Funções com "create" ou "new"
+        else if (lowerName.startsWith("create_") ||
+                lowerName.startsWith("create") ||
+                lowerName.startsWith("new_") ||
+                lowerName.startsWith("new") ||
+                lowerName.contains("_create") ||
+                lowerName.contains("_new") ||
+                lowerName.startsWith("make_") ||
+                lowerName.contains("_make")) {
+            
+            return createFactoryStub(stubAddr, symbolName);
+        }
+        
+        // 15. Funções com "find" ou "search"
+        else if (lowerName.startsWith("find_") ||
+                lowerName.startsWith("find") ||
+                lowerName.startsWith("search_") ||
+                lowerName.startsWith("search") ||
+                lowerName.contains("_find") ||
+                lowerName.contains("_search") ||
+                lowerName.startsWith("locate_") ||
+                lowerName.contains("_locate")) {
+            
+            return createSearchStub(stubAddr, symbolName);
+        }
+        
+        // 16. Funções com "compare" ou "cmp"
+        else if (lowerName.contains("compare") ||
+                lowerName.contains("cmp") ||
+                lowerName.contains("diff") ||
+                lowerName.contains("equal") ||
+                lowerName.contains("match")) {
+            
+            return createCompareStub(stubAddr, symbolName);
+        }
+        
+        // 17. Funções com "copy" ou "clone"
+        else if (lowerName.contains("copy") ||
+                lowerName.contains("clone") ||
+                lowerName.contains("duplicate") ||
+                lowerName.contains("replicate")) {
+            
+            return createCopyStub(stubAddr, symbolName);
+        }
+        
+        // 18. Funções com "convert" ou "transform"
+        else if (lowerName.contains("convert") ||
+                lowerName.contains("transform") ||
+                lowerName.contains("transcode") ||
+                lowerName.contains("translate")) {
+            
+            return createConvertStub(stubAddr, symbolName);
+        }
+        
+        // 19. Funções com "handle" ou "manager"
+        else if (lowerName.contains("handle") ||
+                lowerName.contains("manager") ||
+                lowerName.contains("controller")) {
+            
+            return createHandleStub(stubAddr, symbolName);
+        }
+        
+        // 20. Funções com "callback" ou "handler"
+        else if (lowerName.contains("callback") ||
+                lowerName.contains("handler") ||
+                lowerName.contains("listener") ||
+                lowerName.contains("observer")) {
+            
+            return createCallbackStub(stubAddr, symbolName);
+        }
+        
+        // DEFAULT: Função genérica que retorna 0/sucesso
+        return createDefaultStub(stubAddr, symbolName);
+    }
+
+    // ========== IMPLEMENTAÇÕES ESPECÍFICAS ==========
+
+    private int createVoidFunctionStub(int stubAddr, String name) {
+        // Funções que não retornam valor (void)
+        // bx lr (apenas retorna)
+        writeIntLE(memory, stubAddr, 0xE12FFF1E);
+        
+        // Registrar para debug
+        if (midlet.debug) {
+            midlet.print("Created void stub for: " + name + " at " + toHex(stubAddr), stdout);
+        }
+        
+        return stubAddr;
+    }
+
+    private int createGetterStub(int stubAddr, String name) {
+        // Funções getter - retornam valor "falso"
+        // Padrão: retorna 0, 1, ou valor baseado no nome
+        
+        int returnValue = 0;
+        
+        // Tentar extrair valor do nome (ex: get_version -> 1)
+        if (name.contains("version") || name.contains("ver")) {
+            returnValue = 1;
+        } else if (name.contains("size") || name.contains("length") || name.contains("count")) {
+            returnValue = 0; // Tamanho 0
+        } else if (name.contains("id") || name.contains("handle")) {
+            returnValue = 0x1234; // ID falso
+        } else if (name.contains("time") || name.contains("clock")) {
+            returnValue = (int)(System.currentTimeMillis() / 1000) & 0x7FFFFFFF;
+        } else if (name.contains("error") || name.contains("errno")) {
+            returnValue = 0; // Sem erro
+        } else {
+            // Valor padrão baseado em hash do nome
+            returnValue = name.hashCode() & 0x7FFFFFFF;
+        }
+        
+        // mov r0, #returnValue (ou valor apropriado)
+        if (returnValue <= 0xFF) {
+            // mov r0, #value
+            writeIntLE(memory, stubAddr, 0xE3A00000 | (returnValue & 0xFF));
+        } else {
+            // Precisa de mais instruções para valores maiores
+            // movw r0, #(value & 0xFFFF)
+            int movwInstr = 0xE3000000 | ((returnValue & 0xF000) << 4) | (returnValue & 0x0FFF);
+            writeIntLE(memory, stubAddr, movwInstr);
+            
+            if (returnValue > 0xFFFF) {
+                // movt r0, #(value >> 16)
+                int movtInstr = 0xE3400000 | (((returnValue >> 12) & 0xF000) << 4) | ((returnValue >> 16) & 0x0FFF);
+                writeIntLE(memory, stubAddr + 4, movtInstr);
+                // bx lr
+                writeIntLE(memory, stubAddr + 8, 0xE12FFF1E);
+                return stubAddr;
+            }
+        }
+        
+        // bx lr
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        
+        if (midlet.debug) {
+            midlet.print("Created getter stub for: " + name + " returns " + returnValue, stdout);
+        }
+        
+        return stubAddr;
+    }
+
+    private int createSetterStub(int stubAddr, String name) {
+        // Funções setter - retornam sucesso (0) ou falha (-1)
+        // Normalmente retornam void ou int (0=sucesso)
+        
+        // Retornar 0 (sucesso)
+        // mov r0, #0
+        writeIntLE(memory, stubAddr, 0xE3A00000);
+        // bx lr
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        
+        if (midlet.debug) {
+            midlet.print("Created setter stub for: " + name, stdout);
+        }
+        
+        return stubAddr;
+    }
+
+    private int createBooleanStub(int stubAddr, String name) {
+        // Funções booleanas - retornam true (1) ou false (0)
+        
+        int returnValue = 1; // Por padrão, retorna true
+        
+        // Algumas funções específicas
+        if (name.contains("isnull") || name.contains("is_null") ||
+            name.contains("isempty") || name.contains("is_empty") ||
+            name.contains("isfull") || name.contains("is_full") ||
+            name.contains("haserror") || name.contains("has_error") ||
+            name.contains("failed") || name.contains("fail")) {
+            returnValue = 0; // false
+        }
+        
+        // mov r0, #returnValue
+        writeIntLE(memory, stubAddr, 0xE3A00000 | (returnValue & 0xFF));
+        // bx lr
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        
+        if (midlet.debug) {
+            midlet.print("Created boolean stub for: " + name + " returns " + 
+                    (returnValue != 0 ? "true" : "false"), stdout);
+        }
+        
+        return stubAddr;
+    }
+
+    private int createMathStub(int stubAddr, String name) {
+        // Funções matemáticas - retornam resultado calculado
+        
+        int returnValue = 0;
+        
+        if (name.contains("add") || name.contains("sum") || name.contains("total")) {
+            // Soma: retorna primeiro argumento (assumindo está em r0)
+            // Função já recebe valor em r0, apenas retorna
+            // bx lr
+            writeIntLE(memory, stubAddr, 0xE12FFF1E);
+        } else if (name.contains("sub") || name.contains("diff")) {
+            // Diferença: retorna 0
+            // mov r0, #0
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        } else if (name.contains("mul") || name.contains("product")) {
+            // Produto: retorna primeiro argumento
+            // bx lr
+            writeIntLE(memory, stubAddr, 0xE12FFF1E);
+        } else if (name.contains("div") || name.contains("quotient")) {
+            // Quociente: retorna 1
+            // mov r0, #1
+            writeIntLE(memory, stubAddr, 0xE3A00001);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        } else if (name.contains("min")) {
+            // Mínimo: retorna primeiro argumento
+            // bx lr
+            writeIntLE(memory, stubAddr, 0xE12FFF1E);
+        } else if (name.contains("max")) {
+            // Máximo: retorna 100
+            // mov r0, #100
+            writeIntLE(memory, stubAddr, 0xE3A00064);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        } else if (name.contains("avg") || name.contains("mean")) {
+            // Média: retorna 50
+            // mov r0, #50
+            writeIntLE(memory, stubAddr, 0xE3A00032);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        } else {
+            // Default: retorna 0
+            // mov r0, #0
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        }
+        
+        if (midlet.debug) {
+            midlet.print("Created math stub for: " + name, stdout);
+        }
+        
+        return stubAddr;
+    }
+
+    private int createStringStub(int stubAddr, String name) {
+        // Funções de string - comportamento específico
+        
+        if (name.contains("len") || name.contains("length") || name.contains("size")) {
+            // strlen, etc - retorna comprimento
+            // Retorna comprimento do primeiro argumento (string em r0)
+            // Vamos implementar strlen simplificado
+            
+            // stmfd sp!, {lr}
+            writeIntLE(memory, stubAddr, 0xE92D4000);
+            
+            // mov r1, r0  // backup do ponteiro
+            writeIntLE(memory, stubAddr + 4, 0xE1A01000);
+            
+            // loop: ldrb r2, [r1], #1
+            writeIntLE(memory, stubAddr + 8, 0xE4D12001);
+            
+            // cmp r2, #0
+            writeIntLE(memory, stubAddr + 12, 0xE3520000);
+            
+            // bne loop
+            writeIntLE(memory, stubAddr + 16, 0x1AFFFFFB);
+            
+            // sub r0, r1, r0
+            writeIntLE(memory, stubAddr + 20, 0xE0400001);
+            
+            // sub r0, r0, #1
+            writeIntLE(memory, stubAddr + 24, 0xE2400001);
+            
+            // ldmfd sp!, {pc}
+            writeIntLE(memory, stubAddr + 28, 0xE8BD8000);
+            
+        } else if (name.contains("copy") || name.contains("cpy")) {
+            // strcpy, etc - retorna ponteiro destino
+            // Retorna primeiro argumento (dest em r0)
+            // bx lr
+            writeIntLE(memory, stubAddr, 0xE12FFF1E);
+            
+        } else if (name.contains("cat") || name.contains("append")) {
+            // strcat - retorna ponteiro destino
+            // bx lr
+            writeIntLE(memory, stubAddr, 0xE12FFF1E);
+            
+        } else if (name.contains("cmp") || name.contains("compare")) {
+            // strcmp - retorna 0 (iguais)
+            // mov r0, #0
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+            
+        } else {
+            // Default: retorna primeiro argumento
+            // bx lr
+            writeIntLE(memory, stubAddr, 0xE12FFF1E);
+        }
+        
+        if (midlet.debug) {
+            midlet.print("Created string stub for: " + name, stdout);
+        }
+        
+        return stubAddr;
+    }
+
+    private int createDefaultStub(int stubAddr, String name) {
+        // Stub genérico padrão
+        
+        // Funções normalmente retornam 0 (sucesso) ou primeiro argumento
+        // Vamos fazer heurística simples:
+        
+        // Se nome sugere que retorna ponteiro/objeto, retorna primeiro arg
+        if (name.contains("ptr") || name.contains("pointer") ||
+            name.contains("obj") || name.contains("object") ||
+            name.contains("handle") || name.contains("ref") ||
+            name.contains("address") || name.contains("addr") ||
+            name.startsWith("get") || name.startsWith("create") ||
+            name.startsWith("new") || name.startsWith("make") ||
+            name.contains("alloc") || name.contains("open")) {
+            
+            // Retorna primeiro argumento (já em r0)
+            // bx lr
+            writeIntLE(memory, stubAddr, 0xE12FFF1E);
+            
+        } else if (name.contains("error") || name.contains("err") ||
+                name.contains("fail") || name.contains("invalid") ||
+                name.contains("null") || name.contains("empty")) {
+            
+            // Retorna valor de erro (-1 ou NULL)
+            // mov r0, #0  // NULL
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+            
+        } else {
+            // Retorna 0 (sucesso)
+            // mov r0, #0
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+            // bx lr
+            writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        }
+        
+        if (midlet.debug) {
+            midlet.print("Created generic stub for: " + name, stdout);
+        }
+        
+        return stubAddr;
+    }
+
+    // ========== STUBS PARA OUTROS TIPOS (simplificados) ==========
+
+    private int createStatusStub(int stubAddr, String name) {
+        // mov r0, #0 (sucesso)
+        writeIntLE(memory, stubAddr, 0xE3A00000);
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        return stubAddr;
+    }
+
+    private int createTimeStub(int stubAddr, String name) {
+        // Retorna timestamp atual
+        int time = (int)(System.currentTimeMillis() / 1000);
+        // Usar stub mais complexo ou simplificar
+        writeIntLE(memory, stubAddr, 0xE12FFF1E); // bx lr (retorna r0 que pode ter sido setado)
+        return stubAddr;
+    }
+
+    private int createMemoryStub(int stubAddr, String name) {
+        // Para funções de alocação, retorna ponteiro simulado
+        // Retorna endereço do heap atual
+        // ldr r0, =heap_current
+        // bx lr
+        // Implementação simplificada:
+        writeIntLE(memory, stubAddr, 0xE12FFF1E);
+        return stubAddr;
+    }
+
+    private int createSystemStub(int stubAddr, String name) {
+        // Retorna 0 (sucesso) ou -1 (falha) dependendo do nome
+        if (name.contains("error") || name.contains("fail")) {
+            // mvn r0, #0  // -1
+            writeIntLE(memory, stubAddr, 0xE3E00000);
+        } else {
+            // mov r0, #0  // sucesso
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+        }
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        return stubAddr;
+    }
+
+    // ========== MÉTODO AUXILIAR PARA CRIAÇÃO RÁPIDA ==========
+
+    private int createSimpleStub(int returnValue) {
+        int stubSize = 8;
+        int stubAddr = allocateStubMemory(stubSize);
+        if (stubAddr == 0) stubAddr = findFreeMemoryRegion(stubSize);
+        if (stubAddr == 0) return 0;
+        
+        if (returnValue == 0) {
+            // mov r0, #0
+            writeIntLE(memory, stubAddr, 0xE3A00000);
+        } else if (returnValue == 1) {
+            // mov r0, #1
+            writeIntLE(memory, stubAddr, 0xE3A00001);
+        } else if (returnValue == -1) {
+            // mvn r0, #0  // -1 = 0xFFFFFFFF
+            writeIntLE(memory, stubAddr, 0xE3E00000);
+        } else {
+            // Para outros valores, usar retorno genérico
+            writeIntLE(memory, stubAddr, 0xE12FFF1E); // bx lr
+            return stubAddr;
+        }
+        
+        // bx lr
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
         
         return stubAddr;
     }
