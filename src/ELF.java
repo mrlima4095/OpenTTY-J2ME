@@ -4140,7 +4140,7 @@ public class ELF {
                 lowerName.indexOf("valid") != -1 ||
                 lowerName.indexOf("empty") != -1 ||
                 lowerName.indexOf("null") != -1 ||
-                lowerName.indexOf("exist")) {
+                lowerName.indexOf("exist") != -1) {
             
             return createBooleanStub(stubAddr, symbolName);
         }
