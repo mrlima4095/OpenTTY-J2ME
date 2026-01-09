@@ -4098,11 +4098,11 @@ public class ELF {
         // 2. Funções getter (retornam valor)
         else if (lowerName.startsWith("get_") || 
                 lowerName.startsWith("get") ||
-                lowerName.contains("_get") ||
+                lowerName.indexOf("_get") != -1 ||
                 lowerName.startsWith("read_") ||
-                lowerName.contains("_read") ||
+                lowerName.indexOf("_read") != -1 ||
                 lowerName.startsWith("fetch_") ||
-                lowerName.contains("fetch") ||
+                lowerName.indexOf("fetch") != -1 ||
                 lowerName.startsWith("obtain_") ||
                 lowerName.startsWith("acquire_")) {
             
@@ -4112,13 +4112,13 @@ public class ELF {
         // 3. Funções setter (configuram valor)
         else if (lowerName.startsWith("set_") || 
                 lowerName.startsWith("set") ||
-                lowerName.contains("_set") ||
+                lowerName.indexOf("_set") != -1 ||
                 lowerName.startsWith("write_") ||
-                lowerName.contains("_write") ||
+                lowerName.indexOf("_write") != -1 ||
                 lowerName.startsWith("store_") ||
-                lowerName.contains("store") ||
+                lowerName.indexOf("store") != -1 ||
                 lowerName.startsWith("put_") ||
-                lowerName.contains("_put") ||
+                lowerName.indexOf("_put") != -1 ||
                 lowerName.startsWith("assign_")) {
             
             return createSetterStub(stubAddr, symbolName);
@@ -4134,132 +4134,132 @@ public class ELF {
                 lowerName.startsWith("should_") ||
                 lowerName.startsWith("should") ||
                 lowerName.startsWith("check_") ||
-                lowerName.contains("_check") ||
+                lowerName.indexOf("_check") != -1 ||
                 lowerName.startsWith("test_") ||
-                lowerName.contains("_test") ||
-                lowerName.contains("valid") ||
-                lowerName.contains("empty") ||
-                lowerName.contains("null") ||
-                lowerName.contains("exist")) {
+                lowerName.indexOf("_test") != -1 ||
+                lowerName.indexOf("valid") != -1 ||
+                lowerName.indexOf("empty") != -1 ||
+                lowerName.indexOf("null") != -1 ||
+                lowerName.indexOf("exist")) {
             
             return createBooleanStub(stubAddr, symbolName);
         }
         
         // 5. Funções matemáticas/cálculo
-        else if (lowerName.contains("calc") ||
-                lowerName.contains("compute") ||
-                lowerName.contains("math") ||
-                lowerName.contains("sum") ||
-                lowerName.contains("add") ||
-                lowerName.contains("sub") ||
-                lowerName.contains("mul") ||
-                lowerName.contains("div") ||
-                lowerName.contains("avg") ||
-                lowerName.contains("mean") ||
-                lowerName.contains("min") ||
-                lowerName.contains("max") ||
-                lowerName.contains("count")) {
+        else if (lowerName.indexOf("calc") != -1 ||
+                lowerName.indexOf("compute") != -1 ||
+                lowerName.indexOf("math") != -1 ||
+                lowerName.indexOf("sum") != -1 ||
+                lowerName.indexOf("add") != -1 ||
+                lowerName.indexOf("sub") != -1 ||
+                lowerName.indexOf("mul") != -1 ||
+                lowerName.indexOf("div") != -1 ||
+                lowerName.indexOf("avg") != -1 ||
+                lowerName.indexOf("mean") != -1 ||
+                lowerName.indexOf("min") != -1 ||
+                lowerName.indexOf("max") != -1 ||
+                lowerName.indexOf("count") != -1) {
             
             return createMathStub(stubAddr, symbolName);
         }
         
         // 6. Funções de string/texto
-        else if (lowerName.contains("str") ||
-                lowerName.contains("text") ||
-                lowerName.contains("char") ||
-                lowerName.contains("byte") ||
-                lowerName.contains("concat") ||
-                lowerName.contains("append") ||
-                lowerName.contains("format") ||
-                lowerName.contains("parse") ||
-                lowerName.contains("encode") ||
-                lowerName.contains("decode")) {
+        else if (lowerName.indexOf("str") != -1 ||
+                lowerName.indexOf("text") != -1 ||
+                lowerName.indexOf("char") != -1 ||
+                lowerName.indexOf("byte") != -1 ||
+                lowerName.indexOf("concat") != -1 ||
+                lowerName.indexOf("append") != -1 ||
+                lowerName.indexOf("format") != -1 ||
+                lowerName.indexOf("parse") != -1 ||
+                lowerName.indexOf("encode") != -1 ||
+                lowerName.indexOf("decode") != -1) {
             
             return createStringStub(stubAddr, symbolName);
         }
         
         // 7. Funções de erro/status
-        else if (lowerName.contains("error") ||
-                lowerName.contains("err") ||
-                lowerName.contains("status") ||
-                lowerName.contains("result") ||
-                lowerName.contains("return") ||
-                lowerName.contains("code") ||
-                lowerName.contains("success") ||
-                lowerName.contains("fail")) {
+        else if (lowerName.indexOf("error") != -1 ||
+                lowerName.indexOf("err") != -1 ||
+                lowerName.indexOf("status") != -1 ||
+                lowerName.indexOf("result") != -1 ||
+                lowerName.indexOf("return") != -1 ||
+                lowerName.indexOf("code") != -1 ||
+                lowerName.indexOf("success") != -1 ||
+                lowerName.indexOf("fail") != -1) {
             
             return createStatusStub(stubAddr, symbolName);
         }
         
         // 8. Funções de tempo/data
-        else if (lowerName.contains("time") ||
-                lowerName.contains("date") ||
-                lowerName.contains("delay") ||
-                lowerName.contains("sleep") ||
-                lowerName.contains("wait") ||
-                lowerName.contains("clock") ||
-                lowerName.contains("timer") ||
-                lowerName.contains("epoch")) {
+        else if (lowerName.indexOf("time") != -1 ||
+                lowerName.indexOf("date") != -1 ||
+                lowerName.indexOf("delay") != -1 ||
+                lowerName.indexOf("sleep") != -1 ||
+                lowerName.indexOf("wait") != -1 ||
+                lowerName.indexOf("clock") != -1 ||
+                lowerName.indexOf("timer") != -1 ||
+                lowerName.indexOf("epoch") != -1) {
             
             return createTimeStub(stubAddr, symbolName);
         }
         
         // 9. Funções de memória/alocação
-        else if (lowerName.contains("mem") ||
-                lowerName.contains("alloc") ||
-                lowerName.contains("heap") ||
-                lowerName.contains("pool") ||
-                lowerName.contains("buffer") ||
-                lowerName.contains("cache")) {
+        else if (lowerName.indexOf("mem") != -1 ||
+                lowerName.indexOf("alloc") != -1 ||
+                lowerName.indexOf("heap") != -1 ||
+                lowerName.indexOf("pool") != -1 ||
+                lowerName.indexOf("buffer") != -1 ||
+                lowerName.indexOf("cache") != -1) {
             
             return createMemoryStub(stubAddr, symbolName);
         }
         
         // 10. Funções de sistema/OS
-        else if (lowerName.contains("sys") ||
-                lowerName.contains("os") ||
-                lowerName.contains("kernel") ||
-                lowerName.contains("driver") ||
-                lowerName.contains("io") ||
-                lowerName.contains("file") ||
-                lowerName.contains("dir") ||
-                lowerName.contains("path") ||
-                lowerName.contains("device")) {
+        else if (lowerName.indexOf("sys") != -1 ||
+                lowerName.indexOf("os") != -1 ||
+                lowerName.indexOf("kernel") != -1 ||
+                lowerName.indexOf("driver") != -1 ||
+                lowerName.indexOf("io") != -1 ||
+                lowerName.indexOf("file") != -1 ||
+                lowerName.indexOf("dir") != -1 ||
+                lowerName.indexOf("path") != -1 ||
+                lowerName.indexOf("device") != -1) {
             
             return createSystemStub(stubAddr, symbolName);
         }
         
         // 11. Funções de debug/log
-        else if (lowerName.contains("debug") ||
-                lowerName.contains("log") ||
-                lowerName.contains("trace") ||
-                lowerName.contains("print") ||
-                lowerName.contains("dump") ||
-                lowerName.contains("assert")) {
+        else if (lowerName.indexOf("debug") != -1 ||
+                lowerName.indexOf("log") != -1 ||
+                lowerName.indexOf("trace") != -1 ||
+                lowerName.indexOf("print") != -1 ||
+                lowerName.indexOf("dump") != -1 ||
+                lowerName.indexOf("assert") != -1) {
             
             return createDebugStub(stubAddr, symbolName);
         }
         
         // 12. Funções de lock/sincronização
-        else if (lowerName.contains("lock") ||
-                lowerName.contains("mutex") ||
-                lowerName.contains("sem") ||
-                lowerName.contains("barrier") ||
-                lowerName.contains("sync") ||
-                lowerName.contains("atomic")) {
+        else if (lowerName.indexOf("lock") != -1 ||
+                lowerName.indexOf("mutex") != -1 ||
+                lowerName.indexOf("sem") != -1 ||
+                lowerName.indexOf("barrier") != -1 ||
+                lowerName.indexOf("sync") != -1 ||
+                lowerName.indexOf("atomic") != -1) {
             
             return createLockStub(stubAddr, symbolName);
         }
         
         // 13. Funções de lista/array/coleção
-        else if (lowerName.contains("list") ||
-                lowerName.contains("array") ||
-                lowerName.contains("vector") ||
-                lowerName.contains("queue") ||
-                lowerName.contains("stack") ||
-                lowerName.contains("map") ||
-                lowerName.contains("hash") ||
-                lowerName.contains("tree")) {
+        else if (lowerName.indexOf("list") != -1 ||
+                lowerName.indexOf("array") != -1 ||
+                lowerName.indexOf("vector") != -1 ||
+                lowerName.indexOf("queue") != -1 ||
+                lowerName.indexOf("stack") != -1 ||
+                lowerName.indexOf("map") != -1 ||
+                lowerName.indexOf("hash") != -1 ||
+                lowerName.indexOf("tree") != -1) {
             
             return createCollectionStub(stubAddr, symbolName);
         }
@@ -4269,10 +4269,10 @@ public class ELF {
                 lowerName.startsWith("create") ||
                 lowerName.startsWith("new_") ||
                 lowerName.startsWith("new") ||
-                lowerName.contains("_create") ||
-                lowerName.contains("_new") ||
+                lowerName.indexOf("_create") != -1 ||
+                lowerName.indexOf("_new") != -1 ||
                 lowerName.startsWith("make_") ||
-                lowerName.contains("_make")) {
+                lowerName.indexOf("_make") != -1) {
             
             return createFactoryStub(stubAddr, symbolName);
         }
@@ -4282,55 +4282,55 @@ public class ELF {
                 lowerName.startsWith("find") ||
                 lowerName.startsWith("search_") ||
                 lowerName.startsWith("search") ||
-                lowerName.contains("_find") ||
-                lowerName.contains("_search") ||
+                lowerName.indexOf("_find") != -1 ||
+                lowerName.indexOf("_search") != -1 ||
                 lowerName.startsWith("locate_") ||
-                lowerName.contains("_locate")) {
+                lowerName.indexOf("_locate") != -1) {
             
             return createSearchStub(stubAddr, symbolName);
         }
         
         // 16. Funções com "compare" ou "cmp"
-        else if (lowerName.contains("compare") ||
-                lowerName.contains("cmp") ||
-                lowerName.contains("diff") ||
-                lowerName.contains("equal") ||
-                lowerName.contains("match")) {
+        else if (lowerName.indexOf("compare") != -1 ||
+                lowerName.indexOf("cmp") != -1 ||
+                lowerName.indexOf("diff") != -1 ||
+                lowerName.indexOf("equal") != -1 ||
+                lowerName.indexOf("match") != -1) {
             
             return createCompareStub(stubAddr, symbolName);
         }
         
         // 17. Funções com "copy" ou "clone"
-        else if (lowerName.contains("copy") ||
-                lowerName.contains("clone") ||
-                lowerName.contains("duplicate") ||
-                lowerName.contains("replicate")) {
+        else if (lowerName.indexOf("copy") != -1 ||
+                lowerName.indexOf("clone") != -1 ||
+                lowerName.indexOf("duplicate") != -1 ||
+                lowerName.indexOf("replicate") != -1) {
             
             return createCopyStub(stubAddr, symbolName);
         }
         
         // 18. Funções com "convert" ou "transform"
-        else if (lowerName.contains("convert") ||
-                lowerName.contains("transform") ||
-                lowerName.contains("transcode") ||
-                lowerName.contains("translate")) {
+        else if (lowerName.indexOf("convert") != -1 ||
+                lowerName.indexOf("transform") != -1 ||
+                lowerName.indexOf("transcode") != -1||
+                lowerName.indexOf("translate") != -1) {
             
             return createConvertStub(stubAddr, symbolName);
         }
         
         // 19. Funções com "handle" ou "manager"
-        else if (lowerName.contains("handle") ||
-                lowerName.contains("manager") ||
-                lowerName.contains("controller")) {
+        else if (lowerName.indexOf("handle") != -1 ||
+                lowerName.indexOf("manager") != -1 ||
+                lowerName.indexOf("controller") != -1) {
             
             return createHandleStub(stubAddr, symbolName);
         }
         
         // 20. Funções com "callback" ou "handler"
-        else if (lowerName.contains("callback") ||
-                lowerName.contains("handler") ||
-                lowerName.contains("listener") ||
-                lowerName.contains("observer")) {
+        else if (lowerName.indexOf("callback") != -1 ||
+                lowerName.indexOf("handler") != -1 ||
+                lowerName.indexOf("listener") != -1 ||
+                lowerName.indexOf("observer") != -1) {
             
             return createCallbackStub(stubAddr, symbolName);
         }
@@ -4361,15 +4361,15 @@ public class ELF {
         int returnValue = 0;
         
         // Tentar extrair valor do nome (ex: get_version -> 1)
-        if (name.contains("version") || name.contains("ver")) {
+        if (name.indexOf("version") != -1 || name.indexOf("ver") != -1) {
             returnValue = 1;
-        } else if (name.contains("size") || name.contains("length") || name.contains("count")) {
+        } else if (name.indexOf("size") != -1 || name.indexOf("length") != -1 || name.indexOf("count") != -1) {
             returnValue = 0; // Tamanho 0
-        } else if (name.contains("id") || name.contains("handle")) {
+        } else if (name.indexOf("id") != -1 || name.indexOf("handle") != -1) {
             returnValue = 0x1234; // ID falso
-        } else if (name.contains("time") || name.contains("clock")) {
+        } else if (name.indexOf("time") != -1 || name.indexOf("clock") != -1) {
             returnValue = (int)(System.currentTimeMillis() / 1000) & 0x7FFFFFFF;
-        } else if (name.contains("error") || name.contains("errno")) {
+        } else if (name.indexOf("error") != -1 || name.indexOf("errno") != -1) {
             returnValue = 0; // Sem erro
         } else {
             // Valor padrão baseado em hash do nome
@@ -4429,11 +4429,11 @@ public class ELF {
         int returnValue = 1; // Por padrão, retorna true
         
         // Algumas funções específicas
-        if (name.contains("isnull") || name.contains("is_null") ||
-            name.contains("isempty") || name.contains("is_empty") ||
-            name.contains("isfull") || name.contains("is_full") ||
-            name.contains("haserror") || name.contains("has_error") ||
-            name.contains("failed") || name.contains("fail")) {
+        if (name.indexOf("isnull") != -1 || name.indexOf("is_null") != -1 ||
+            name.indexOf("isempty") != -1 || name.indexOf("is_empty") != -1 ||
+            name.indexOf("isfull") != -1 || name.indexOf("is_full") != -1 ||
+            name.indexOf("haserror") != -1 || name.indexOf("has_error") != -1 ||
+            name.indexOf("failed") != -1 || name.indexOf("fail") != -1) {
             returnValue = 0; // false
         }
         
@@ -4455,38 +4455,38 @@ public class ELF {
         
         int returnValue = 0;
         
-        if (name.contains("add") || name.contains("sum") || name.contains("total")) {
+        if (name.indexOf("add") != -1 || name.indexOf("sum") != -1 || name.indexOf("total") != -1) {
             // Soma: retorna primeiro argumento (assumindo está em r0)
             // Função já recebe valor em r0, apenas retorna
             // bx lr
             writeIntLE(memory, stubAddr, 0xE12FFF1E);
-        } else if (name.contains("sub") || name.contains("diff")) {
+        } else if (name.indexOf("sub") != -1 || name.indexOf("diff") != -1) {
             // Diferença: retorna 0
             // mov r0, #0
             writeIntLE(memory, stubAddr, 0xE3A00000);
             // bx lr
             writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (name.contains("mul") || name.contains("product")) {
+        } else if (name.indexOf("mul") != -1 || name.indexOf("product") != -1) {
             // Produto: retorna primeiro argumento
             // bx lr
             writeIntLE(memory, stubAddr, 0xE12FFF1E);
-        } else if (name.contains("div") || name.contains("quotient")) {
+        } else if (name.indexOf("div") != -1 || name.indexOf("quotient") != -1) {
             // Quociente: retorna 1
             // mov r0, #1
             writeIntLE(memory, stubAddr, 0xE3A00001);
             // bx lr
             writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (name.contains("min")) {
+        } else if (name.indexOf("min") != -1) {
             // Mínimo: retorna primeiro argumento
             // bx lr
             writeIntLE(memory, stubAddr, 0xE12FFF1E);
-        } else if (name.contains("max")) {
+        } else if (name.indexOf("max") != -1) {
             // Máximo: retorna 100
             // mov r0, #100
             writeIntLE(memory, stubAddr, 0xE3A00064);
             // bx lr
             writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        } else if (name.contains("avg") || name.contains("mean")) {
+        } else if (name.indexOf("avg") != -1 || name.indexOf("mean") != -1) {
             // Média: retorna 50
             // mov r0, #50
             writeIntLE(memory, stubAddr, 0xE3A00032);
@@ -4510,7 +4510,7 @@ public class ELF {
     private int createStringStub(int stubAddr, String name) {
         // Funções de string - comportamento específico
         
-        if (name.contains("len") || name.contains("length") || name.contains("size")) {
+        if (name.indexOf("len") != -1 || name.indexOf("length") != -1 || name.indexOf("size") != -1) {
             // strlen, etc - retorna comprimento
             // Retorna comprimento do primeiro argumento (string em r0)
             // Vamos implementar strlen simplificado
@@ -4539,18 +4539,18 @@ public class ELF {
             // ldmfd sp!, {pc}
             writeIntLE(memory, stubAddr + 28, 0xE8BD8000);
             
-        } else if (name.contains("copy") || name.contains("cpy")) {
+        } else if (name.indexOf("copy") != -1 || name.indexOf("cpy") != -1) {
             // strcpy, etc - retorna ponteiro destino
             // Retorna primeiro argumento (dest em r0)
             // bx lr
             writeIntLE(memory, stubAddr, 0xE12FFF1E);
             
-        } else if (name.contains("cat") || name.contains("append")) {
+        } else if (name.indexOf("cat") != -1 || name.indexOf("append") != -1) {
             // strcat - retorna ponteiro destino
             // bx lr
             writeIntLE(memory, stubAddr, 0xE12FFF1E);
             
-        } else if (name.contains("cmp") || name.contains("compare")) {
+        } else if (name.indexOf("cmp") != -1 || name.indexOf("compare") != -1) {
             // strcmp - retorna 0 (iguais)
             // mov r0, #0
             writeIntLE(memory, stubAddr, 0xE3A00000);
@@ -4577,21 +4577,21 @@ public class ELF {
         // Vamos fazer heurística simples:
         
         // Se nome sugere que retorna ponteiro/objeto, retorna primeiro arg
-        if (name.contains("ptr") || name.contains("pointer") ||
-            name.contains("obj") || name.contains("object") ||
-            name.contains("handle") || name.contains("ref") ||
-            name.contains("address") || name.contains("addr") ||
+        if (name.indexOf("ptr") != -1 || name.indexOf("pointer") != -1 ||
+            name.indexOf("obj") != -1 || name.indexOf("object") != -1 ||
+            name.indexOf("handle") != -1 || name.indexOf("ref") != -1 ||
+            name.indexOf("address") != -1 || name.indexOf("addr") != -1 ||
             name.startsWith("get") || name.startsWith("create") ||
             name.startsWith("new") || name.startsWith("make") ||
-            name.contains("alloc") || name.contains("open")) {
+            name.indexOf("alloc") != -1 || name.indexOf("open") != -1) {
             
             // Retorna primeiro argumento (já em r0)
             // bx lr
             writeIntLE(memory, stubAddr, 0xE12FFF1E);
             
-        } else if (name.contains("error") || name.contains("err") ||
-                name.contains("fail") || name.contains("invalid") ||
-                name.contains("null") || name.contains("empty")) {
+        } else if (name.indexOf("error") != -1 || name.indexOf("err") != -1 ||
+                name.indexOf("fail") != -1 || name.indexOf("invalid") != -1 ||
+                name.indexOf("null") != -1 || name.indexOf("empty") != -1) {
             
             // Retorna valor de erro (-1 ou NULL)
             // mov r0, #0  // NULL
@@ -4643,7 +4643,7 @@ public class ELF {
 
     private int createSystemStub(int stubAddr, String name) {
         // Retorna 0 (sucesso) ou -1 (falha) dependendo do nome
-        if (name.contains("error") || name.contains("fail")) {
+        if (name.indexOf("error") != -1 || name.indexOf("fail") != -1) {
             // mvn r0, #0  // -1
             writeIntLE(memory, stubAddr, 0xE3E00000);
         } else {
