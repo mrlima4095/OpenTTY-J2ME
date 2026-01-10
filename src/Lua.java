@@ -2124,7 +2124,7 @@ public class Lua {
             else if (MOD == PUSH_PENDING) {
                 try {
                     boolean hasPending = PushRegistry.listConnections(true).length > 0;
-                    return Boolean.valueOf(hasPending);
+                    return new Boolean(hasPending);
                 } catch (Exception e) { return gotbad(1, "hasPending", midlet.getCatch(e)); }
             }
             else if (MOD == PUSH_SET_ALARM) {
