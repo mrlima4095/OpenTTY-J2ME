@@ -18,7 +18,7 @@ public class ELF {
     private static final int PT_INTERP = 3;
     private static final int PT_NOTE = 4;
 
-    public ELF(OpenTTY midlet, Object stdout, Hashtable scope, int id, String pid, Hashtable proc) { this.midlet = midlet; this.stdout = stdout; }
+    public ELF(OpenTTY midlet, Hashtable args, Object stdout, Hashtable scope, int id, String pid, Hashtable proc) { this.midlet = midlet; this.stdout = stdout; }
     
     public String getPid() { return ""; }
     public void kill() {  }
