@@ -2110,7 +2110,7 @@ public class Lua {
                     
                     if (connections != null) {
                         for (int i = 0; i < connections.length; i++) {
-                            if (connections[i].startsWith(connection) || connection.equals("*")) {result.put(connections[i], connInfo);
+                            if (connections[i].startsWith(connection) || connection.equals("*")) {
                                 result.put(new Double(j), connections[i]); j++;
                             }
                         }
