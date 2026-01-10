@@ -44,11 +44,11 @@ public class LuaCanvas extends Canvas implements Runnable {
         
         // Chama a função paint do handler se existir
         Object paintHandler = handlerTable.get("paint");
-        if (paintHandler instanceof LuaFunction) {
+        if (paintHandler instanceof Lua.LuaFunction) {
             try {
                 Vector args = new Vector();
                 args.addElement(g);
-                ((LuaFunction) paintHandler).call(args);
+                ((Lua.LuaFunction) paintHandler).call(args);
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), midlet.stdout);
             }
@@ -57,11 +57,11 @@ public class LuaCanvas extends Canvas implements Runnable {
         // Se não houver paint handler, chama repaint se existir
         else {
             Object repaintHandler = handlerTable.get("repaint");
-            if (repaintHandler instanceof LuaFunction) {
+            if (repaintHandler instanceof Lua.LuaFunction) {
                 try {
                     Vector args = new Vector();
                     args.addElement(g);
-                    ((LuaFunction) repaintHandler).call(args);
+                    ((Lua.LuaFunction) repaintHandler).call(args);
                 } catch (Exception e) {
                     midlet.print(midlet.getCatch(e), midlet.stdout);
                 }
@@ -71,11 +71,11 @@ public class LuaCanvas extends Canvas implements Runnable {
     
     protected void keyPressed(int keyCode) {
         Object handler = handlerTable.get("keyPressed");
-        if (handler instanceof LuaFunction) {
+        if (handler instanceof Lua.LuaFunction) {
             try {
                 Vector args = new Vector();
                 args.addElement(new Double(keyCode));
-                ((LuaFunction) handler).call(args);
+                ((Lua.LuaFunction) handler).call(args);
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), midlet.stdout);
             }
@@ -84,11 +84,11 @@ public class LuaCanvas extends Canvas implements Runnable {
     
     protected void keyReleased(int keyCode) {
         Object handler = handlerTable.get("keyReleased");
-        if (handler instanceof LuaFunction) {
+        if (handler instanceof Lua.LuaFunction) {
             try {
                 Vector args = new Vector();
                 args.addElement(new Double(keyCode));
-                ((LuaFunction) handler).call(args);
+                ((Lua.LuaFunction) handler).call(args);
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), midlet.stdout);
             }
@@ -97,11 +97,11 @@ public class LuaCanvas extends Canvas implements Runnable {
     
     protected void keyRepeated(int keyCode) {
         Object handler = handlerTable.get("keyRepeated");
-        if (handler instanceof LuaFunction) {
+        if (handler instanceof Lua.LuaFunction) {
             try {
                 Vector args = new Vector();
                 args.addElement(new Double(keyCode));
-                ((LuaFunction) handler).call(args);
+                ((Lua.LuaFunction) handler).call(args);
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), midlet.stdout);
             }
@@ -110,12 +110,12 @@ public class LuaCanvas extends Canvas implements Runnable {
     
     protected void pointerDragged(int x, int y) {
         Object handler = handlerTable.get("pointerDragged");
-        if (handler instanceof LuaFunction) {
+        if (handler instanceof Lua.LuaFunction) {
             try {
                 Vector args = new Vector();
                 args.addElement(new Double(x));
                 args.addElement(new Double(y));
-                ((LuaFunction) handler).call(args);
+                ((Lua.LuaFunction) handler).call(args);
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), midlet.stdout);
             }
@@ -124,12 +124,12 @@ public class LuaCanvas extends Canvas implements Runnable {
     
     protected void pointerPressed(int x, int y) {
         Object handler = handlerTable.get("pointerPressed");
-        if (handler instanceof LuaFunction) {
+        if (handler instanceof Lua.LuaFunction) {
             try {
                 Vector args = new Vector();
                 args.addElement(new Double(x));
                 args.addElement(new Double(y));
-                ((LuaFunction) handler).call(args);
+                ((Lua.LuaFunction) handler).call(args);
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), midlet.stdout);
             }
@@ -138,12 +138,12 @@ public class LuaCanvas extends Canvas implements Runnable {
     
     protected void pointerReleased(int x, int y) {
         Object handler = handlerTable.get("pointerReleased");
-        if (handler instanceof LuaFunction) {
+        if (handler instanceof Lua.LuaFunction) {
             try {
                 Vector args = new Vector();
                 args.addElement(new Double(x));
                 args.addElement(new Double(y));
-                ((LuaFunction) handler).call(args);
+                ((Lua.LuaFunction) handler).call(args);
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), midlet.stdout);
             }
