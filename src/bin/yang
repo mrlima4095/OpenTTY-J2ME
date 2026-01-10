@@ -26,6 +26,7 @@ local mirror = {
     ["nc"] = { remote = "net/netcat.lua", here = "/bin/nc", description = "Connect with Remote Interfaces" },
     ["pastebin"] = { remote = "net/pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
     ["ping"] = { remote = "net/ping.lua", here = "/bin/ping", description = "Test connection delay" },
+    ["prg"] = { remote = "sys/push.lua", here = "/bin/prg", description = "PushRegister Manager" },
     ["sed"] = { remote = "file/sed.lua", here = "/bin/sed", description = "String Editor" },
     ["sdk"] = { remote = "dev/sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
     ["sync"] = { remote = "sys/sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
