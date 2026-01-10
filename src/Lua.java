@@ -328,7 +328,7 @@ public class Lua {
             }
         }
 
-        else if (current.type == LABEL) { marks.put(consume(LABEL).value, new Integer(tokenIndex)); return null; }
+        /*else if (current.type == LABEL) { marks.put(consume(LABEL).value, new Integer(tokenIndex)); return null; }
         else if (current.type == GOTO) {
             consume(GOTO);
             String labelName = (String) consume(IDENTIFIER).value;
@@ -339,7 +339,7 @@ public class Lua {
 
             tokenIndex = labelPos.intValue();
             return null;
-        }
+        }*/
 
         else if (current.type == IF) {
             consume(IF);
