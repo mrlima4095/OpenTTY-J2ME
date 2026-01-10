@@ -1571,13 +1571,13 @@ public class ELF {
 
             if (midlet.isPureText(data)) {
                 String code = new String(data, "UTF-8");
-                Lua lua = new Lua(midlet, owner, null, null, out, scope);
+                Lua lua = new Lua(midlet, id, null, null, stdout, scope);
                 lua.run(program, code, arg);
                 registers[REG_R0] = 0;
             }
             else {
                 InputStream elfStream = new ByteArrayInputStream(data);
-                ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
+                ELF elf = new ELF(midlet, arg, stdout, scope, id, null, null);
                 
                 if (elf.load(elfStream)) { elf.run(); registers[REG_R0] = 0; } else { registers[REG_R0] = -8; }
             }
