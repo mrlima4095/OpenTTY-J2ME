@@ -34,20 +34,10 @@ public class ELF {
     private Hashtable allocatedBlocks;
 
     // Dynamic linking structures
-    private Hashtable dynamicSymbols;      // Símbolos dinâmicos: nome -> {value, size, type}
-    private Hashtable neededLibraries;     // Bibliotecas necessárias
-    private Vector loadedLibraries;        // Bibliotecas carregadas
-    private Hashtable globalSymbols;       // Tabela global de símbolos
-    private Hashtable pltEntries;          // Entradas PLT: índice -> {symIndex, gotOffset, resolved}
-    private int pltGotAddr;                // Endereço da PLT/GOT
-    private int dynamicSectionAddr;        // Endereço da seção dinâmica
-    private int gotBase;                   // Base da GOT
-    private int pltBase;                   // Base da PLT
-    private int resolverCodeAddr;          // Endereço do código do resolvedor
-    private int resolveFuncAddr;           // Endereço da função de resolução
-        
-    // Mapeamentos de memória
-    private Vector memoryMappings;
+    private Hashtable dynamicSymbols, neededLibraries, globalSymbols, pltEntries;
+    private Vector loadedLibraries, memoryMappings; 
+    private int pltGotAddr, dynamicSectionAddr, gotBase, pltBase, resolverCodeAddr, resolveFuncAddr;
+
     
     // Constantes ELF
     private static final int EI_NIDENT = 16;
@@ -61,14 +51,7 @@ public class ELF {
     private static final int PT_NOTE = 4;
     
     // Constantes ARM
-    private static final int REG_R0 = 0;
-    private static final int REG_R1 = 1;
-    private static final int REG_R2 = 2;
-    private static final int REG_R3 = 3;
-    private static final int REG_R7 = 7;
-    private static final int REG_SP = 13;
-    private static final int REG_LR = 14;
-    private static final int REG_PC = 15;
+    private static final int REG_R0 = 0, REG_R1 = 1, REG_R2 = 2, REG_R3 = 3, REG_R7 = 7, REG_SP = 13, REG_LR = 14, REG_PC = 15;
     
     // Bits do CPSR
     private static final int CPSR_N = 31; // Negative/Less than
@@ -316,13 +299,13 @@ public class ELF {
         this.instructionCache = new Hashtable();
         this.cacheHits = 0;
         this.cacheMisses = 0;
-        this.elfInfo = new Hashtable();
         this.signalStack = new Vector();
-        this.futexWaiters = new Hashtable();
         this.memoryMappings = new Vector();
+        this.loadedLibraries = new Vector();
+        this.elfInfo = new Hashtable();
+        this.futexWaiters = new Hashtable();
         this.dynamicSymbols = new Hashtable();
         this.neededLibraries = new Hashtable();
-        this.loadedLibraries = new Vector();
         this.globalSymbols = new Hashtable();
         this.pltEntries = new Hashtable();
         this.pltGotAddr = 0;
@@ -361,24 +344,14 @@ public class ELF {
         if (elfData[4] != ELFCLASS32) { midlet.print("Only 32-bit ELF supported", stdout); return false; }
         if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout); return false; }
         
-        int e_type = readShortLE(elfData, 16);
-        int e_machine = readShortLE(elfData, 18);
-        int e_entry = readIntLE(elfData, 24);
-        int e_phoff = readIntLE(elfData, 28);
-        int e_shoff = readIntLE(elfData, 32);
-        int e_phnum = readShortLE(elfData, 44);
-        int e_shnum = readShortLE(elfData, 48);
-        int e_phentsize = readShortLE(elfData, 42);
-        int e_shentsize = readShortLE(elfData, 46);
+        int e_type = readShortLE(elfData, 16), e_machine = readShortLE(elfData, 18), e_entry = readIntLE(elfData, 24), e_phoff = readIntLE(elfData, 28), e_shoff = readIntLE(elfData, 32), e_phnum = readShortLE(elfData, 44), e_shnum = readShortLE(elfData, 48), e_phentsize = readShortLE(elfData, 42), e_shentsize = readShortLE(elfData, 46);
         
         if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout); return false; }
         if (e_machine != EM_ARM) { midlet.print("Not an ARM executable", stdout); return false; }
         
         // Armazenar informações do ELF
-        elfInfo.put("entry", new Integer(e_entry));
-        elfInfo.put("phoff", new Integer(e_phoff));
-        elfInfo.put("phnum", new Integer(e_phnum));
-        elfInfo.put("shoff", new Integer(e_shoff));
+        elfInfo.put("entry", new Integer(e_entry)); elfInfo.put("phoff", new Integer(e_phoff));
+        elfInfo.put("phnum", new Integer(e_phnum)); elfInfo.put("shoff", new Integer(e_shoff));
         elfInfo.put("shnum", new Integer(e_shnum));
         
         // Carregar seções primeiro para obter informações de .bss
@@ -393,70 +366,39 @@ public class ELF {
         
         // Carregar segmentos
         for (int i = 0; i < e_phnum; i++) {
-            int phdrOffset = e_phoff + i * e_phentsize;
-            int p_type = readIntLE(elfData, phdrOffset);
+            int phdrOffset = e_phoff + i * e_phentsize, p_type = readIntLE(elfData, phdrOffset);
             
             if (p_type == PT_LOAD) {
-                int p_offset = readIntLE(elfData, phdrOffset + 4);
-                int p_vaddr = readIntLE(elfData, phdrOffset + 8);
-                int p_filesz = readIntLE(elfData, phdrOffset + 16);
-                int p_memsz = readIntLE(elfData, phdrOffset + 20);
+                int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16), p_memsz = readIntLE(elfData, phdrOffset + 20);
                 
                 // Carregar dados do arquivo
-                for (int j = 0; j < p_filesz && j < memory.length; j++) { 
-                    if (p_vaddr + j < memory.length) { 
-                        memory[p_vaddr + j] = elfData[p_offset + j]; 
-                    } 
-                }
+                for (int j = 0; j < p_filesz && j < memory.length; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = elfData[p_offset + j]; } }
                 
                 // Zerar memória restante (.bss)
-                for (int j = p_filesz; j < p_memsz; j++) { 
-                    if (p_vaddr + j < memory.length) { 
-                        memory[p_vaddr + j] = 0; 
-                    } 
-                }
-            } else if (p_type == PT_DYNAMIC) {
-                // Processar dynamic section (para bibliotecas compartilhadas)
-                processDynamicSegment(elfData, phdrOffset);
-            } else if (p_type == PT_INTERP) {
+                for (int j = p_filesz; j < p_memsz; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = 0; } }
+            }
+            else if (p_type == PT_DYNAMIC) { processDynamicSegment(elfData, phdrOffset); }
+            else if (p_type == PT_INTERP) {
                 // Interpretador (loader dinâmico) - ignorado por enquanto
                 int p_offset = readIntLE(elfData, phdrOffset + 4);
                 String interp = readString(elfData, p_offset, 256);
-                if (midlet.debug) midlet.print("Interpreter: " + interp, stdout);
+                if (midlet.debug) { midlet.print("Interpreter: " + interp, stdout); }
             }
         }
-        
-        // Processar símbolos e realocações
-        processSymbolsAndRelocations(elfData, sectionInfo);
-        
-        // Configurar stack para CRT
-        setupCRTStack();
 
-        // Processar dynamic segment
-        processDynamicSection(elfData);
-        
-        // Carregar bibliotecas necessárias
-        loadNeededLibraries();
-        
-        // Processar símbolos e realocações
-        processSymbolsAndRelocations(elfData, sectionInfo);
-        
-        // Configurar PLT/GOT
-        setupPLTGOT();
-        
-        // Executar funções de inicialização
+        processSymbolsAndRelocations(elfData, sectionInfo); setupCRTStack();
+        processDynamicSection(elfData); loadNeededLibraries();
+        processSymbolsAndRelocations(elfData, sectionInfo); setupPLTGOT();
         executeInitFunctions();
         
         return true;
     }
 
     private void processDynamicSection(byte[] elfData) {
-        int e_phoff = ((Integer)elfInfo.get("phoff")).intValue();
-        int e_phnum = ((Integer)elfInfo.get("phnum")).intValue();
+        int e_phoff = ((Integer)elfInfo.get("phoff")).intValue(), e_phnum = ((Integer)elfInfo.get("phnum")).intValue();
         
         for (int i = 0; i < e_phnum; i++) {
-            int phdrOffset = e_phoff + i * 32;
-            int p_type = readIntLE(elfData, phdrOffset);
+            int phdrOffset = e_phoff + i * 32, p_type = readIntLE(elfData, phdrOffset);
             
             if (p_type == PT_DYNAMIC) {
                 dynamicSectionAddr = readIntLE(elfData, phdrOffset + 8);
@@ -466,26 +408,23 @@ public class ELF {
             }
         }
     }
-
     private void processDynamicEntries(byte[] elfData, int dynAddr, int dynSize) {
         int offset = 0;
         
         while (offset < dynSize) {
-            int tag = readIntLE(elfData, dynAddr + offset);
-            int val = readIntLE(elfData, dynAddr + offset + 4);
-            
-            if (tag == DT_NULL) break;
+            int tag = readIntLE(elfData, dynAddr + offset), val = readIntLE(elfData, dynAddr + offset + 4);
+            if (tag == DT_NULL) { break; }
             
             switch (tag) {
                 case DT_NEEDED:
                     String libName = readString(elfData, val, 256);
                     neededLibraries.put(libName, new Integer(val));
-                    if (midlet.debug) midlet.print("Needed library: " + libName, stdout);
+                    if (midlet.debug) { midlet.print("Needed library: " + libName, stdout); }
                     break;
                     
                 case DT_PLTGOT:
                     pltGotAddr = val;
-                    if (midlet.debug) midlet.print("PLT/GOT at: " + toHex(val), stdout);
+                    if (midlet.debug) { midlet.print("PLT/GOT at: " + toHex(val), stdout); }
                     break;
                     
                 case DT_STRTAB:
@@ -536,35 +475,18 @@ public class ELF {
             offset += 8;
         }
     }
-
-    private void processHashTable(byte[] elfData, int hashAddr) {
-        int nbucket = readIntLE(elfData, hashAddr);
-        int nchain = readIntLE(elfData, hashAddr + 4);
-        
-        elfInfo.put("nbucket", new Integer(nbucket));
-        elfInfo.put("nchain", new Integer(nchain));
-        elfInfo.put("buckets", new Integer(hashAddr + 8));
-        elfInfo.put("chains", new Integer(hashAddr + 8 + nbucket * 4));
-    }
+    private void processHashTable(byte[] elfData, int hashAddr) { int nbucket = readIntLE(elfData, hashAddr), nchain = readIntLE(elfData, hashAddr + 4); elfInfo.put("nbucket", new Integer(nbucket)); elfInfo.put("nchain", new Integer(nchain)); elfInfo.put("buckets", new Integer(hashAddr + 8)); elfInfo.put("chains", new Integer(hashAddr + 8 + nbucket * 4)); }
 
     private void loadNeededLibraries() {
         Enumeration libNames = neededLibraries.keys();
         while (libNames.hasMoreElements()) {
             String libName = (String) libNames.nextElement();
             
-            if (!loadedLibraries.contains(libName)) {
-                if (loadLibrary(libName)) {
-                    loadedLibraries.addElement(libName);
-                    if (midlet.debug) midlet.print("Loaded library: " + libName, stdout);
-                } else {
-                    if (midlet.debug) midlet.print("Failed to load: " + libName, stdout);
-                }
-            }
+            if (loadedLibraries.contains(libName)) { }
+            else { if (loadLibrary(libName)) { loadedLibraries.addElement(libName); if (midlet.debug) { midlet.print("Loaded library: " + libName, stdout); } } else { if (midlet.debug) { midlet.print("Failed to load: " + libName, stdout); } } }
         }
     }
-
     private boolean loadLibrary(String libName) {
-        // Tentar caminhos comuns
         String[] paths = { "/lib/" + libName, "/usr/lib/" + libName };
         
         for (int i = 0; i < paths.length; i++) {
@@ -594,15 +516,13 @@ public class ELF {
     }
 
     private void loadDefaultLibraries() {
-        // Libc simulada
         Hashtable libc = new Hashtable();
         
-        // Adicionar funções básicas
         libc.put("printf", new Integer(createSyscallStub("write")));
         libc.put("puts", new Integer(createSyscallStub("write")));
         libc.put("malloc", new Integer(createSyscallStub("brk")));
         libc.put("free", new Integer(createSyscallStub("brk")));
-        libc.put("strlen", new Integer(createSimpleStub(16))); // Stub simples
+        libc.put("strlen", new Integer(createSimpleStub(16)));
         libc.put("strcpy", new Integer(createSimpleStub(32)));
         libc.put("strcmp", new Integer(createSimpleStub(32)));
         libc.put("memcpy", new Integer(createSimpleStub(48)));
@@ -616,21 +536,10 @@ public class ELF {
         globalSymbols.put("libc.so.6", libc);
         loadedLibraries.addElement("libc.so.6");
         
-        if (midlet.debug) {
-            midlet.print("Loaded default libraries", stdout);
-        }
+        if (midlet.debug) { midlet.print("Loaded default libraries", stdout); }
     }
 
-    private int createSimpleStub(int size) {
-        int stubAddr = findFreeMemoryRegion(size);
-        if (stubAddr == 0) { return 0; }
-
-        writeIntLE(memory, stubAddr, 0xE3A00000); // mov r0, #0
-        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E); // bx lr
-        
-        return stubAddr;
-    }
-    
+    // Runtime
     public Hashtable run() {
         running = true;
         Hashtable proc = midlet.genprocess("elf", id, null), ITEM = new Hashtable();
@@ -699,133 +608,35 @@ public class ELF {
         return ITEM;
     }
 
-    private int fetchInstruction(int addr) {
-        // Verificar cache primeiro
-        Integer addrObj = new Integer(addr);
-        if (instructionCache.containsKey(addrObj)) {
-            cacheHits++;
-            return ((Integer)instructionCache.get(addrObj)).intValue();
-        }
-        
-        cacheMisses++;
-        int instruction = readIntLE(memory, addr);
-        
-        // Armazenar no cache (apenas instruções comuns)
-        if ((instruction & 0x0E000000) != 0x0A000000) { // Não armazenar branches
-            instructionCache.put(addrObj, new Integer(instruction));
-        }
-        
-        return instruction;
-    }
-    
+    private int fetchInstruction(int addr) { Integer addrObj = new Integer(addr); if (instructionCache.containsKey(addrObj)) { cacheHits++; return ((Integer)instructionCache.get(addrObj)).intValue(); } cacheMisses++; int instruction = readIntLE(memory, addr); if ((instruction & 0x0E000000) != 0x0A000000) { instructionCache.put(addrObj, new Integer(instruction)); } return instruction; }
     private void executeInstruction(int instruction) {
-        // Extrair condição (bits 28-31)
         int cond = (instruction >> 28) & 0xF;
+        if (!checkCondition(cond)) { return; }
+
+        if ((instruction & 0xFF000000) == 0xEB000000) { int offset = instruction & 0x00FFFFFF; if ((offset & 0x00800000) != 0) offset |= 0xFF000000; offset <<= 2; int target = pc + offset - 4; if (pltBase != 0 && target >= pltBase && target < pltBase + 4096) { handlePLTCall(target); return; } }
+        if ((instruction & 0x0F000000) == 0x0F000000) { int swi_number = instruction & 0x00FFFFFF; if (swi_number == 0) { handleSyscall(registers[REG_R7]); } else { handleSyscall(swi_number); } return; }
+        if ((instruction & 0x0FC000F0) == 0x00000090) { handleMultiply(instruction); return; }
+        if ((instruction & 0x0F8000F0) == 0x00800090) { handleLongMultiply(instruction); return; }
+        if ((instruction & 0x0E000000) == 0x08000000) { handleLoadStoreMultiple(instruction); return; }
+        if ((instruction & 0x0E000000) == 0x0C000000) { handleCoprocessor(instruction); return; }
+        if ((instruction & 0x0C000000) == 0x00000000) { handleDataProcessing(instruction); return; }
+        if ((instruction & 0x0C000000) == 0x04000000) { handleLoadStore(instruction); return; }
+        if ((instruction & 0x0E000000) == 0x0A000000) { handleBranch(instruction); return; }
+        if ((instruction & 0x0F000000) == 0x02800000 || (instruction & 0x0F000000) == 0x02400000) { handleAdrSub(instruction); return; }
+        if (instruction == 0xE1A00000) { return; }
         
-        // Verificar se a instrução deve ser executada baseada na condição
-        if (!checkCondition(cond)) {
-            return; // Condição falsa, pular instrução
-        }
-
-        if ((instruction & 0xFF000000) == 0xEB000000) { // bl
-            int offset = instruction & 0x00FFFFFF;
-            if ((offset & 0x00800000) != 0) offset |= 0xFF000000;
-            offset <<= 2;
-            
-            int target = pc + offset - 4;
-            
-            if (pltBase != 0 && target >= pltBase && target < pltBase + 4096) {
-                handlePLTCall(target);
-                return;
-            }
-        }
-        
-        // Syscall (SWI)
-        if ((instruction & 0x0F000000) == 0x0F000000) {
-            int swi_number = instruction & 0x00FFFFFF;
-            if (swi_number == 0) { 
-                handleSyscall(registers[REG_R7]); 
-            } else { 
-                handleSyscall(swi_number); 
-            }
-            return;
-        }
-
-        // Multiplicação e Multiplicação-Acumulação
-        if ((instruction & 0x0FC000F0) == 0x00000090) {
-            handleMultiply(instruction);
-            return;
-        }
-        
-        // Multiplicação longa (signed/unsigned)
-        if ((instruction & 0x0F8000F0) == 0x00800090) {
-            handleLongMultiply(instruction);
-            return;
-        }
-
-        // Load/Store múltiplos
-        if ((instruction & 0x0E000000) == 0x08000000) {
-            handleLoadStoreMultiple(instruction);
-            return;
-        }
-
-        // Instruções de coprocessador (incluindo FPU)
-        if ((instruction & 0x0E000000) == 0x0C000000) {
-            handleCoprocessor(instruction);
-            return;
-        }
-
-        // Data Processing Instructions
-        if ((instruction & 0x0C000000) == 0x00000000) {
-            handleDataProcessing(instruction);
-            return;
-        }
-        
-        // Load/Store Instructions
-        if ((instruction & 0x0C000000) == 0x04000000) {
-            handleLoadStore(instruction);
-            return;
-        }
-        
-        // Branch Instructions
-        if ((instruction & 0x0E000000) == 0x0A000000) {
-            handleBranch(instruction);
-            return;
-        }
-
-        // ADR/SUB pseudo-instructions (ADD/SUB com PC)
-        if ((instruction & 0x0F000000) == 0x02800000 || (instruction & 0x0F000000) == 0x02400000) {
-            handleAdrSub(instruction);
-            return;
-        }
-
-        // NOP
-        if (instruction == 0xE1A00000) {
-            return;
-        }
-        
-        // Instrução não reconhecida
-        if (midlet.debug) {
-            midlet.print("[WARN] Unrecognized instruction: " + toHex(instruction) + " at PC: " + toHex(pc-4), stdout);
-        }
+        if (midlet.debug) { midlet.print("[WARN] Unrecognized instruction: " + toHex(instruction) + " at PC: " + toHex(pc-4), stdout); }
     }
-
     private void executeInitFunctions() {
-        // .init
         if (elfInfo.containsKey("init")) {
             int initAddr = ((Integer)elfInfo.get("init")).intValue();
             if (initAddr != 0) {
-                int savedPC = pc;
-                int savedSP = registers[REG_SP];
+                int savedPC = pc, savedSP = registers[REG_SP];
                 
-                registers[REG_LR] = savedPC;
-                pc = initAddr;
+                registers[REG_LR] = savedPC;pc = initAddr;
                 
-                if (midlet.debug) {
-                    midlet.print("Calling .init at " + toHex(initAddr), stdout);
-                }
+                if (midlet.debug) { midlet.print("Calling .init at " + toHex(initAddr), stdout); }
                 
-                // Executar brevemente
                 for (int i = 0; i < 100 && running; i++) {
                     int instruction = fetchInstruction(pc);
                     pc += 4;
@@ -840,284 +651,111 @@ public class ELF {
     
     private boolean checkCondition(int cond) {
         switch (cond) {
-            case COND_EQ: // Z = 1
-                return (cpsr & Z_MASK) != 0;
-            case COND_NE: // Z = 0
-                return (cpsr & Z_MASK) == 0;
-            case COND_CS: // C = 1
-                return (cpsr & C_MASK) != 0;
-            case COND_CC: // C = 0
-                return (cpsr & C_MASK) == 0;
-            case COND_MI: // N = 1
-                return (cpsr & N_MASK) != 0;
-            case COND_PL: // N = 0
-                return (cpsr & N_MASK) == 0;
-            case COND_VS: // V = 1
-                return (cpsr & V_MASK) != 0;
-            case COND_VC: // V = 0
-                return (cpsr & V_MASK) == 0;
-            case COND_HI: // C = 1 and Z = 0
-                return ((cpsr & C_MASK) != 0) && ((cpsr & Z_MASK) == 0);
-            case COND_LS: // C = 0 or Z = 1
-                return ((cpsr & C_MASK) == 0) || ((cpsr & Z_MASK) != 0);
-            case COND_GE: // N = V
-                return ((cpsr & N_MASK) != 0) == ((cpsr & V_MASK) != 0);
-            case COND_LT: // N != V
-                return ((cpsr & N_MASK) != 0) != ((cpsr & V_MASK) != 0);
-            case COND_GT: // Z = 0 and N = V
-                return ((cpsr & Z_MASK) == 0) && (((cpsr & N_MASK) != 0) == ((cpsr & V_MASK) != 0));
-            case COND_LE: // Z = 1 or N != V
-                return ((cpsr & Z_MASK) != 0) || (((cpsr & N_MASK) != 0) != ((cpsr & V_MASK) != 0));
-            case COND_AL: // Always
-                return true;
-            case COND_NV: // Never
-                return false;
-            default:
-                return true; // Por segurança
+            case COND_EQ: return (cpsr & Z_MASK) != 0;
+            case COND_NE: return (cpsr & Z_MASK) == 0;
+            case COND_CS: return (cpsr & C_MASK) != 0;
+            case COND_CC: return (cpsr & C_MASK) == 0;
+            case COND_MI: return (cpsr & N_MASK) != 0;
+            case COND_PL: return (cpsr & N_MASK) == 0;
+            case COND_VS: return (cpsr & V_MASK) != 0;
+            case COND_VC: return (cpsr & V_MASK) == 0;
+            case COND_HI: return ((cpsr & C_MASK) != 0) && ((cpsr & Z_MASK) == 0);
+            case COND_LS: return ((cpsr & C_MASK) == 0) || ((cpsr & Z_MASK) != 0);
+            case COND_GE: return ((cpsr & N_MASK) != 0) == ((cpsr & V_MASK) != 0);
+            case COND_LT: return ((cpsr & N_MASK) != 0) != ((cpsr & V_MASK) != 0);
+            case COND_GT: return ((cpsr & Z_MASK) == 0) && (((cpsr & N_MASK) != 0) == ((cpsr & V_MASK) != 0));
+            case COND_LE: return ((cpsr & Z_MASK) != 0) || (((cpsr & N_MASK) != 0) != ((cpsr & V_MASK) != 0));
+            case COND_AL: return true;
+            case COND_NV: return false;
+            default: return true;
         }
     }
     
     private void handleMultiply(int instruction) {
-        boolean accumulate = (instruction & (1 << 21)) != 0;
-        boolean setFlags = (instruction & (1 << 20)) != 0;
-        int rd = (instruction >> 16) & 0xF;
-        int rn = (instruction >> 12) & 0xF;
-        int rs = (instruction >> 8) & 0xF;
-        int rm = instruction & 0xF;
+        boolean accumulate = (instruction & (1 << 21)) != 0, setFlags = (instruction & (1 << 20)) != 0;
+        int rd = (instruction >> 16) & 0xF, rn = (instruction >> 12) & 0xF, rs = (instruction >> 8) & 0xF, rm = instruction & 0xF;
         
         long result = (long)registers[rm] * (long)registers[rs];
+        if (accumulate) { result += registers[rn]; }
         
-        if (accumulate) {
-            result += registers[rn];
-        }
+        registers[rd] = (int) result;
         
-        // Truncar para 32 bits
-        registers[rd] = (int)result;
-        
-        if (setFlags) {
-            // Atualizar flags N e Z
-            updateFlags(registers[rd], -1);
-            // Flag C não é afetada em multiplicações ARM
-        }
+        if (setFlags) { updateFlags(registers[rd], -1); }
     }
-    
     private void handleLongMultiply(int instruction) {
-        boolean signed = (instruction & (1 << 22)) != 0;
-        boolean accumulate = (instruction & (1 << 21)) != 0;
-        boolean setFlags = (instruction & (1 << 20)) != 0;
-        int rdHi = (instruction >> 16) & 0xF;
-        int rdLo = (instruction >> 12) & 0xF;
-        int rs = (instruction >> 8) & 0xF;
-        int rm = instruction & 0xF;
+        boolean signed = (instruction & (1 << 22)) != 0, accumulate = (instruction & (1 << 21)) != 0, setFlags = (instruction & (1 << 20)) != 0;
+        int rdHi = (instruction >> 16) & 0xF, rdLo = (instruction >> 12) & 0xF, rs = (instruction >> 8) & 0xF, rm = instruction & 0xF;
+        long a = registers[rm], b = registers[rs];
         
-        long a = registers[rm];
-        long b = registers[rs];
-        
-        if (signed) {
-            // Extensão de sinal para 64 bits
-            a = (long)(int)a;
-            b = (long)(int)b;
-        } else {
-            // Zero extend para 64 bits
-            a = a & 0xFFFFFFFFL;
-            b = b & 0xFFFFFFFFL;
-        }
+        if (signed) { a = (long)(int) a; b = (long)(int) b; } 
+        else { a = a & 0xFFFFFFFFL; b = b & 0xFFFFFFFFL; }
         
         long result = a * b;
         
-        if (accumulate) {
-            long accumulator = ((long)registers[rdHi] << 32) | (registers[rdLo] & 0xFFFFFFFFL);
-            result += accumulator;
-        }
+        if (accumulate) { long accumulator = ((long) registers[rdHi] << 32) | (registers[rdLo] & 0xFFFFFFFFL); result += accumulator; }
         
-        registers[rdHi] = (int)(result >> 32);
-        registers[rdLo] = (int)result;
+        registers[rdHi] = (int)(result >> 32); registers[rdLo] = (int)result;
         
         if (setFlags) {
             // Atualizar flags N e Z baseado no resultado de 64 bits
-            boolean negative = (result >> 63) != 0;
-            boolean zero = result == 0;
+            boolean negative = (result >> 63) != 0, zero = result == 0;
             
-            if (negative) {
-                cpsr |= N_MASK;
-            } else {
-                cpsr &= ~N_MASK;
-            }
-            
-            if (zero) {
-                cpsr |= Z_MASK;
-            } else {
-                cpsr &= ~Z_MASK;
-            }
+            if (negative) { cpsr |= N_MASK; } else { cpsr &= ~N_MASK; }
+            if (zero) { cpsr |= Z_MASK; } else { cpsr &= ~Z_MASK; }
         }
     }
-    
     private void handleLoadStoreMultiple(int instruction) {
-        boolean load = (instruction & (1 << 20)) != 0;
-        boolean writeBack = (instruction & (1 << 21)) != 0;
-        boolean userMode = (instruction & (1 << 22)) != 0;
-        boolean increment = (instruction & (1 << 23)) != 0;
-        boolean before = (instruction & (1 << 24)) != 0;
-        int rn = (instruction >> 16) & 0xF;
-        int registerList = instruction & 0xFFFF;
+        boolean load = (instruction & (1 << 20)) != 0, writeBack = (instruction & (1 << 21)) != 0, userMode = (instruction & (1 << 22)) != 0, increment = (instruction & (1 << 23)) != 0, before = (instruction & (1 << 24)) != 0;
+        int rn = (instruction >> 16) & 0xF, registerList = instruction & 0xFFFF;
         
-        int address = registers[rn];
-        int startAddress = address;
-        
-        // Contar número de registradores
-        int regCount = 0;
+        int address = registers[rn], startAddress = address, regCount = 0;
+        for (int i = 0; i < 16; i++) { if ((registerList & (1 << i)) != 0) { regCount++; } }
+
+        if (before) { if (increment) { address += 4; } else { address -= 4 * regCount; } }
         for (int i = 0; i < 16; i++) {
             if ((registerList & (1 << i)) != 0) {
-                regCount++;
-            }
-        }
-        
-        // Ajustar endereço base se before = true
-        if (before) {
-            if (increment) {
-                address += 4;
-            } else {
-                address -= 4 * regCount;
-            }
-        }
-        
-        // Executar load/store
-        for (int i = 0; i < 16; i++) {
-            if ((registerList & (1 << i)) != 0) {
-                if (load) {
-                    if (address >= 0 && address + 3 < memory.length) {
-                        registers[i] = readIntLE(memory, address);
-                    }
-                } else {
-                    if (address >= 0 && address + 3 < memory.length) {
-                        writeIntLE(memory, address, registers[i]);
-                    }
-                }
+                if (load) { if (address >= 0 && address + 3 < memory.length) { registers[i] = readIntLE(memory, address); } }
+                else { if (address >= 0 && address + 3 < memory.length) { writeIntLE(memory, address, registers[i]); } }
                 
-                if (increment) {
-                    address += 4;
-                } else {
-                    address -= 4;
-                }
+                if (increment) { address += 4; } else { address -= 4; }
             }
         }
-        
-        // Write back
-        if (writeBack) {
-            if (increment) {
-                registers[rn] = startAddress + 4 * regCount;
-            } else {
-                registers[rn] = startAddress - 4 * regCount;
-            }
-        }
+
+        if (writeBack) { if (increment) { registers[rn] = startAddress + 4 * regCount; } else { registers[rn] = startAddress - 4 * regCount; } }
     }
-    
-    private void handleCoprocessor(int instruction) {
-        int cpNum = (instruction >> 8) & 0xF;
-        
-        // CP10 e CP11 são para FPU (VFP)
-        if (cpNum == 10 || cpNum == 11) {
-            handleFPU(instruction);
-        } else {
-            // Outros coprocessadores não implementados
-            midlet.print("[WARN] Coprocessor " + cpNum + " not implemented", stdout);
-        }
-    }
-    
+    private void handleCoprocessor(int instruction) { int cpNum = (instruction >> 8) & 0xF; if (cpNum == 10 || cpNum == 11) { handleFPU(instruction); } else { midlet.print("[WARN] Coprocessor " + cpNum + " not implemented", stdout); } }
+
     private void handleFPU(int instruction) {
-        int opcode1 = (instruction >> 20) & 0xF;
-        int opcode2 = (instruction >> 16) & 0xF;
-        int crd = (instruction >> 12) & 0xF;
-        int crn = (instruction >> 16) & 0xF;
-        int crm = instruction & 0xF;
-        int cpNum = (instruction >> 8) & 0xF;
-        
-        // Verificar tipo de instrução FPU
-        if ((instruction & 0x0F000000) == 0x0C000000) {
-            // Data processing ou register transfer
-            if ((instruction & (1 << 4)) != 0) {
-                // Register transfer
-                handleFPURegisterTransfer(instruction);
-            } else {
-                // Data processing
-                handleFPUDataProcessing(instruction);
-            }
-        } else if ((instruction & 0x0E000000) == 0x0C400000) {
-            // Load/store de coprocessador
-            handleFPULoadStore(instruction);
-        }
+        int opcode1 = (instruction >> 20) & 0xF, opcode2 = (instruction >> 16) & 0xF, crd = (instruction >> 12) & 0xF, crn = (instruction >> 16) & 0xF, crm = instruction & 0xF, cpNum = (instruction >> 8) & 0xF;
+
+        if ((instruction & 0x0F000000) == 0x0C000000) { if ((instruction & (1 << 4)) != 0) { handleFPURegisterTransfer(instruction); } else { handleFPUDataProcessing(instruction); } }
+        else if ((instruction & 0x0E000000) == 0x0C400000) { handleFPULoadStore(instruction); }
     }
-    
     private void handleFPURegisterTransfer(int instruction) {
         boolean load = (instruction & (1 << 20)) != 0;
-        int rt = (instruction >> 12) & 0xF;
-        int crn = (instruction >> 16) & 0xF;
+        int rt = (instruction >> 12) & 0xF, crn = (instruction >> 16) & 0xF;
         
-        if (load) {
-            // VMRS: mover de FPSCR para registrador ARM
-            if (crn == 1) { // FPSCR
-                registers[rt] = fpscr;
-            } else {
-                // Mover de registrador FPU para ARM
-                int fpuReg = crn;
-                registers[rt] = Float.floatToIntBits(fpuRegisters[fpuReg]);
-            }
-        } else {
-            // VMSR: mover de registrador ARM para FPSCR
-            if (crn == 1) { // FPSCR
-                fpscr = registers[rt];
-            } else {
-                // Mover de ARM para registrador FPU
-                int fpuReg = crn;
-                fpuRegisters[fpuReg] = Float.intBitsToFloat(registers[rt]);
-            }
-        }
+        if (load) { if (crn == 1) { registers[rt] = fpscr; } else { int fpuReg = crn; registers[rt] = Float.floatToIntBits(fpuRegisters[fpuReg]); } }
+        else { if (crn == 1) { fpscr = registers[rt]; } else { int fpuReg = crn; fpuRegisters[fpuReg] = Float.intBitsToFloat(registers[rt]); } }
     }
-    
     private void handleFPUDataProcessing(int instruction) {
-        int opcode = (instruction >> 20) & 0xFF;
-        int vd = ((instruction >> 12) & 0xF) | ((instruction & 0x10) << 1);
-        int vn = ((instruction >> 16) & 0xF) | ((instruction & 0x100000) >> 15);
-        int vm = instruction & 0xF;
-        
-        float a = fpuRegisters[vn];
-        float b = fpuRegisters[vm];
-        float result = 0;
+        int opcode = (instruction >> 20) & 0xFF, vd = ((instruction >> 12) & 0xF) | ((instruction & 0x10) << 1), vn = ((instruction >> 16) & 0xF) | ((instruction & 0x100000) >> 15), vm = instruction & 0xF;
+        float a = fpuRegisters[vn], b = fpuRegisters[vm], result = 0;
         
         switch (opcode) {
-            case 0x00: // VADD
-                result = a + b;
-                break;
-            case 0x01: // VSUB
-                result = a - b;
-                break;
-            case 0x02: // VMUL
-                result = a * b;
-                break;
-            case 0x03: // VDIV
-                result = a / b;
-                break;
-            case 0x04: // VNEG
-                result = -a;
-                break;
-            case 0x05: // VABS
-                result = Math.abs(a);
-                break;
-            case 0x06: // VSQRT
-                result = (float)Math.sqrt(a);
-                break;
-            case 0x07: // VCMP
-                // Configurar flags FPSCR baseado na comparação
+            case 0x00: result = a + b; break;
+            case 0x01: result = a - b; break;
+            case 0x02: result = a * b; break;
+            case 0x03: result = a / b; break;
+            case 0x04: result = -a; break;
+            case 0x05: result = Math.abs(a); break;
+            case 0x06: result = (float) Math.sqrt(a); break;
+            case 0x07: 
                 int flags = 0;
-                if (Float.isNaN(a) || Float.isNaN(b)) {
-                    flags |= 0x1; // NaN
-                } else if (a == b) {
-                    flags |= 0x6; // Equal
-                } else if (a < b) {
-                    flags |= 0x8; // Less than
-                } else {
-                    flags |= 0x2; // Greater than
-                }
+                if (Float.isNaN(a) || Float.isNaN(b)) { flags |= 0x1; }
+                else if (a == b) { flags |= 0x6; }
+                else if (a < b) { flags |= 0x8; }
+                else { flags |= 0x2; }
                 fpscr = (fpscr & ~0xF) | flags;
                 return;
             default:
@@ -1127,108 +765,41 @@ public class ELF {
         
         fpuRegisters[vd] = result;
         
-        // Atualizar flags FPSCR se necessário
-        if (Float.isNaN(result)) {
-            fpscr |= 0x1; // NaN flag
-        } else if (Float.isInfinite(result)) {
-            fpscr |= 0x4; // Overflow flag
-        } else if (result == 0) {
-            fpscr |= 0x2; // Zero flag
-        }
+        if (Float.isNaN(result)) { fpscr |= 0x1; }
+        else if (Float.isInfinite(result)) { fpscr |= 0x4; }
+        else if (result == 0) { fpscr |= 0x2; }
     }
-    
     private void handleFPULoadStore(int instruction) {
-        boolean load = (instruction & (1 << 20)) != 0;
-        boolean increment = (instruction & (1 << 23)) != 0;
-        boolean before = (instruction & (1 << 24)) != 0;
-        int rn = (instruction >> 16) & 0xF;
-        int vd = ((instruction >> 12) & 0xF) | ((instruction & 0x10) << 1);
-        int imm8 = instruction & 0xFF;
+        boolean load = (instruction & (1 << 20)) != 0, increment = (instruction & (1 << 23)) != 0, before = (instruction & (1 << 24)) != 0;
+        int rn = (instruction >> 16) & 0xF, vd = ((instruction >> 12) & 0xF) | ((instruction & 0x10) << 1), imm8 = instruction & 0xFF, address = registers[rn];
         
-        int address = registers[rn];
-        
-        if (before) {
-            if (increment) {
-                address += 4;
-            } else {
-                address -= 4;
-            }
-        }
-        
-        if (load) {
-            // Load single
-            if (address >= 0 && address + 3 < memory.length) {
-                int value = readIntLE(memory, address);
-                fpuRegisters[vd] = Float.intBitsToFloat(value);
-            }
-        } else {
-            // Store single
-            if (address >= 0 && address + 3 < memory.length) {
-                int value = Float.floatToIntBits(fpuRegisters[vd]);
-                writeIntLE(memory, address, value);
-            }
-        }
-        
-        // Write back
-        if ((instruction & (1 << 21)) != 0) {
-            if (increment) {
-                registers[rn] = address + 4;
-            } else {
-                registers[rn] = address - 4;
-            }
-        }
+        if (before) { if (increment) { address += 4; } else { address -= 4; } } 
+        if (load) { if (address >= 0 && address + 3 < memory.length) { int value = readIntLE(memory, address); fpuRegisters[vd] = Float.intBitsToFloat(value); } }
+        else { if (address >= 0 && address + 3 < memory.length) { int value = Float.floatToIntBits(fpuRegisters[vd]); writeIntLE(memory, address, value); } }
+
+        if ((instruction & (1 << 21)) != 0) { if (increment) { registers[rn] = address + 4; } else { registers[rn] = address - 4; } }
     }
     
     private void handleDataProcessing(int instruction) {
-        int opcode = (instruction >> 21) & 0xF;
-        int setFlags = (instruction & (1 << 20)) >> 20;
-        int rn = (instruction >> 16) & 0xF;
-        int rd = (instruction >> 12) & 0xF;
-        
-        // Extrair shifter_operand baseado no bit I (immediate)
-        int shifter_operand;
-        int shifter_carry_out = (cpsr & C_MASK) != 0 ? 1 : 0; // carry atual
+        int opcode = (instruction >> 21) & 0xF, setFlags = (instruction & (1 << 20)) >> 20, rn = (instruction >> 16) & 0xF, rd = (instruction >> 12) & 0xF, shifter_operand, shifter_carry_out = (cpsr & C_MASK) != 0 ? 1 : 0;
         
         if ((instruction & (1 << 25)) != 0) {
-            // Immediate operand
-            int imm = instruction & 0xFF;
-            int rotate = ((instruction >> 8) & 0xF) * 2;
+            int imm = instruction & 0xFF, rotate = ((instruction >> 8) & 0xF) * 2;
             shifter_operand = rotateRight(imm, rotate);
-            
-            // Para rotações, o carry é o último bit rotacionado para fora
-            if (rotate != 0) {
-                int last_bit = (imm >> (rotate - 1)) & 0x1;
-                shifter_carry_out = last_bit;
-            }
+
+            if (rotate != 0) { int last_bit = (imm >> (rotate - 1)) & 0x1; shifter_carry_out = last_bit; }
         } else {
-            // Register operand with shift
-            int rm = instruction & 0xF;
-            int shift_type = (instruction >> 5) & 0x3;
-            int shift_amount;
+            int rm = instruction & 0xF, shift_type = (instruction >> 5) & 0x3, shift_amount;
             
-            // Verificar se o shift amount é imediato ou registrador
-            if ((instruction & (1 << 4)) == 0) {
-                // Shift amount é imediato
-                shift_amount = (instruction >> 7) & 0x1F;
-            } else {
-                // Shift amount é registrador
-                int rs = (instruction >> 8) & 0xF;
-                shift_amount = registers[rs] & 0xFF;
-            }
+            if ((instruction & (1 << 4)) == 0) { shift_amount = (instruction >> 7) & 0x1F; }
+            else { int rs = (instruction >> 8) & 0xF; shift_amount = registers[rs] & 0xFF; }
             
             int rm_value = registers[rm];
             shifter_operand = applyShift(rm_value, shift_type, shift_amount, shifter_carry_out);
         }
-        
-        // Para instruções que usam PC como Rn, ajustar o valor
+
         int rnValue;
-        if (rn == REG_PC) {
-            // PC arquitetural: endereço da instrução atual + 8
-            // A instrução atual está em (pc - 4) porque já incrementamos o pc
-            rnValue = pc + 4;
-        } else {
-            rnValue = registers[rn];
-        }
+        if (rn == REG_PC) { rnValue = pc + 4; } else { rnValue = registers[rn]; }
         
         int result = 0;
         boolean updateCarry = false;
@@ -1320,122 +891,29 @@ public class ELF {
                 break;
         }
 
-        // Atualizar registrador de destino (exceto para instruções de teste)
-        if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) { 
-            registers[rd] = result; 
-        }
-        // Atualizar flags se necessário
-        if (setFlags != 0) {
-            updateFlags(result, updateCarry ? shifter_carry_out : -1);
-            
-            // Atualizar flags de overflow para operações aritméticas
-            if (opcode == 0x2 || opcode == 0x3 || opcode == 0x4 || opcode == 0x5 || 
-                opcode == 0x6 || opcode == 0x7 || opcode == 0xA || opcode == 0xB) {
-                updateOverflow(rnValue, shifter_operand, result, opcode);
-            }
-        }
+        if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) { registers[rd] = result; }
+        if (setFlags != 0) { updateFlags(result, updateCarry ? shifter_carry_out : -1); if (opcode == 0x2 || opcode == 0x3 || opcode == 0x4 || opcode == 0x5 || opcode == 0x6 || opcode == 0x7 || opcode == 0xA || opcode == 0xB) { updateOverflow(rnValue, shifter_operand, result, opcode); } }
     }
-    
+
     private void handleLoadStore(int instruction) {
-        int rn = (instruction >> 16) & 0xF;
-        int rd = (instruction >> 12) & 0xF;
-        int offset = instruction & 0xFFF;
-        boolean isLoad = (instruction & (1 << 20)) != 0;
-        boolean isByte = (instruction & (1 << 22)) != 0;
-        boolean addOffset = (instruction & (1 << 23)) != 0;
-        boolean preIndexed = (instruction & (1 << 24)) != 0;
-        boolean writeBack = (instruction & (1 << 21)) != 0;
+        int rn = (instruction >> 16) & 0xF, rd = (instruction >> 12) & 0xF, offset = instruction & 0xFFF, baseAddress;
+        boolean isLoad = (instruction & (1 << 20)) != 0, isByte = (instruction & (1 << 22)) != 0, addOffset = (instruction & (1 << 23)) != 0, preIndexed = (instruction & (1 << 24)) != 0, writeBack = (instruction & (1 << 21)) != 0;
         
-        int baseAddress;
-        
-        if (rn == REG_PC) { 
-            baseAddress = pc + 4; 
-        } else { 
-            baseAddress = registers[rn]; 
-        }
+        if (rn == REG_PC) { baseAddress = pc + 4; } else { baseAddress = registers[rn]; }
         
         int address = baseAddress;
         
-        if (preIndexed) {
-            if (addOffset) { 
-                address += offset; 
-            } else { 
-                address -= offset; 
-            }
-            
-            // Write back para pré-indexado
-            if (writeBack && rn != REG_PC) { 
-                registers[rn] = address; 
-            }
-        }
+        if (preIndexed) { if (addOffset) { address += offset; } else { address -= offset; } if (writeBack && rn != REG_PC) { registers[rn] = address; } }
+        if (isLoad) { if (address >= 0 && address < memory.length) { if (isByte) { registers[rd] = memory[address] & 0xFF; } else { int alignedAddr = address & ~3; if (alignedAddr + 3 < memory.length) { registers[rd] = readIntLE(memory, alignedAddr); } } } }
+        else { if (address >= 0 && address < memory.length) { if (isByte) { memory[address] = (byte)(registers[rd] & 0xFF); } else { writeIntLE(memory, address, registers[rd]); } } }
         
-        if (isLoad) {
-            if (address >= 0 && address < memory.length) {
-                if (isByte) {
-                    registers[rd] = memory[address] & 0xFF;
-                } else {
-                    // Alinhar para palavra (4 bytes)
-                    int alignedAddr = address & ~3;
-                    if (alignedAddr + 3 < memory.length) {
-                        registers[rd] = readIntLE(memory, alignedAddr);
-                    }
-                }
-            }
-        } else {
-            if (address >= 0 && address < memory.length) {
-                if (isByte) {
-                    memory[address] = (byte)(registers[rd] & 0xFF);
-                } else {
-                    writeIntLE(memory, address, registers[rd]);
-                }
-            }
-        }
-        
-        if (!preIndexed) {
-            if (addOffset) {
-                registers[rn] += offset;
-            } else {
-                registers[rn] -= offset;
-            }
-        }
+        if (!preIndexed) { if (addOffset) { registers[rn] += offset; } else { registers[rn] -= offset; } }
     }
-    
-    private void handleBranch(int instruction) {
-        int offset = instruction & 0x00FFFFFF;
-        if ((offset & 0x00800000) != 0) {
-            offset |= 0xFF000000;
-        }
-        offset <<= 2;
-        
-        boolean link = (instruction & (1 << 24)) != 0;
-        
-        if (link) {
-            registers[REG_LR] = pc;
-        }
-        
-        pc = pc + offset - 4;
-    }
-    
-    private void handleAdrSub(int instruction) {
-        boolean isAdd = (instruction & 0x0F000000) == 0x02800000;
-        int rd = (instruction >> 12) & 0xF;
-        int imm = instruction & 0xFF;
-        int rotate = ((instruction >> 8) & 0xF) * 2;
-        int offset = rotateRight(imm, rotate);
-        
-        int pcValue = pc + 4;
-        
-        if (isAdd) { 
-            registers[rd] = pcValue + offset; 
-        } else { 
-            registers[rd] = pcValue - offset; 
-        }
-    }
+    private void handleBranch(int instruction) { int offset = instruction & 0x00FFFFFF; if ((offset & 0x00800000) != 0) { offset |= 0xFF000000; } offset <<= 2; boolean link = (instruction & (1 << 24)) != 0; if (link) { registers[REG_LR] = pc; } pc = pc + offset - 4; }
+    private void handleAdrSub(int instruction) { boolean isAdd = (instruction & 0x0F000000) == 0x02800000; int rd = (instruction >> 12) & 0xF, imm = instruction & 0xFF, rotate = ((instruction >> 8) & 0xF) * 2, offset = rotateRight(imm, rotate), pcValue = pc + 4; if (isAdd) { registers[rd] = pcValue + offset; } else { registers[rd] = pcValue - offset; } }
     
     private int applyShift(int value, int shift_type, int shift_amount, int carry_in) {
-        if (shift_amount == 0) {
-            return value;
-        }
+        if (shift_amount == 0) { return value; }
         
         switch (shift_type) {
             case 0: // LSL (Logical Shift Left)
@@ -1480,28 +958,10 @@ public class ELF {
     }
     
     private void updateFlags(int result, int carry) {
-        // Atualizar flag N (Negative)
-        if ((result & 0x80000000) != 0) {
-            cpsr |= N_MASK;
-        } else {
-            cpsr &= ~N_MASK;
-        }
-        
-        // Atualizar flag Z (Zero)
-        if (result == 0) {
-            cpsr |= Z_MASK;
-        } else {
-            cpsr &= ~Z_MASK;
-        }
-        
-        // Atualizar flag C (Carry) se fornecido
-        if (carry >= 0) {
-            if (carry != 0) {
-                cpsr |= C_MASK;
-            } else {
-                cpsr &= ~C_MASK;
-            }
-        }
+        if ((result & 0x80000000) != 0) { cpsr |= N_MASK; } else { cpsr &= ~N_MASK; }
+        if (result == 0) { cpsr |= Z_MASK; } else { cpsr &= ~Z_MASK; }
+
+        if (carry >= 0) { if (carry != 0) { cpsr |= C_MASK; } else { cpsr &= ~C_MASK; } }
     }
     
     private void updateOverflow(int operand1, int operand2, int result, int opcode) {
@@ -1521,196 +981,87 @@ public class ELF {
                 break;
         }
         
-        if (overflow) {
-            cpsr |= V_MASK;
-        } else {
-            cpsr &= ~V_MASK;
-        }
+        if (overflow) { cpsr |= V_MASK; } else { cpsr &= ~V_MASK; }
     }
 
     private Hashtable loadSections(byte[] elfData, int shoff, int shnum, int shentsize) {
         Hashtable sections = new Hashtable();
         
         for (int i = 0; i < shnum; i++) {
-            int shdrOffset = shoff + i * shentsize;
-            int sh_name = readIntLE(elfData, shdrOffset);
-            int sh_type = readIntLE(elfData, shdrOffset + 4);
-            int sh_flags = readIntLE(elfData, shdrOffset + 8);
-            int sh_addr = readIntLE(elfData, shdrOffset + 12);
-            int sh_offset = readIntLE(elfData, shdrOffset + 16);
-            int sh_size = readIntLE(elfData, shdrOffset + 20);
-            int sh_link = readIntLE(elfData, shdrOffset + 24);
-            int sh_info = readIntLE(elfData, shdrOffset + 28);
-            int sh_addralign = readIntLE(elfData, shdrOffset + 32);
-            int sh_entsize = readIntLE(elfData, shdrOffset + 36);
-            
+            int shdrOffset = shoff + i * shentsize, sh_name = readIntLE(elfData, shdrOffset), sh_type = readIntLE(elfData, shdrOffset + 4), sh_flags = readIntLE(elfData, shdrOffset + 8), sh_addr = readIntLE(elfData, shdrOffset + 12), sh_offset = readIntLE(elfData, shdrOffset + 16), sh_size = readIntLE(elfData, shdrOffset + 20), sh_link = readIntLE(elfData, shdrOffset + 24), sh_info = readIntLE(elfData, shdrOffset + 28), sh_addralign = readIntLE(elfData, shdrOffset + 32), sh_entsize = readIntLE(elfData, shdrOffset + 36);
+
             Hashtable section = new Hashtable();
-            section.put("type", new Integer(sh_type));
-            section.put("flags", new Integer(sh_flags));
-            section.put("addr", new Integer(sh_addr));
-            section.put("offset", new Integer(sh_offset));
-            section.put("size", new Integer(sh_size));
-            section.put("link", new Integer(sh_link));
-            section.put("info", new Integer(sh_info));
-            section.put("addralign", new Integer(sh_addralign));
-            section.put("entsize", new Integer(sh_entsize));
-            
-            // Ler nome da seção da string table
-            if (sh_name != 0 && elfInfo.containsKey(".shstrtab")) {
-                int strtabOffset = ((Integer)elfInfo.get(".shstrtab")).intValue();
-                String name = readString(elfData, strtabOffset + sh_name, 64);
-                sections.put(name, section);
-                if (midlet.debug) midlet.print("Section: " + name + " at " + toHex(sh_addr), stdout);
-            }
-            
-            // Armazenar seção de string table
-            if (sh_type == 3) { // SHT_STRTAB
-                elfInfo.put(".shstrtab", new Integer(sh_offset));
-            }
+            section.put("type", new Integer(sh_type)); section.put("flags", new Integer(sh_flags)); section.put("addr", new Integer(sh_addr));
+            section.put("offset", new Integer(sh_offset)); section.put("size", new Integer(sh_size)); section.put("link", new Integer(sh_link));
+            section.put("info", new Integer(sh_info)); section.put("addralign", new Integer(sh_addralign)); section.put("entsize", new Integer(sh_entsize));
+
+            if (sh_name != 0 && elfInfo.containsKey(".shstrtab")) { int strtabOffset = ((Integer)elfInfo.get(".shstrtab")).intValue(); String name = readString(elfData, strtabOffset + sh_name, 64); sections.put(name, section); if (midlet.debug) { midlet.print("Section: " + name + " at " + toHex(sh_addr), stdout); } }
+            if (sh_type == 3) { elfInfo.put(".shstrtab", new Integer(sh_offset)); }
         }
         
         return sections;
     }
     
     private void initializeBSS(Hashtable sections) {
-        // Zerar seções .bss e .sbss
         Enumeration keys = sections.keys();
         while (keys.hasMoreElements()) {
             String name = (String) keys.nextElement();
             if (name.equals(".bss") || name.equals(".sbss")) {
                 Hashtable section = (Hashtable) sections.get(name);
-                int addr = ((Integer)section.get("addr")).intValue();
-                int size = ((Integer)section.get("size")).intValue();
-                
-                // Zerar memória
-                for (int i = 0; i < size && addr + i < memory.length; i++) {
-                    memory[addr + i] = 0;
-                }
-                
-                if (midlet.debug) midlet.print("Zeroed " + name + " at " + toHex(addr) + " size " + size, stdout);
+                int addr = ((Integer)section.get("addr")).intValue(), size = ((Integer)section.get("size")).intValue();
+
+                for (int i = 0; i < size && addr + i < memory.length; i++) { memory[addr + i] = 0; }
+                if (midlet.debug) { midlet.print("Zeroed " + name + " at " + toHex(addr) + " size " + size, stdout); }
             }
         }
     }
     
     private void processDynamicSegment(byte[] elfData, int phdrOffset) {
-        int p_offset = readIntLE(elfData, phdrOffset + 4);
-        int p_vaddr = readIntLE(elfData, phdrOffset + 8);
-        int p_filesz = readIntLE(elfData, phdrOffset + 16);
-        
-        if (midlet.debug) midlet.print("Dynamic segment at " + toHex(p_vaddr), stdout);
-        
-        // Processar entradas da tabela dinâmica
+        int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16);
+        if (midlet.debug) { midlet.print("Dynamic segment at " + toHex(p_vaddr), stdout); } 
+
         for (int offset = 0; offset < p_filesz; offset += 8) {
-            int tag = readIntLE(elfData, p_offset + offset);
-            int val = readIntLE(elfData, p_offset + offset + 4);
-            
-            if (tag == 0) break; // DT_NULL
+            int tag = readIntLE(elfData, p_offset + offset), val = readIntLE(elfData, p_offset + offset + 4);
+            if (tag == 0) { break; }
             
             switch (tag) {
-                case 1: // DT_NEEDED (biblioteca necessária)
+                case 1:
                     String libname = readString(elfData, val, 64);
-                    if (midlet.debug) midlet.print("Needs library: " + libname, stdout);
+                    if (midlet.debug) { midlet.print("Needs library: " + libname, stdout); }
                     break;
-                case 5: // DT_STRTAB
+                case 5:
                     elfInfo.put("dynstr", new Integer(val));
                     break;
-                case 6: // DT_SYMTAB
+                case 6:
                     elfInfo.put("dynsym", new Integer(val));
                     break;
             }
         }
     }
-    
     private void processSymbolsAndRelocations(byte[] elfData, Hashtable sections) {
-        if (!elfInfo.containsKey("dynsym") || !elfInfo.containsKey("dynstr")) {
-            return;
-        }
+        if (!elfInfo.containsKey("dynsym") || !elfInfo.containsKey("dynstr")) { return; }
         
-        int dynsymAddr = ((Integer)elfInfo.get("dynsym")).intValue();
-        int dynstrAddr = ((Integer)elfInfo.get("dynstr")).intValue();
-        int symentSize = elfInfo.containsKey("syment") ? 
-            ((Integer)elfInfo.get("syment")).intValue() : 16;
+        int dynsymAddr = ((Integer)elfInfo.get("dynsym")).intValue(), dynstrAddr = ((Integer)elfInfo.get("dynstr")).intValue(), symentSize = elfInfo.containsKey("syment") ? ((Integer) elfInfo.get("syment")).intValue() : 16;
         
         // Processar símbolos
         int symOffset = dynsymAddr;
         while (true) {
-            int st_name = readIntLE(elfData, symOffset);
-            int st_value = readIntLE(elfData, symOffset + 4);
-            int st_size = readIntLE(elfData, symOffset + 8);
-            int st_info = elfData[symOffset + 12] & 0xFF;
-            
-            if (st_name == 0 && st_value == 0 && st_size == 0 && st_info == 0) {
-                break;
-            }
+            int st_name = readIntLE(elfData, symOffset), st_value = readIntLE(elfData, symOffset + 4), st_size = readIntLE(elfData, symOffset + 8), st_info = elfData[symOffset + 12] & 0xFF;
+            if (st_name == 0 && st_value == 0 && st_size == 0 && st_info == 0) { break; }
             
             String symName = readString(elfData, dynstrAddr + st_name, 256);
             
             Hashtable symInfo = new Hashtable();
-            symInfo.put("value", new Integer(st_value));
-            symInfo.put("size", new Integer(st_size));
-            symInfo.put("info", new Integer(st_info));
-            symInfo.put("binding", new Integer((st_info >> 4) & 0xF));
-            symInfo.put("type", new Integer(st_info & 0xF));
+            symInfo.put("value", new Integer(st_value)); symInfo.put("size", new Integer(st_size)); symInfo.put("info", new Integer(st_info));
+            symInfo.put("binding", new Integer((st_info >> 4) & 0xF)); symInfo.put("type", new Integer(st_info & 0xF));
             
             dynamicSymbols.put(symName, symInfo);
             
             symOffset += symentSize;
         }
-        
-        // Processar realocações
         processRelocations(elfData);
     }
-
-    private void processRelocations(byte[] elfData) {
-        // REL
-        if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) {
-            int relAddr = ((Integer)elfInfo.get("rel")).intValue();
-            int relsz = ((Integer)elfInfo.get("relsz")).intValue();
-            int relent = 8;
-            
-            for (int i = 0; i < relsz; i += relent) {
-                int offset = relAddr + i;
-                int r_offset = readIntLE(elfData, offset);
-                int r_info = readIntLE(elfData, offset + 4);
-                
-                int symIndex = r_info >> 8;
-                int type = r_info & 0xFF;
-                
-                applyRelocation(r_offset, type, symIndex, 0);
-            }
-        }
-        
-        // JMPREL (PLT)
-        if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) {
-            int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue();
-            int pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue();
-            int pltrel = elfInfo.containsKey("pltrel") ? 
-                ((Integer)elfInfo.get("pltrel")).intValue() : DT_REL;
-            
-            int relent = (pltrel == DT_RELA) ? 12 : 8;
-            int numEntries = pltrelsz / relent;
-            
-            if (gotBase == 0 && pltGotAddr != 0) {
-                gotBase = pltGotAddr + 12;
-            }
-            
-            for (int i = 0; i < numEntries; i++) {
-                int offset = jmprelAddr + i * relent;
-                int r_offset = readIntLE(elfData, offset);
-                int r_info = readIntLE(elfData, offset + 4);
-                
-                int symIndex = r_info >> 8;
-                int type = r_info & 0xFF;
-                
-                if (type == R_ARM_JUMP_SLOT) {
-                    setupLazyBinding(r_offset, symIndex, i);
-                } else {
-                    applyRelocation(r_offset, type, symIndex, 0);
-                }
-            }
-        }
-    }
-
+    private void processRelocations(byte[] elfData) { if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) { int relAddr = ((Integer) elfInfo.get("rel")).intValue(), relsz = ((Integer) elfInfo.get("relsz")).intValue(), relent = 8; for (int i = 0; i < relsz; i += relent) { int offset = relAddr + i, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; applyRelocation(r_offset, type, symIndex, 0); } } if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) { int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue(), pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue(), pltrel = elfInfo.containsKey("pltrel") ? ((Integer) elfInfo.get("pltrel")).intValue() : DT_REL, relent = (pltrel == DT_RELA) ? 12 : 8, numEntries = pltrelsz / relent; if (gotBase == 0 && pltGotAddr != 0) { gotBase = pltGotAddr + 12; } for (int i = 0; i < numEntries; i++) { int offset = jmprelAddr + i * relent, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; if (type == R_ARM_JUMP_SLOT) { setupLazyBinding(r_offset, symIndex, i); } else { applyRelocation(r_offset, type, symIndex, 0); } } } }
     private void applyRelocation(int r_offset, int type, int symIndex, int addend) {
         switch (type) {
             case R_ARM_ABS32:
@@ -1720,13 +1071,9 @@ public class ELF {
                 
                 if (symAddr != null) {
                     writeIntLE(memory, r_offset, symAddr.intValue() + addend);
-                    if (midlet.debug) {
-                        midlet.print("Reloc: " + symName + " -> " + 
-                                toHex(symAddr.intValue()) + " at " + toHex(r_offset), stdout);
-                    }
+                    if (midlet.debug) { midlet.print("Reloc: " + symName + " -> " + toHex(symAddr.intValue()) + " at " + toHex(r_offset), stdout); }
                 }
                 break;
-                
             case R_ARM_RELATIVE:
                 int current = readIntLE(memory, r_offset);
                 writeIntLE(memory, r_offset, current + addend);
@@ -1736,115 +1083,50 @@ public class ELF {
 
     private void setupLazyBinding(int gotOffset, int symIndex, int slotIndex) {
         int resolverAddr = setupResolverStub(slotIndex);
-        
         if (resolverAddr != 0) {
             writeIntLE(memory, gotOffset, resolverAddr);
             
             Hashtable pltInfo = new Hashtable();
-            pltInfo.put("symIndex", new Integer(symIndex));
-            pltInfo.put("gotOffset", new Integer(gotOffset));
-            pltInfo.put("resolved", Boolean.FALSE);
-            
+            pltInfo.put("symIndex", new Integer(symIndex)); pltInfo.put("gotOffset", new Integer(gotOffset)); pltInfo.put("resolved", Boolean.FALSE);
             pltEntries.put("plt_" + slotIndex, pltInfo);
             
-            if (midlet.debug) {
-                midlet.print("Lazy binding: slot " + slotIndex + " at GOT " + toHex(gotOffset), stdout);
+            if (midlet.debug) { midlet.print("Lazy binding: slot " + slotIndex + " at GOT " + toHex(gotOffset), stdout); }
+        }
+    }
+
+    private int setupResolverStub(int slotIndex) { if (pltBase == 0) { pltBase = findFreeMemoryRegion(4096); if (pltBase == 0) { return 0; } } int stubAddr = pltBase + slotIndex * 16; writeIntLE(memory, stubAddr, 0xE51FF004); int trampoline = setupResolverTrampoline(); writeIntLE(memory, stubAddr + 4, trampoline + slotIndex * 8); return stubAddr; }
+    private int setupResolverTrampoline() { if (resolverCodeAddr == 0) { resolverCodeAddr = findFreeMemoryRegion(256); if (resolverCodeAddr == 0) { return 0; } writeIntLE(memory, resolverCodeAddr, 0xE92D400F); writeIntLE(memory, resolverCodeAddr + 4, 0xE59F0004); int resolveAddr = setupResolveFunction(), offset = ((resolveAddr - (resolverCodeAddr + 8 + 8)) >> 2) & 0x00FFFFFF; writeIntLE(memory, resolverCodeAddr + 8, 0xEB000000 | offset); writeIntLE(memory, resolverCodeAddr + 12, 0xE8BD400F); writeIntLE(memory, resolverCodeAddr + 16, 0xE12FFF10); writeIntLE(memory, resolverCodeAddr + 20, 0); } return resolverCodeAddr; }
+    private int setupResolveFunction() { if (resolveFuncAddr == 0) { resolveFuncAddr = findFreeMemoryRegion(128); if (resolveFuncAddr == 0) { return 0; } writeIntLE(memory, resolveFuncAddr, 0xE92D4000); writeIntLE(memory, resolveFuncAddr + 4, 0xE59F0004); int resolveHandlerAddr = setupPLTResolverHandler(), offset = ((resolveHandlerAddr - (resolveFuncAddr + 8 + 8)) >> 2) & 0x00FFFFFF; writeIntLE(memory, resolveFuncAddr + 8, 0xEB000000 | offset); writeIntLE(memory, resolveFuncAddr + 12, 0xE8BD4000); writeIntLE(memory, resolveFuncAddr + 16, 0xE12FFF1E); writeIntLE(memory, resolveFuncAddr + 20, 0); } return resolveFuncAddr; }
+    private int setupPLTResolverHandler() {
+        if (!elfInfo.containsKey("plt_resolver_handler")) {
+            int handlerAddr = findFreeMemoryRegion(64);
+            if (handlerAddr == 0) return 0;
+            
+            // Handler simples que chama resolvePLTSymbol
+            // Este código é executado quando uma função PLT precisa ser resolvida
+            elfInfo.put("plt_resolver_handler", new Integer(handlerAddr));
+            
+            // Armazenar endereço do resolvedor no mapa de símbolos globais
+            if (!globalSymbols.containsKey("__plt_resolver")) {
+                Hashtable resolver = new Hashtable();
+                resolver.put("addr", new Integer(handlerAddr));
+                resolver.put("type", "plt_resolver");
+                globalSymbols.put("__plt_resolver", resolver);
             }
         }
+        
+        return ((Integer) elfInfo.get("plt_resolver_handler")).intValue();
     }
 
-    private int setupResolverStub(int slotIndex) {
-        if (pltBase == 0) {
-            pltBase = findFreeMemoryRegion(4096);
-            if (pltBase == 0) return 0;
-        }
-        
-        int stubAddr = pltBase + slotIndex * 16;
-        
-        // ldr pc, [pc, #-4]
-        writeIntLE(memory, stubAddr, 0xE51FF004);
-        
-        // Endereço do trampoline
-        int trampoline = setupResolverTrampoline();
-        writeIntLE(memory, stubAddr + 4, trampoline + slotIndex * 8);
-        
-        return stubAddr;
-    }
+    private void processPLTResolverCall(int handlerAddr, int pltIndex) { int resolvedAddr = resolvePLTSymbol(pltIndex); if (resolvedAddr != 0) { registers[REG_R0] = resolvedAddr; } }
 
-    private int setupResolverTrampoline() {
-        if (resolverCodeAddr == 0) {
-            resolverCodeAddr = findFreeMemoryRegion(256);
-            if (resolverCodeAddr == 0) return 0;
-            
-            // stmfd sp!, {r0-r3, lr}
-            writeIntLE(memory, resolverCodeAddr, 0xE92D400F);
-            
-            // ldr r0, [pc, #4]  ; índice PLT
-            writeIntLE(memory, resolverCodeAddr + 4, 0xE59F0004);
-            
-            // bl resolve_function
-            int resolveAddr = setupResolveFunction();
-            int offset = ((resolveAddr - (resolverCodeAddr + 8 + 8)) >> 2) & 0x00FFFFFF;
-            writeIntLE(memory, resolverCodeAddr + 8, 0xEB000000 | offset);
-            
-            // ldmfd sp!, {r0-r3, lr}
-            writeIntLE(memory, resolverCodeAddr + 12, 0xE8BD400F);
-            
-            // bx r0
-            writeIntLE(memory, resolverCodeAddr + 16, 0xE12FFF10);
-            
-            // .word plt_index
-            writeIntLE(memory, resolverCodeAddr + 20, 0);
-        }
-        
-        return resolverCodeAddr;
-    }
-
-    private int setupResolveFunction() {
-        if (resolveFuncAddr == 0) {
-            resolveFuncAddr = findFreeMemoryRegion(128);
-            if (resolveFuncAddr == 0) return 0;
-            
-            // stmfd sp!, {lr}
-            writeIntLE(memory, resolveFuncAddr, 0xE92D4000);
-            
-            // Implementação da resolução
-            // ldr r0, [r0]  ; obter índice
-            writeIntLE(memory, resolveFuncAddr + 4, 0xE5900000);
-            
-            // Aqui viria o código real de resolução
-            // Por enquanto, chamar resolvePLTSymbol
-            writeIntLE(memory, resolveFuncAddr + 8, 0xE12FFF1E); // bx lr
-            
-            // Armazenar handler
-            elfInfo.put("resolve_handler", new Object() {
-                public int handle(int pltIndex) {
-                    return resolvePLTSymbol(pltIndex);
-                }
-            });
-        }
-        
-        return resolveFuncAddr;
-    }
-    
-    private String getSymbolNameByIndex(int index) {
-        Enumeration keys = dynamicSymbols.keys();
-        int current = 0;
-        while (keys.hasMoreElements()) {
-            String name = (String) keys.nextElement();
-            if (current == index) return name;
-            current++;
-        }
-        return null;
-    }
-
+    private String getSymbolNameByIndex(int index) { Enumeration keys = dynamicSymbols.keys(); int current = 0; while (keys.hasMoreElements()) { String name = (String) keys.nextElement(); if (current == index) { return name; } current++; } return null; }
     private int resolvePLTSymbol(int pltIndex) {
         String key = "plt_" + pltIndex;
         if (!pltEntries.containsKey(key)) return 0;
         
         Hashtable pltInfo = (Hashtable) pltEntries.get(key);
-        int symIndex = ((Integer)pltInfo.get("symIndex")).intValue();
-        int gotOffset = ((Integer)pltInfo.get("gotOffset")).intValue();
+        int symIndex = ((Integer)pltInfo.get("symIndex")).intValue(), gotOffset = ((Integer)pltInfo.get("gotOffset")).intValue();
         
         String symName = getSymbolNameByIndex(symIndex);
         Integer resolvedAddr = resolveSymbol(symName);
@@ -1853,131 +1135,80 @@ public class ELF {
             writeIntLE(memory, gotOffset, resolvedAddr.intValue());
             pltInfo.put("resolved", Boolean.TRUE);
             
-            if (midlet.debug) {
-                midlet.print("Resolved: " + symName + " -> " + toHex(resolvedAddr.intValue()), stdout);
-            }
+            if (midlet.debug) { midlet.print("Resolved: " + symName + " -> " + toHex(resolvedAddr.intValue()), stdout); }
             
             return resolvedAddr.intValue();
         }
         
         return 0;
     }
-
     private Integer resolveSymbol(String name) {
-        // Verificar no executável
         if (dynamicSymbols.containsKey(name)) {
             Hashtable symInfo = (Hashtable) dynamicSymbols.get(name);
             int value = ((Integer)symInfo.get("value")).intValue();
-            if (value != 0) return new Integer(value);
+            if (value != 0) { return new Integer(value); }
         }
-        
-        // Verificar em bibliotecas
+
         for (int i = 0; i < loadedLibraries.size(); i++) {
             String libName = (String) loadedLibraries.elementAt(i);
             Hashtable lib = (Hashtable) globalSymbols.get(libName);
             
             if (lib != null && lib.containsKey(name)) {
                 Object symValue = lib.get(name);
-                if (symValue instanceof Hashtable) {
-                    return new Integer(((Integer)((Hashtable)symValue).get("value")).intValue());
-                } else if (symValue instanceof Integer) {
-                    return (Integer) symValue;
-                }
+                if (symValue instanceof Hashtable) { return new Integer(((Integer) ((Hashtable) symValue).get("value")).intValue()); }
+                else if (symValue instanceof Integer) { return (Integer) symValue; }
             }
         }
         
         // Criar stub se for syscall
-        if (name.startsWith("sys_")) {
-            return new Integer(createSyscallStub(name));
-        }
+        if (name.startsWith("sys_")) { return new Integer(createSyscallStub(name)); }
         
         return null;
     }
 
-    private void setupPLTGOT() {
-        if (pltGotAddr == 0) return;
-        
-        // Primeira entrada: dynamic section
-        writeIntLE(memory, pltGotAddr, dynamicSectionAddr);
-        
-        // Segunda entrada: módulo (0)
-        writeIntLE(memory, pltGotAddr + 4, 0);
-        
-        // Terceira entrada: resolvedor
-        writeIntLE(memory, pltGotAddr + 8, resolveFuncAddr);
-    }
-
+    private void setupPLTGOT() { if (pltGotAddr == 0) { return; } writeIntLE(memory, pltGotAddr, dynamicSectionAddr); writeIntLE(memory, pltGotAddr + 4, 0); writeIntLE(memory, pltGotAddr + 8, resolveFuncAddr); }
     private void setupCRTStack() {
-        // Configurar stack para C Runtime
-        // Argumentos: argc, argv[], envp[], auxv[]
-        
         int sp = registers[REG_SP];
-        
-        // Auxiliary vector (simplificado)
-        writeIntLE(memory, sp - 4, 0); // AT_NULL
+
+        writeIntLE(memory, sp - 4, 0);
         writeIntLE(memory, sp - 8, 0);
         sp -= 8;
-        
-        // Environment variables (mantenha como está)
+
         Vector envVars = new Vector();
-        envVars.addElement("PATH=/bin");
-        envVars.addElement("USER=" + (id == 0 ? "root" : midlet.username));
-        envVars.addElement("HOME=/home");
-        envVars.addElement("SHELL=/bin/sh");
-        envVars.addElement("TERM=vt100");
-        for (Enumeration e = midlet.attributes.keys(); e.hasMoreElements();) {
-            envVars.addElement(midlet.attributes.get(e.nextElement()));
-        }
-        
-        // Ponteiros para env vars
+        envVars.addElement("PATH=/bin"); envVars.addElement("USER=" + (id == 0 ? "root" : midlet.username)); envVars.addElement("HOME=/home"); envVars.addElement("TERM=vt100");
+        for (Enumeration e = midlet.attributes.keys(); e.hasMoreElements();) { envVars.addElement(midlet.attributes.get(e.nextElement())); }
+
         int envpStart = sp - (envVars.size() + 1) * 4;
         for (int i = 0; i < envVars.size(); i++) {
             String env = (String) envVars.elementAt(i);
             byte[] envBytes = env.getBytes();
             sp -= envBytes.length + 1;
-            for (int j = 0; j < envBytes.length; j++) {
-                memory[sp + j] = envBytes[j];
-            }
+            for (int j = 0; j < envBytes.length; j++) { memory[sp + j] = envBytes[j]; }
             memory[sp + envBytes.length] = 0;
             writeIntLE(memory, envpStart + i * 4, sp);
         }
         writeIntLE(memory, envpStart + envVars.size() * 4, 0); // NULL terminator
         sp = envpStart;
-        
-        // Argumentos do programa (AGORA USANDO OS ARGUMENTOS REAIS)
+
         Vector argsVec = new Vector();
-        
-        for (int i = 0; i < args.size(); i++){
-            argsVec.addElement(args.get(new Double(i)));
-        }
-        
-        // Se não houver argumentos, usar o padrão
+        for (int i = 0; i < args.size(); i++) { argsVec.addElement(args.get(new Double(i))); }
         if (argsVec.size() == 0) { argsVec.addElement("program"); }
-        
-        // Ponteiros para args
+
         int argvStart = sp - (argsVec.size() + 1) * 4;
         for (int i = 0; i < argsVec.size(); i++) {
             String arg = (String) argsVec.elementAt(i);
             byte[] argBytes = arg.getBytes();
             sp -= argBytes.length + 1;
-            for (int j = 0; j < argBytes.length; j++) {
-                memory[sp + j] = argBytes[j];
-            }
+            for (int j = 0; j < argBytes.length; j++) { memory[sp + j] = argBytes[j]; }
             memory[sp + argBytes.length] = 0;
             writeIntLE(memory, argvStart + i * 4, sp);
         }
         writeIntLE(memory, argvStart + argsVec.size() * 4, 0); // NULL terminator
-        sp = argvStart;
-        
-        // argc
-        sp -= 4;
+        sp = argvStart; sp -= 4;
         writeIntLE(memory, sp, argsVec.size());
-        
-        // Armazenar argc e argv[0] para uso posterior (opcional)
+
         elfInfo.put("argc", new Integer(argsVec.size()));
-        if (argsVec.size() > 0) {
-            elfInfo.put("argv0", argsVec.elementAt(0));
-        }
+        if (argsVec.size() > 0) { elfInfo.put("argv0", argsVec.elementAt(0)); }
         
         // Configurar stack pointer
         registers[REG_SP] = sp;
@@ -1985,9 +1216,7 @@ public class ELF {
         if (midlet.debug) {
             midlet.print("Stack setup: SP=" + toHex(registers[REG_SP]), stdout);
             midlet.print("argc=" + argsVec.size(), stdout);
-            for (int i = 0; i < argsVec.size(); i++) {
-                midlet.print("argv[" + i + "]=" + argsVec.elementAt(i), stdout);
-            }
+            for (int i = 0; i < argsVec.size(); i++) { midlet.print("argv[" + i + "]=" + argsVec.elementAt(i), stdout); }
         }
     }
 
@@ -1996,22 +1225,13 @@ public class ELF {
         
         if (pltIndex >= 0) {
             String key = "plt_" + pltIndex;
-            if (pltEntries.containsKey(key)) {
-                Hashtable pltInfo = (Hashtable) pltEntries.get(key);
-                if (!((Boolean)pltInfo.get("resolved")).booleanValue()) {
-                    resolvePLTSymbol(pltIndex);
-                }
-            }
+            if (pltEntries.containsKey(key)) { Hashtable pltInfo = (Hashtable) pltEntries.get(key); if (!((Boolean)pltInfo.get("resolved")).booleanValue()) { resolvePLTSymbol(pltIndex); } }
             
-            int gotOffset = pltGotAddr + 12 + pltIndex * 4;
-            int realAddr = readIntLE(memory, gotOffset);
+            int gotOffset = pltGotAddr + 12 + pltIndex * 4, realAddr = readIntLE(memory, gotOffset);
             
-            registers[REG_LR] = pc;
-            pc = realAddr;
+            registers[REG_LR] = pc; pc = realAddr;
             
-            if (midlet.debug) {
-                midlet.print("PLT call via slot " + pltIndex + " to " + toHex(realAddr), stdout);
-            }
+            if (midlet.debug) { midlet.print("PLT call via slot " + pltIndex + " to " + toHex(realAddr), stdout); }
         }
     }
     public void dumpDynamicInfo(Object stdout) {
@@ -2036,42 +1256,18 @@ public class ELF {
             count++;
         }
     }
-    private int createSyscallStub(String name) {
-        int stubAddr = findFreeMemoryRegion(32);
-        if (stubAddr == 0) { return 0; }
-        
-        int syscallNum = mapSyscallName(name);
-        
-        // swi #syscallNum
-        writeIntLE(memory, stubAddr, 0xEF000000 | (syscallNum & 0x00FFFFFF));
-        // bx lr
-        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
-        
-        return stubAddr;
-    }
+    // Stubs
+    private int createSimpleStub(int size) { int stubAddr = findFreeMemoryRegion(size); if (stubAddr == 0) { return 0; } writeIntLE(memory, stubAddr, 0xE3A00000); writeIntLE(memory, stubAddr + 4, 0xE12FFF1E); return stubAddr; }
+    private int createSyscallStub(String name) { int stubAddr = findFreeMemoryRegion(32); if (stubAddr == 0) { return 0; } int syscallNum = mapSyscallName(name); writeIntLE(memory, stubAddr, 0xEF000000 | (syscallNum & 0x00FFFFFF)); writeIntLE(memory, stubAddr + 4, 0xE12FFF1E); return stubAddr; }
 
-    private int mapSyscallName(String name) {
-        if (name.equals("exit") || name.indexOf("exit") != -1) return SYS_EXIT;
-        if (name.equals("write") || name.indexOf("write") != -1) return SYS_WRITE;
-        if (name.equals("read") || name.indexOf("read") != -1) return SYS_READ;
-        if (name.equals("open") || name.indexOf("open") != -1) return SYS_OPEN;
-        if (name.equals("close") || name.indexOf("close") != -1) return SYS_CLOSE;
-        if (name.equals("brk") || name.indexOf("brk") != -1) return SYS_BRK;
-        if (name.equals("fork") || name.indexOf("fork") != -1) return SYS_FORK;
-        if (name.equals("execve") || name.indexOf("exec") != -1) return SYS_EXECVE;
-        return 0;
-    }
+    private int mapSyscallName(String name) { if (name.equals("exit") || name.indexOf("exit") != -1) { return SYS_EXIT; } if (name.equals("write") || name.indexOf("write") != -1) {  return SYS_WRITE; } if (name.equals("read") || name.indexOf("read") != -1) { return SYS_READ; } if (name.equals("open") || name.indexOf("open") != -1) { return SYS_OPEN; } if (name.equals("close") || name.indexOf("close") != -1) { return SYS_CLOSE; } if (name.equals("brk") || name.indexOf("brk") != -1) { return SYS_BRK; } if (name.equals("fork") || name.indexOf("fork") != -1) { return SYS_FORK; } if (name.equals("execve") || name.indexOf("exec") != -1) { return SYS_EXECVE; } return 0; }
     
     // Syscalls Handler
     // |
     private void handleSyscall(int number) {
-        // Debug
-        if (midlet.debug && number != SYS_GETTIMEOFDAY && number != SYS_GETPID) {
-            midlet.print("Syscall " + number + " (R7=" + registers[REG_R7] + ")", stdout, id);
-        }
+        if (midlet.debug && number != SYS_GETTIMEOFDAY && number != SYS_GETPID) { midlet.print("Syscall " + number + " (R7=" + registers[REG_R7] + ")", stdout, id); }
         int savedPC = pc;
-    
-        
+
         switch (number) {
             case SYS_FORK:
                 handleFork();
@@ -2238,7 +1434,6 @@ public class ELF {
                 break;
                 
             case SYS_SYSCALL:
-                // syscall() - chamar syscall por número
                 int syscallNum = registers[REG_R0];
                 registers[REG_R7] = syscallNum;
                 registers[REG_R0] = registers[REG_R1];
@@ -2321,7 +1516,7 @@ public class ELF {
                 break;
             default:
                 registers[REG_R0] = -38; // ENOSYS - Syscall não implementada
-                if (midlet.debug) midlet.print("Unimplemented syscall: " + number, stdout, id);
+                if (midlet.debug) { midlet.print("Unimplemented syscall: " + number, stdout, id); }
                 break;
         }
     }
@@ -2331,15 +1526,13 @@ public class ELF {
     private void handleFork() { registers[REG_R0] = -1; }
     private void handleExecve() {
         int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
-        
         if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
 
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
         while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
         String path = pathBuf.toString();
-        
-        // Construir argumentos (similar ao io.popen do Lua)
+
         Vector argsVec = new Vector();
         if (argvAddr != 0) {
             int argPtr = readIntLE(memory, argvAddr);
@@ -2360,169 +1553,73 @@ public class ELF {
             }
         }
         
-        // Construir string de argumentos
         StringBuffer argsStr = new StringBuffer();
-        for (i = 1; i < argsVec.size(); i++) {
-            if (i > 1) argsStr.append(" ");
-            argsStr.append((String)argsVec.elementAt(i));
-        }
-        
+        for (i = 1; i < argsVec.size(); i++) { if (i > 1) argsStr.append(" "); argsStr.append((String) argsVec.elementAt(i)); }
         try {
-            // Verificar se é ELF ou Lua
-            InputStream is = midlet.getInputStream(path);
-            if (is == null) { registers[REG_R0] = -2; return; }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
             
-            byte[] header = new byte[4];
-            int bytesRead = is.read(header);
-            is.close();
+            while ((length = is.read(buffer)) != -1) { baos.write(buffer, 0, length); }
+            
+            byte[] data = baos.toByteArray(); baos.close();
 
             Hashtable arg = new Hashtable();
-            arg.put(new Double(0), path);
-            String[] argList = midlet.splitArgs(argsStr.toString());
-            for (i = 0; i < argList.length; i++) { arg.put(new Double(i + 1), argList[i]); }
-            
-            boolean isElf = (bytesRead == 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F');
-            
-            if (isElf) {
-                // Executar ELF (similar ao fork+exec)
-                InputStream elfStream = midlet.getInputStream(path);
-                ELF elf = new ELF(midlet, arg, stdout, scope, id, null, null);
-                
-                if (elf.load(elfStream)) {
-                    // Fechar file descriptors (exceto 0,1,2)
-                    Enumeration keys = fileDescriptors.keys();
-                    while (keys.hasMoreElements()) {
-                        Object key = keys.nextElement();
-                        if (key instanceof Integer) {
-                            Integer fd = (Integer) key;
-                            if (fd.intValue() >= 3) {
-                                Object stream = fileDescriptors.get(fd);
-                                try {
-                                    if (stream instanceof InputStream) { ((InputStream) stream).close(); }
-                                    else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
-                                } catch (Exception e) {}
-                            }
-                        }
-                    }
-                    fileDescriptors.clear();
-                    
-                    // Reabrir stdin/stdout/stderr
-                    fileDescriptors.put(new Integer(1), stdout);
-                    fileDescriptors.put(new Integer(2), stdout);
-                    
-                    // Executar novo programa
-                    Hashtable proc = midlet.genprocess("elf", id, null);
-                    proc.put("elf", elf);
-                    midlet.sys.put(pid, proc);
-                    
-                    // Configurar stack para argumentos
-                    // (simplificado - na prática precisaria configurar argc/argv na stack)
-                    
-                    registers[REG_R0] = 0; // Sucesso
-                } else {
-                    registers[REG_R0] = -8; // ENOEXEC
-                }
-            } else {
-                // Executar Lua
-                String code = midlet.read(path);
-                if (code == null || code.equals("")) { registers[REG_R0] = -2; return; }
-                
-                // Fechar file descriptors (exceto 0,1,2)
-                Enumeration keys = fileDescriptors.keys();
-                while (keys.hasMoreElements()) {
-                    Object key = keys.nextElement();
-                    if (key instanceof Integer) {
-                        Integer fd = (Integer) key;
-                        if (fd.intValue() >= 3) {
-                            Object stream = fileDescriptors.get(fd);
-                            try {
-                                if (stream instanceof InputStream) { ((InputStream) stream).close(); }
-                                else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
-                            } catch (Exception e) {}
-                        }
-                    }
-                }
-                fileDescriptors.clear();
-                
-                // Reabrir stdin/stdout/stderr
-                fileDescriptors.put(new Integer(1), stdout);
-                fileDescriptors.put(new Integer(2), stdout);
-                
-                Lua lua = new Lua(midlet, id, pid, null, stdout, scope);
-                lua.run(path, code, arg);
-                
+
+            if (midlet.isPureText(data)) {
+                String code = new String(data, "UTF-8");
+                Lua lua = new Lua(midlet, owner, null, null, out, scope);
+                lua.run(program, code, arg);
                 registers[REG_R0] = 0;
+            }
+            else {
+                InputStream elfStream = new ByteArrayInputStream(data);
+                ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
+                
+                if (elf.load(elfStream)) { elf.run(); registers[REG_R0] = 0; } else { registers[REG_R0] = -8; }
             }
         } catch (Exception e) { registers[REG_R0] = -1; }
     }
     private void handleGetpriority() { int which = registers[REG_R0], who = registers[REG_R1]; if (who == 0) { Object priorityObj = proc.get("priority"); if (priorityObj instanceof Integer) { registers[REG_R0] = ((Integer) priorityObj).intValue(); } else { registers[REG_R0] = 20; } } else { registers[REG_R0] = -22; } }
     private void handleSetpriority() { int which = registers[REG_R0], who = registers[REG_R1], prio = registers[REG_R2]; if (who == 0) { proc.put("priority", new Integer(prio)); registers[REG_R0] = 0; } else { registers[REG_R0] = -22; } }
     // |
-    private void handleSignal() {
-        int signum = registers[REG_R0], handler = registers[REG_R1];
-        
-        if (signum <= 0 || signum >= NSIG) { registers[REG_R0] = SIG_ERR; return; }
-        
-        int oldHandler = signalHandlers[signum];
-        signalHandlers[signum] = handler;
-        
-        registers[REG_R0] = oldHandler;
-    }
+    private void handleSignal() { int signum = registers[REG_R0], handler = registers[REG_R1]; if (signum <= 0 || signum >= NSIG) { registers[REG_R0] = SIG_ERR; return; } int oldHandler = signalHandlers[signum]; signalHandlers[signum] = handler; registers[REG_R0] = oldHandler; }
     private void handleSignal(int sig) {
         if (sig <= 0 || sig >= NSIG) return;
-        
         int handler = signalHandlers[sig];
         
         if (handler == SIG_DFL) {
-            // Comportamento padrão
             switch (sig) {
                 case SIGSEGV:
                     running = false;
-                    midlet.print("Segmentation fault", stdout, id);
+                    if (midlet.debug) { midlet.print("Segmentation fault", stdout, id); }
                     break;
                 case SIGINT:
                     running = false;
                     break;
             }
-        } else if (handler == SIG_IGN) {
-            // Ignorar sinal
-            return;
-        } else if (handler != 0) {
-            // Chamar handler de sinal
-            pushSignalFrame(sig);
-            pc = handler;
         }
+        else if (handler == SIG_IGN) { return; }
+        else if (handler != 0) { pushSignalFrame(sig); pc = handler; }
     }
     private void handleSigaction() {
         int signum = registers[REG_R0], actPtr = registers[REG_R1], oldactPtr = registers[REG_R2];
-
         if (signum <= 0 || signum >= NSIG) { registers[REG_R0] = -22; return; }
- 
-        // Salvar o antigo handler se oldactPtr não for nulo
-        if (oldactPtr != 0 && oldactPtr + 12 <= memory.length) {
-            writeIntLE(memory, oldactPtr, signalHandlers[signum]);
-            writeIntLE(memory, oldactPtr + 4, 0); // sa_mask
-            writeIntLE(memory, oldactPtr + 8, 0); // sa_flags
-        }
 
-        if (actPtr != 0 && actPtr + 4 <= memory.length) {
-            int newHandler = readIntLE(memory, actPtr);
-            signalHandlers[signum] = newHandler;
-        }
+        if (oldactPtr != 0 && oldactPtr + 12 <= memory.length) { writeIntLE(memory, oldactPtr, signalHandlers[signum]); writeIntLE(memory, oldactPtr + 4, 0); writeIntLE(memory, oldactPtr + 8, 0); }
+        if (actPtr != 0 && actPtr + 4 <= memory.length) { int newHandler = readIntLE(memory, actPtr); signalHandlers[signum] = newHandler; }
         
         registers[REG_R0] = 0;
     }
     private void handleKill() {
         int pid = registers[REG_R0], sig = registers[REG_R1];
-        
         String targetPid = String.valueOf(pid);
         
         if (!midlet.sys.containsKey(targetPid)) { registers[REG_R0] = -3; return; }
         if (this.id != 0 && !targetPid.equals(this.pid)) { registers[REG_R0] = -1; return; }
         
         Object procObj = midlet.sys.get(targetPid);
-        
-        // Para sinais de terminação
+
         if (sig == SIGKILL || sig == SIGTERM) {
             if (procObj instanceof Hashtable) {
                 Hashtable proc = (Hashtable) procObj;
@@ -2555,13 +1652,8 @@ public class ELF {
         else { registers[REG_R0] = -22; }
     }
     // |
-    private void handleExit() {
-        int status = registers[REG_R0];
-        running = false;
-        cleanup();
-    }
+    private void handleExit() { int status = registers[REG_R0]; running = false; cleanup(); }
     private void cleanup() {
-        // Fechar todos os file descriptors
         Enumeration keys = fileDescriptors.keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
@@ -2569,15 +1661,11 @@ public class ELF {
                 Integer fd = (Integer) key;
                 if (fd.intValue() >= 3) {
                     Object stream = fileDescriptors.get(fd);
-                    try {
-                        if (stream instanceof InputStream) { ((InputStream) stream).close(); }
-                        else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
-                    } catch (Exception e) { }
+                    try { if (stream instanceof InputStream) { ((InputStream) stream).close(); } else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); } } catch (Exception e) { }
                 }
             }
         }
 
-        // Fechar sockets
         keys = socketDescriptors.keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
@@ -2585,10 +1673,8 @@ public class ELF {
             if (socketInfo.containsKey("connection")) { try { ((StreamConnection) socketInfo.get("connection")).close(); } catch (Exception e) { } }
             if (socketInfo.containsKey("server")) { try { ((StreamConnectionNotifier) socketInfo.get("server")).close(); } catch (Exception e) { } }
         }
-        
-        // Limpar estruturas
-        fileDescriptors.clear(); socketDescriptors.clear();
-        allocatedBlocks.clear(); instructionCache.clear(); jmpBufs.clear();
+
+        fileDescriptors.clear(); socketDescriptors.clear(); allocatedBlocks.clear(); instructionCache.clear(); jmpBufs.clear();
         memoryMappings.removeAllElements();
     }
     // |
@@ -2600,187 +1686,80 @@ public class ELF {
 
     // | (Memory)
     private void handleMmap() {
-        // Parâmetros 1-4 em R0-R3
-        int addr = registers[REG_R0];
-        int length = registers[REG_R1];
-        int prot = registers[REG_R2];
-        int flags = registers[REG_R3];
+        int addr = registers[REG_R0], length = registers[REG_R1], prot = registers[REG_R2], flags = registers[REG_R3], fd = getSyscallParam(4), offset = getSyscallParam(5);
         
-        // Parâmetros 5-6 na stack (R4 e R5 não são usados!)
-        int fd = getSyscallParam(4);    // Parâmetro 5 (índice 4)
-        int offset = getSyscallParam(5); // Parâmetro 6 (índice 5)
-        
-        if (midlet.debug) {
-            midlet.print("mmap: addr=" + toHex(addr) + " length=" + length + 
-                        " prot=" + prot + " flags=" + toHex(flags) + 
-                        " fd=" + fd + " offset=" + offset, stdout, id);
-        }
-        
-        if (length <= 0) {
-            registers[REG_R0] = -22; // EINVAL
-            return;
-        }
-        
-        // Arredondar para múltiplo de página (4096)
+        if (midlet.debug) { midlet.print("mmap: addr=" + toHex(addr) + " length=" + length + " prot=" + prot + " flags=" + toHex(flags) + " fd=" + fd + " offset=" + offset, stdout, id); }
+        if (length <= 0) { registers[REG_R0] = -22; return; }
+
         length = (length + 4095) & ~4095;
-        
-        // Se addr é 0, escolher automaticamente
-        if (addr == 0) {
-            // Encontrar região livre
-            addr = findFreeMemoryRegion(length);
-            if (addr == 0) {
-                registers[REG_R0] = -12; // ENOMEM
-                return;
-            }
+
+        if (addr == 0) { addr = findFreeMemoryRegion(length); if (addr == 0) { registers[REG_R0] = -12; return; }
         }
+        if (!isMemoryRegionFree(addr, length)) { registers[REG_R0] = -12; return; }
         
-        // Verificar se a região está livre
-        if (!isMemoryRegionFree(addr, length)) {
-            registers[REG_R0] = -12; // ENOMEM
-            return;
-        }
-        
-        // Mapear memória
         Hashtable mapping = new Hashtable();
-        mapping.put("addr", new Integer(addr));
-        mapping.put("length", new Integer(length));
-        mapping.put("prot", new Integer(prot));
-        mapping.put("flags", new Integer(flags));
-        mapping.put("fd", new Integer(fd));
-        mapping.put("offset", new Integer(offset));
-        
+        mapping.put("addr", new Integer(addr)); mapping.put("length", new Integer(length)); mapping.put("prot", new Integer(prot));
+        mapping.put("flags", new Integer(flags)); mapping.put("fd", new Integer(fd)); mapping.put("offset", new Integer(offset));
+
         memoryMappings.addElement(mapping);
         
-        // Se for MAP_ANONYMOUS, zerar a memória
-        if ((flags & MAP_ANONYMOUS) != 0) {
-            for (int i = 0; i < length && addr + i < memory.length; i++) {
-                memory[addr + i] = 0;
-            }
-        }
+        if ((flags & MAP_ANONYMOUS) != 0) { for (int i = 0; i < length && addr + i < memory.length; i++) { memory[addr + i] = 0; } }
         
         registers[REG_R0] = addr;
     }
     private void handleMunmap() {
-        int addr = registers[REG_R0];
-        int length = registers[REG_R1];
-        
-        // Encontrar e remover mapeamento
+        int addr = registers[REG_R0], length = registers[REG_R1];
+
         for (int i = 0; i < memoryMappings.size(); i++) {
             Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
-            int maddr = ((Integer)mapping.get("addr")).intValue();
-            int mlen = ((Integer)mapping.get("length")).intValue();
-            
-            if (addr >= maddr && addr < maddr + mlen) {
-                // Zerar memória (opcional)
-                for (int j = 0; j < mlen && maddr + j < memory.length; j++) {
-                    memory[maddr + j] = 0;
-                }
-                
-                memoryMappings.removeElementAt(i);
-                registers[REG_R0] = 0;
-                return;
-            }
+            int maddr = ((Integer) mapping.get("addr")).intValue(), mlen = ((Integer) mapping.get("length")).intValue();
+            if (addr >= maddr && addr < maddr + mlen) { for (int j = 0; j < mlen && maddr + j < memory.length; j++) { memory[maddr + j] = 0; } memoryMappings.removeElementAt(i); registers[REG_R0] = 0; return; }
         }
-        
-        registers[REG_R0] = -22; // EINVAL
+
+        registers[REG_R0] = -22;
     }
     
     private void handleMprotect() {
-        int addr = registers[REG_R0];
-        int len = registers[REG_R1];
-        int prot = registers[REG_R2];
-        
-        // Verificar mapeamento
+        int addr = registers[REG_R0], len = registers[REG_R1], prot = registers[REG_R2];
+
         for (int i = 0; i < memoryMappings.size(); i++) {
             Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
-            int maddr = ((Integer)mapping.get("addr")).intValue();
-            int mlen = ((Integer)mapping.get("length")).intValue();
-            
-            if (addr >= maddr && addr < maddr + mlen) {
-                // Atualizar proteção
-                mapping.put("prot", new Integer(prot));
-                registers[REG_R0] = 0;
-                return;
-            }
+            int maddr = ((Integer)mapping.get("addr")).intValue(), mlen = ((Integer)mapping.get("length")).intValue();
+            if (addr >= maddr && addr < maddr + mlen) { mapping.put("prot", new Integer(prot)); registers[REG_R0] = 0; return; }
         }
         
-        registers[REG_R0] = -22; // EINVAL
+        registers[REG_R0] = -22;
     }
-    
     private void handleMremap() {
-        // Parâmetros 1-4 em R0-R3
-        int old_addr = registers[REG_R0];
-        int old_size = registers[REG_R1];
-        int new_size = registers[REG_R2];
-        int flags = registers[REG_R3];
-        
-        // Parâmetro 5 na stack
-        int new_addr = getSyscallParam(4);
-        
-        if (midlet.debug) {
-            midlet.print("mremap: old=" + toHex(old_addr) + " oldsize=" + old_size +
-                        " newsize=" + new_size + " flags=" + flags +
-                        " newaddr=" + toHex(new_addr), stdout, id);
-        }
-        
-        // Implementação simplificada
-        if (new_addr == 0) {
-            // Tentar expandir no lugar
+        int old_addr = registers[REG_R0], old_size = registers[REG_R1], new_size = registers[REG_R2], flags = registers[REG_R3], new_addr = getSyscallParam(4);
+        if (midlet.debug) { midlet.print("mremap: old=" + toHex(old_addr) + " oldsize=" + old_size + " newsize=" + new_size + " flags=" + flags + " newaddr=" + toHex(new_addr), stdout, id); }
+        if (new_addr == 0) { 
             for (int i = 0; i < memoryMappings.size(); i++) {
                 Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
-                int maddr = ((Integer)mapping.get("addr")).intValue();
-                int mlen = ((Integer)mapping.get("length")).intValue();
-                
-                if (maddr == old_addr && mlen == old_size) {
-                    // Verificar se há espaço para expandir
-                    if (isMemoryRegionFree(maddr + mlen, new_size - old_size)) {
-                        mapping.put("length", new Integer(new_size));
-                        registers[REG_R0] = maddr;
-                        return;
-                    }
-                }
+                int maddr = ((Integer)mapping.get("addr")).intValue(),mlen = ((Integer)mapping.get("length")).intValue();
+                if (maddr == old_addr && mlen == old_size) { if (isMemoryRegionFree(maddr + mlen, new_size - old_size)) { mapping.put("length", new Integer(new_size)); registers[REG_R0] = maddr; return; } }
             }
         }
-        
-        // Falhou, retornar erro
-        registers[REG_R0] = -12; // ENOMEM
+
+        registers[REG_R0] = -12;
     }
     private void handleBrk() {
         int newBrk = registers[REG_R0];
-        if (newBrk == 0) { 
-            registers[REG_R0] = heapEnd; 
-            return; 
-        }
-        
-        if (newBrk < heapStart) { 
-            registers[REG_R0] = -1; 
-            return; 
-        }
-        
-        // Arredondar para página
+        if (newBrk == 0) { registers[REG_R0] = heapEnd; return; }
+        if (newBrk < heapStart) { registers[REG_R0] = -1; return; }
+
         newBrk = (newBrk + 4095) & ~4095;
-        
-        if (newBrk > memory.length) {
-            registers[REG_R0] = -12; // ENOMEM
-            return;
-        }
-        
-        // Verificar se estamos liberando memória
+        if (newBrk > memory.length) { registers[REG_R0] = -12; return; }
         if (newBrk < heapEnd) {
-            // Liberar blocos alocados que estão além do novo break
             Vector keysToRemove = new Vector();
             Enumeration keys = allocatedBlocks.keys();
             while (keys.hasMoreElements()) {
                 Integer addr = (Integer) keys.nextElement();
                 Integer size = (Integer) allocatedBlocks.get(addr);
-                if (addr.intValue() + size.intValue() > newBrk) { 
-                    keysToRemove.addElement(addr); 
-                }
+                if (addr.intValue() + size.intValue() > newBrk) { keysToRemove.addElement(addr); }
             }
             
-            for (int i = 0; i < keysToRemove.size(); i++) { 
-                allocatedBlocks.remove(keysToRemove.elementAt(i)); 
-            }
+            for (int i = 0; i < keysToRemove.size(); i++) { allocatedBlocks.remove(keysToRemove.elementAt(i)); }
         }
         
         heapEnd = newBrk;
