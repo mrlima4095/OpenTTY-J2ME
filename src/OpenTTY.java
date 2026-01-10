@@ -59,10 +59,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
         screen.append(e instanceof Exception ? "If you tried to install a program in /bin/init it can be the error" : "Try to clear your data or update OpenTTY");
 
         screen.addCommand(new Command("Exit", Command.OK, 1));
-        screen.addCommand(new Command("Update", Command.SCREEN, 1));
-        screen.addCommand(new Command("Clear data", Command.SCREEN, 1));
+        screen.addCommand(new Command("Recovery", Command.SCREEN, 1));
         screen.setCommandListener(this);
         display.setCurrent(screen);
+    }
+    private void recovery() {
+        List menu = new List("Recovery", List.IMPLICIT);
+        menu.append("Update", null);
+        menu.append("---", null);
+        menu.append("Clear data", null);
+        menu.append("Reset config", null);
+        menu.append("Factory reset", null);
+        menu.append("---", null);
+        menu.append("System Info", null);
+        menu.append("Questions", null);
+        menu.setCommandListener(this);
+        display.setCurrent(menu).
     }
     // | (Installation)
     private void login(boolean user, boolean pword) {
@@ -88,8 +100,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Graphical Handler)
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
-        if (c.getLabel() == "Update") { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
-        if (c.getLabel() == "Clear data") { deleteFile("/bin/init", 0); destroyApp(true); }
+        else if (c.getLabel() == "Recovery" || c.getLabel() == "Back") { recovery(); }
+        else if (c.getLabel() == "Update") { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
+        else if (c.getLabel() == "Clear data") {  }
+        else if (c.getLabel() == "Reset config") {  }
+        else if (c.getLabel() == "Factory reset") {  }
+        else if (c.getLabel() == "System Info") {  }
+        else if (c.getLabel() == "Questions") {  }
         else {
             int size = ((Form) d).size();
             if (size == 2) {
