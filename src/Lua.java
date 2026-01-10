@@ -15,7 +15,7 @@ public class Lua {
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), labels = new Hashtable();;
+    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), labels = new Hashtable();
     public Vector tokens;
     // |
     public int status = 0;
@@ -90,7 +90,7 @@ public class Lua {
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
         math.put("random", new LuaFunction(RANDOM)); globals.put("math", math);
-        globals.put("_VERSION", "Lua J2ME");
+        globals.put("_VERSION", "Lua J2ME"); globals.put("_ENV", globals);
     }
     // | (Run Source code)
     public Hashtable run(String source, String code, Hashtable args) { 
