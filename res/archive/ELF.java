@@ -17,7 +17,7 @@ public class ELF {
     private static final int PT_DYNAMIC = 2;
     private static final int PT_INTERP = 3;
     private static final int PT_NOTE = 4;
-    
+
     public ELF(OpenTTY midlet, Object stdout, Hashtable scope, int id, String pid, Hashtable proc) { this.midlet = midlet; this.stdout = stdout; }
     
     public String getPid() { return ""; }
@@ -52,4 +52,7 @@ public class ELF {
         ITEM.put("status", new Double(69));
         return ITEM;
     }
+
+    private int readIntLE(byte[] data, int offset) { if (offset + 3 >= data.length || offset < 0) { return 0; } return ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24)); } 
+    private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length || offset < 0) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
 }
