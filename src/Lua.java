@@ -2084,7 +2084,7 @@ public class Lua {
                 } catch (ClassNotFoundException e) {
                     return gotbad(3, "register", "MIDlet class not found: " + midletClass);
                 } catch (Exception e) {
-                    return gotbad(1, "register", midlet.getCatch(e.getMessage()));
+                    return gotbad(1, "register", midlet.getCatch(e));
                 }
             }
             else if (MOD == PUSH_UNREGISTER) {
@@ -2096,7 +2096,7 @@ public class Lua {
                     boolean result = PushRegistry.unregisterConnection(connection);
                     return Boolean.valueOf(result);
                 } catch (Exception e) {
-                    return gotbad(1, "unregister", midlet.getCatch(e.getMessage()));
+                    return gotbad(1, "unregister", midlet.getCatch(e));
                 }
             }
             else if (MOD == PUSH_LIST) {
@@ -2125,14 +2125,14 @@ public class Lua {
                     
                     return result;
                 } catch (Exception e) {
-                    return gotbad(1, "list", midlet.getCatch(e.getMessage()));
+                    return gotbad(1, "list", midlet.getCatch(e));
                 }
             }
             else if (MOD == PUSH_PENDING) {
                 try {
                     boolean hasPending = PushRegistry.listConnections(true).length > 0;
                     return Boolean.valueOf(hasPending);
-                } catch (Exception e) { return gotbad(1, "hasPending", midlet.getCatch(e.getMessage())); }
+                } catch (Exception e) { return gotbad(1, "hasPending", midlet.getCatch(e)); }
             }
             else if (MOD == PUSH_SET_ALARM) {
                 if (args.size() < 2) {
